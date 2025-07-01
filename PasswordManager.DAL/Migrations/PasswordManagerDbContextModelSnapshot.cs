@@ -38,8 +38,14 @@ namespace PasswordManager.DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("CollectionId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Color")
                         .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Icon")
@@ -53,67 +59,151 @@ namespace PasswordManager.DAL.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CollectionId");
+
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Category");
+                    b.ToTable("Categories");
 
                     b.HasData(
                         new
                         {
                             Id = 1,
+                            CollectionId = 1,
                             Color = "#3B82F6",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Icon = "👤",
                             Name = "Personal"
                         },
                         new
                         {
                             Id = 2,
+                            CollectionId = 2,
                             Color = "#10B981",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Icon = "💼",
                             Name = "Work"
                         },
                         new
                         {
                             Id = 3,
+                            CollectionId = 1,
                             Color = "#F59E0B",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Icon = "💰",
                             Name = "Finance"
                         },
                         new
                         {
                             Id = 4,
+                            CollectionId = 1,
                             Color = "#8B5CF6",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Icon = "🌐",
                             Name = "Social"
                         },
                         new
                         {
                             Id = 5,
+                            CollectionId = 1,
                             Color = "#EF4444",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Icon = "🛒",
                             Name = "Shopping"
                         },
                         new
                         {
                             Id = 6,
+                            CollectionId = 3,
                             Color = "#EC4899",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Icon = "🎮",
                             Name = "Entertainment"
                         },
                         new
                         {
                             Id = 7,
+                            CollectionId = 3,
                             Color = "#06B6D4",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Icon = "✈️",
                             Name = "Travel"
                         },
                         new
                         {
                             Id = 8,
+                            CollectionId = 1,
                             Color = "#84CC16",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Icon = "🏥",
                             Name = "Health"
+                        });
+                });
+
+            modelBuilder.Entity("PasswordManager.Models.Collection", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Collections");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Color = "#3B82F6",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Icon = "👤",
+                            IsDefault = true,
+                            Name = "Personal"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Color = "#10B981",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Icon = "💼",
+                            IsDefault = false,
+                            Name = "Work"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Color = "#8B5CF6",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Icon = "👪",
+                            IsDefault = false,
+                            Name = "Family"
                         });
                 });
 
@@ -393,6 +483,9 @@ namespace PasswordManager.DAL.Migrations
                     b.Property<int>("CategoryId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("CollectionId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -423,6 +516,8 @@ namespace PasswordManager.DAL.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("CollectionId");
 
                     b.ToTable("PasswordItems");
                 });
@@ -760,6 +855,16 @@ namespace PasswordManager.DAL.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PasswordManager.Models.Category", b =>
+                {
+                    b.HasOne("PasswordManager.Models.Collection", "Collection")
+                        .WithMany("Categories")
+                        .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Collection");
+                });
+
             modelBuilder.Entity("PasswordManager.Models.CreditCardItem", b =>
                 {
                     b.HasOne("PasswordManager.Models.PasswordItem", "PasswordItem")
@@ -790,7 +895,15 @@ namespace PasswordManager.DAL.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PasswordManager.Models.Collection", "Collection")
+                        .WithMany("PasswordItems")
+                        .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Category");
+
+                    b.Navigation("Collection");
                 });
 
             modelBuilder.Entity("PasswordManager.Models.SecureNoteItem", b =>
@@ -817,6 +930,13 @@ namespace PasswordManager.DAL.Migrations
 
             modelBuilder.Entity("PasswordManager.Models.Category", b =>
                 {
+                    b.Navigation("PasswordItems");
+                });
+
+            modelBuilder.Entity("PasswordManager.Models.Collection", b =>
+                {
+                    b.Navigation("Categories");
+
                     b.Navigation("PasswordItems");
                 });
 

@@ -8,24 +8,27 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PasswordManager.DAL.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class ADDmigrations : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Category",
+                name: "Collections",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    Description = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
                     Icon = table.Column<string>(type: "TEXT", maxLength: 10, nullable: true),
-                    Color = table.Column<string>(type: "TEXT", maxLength: 10, nullable: true)
+                    Color = table.Column<string>(type: "TEXT", maxLength: 10, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    IsDefault = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Category", x => x.Id);
+                    table.PrimaryKey("PK_Collections", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -46,6 +49,29 @@ namespace PasswordManager.DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Categories",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    Icon = table.Column<string>(type: "TEXT", maxLength: 10, nullable: true),
+                    Color = table.Column<string>(type: "TEXT", maxLength: 10, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    CollectionId = table.Column<int>(type: "INTEGER", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Categories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Categories_Collections_CollectionId",
+                        column: x => x.CollectionId,
+                        principalTable: "Collections",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PasswordItems",
                 columns: table => new
                 {
@@ -59,15 +85,22 @@ namespace PasswordManager.DAL.Migrations
                     IsFavorite = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsArchived = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
-                    CategoryId = table.Column<int>(type: "INTEGER", nullable: false)
+                    CategoryId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CollectionId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PasswordItems", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PasswordItems_Category_CategoryId",
+                        name: "FK_PasswordItems_Categories_CategoryId",
                         column: x => x.CategoryId,
-                        principalTable: "Category",
+                        principalTable: "Categories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PasswordItems_Collections_CollectionId",
+                        column: x => x.CollectionId,
+                        principalTable: "Collections",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -289,18 +322,13 @@ namespace PasswordManager.DAL.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "Category",
-                columns: new[] { "Id", "Color", "Icon", "Name" },
+                table: "Collections",
+                columns: new[] { "Id", "Color", "CreatedAt", "Description", "Icon", "IsDefault", "Name" },
                 values: new object[,]
                 {
-                    { 1, "#3B82F6", "👤", "Personal" },
-                    { 2, "#10B981", "💼", "Work" },
-                    { 3, "#F59E0B", "💰", "Finance" },
-                    { 4, "#8B5CF6", "🌐", "Social" },
-                    { 5, "#EF4444", "🛒", "Shopping" },
-                    { 6, "#EC4899", "🎮", "Entertainment" },
-                    { 7, "#06B6D4", "✈️", "Travel" },
-                    { 8, "#84CC16", "🏥", "Health" }
+                    { 1, "#3B82F6", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "👤", true, "Personal" },
+                    { 2, "#10B981", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "💼", false, "Work" },
+                    { 3, "#8B5CF6", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, "👪", false, "Family" }
                 });
 
             migrationBuilder.InsertData(
@@ -315,9 +343,35 @@ namespace PasswordManager.DAL.Migrations
                     { 5, "#EF4444", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, true, "Shopping" }
                 });
 
+            migrationBuilder.InsertData(
+                table: "Categories",
+                columns: new[] { "Id", "CollectionId", "Color", "CreatedAt", "Icon", "Name" },
+                values: new object[,]
+                {
+                    { 1, 1, "#3B82F6", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "👤", "Personal" },
+                    { 2, 2, "#10B981", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "💼", "Work" },
+                    { 3, 1, "#F59E0B", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "💰", "Finance" },
+                    { 4, 1, "#8B5CF6", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "🌐", "Social" },
+                    { 5, 1, "#EF4444", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "🛒", "Shopping" },
+                    { 6, 3, "#EC4899", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "🎮", "Entertainment" },
+                    { 7, 3, "#06B6D4", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "✈️", "Travel" },
+                    { 8, 1, "#84CC16", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "🏥", "Health" }
+                });
+
             migrationBuilder.CreateIndex(
-                name: "IX_Category_Name",
-                table: "Category",
+                name: "IX_Categories_CollectionId",
+                table: "Categories",
+                column: "CollectionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categories_Name",
+                table: "Categories",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Collections_Name",
+                table: "Collections",
                 column: "Name",
                 unique: true);
 
@@ -337,6 +391,11 @@ namespace PasswordManager.DAL.Migrations
                 name: "IX_PasswordItems_CategoryId",
                 table: "PasswordItems",
                 column: "CategoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PasswordItems_CollectionId",
+                table: "PasswordItems",
+                column: "CollectionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PasswordItemTags_TagsId",
@@ -387,7 +446,10 @@ namespace PasswordManager.DAL.Migrations
                 name: "PasswordItems");
 
             migrationBuilder.DropTable(
-                name: "Category");
+                name: "Categories");
+
+            migrationBuilder.DropTable(
+                name: "Collections");
         }
     }
 }
