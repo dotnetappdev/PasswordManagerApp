@@ -46,11 +46,32 @@ public static class MauiProgram
 
 		var app = builder.Build();
 
-		// Ensure database and tables are created on first run
+		// Ensure database migrations are applied on first run
 		using (var scope = app.Services.CreateScope())
 		{
 			var db = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
-			db.Database.EnsureCreated();
+			
+			// Check if this is the first run (no migration history exists)
+			#if DEBUG
+			try
+			{
+				// Try to check if migration history table exists
+				var hasMigrationHistory = db.Database.GetAppliedMigrations().Any();
+				
+				// If database exists but has no migration history (created with EnsureCreated), delete it
+				if (db.Database.CanConnect() && !hasMigrationHistory)
+				{
+					db.Database.EnsureDeleted();
+				}
+			}
+			catch
+			{
+				// If we can't check migration history, it's likely the first run or database doesn't exist
+				// Just proceed with migration
+			}
+			#endif
+			
+			db.Database.Migrate();
 		}
 
 		return app;
