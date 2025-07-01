@@ -145,6 +145,11 @@ public class PasswordManagerDbContext : DbContext
             entity.Property(e => e.Icon).HasMaxLength(10);
             entity.Property(e => e.Color).HasMaxLength(10);
             entity.HasIndex(e => e.Name).IsUnique();
+            // Parent-child relationship
+            entity.HasOne(e => e.ParentCollection)
+                  .WithMany(e => e.Children)
+                  .HasForeignKey(e => e.ParentCollectionId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
   
         // Seed data

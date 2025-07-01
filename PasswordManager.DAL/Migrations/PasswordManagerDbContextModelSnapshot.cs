@@ -170,10 +170,15 @@ namespace PasswordManager.DAL.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("ParentCollectionId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
+
+                    b.HasIndex("ParentCollectionId");
 
                     b.ToTable("Collections");
 
@@ -865,6 +870,16 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("Collection");
                 });
 
+            modelBuilder.Entity("PasswordManager.Models.Collection", b =>
+                {
+                    b.HasOne("PasswordManager.Models.Collection", "ParentCollection")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentCollectionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ParentCollection");
+                });
+
             modelBuilder.Entity("PasswordManager.Models.CreditCardItem", b =>
                 {
                     b.HasOne("PasswordManager.Models.PasswordItem", "PasswordItem")
@@ -936,6 +951,8 @@ namespace PasswordManager.DAL.Migrations
             modelBuilder.Entity("PasswordManager.Models.Collection", b =>
                 {
                     b.Navigation("Categories");
+
+                    b.Navigation("Children");
 
                     b.Navigation("PasswordItems");
                 });

@@ -11,8 +11,8 @@ using PasswordManager.DAL;
 namespace PasswordManager.DAL.Migrations
 {
     [DbContext(typeof(PasswordManagerDbContext))]
-    [Migration("20250701182529_ADDmigrations")]
-    partial class ADDmigrations
+    [Migration("20250701223330_ADDCOLLECTIONS2")]
+    partial class ADDCOLLECTIONS2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -59,9 +59,6 @@ namespace PasswordManager.DAL.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
-
-                    b.Property<int?>("ParentCollectionId")
-                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -183,6 +180,8 @@ namespace PasswordManager.DAL.Migrations
 
                     b.HasIndex("Name")
                         .IsUnique();
+
+                    b.HasIndex("ParentCollectionId");
 
                     b.ToTable("Collections");
 
@@ -871,12 +870,15 @@ namespace PasswordManager.DAL.Migrations
                         .HasForeignKey("CollectionId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.Navigation("Collection");
+                });
+
+            modelBuilder.Entity("PasswordManager.Models.Collection", b =>
+                {
                     b.HasOne("PasswordManager.Models.Collection", "ParentCollection")
                         .WithMany("Children")
                         .HasForeignKey("ParentCollectionId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Collection");
 
                     b.Navigation("ParentCollection");
                 });
@@ -952,6 +954,8 @@ namespace PasswordManager.DAL.Migrations
             modelBuilder.Entity("PasswordManager.Models.Collection", b =>
                 {
                     b.Navigation("Categories");
+
+                    b.Navigation("Children");
 
                     b.Navigation("PasswordItems");
                 });

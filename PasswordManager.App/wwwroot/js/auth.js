@@ -1,4 +1,4 @@
-// Auth.js - Enhance 1Password login experience
+// Auth.js - Enhance Password Manager login experience
 
 // Focus the password field when page loads
 window.focusPasswordField = function() {

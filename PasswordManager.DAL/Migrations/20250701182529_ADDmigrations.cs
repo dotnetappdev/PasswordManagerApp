@@ -24,11 +24,18 @@ namespace PasswordManager.DAL.Migrations
                     Icon = table.Column<string>(type: "TEXT", maxLength: 10, nullable: true),
                     Color = table.Column<string>(type: "TEXT", maxLength: 10, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    IsDefault = table.Column<bool>(type: "INTEGER", nullable: false)
+                    IsDefault = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ParentCollectionId = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Collections", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Collections_Collections_ParentCollectionId",
+                        column: x => x.ParentCollectionId,
+                        principalTable: "Collections",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(

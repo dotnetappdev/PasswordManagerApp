@@ -18,7 +18,7 @@
         <div class="sidebar-header">
             <div class="logo-section">
                 <span class="logo-icon">🔐</span>
-                <h2>1Password</h2>
+                <h2>Password Manager</h2>
             </div>
             <button class="logout-btn" @onclick="LogoutAsync" title="Logout">
                 <span>🚪</span>
@@ -36,87 +36,58 @@
         <div class="sidebar-navigation">
             <!-- Collections Section -->
             <div class="nav-section">
-                <h3 style="display:flex;align-items:center;gap:8px;">
-                    Collections
-                    <button class="add-collection-btn" style="margin-left:4px;" @onclick="ShowAddCollectionModal">＋</button>
+                <h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                    <div style="display:flex;align-items:center;">
+                        <span class="section-toggle" @onclick="ToggleCollectionsExpanded" style="cursor:pointer;margin-right:5px;">
+                            @(isCollectionsExpanded ? "▼" : "►")
+                        </span>
+                        <span>Collections</span>
+                    </div>
+                    <button class="add-collection-btn" style="margin-left:4px;background:none;border:none;font-size:1rem;cursor:pointer;" @onclick="ShowAddCollectionModal">＋</button>
                 </h3>
-                <div class="nav-items">
-                    @foreach (var collection in collections)
-                    {
-                        <div class="nav-item @(selectedCollectionId == collection.Id ? "active" : "")" 
-                             style="display:flex;align-items:center;gap:4px;position:relative;"
-                             @onclick="() => SelectCollection(collection.Id)">
-                            <span class="nav-icon">@(string.IsNullOrEmpty(collection.Icon) ? "📚" : collection.Icon)</span>
-                            <span class="nav-text">@collection.Name</span>
-                            <span class="nav-count">@collection.PasswordItems.Count</span>
-                            @if (collection.IsDefault)
-                            {
-                                <span class="default-badge" title="Default Collection" style="font-size:10px;background:#007bff;color:white;padding:2px 4px;border-radius:3px;margin-left:3px;">Default</span>
-                            }
-                            <div class="collection-actions" style="margin-left:auto;display:flex;gap:2px;">
-                                @if (!collection.IsDefault)
-                                {
-                                    <button class="set-default-btn" style="border:none;background:transparent;" 
-                                            @onclick:stopPropagation="true" 
-                                            @onclick="() => SetDefaultCollection(collection.Id)" 
-                                            title="Set as default">⭐</button>
-                                }
-                                <button class="collection-edit-btn" style="border:none;background:transparent;" 
-                                        @onclick:stopPropagation="true" 
-                                        @onclick="() => ShowEditCollectionModal(collection)" 
-                                        title="Edit">✏️</button>
-                                <button class="collection-delete-btn" style="border:none;background:transparent;" 
-                                        @onclick:stopPropagation="true" 
-                                        @onclick="() => DeleteCollection(collection.Id)"
-                                        title="Delete" 
-                                        disabled="@(collection.IsDefault)">🗑️</button>
+                @if (isCollectionsExpanded)
+                {
+                    <div class="nav-items">
+                        @foreach (var rootCollection in GetRootCollections())
+                        {
+                            <div style="margin-bottom: 10px;">
+                                @RenderCollectionTree(rootCollection)
                             </div>
-                        </div>
-                    }
-                </div>
-            </div>
-            
-            <!-- Categories Section -->
-            <div class="nav-section">
-                <h3 style="display:flex;align-items:center;gap:8px;">
-                    Categories
-                    <button class="add-category-btn" style="margin-left:4px;" @onclick="ShowAddCategoryModal">＋</button>
-                </h3>
-                <div class="nav-items">
-                    @foreach (var category in GetFilteredCategories())
-                    {
-                        <div class="nav-item @(selectedCategory == category.Name ? "active" : "")" style="display:flex;align-items:center;gap:4px;"
-                             @onclick="() => SelectCategory(category.Name)">
-                            <span class="nav-icon">@(string.IsNullOrEmpty(category.Icon) ? "📁" : category.Icon)</span>
-                            <span class="nav-text">@category.Name</span>
-                            <span class="nav-count">@filteredItems.Count(i => i.LoginItem != null && i.CategoryId == category.Id)</span>
-                            <button class="category-edit-btn" style="border:none;background:transparent;" @onclick:stopPropagation="true" @onclick="() => ShowEditCategoryModal(category)">✏️</button>
-                            <button class="category-delete-btn" style="border:none;background:transparent;" @onclick:stopPropagation="true" @onclick="() => DeleteCategory(category)">🗑️</button>
-                        </div>
-                    }
-                </div>
+                        }
+                    </div>
+                }
             </div>
 
             <!-- Tags Section -->
             <div class="nav-section">
-                <h3>Tags</h3>
-                <div class="nav-items">
-                    @foreach (var tag in tags)
-                    {
-                        <div class="nav-item tag-item @(selectedTag == tag.Name ? "active" : "")" 
-                             @onclick="() => SelectTag(tag.Name)"
-                             @oncontextmenu:preventDefault="true"
-                             @oncontextmenu="() => ShowEditTagModal(tag)">
-                            <span class="tag-color" style="background-color: @tag.Color"></span>
-                            <span class="nav-text">@tag.Name</span>
-                            <div class="tag-actions">
-                                <button class="tag-edit-btn"  style="border:none;" @onclick:stopPropagation="true" @onclick="() => ShowEditTagModal(tag)">✏️</button>
-                                <button class="tag-delete-btn" style="border:none;" @onclick:stopPropagation="true" @onclick="() => DeleteTag(tag)">🗑️</button>
+                <h3 style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;">
+                        <span class="section-toggle" @onclick="ToggleTagsExpanded" style="cursor:pointer;margin-right:5px;">
+                            @(isTagsExpanded ? "▼" : "►")
+                        </span>
+                        <span>Tags</span>
+                    </div>
+                    <button class="add-tag-btn" style="margin-left:4px;background:none;border:none;font-size:1rem;cursor:pointer;" @onclick="ShowAddTagModal">＋</button>
+                </h3>
+                @if (isTagsExpanded)
+                {
+                    <div class="nav-items">
+                        @foreach (var tag in tags)
+                        {
+                            <div class="nav-item tag-item @(selectedTag == tag.Name ? "active" : "")" 
+                                 @onclick="() => SelectTag(tag.Name)"
+                                 @oncontextmenu:preventDefault="true"
+                                 @oncontextmenu="() => ShowEditTagModal(tag)">
+                                <span class="tag-color" style="background-color: @tag.Color"></span>
+                                <span class="nav-text">@tag.Name</span>
+                                <div class="tag-actions">
+                                    <button class="tag-edit-btn" style="border:none;" @onclick:stopPropagation="true" @onclick="() => ShowEditTagModal(tag)">✏️</button>
+                                    <button class="tag-delete-btn" style="border:none;" @onclick:stopPropagation="true" @onclick="() => DeleteTag(tag)">🗑️</button>
+                                </div>
                             </div>
-                        </div>
-                    }
-                </div>
-                <button class="add-tag-btn" @onclick="ShowAddTagModal">+ Add Tag</button>
+                        }
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -513,7 +484,7 @@
         <div class="modal-content" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2>@(editingCategory != null ? "Edit Category" : "Add New Category")</h2>
-                <button class="close-btn" @onclick="async () => await HideAddCategoryModal()">×</button>
+                <button class="close-modal-btn" @onclick="async () => await HideAddCategoryModal()">×</button>
             </div>
             <div class="modal-body">
                 <label>Category Name</label>
@@ -555,6 +526,16 @@
                     <label for="collectionColor">Color (Optional)</label>
                     <input id="collectionColor" type="color" class="form-control" @bind="newCollection.Color" />
                 </div>
+                <div class="form-group">
+                    <label for="parentCollection">Parent Collection (Optional)</label>
+                    <select id="parentCollection" class="form-control" @bind="newCollection.ParentCollectionId">
+                        <option value="">No Parent</option>
+                        @foreach (var collection in collections)
+                        {
+                            <option value="@collection.Id">@collection.Name</option>
+                        }
+                    </select>
+                </div>
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="isDefault" @bind="newCollection.IsDefault">
                     <label class="form-check-label" for="isDefault">
@@ -595,6 +576,16 @@
                 <div class="form-group">
                     <label for="editCollectionColor">Color (Optional)</label>
                     <input id="editCollectionColor" type="color" class="form-control" @bind="editingCollection.Color" />
+                </div>
+                <div class="form-group">
+                    <label for="editParentCollection">Parent Collection (Optional)</label>
+                    <select id="editParentCollection" class="form-control" @bind="editingCollection.ParentCollectionId">
+                        <option value="">No Parent</option>
+                        @foreach (var collection in collections.Where(c => c.Id != editingCollection.Id))
+                        {
+                            <option value="@collection.Id">@collection.Name</option>
+                        }
+                    </select>
                 </div>
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="editIsDefault" @bind="editingCollection.IsDefault">
@@ -641,6 +632,38 @@
     private bool isCollectionsExpanded = true;
     private bool isCategoriesExpanded = true;
     private bool isTagsExpanded = true;
+    private Dictionary<int, bool> expandedCollections = new();
+    
+    // Toggle methods for expand/collapse
+    private void ToggleCollectionsExpanded()
+    {
+        isCollectionsExpanded = !isCollectionsExpanded;
+        StateHasChanged();
+    }
+    
+    private void ToggleCollectionCategories(int collectionId)
+    {
+        if (!expandedCollections.ContainsKey(collectionId))
+            expandedCollections[collectionId] = true;
+        else
+            expandedCollections[collectionId] = !expandedCollections[collectionId];
+            
+        StateHasChanged();
+    }
+    
+    private void ToggleTagsExpanded()
+    {
+        isTagsExpanded = !isTagsExpanded;
+        StateHasChanged();
+    }
+    
+    private void ShowAddCategoryForCollection(int collectionId)
+    {
+        editingCategory = null;
+        newCategory = new Category { CollectionId = collectionId };
+        showAddCategoryModal = true;
+        StateHasChanged();
+    }
     
     // Returns the SimpleIcons slug for a brand based on the website or title, or null if not found
     private string? GetBrandSlug(string? website, string? title)
@@ -720,7 +743,7 @@
     private Category newCategory = new();
 
     // New collection form data
-    private Collection newCollection = new() { Color = "#ffffff" };
+    private Collection newCollection = new() { Color = "#ffffff", ParentCollectionId = null };
 
     // Password generator settings
     private int _passwordGenLength = 16;
@@ -1080,7 +1103,7 @@ private void OnLengthChanged(ChangeEventArgs e)
     private void HideAddCollectionModal()
     {
         showAddCollectionModal = false;
-        newCollection = new Collection();
+        newCollection = new Collection { Color = "#ffffff", ParentCollectionId = null };
     }
 
     private async Task CreateCollectionAsync()
@@ -1128,7 +1151,8 @@ private void OnLengthChanged(ChangeEventArgs e)
             Description = collection.Description,
             Icon = collection.Icon,
             Color = collection.Color,
-            IsDefault = collection.IsDefault
+            IsDefault = collection.IsDefault,
+            ParentCollectionId = collection.ParentCollectionId
         };
         showEditCollectionModal = true;
     }
@@ -1136,7 +1160,7 @@ private void OnLengthChanged(ChangeEventArgs e)
     private void HideEditCollectionModal()
     {
         showEditCollectionModal = false;
-        editingCollection = new Collection();
+        editingCollection = new Collection { Color = "#ffffff", ParentCollectionId = null };
     }
 
     private void HideDeleteCollectionModal()
@@ -1433,4 +1457,82 @@ private void OnLengthChanged(ChangeEventArgs e)
         await HideAddItemModal();
         await LoadData();
     }
+
+    private IEnumerable<Collection> GetRootCollections() => collections.Where(c => c.ParentCollectionId == null);
+    private IEnumerable<Collection> GetChildCollections(int parentId) => collections.Where(c => c.ParentCollectionId == parentId);
+    private RenderFragment RenderCollectionTree(Collection collection) => __builder =>
+    {
+        <div class="nav-item @(selectedCollectionId == collection.Id ? "active" : "")"
+             style="display:flex;align-items:center;gap:4px;position:relative;"
+             @onclick="() => SelectCollection(collection.Id)">
+            <span class="section-toggle" @onclick:stopPropagation="true" @onclick="() => ToggleCollectionCategories(collection.Id)" style="cursor:pointer;margin-right:2px;">
+                @(expandedCollections.ContainsKey(collection.Id) && expandedCollections[collection.Id] ? "▼" : "►")
+            </span>
+            <span class="nav-icon">@(string.IsNullOrEmpty(collection.Icon) ? "📚" : collection.Icon)</span>
+            <span class="nav-text">@collection.Name</span>
+            <span class="nav-count">@filteredItems.Count(i => i.CollectionId == collection.Id)</span>
+            @if (collection.IsDefault)
+            {
+                <span class="default-badge" title="Default Collection" style="font-size:10px;background:#007bff;color:white;padding:2px 4px;border-radius:3px;margin-left:3px;">Default</span>
+            }
+            <div class="collection-actions" style="margin-left:auto;display:flex;gap:2px;">
+                @if (!collection.IsDefault)
+                {
+                    <button class="set-default-btn" style="border:none;background:transparent;"
+                            @onclick:stopPropagation="true"
+                            @onclick="() => SetDefaultCollection(collection.Id)"
+                            title="Set as default">⭐</button>
+                }
+                <button class="collection-edit-btn" style="border:none;background:transparent;"
+                        @onclick:stopPropagation="true"
+                        @onclick="() => ShowEditCollectionModal(collection)"
+                        title="Edit">✏️</button>
+                <button class="collection-delete-btn" style="border:none;background:transparent;"
+                        @onclick:stopPropagation="true"
+                        @onclick="() => DeleteCollection(collection.Id)"
+                        title="Delete"
+                        disabled="@(collection.IsDefault)">🗑️</button>
+            </div>
+        </div>
+        @if (expandedCollections.ContainsKey(collection.Id) && expandedCollections[collection.Id])
+        {
+            <div style="margin-left: 20px;">
+                @foreach (var child in GetChildCollections(collection.Id))
+                {
+                    @RenderCollectionTree(child)
+                }
+                var collectionCategories = categories.Where(c => c.CollectionId == collection.Id).ToList();
+                if (collectionCategories.Any())
+                {
+                    foreach (var category in collectionCategories)
+                    {
+                        <div class="nav-item @(selectedCategory == category.Name ? "active" : "")"
+                             style="display:flex;align-items:center;gap:4px;"
+                             @onclick="() => SelectCategory(category.Name)">
+                            <span class="nav-icon">@(string.IsNullOrEmpty(category.Icon) ? "📁" : category.Icon)</span>
+                            <span class="nav-text">@category.Name</span>
+                            <span class="nav-count">@filteredItems.Count(i => i.CategoryId == category.Id)</span>
+                            <div style="margin-left:auto;">
+                                <button class="category-edit-btn" style="border:none;background:transparent;"
+                                        @onclick:stopPropagation="true"
+                                        @onclick="() => ShowEditCategoryModal(category)">✏️</button>
+                                <button class="category-delete-btn" style="border:none;background:transparent;"
+                                        @onclick:stopPropagation="true"
+                                        @onclick="() => DeleteCategory(category)">🗑️</button>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-message" style="padding: 5px; font-style: italic; color: #888;">No categories</div>
+                }
+                <button class="add-category-btn"
+                        style="background:none;border:none;font-size:0.9rem;padding:5px 0;cursor:pointer;color:#007bff;width:100%;text-align:left;"
+                        @onclick:stopPropagation="true"
+                        @onclick="() => ShowAddCategoryForCollection(collection.Id)">+ Add Category</button>
+            </div>
+        }
+    };
 }
+
