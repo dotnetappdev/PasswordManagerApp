@@ -48,9 +48,24 @@ namespace PasswordManager.Services.Services
 
         public async Task<Collection> UpdateAsync(Collection collection)
         {
-            _db.Collections.Update(collection);
-            await _db.SaveChangesAsync();
-            return collection;
+            // Find the existing entity to avoid tracking conflicts
+            var existingCollection = await _db.Collections.FindAsync(collection.Id);
+            if (existingCollection != null)
+            {
+                // Update the properties manually
+                existingCollection.Name = collection.Name;
+                existingCollection.Description = collection.Description;
+                existingCollection.Icon = collection.Icon;
+                existingCollection.Color = collection.Color;
+                existingCollection.ParentCollectionId = collection.ParentCollectionId;
+                existingCollection.IsDefault = collection.IsDefault;
+                
+                await _db.SaveChangesAsync();
+                return existingCollection;
+            }
+            
+            // If not found, throw an exception
+            throw new InvalidOperationException($"Collection with ID {collection.Id} not found.");
         }
 
         public async Task DeleteAsync(int id)
@@ -113,11 +128,19 @@ namespace PasswordManager.Services.Services
 
         public async Task SetAsDefaultAsync(int id)
         {
-            var collections = await _db.Collections.ToListAsync();
+            // Get all collections without tracking to avoid conflicts
+            var collections = await _db.Collections.AsNoTracking().ToListAsync();
+            
+            // Update each collection's IsDefault property
             foreach (var collection in collections)
             {
-                collection.IsDefault = (collection.Id == id);
+                var entity = _db.Collections.Find(collection.Id);
+                if (entity != null)
+                {
+                    entity.IsDefault = (collection.Id == id);
+                }
             }
+            
             await _db.SaveChangesAsync();
         }
     }

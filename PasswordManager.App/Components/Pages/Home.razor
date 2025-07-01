@@ -1131,7 +1131,7 @@ private void OnLengthChanged(ChangeEventArgs e)
 
         await CollectionService.UpdateAsync(editingCollection);
         
-        // If this was set as default, update UI for other collections
+        // If this was set as default, ensure other collections are not default
         if (editingCollection.IsDefault)
         {
             await CollectionService.SetAsDefaultAsync(editingCollection.Id);
