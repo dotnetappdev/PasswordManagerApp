@@ -1,0 +1,28 @@
+﻿<Router AppAssembly="@typeof(MauiProgram).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not Found</PageTitle>
+        @{
+            NavigationManager.NavigateTo("/login");
+        }
+    </NotFound>
+</Router>
+
+@code {
+    [Inject] 
+    private NavigationManager NavigationManager { get; set; } = default!;
+    
+    protected override void OnInitialized()
+    {
+        // Redirect to login page when app starts
+        if (NavigationManager.Uri.EndsWith("/"))
+        {
+            NavigationManager.NavigateTo("/login", true);
+        }
+    }
+}
+
+

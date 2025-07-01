@@ -1,0 +1,1431 @@
+﻿@page "/home"
+
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using PasswordManager.Models
+@using PasswordManager.Interfaces
+@using PasswordManager.Services.Interfaces
+@inject IPasswordItemService PasswordItemService
+@inject ITagService TagService
+@inject ICategoryInterface CategoryService
+@inject ICollectionService CollectionService
+@inject IJSRuntime JSRuntime
+@inject PasswordManager.App.Services.AuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="password-manager-layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-section">
+                <span class="logo-icon">🔐</span>
+                <h2>1Password</h2>
+            </div>
+            <button class="logout-btn" @onclick="LogoutAsync" title="Logout">
+                <span>🚪</span>
+            </button>
+        </div>
+
+        <div class="search-section">
+            <div class="search-box">
+                <input type="text" @bind="searchTerm" @bind:event="oninput" @onkeyup="SearchItems" 
+                       placeholder="Search your vault..." class="search-input" />
+                <span class="search-icon">🔍</span>
+            </div>
+        </div>
+
+        <div class="sidebar-navigation">
+            <!-- Collections Section -->
+            <div class="nav-section">
+                <h3 style="display:flex;align-items:center;gap:8px;">
+                    Collections
+                    <button class="add-collection-btn" style="margin-left:4px;" @onclick="ShowAddCollectionModal">＋</button>
+                </h3>
+                <div class="nav-items">
+                    @foreach (var collection in collections)
+                    {
+                        <div class="nav-item @(selectedCollectionId == collection.Id ? "active" : "")" 
+                             style="display:flex;align-items:center;gap:4px;position:relative;"
+                             @onclick="() => SelectCollection(collection.Id)">
+                            <span class="nav-icon">@(string.IsNullOrEmpty(collection.Icon) ? "📚" : collection.Icon)</span>
+                            <span class="nav-text">@collection.Name</span>
+                            <span class="nav-count">@collection.PasswordItems.Count</span>
+                            @if (collection.IsDefault)
+                            {
+                                <span class="default-badge" title="Default Collection" style="font-size:10px;background:#007bff;color:white;padding:2px 4px;border-radius:3px;margin-left:3px;">Default</span>
+                            }
+                            <div class="collection-actions" style="margin-left:auto;display:flex;gap:2px;">
+                                @if (!collection.IsDefault)
+                                {
+                                    <button class="set-default-btn" style="border:none;background:transparent;" 
+                                            @onclick:stopPropagation="true" 
+                                            @onclick="() => SetDefaultCollection(collection.Id)" 
+                                            title="Set as default">⭐</button>
+                                }
+                                <button class="collection-edit-btn" style="border:none;background:transparent;" 
+                                        @onclick:stopPropagation="true" 
+                                        @onclick="() => ShowEditCollectionModal(collection)" 
+                                        title="Edit">✏️</button>
+                                <button class="collection-delete-btn" style="border:none;background:transparent;" 
+                                        @onclick:stopPropagation="true" 
+                                        @onclick="() => DeleteCollection(collection.Id)"
+                                        title="Delete" 
+                                        disabled="@(collection.IsDefault)">🗑️</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            
+            <!-- Categories Section -->
+            <div class="nav-section">
+                <h3 style="display:flex;align-items:center;gap:8px;">
+                    Categories
+                    <button class="add-category-btn" style="margin-left:4px;" @onclick="ShowAddCategoryModal">＋</button>
+                </h3>
+                <div class="nav-items">
+                    @foreach (var category in GetFilteredCategories())
+                    {
+                        <div class="nav-item @(selectedCategory == category.Name ? "active" : "")" style="display:flex;align-items:center;gap:4px;"
+                             @onclick="() => SelectCategory(category.Name)">
+                            <span class="nav-icon">@(string.IsNullOrEmpty(category.Icon) ? "📁" : category.Icon)</span>
+                            <span class="nav-text">@category.Name</span>
+                            <span class="nav-count">@filteredItems.Count(i => i.LoginItem != null && i.CategoryId == category.Id)</span>
+                            <button class="category-edit-btn" style="border:none;background:transparent;" @onclick:stopPropagation="true" @onclick="() => ShowEditCategoryModal(category)">✏️</button>
+                            <button class="category-delete-btn" style="border:none;background:transparent;" @onclick:stopPropagation="true" @onclick="() => DeleteCategory(category)">🗑️</button>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Tags Section -->
+            <div class="nav-section">
+                <h3>Tags</h3>
+                <div class="nav-items">
+                    @foreach (var tag in tags)
+                    {
+                        <div class="nav-item tag-item @(selectedTag == tag.Name ? "active" : "")" 
+                             @onclick="() => SelectTag(tag.Name)"
+                             @oncontextmenu:preventDefault="true"
+                             @oncontextmenu="() => ShowEditTagModal(tag)">
+                            <span class="tag-color" style="background-color: @tag.Color"></span>
+                            <span class="nav-text">@tag.Name</span>
+                            <div class="tag-actions">
+                                <button class="tag-edit-btn"  style="border:none;" @onclick:stopPropagation="true" @onclick="() => ShowEditTagModal(tag)">✏️</button>
+                                <button class="tag-delete-btn" style="border:none;" @onclick:stopPropagation="true" @onclick="() => DeleteTag(tag)">🗑️</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <button class="add-tag-btn" @onclick="ShowAddTagModal">+ Add Tag</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="content-header">
+            <div class="header-left">
+                <h1>@GetCategoryTitle()</h1>
+                <div class="header-actions">
+                    <button class="action-btn" title="More options">⋯</button>
+                    <button class="action-btn" title="View options">👁️</button>
+                </div>
+            </div>
+            <button class="add-item-btn" @onclick="ShowAddItemModal">+ Add Item</button>
+        </div>
+
+        <!-- Items List -->
+        <div class="items-container">
+            @if (filteredItems.Any())
+            {
+                <div class="items-grid">
+                    @foreach (var item in filteredItems)
+                    {
+                        <div class="item-card @(selectedItem?.Id == item.Id ? "selected" : "")" 
+                             @onclick="() => SelectItem(item)">
+                            <div class="item-header">
+                                <div class="item-info">
+                                    <div class="item-title">
+                                        @if (item.Type == ItemType.Login && item.LoginItem != null)
+                                        {
+                                            var brandSlug = GetBrandSlug(item.LoginItem.Website, item.Title);
+                                            if (!string.IsNullOrEmpty(brandSlug))
+                                            {
+                                                <img class="brand-icon" height="24" width="24" style="margin-right:4px;vertical-align:middle;" src=$"https://unpkg.com/simple-icons@v15/icons/{brandSlug}.svg" alt="brand icon" />
+                                            }
+                                        }
+                                        @item.Title
+                                    </div>
+                                    <div class="item-subtitle">
+                                        @if (item.Type == ItemType.Login && item.LoginItem != null)
+                                        {
+                                            <span>@item.LoginItem.Username</span>
+                                            <br />
+                                            <span class="item-url">@item.LoginItem.Website</span>
+                                        }
+                                        else if (item.Type == ItemType.CreditCard && item.CreditCardItem != null)
+                                        {
+                                            <span>@item.CreditCardItem.CardNumber?.Substring(Math.Max(0, item.CreditCardItem.CardNumber.Length - 4))</span>
+                                            <br />
+                                            <span class="item-url">@item.CreditCardItem.BankWebsite</span>
+                                        }
+                                        else if (item.Type == ItemType.WiFi && item.WiFiItem != null)
+                                        {
+                                            <span>@item.WiFiItem.NetworkName</span>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="item-type-badge">@item.Type.ToString().ToUpper()</div>
+                            </div>
+                            <div class="item-tags">
+                                @foreach (var tag in item.Tags.Take(3))
+                                {
+                                    <span class="tag" style="background-color: @tag.Color ">@tag.Name</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <h3>No items found</h3>
+                    <p>Try adjusting your search or add a new item.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Detail Panel -->
+    @if (selectedItem != null)
+    {
+        <div class="detail-panel">
+            <div class="detail-header">
+                <h2>@selectedItem.Title</h2>
+                <div class="detail-actions">
+                    <button class="detail-btn edit-btn" @onclick="EditItem">Edit</button>
+                    <button class="detail-btn delete-btn" @onclick="DeleteItem">Delete</button>
+                </div>
+            </div>
+
+            <div class="detail-content">
+                @if (selectedItem.Type == ItemType.Login && selectedItem.LoginItem != null)
+                {
+                    <div class="detail-section">
+                        <h3>Login Details</h3>
+                        <div class="detail-field">
+                            <label>Username</label>
+                            <div class="field-value">
+                                <span>@selectedItem.LoginItem.Username</span>
+                                <button class="copy-btn" @onclick="() => CopyToClipboard(selectedItem.LoginItem.Username)">📋</button>
+                            </div>
+                        </div>
+                        <div class="detail-field">
+                            <label>Password</label>
+                            <div class="field-value">
+                                <span>••••••••••</span>
+                                <button class="copy-btn" @onclick="() => CopyToClipboard(selectedItem.LoginItem.Password)">📋</button>
+                                <button class="reveal-btn" @onclick="TogglePasswordVisibility">👁️</button>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(selectedItem.LoginItem.Website))
+                        {
+                            <div class="detail-field">
+                                <label>Website</label>
+                                <div class="field-value">
+                                    <span>@selectedItem.LoginItem.Website</span>
+                                    <button class="copy-btn" @onclick="() => CopyToClipboard(selectedItem.LoginItem.Website)">📋</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(selectedItem.LoginItem?.Notes))
+                {
+                    <div class="detail-section">
+                        <h3>Notes</h3>
+                        <div class="notes-content">@selectedItem.LoginItem.Notes</div>
+                    </div>
+                }
+
+                @if (selectedItem.Tags.Any())
+                {
+                    <div class="detail-section">
+                        <h3>Tags</h3>
+                        <div class="tags-container">
+                            @foreach (var tag in selectedItem.Tags)
+                            {
+                                <span class="tag" style="background-color: @tag.Color;  border: none;">@tag.Name</span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="detail-section">
+                    <h3>Information</h3>
+                    <div class="detail-field">
+                        <label>Created</label>
+                        <span>@selectedItem.CreatedAt.ToString("MMM dd, yyyy")</span>
+                    </div>
+                    <div class="detail-field">
+                        <label>Last Modified</label>
+                        <span>@selectedItem.LastModified.ToString("MMM dd, yyyy")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Add Item Modal -->
+@if (showAddItemModal)
+{
+    <div class="modal-overlay" @onclick="HideAddItemModal">
+        <div class="modal-content large-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>@(editingItem != null ? "Edit Item" : "Add New Item")</h2>
+                <button class="close-btn" @onclick="async () => await HideAddItemModal()">×</button>
+            </div>
+            <div class="modal-body">
+
+                <label>Title</label>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    @if (newItem.Type == ItemType.Login)
+                    {
+                        var brandSlug = GetBrandSlug(loginDetails.Website, newItem.Title);
+                        if (!string.IsNullOrEmpty(brandSlug))
+                        {
+                            <img class="brand-icon" height="24" width="24" style="vertical-align:middle;" src=$"https://unpkg.com/simple-icons@v15/icons/{brandSlug}.svg" alt="brand icon" />
+                        }
+                    }
+                    <input type="text" @bind="newItem.Title" class="form-control" placeholder="Enter title" required />
+                </div>
+
+                <label>Type</label>
+                <select @bind="newItem.Type" class="form-control">
+                    <option value="@ItemType.Login">Login</option>
+                    <option value="@ItemType.CreditCard">Credit Card</option>
+                    <option value="@ItemType.SecureNote">Secure Note</option>
+                    <option value="@ItemType.WiFi">WiFi</option>
+                </select>
+                
+                <label>Collection</label>
+                <select @bind="newItem.CollectionId" class="form-control">
+                    @foreach (var collection in collections)
+                    {
+                        <option value="@collection.Id">@collection.Name @(collection.IsDefault ? "(Default)" : "")</option>
+                    }
+                </select>
+                
+                <label>Category</label>
+                <select @bind="newItem.CategoryId" class="form-control">
+                    @foreach (var category in GetCategoriesForCollection(newItem.CollectionId))
+                    {
+                        <option value="@category.Id">@category.Name</option>
+                    }
+                </select>
+
+                @if (newItem.Type == ItemType.Login)
+                {
+                    <div class="form-section">
+                        <h4>Login Details</h4>
+                        <label>Website/URL</label>
+                        <input type="url" @bind="loginDetails.Website" class="form-control" placeholder="https://example.com" />
+                        
+                        <label>Username</label>
+                        <input type="text" @bind="loginDetails.Username" class="form-control" placeholder="Enter username" />
+                        
+                        <label>Password</label>
+                        <div class="password-input-group">
+                            <input type="@(showNewPassword ? "text" : "password")" @bind="loginDetails.Password" class="form-control" placeholder="Enter password" />
+                            <button type="button" class="password-toggle-btn" @onclick="ToggleNewPasswordVisibility">
+                                @(showNewPassword ? "👁️" : "👁️‍🗨️")
+                            </button>
+                            <span style="position:relative;">
+                                <button type="button" class="generate-btn" @onclick="ShowPasswordGenerator">Generate</button>
+                                <div class="password-generator-popup center-popup" style="@(showPasswordGenerator ? "display:flex;align-items:center;justify-content:center;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2000;background:rgba(0,0,0,0.25);" : "display:none;")">
+                                    <div class="generator-content" style="background:#fff;padding:2rem 2.5rem;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,0.18);width:420px;max-width:90vw;height:380px;max-height:90vh;display:flex;flex-direction:column;justify-content:center;">
+                                        <div class="generator-row">
+                                            <label>Password Length: <b>@passwordGenLength</b></label>
+                                            <input type="range" min="8" max="32" @bind="passwordGenLength" @oninput="OnLengthChanged" />
+                                        </div>
+                                        <div class="generator-row">
+                                            <label><input type="checkbox" @bind="passwordGenIncludeSymbols" @bind:event="onchange" /> Include Symbols</label>
+                                            <label><input type="checkbox" @bind="passwordGenExcludeSimilar" @bind:event="onchange" /> Exclude Similar Characters</label>
+                                            <label><input type="checkbox" @bind="passwordGenExcludeAmbiguous" @bind:event="onchange" /> Exclude Ambiguous Symbols</label>
+                                        </div>
+                                        <div class="generator-row">
+                                            <input type="text" class="form-control" readonly value="@generatedPassword" style="width:70%" />
+                                            <button type="button" class="btn btn-secondary" @onclick="CopyGeneratedPassword">Copy</button>
+                                            <button type="button" class="btn btn-primary" @onclick="UseGeneratedPassword">Use</button>
+                                        </div>
+                                        <div class="generator-row">
+                                            <button type="button" class="btn btn-secondary" @onclick="GeneratePassword">Regenerate</button>
+                                            <button type="button" class="btn btn-link" @onclick="HidePasswordGenerator">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </span>
+                        </div>
+                        <label>Notes</label>
+                        <textarea @bind="loginDetails.Notes" class="form-control" rows="3" placeholder="Additional notes"></textarea>
+                    </div>
+                }
+                else if (newItem.Type == ItemType.CreditCard)
+                {
+                    <div class="form-section">
+                        <h4>Credit Card Details</h4>
+                        <label>Cardholder Name</label>
+                        <input type="text" @bind="creditCardDetails.CardholderName" class="form-control" placeholder="Enter cardholder name" />
+                        
+                        <label>Card Number</label>
+                        <input type="text" @bind="creditCardDetails.CardNumber" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19" />
+                        
+                        <div class="form-row">
+                            <div class="form-col">
+                                <label>Expiry Date</label>
+                                <input type="text" @bind="creditCardDetails.ExpiryDate" class="form-control" placeholder="MM/YY" maxlength="5" />
+                            </div>
+                            <div class="form-col">
+                                <label>CVV</label>
+                                <input type="@(showNewPassword ? "text" : "password")" @bind="creditCardDetails.CVV" class="form-control" placeholder="123" maxlength="4" />
+                            </div>
+                        </div>
+                        
+                        <label>Bank Website</label>
+                        <input type="url" @bind="creditCardDetails.BankWebsite" class="form-control" placeholder="https://bank.com" />
+                        
+                        <label>Notes</label>
+                        <textarea @bind="creditCardDetails.Notes" class="form-control" rows="3" placeholder="Additional notes"></textarea>
+                    </div>
+                }
+                else if (newItem.Type == ItemType.SecureNote)
+                {
+                    <div class="form-section">
+                        <h4>Secure Note</h4>
+                        <label>Content</label>
+                        <textarea @bind="secureNoteDetails.Content" class="form-control" rows="8" placeholder="Enter your secure note content"></textarea>
+                    </div>
+                }
+                else if (newItem.Type == ItemType.WiFi)
+                {
+                    <div class="form-section">
+                        <h4>WiFi Details</h4>
+                        <label>Network Name (SSID)</label>
+                        <input type="text" @bind="wifiDetails.NetworkName" class="form-control" placeholder="Enter network name" />
+                        
+                        <label>Password</label>
+                        <div class="password-input-group">
+                            <input type="@(showNewPassword ? "text" : "password")" @bind="wifiDetails.Password" class="form-control" placeholder="Enter WiFi password" />
+                            <button type="button" class="password-toggle-btn" @onclick="ToggleNewPasswordVisibility">
+                                @(showNewPassword ? "👁️" : "👁️‍🗨️")
+                            </button>
+                        </div>
+                        
+                        <label>Security Type</label>
+                        <select @bind="wifiDetails.SecurityType" class="form-control">
+                            <option value="WPA2">WPA2</option>
+                            <option value="WPA3">WPA3</option>
+                            <option value="WEP">WEP</option>
+                            <option value="Open">Open</option>
+                        </select>
+                        
+                        <label>Notes</label>
+                        <textarea @bind="wifiDetails.Notes" class="form-control" rows="3" placeholder="Additional notes"></textarea>
+                    </div>
+                }
+
+                <div class="form-section">
+                    <h4>Tags</h4>
+                    <div class="tags-selection">
+                        @foreach (var tag in tags)
+                        {
+                            <label class="tag-checkbox">
+                                <input type="checkbox" @bind="selectedTagIds[tag.Id]" />
+                                <span class="tag" style="background-color: @tag.Color">@tag.Name</span>
+                            </label>
+                        }
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="async () => await HideAddItemModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveItem">
+                        @(editingItem != null ? "Update" : "Save")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Add Tag Modal -->
+@if (showAddTagModal)
+{
+    <div class="modal-overlay" @onclick="HideAddTagModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>@(editingTag != null ? "Edit Tag" : "Add New Tag")</h2>
+                <button class="close-btn" @onclick="HideAddTagModal">×</button>
+            </div>
+            <div class="modal-body">
+                <label>Tag Name</label>
+                <input type="text" @bind="newTag.Name" class="form-control" placeholder="Enter tag name" required />
+
+                <label>Color</label>
+                <div class="color-selection">
+                    @foreach (var color in predefinedColors)
+                    {
+                        <button type="button" 
+                                class="color-option @(newTag.Color == color ? "selected" : "")" 
+                                style="background-color: @color" 
+                                @onclick="() => SelectTagColor(color)">
+                        </button>
+                    }
+                </div>
+                
+                <label>Custom Color</label>
+                <input type="color" @bind="newTag.Color" class="form-control color-picker" />
+
+                <div class="tag-preview">
+                    <span class="tag" style="background-color: @newTag.Color">@(string.IsNullOrWhiteSpace(newTag.Name) ? "Preview" : newTag.Name)</span>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="HideAddTagModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveTag">
+                        @(editingTag != null ? "Update" : "Save")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Add Category Modal -->
+@if (showAddCategoryModal)
+{
+    <div class="modal-overlay" @onclick="async () => await HideAddCategoryModal()">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>@(editingCategory != null ? "Edit Category" : "Add New Category")</h2>
+                <button class="close-btn" @onclick="async () => await HideAddCategoryModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <label>Category Name</label>
+                <input type="text" @bind="newCategory.Name" class="form-control" placeholder="Enter category name" required />
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="async () => await HideAddCategoryModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveCategory">
+                        @(editingCategory != null ? "Update" : "Save")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Add Collection Modal -->
+@if (showAddCollectionModal)
+{
+    <div class="modal-overlay" @onclick="HideAddCollectionModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>Add Collection</h2>
+                <button class="close-modal-btn" @onclick="HideAddCollectionModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="collectionName">Name</label>
+                    <input id="collectionName" class="form-control" @bind="newCollection.Name" />
+                </div>
+                <div class="form-group">
+                    <label for="collectionDescription">Description (Optional)</label>
+                    <textarea id="collectionDescription" class="form-control" @bind="newCollection.Description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="collectionIcon">Icon (Optional)</label>
+                    <input id="collectionIcon" class="form-control" @bind="newCollection.Icon" placeholder="Emoji or icon name" />
+                </div>
+                <div class="form-group">
+                    <label for="collectionColor">Color (Optional)</label>
+                    <input id="collectionColor" type="color" class="form-control" @bind="newCollection.Color" />
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="isDefault" @bind="newCollection.IsDefault">
+                    <label class="form-check-label" for="isDefault">
+                        Set as default collection
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button class="cancel-btn" @onclick="HideAddCollectionModal">Cancel</button>
+                    <button class="submit-btn" @onclick="CreateCollectionAsync">Add Collection</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Edit Collection Modal -->
+@if (showEditCollectionModal)
+{
+    <div class="modal-overlay" @onclick="HideEditCollectionModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>Edit Collection</h2>
+                <button class="close-modal-btn" @onclick="HideEditCollectionModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editCollectionName">Name</label>
+                    <input id="editCollectionName" class="form-control" @bind="editingCollection!.Name" />
+                </div>
+                <div class="form-group">
+                    <label for="editCollectionDescription">Description (Optional)</label>
+                    <textarea id="editCollectionDescription" class="form-control" @bind="editingCollection.Description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editCollectionIcon">Icon (Optional)</label>
+                    <input id="editCollectionIcon" class="form-control" @bind="editingCollection.Icon" placeholder="Emoji or icon name" />
+                </div>
+                <div class="form-group">
+                    <label for="editCollectionColor">Color (Optional)</label>
+                    <input id="editCollectionColor" type="color" class="form-control" @bind="editingCollection.Color" />
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="editIsDefault" @bind="editingCollection.IsDefault">
+                    <label class="form-check-label" for="editIsDefault">
+                        Set as default collection
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button class="cancel-btn" @onclick="HideEditCollectionModal">Cancel</button>
+                    <button class="submit-btn" @onclick="UpdateCollectionAsync">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Delete Collection Confirmation Modal -->
+@if (showDeleteCollectionModal)
+{
+    <div class="modal-overlay" @onclick="HideDeleteCollectionModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>Delete Collection</h2>
+                <button class="close-modal-btn" @onclick="HideDeleteCollectionModal">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this collection? All passwords in this collection will be moved to the default collection.</p>
+                <div class="modal-actions">
+                    <button class="cancel-btn" @onclick="HideDeleteCollectionModal">Cancel</button>
+                    <button class="delete-btn" @onclick="ConfirmDeleteCollectionAsync">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // Collection management
+    private List<Collection> collections = new();
+    private int? selectedCollectionId = null;
+    private int collectionToDeleteId = 0;
+    
+    // Returns the SimpleIcons slug for a brand based on the website or title, or null if not found
+    private string? GetBrandSlug(string? website, string? title)
+    {
+        string? input = website;
+        if (string.IsNullOrWhiteSpace(input))
+            input = title;
+        if (string.IsNullOrWhiteSpace(input))
+            return null;
+
+        // Try to extract the domain from the website
+        string domain = input.ToLower();
+        if (domain.StartsWith("http"))
+        {
+            try
+            {
+                var uri = new Uri(domain);
+                domain = uri.Host;
+            }
+            catch { }
+        }
+        // Remove www.
+        if (domain.StartsWith("www."))
+            domain = domain.Substring(4);
+        // Remove TLD
+        var parts = domain.Split('.');
+        if (parts.Length > 2)
+            domain = parts[parts.Length - 2];
+        else if (parts.Length == 2)
+            domain = parts[0];
+        // Remove non-alphanumeric
+        domain = new string(domain.Where(char.IsLetterOrDigit).ToArray());
+        if (string.IsNullOrWhiteSpace(domain))
+            return null;
+        return domain;
+    }
+    private IQueryable<PasswordItem> items = Enumerable.Empty<PasswordItem>().AsQueryable();
+    private List<PasswordItem> filteredItems = new();
+    private List<Tag> tags = new();
+    private List<Category> categories = new();
+    private PasswordItem? selectedItem;
+    private string searchTerm = string.Empty;
+    private string selectedCategory = "all";
+    private string? selectedTag;
+    private bool showAddItemModal = false;
+    private bool showAddTagModal = false;
+    private bool showAddCategoryModal = false;
+    private bool showAddCollectionModal = false;
+    private bool showEditCollectionModal = false;
+    private bool showDeleteCollectionModal = false;
+    private bool passwordVisible = false;
+    private bool showNewPassword = false;
+    private bool showPasswordGenerator = false;
+
+    // Editing state
+    private PasswordItem? editingItem;
+    private Tag? editingTag;
+    private Category? editingCategory;
+    private Collection? editingCollection;
+
+    // New item form data
+    private PasswordItem newItem = new() { Type = ItemType.Login };
+    private LoginItem loginDetails = new();
+    private CreditCardItem creditCardDetails = new();
+    private SecureNoteItem secureNoteDetails = new();
+    private WiFiItem wifiDetails = new();
+    private Dictionary<int, bool> selectedTagIds = new();
+
+    // New tag form data
+    private Tag newTag = new() { Color = "#3b82f6" };
+    private readonly string[] predefinedColors = {
+        "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6",
+        "#ec4899", "#6b7280", "#06b6d4", "#84cc16", "#f97316"
+    };
+
+    // New category form data
+    private Category newCategory = new();
+
+    // New collection form data
+    private Collection newCollection = new() { Color = "#ffffff" };
+
+    // Password generator settings
+    private int _passwordGenLength = 16;
+    private bool _passwordGenIncludeSymbols = true;
+    private bool _passwordGenExcludeSimilar = false;
+    private bool _passwordGenExcludeAmbiguous = false;
+
+
+private void OnLengthChanged(ChangeEventArgs e)
+{
+    var str = e.Value?.ToString() ?? string.Empty;
+    if (int.TryParse(str, out var len))
+        passwordGenLength = len;
+    GeneratePassword();
+}
+    
+    private int passwordGenLength
+    {
+        get => _passwordGenLength;
+        set { _passwordGenLength = value; GeneratePassword(); }
+    }
+    private bool passwordGenIncludeSymbols
+    {
+        get => _passwordGenIncludeSymbols;
+        set { _passwordGenIncludeSymbols = value; GeneratePassword(); }
+    }
+    private bool passwordGenExcludeSimilar
+    {
+        get => _passwordGenExcludeSimilar;
+        set { _passwordGenExcludeSimilar = value; GeneratePassword(); }
+    }
+    private bool passwordGenExcludeAmbiguous
+    {
+        get => _passwordGenExcludeAmbiguous;
+        set { _passwordGenExcludeAmbiguous = value; GeneratePassword(); }
+    }
+    private string generatedPassword = string.Empty;
+
+    // Counts
+    private int totalItems = 0;
+    private int loginCount = 0;
+    private int creditCardCount = 0;
+    private int secureNoteCount = 0;
+    private int wifiCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        await LoadCategories();
+        await LoadCollections();
+        
+        // Set default collection if none selected
+        if (selectedCollectionId == null)
+        {
+            var defaultCollection = collections.FirstOrDefault(c => c.IsDefault);
+            if (defaultCollection != null)
+            {
+                selectedCollectionId = defaultCollection.Id;
+            }
+            else if (collections.Any())
+            {
+                selectedCollectionId = collections.First().Id;
+            }
+        }
+    }
+
+    private async Task LoadData()
+    {
+        var allItems = await PasswordItemService.GetAllAsync();
+        items = allItems.AsQueryable();
+        filteredItems = allItems.ToList();
+        
+        tags = (await TagService.GetAllAsync()).ToList();
+        
+        UpdateCounts();
+        FilterItems();
+    }
+
+    private async Task LoadCollections()
+    {
+        collections = (await CollectionService.GetAllAsync()).ToList();
+    }
+
+    private async Task LoadCategories()
+    {
+        categories = (await CategoryService.GetAllAsync()).ToList();
+        StateHasChanged();
+    }
+
+    private void UpdateCounts()
+    {
+        totalItems = filteredItems.Count;
+        loginCount = filteredItems.Count(i => i.Type == ItemType.Login);
+        creditCardCount = filteredItems.Count(i => i.Type == ItemType.CreditCard);
+        secureNoteCount = filteredItems.Count(i => i.Type == ItemType.SecureNote);
+        wifiCount = filteredItems.Count(i => i.Type == ItemType.WiFi);
+    }
+
+    private async Task SearchItems()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var allItems = await PasswordItemService.GetAllAsync();
+            filteredItems = allItems.ToList();
+        }
+        else
+        {
+            filteredItems = (await PasswordItemService.SearchAsync(searchTerm)).ToList();
+        }
+        FilterItems();
+        UpdateCounts();
+        StateHasChanged();
+    }
+
+    private async Task SelectCategory(string category)
+    {
+        selectedCategory = category;
+        selectedTag = null;
+        
+        var selectedCat = categories.FirstOrDefault(c => c.Name == category);
+        if (selectedCat != null)
+        {
+            // Custom category: filter items by Login type and category name
+            filteredItems = (await PasswordItemService.GetByTypeAsync(ItemType.Login)).Where(i => i.LoginItem != null && i.CategoryId == selectedCat.Id).ToList();
+        }
+        else
+        {
+            switch (category)
+            {
+                case "all":
+                    filteredItems = (await PasswordItemService.GetAllAsync()).ToList();
+                    break;
+                case "logins":
+                    filteredItems = (await PasswordItemService.GetByTypeAsync(ItemType.Login)).ToList();
+                    break;
+                case "cards":
+                    filteredItems = (await PasswordItemService.GetByTypeAsync(ItemType.CreditCard)).ToList();
+                    break;
+                case "notes":
+                    filteredItems = (await PasswordItemService.GetByTypeAsync(ItemType.SecureNote)).ToList();
+                    break;
+                case "wifi":
+                    filteredItems = (await PasswordItemService.GetByTypeAsync(ItemType.WiFi)).ToList();
+                    break;
+            }
+        }
+        
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            await SearchItems();
+        }
+        else
+        {
+            UpdateCounts();
+            StateHasChanged();
+        }
+    }
+
+    private async Task SelectTag(string tagName)
+    {
+        selectedTag = tagName;
+        selectedCategory = "";
+        filteredItems = (await PasswordItemService.GetByTagAsync(tagName)).ToList();
+        UpdateCounts();
+        StateHasChanged();
+    }
+
+    private void FilterItems()
+    {
+        var query = items.AsQueryable();
+
+        // First filter by collection
+        if (selectedCollectionId.HasValue)
+        {
+            query = query.Where(i => i.CollectionId == selectedCollectionId.Value);
+        }
+        
+        // Then apply other filters
+        if (!string.IsNullOrEmpty(selectedCategory))
+        {
+            // Find category by name
+            var category = categories.FirstOrDefault(c => c.Name == selectedCategory);
+            if (category != null)
+            {
+                query = query.Where(i => i.CategoryId == category.Id);
+            }
+            else
+            {
+                // Special category filters
+                switch (selectedCategory)
+                {
+                    case "logins":
+                        query = query.Where(i => i.Type == ItemType.Login);
+                        break;
+                    case "cards":
+                        query = query.Where(i => i.Type == ItemType.CreditCard);
+                        break;
+                    case "notes":
+                        query = query.Where(i => i.Type == ItemType.SecureNote);
+                        break;
+                    case "wifi":
+                        query = query.Where(i => i.Type == ItemType.WiFi);
+                        break;
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(selectedTag))
+        {
+            query = query.Where(i => i.Tags.Any(t => t.Name == selectedTag));
+        }
+
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            var loweredSearchTerm = searchTerm.ToLowerInvariant();
+            query = query.Where(i => 
+                i.Title.ToLowerInvariant().Contains(loweredSearchTerm) || 
+                (i.Description != null && i.Description.ToLowerInvariant().Contains(loweredSearchTerm)));
+        }
+
+        // Apply sorting (add more sort options as needed)
+        query = query.OrderBy(i => i.Title);
+
+        filteredItems = query.ToList();
+        StateHasChanged();
+    }
+
+    private void SelectItem(PasswordItem item)
+    {
+        selectedItem = item;
+        StateHasChanged();
+    }
+
+    private string GetCategoryTitle()
+    {
+        string title = selectedCategory switch
+        {
+            "all" => "All Items",
+            "logins" => "Logins",
+            "cards" => "Credit Cards", 
+            "notes" => "Secure Notes",
+            "wifi" => "WiFi",
+            _ when !string.IsNullOrEmpty(selectedTag) => $"Tagged: {selectedTag}",
+            _ => selectedCategory ?? "All Items"
+        };
+        
+        // Add collection name if a collection is selected
+        if (selectedCollectionId.HasValue)
+        {
+            var collection = collections.FirstOrDefault(c => c.Id == selectedCollectionId.Value);
+            if (collection != null)
+            {
+                return $"{title} - {collection.Name}";
+            }
+        }
+        
+        return title;
+    }
+
+    private void ShowAddItemModal()
+    {
+        editingItem = null;
+        newItem = new PasswordItem { Type = ItemType.Login };
+        loginDetails = new LoginItem();
+        creditCardDetails = new CreditCardItem();
+        secureNoteDetails = new SecureNoteItem();
+        wifiDetails = new WiFiItem();
+        selectedTagIds = tags.ToDictionary(t => t.Id, t => false);
+        showAddItemModal = true;
+        StateHasChanged();
+    }
+
+    private void ShowEditItemModal(PasswordItem item)
+    {
+        editingItem = item;
+        newItem = new PasswordItem 
+        {
+            Id = item.Id,
+            Title = item.Title,
+            Type = item.Type,
+            CreatedAt = item.CreatedAt,
+            LastModified = item.LastModified
+        };
+
+        // Populate type-specific details
+        loginDetails = item.LoginItem ?? new LoginItem();
+        creditCardDetails = item.CreditCardItem ?? new CreditCardItem();
+        secureNoteDetails = item.SecureNoteItem ?? new SecureNoteItem();
+        wifiDetails = item.WiFiItem ?? new WiFiItem();
+
+        // Set selected tags
+        selectedTagIds = tags.ToDictionary(t => t.Id, t => item.Tags.Any(tag => tag.Id == t.Id));
+        
+        showAddItemModal = true;
+        StateHasChanged();
+    }
+
+    private async Task HideAddItemModal()
+    {
+        showAddItemModal = false;
+        editingItem = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ShowAddTagModal()
+    {
+        editingTag = null;
+        newTag = new Tag { Color = "#3b82f6" };
+        showAddTagModal = true;
+        StateHasChanged();
+    }
+
+    private void ShowEditTagModal(Tag tag)
+    {
+        editingTag = tag;
+        newTag = new Tag { Id = tag.Id, Name = tag.Name, Color = tag.Color };
+        showAddTagModal = true;
+        StateHasChanged();
+    }
+
+    private void HideAddTagModal()
+    {
+        showAddTagModal = false;
+        editingTag = null;
+        StateHasChanged();
+    }
+
+    private void ShowAddCategoryModal()
+    {
+        editingCategory = null;
+        newCategory = new Category();
+        showAddCategoryModal = true;
+        StateHasChanged();
+    }
+
+    private void ShowEditCategoryModal(Category category)
+    {
+        editingCategory = category;
+        newCategory = new Category { Id = category.Id, Name = category.Name, Icon = category.Icon, Color = category.Color };
+        showAddCategoryModal = true;
+        StateHasChanged();
+    }
+
+    private async Task HideAddCategoryModal()
+    {
+        showAddCategoryModal = false;
+        editingCategory = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ShowAddCollectionModal()
+    {
+        newCollection = new Collection();
+        showAddCollectionModal = true;
+    }
+
+    private void HideAddCollectionModal()
+    {
+        showAddCollectionModal = false;
+        newCollection = new Collection();
+    }
+
+    private async Task CreateCollectionAsync()
+    {
+        if (string.IsNullOrWhiteSpace(newCollection.Name))
+            return;
+
+        await CollectionService.CreateAsync(newCollection);
+        
+        // If this was set as default, update UI for other collections
+        if (newCollection.IsDefault)
+        {
+            await LoadCollections();
+        }
+        
+        HideAddCollectionModal();
+        await LoadCollections();
+        StateHasChanged();
+    }
+
+    private async Task UpdateCollectionAsync()
+    {
+        if (editingCollection == null || string.IsNullOrWhiteSpace(editingCollection.Name))
+            return;
+
+        await CollectionService.UpdateAsync(editingCollection);
+        
+        // If this was set as default, update UI for other collections
+        if (editingCollection.IsDefault)
+        {
+            await CollectionService.SetAsDefaultAsync(editingCollection.Id);
+        }
+        
+        HideEditCollectionModal();
+        await LoadCollections();
+        StateHasChanged();
+    }
+
+    private void ShowEditCollectionModal(Collection collection)
+    {
+        editingCollection = new Collection
+        {
+            Id = collection.Id,
+            Name = collection.Name,
+            Description = collection.Description,
+            Icon = collection.Icon,
+            Color = collection.Color,
+            IsDefault = collection.IsDefault
+        };
+        showEditCollectionModal = true;
+    }
+
+    private void HideEditCollectionModal()
+    {
+        showEditCollectionModal = false;
+        editingCollection = new Collection();
+    }
+
+    private void HideDeleteCollectionModal()
+    {
+        showDeleteCollectionModal = false;
+        collectionToDeleteId = 0;
+    }
+
+    private async Task ConfirmDeleteCollectionAsync()
+    {
+        if (collectionToDeleteId > 0)
+        {
+            await CollectionService.DeleteAsync(collectionToDeleteId);
+            HideDeleteCollectionModal();
+            await LoadCollections();
+            
+            // If the currently selected collection was deleted, select the default one
+            if (selectedCollectionId == collectionToDeleteId)
+            {
+                var defaultCollection = collections.FirstOrDefault(c => c.IsDefault);
+                selectedCollectionId = defaultCollection?.Id;
+                await LoadData();
+                FilterItems();
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private async Task SetDefaultCollection(int id)
+    {
+        await CollectionService.SetAsDefaultAsync(id);
+        await LoadCollections();
+        StateHasChanged();
+    }
+
+    private void DeleteCollection(int id)
+    {
+        collectionToDeleteId = id;
+        showDeleteCollectionModal = true;
+    }
+
+    private async Task LogoutAsync()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/");
+    }
+
+    private void EditItem()
+    {
+        if (selectedItem != null)
+        {
+            ShowEditItemModal(selectedItem);
+        }
+    }
+
+    private async Task DeleteItem()
+    {
+        if (selectedItem != null)
+        {
+            await PasswordItemService.DeleteAsync(selectedItem.Id);
+            selectedItem = null;
+            await LoadData();
+            StateHasChanged();
+        }
+    }
+
+    private async Task CopyToClipboard(string? text)
+    {
+        if (!string.IsNullOrEmpty(text))
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        passwordVisible = !passwordVisible;
+        StateHasChanged();
+    }
+
+    private void ToggleNewPasswordVisibility()
+    {
+        showNewPassword = !showNewPassword;
+        StateHasChanged();
+    }
+
+    private void ShowPasswordGenerator()
+    {
+        showPasswordGenerator = true;
+        GeneratePassword();
+    }
+
+    private void HidePasswordGenerator()
+    {
+        showPasswordGenerator = false;
+    }
+
+    private void GeneratePassword()
+    {
+        var random = new Random();
+        var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        
+        if (passwordGenIncludeSymbols)
+            chars += "!@#$%^&*()-_=+[]{}|;:,.<>?";
+            
+        if (passwordGenExcludeSimilar)
+            chars = chars.Replace("O", "").Replace("0", "").Replace("I", "").Replace("l", "").Replace("1", "");
+            
+        if (passwordGenExcludeAmbiguous)
+            chars = chars.Replace("`", "").Replace("~", "").Replace("\\", "").Replace("/", "").Replace("\"", "").Replace("'", "");
+        
+        var result = new char[passwordGenLength];
+        
+        for (int i = 0; i < passwordGenLength; i++)
+        {
+            result[i] = chars[random.Next(chars.Length)];
+        }
+        
+        generatedPassword = new string(result);
+        StateHasChanged();
+    }
+
+    private void CopyGeneratedPassword()
+    {
+        JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", generatedPassword);
+    }
+
+    private void UseGeneratedPassword()
+    {
+        loginDetails.Password = generatedPassword;
+        HidePasswordGenerator();
+    }
+
+    // Collection methods
+    private void SelectCollection(int id)
+    {
+        selectedCollectionId = id;
+        selectedCategory = "all";
+        selectedTag = "";
+        FilterItems();
+        StateHasChanged();
+    }
+
+    private List<Category> GetFilteredCategories()
+    {
+        if (selectedCollectionId == null)
+            return categories;
+            
+        return categories.Where(c => c.CollectionId == selectedCollectionId).ToList();
+    }
+
+    private List<Category> GetCategoriesForCollection(int collectionId)
+    {
+        return categories.Where(c => c.CollectionId == collectionId).ToList();
+    }
+    
+    // Collection-related methods
+
+    private void SelectTagColor(string color)
+    {
+        newTag.Color = color;
+        StateHasChanged();
+    }
+
+    private async Task SaveTag()
+    {
+        if (string.IsNullOrWhiteSpace(newTag.Name))
+            return;
+
+        if (editingTag != null)
+        {
+            editingTag.Name = newTag.Name;
+            editingTag.Color = newTag.Color;
+            await TagService.UpdateAsync(editingTag);
+        }
+        else
+        {
+            await TagService.CreateAsync(newTag);
+        }
+        
+        HideAddTagModal();
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private async Task SaveCategory()
+    {
+        if (string.IsNullOrWhiteSpace(newCategory.Name))
+            return;
+
+        // Set the collection ID based on current selection
+        if (selectedCollectionId.HasValue)
+            newCategory.CollectionId = selectedCollectionId.Value;
+
+        if (editingCategory != null)
+        {
+            editingCategory.Name = newCategory.Name;
+            editingCategory.CollectionId = newCategory.CollectionId;
+            await CategoryService.UpdateAsync(editingCategory);
+        }
+        else
+        {
+            await CategoryService.CreateAsync(newCategory);
+        }
+        
+        await HideAddCategoryModal();
+        await LoadCategories();
+        StateHasChanged();
+    }
+
+    private void DeleteTag(Tag tag)
+    {
+        // Implementation for deleting tags
+        TagService.DeleteAsync(tag.Id);
+        tags.Remove(tag);
+        StateHasChanged();
+    }
+
+    private void DeleteCategory(Category category)
+    {
+        // Implementation for deleting categories
+        CategoryService.DeleteAsync(category.Id);
+        categories.Remove(category);
+        StateHasChanged();
+    }
+
+    private async Task SaveItem()
+    {
+        if (string.IsNullOrWhiteSpace(newItem.Title))
+            return;
+
+        // Set the appropriate type-specific item
+        switch (newItem.Type)
+        {
+            case ItemType.Login:
+                newItem.LoginItem = loginDetails;
+                break;
+            case ItemType.CreditCard:
+                newItem.CreditCardItem = creditCardDetails;
+                break;
+            case ItemType.SecureNote:
+                newItem.SecureNoteItem = secureNoteDetails;
+                break;
+            case ItemType.WiFi:
+                newItem.WiFiItem = wifiDetails;
+                break;
+        }
+        
+        // Make sure we have a collection ID (default to the first one if none selected)
+        if (newItem.CollectionId == 0 && collections.Any())
+        {
+            var defaultCollection = collections.FirstOrDefault(c => c.IsDefault);
+            newItem.CollectionId = defaultCollection?.Id ?? collections.First().Id;
+        }
+
+        // Create a list of selected tags to add to the item
+        var selectedTagsList = new List<Tag>();
+        foreach (var tagId in selectedTagIds.Where(kvp => kvp.Value).Select(kvp => kvp.Key))
+        {
+            var tag = tags.FirstOrDefault(t => t.Id == tagId);
+            if (tag != null)
+            {
+                selectedTagsList.Add(tag);
+            }
+        }
+
+        if (editingItem != null)
+        {
+            // Update existing item
+            newItem.Id = editingItem.Id;
+            newItem.CreatedAt = editingItem.CreatedAt;
+            newItem.LastModified = DateTime.UtcNow;
+            
+            // Set the selected tags directly on the item
+            newItem.Tags = selectedTagsList;
+            
+            // Update the item with new values
+            await PasswordItemService.UpdateAsync(newItem);
+        }
+        else
+        {
+            // Create new item
+            newItem.CreatedAt = DateTime.UtcNow;
+            newItem.LastModified = DateTime.UtcNow;
+            
+            // Set the selected tags directly on the item
+            newItem.Tags = selectedTagsList;
+            
+            // Create the item with tags already attached
+            await PasswordItemService.CreateAsync(newItem);
+        }
+        
+        await HideAddItemModal();
+        await LoadData();
+    }
+}

@@ -1,0 +1,29 @@
+@using Microsoft.AspNetCore.Components
+@inject PasswordManager.App.Services.AuthService AuthService
+@inject NavigationManager NavigationManager
+
+@if (isAuthenticated)
+{
+    @ChildContent
+}
+else
+{
+    <div>Redirecting to login...</div>
+}
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; } = default!;
+
+    private bool isAuthenticated = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isAuthenticated = await AuthService.CheckAuthenticationStatusAsync();
+
+        if (!isAuthenticated)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+    }
+}

@@ -1,0 +1,3 @@
+dotnet ef migrations add ADDCOLLECTIONS --project PasswordManager.DAL --startup-project PasswordManager.App
+
+dotnet ef database update --project PasswordManager.DAL --startup-project PasswordManager.App
