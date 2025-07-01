@@ -637,6 +637,11 @@
     private int? selectedCollectionId = null;
     private int collectionToDeleteId = 0;
     
+    // Expand/collapse state
+    private bool isCollectionsExpanded = true;
+    private bool isCategoriesExpanded = true;
+    private bool isTagsExpanded = true;
+    
     // Returns the SimpleIcons slug for a brand based on the website or title, or null if not found
     private string? GetBrandSlug(string? website, string? title)
     {
