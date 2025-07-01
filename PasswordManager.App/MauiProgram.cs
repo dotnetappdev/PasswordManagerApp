@@ -25,7 +25,15 @@ public static class MauiProgram
 		builder.Services.AddMauiBlazorWebView();
 		
 		// Add Entity Framework
-		var dbPath = Path.Combine(FileSystem.AppDataDirectory, "passwordmanager.db");
+		var dbPath = Path.Combine(FileSystem.AppDataDirectory, "PasswordManager", "data", "passwordmanager.db");
+		
+		// Ensure the directory exists
+		var dbDirectory = Path.GetDirectoryName(dbPath);
+		if (!Directory.Exists(dbDirectory))
+		{
+			Directory.CreateDirectory(dbDirectory!);
+		}
+		
 		builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
 			options.UseSqlite($"Data Source={dbPath}"));
 
@@ -50,6 +58,13 @@ public static class MauiProgram
 		using (var scope = app.Services.CreateScope())
 		{
 			var db = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+			
+			#if DEBUG
+			// Log the database path for debugging
+			System.Diagnostics.Debug.WriteLine($"Database path: {dbPath}");
+			System.Diagnostics.Debug.WriteLine($"App data directory: {FileSystem.AppDataDirectory}");
+			System.Diagnostics.Debug.WriteLine($"Directory exists: {Directory.Exists(Path.GetDirectoryName(dbPath))}");
+			#endif
 			
 			// Check if this is the first run (no migration history exists)
 			#if DEBUG
