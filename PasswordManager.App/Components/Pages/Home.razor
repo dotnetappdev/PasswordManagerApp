@@ -1,6 +1,7 @@
 ﻿@page "/home"
 
 @using Microsoft.AspNetCore.Components.QuickGrid
+@using Microsoft.AspNetCore.Components.Forms
 @using PasswordManager.Models
 @using PasswordManager.Interfaces
 @using PasswordManager.Services.Interfaces
@@ -11,6 +12,7 @@
 @inject IJSRuntime JSRuntime
 @inject PasswordManager.App.Services.AuthService AuthService
 @inject NavigationManager Navigation
+@inject PasswordManager.Imports.Interfaces.IImportService ImportService
 
 <style>
     .validation-error {
@@ -23,6 +25,175 @@
         font-size: 14px;
         margin-top: 5px;
         font-weight: 500;
+    }
+
+    .header-buttons {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .import-btn {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .import-btn:hover {
+        background: #059669;
+    }
+
+    .provider-selection {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+
+    .provider-option {
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .provider-option:hover {
+        border-color: #3b82f6;
+        background-color: #f8fafc;
+    }
+
+    .provider-option.selected {
+        border-color: #3b82f6;
+        background-color: #eff6ff;
+    }
+
+    .provider-info h5 {
+        margin: 0 0 4px 0;
+        color: #1f2937;
+        font-weight: 600;
+    }
+
+    .provider-info p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .file-upload-area {
+        border: 2px dashed #d1d5db;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .selected-file {
+        margin-top: 10px;
+        padding: 8px 12px;
+        background: #f3f4f6;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .file-size {
+        color: #6b7280;
+        font-size: 12px;
+    }
+
+    .import-step {
+        margin-bottom: 24px;
+    }
+
+    .import-step h4 {
+        margin: 0 0 12px 0;
+        color: #1f2937;
+        font-weight: 600;
+    }
+
+    .import-preview {
+        background: #f0f9ff;
+        border: 1px solid #0ea5e9;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .import-preview h4 {
+        margin: 0 0 8px 0;
+        color: #0c4a6e;
+    }
+
+    .import-preview p {
+        margin: 4px 0;
+        color: #075985;
+    }
+
+    .import-progress {
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    .progress-indicator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #e5e7eb;
+        border-top: 3px solid #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .import-results {
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .success-message, .error-message {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .success-message span {
+        font-size: 20px;
+    }
+
+    .error-message span {
+        font-size: 20px;
+    }
+
+    .success-message p, .error-message p {
+        margin: 0 0 8px 0;
+    }
+
+    .success-message ul, .error-message ul {
+        margin: 8px 0;
+        padding-left: 20px;
+    }
+
+    .success-message li, .error-message li {
+        margin: 4px 0;
     }
 </style>
 
@@ -117,7 +288,10 @@
                     <button class="action-btn" title="View options">👁️</button>
                 </div>
             </div>
-            <button class="add-item-btn" @onclick="ShowAddItemModal">+ Add Item</button>
+            <div class="header-buttons">
+                <button class="import-btn" @onclick="ShowImportModal">📥 Import</button>
+                <button class="add-item-btn" @onclick="ShowAddItemModal">+ Add Item</button>
+            </div>
         </div>
 
         <!-- Items List -->
@@ -645,6 +819,135 @@
     </div>
 }
 
+<!-- Import Modal -->
+@if (showImportModal)
+{
+    <div class="modal-overlay" @onclick="HideImportModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>Import Passwords</h2>
+                <button class="close-btn" @onclick="HideImportModal">×</button>
+            </div>
+            <div class="modal-body">
+                @if (!importInProgress)
+                {
+                    <div class="import-step">
+                        <h4>Select Import Provider</h4>
+                        <div class="provider-selection">
+                            @foreach (var provider in availableProviders)
+                            {
+                                <div class="provider-option @(selectedProvider?.ProviderName == provider.ProviderName ? "selected" : "")"
+                                     @onclick="() => SelectProvider(provider)">
+                                    <div class="provider-info">
+                                        <h5>@provider.DisplayName</h5>
+                                        <p>Supported formats: @string.Join(", ", provider.SupportedFileExtensions)</p>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @if (selectedProvider != null)
+                    {
+                        <div class="import-step">
+                            <h4>Select File</h4>
+                            <div class="file-upload-area">
+                                <InputFile OnChange="OnFileSelected" accept="@string.Join(",", selectedProvider.SupportedFileExtensions)" />
+                                @if (selectedFile != null)
+                                {
+                                    <div class="selected-file">
+                                        <span>📄 @selectedFile.Name</span>
+                                        <span class="file-size">(@(selectedFile.Size / 1024) KB)</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        @if (selectedFile != null)
+                        {
+                            <div class="import-preview">
+                                <h4>Import Preview</h4>
+                                <p>Ready to import from <strong>@selectedProvider.DisplayName</strong></p>
+                                <p>File: <strong>@selectedFile.Name</strong></p>
+                            </div>
+                        }
+                    }
+                }
+                else
+                {
+                    <div class="import-progress">
+                        <h4>Importing...</h4>
+                        <div class="progress-indicator">
+                            <div class="spinner"></div>
+                            <p>Processing your file, please wait...</p>
+                        </div>
+                    </div>
+                }
+
+                @if (importResult != null)
+                {
+                    <div class="import-results">
+                        <h4>Import Results</h4>
+                        @if (importResult.Success)
+                        {
+                            <div class="success-message">
+                                <span>✅</span>
+                                <div>
+                                    <p><strong>Import completed successfully!</strong></p>
+                                    <ul>
+                                        <li>@importResult.SuccessfulImports items imported</li>
+                                        <li>@importResult.RequiredCollections.Count collections created</li>
+                                        <li>@importResult.RequiredCategories.Count categories created</li>
+                                        <li>@importResult.RequiredTags.Count tags created</li>
+                                    </ul>
+                                    @if (importResult.Warnings.Any())
+                                    {
+                                        <details>
+                                            <summary>@importResult.Warnings.Count warnings</summary>
+                                            <ul>
+                                                @foreach (var warning in importResult.Warnings)
+                                                {
+                                                    <li>@warning</li>
+                                                }
+                                            </ul>
+                                        </details>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="error-message">
+                                <span>❌</span>
+                                <div>
+                                    <p><strong>Import failed</strong></p>
+                                    <p>@importResult.ErrorMessage</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="modal-actions">
+                    @if (!importInProgress && importResult == null)
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="HideImportModal">Cancel</button>
+                        <button type="button" class="btn btn-primary" 
+                                @onclick="StartImport" 
+                                disabled="@(selectedProvider == null || selectedFile == null)">
+                            Start Import
+                        </button>
+                    }
+                    else if (importResult != null)
+                    {
+                        <button type="button" class="btn btn-primary" @onclick="FinishImport">Done</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     // Collection management
     private List<Collection> collections = new();
@@ -737,6 +1040,7 @@
     private bool showAddCollectionModal = false;
     private bool showEditCollectionModal = false;
     private bool showDeleteCollectionModal = false;
+    private bool showImportModal = false;
     private bool passwordVisible = false;
     private bool showNewPassword = false;
     private bool showPasswordGenerator = false;
@@ -767,6 +1071,13 @@
 
     // New collection form data
     private Collection newCollection = new() { Color = "#ffffff", ParentCollectionId = null };
+
+    // Import related properties
+    private List<PasswordManager.Imports.Interfaces.IPasswordImportProvider> availableProviders = new();
+    private PasswordManager.Imports.Interfaces.IPasswordImportProvider? selectedProvider;
+    private IBrowserFile? selectedFile;
+    private bool importInProgress = false;
+    private PasswordManager.Imports.Interfaces.ImportResult? importResult;
 
     // Validation state
     private bool collectionValidationError = false;
@@ -822,6 +1133,7 @@ private void OnLengthChanged(ChangeEventArgs e)
         await LoadData();
         await LoadCategories();
         await LoadCollections();
+        await LoadImportProviders();
         
         // Set default collection if none selected
         if (selectedCollectionId == null)
@@ -1667,6 +1979,86 @@ private void OnCollectionChanged(ChangeEventArgs e)
             
             StateHasChanged();
         }
+    }
+
+    // Import methods
+    private async Task LoadImportProviders()
+    {
+        availableProviders = ImportService.GetAvailableProviders().ToList();
+    }
+
+    private void ShowImportModal()
+    {
+        showImportModal = true;
+        selectedProvider = null;
+        selectedFile = null;
+        importResult = null;
+        importInProgress = false;
+        StateHasChanged();
+    }
+
+    private void HideImportModal()
+    {
+        showImportModal = false;
+        selectedProvider = null;
+        selectedFile = null;
+        importResult = null;
+        importInProgress = false;
+        StateHasChanged();
+    }
+
+    private void SelectProvider(PasswordManager.Imports.Interfaces.IPasswordImportProvider provider)
+    {
+        selectedProvider = provider;
+        selectedFile = null; // Reset file selection when provider changes
+        StateHasChanged();
+    }
+
+    private void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        StateHasChanged();
+    }
+
+    private async Task StartImport()
+    {
+        if (selectedProvider == null || selectedFile == null)
+            return;
+
+        importInProgress = true;
+        importResult = null;
+        StateHasChanged();
+
+        try
+        {
+            using var stream = selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
+            importResult = await ImportService.ImportPasswordsAsync(selectedProvider.ProviderName, stream, selectedFile.Name);
+        }
+        catch (Exception ex)
+        {
+            importResult = new PasswordManager.Imports.Interfaces.ImportResult
+            {
+                Success = false,
+                ErrorMessage = $"Failed to process file: {ex.Message}"
+            };
+        }
+        finally
+        {
+            importInProgress = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task FinishImport()
+    {
+        HideImportModal();
+        
+        // Refresh the data to show imported items
+        await LoadData();
+        await LoadCategories();
+        await LoadCollections();
+        
+        StateHasChanged();
     }
 }
 

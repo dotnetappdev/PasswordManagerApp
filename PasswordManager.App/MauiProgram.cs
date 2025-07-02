@@ -6,6 +6,9 @@ using PasswordManager.Interfaces;
 using PasswordManager.Services;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
+using PasswordManager.Imports.Interfaces;
+using PasswordManager.Imports.Services;
+using PasswordManagerImports.OnePassword.Providers;
 
 namespace PasswordManager.App;
 
@@ -44,6 +47,12 @@ public static class MauiProgram
 		builder.Services.AddScoped<ICategoryInterface, CategoryService>();
 		builder.Services.AddScoped<ICollectionService, CollectionService>();
 		builder.Services.AddScoped<Services.AuthService>();
+
+		// Register import services
+		builder.Services.AddScoped<IImportService, ImportService>();
+
+		// Register import providers
+		builder.Services.AddScoped<IPasswordImportProvider, OnePasswordImportProvider>();
 
 		// Add QuickGrid
 
@@ -87,6 +96,11 @@ public static class MauiProgram
 			#endif
 			
 			db.Database.Migrate();
+
+			// Initialize import service with providers
+			var importService = scope.ServiceProvider.GetRequiredService<IImportService>();
+			var onePasswordProvider = scope.ServiceProvider.GetRequiredService<IPasswordImportProvider>();
+			importService.RegisterProvider(onePasswordProvider);
 		}
 
 		return app;
