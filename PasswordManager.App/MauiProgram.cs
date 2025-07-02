@@ -96,7 +96,15 @@ public static class MauiProgram
 			}
 			#endif
 			
-			db.Database.Migrate();
+			// Only migrate if there are pending migrations
+			var pendingMigrations = db.Database.GetPendingMigrations();
+			if (pendingMigrations.Any())
+			{
+				db.Database.Migrate();
+			}
+			
+			// Alternative approach for simple scenarios (no migrations):
+			// db.Database.EnsureCreated();
 
 			// Initialize import service with providers
 			var importService = scope.ServiceProvider.GetRequiredService<IImportService>();

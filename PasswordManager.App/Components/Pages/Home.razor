@@ -264,6 +264,29 @@
         gap: 16px;
     }
 
+    .progress-bar-container {
+        width: 100%;
+        max-width: 400px;
+        background-color: #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 16px 0;
+    }
+
+    .progress-bar {
+        height: 8px;
+        background: linear-gradient(to right, #3b82f6, #10b981);
+        border-radius: 8px;
+        transition: width 0.3s ease;
+        width: 0%;
+    }
+
+    .progress-text {
+        font-size: 14px;
+        color: #6b7280;
+        margin-top: 8px;
+    }
+
     .spinner {
         width: 32px;
         height: 32px;
@@ -283,6 +306,27 @@
         border-radius: 8px;
         padding: 16px;
         margin-bottom: 20px;
+    }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        border: 1px solid;
+    }
+
+    .alert-warning {
+        background-color: #fef3c7;
+        border-color: #d97706;
+        color: #92400e;
+    }
+
+    .alert p {
+        margin: 0;
+    }
+
+    .alert p:not(:last-child) {
+        margin-bottom: 8px;
     }
 
     .success-message, .error-message {
@@ -949,48 +993,60 @@
                 {
                     <div class="import-step">
                         <h4>Select Import Provider</h4>
-                        <div class="provider-selection">
-                            @foreach (var provider in availableProviders)
-                            {
-                                <div class="provider-option @(selectedProvider?.ProviderName == provider.ProviderName ? "selected" : "")"
-                                     @onclick="() => SelectProvider(provider)">
-                                    <div class="provider-info">                                @if (provider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin plugin)
+                        
+                        @if (!availableProviders.Any())
+                        {
+                            <div class="alert alert-warning">
+                                <p><strong>No import providers available</strong></p>
+                                <p>Please check that import plugins are properly installed and configured.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="provider-selection">
+                                @foreach (var provider in availableProviders)
                                 {
-                                            <div class="plugin-header">
-                                                @if (!string.IsNullOrEmpty(plugin.Metadata.IconUrl))
-                                                {
-                                                    <span class="plugin-icon">@plugin.Metadata.IconUrl</span>
-                                                }
-                                                <div class="plugin-title">
-                                                    <h5>@plugin.Metadata.DisplayName</h5>
-                                                    <span class="plugin-version">v@plugin.Metadata.Version</span>
+                                    <div class="provider-option @(selectedProvider?.ProviderName == provider.ProviderName ? "selected" : "")"
+                                         @onclick="() => SelectProvider(provider)">
+                                        <div class="provider-info">
+                                            @if (provider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin plugin)
+                                            {
+                                                <div class="plugin-header">
+                                                    @if (!string.IsNullOrEmpty(plugin.Metadata.IconUrl))
+                                                    {
+                                                        <span class="plugin-icon">@plugin.Metadata.IconUrl</span>
+                                                    }
+                                                    <div class="plugin-title">
+                                                        <h5>@plugin.Metadata.DisplayName</h5>
+                                                        <span class="plugin-version">v@plugin.Metadata.Version</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <p class="plugin-description">@plugin.Metadata.Description</p>
-                                            <div class="plugin-details">
-                                                <span class="plugin-author">by @plugin.Metadata.Author</span>
-                                                @if (!string.IsNullOrEmpty(plugin.Metadata.Website))
-                                                {
-                                                    <a href="@plugin.Metadata.Website" target="_blank" class="plugin-website">🌐 Website</a>
-                                                }
-                                            </div>
-                                            <div class="plugin-tags">
-                                                @foreach (var tag in plugin.Metadata.Tags)
-                                                {
-                                                    <span class="plugin-tag">@tag</span>
-                                                }
-                                            </div>
-                                            <p class="plugin-formats">Supported formats: @string.Join(", ", provider.SupportedFileExtensions)</p>
-                                        }
-                                        else
-                                        {
-                                            <h5>@provider.DisplayName</h5>
-                                            <p>Supported formats: @string.Join(", ", provider.SupportedFileExtensions)</p>
-                                        }
+                                                <p class="plugin-description">@plugin.Metadata.Description</p>
+                                                <div class="plugin-details">
+                                                    <span class="plugin-author">by @plugin.Metadata.Author</span>
+                                                    @if (!string.IsNullOrEmpty(plugin.Metadata.Website))
+                                                    {
+                                                        <a href="@plugin.Metadata.Website" target="_blank" class="plugin-website">🌐 Website</a>
+                                                    }
+                                                </div>
+                                                <div class="plugin-tags">
+                                                    @foreach (var tag in plugin.Metadata.Tags)
+                                                    {
+                                                        <span class="plugin-tag">@tag</span>
+                                                    }
+                                                </div>
+                                                <p class="plugin-formats">Supported formats: @string.Join(", ", provider.SupportedFileExtensions)</p>
+                                            }
+                                            else
+                                            {
+                                                <h5>@provider.DisplayName</h5>
+                                                <p>Supported formats: @string.Join(", ", provider.SupportedFileExtensions)</p>
+                                            }
+                                        </div>
                                     </div>
-                                </div>
-                            }
-                        </div>
+                                }
+                            </div>
+                        }
                     </div>
 
                     @if (selectedProvider != null)
@@ -1043,7 +1099,10 @@
                         <h4>Importing...</h4>
                         <div class="progress-indicator">
                             <div class="spinner"></div>
-                            <p>Processing your file, please wait...</p>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: @(importProgress)%"></div>
+                            </div>
+                            <p class="progress-text">@importProgressText</p>
                         </div>
                     </div>
                 }
@@ -1242,6 +1301,8 @@
     private IBrowserFile? selectedFile;
     private bool importInProgress = false;
     private PasswordManager.Imports.Interfaces.ImportResult? importResult;
+    private int importProgress = 0;
+    private string importProgressText = "Processing your file, please wait...";
 
     // Validation state
     private bool collectionValidationError = false;
@@ -2148,7 +2209,24 @@ private void OnCollectionChanged(ChangeEventArgs e)
     // Import methods
     private async Task LoadImportProviders()
     {
-        availableProviders = (await ImportService.GetAvailableProvidersAsync()).ToList();
+        try 
+        {
+            availableProviders = (await ImportService.GetAvailableProvidersAsync()).ToList();
+            
+            #if DEBUG
+            System.Diagnostics.Debug.WriteLine($"Loaded {availableProviders.Count} import providers");
+            foreach (var provider in availableProviders)
+            {
+                System.Diagnostics.Debug.WriteLine($"Provider: {provider.ProviderName} - {provider.DisplayName}");
+            }
+            #endif
+        }
+        catch (Exception ex)
+        {
+            #if DEBUG
+            System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message}");
+            #endif
+        }
     }
 
     private void ShowImportModal()
@@ -2158,6 +2236,8 @@ private void OnCollectionChanged(ChangeEventArgs e)
         selectedFile = null;
         importResult = null;
         importInProgress = false;
+        importProgress = 0;
+        importProgressText = "Processing your file, please wait...";
         StateHasChanged();
     }
 
@@ -2168,6 +2248,8 @@ private void OnCollectionChanged(ChangeEventArgs e)
         selectedFile = null;
         importResult = null;
         importInProgress = false;
+        importProgress = 0;
+        importProgressText = "Processing your file, please wait...";
         StateHasChanged();
     }
 
@@ -2191,12 +2273,32 @@ private void OnCollectionChanged(ChangeEventArgs e)
 
         importInProgress = true;
         importResult = null;
+        importProgress = 0;
+        importProgressText = "Starting import...";
         StateHasChanged();
 
         try
         {
+            // Step 1: Reading file
+            importProgress = 20;
+            importProgressText = "Reading file...";
+            StateHasChanged();
+            await Task.Delay(500); // Small delay to show progress
+
             using var stream = selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
+            
+            // Step 2: Processing file
+            importProgress = 50;
+            importProgressText = "Processing data...";
+            StateHasChanged();
+            await Task.Delay(500);
+
             importResult = await ImportService.ImportPasswordsAsync(selectedProvider.ProviderName, stream, selectedFile.Name);
+            
+            // Step 3: Finalizing
+            importProgress = 100;
+            importProgressText = "Import completed!";
+            StateHasChanged();
         }
         catch (Exception ex)
         {
