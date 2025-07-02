@@ -299,7 +299,7 @@
                 </select>
                 
                 <label>Collection <span style="color:red;">*</span></label>
-                <select @bind="newItem.CollectionId" class="form-control @(collectionValidationError ? "validation-error" : "")" @onchange="OnCollectionChanged">
+                <select value="@newItem.CollectionId" class="form-control @(collectionValidationError ? "validation-error" : "")" @onchange="OnCollectionChanged">
                     <option value="0">-- Select Collection --</option>
                     @foreach (var collection in collections)
                     {
