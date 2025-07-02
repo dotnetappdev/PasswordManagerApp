@@ -12,6 +12,20 @@
 @inject PasswordManager.App.Services.AuthService AuthService
 @inject NavigationManager Navigation
 
+<style>
+    .validation-error {
+        border: 2px solid #007bff !important;
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5) !important;
+    }
+    
+    .validation-message {
+        color: #dc3545;
+        font-size: 14px;
+        margin-top: 5px;
+        font-weight: 500;
+    }
+</style>
+
 <div class="password-manager-layout">
     <!-- Sidebar -->
     <div class="sidebar">
@@ -284,21 +298,30 @@
                     <option value="@ItemType.WiFi">WiFi</option>
                 </select>
                 
-                <label>Collection</label>
-                <select @bind="newItem.CollectionId" class="form-control">
+                <label>Collection <span style="color:red;">*</span></label>
+                <select @bind="newItem.CollectionId" class="form-control @(collectionValidationError ? "validation-error" : "")" @onchange="OnCollectionChanged">
+                    <option value="0">-- Select Collection --</option>
                     @foreach (var collection in collections)
                     {
                         <option value="@collection.Id">@collection.Name @(collection.IsDefault ? "(Default)" : "")</option>
                     }
                 </select>
                 
-                <label>Category</label>
-                <select @bind="newItem.CategoryId" class="form-control">
+                <label>Category <span style="color:red;">*</span></label>
+                <select @bind="newItem.CategoryId" class="form-control @(categoryValidationError ? "validation-error" : "")">
+                    <option value="0">-- Select Category --</option>
                     @foreach (var category in GetCategoriesForCollection(newItem.CollectionId))
                     {
                         <option value="@category.Id">@category.Name</option>
                     }
                 </select>
+                
+                @if (!string.IsNullOrEmpty(validationMessage))
+                {
+                    <div class="validation-message" style="color: red; margin-top: 5px; font-size: 14px;">
+                        @validationMessage
+                    </div>
+                }
 
                 @if (newItem.Type == ItemType.Login)
                 {
@@ -745,6 +768,11 @@
     // New collection form data
     private Collection newCollection = new() { Color = "#ffffff", ParentCollectionId = null };
 
+    // Validation state
+    private bool collectionValidationError = false;
+    private bool categoryValidationError = false;
+    private string validationMessage = string.Empty;
+
     // Password generator settings
     private int _passwordGenLength = 16;
     private bool _passwordGenIncludeSymbols = true;
@@ -1006,7 +1034,26 @@ private void OnLengthChanged(ChangeEventArgs e)
     private void ShowAddItemModal()
     {
         editingItem = null;
+        collectionValidationError = false;
+        categoryValidationError = false;
+        validationMessage = string.Empty;
+        
         newItem = new PasswordItem { Type = ItemType.Login };
+        
+        // Set default collection ID
+        if (collections.Any())
+        {
+            var defaultCollection = collections.FirstOrDefault(c => c.IsDefault);
+            newItem.CollectionId = defaultCollection?.Id ?? collections.First().Id;
+        }
+        
+        // Set default category ID based on collection
+        var availableCategories = GetCategoriesForCollection(newItem.CollectionId);
+        if (availableCategories.Any())
+        {
+            newItem.CategoryId = availableCategories.First().Id;
+        }
+        
         loginDetails = new LoginItem();
         creditCardDetails = new CreditCardItem();
         secureNoteDetails = new SecureNoteItem();
@@ -1019,11 +1066,17 @@ private void OnLengthChanged(ChangeEventArgs e)
     private void ShowEditItemModal(PasswordItem item)
     {
         editingItem = item;
+        collectionValidationError = false;
+        categoryValidationError = false;
+        validationMessage = string.Empty;
+        
         newItem = new PasswordItem 
         {
             Id = item.Id,
             Title = item.Title,
             Type = item.Type,
+            CollectionId = item.CollectionId,
+            CategoryId = item.CategoryId,
             CreatedAt = item.CreatedAt,
             LastModified = item.LastModified
         };
@@ -1390,72 +1443,128 @@ private void OnLengthChanged(ChangeEventArgs e)
 
     private async Task SaveItem()
     {
+        // Reset validation state
+        collectionValidationError = false;
+        categoryValidationError = false;
+        validationMessage = string.Empty;
+
         if (string.IsNullOrWhiteSpace(newItem.Title))
+        {
+            validationMessage = "Title is required.";
             return;
-
-        // Set the appropriate type-specific item
-        switch (newItem.Type)
-        {
-            case ItemType.Login:
-                newItem.LoginItem = loginDetails;
-                break;
-            case ItemType.CreditCard:
-                newItem.CreditCardItem = creditCardDetails;
-                break;
-            case ItemType.SecureNote:
-                newItem.SecureNoteItem = secureNoteDetails;
-                break;
-            case ItemType.WiFi:
-                newItem.WiFiItem = wifiDetails;
-                break;
         }
+
+        // Validate Collection is selected
+        if (newItem.CollectionId == 0)
+        {
+            collectionValidationError = true;
+            validationMessage = "Collection is required.";
+            StateHasChanged();
+            return;
+        }
+
+        // Validate Category is selected
+        if (newItem.CategoryId == 0)
+        {
+            categoryValidationError = true;
+            validationMessage = "Category is required.";
+            StateHasChanged();
+            return;
+        }
+
+        // Verify the collection and category exist and are valid
+        var selectedCollection = collections.FirstOrDefault(c => c.Id == newItem.CollectionId);
+        var selectedCategory = categories.FirstOrDefault(c => c.Id == newItem.CategoryId);
         
-        // Make sure we have a collection ID (default to the first one if none selected)
-        if (newItem.CollectionId == 0 && collections.Any())
+        if (selectedCollection == null)
         {
-            var defaultCollection = collections.FirstOrDefault(c => c.IsDefault);
-            newItem.CollectionId = defaultCollection?.Id ?? collections.First().Id;
+            collectionValidationError = true;
+            validationMessage = "Selected collection is invalid.";
+            StateHasChanged();
+            return;
         }
 
-        // Create a list of selected tags to add to the item
-        var selectedTagsList = new List<Tag>();
-        foreach (var tagId in selectedTagIds.Where(kvp => kvp.Value).Select(kvp => kvp.Key))
+        if (selectedCategory == null)
         {
-            var tag = tags.FirstOrDefault(t => t.Id == tagId);
-            if (tag != null)
+            categoryValidationError = true;
+            validationMessage = "Selected category is invalid.";
+            StateHasChanged();
+            return;
+        }
+
+        // Verify the category belongs to the selected collection
+        if (selectedCategory.CollectionId != newItem.CollectionId)
+        {
+            categoryValidationError = true;
+            validationMessage = "Selected category does not belong to the selected collection.";
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            // Set the appropriate type-specific item
+            switch (newItem.Type)
             {
-                selectedTagsList.Add(tag);
+                case ItemType.Login:
+                    newItem.LoginItem = loginDetails;
+                    break;
+                case ItemType.CreditCard:
+                    newItem.CreditCardItem = creditCardDetails;
+                    break;
+                case ItemType.SecureNote:
+                    newItem.SecureNoteItem = secureNoteDetails;
+                    break;
+                case ItemType.WiFi:
+                    newItem.WiFiItem = wifiDetails;
+                    break;
             }
-        }
 
-        if (editingItem != null)
-        {
-            // Update existing item
-            newItem.Id = editingItem.Id;
-            newItem.CreatedAt = editingItem.CreatedAt;
-            newItem.LastModified = DateTime.UtcNow;
+            // Create a list of selected tags to add to the item
+            var selectedTagsList = new List<Tag>();
+            foreach (var tagId in selectedTagIds.Where(kvp => kvp.Value).Select(kvp => kvp.Key))
+            {
+                var tag = tags.FirstOrDefault(t => t.Id == tagId);
+                if (tag != null)
+                {
+                    selectedTagsList.Add(tag);
+                }
+            }
+
+            if (editingItem != null)
+            {
+                // Update existing item
+                newItem.Id = editingItem.Id;
+                newItem.CreatedAt = editingItem.CreatedAt;
+                newItem.LastModified = DateTime.UtcNow;
+                
+                // Set the selected tags directly on the item
+                newItem.Tags = selectedTagsList;
+                
+                // Update the item with new values
+                await PasswordItemService.UpdateAsync(newItem);
+            }
+            else
+            {
+                // Create new item
+                newItem.CreatedAt = DateTime.UtcNow;
+                newItem.LastModified = DateTime.UtcNow;
+                
+                // Set the selected tags directly on the item
+                newItem.Tags = selectedTagsList;
+                
+                // Create the item with tags already attached
+                await PasswordItemService.CreateAsync(newItem);
+            }
             
-            // Set the selected tags directly on the item
-            newItem.Tags = selectedTagsList;
-            
-            // Update the item with new values
-            await PasswordItemService.UpdateAsync(newItem);
+            await HideAddItemModal();
+            await LoadData();
         }
-        else
+        catch (Exception ex)
         {
-            // Create new item
-            newItem.CreatedAt = DateTime.UtcNow;
-            newItem.LastModified = DateTime.UtcNow;
-            
-            // Set the selected tags directly on the item
-            newItem.Tags = selectedTagsList;
-            
-            // Create the item with tags already attached
-            await PasswordItemService.CreateAsync(newItem);
+            validationMessage = $"Error saving item: {ex.Message}";
+            StateHasChanged();
         }
-        
-        await HideAddItemModal();
-        await LoadData();
     }
 
     private IEnumerable<Collection> GetRootCollections() => collections.Where(c => c.ParentCollectionId == null);
@@ -1536,5 +1645,28 @@ private void OnLengthChanged(ChangeEventArgs e)
             </div>
         }
     };
+
+private void OnCollectionChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var collectionId))
+        {
+            newItem.CollectionId = collectionId;
+            
+            // Reset category validation error when collection changes
+            categoryValidationError = false;
+            
+            // Reset category selection when collection changes
+            newItem.CategoryId = 0;
+            
+            // Set default category if available
+            var availableCategories = GetCategoriesForCollection(collectionId);
+            if (availableCategories.Any())
+            {
+                newItem.CategoryId = availableCategories.First().Id;
+            }
+            
+            StateHasChanged();
+        }
+    }
 }
 
