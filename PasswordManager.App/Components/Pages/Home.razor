@@ -5,6 +5,7 @@
 @using PasswordManager.Models
 @using PasswordManager.Interfaces
 @using PasswordManager.Services.Interfaces
+@using PasswordManager.Imports.Interfaces
 @inject IPasswordItemService PasswordItemService
 @inject ITagService TagService
 @inject ICategoryInterface CategoryService
@@ -953,9 +954,8 @@
                             {
                                 <div class="provider-option @(selectedProvider?.ProviderName == provider.ProviderName ? "selected" : "")"
                                      @onclick="() => SelectProvider(provider)">
-                                    <div class="provider-info">
-                                        @if (provider is IPasswordImportPlugin plugin)
-                                        {
+                                    <div class="provider-info">                                @if (provider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin plugin)
+                                {
                                             <div class="plugin-header">
                                                 @if (!string.IsNullOrEmpty(plugin.Metadata.IconUrl))
                                                 {
@@ -997,7 +997,7 @@
                     {
                         <div class="import-step">
                             <h4>Select File</h4>
-                            @if (selectedProvider is IPasswordImportPlugin plugin && !string.IsNullOrEmpty(plugin.Metadata.Website))
+                            @if (selectedProvider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin plugin && !string.IsNullOrEmpty(plugin.Metadata.Website))
                             {
                                 <div class="import-help">
                                     <p><strong>How to export from @plugin.Metadata.DisplayName:</strong></p>
@@ -1029,7 +1029,7 @@
                                 <h4>Import Preview</h4>
                                 <p>Ready to import from <strong>@selectedProvider.DisplayName</strong></p>
                                 <p>File: <strong>@selectedFile.Name</strong></p>
-                                @if (selectedProvider is IPasswordImportPlugin pluginProvider)
+                                @if (selectedProvider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin pluginProvider)
                                 {
                                     <p>Plugin version: <strong>@pluginProvider.Metadata.Version</strong></p>
                                 }
