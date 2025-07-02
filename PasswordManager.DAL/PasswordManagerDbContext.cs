@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using PasswordManager.Models;
 
 namespace PasswordManager.DAL;
 
-public class PasswordManagerDbContext : DbContext
+public class PasswordManagerDbContext : IdentityDbContext<ApplicationUser>
 {
     public PasswordManagerDbContext(DbContextOptions<PasswordManagerDbContext> options) : base(options)
     {
@@ -71,6 +72,12 @@ public class PasswordManagerDbContext : DbContext
             entity.HasMany(e => e.Tags)
                   .WithMany(t => t.PasswordItems)
                   .UsingEntity(j => j.ToTable("PasswordItemTags"));
+                  
+            // Configure User relationship
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.PasswordItems)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configure LoginItem
@@ -150,6 +157,12 @@ public class PasswordManagerDbContext : DbContext
                   .WithMany(e => e.Children)
                   .HasForeignKey(e => e.ParentCollectionId)
                   .OnDelete(DeleteBehavior.Restrict);
+                  
+            // Configure User relationship
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.Collections)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
   
         // Seed data

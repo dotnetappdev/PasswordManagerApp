@@ -10,6 +10,10 @@ namespace PasswordManager.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public bool IsDefault { get; set; } // Mark a collection as the default one
         
+        // User relationship
+        public string? UserId { get; set; }
+        public ApplicationUser? User { get; set; }
+        
         // Parent-child relationship
         public int? ParentCollectionId { get; set; }
         public Collection? ParentCollection { get; set; }

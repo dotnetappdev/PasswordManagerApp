@@ -25,6 +25,10 @@ public class PasswordItem
     
     public bool IsDeleted { get; set; }
     
+    // User relationship
+    public string? UserId { get; set; }
+    public ApplicationUser? User { get; set; }
+    
     public int CategoryId { get; set; } // Foreign key to Category - now required
     
     // Collection relationship

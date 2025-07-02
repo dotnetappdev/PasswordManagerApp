@@ -1,0 +1,18 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Password Manager API",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"/workspaces/PasswordManagerApp/PasswordManager.API"
+			],
+			"group": "build",
+			"problemMatcher": [
+				"$msCompile"
+			]
+		}
+	]
+}

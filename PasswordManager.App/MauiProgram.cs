@@ -9,6 +9,8 @@ using PasswordManager.Services.Services;
 using PasswordManager.Imports.Interfaces;
 using PasswordManager.Imports.Services;
 using PasswordManagerImports.OnePassword.Providers;
+using PasswordManager.App.Services.Interfaces;
+using PasswordManager.App.Services;
 
 namespace PasswordManager.App;
 
@@ -26,6 +28,9 @@ public static class MauiProgram
 			});
 
 		builder.Services.AddMauiBlazorWebView();
+
+		// Add configuration
+		builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 		
 		// Add Entity Framework
 		var dbPath = Path.Combine(FileSystem.AppDataDirectory, "PasswordManager", "data", "passwordmanager.db");
@@ -47,6 +52,11 @@ public static class MauiProgram
 		builder.Services.AddScoped<ICategoryInterface, CategoryService>();
 		builder.Services.AddScoped<ICollectionService, CollectionService>();
 		builder.Services.AddScoped<Services.AuthService>();
+
+		// Register sync services
+		builder.Services.AddHttpClient();
+		builder.Services.AddScoped<IAppSyncService, AppSyncService>();
+		builder.Services.AddScoped<AppStartupService>();
 
 		// Register import services
 		builder.Services.AddSingleton<PluginDiscoveryService>();
@@ -110,6 +120,10 @@ public static class MauiProgram
 			var importService = scope.ServiceProvider.GetRequiredService<IImportService>();
 			var onePasswordProvider = scope.ServiceProvider.GetRequiredService<IPasswordImportProvider>();
 			importService.RegisterProvider(onePasswordProvider);
+
+			// Initialize startup sync service
+			var startupService = scope.ServiceProvider.GetRequiredService<AppStartupService>();
+			await startupService.InitializeAsync();
 		}
 
 		return app;
