@@ -1,6 +1,7 @@
 using PasswordManager.Imports.Interfaces;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
+using PasswordManager.Interfaces;
 
 namespace PasswordManager.Imports.Services;
 
@@ -9,14 +10,14 @@ public class ImportService : IImportService
     private readonly IPasswordItemService _passwordItemService;
     private readonly ICollectionService _collectionService;
     private readonly ICategoryInterface _categoryService;
-    private readonly ITagInterface _tagService;
+    private readonly ITagService _tagService;
     private readonly Dictionary<string, IPasswordImportProvider> _importProviders;
 
     public ImportService(
         IPasswordItemService passwordItemService,
         ICollectionService collectionService,
         ICategoryInterface categoryService,
-        ITagInterface tagService)
+        ITagService tagService)
     {
         _passwordItemService = passwordItemService;
         _collectionService = collectionService;
