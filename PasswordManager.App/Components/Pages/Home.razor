@@ -73,6 +73,90 @@
         background-color: #eff6ff;
     }
 
+    .plugin-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .plugin-icon {
+        font-size: 24px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .plugin-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-grow: 1;
+    }
+
+    .plugin-version {
+        background: #e5e7eb;
+        color: #6b7280;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .plugin-description {
+        margin: 4px 0 8px 0;
+        color: #6b7280;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .plugin-details {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .plugin-author {
+        color: #9ca3af;
+        font-size: 12px;
+    }
+
+    .plugin-website {
+        color: #3b82f6;
+        font-size: 12px;
+        text-decoration: none;
+    }
+
+    .plugin-website:hover {
+        text-decoration: underline;
+    }
+
+    .plugin-tags {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+    }
+
+    .plugin-tag {
+        background: #f3f4f6;
+        color: #6b7280;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 500;
+    }
+
+    .plugin-formats {
+        margin: 8px 0 0 0;
+        color: #9ca3af;
+        font-size: 12px;
+        font-style: italic;
+    }
+
     .provider-info h5 {
         margin: 0 0 4px 0;
         color: #1f2937;
@@ -91,6 +175,37 @@
         padding: 20px;
         text-align: center;
         margin-bottom: 20px;
+    }
+
+    .import-help {
+        background: #f0f9ff;
+        border: 1px solid #0ea5e9;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .import-help p {
+        margin: 0 0 8px 0;
+        color: #0c4a6e;
+        font-weight: 600;
+    }
+
+    .import-help ol {
+        margin: 8px 0 0 0;
+        padding-left: 20px;
+        color: #075985;
+    }
+
+    .import-help li {
+        margin: 4px 0;
+    }
+
+    .file-help {
+        margin: 8px 0 0 0;
+        color: #6b7280;
+        font-size: 12px;
+        font-style: italic;
     }
 
     .selected-file {
@@ -839,8 +954,39 @@
                                 <div class="provider-option @(selectedProvider?.ProviderName == provider.ProviderName ? "selected" : "")"
                                      @onclick="() => SelectProvider(provider)">
                                     <div class="provider-info">
-                                        <h5>@provider.DisplayName</h5>
-                                        <p>Supported formats: @string.Join(", ", provider.SupportedFileExtensions)</p>
+                                        @if (provider is IPasswordImportPlugin plugin)
+                                        {
+                                            <div class="plugin-header">
+                                                @if (!string.IsNullOrEmpty(plugin.Metadata.IconUrl))
+                                                {
+                                                    <span class="plugin-icon">@plugin.Metadata.IconUrl</span>
+                                                }
+                                                <div class="plugin-title">
+                                                    <h5>@plugin.Metadata.DisplayName</h5>
+                                                    <span class="plugin-version">v@plugin.Metadata.Version</span>
+                                                </div>
+                                            </div>
+                                            <p class="plugin-description">@plugin.Metadata.Description</p>
+                                            <div class="plugin-details">
+                                                <span class="plugin-author">by @plugin.Metadata.Author</span>
+                                                @if (!string.IsNullOrEmpty(plugin.Metadata.Website))
+                                                {
+                                                    <a href="@plugin.Metadata.Website" target="_blank" class="plugin-website">🌐 Website</a>
+                                                }
+                                            </div>
+                                            <div class="plugin-tags">
+                                                @foreach (var tag in plugin.Metadata.Tags)
+                                                {
+                                                    <span class="plugin-tag">@tag</span>
+                                                }
+                                            </div>
+                                            <p class="plugin-formats">Supported formats: @string.Join(", ", provider.SupportedFileExtensions)</p>
+                                        }
+                                        else
+                                        {
+                                            <h5>@provider.DisplayName</h5>
+                                            <p>Supported formats: @string.Join(", ", provider.SupportedFileExtensions)</p>
+                                        }
                                     </div>
                                 </div>
                             }
@@ -851,8 +997,22 @@
                     {
                         <div class="import-step">
                             <h4>Select File</h4>
+                            @if (selectedProvider is IPasswordImportPlugin plugin && !string.IsNullOrEmpty(plugin.Metadata.Website))
+                            {
+                                <div class="import-help">
+                                    <p><strong>How to export from @plugin.Metadata.DisplayName:</strong></p>
+                                    <ol>
+                                        <li>Open @plugin.Metadata.DisplayName web vault</li>
+                                        <li>Go to Tools → Export Vault</li>
+                                        <li>Select '.csv' format</li>
+                                        <li>Download the export file</li>
+                                        <li>Select the downloaded file below</li>
+                                    </ol>
+                                </div>
+                            }
                             <div class="file-upload-area">
                                 <InputFile OnChange="OnFileSelected" accept="@string.Join(",", selectedProvider.SupportedFileExtensions)" />
+                                <p class="file-help">Supported files: @string.Join(", ", selectedProvider.SupportedFileExtensions)</p>
                                 @if (selectedFile != null)
                                 {
                                     <div class="selected-file">
@@ -869,6 +1029,10 @@
                                 <h4>Import Preview</h4>
                                 <p>Ready to import from <strong>@selectedProvider.DisplayName</strong></p>
                                 <p>File: <strong>@selectedFile.Name</strong></p>
+                                @if (selectedProvider is IPasswordImportPlugin pluginProvider)
+                                {
+                                    <p>Plugin version: <strong>@pluginProvider.Metadata.Version</strong></p>
+                                }
                             </div>
                         }
                     }
@@ -1984,7 +2148,7 @@ private void OnCollectionChanged(ChangeEventArgs e)
     // Import methods
     private async Task LoadImportProviders()
     {
-        availableProviders = ImportService.GetAvailableProviders().ToList();
+        availableProviders = (await ImportService.GetAvailableProvidersAsync()).ToList();
     }
 
     private void ShowImportModal()

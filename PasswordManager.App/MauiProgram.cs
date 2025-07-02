@@ -49,6 +49,7 @@ public static class MauiProgram
 		builder.Services.AddScoped<Services.AuthService>();
 
 		// Register import services
+		builder.Services.AddSingleton<PluginDiscoveryService>();
 		builder.Services.AddScoped<IImportService, ImportService>();
 
 		// Register import providers

@@ -11,18 +11,22 @@ public class ImportService : IImportService
     private readonly ICollectionService _collectionService;
     private readonly ICategoryInterface _categoryService;
     private readonly ITagService _tagService;
+    private readonly PluginDiscoveryService _pluginDiscovery;
     private readonly Dictionary<string, IPasswordImportProvider> _importProviders;
+    private bool _pluginsLoaded = false;
 
     public ImportService(
         IPasswordItemService passwordItemService,
         ICollectionService collectionService,
         ICategoryInterface categoryService,
-        ITagService tagService)
+        ITagService tagService,
+        PluginDiscoveryService pluginDiscovery)
     {
         _passwordItemService = passwordItemService;
         _collectionService = collectionService;
         _categoryService = categoryService;
         _tagService = tagService;
+        _pluginDiscovery = pluginDiscovery;
         _importProviders = new Dictionary<string, IPasswordImportProvider>();
     }
 
@@ -31,9 +35,44 @@ public class ImportService : IImportService
         _importProviders[provider.ProviderName] = provider;
     }
 
+    public async Task<IEnumerable<IPasswordImportProvider>> GetAvailableProvidersAsync()
+    {
+        if (!_pluginsLoaded)
+        {
+            await LoadPluginsAsync();
+            _pluginsLoaded = true;
+        }
+        
+        return _importProviders.Values;
+    }
+
     public IEnumerable<IPasswordImportProvider> GetAvailableProviders()
     {
+        // For backward compatibility, load plugins synchronously if not already loaded
+        if (!_pluginsLoaded)
+        {
+            Task.Run(async () => await LoadPluginsAsync()).Wait();
+            _pluginsLoaded = true;
+        }
+        
         return _importProviders.Values;
+    }
+
+    private async Task LoadPluginsAsync()
+    {
+        try
+        {
+            var plugins = await _pluginDiscovery.DiscoverPluginsAsync();
+            foreach (var plugin in plugins)
+            {
+                RegisterProvider(plugin);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't fail the service
+            Console.WriteLine($"Error loading plugins: {ex.Message}");
+        }
     }
 
     public async Task<ImportResult> ImportPasswordsAsync(string providerName, Stream fileStream, string fileName)

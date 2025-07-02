@@ -1,0 +1,38 @@
+{
+  "name": "bitwarden",
+  "displayName": "Bitwarden CSV Importer",
+  "description": "Import passwords from Bitwarden CSV export files. Supports standard Bitwarden export format with folders, login credentials, and notes.",
+  "version": "1.0.0",
+  "author": "PasswordManager Team",
+  "website": "https://bitwarden.com",
+  "iconUrl": "🔑",
+  "mainAssembly": "PasswordManagerImports.Bitwarden.dll",
+  "mainClass": "PasswordManagerImports.Bitwarden.BitwardenImportPlugin",
+  "supportedFileExtensions": [".csv"],
+  "created": "2025-07-02T00:00:00Z",
+  "lastUpdated": "2025-07-02T00:00:00Z",
+  "tags": ["bitwarden", "csv", "password-manager", "import"],
+  "configuration": {
+    "encoding": "utf-8",
+    "delimiter": ",",
+    "hasHeader": true,
+    "skipEmptyRecords": true,
+    "expectedHeaders": "folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp"
+  },
+  "requirements": {
+    "minFrameworkVersion": "net8.0",
+    "dependencies": [
+      "FileHelpers"
+    ]
+  },
+  "help": {
+    "instructions": "Export your Bitwarden data as CSV and select the file below.",
+    "exportSteps": [
+      "1. Open Bitwarden web vault",
+      "2. Go to Tools > Export Vault", 
+      "3. Select '.csv' format",
+      "4. Download the export file",
+      "5. Select the downloaded file below"
+    ]
+  }
+}
