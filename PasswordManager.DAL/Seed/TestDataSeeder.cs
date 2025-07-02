@@ -7,13 +7,32 @@ public static class TestDataSeeder
 {
     public static void SeedTestData(PasswordManagerDbContext db)
     {
+        if (!db.Collections.Any())
+        {
+            db.Collections.AddRange(
+                new Collection { Name = "Banking", Icon = "🏦", Color = "#1f2937", IsDefault = true },
+                new Collection { Name = "Insurance", Icon = "🛡️", Color = "#059669", IsDefault = false },
+                new Collection { Name = "Utilities", Icon = "⚡", Color = "#dc2626", IsDefault = false },
+                new Collection { Name = "Work", Icon = "💼", Color = "#7c3aed", IsDefault = false },
+                new Collection { Name = "Personal", Icon = "�", Color = "#3b82f6", IsDefault = false }
+            );
+            db.SaveChanges();
+        }
+
         if (!db.Categories.Any())
         {
             db.Categories.AddRange(
-                new Category { Name = "Personal", Icon = "👤", Color = "#3b82f6" },
-                new Category { Name = "Work", Icon = "💼", Color = "#10b981" },
-                new Category { Name = "Finance", Icon = "💳", Color = "#f59e0b" },
-                new Category { Name = "Social", Icon = "💬", Color = "#ef4444" }
+                new Category { Name = "Checking Account", Icon = "�", Color = "#3b82f6", CollectionId = 1 },
+                new Category { Name = "Credit Cards", Icon = "💰", Color = "#f59e0b", CollectionId = 1 },
+                new Category { Name = "Investment", Icon = "�", Color = "#10b981", CollectionId = 1 },
+                new Category { Name = "Health Insurance", Icon = "🏥", Color = "#ef4444", CollectionId = 2 },
+                new Category { Name = "Auto Insurance", Icon = "�", Color = "#8b5cf6", CollectionId = 2 },
+                new Category { Name = "Home Insurance", Icon = "🏠", Color = "#06b6d4", CollectionId = 2 },
+                new Category { Name = "Electric", Icon = "⚡", Color = "#fbbf24", CollectionId = 3 },
+                new Category { Name = "Gas", Icon = "�", Color = "#f97316", CollectionId = 3 },
+                new Category { Name = "Internet", Icon = "🌐", Color = "#6366f1", CollectionId = 3 },
+                new Category { Name = "Business", Icon = "🏢", Color = "#7c3aed", CollectionId = 4 },
+                new Category { Name = "Email", Icon = "📧", Color = "#10b981", CollectionId = 5 }
             );
             db.SaveChanges();
         }
@@ -23,8 +42,8 @@ public static class TestDataSeeder
             db.Tags.AddRange(
                 new Tag { Name = "Important", Color = "#ef4444" },
                 new Tag { Name = "2FA", Color = "#8b5cf6" },
-                new Tag { Name = "Work", Color = "#10b981" },
-                new Tag { Name = "Shopping", Color = "#f59e0b" }
+                new Tag { Name = "Monthly Bills", Color = "#10b981" },
+                new Tag { Name = "High Security", Color = "#7c3aed" }
             );
             db.SaveChanges();
         }
@@ -33,84 +52,145 @@ public static class TestDataSeeder
         {
             var categories = db.Categories.ToList();
             var tags = db.Tags.ToList();
+            var collections = db.Collections.ToList();
             
-            // Get default category IDs with fallbacks
-            var personalCategoryId = categories.FirstOrDefault(c => c.Name == "Personal")?.Id ?? 1;
-            var workCategoryId = categories.FirstOrDefault(c => c.Name == "Work")?.Id ?? 2;
-            var shoppingCategoryId = categories.FirstOrDefault(c => c.Name == "Shopping")?.Id ?? 5;
-            var financeCategoryId = categories.FirstOrDefault(c => c.Name == "Finance")?.Id ?? 3;
-            var socialCategoryId = categories.FirstOrDefault(c => c.Name == "Social")?.Id ?? 4;
+            // Get collection IDs with fallbacks
+            var bankingCollectionId = collections.FirstOrDefault(c => c.Name == "Banking")?.Id ?? 1;
+            var insuranceCollectionId = collections.FirstOrDefault(c => c.Name == "Insurance")?.Id ?? 2;
+            var utilitiesCollectionId = collections.FirstOrDefault(c => c.Name == "Utilities")?.Id ?? 3;
+            var workCollectionId = collections.FirstOrDefault(c => c.Name == "Work")?.Id ?? 4;
+            var personalCollectionId = collections.FirstOrDefault(c => c.Name == "Personal")?.Id ?? 5;
+            
+            // Get category IDs with fallbacks
+            var checkingCategoryId = categories.FirstOrDefault(c => c.Name == "Checking Account")?.Id ?? 1;
+            var creditCardCategoryId = categories.FirstOrDefault(c => c.Name == "Credit Cards")?.Id ?? 2;
+            var healthInsuranceCategoryId = categories.FirstOrDefault(c => c.Name == "Health Insurance")?.Id ?? 4;
+            var autoInsuranceCategoryId = categories.FirstOrDefault(c => c.Name == "Auto Insurance")?.Id ?? 5;
+            var electricCategoryId = categories.FirstOrDefault(c => c.Name == "Electric")?.Id ?? 7;
+            var internetCategoryId = categories.FirstOrDefault(c => c.Name == "Internet")?.Id ?? 9;
+            var businessCategoryId = categories.FirstOrDefault(c => c.Name == "Business")?.Id ?? 10;
+            var emailCategoryId = categories.FirstOrDefault(c => c.Name == "Email")?.Id ?? 11;
             
             db.PasswordItems.AddRange(
                 new PasswordItem
                 {
-                    Title = "Google Account",
+                    Title = "Chase Bank",
                     Type = ItemType.Login,
-                    CategoryId = personalCategoryId,
+                    CategoryId = checkingCategoryId,
+                    CollectionId = bankingCollectionId,
                     LoginItem = new LoginItem
                     {
-                        Website = "https://accounts.google.com",
-                        Username = "user@gmail.com",
-                        Password = "password123",
-                        Email = "user@gmail.com"
+                        Website = "https://chase.com",
+                        Username = "john.doe@email.com",
+                        Password = "SecureBank123!",
+                        Email = "john.doe@email.com"
+                    },
+                    Tags = tags.Where(t => t.Name == "Important" || t.Name == "High Security").ToList()
+                },
+                new PasswordItem
+                {
+                    Title = "Capital One Credit Card",
+                    Type = ItemType.Login,
+                    CategoryId = creditCardCategoryId,
+                    CollectionId = bankingCollectionId,
+                    LoginItem = new LoginItem
+                    {
+                        Website = "https://capitalone.com",
+                        Username = "john.doe",
+                        Password = "CapOne2024!",
+                        Email = "john.doe@email.com"
+                    },
+                    Tags = tags.Where(t => t.Name == "Important" || t.Name == "2FA").ToList()
+                },
+                new PasswordItem
+                {
+                    Title = "Blue Cross Blue Shield",
+                    Type = ItemType.Login,
+                    CategoryId = healthInsuranceCategoryId,
+                    CollectionId = insuranceCollectionId,
+                    LoginItem = new LoginItem
+                    {
+                        Website = "https://bcbs.com",
+                        Username = "johndoe123",
+                        Password = "Health2024!",
+                        Email = "john.doe@email.com"
                     },
                     Tags = tags.Where(t => t.Name == "Important").ToList()
                 },
                 new PasswordItem
                 {
-                    Title = "GitHub",
+                    Title = "State Farm Auto",
                     Type = ItemType.Login,
-                    CategoryId = workCategoryId,
+                    CategoryId = autoInsuranceCategoryId,
+                    CollectionId = insuranceCollectionId,
                     LoginItem = new LoginItem
                     {
-                        Website = "https://github.com",
-                        Username = "devuser",
-                        Password = "devpass!@#",
-                        Email = "dev@work.com"
-                    },
-                    Tags = tags.Where(t => t.Name == "Work" || t.Name == "2FA").ToList()
-                },
-                new PasswordItem
-                {
-                    Title = "Amazon",
-                    Type = ItemType.Login,
-                    CategoryId = shoppingCategoryId,
-                    LoginItem = new LoginItem
-                    {
-                        Website = "https://amazon.com",
-                        Username = "shopper",
-                        Password = "shop1234",
-                        Email = "shopper@email.com"
-                    },
-                    Tags = tags.Where(t => t.Name == "Shopping").ToList()
-                },
-                new PasswordItem
-                {
-                    Title = "Bank of America",
-                    Type = ItemType.Login,
-                    CategoryId = financeCategoryId,
-                    LoginItem = new LoginItem
-                    {
-                        Website = "https://bankofamerica.com",
-                        Username = "bankuser",
-                        Password = "bankpass!",
-                        Email = "bankuser@email.com"
+                        Website = "https://statefarm.com",
+                        Username = "john.doe.sf",
+                        Password = "AutoInsure123!",
+                        Email = "john.doe@email.com"
                     },
                     Tags = tags.Where(t => t.Name == "Important").ToList()
                 },
                 new PasswordItem
                 {
-                    Title = "Facebook",
+                    Title = "Pacific Gas & Electric",
                     Type = ItemType.Login,
-                    CategoryId = socialCategoryId,
+                    CategoryId = electricCategoryId,
+                    CollectionId = utilitiesCollectionId,
                     LoginItem = new LoginItem
                     {
-                        Website = "https://facebook.com",
-                        Username = "fbuser",
-                        Password = "fbpass!",
-                        Email = "fb@email.com"
+                        Website = "https://pge.com",
+                        Username = "john.doe.pge",
+                        Password = "PowerBill2024!",
+                        Email = "john.doe@email.com"
                     },
-                    Tags = tags.Where(t => t.Name == "2FA").ToList()
+                    Tags = tags.Where(t => t.Name == "Monthly Bills").ToList()
+                },
+                new PasswordItem
+                {
+                    Title = "Comcast Xfinity",
+                    Type = ItemType.Login,
+                    CategoryId = internetCategoryId,
+                    CollectionId = utilitiesCollectionId,
+                    LoginItem = new LoginItem
+                    {
+                        Website = "https://xfinity.com",
+                        Username = "johndoe_xfinity",
+                        Password = "Internet123!",
+                        Email = "john.doe@email.com"
+                    },
+                    Tags = tags.Where(t => t.Name == "Monthly Bills").ToList()
+                },
+                new PasswordItem
+                {
+                    Title = "Company Portal",
+                    Type = ItemType.Login,
+                    CategoryId = businessCategoryId,
+                    CollectionId = workCollectionId,
+                    LoginItem = new LoginItem
+                    {
+                        Website = "https://portal.company.com",
+                        Username = "john.doe",
+                        Password = "WorkSecure2024!",
+                        Email = "john.doe@company.com"
+                    },
+                    Tags = tags.Where(t => t.Name == "2FA" || t.Name == "High Security").ToList()
+                },
+                new PasswordItem
+                {
+                    Title = "Personal Gmail",
+                    Type = ItemType.Login,
+                    CategoryId = emailCategoryId,
+                    CollectionId = personalCollectionId,
+                    LoginItem = new LoginItem
+                    {
+                        Website = "https://gmail.com",
+                        Username = "john.doe@gmail.com",
+                        Password = "Gmail2024!",
+                        Email = "john.doe@gmail.com"
+                    },
+                    Tags = tags.Where(t => t.Name == "Important" || t.Name == "2FA").ToList()
                 }
             );
             db.SaveChanges();
