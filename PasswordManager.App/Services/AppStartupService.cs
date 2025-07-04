@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using PasswordManager.App.Services.Interfaces;
 
 namespace PasswordManager.App.Services;

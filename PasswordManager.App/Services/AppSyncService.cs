@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PasswordManager.App.Services.Interfaces;
 using PasswordManager.Models.DTOs.Sync;

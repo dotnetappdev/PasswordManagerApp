@@ -153,4 +153,9 @@ public class JwtService : IJwtService
 
         _logger.LogDebug("Revoked refresh token for user {UserId}", userId);
     }
+
+    ClaimsPrincipal IJwtService.GetPrincipalFromExpiredToken(string token)
+    {
+        throw new NotImplementedException();
+    }
 }

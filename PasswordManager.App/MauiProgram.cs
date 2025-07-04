@@ -18,9 +18,8 @@ namespace PasswordManager.App;
 public static class MauiProgram
 {
 
-	public static MauiApp CreateMauiApp()
-	{
-	}
+ 
+
 	public static async Task<MauiApp> CreateMauiAppAsync()
 	{
 		var builder = MauiApp.CreateBuilder();
@@ -36,17 +35,17 @@ public static class MauiProgram
 
 		// Add configuration
 		builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-		
+
 		// Add Entity Framework
 		var dbPath = Path.Combine(FileSystem.AppDataDirectory, "PasswordManager", "data", "passwordmanager.db");
-		
+
 		// Ensure the directory exists
 		var dbDirectory = Path.GetDirectoryName(dbPath);
 		if (!Directory.Exists(dbDirectory))
 		{
 			Directory.CreateDirectory(dbDirectory!);
 		}
-		
+
 		builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
 			options.UseSqlite($"Data Source={dbPath}"));
 
@@ -83,21 +82,21 @@ public static class MauiProgram
 		using (var scope = app.Services.CreateScope())
 		{
 			var db = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
-			
-			#if DEBUG
+
+#if DEBUG
 			// Log the database path for debugging
 			System.Diagnostics.Debug.WriteLine($"Database path: {dbPath}");
 			System.Diagnostics.Debug.WriteLine($"App data directory: {FileSystem.AppDataDirectory}");
 			System.Diagnostics.Debug.WriteLine($"Directory exists: {Directory.Exists(Path.GetDirectoryName(dbPath))}");
-			#endif
-			
+#endif
+
 			// Check if this is the first run (no migration history exists)
-			#if DEBUG
+#if DEBUG
 			try
 			{
 				// Try to check if migration history table exists
 				var hasMigrationHistory = db.Database.GetAppliedMigrations().Any();
-				
+
 				// If database exists but has no migration history (created with EnsureCreated), delete it
 				if (db.Database.CanConnect() && !hasMigrationHistory)
 				{
@@ -109,15 +108,15 @@ public static class MauiProgram
 				// If we can't check migration history, it's likely the first run or database doesn't exist
 				// Just proceed with migration
 			}
-			#endif
-			
+#endif
+
 			// Only migrate if there are pending migrations
 			var pendingMigrations = db.Database.GetPendingMigrations();
 			if (pendingMigrations.Any())
 			{
 				db.Database.Migrate();
 			}
-			
+
 			// Alternative approach for simple scenarios (no migrations):
 			// db.Database.EnsureCreated();
 
@@ -133,4 +132,5 @@ public static class MauiProgram
 
 		return app;
 	}
+ 
 }

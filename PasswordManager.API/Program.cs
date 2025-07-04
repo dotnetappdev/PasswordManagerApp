@@ -4,6 +4,7 @@ using PasswordManager.API.Services;
 using PasswordManager.DAL;
 using Serilog;
 using Scalar.AspNetCore;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
