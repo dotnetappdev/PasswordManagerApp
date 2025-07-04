@@ -11,12 +11,17 @@ using PasswordManager.Imports.Services;
 using PasswordManagerImports.OnePassword.Providers;
 using PasswordManager.App.Services.Interfaces;
 using PasswordManager.App.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace PasswordManager.App;
 
 public static class MauiProgram
 {
+
 	public static MauiApp CreateMauiApp()
+	{
+	}
+	public static async Task<MauiApp> CreateMauiAppAsync()
 	{
 		var builder = MauiApp.CreateBuilder();
 		builder
