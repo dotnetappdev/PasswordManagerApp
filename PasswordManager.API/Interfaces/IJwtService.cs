@@ -1,5 +1,6 @@
 using PasswordManager.Models;
 using PasswordManager.Models.DTOs.Auth;
+using System.Security.Claims;
 
 namespace PasswordManager.API.Interfaces;
 
