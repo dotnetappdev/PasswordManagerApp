@@ -1,0 +1,23 @@
+{
+  "name": "Codespace - .NET 9.0.6",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".",
+    "args": {
+      "DOTNET_VERSION": "9.0.6"
+    }
+  },
+  "settings": {
+    "terminal.integrated.defaultProfile.linux": "bash"
+  },
+  "extensions": [
+    "ms-dotnettools.csharp",
+    "ms-azuretools.vscode-docker",
+    "eamodio.gitlens",
+    "ms-vscode.azurecli"
+  ],
+  "forwardPorts": [ 5000, 5001 ],
+  "postCreateCommand": "dotnet --version",
+  "remoteUser": "codespace"
+}
+ 
