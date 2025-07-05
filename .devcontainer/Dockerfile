@@ -1,26 +1,22 @@
-# Use the official .NET 9.0.6 SDK image
-ARG DOTNET_VERSION=9.0.6
-FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}
+# Use .NET 9 SDK preview image
+FROM mcr.microsoft.com/dotnet/sdk:9.0
 
-# Install basic tools
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get install -y \
-        curl \
-        git \
-        unzip \
-        sudo \
-        bash \
-    && apt-get clean \
+# Install prerequisites for MAUI (Java JDK, unzip, wget, etc.)
+RUN apt-get update && apt-get install -y \
+    openjdk-11-jdk \
+    unzip \
+    wget \
+    apt-transport-https \
+    ca-certificates \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user for Codespaces
-ARG USERNAME=codespace
-ARG USER_UID=1000
-ARG USER_GID=1000
+# Set JAVA_HOME environment variable
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/
+ENV PATH="$JAVA_HOME/bin:$PATH"
 
-RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
-    && chmod 0440 /etc/sudoers.d/$USERNAME
+# Install MAUI workloads
+RUN dotnet workload install maui
 
-USER $USERNAME
+# Optional: Verify installed workloads
+RUN dotnet workload list
