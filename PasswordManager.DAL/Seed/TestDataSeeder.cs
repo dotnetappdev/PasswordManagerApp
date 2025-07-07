@@ -14,7 +14,7 @@ public static class TestDataSeeder
                 new Collection { Name = "Insurance", Icon = "🛡️", Color = "#059669", IsDefault = false },
                 new Collection { Name = "Utilities", Icon = "⚡", Color = "#dc2626", IsDefault = false },
                 new Collection { Name = "Work", Icon = "💼", Color = "#7c3aed", IsDefault = false },
-                new Collection { Name = "Personal", Icon = "�", Color = "#3b82f6", IsDefault = false }
+                new Collection { Name = "Personal", Icon = "👤", Color = "#3b82f6", IsDefault = false }
             );
             db.SaveChanges();
         }
@@ -22,14 +22,14 @@ public static class TestDataSeeder
         if (!db.Categories.Any())
         {
             db.Categories.AddRange(
-                new Category { Name = "Checking Account", Icon = "�", Color = "#3b82f6", CollectionId = 1 },
+                new Category { Name = "Checking Account", Icon = "💳", Color = "#3b82f6", CollectionId = 1 },
                 new Category { Name = "Credit Cards", Icon = "💰", Color = "#f59e0b", CollectionId = 1 },
-                new Category { Name = "Investment", Icon = "�", Color = "#10b981", CollectionId = 1 },
+                new Category { Name = "Investment", Icon = "📈", Color = "#10b981", CollectionId = 1 },
                 new Category { Name = "Health Insurance", Icon = "🏥", Color = "#ef4444", CollectionId = 2 },
-                new Category { Name = "Auto Insurance", Icon = "�", Color = "#8b5cf6", CollectionId = 2 },
+                new Category { Name = "Auto Insurance", Icon = "🚗", Color = "#8b5cf6", CollectionId = 2 },
                 new Category { Name = "Home Insurance", Icon = "🏠", Color = "#06b6d4", CollectionId = 2 },
                 new Category { Name = "Electric", Icon = "⚡", Color = "#fbbf24", CollectionId = 3 },
-                new Category { Name = "Gas", Icon = "�", Color = "#f97316", CollectionId = 3 },
+                new Category { Name = "Gas", Icon = "🔥", Color = "#f97316", CollectionId = 3 },
                 new Category { Name = "Internet", Icon = "🌐", Color = "#6366f1", CollectionId = 3 },
                 new Category { Name = "Business", Icon = "🏢", Color = "#7c3aed", CollectionId = 4 },
                 new Category { Name = "Email", Icon = "📧", Color = "#10b981", CollectionId = 5 }
@@ -71,6 +71,8 @@ public static class TestDataSeeder
             var businessCategoryId = categories.FirstOrDefault(c => c.Name == "Business")?.Id ?? 10;
             var emailCategoryId = categories.FirstOrDefault(c => c.Name == "Email")?.Id ?? 11;
             
+            // NOTE: All passwords are now encrypted. These are sample items without actual passwords.
+            // Real passwords will be added through the API with proper encryption using the user's master password.
             db.PasswordItems.AddRange(
                 new PasswordItem
                 {
@@ -82,7 +84,7 @@ public static class TestDataSeeder
                     {
                         Website = "https://chase.com",
                         Username = "john.doe@email.com",
-                        Password = "SecureBank123!",
+                        // Password will be encrypted when added through the API
                         Email = "john.doe@email.com"
                     },
                     Tags = tags.Where(t => t.Name == "Important" || t.Name == "High Security").ToList()
@@ -97,7 +99,7 @@ public static class TestDataSeeder
                     {
                         Website = "https://capitalone.com",
                         Username = "john.doe",
-                        Password = "CapOne2024!",
+                        // Password will be encrypted when added through the API
                         Email = "john.doe@email.com"
                     },
                     Tags = tags.Where(t => t.Name == "Important" || t.Name == "2FA").ToList()
@@ -112,7 +114,7 @@ public static class TestDataSeeder
                     {
                         Website = "https://bcbs.com",
                         Username = "johndoe123",
-                        Password = "Health2024!",
+                        // Password will be encrypted when added through the API
                         Email = "john.doe@email.com"
                     },
                     Tags = tags.Where(t => t.Name == "Important").ToList()
@@ -127,7 +129,7 @@ public static class TestDataSeeder
                     {
                         Website = "https://statefarm.com",
                         Username = "john.doe.sf",
-                        Password = "AutoInsure123!",
+                        // Password will be encrypted when added through the API
                         Email = "john.doe@email.com"
                     },
                     Tags = tags.Where(t => t.Name == "Important").ToList()
@@ -142,7 +144,7 @@ public static class TestDataSeeder
                     {
                         Website = "https://pge.com",
                         Username = "john.doe.pge",
-                        Password = "PowerBill2024!",
+                        // Password will be encrypted when added through the API
                         Email = "john.doe@email.com"
                     },
                     Tags = tags.Where(t => t.Name == "Monthly Bills").ToList()
@@ -157,7 +159,7 @@ public static class TestDataSeeder
                     {
                         Website = "https://xfinity.com",
                         Username = "johndoe_xfinity",
-                        Password = "Internet123!",
+                        // Password will be encrypted when added through the API
                         Email = "john.doe@email.com"
                     },
                     Tags = tags.Where(t => t.Name == "Monthly Bills").ToList()
@@ -172,7 +174,7 @@ public static class TestDataSeeder
                     {
                         Website = "https://portal.company.com",
                         Username = "john.doe",
-                        Password = "WorkSecure2024!",
+                        // Password will be encrypted when added through the API
                         Email = "john.doe@company.com"
                     },
                     Tags = tags.Where(t => t.Name == "2FA" || t.Name == "High Security").ToList()
@@ -187,7 +189,7 @@ public static class TestDataSeeder
                     {
                         Website = "https://gmail.com",
                         Username = "john.doe@gmail.com",
-                        Password = "Gmail2024!",
+                        // Password will be encrypted when added through the API
                         Email = "john.doe@gmail.com"
                     },
                     Tags = tags.Where(t => t.Name == "Important" || t.Name == "2FA").ToList()

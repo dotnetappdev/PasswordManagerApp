@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PasswordManager.API.Interfaces;
+using PasswordManager.API.DTOs;
 using PasswordManager.Models.DTOs;
 
 namespace PasswordManager.API.Controllers;
@@ -9,13 +10,16 @@ namespace PasswordManager.API.Controllers;
 public class PasswordItemsController : ControllerBase
 {
     private readonly IPasswordItemApiService _passwordItemService;
+    private readonly IPasswordEncryptionService _passwordEncryptionService;
     private readonly ILogger<PasswordItemsController> _logger;
 
     public PasswordItemsController(
         IPasswordItemApiService passwordItemService,
+        IPasswordEncryptionService passwordEncryptionService,
         ILogger<PasswordItemsController> logger)
     {
         _passwordItemService = passwordItemService;
+        _passwordEncryptionService = passwordEncryptionService;
         _logger = logger;
     }
 
@@ -301,6 +305,200 @@ public class PasswordItemsController : ControllerBase
         {
             _logger.LogError(ex, "Error unarchiving password item with ID {Id}", id);
             return StatusCode(500, "An error occurred while unarchiving the password item");
+        }
+    }
+
+    /// <summary>
+    /// Decrypt and retrieve password data for a specific item
+    /// </summary>
+    [HttpPost("{id}/decrypt")]
+    public async Task<ActionResult<DecryptedPasswordItemDto>> DecryptPassword(int id, [FromBody] DecryptPasswordRequestDto request)
+    {
+        try
+        {
+            if (request.PasswordItemId != id)
+                return BadRequest("Password item ID in URL does not match request body");
+
+            if (string.IsNullOrEmpty(request.MasterPassword))
+                return BadRequest("Master password is required");
+
+            // Get the password item from database
+            var item = await _passwordItemService.GetByIdAsync(id);
+            if (item == null)
+                return NotFound($"Password item with ID {id} not found");
+
+            // TODO: Get user salt from current user (requires authentication)
+            // For now, this is a placeholder - you'll need to implement user authentication
+            // and retrieve the user's salt from the database
+            var userSalt = new byte[32]; // This should come from the authenticated user
+            
+            if (item.LoginItem != null)
+            {
+                // Convert the stored LoginItem to our model
+                var loginItem = new Models.LoginItem
+                {
+                    Id = item.LoginItem.Id,
+                    PasswordItemId = item.LoginItem.PasswordItemId,
+                    Website = item.LoginItem.Website,
+                    Username = item.LoginItem.Username,
+                    Email = item.LoginItem.Email,
+                    PhoneNumber = item.LoginItem.PhoneNumber,
+                    TwoFactorType = item.LoginItem.TwoFactorType,
+                    // Add encrypted fields here when they exist in your DTO
+                };
+
+                // Decrypt the login item
+                var decryptedLoginItem = await _passwordEncryptionService.DecryptLoginItemAsync(
+                    loginItem, request.MasterPassword, userSalt);
+
+                // Return decrypted data
+                return Ok(new DecryptedPasswordItemDto
+                {
+                    Id = item.Id,
+                    Title = item.Title,
+                    Description = item.Description,
+                    Type = item.Type,
+                    CreatedAt = item.CreatedAt,
+                    LastModified = item.LastModified,
+                    IsFavorite = item.IsFavorite,
+                    IsArchived = item.IsArchived,
+                    IsDeleted = item.IsDeleted,
+                    UserId = item.UserId,
+                    CategoryId = item.CategoryId,
+                    CollectionId = item.CollectionId,
+                    LoginItem = new DecryptedLoginItemDto
+                    {
+                        Id = decryptedLoginItem.Id,
+                        Website = decryptedLoginItem.Website,
+                        Username = decryptedLoginItem.Username,
+                        Password = decryptedLoginItem.Password,
+                        Email = decryptedLoginItem.Email,
+                        PhoneNumber = decryptedLoginItem.PhoneNumber,
+                        TotpSecret = decryptedLoginItem.TotpSecret,
+                        TwoFactorType = decryptedLoginItem.TwoFactorType,
+                        SecurityQuestion1 = decryptedLoginItem.SecurityQuestion1,
+                        SecurityAnswer1 = decryptedLoginItem.SecurityAnswer1,
+                        SecurityQuestion2 = decryptedLoginItem.SecurityQuestion2,
+                        SecurityAnswer2 = decryptedLoginItem.SecurityAnswer2,
+                        SecurityQuestion3 = decryptedLoginItem.SecurityQuestion3,
+                        SecurityAnswer3 = decryptedLoginItem.SecurityAnswer3,
+                        RecoveryEmail = decryptedLoginItem.RecoveryEmail,
+                        RecoveryPhone = decryptedLoginItem.RecoveryPhone,
+                        LoginUrl = decryptedLoginItem.LoginUrl,
+                        SupportUrl = decryptedLoginItem.SupportUrl,
+                        AdminConsoleUrl = decryptedLoginItem.AdminConsoleUrl,
+                        PasswordLastChanged = decryptedLoginItem.PasswordLastChanged,
+                        RequiresPasswordChange = decryptedLoginItem.RequiresPasswordChange,
+                        LastUsed = decryptedLoginItem.LastUsed,
+                        UsageCount = decryptedLoginItem.UsageCount,
+                        CompanyName = decryptedLoginItem.CompanyName,
+                        Department = decryptedLoginItem.Department,
+                        JobTitle = decryptedLoginItem.JobTitle,
+                        Notes = decryptedLoginItem.Notes
+                    },
+                    Tags = item.Tags?.Select(t => new TagDto 
+                    { 
+                        Id = t.Id, 
+                        Name = t.Name, 
+                        Color = t.Color 
+                    }).ToList() ?? new List<TagDto>()
+                });
+            }
+
+            return BadRequest("Password item does not contain login data");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error decrypting password for item ID {Id}", id);
+            return StatusCode(500, "An error occurred while decrypting the password");
+        }
+    }
+
+    /// <summary>
+    /// Create a new encrypted password item
+    /// </summary>
+    [HttpPost("encrypted")]
+    public async Task<ActionResult<PasswordItemDto>> CreateEncrypted([FromBody] CreatePasswordItemDto createDto)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(createDto.MasterPassword))
+                return BadRequest("Master password is required for encryption");
+
+            // TODO: Get user salt from authenticated user
+            var userSalt = new byte[32]; // This should come from the authenticated user
+
+            // Create the password item model
+            var passwordItem = new Models.PasswordItem
+            {
+                Title = createDto.Title,
+                Description = createDto.Description,
+                Type = createDto.Type,
+                IsFavorite = createDto.IsFavorite,
+                IsArchived = createDto.IsArchived,
+                CategoryId = createDto.CategoryId,
+                CollectionId = createDto.CollectionId,
+                CreatedAt = DateTime.UtcNow,
+                LastModified = DateTime.UtcNow
+            };
+
+            if (createDto.LoginItem != null)
+            {
+                var loginItem = new Models.LoginItem
+                {
+                    Website = createDto.LoginItem.Website,
+                    Username = createDto.LoginItem.Username,
+                    Email = createDto.LoginItem.Email,
+                    PhoneNumber = createDto.LoginItem.PhoneNumber,
+                    TwoFactorType = createDto.LoginItem.TwoFactorType,
+                    SecurityQuestion1 = createDto.LoginItem.SecurityQuestion1,
+                    SecurityQuestion2 = createDto.LoginItem.SecurityQuestion2,
+                    SecurityQuestion3 = createDto.LoginItem.SecurityQuestion3,
+                    RecoveryEmail = createDto.LoginItem.RecoveryEmail,
+                    RecoveryPhone = createDto.LoginItem.RecoveryPhone,
+                    LoginUrl = createDto.LoginItem.LoginUrl,
+                    SupportUrl = createDto.LoginItem.SupportUrl,
+                    AdminConsoleUrl = createDto.LoginItem.AdminConsoleUrl,
+                    PasswordLastChanged = createDto.LoginItem.PasswordLastChanged,
+                    RequiresPasswordChange = createDto.LoginItem.RequiresPasswordChange,
+                    CompanyName = createDto.LoginItem.CompanyName,
+                    Department = createDto.LoginItem.Department,
+                    JobTitle = createDto.LoginItem.JobTitle,
+                    // Set plaintext fields that will be encrypted
+                    Password = createDto.LoginItem.Password,
+                    TotpSecret = createDto.LoginItem.TotpSecret,
+                    SecurityAnswer1 = createDto.LoginItem.SecurityAnswer1,
+                    SecurityAnswer2 = createDto.LoginItem.SecurityAnswer2,
+                    SecurityAnswer3 = createDto.LoginItem.SecurityAnswer3,
+                    Notes = createDto.LoginItem.Notes
+                };
+
+                // Encrypt sensitive fields
+                await _passwordEncryptionService.EncryptLoginItemAsync(loginItem, createDto.MasterPassword, userSalt);
+
+                passwordItem.LoginItem = loginItem;
+            }
+
+            // Convert to DTO format for the service
+            var itemDto = new PasswordItemDto
+            {
+                Title = passwordItem.Title,
+                Description = passwordItem.Description,
+                Type = passwordItem.Type,
+                IsFavorite = passwordItem.IsFavorite,
+                IsArchived = passwordItem.IsArchived,
+                CategoryId = passwordItem.CategoryId,
+                CollectionId = passwordItem.CollectionId,
+                // TODO: Convert LoginItem to DTO format
+            };
+
+            var createdItem = await _passwordItemService.CreateAsync(itemDto);
+            return CreatedAtAction(nameof(GetById), new { id = createdItem.Id }, createdItem);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating encrypted password item");
+            return StatusCode(500, "An error occurred while creating the password item");
         }
     }
 }

@@ -67,7 +67,20 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 - **Background Sync**: Non-blocking synchronization with progress tracking
 - **Cross-Platform Sync**: Sync data across all supported platforms
 
-## 🛠️ Technology Stack
+## � Security & Encryption
+
+This password manager implements enterprise-grade security with zero-knowledge architecture:
+
+- **PBKDF2 Key Derivation**: 100,000+ iterations with SHA-256 for strong key derivation
+- **AES-256-GCM Encryption**: Authenticated encryption preventing tampering
+- **Zero-Knowledge Architecture**: Server cannot decrypt user data without master password
+- **Bitwarden-Compatible Security**: Same encryption standards and approach
+- **Memory Safety**: Encryption keys are immediately cleared from memory after use
+- **Secure Database Storage**: Only encrypted ciphertext and authentication hashes stored
+
+📋 **[View Detailed Encryption Implementation](ENCRYPTION_IMPLEMENTATION.md)** - Complete technical documentation of the security architecture, encryption algorithms, and implementation details.
+
+## �🛠️ Technology Stack
 
 ### Core Frameworks
 - **.NET 9**: Latest version of Microsoft's unified development platform

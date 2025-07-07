@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PasswordManager.API.Interfaces;
 using PasswordManager.API.Services;
 using PasswordManager.DAL;
+using PasswordManager.Crypto.Extensions;
 using Serilog;
 using Scalar.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -60,7 +61,11 @@ builder.Services.AddScoped<ICollectionApiService, CollectionApiService>();
 builder.Services.AddScoped<ITagApiService, TagApiService>();
 builder.Services.AddScoped<ISyncService, SyncService>();
 builder.Services.AddScoped<IDatabaseContextFactory, DatabaseContextFactory>();
+builder.Services.AddScoped<IPasswordEncryptionService, PasswordEncryptionService>();
 builder.Services.AddHostedService<AutoSyncService>();
+
+// Register cryptography services
+builder.Services.AddCryptographyServices();
 
 // Add API documentation with Scalar
 builder.Services.AddOpenApi();
