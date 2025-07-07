@@ -251,10 +251,16 @@ PasswordManager/
 ├── PasswordManager.API/              # ASP.NET Core Web API
 │   ├── Controllers/                  # API controllers
 │   ├── Services/                     # API business logic
-│   └── Interfaces/                   # Service contracts
+│   ├── Interfaces/                   # Service contracts
+│   └── DTOs/                         # API-specific data transfer objects
 ├── PasswordManager.Models/           # Shared data models and DTOs
 ├── PasswordManager.DAL/              # Data access layer
 ├── PasswordManager.Services/         # Business logic services
+├── PasswordManager.Crypto/           # Cryptographic services (NEW)
+│   ├── Interfaces/                   # Crypto service contracts
+│   ├── Services/                     # PBKDF2 and AES-256-GCM implementations
+│   ├── Extensions/                   # DI container extensions
+│   └── Tests/                        # Crypto functionality tests
 ├── PasswordManager.Imports/          # Import system core
 ├── PasswordManagerImports.Bitwarden/ # Bitwarden import plugin
 └── PasswordManagerImports.1Password/ # 1Password import plugin
@@ -262,13 +268,27 @@ PasswordManager/
 
 ## 🔐 Security Features
 
-- **Local Storage**: All data stored locally on your device
-- **Cloud Sync Security**: JWT-based authentication for API access
-- **User Data Isolation**: Multi-tenant architecture with user-specific data
-- **Encryption**: Sensitive data encrypted at rest
+### Enterprise-Grade Encryption
+- **PBKDF2 Key Derivation**: 100,000+ iterations with SHA-256 for strong key derivation
+- **AES-256-GCM Encryption**: Authenticated encryption preventing tampering and ensuring confidentiality
+- **Zero-Knowledge Architecture**: Server cannot decrypt user data without master password
+- **Bitwarden-Compatible Security**: Same encryption standards and security model
+- **Memory Safety**: Encryption keys immediately cleared from memory after use
+- **Salt-Based Security**: Unique user salts prevent rainbow table attacks
+
+### Database Security
+- **Encrypted Storage**: Only encrypted ciphertext stored in database
+- **No Plain Text Passwords**: Master passwords never stored, only authentication hashes
+- **Secure Field Encryption**: Individual field encryption for passwords, TOTP secrets, notes
+- **Authentication Separation**: Authentication hash cannot be used for data decryption
+- **Forward Secrecy**: Master password changes require complete data re-encryption
+
+### Application Security
+- **Local Storage**: All data stored locally on your device with encryption at rest
+- **Cloud Sync Security**: JWT-based authentication for API access with encrypted data
+- **User Data Isolation**: Multi-tenant architecture with user-specific data and encryption keys
 - **No Cloud Dependency**: Works completely offline (cloud sync is optional)
-- **Secure Memory**: Passwords cleared from memory after use
-- **Input Validation**: Protection against malicious input
+- **Input Validation**: Protection against malicious input and injection attacks
 - **Master Password Protection**: Master passwords automatically excluded from cloud sync
 - **Token Security**: JWT tokens with configurable expiration and refresh capabilities
 
