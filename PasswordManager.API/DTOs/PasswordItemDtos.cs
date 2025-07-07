@@ -3,7 +3,7 @@ namespace PasswordManager.API.DTOs;
 /// <summary>
 /// DTO for creating/updating password items with encryption
 /// </summary>
-public class CreatePasswordItemDto
+public class CreateEncryptedPasswordItemDto
 {
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
@@ -12,7 +12,7 @@ public class CreatePasswordItemDto
     public bool IsArchived { get; set; }
     public int CategoryId { get; set; }
     public int CollectionId { get; set; }
-    public CreateLoginItemDto? LoginItem { get; set; }
+    public CreateEncryptedLoginItemDto? LoginItem { get; set; }
     public List<int> TagIds { get; set; } = new();
     
     // Master password for encryption (not stored)
@@ -22,7 +22,7 @@ public class CreatePasswordItemDto
 /// <summary>
 /// DTO for creating/updating login items with plaintext data (will be encrypted)
 /// </summary>
-public class CreateLoginItemDto
+public class CreateEncryptedLoginItemDto
 {
     public string? Website { get; set; }
     public string? Username { get; set; }
@@ -53,7 +53,7 @@ public class CreateLoginItemDto
 /// <summary>
 /// DTO for password item responses with encrypted data
 /// </summary>
-public class PasswordItemResponseDto
+public class EncryptedPasswordItemResponseDto
 {
     public int Id { get; set; }
     public string Title { get; set; } = string.Empty;
@@ -67,14 +67,14 @@ public class PasswordItemResponseDto
     public string? UserId { get; set; }
     public int CategoryId { get; set; }
     public int CollectionId { get; set; }
-    public EncryptedLoginItemDto? LoginItem { get; set; }
-    public List<TagDto> Tags { get; set; } = new();
+    public EncryptedLoginItemResponseDto? LoginItem { get; set; }
+    public List<ApiTagDto> Tags { get; set; } = new();
 }
 
 /// <summary>
 /// DTO for encrypted login item data (as stored in database)
 /// </summary>
-public class EncryptedLoginItemDto
+public class EncryptedLoginItemResponseDto
 {
     public int Id { get; set; }
     public string? Website { get; set; }
@@ -120,7 +120,7 @@ public class DecryptedPasswordItemDto
     public int CategoryId { get; set; }
     public int CollectionId { get; set; }
     public DecryptedLoginItemDto? LoginItem { get; set; }
-    public List<TagDto> Tags { get; set; } = new();
+    public List<ApiTagDto> Tags { get; set; } = new();
 }
 
 /// <summary>
@@ -167,9 +167,9 @@ public class DecryptPasswordRequestDto
 }
 
 /// <summary>
-/// DTO for tag information
+/// DTO for tag information (API-specific)
 /// </summary>
-public class TagDto
+public class ApiTagDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;

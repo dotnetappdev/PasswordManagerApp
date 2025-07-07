@@ -84,9 +84,34 @@ public class PasswordManagerDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<LoginItem>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Password).HasMaxLength(500);
-            entity.Property(e => e.TotpSecret).HasMaxLength(500);
-            entity.Property(e => e.Notes).HasMaxLength(2000);
+            
+            // Encrypted password fields
+            entity.Property(e => e.EncryptedPassword).HasMaxLength(1000);
+            entity.Property(e => e.PasswordNonce).HasMaxLength(200);
+            entity.Property(e => e.PasswordAuthTag).HasMaxLength(200);
+            
+            // Encrypted TOTP secret fields
+            entity.Property(e => e.EncryptedTotpSecret).HasMaxLength(1000);
+            entity.Property(e => e.TotpNonce).HasMaxLength(200);
+            entity.Property(e => e.TotpAuthTag).HasMaxLength(200);
+            
+            // Encrypted security answer fields
+            entity.Property(e => e.EncryptedSecurityAnswer1).HasMaxLength(1000);
+            entity.Property(e => e.SecurityAnswer1Nonce).HasMaxLength(200);
+            entity.Property(e => e.SecurityAnswer1AuthTag).HasMaxLength(200);
+            
+            entity.Property(e => e.EncryptedSecurityAnswer2).HasMaxLength(1000);
+            entity.Property(e => e.SecurityAnswer2Nonce).HasMaxLength(200);
+            entity.Property(e => e.SecurityAnswer2AuthTag).HasMaxLength(200);
+            
+            entity.Property(e => e.EncryptedSecurityAnswer3).HasMaxLength(1000);
+            entity.Property(e => e.SecurityAnswer3Nonce).HasMaxLength(200);
+            entity.Property(e => e.SecurityAnswer3AuthTag).HasMaxLength(200);
+            
+            // Encrypted notes fields
+            entity.Property(e => e.EncryptedNotes).HasMaxLength(4000);
+            entity.Property(e => e.NotesNonce).HasMaxLength(200);
+            entity.Property(e => e.NotesAuthTag).HasMaxLength(200);
         });
 
         // Configure CreditCardItem
@@ -163,6 +188,15 @@ public class PasswordManagerDbContext : IdentityDbContext<ApplicationUser>
                   .WithMany(u => u.Collections)
                   .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure ApplicationUser (extends IdentityUser)
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            // Configure encryption-related properties
+            entity.Property(e => e.UserSalt).HasMaxLength(200);
+            entity.Property(e => e.MasterPasswordHash).HasMaxLength(500);
+            entity.Property(e => e.MasterPasswordIterations).HasDefaultValue(100000);
         });
   
         // Seed data

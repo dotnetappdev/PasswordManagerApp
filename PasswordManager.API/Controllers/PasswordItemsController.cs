@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using PasswordManager.API.Interfaces;
 using PasswordManager.API.DTOs;
 using PasswordManager.Models.DTOs;
+using ApiDtos = PasswordManager.API.DTOs;
 
 namespace PasswordManager.API.Controllers;
 
@@ -312,7 +313,7 @@ public class PasswordItemsController : ControllerBase
     /// Decrypt and retrieve password data for a specific item
     /// </summary>
     [HttpPost("{id}/decrypt")]
-    public async Task<ActionResult<DecryptedPasswordItemDto>> DecryptPassword(int id, [FromBody] DecryptPasswordRequestDto request)
+    public async Task<ActionResult<ApiDtos.DecryptedPasswordItemDto>> DecryptPassword(int id, [FromBody] ApiDtos.DecryptPasswordRequestDto request)
     {
         try
         {
@@ -352,7 +353,7 @@ public class PasswordItemsController : ControllerBase
                     loginItem, request.MasterPassword, userSalt);
 
                 // Return decrypted data
-                return Ok(new DecryptedPasswordItemDto
+                return Ok(new ApiDtos.DecryptedPasswordItemDto
                 {
                     Id = item.Id,
                     Title = item.Title,
@@ -366,7 +367,7 @@ public class PasswordItemsController : ControllerBase
                     UserId = item.UserId,
                     CategoryId = item.CategoryId,
                     CollectionId = item.CollectionId,
-                    LoginItem = new DecryptedLoginItemDto
+                    LoginItem = new ApiDtos.DecryptedLoginItemDto
                     {
                         Id = decryptedLoginItem.Id,
                         Website = decryptedLoginItem.Website,
@@ -396,12 +397,12 @@ public class PasswordItemsController : ControllerBase
                         JobTitle = decryptedLoginItem.JobTitle,
                         Notes = decryptedLoginItem.Notes
                     },
-                    Tags = item.Tags?.Select(t => new TagDto 
+                    Tags = item.Tags?.Select(t => new ApiDtos.ApiTagDto 
                     { 
                         Id = t.Id, 
                         Name = t.Name, 
                         Color = t.Color 
-                    }).ToList() ?? new List<TagDto>()
+                    }).ToList() ?? new List<ApiDtos.ApiTagDto>()
                 });
             }
 
@@ -418,7 +419,7 @@ public class PasswordItemsController : ControllerBase
     /// Create a new encrypted password item
     /// </summary>
     [HttpPost("encrypted")]
-    public async Task<ActionResult<PasswordItemDto>> CreateEncrypted([FromBody] CreatePasswordItemDto createDto)
+    public async Task<ActionResult<PasswordItemDto>> CreateEncrypted([FromBody] ApiDtos.CreateEncryptedPasswordItemDto createDto)
     {
         try
         {
@@ -463,24 +464,97 @@ public class PasswordItemsController : ControllerBase
                     RequiresPasswordChange = createDto.LoginItem.RequiresPasswordChange,
                     CompanyName = createDto.LoginItem.CompanyName,
                     Department = createDto.LoginItem.Department,
-                    JobTitle = createDto.LoginItem.JobTitle,
-                    // Set plaintext fields that will be encrypted
-                    Password = createDto.LoginItem.Password,
-                    TotpSecret = createDto.LoginItem.TotpSecret,
-                    SecurityAnswer1 = createDto.LoginItem.SecurityAnswer1,
-                    SecurityAnswer2 = createDto.LoginItem.SecurityAnswer2,
-                    SecurityAnswer3 = createDto.LoginItem.SecurityAnswer3,
-                    Notes = createDto.LoginItem.Notes
+                    JobTitle = createDto.LoginItem.JobTitle
                 };
 
-                // Encrypt sensitive fields
-                await _passwordEncryptionService.EncryptLoginItemAsync(loginItem, createDto.MasterPassword, userSalt);
+                // Set plaintext fields that will be encrypted (temporarily)
+                // These will be cleared after encryption
+                var tempPassword = createDto.LoginItem.Password;
+                var tempTotpSecret = createDto.LoginItem.TotpSecret;
+                var tempSecurityAnswer1 = createDto.LoginItem.SecurityAnswer1;
+                var tempSecurityAnswer2 = createDto.LoginItem.SecurityAnswer2;
+                var tempSecurityAnswer3 = createDto.LoginItem.SecurityAnswer3;
+                var tempNotes = createDto.LoginItem.Notes;
 
-                passwordItem.LoginItem = loginItem;
+                // Encrypt sensitive fields
+                if (!string.IsNullOrEmpty(tempPassword))
+                {
+                    var encryptedPassword = await _passwordEncryptionService.EncryptFieldAsync(tempPassword, createDto.MasterPassword, userSalt);
+                    loginItem.EncryptedPassword = encryptedPassword.EncryptedPassword;
+                    loginItem.PasswordNonce = encryptedPassword.Nonce;
+                    loginItem.PasswordAuthTag = encryptedPassword.AuthenticationTag;
+                }
+
+                if (!string.IsNullOrEmpty(tempTotpSecret))
+                {
+                    var encryptedTotp = await _passwordEncryptionService.EncryptFieldAsync(tempTotpSecret, createDto.MasterPassword, userSalt);
+                    loginItem.EncryptedTotpSecret = encryptedTotp.EncryptedPassword;
+                    loginItem.TotpNonce = encryptedTotp.Nonce;
+                    loginItem.TotpAuthTag = encryptedTotp.AuthenticationTag;
+                }
+
+                if (!string.IsNullOrEmpty(tempSecurityAnswer1))
+                {
+                    var encrypted = await _passwordEncryptionService.EncryptFieldAsync(tempSecurityAnswer1, createDto.MasterPassword, userSalt);
+                    loginItem.EncryptedSecurityAnswer1 = encrypted.EncryptedPassword;
+                    loginItem.SecurityAnswer1Nonce = encrypted.Nonce;
+                    loginItem.SecurityAnswer1AuthTag = encrypted.AuthenticationTag;
+                }
+
+                if (!string.IsNullOrEmpty(tempSecurityAnswer2))
+                {
+                    var encrypted = await _passwordEncryptionService.EncryptFieldAsync(tempSecurityAnswer2, createDto.MasterPassword, userSalt);
+                    loginItem.EncryptedSecurityAnswer2 = encrypted.EncryptedPassword;
+                    loginItem.SecurityAnswer2Nonce = encrypted.Nonce;
+                    loginItem.SecurityAnswer2AuthTag = encrypted.AuthenticationTag;
+                }
+
+                if (!string.IsNullOrEmpty(tempSecurityAnswer3))
+                {
+                    var encrypted = await _passwordEncryptionService.EncryptFieldAsync(tempSecurityAnswer3, createDto.MasterPassword, userSalt);
+                    loginItem.EncryptedSecurityAnswer3 = encrypted.EncryptedPassword;
+                    loginItem.SecurityAnswer3Nonce = encrypted.Nonce;
+                    loginItem.SecurityAnswer3AuthTag = encrypted.AuthenticationTag;
+                }
+
+                if (!string.IsNullOrEmpty(tempNotes))
+                {
+                    var encryptedNotes = await _passwordEncryptionService.EncryptFieldAsync(tempNotes, createDto.MasterPassword, userSalt);
+                    loginItem.EncryptedNotes = encryptedNotes.EncryptedPassword;
+                    loginItem.NotesNonce = encryptedNotes.Nonce;
+                    loginItem.NotesAuthTag = encryptedNotes.AuthenticationTag;
+                }
+
+                // Convert to DTO format for the existing service
+                var loginItemDto = new CreateLoginItemDto
+                {
+                    Website = loginItem.Website,
+                    Username = loginItem.Username,
+                    Email = loginItem.Email,
+                    PhoneNumber = loginItem.PhoneNumber,
+                    TwoFactorType = loginItem.TwoFactorType,
+                    SecurityQuestion1 = loginItem.SecurityQuestion1,
+                    SecurityQuestion2 = loginItem.SecurityQuestion2,
+                    SecurityQuestion3 = loginItem.SecurityQuestion3,
+                    RecoveryEmail = loginItem.RecoveryEmail,
+                    RecoveryPhone = loginItem.RecoveryPhone,
+                    LoginUrl = loginItem.LoginUrl,
+                    SupportUrl = loginItem.SupportUrl,
+                    AdminConsoleUrl = loginItem.AdminConsoleUrl,
+                    PasswordLastChanged = loginItem.PasswordLastChanged,
+                    RequiresPasswordChange = loginItem.RequiresPasswordChange,
+                    CompanyName = loginItem.CompanyName,
+                    Department = loginItem.Department,
+                    JobTitle = loginItem.JobTitle,
+                    // Note: Don't pass the plain text passwords to the DTO
+                    // The encrypted versions will be handled separately
+                };
+
+                passwordItem.LoginItem = loginItemDto;
             }
 
             // Convert to DTO format for the service
-            var itemDto = new PasswordItemDto
+            var itemDto = new CreatePasswordItemDto
             {
                 Title = passwordItem.Title,
                 Description = passwordItem.Description,
@@ -489,7 +563,8 @@ public class PasswordItemsController : ControllerBase
                 IsArchived = passwordItem.IsArchived,
                 CategoryId = passwordItem.CategoryId,
                 CollectionId = passwordItem.CollectionId,
-                // TODO: Convert LoginItem to DTO format
+                LoginItem = passwordItem.LoginItem,
+                TagIds = createDto.TagIds
             };
 
             var createdItem = await _passwordItemService.CreateAsync(itemDto);
