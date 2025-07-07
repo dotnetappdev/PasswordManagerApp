@@ -1,0 +1,4 @@
+cd PasswordManager.API && dotnet ef database update
+
+Navigate to the API project and run Entity Framework database update to create the SQL Server database
+
