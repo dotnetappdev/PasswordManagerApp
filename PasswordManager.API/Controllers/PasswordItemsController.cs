@@ -464,66 +464,18 @@ public class PasswordItemsController : ControllerBase
                     RequiresPasswordChange = createDto.LoginItem.RequiresPasswordChange,
                     CompanyName = createDto.LoginItem.CompanyName,
                     Department = createDto.LoginItem.Department,
-                    JobTitle = createDto.LoginItem.JobTitle
+                    JobTitle = createDto.LoginItem.JobTitle,
+                    // Set temporary properties for encryption
+                    Password = createDto.LoginItem.Password,
+                    TotpSecret = createDto.LoginItem.TotpSecret,
+                    SecurityAnswer1 = createDto.LoginItem.SecurityAnswer1,
+                    SecurityAnswer2 = createDto.LoginItem.SecurityAnswer2,
+                    SecurityAnswer3 = createDto.LoginItem.SecurityAnswer3,
+                    Notes = createDto.LoginItem.Notes
                 };
 
-                // Set plaintext fields that will be encrypted (temporarily)
-                // These will be cleared after encryption
-                var tempPassword = createDto.LoginItem.Password;
-                var tempTotpSecret = createDto.LoginItem.TotpSecret;
-                var tempSecurityAnswer1 = createDto.LoginItem.SecurityAnswer1;
-                var tempSecurityAnswer2 = createDto.LoginItem.SecurityAnswer2;
-                var tempSecurityAnswer3 = createDto.LoginItem.SecurityAnswer3;
-                var tempNotes = createDto.LoginItem.Notes;
-
-                // Encrypt sensitive fields
-                if (!string.IsNullOrEmpty(tempPassword))
-                {
-                    var encryptedPassword = await _passwordEncryptionService.EncryptFieldAsync(tempPassword, createDto.MasterPassword, userSalt);
-                    loginItem.EncryptedPassword = encryptedPassword.EncryptedPassword;
-                    loginItem.PasswordNonce = encryptedPassword.Nonce;
-                    loginItem.PasswordAuthTag = encryptedPassword.AuthenticationTag;
-                }
-
-                if (!string.IsNullOrEmpty(tempTotpSecret))
-                {
-                    var encryptedTotp = await _passwordEncryptionService.EncryptFieldAsync(tempTotpSecret, createDto.MasterPassword, userSalt);
-                    loginItem.EncryptedTotpSecret = encryptedTotp.EncryptedPassword;
-                    loginItem.TotpNonce = encryptedTotp.Nonce;
-                    loginItem.TotpAuthTag = encryptedTotp.AuthenticationTag;
-                }
-
-                if (!string.IsNullOrEmpty(tempSecurityAnswer1))
-                {
-                    var encrypted = await _passwordEncryptionService.EncryptFieldAsync(tempSecurityAnswer1, createDto.MasterPassword, userSalt);
-                    loginItem.EncryptedSecurityAnswer1 = encrypted.EncryptedPassword;
-                    loginItem.SecurityAnswer1Nonce = encrypted.Nonce;
-                    loginItem.SecurityAnswer1AuthTag = encrypted.AuthenticationTag;
-                }
-
-                if (!string.IsNullOrEmpty(tempSecurityAnswer2))
-                {
-                    var encrypted = await _passwordEncryptionService.EncryptFieldAsync(tempSecurityAnswer2, createDto.MasterPassword, userSalt);
-                    loginItem.EncryptedSecurityAnswer2 = encrypted.EncryptedPassword;
-                    loginItem.SecurityAnswer2Nonce = encrypted.Nonce;
-                    loginItem.SecurityAnswer2AuthTag = encrypted.AuthenticationTag;
-                }
-
-                if (!string.IsNullOrEmpty(tempSecurityAnswer3))
-                {
-                    var encrypted = await _passwordEncryptionService.EncryptFieldAsync(tempSecurityAnswer3, createDto.MasterPassword, userSalt);
-                    loginItem.EncryptedSecurityAnswer3 = encrypted.EncryptedPassword;
-                    loginItem.SecurityAnswer3Nonce = encrypted.Nonce;
-                    loginItem.SecurityAnswer3AuthTag = encrypted.AuthenticationTag;
-                }
-
-                if (!string.IsNullOrEmpty(tempNotes))
-                {
-                    var encryptedNotes = await _passwordEncryptionService.EncryptFieldAsync(tempNotes, createDto.MasterPassword, userSalt);
-                    loginItem.EncryptedNotes = encryptedNotes.EncryptedPassword;
-                    loginItem.NotesNonce = encryptedNotes.Nonce;
-                    loginItem.NotesAuthTag = encryptedNotes.AuthenticationTag;
-                }
+                // Encrypt all sensitive fields using the encryption service
+                await _passwordEncryptionService.EncryptLoginItemAsync(loginItem, createDto.MasterPassword, userSalt);
 
                 // Convert to DTO format for the existing service
                 var loginItemDto = new CreateLoginItemDto
@@ -545,9 +497,8 @@ public class PasswordItemsController : ControllerBase
                     RequiresPasswordChange = loginItem.RequiresPasswordChange,
                     CompanyName = loginItem.CompanyName,
                     Department = loginItem.Department,
-                    JobTitle = loginItem.JobTitle,
-                    // Note: Don't pass the plain text passwords to the DTO
-                    // The encrypted versions will be handled separately
+                    JobTitle = loginItem.JobTitle
+                    // Note: Encrypted fields are already set in the LoginItem entity
                 };
 
                 passwordItem.LoginItem = loginItemDto;

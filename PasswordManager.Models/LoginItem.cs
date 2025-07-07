@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PasswordManager.Models;
 
@@ -127,6 +128,25 @@ public class LoginItem
     
     [MaxLength(200)]
     public string? NotesAuthTag { get; set; }
+    
+    // Temporary properties for import/export (not stored in database)
+    [NotMapped]
+    public string? Password { get; set; }
+    
+    [NotMapped]
+    public string? TotpSecret { get; set; }
+    
+    [NotMapped]
+    public string? SecurityAnswer1 { get; set; }
+    
+    [NotMapped]
+    public string? SecurityAnswer2 { get; set; }
+    
+    [NotMapped]
+    public string? SecurityAnswer3 { get; set; }
+    
+    [NotMapped]
+    public string? Notes { get; set; }
     
     // Navigation property
     public PasswordItem PasswordItem { get; set; } = null!;

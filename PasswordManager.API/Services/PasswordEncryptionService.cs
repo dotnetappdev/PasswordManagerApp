@@ -77,6 +77,14 @@ public class PasswordEncryptionService : IPasswordEncryptionService
             loginItem.NotesAuthTag = encryptedNotes.AuthenticationTag;
         }
 
+        // Clear temporary plain text values from memory for security
+        loginItem.Password = null;
+        loginItem.TotpSecret = null;
+        loginItem.SecurityAnswer1 = null;
+        loginItem.SecurityAnswer2 = null;
+        loginItem.SecurityAnswer3 = null;
+        loginItem.Notes = null;
+
         await Task.CompletedTask;
     }
 

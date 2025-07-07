@@ -79,9 +79,9 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
                     LoginItem = new LoginItem
                     {
                         Username = record.Username ?? string.Empty,
-                        Password = record.Password ?? string.Empty,
+                        Password = record.Password ?? string.Empty, // Temporary property for import
                         Website = record.Url,
-                        Notes = record.Notes
+                        Notes = record.Notes // Temporary property for import
                     },
                     Tags = new List<Tag>()
                 };
@@ -182,9 +182,9 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
                     LoginItem = new LoginItem
                     {
                         Username = record.Username ?? string.Empty,
-                        Password = "••••••••", // Hide password in preview
+                        Password = "••••••••", // Hide password in preview (temporary property)
                         Website = record.Url,
-                        Notes = record.Notes
+                        Notes = record.Notes // Temporary property for import
                     }
                 };
                 

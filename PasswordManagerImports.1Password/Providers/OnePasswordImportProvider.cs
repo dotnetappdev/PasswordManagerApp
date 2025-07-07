@@ -87,9 +87,9 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                         {
                             Website = record.Website.Trim(),
                             Username = record.Username.Trim(),
-                            Password = record.Password.Trim(),
+                            Password = record.Password.Trim(), // Temporary property for import
                             Email = IsEmail(record.Username.Trim()) ? record.Username.Trim() : null,
-                            Notes = record.Notes.Trim()
+                            Notes = record.Notes.Trim() // Temporary property for import
                         },
                         Tags = new List<Tag>()
                     };
