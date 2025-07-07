@@ -310,29 +310,25 @@ public class PasswordItemsController : ControllerBase
     }
 
     /// <summary>
-    /// Decrypt and retrieve password data for a specific item
+    /// Decrypt and retrieve password data for a specific item using session-based vault
     /// </summary>
     [HttpPost("{id}/decrypt")]
-    public async Task<ActionResult<ApiDtos.DecryptedPasswordItemDto>> DecryptPassword(int id, [FromBody] ApiDtos.DecryptPasswordRequestDto request)
+    public async Task<ActionResult<ApiDtos.DecryptedPasswordItemDto>> DecryptPassword(int id)
     {
         try
         {
-            if (request.PasswordItemId != id)
-                return BadRequest("Password item ID in URL does not match request body");
+            // Get session ID from Authorization header
+            var sessionId = HttpContext.Request.Headers["Authorization"]
+                .FirstOrDefault()?.Replace("Bearer ", "");
 
-            if (string.IsNullOrEmpty(request.MasterPassword))
-                return BadRequest("Master password is required");
+            if (string.IsNullOrEmpty(sessionId))
+                return Unauthorized("Session token required");
 
             // Get the password item from database
             var item = await _passwordItemService.GetByIdAsync(id);
             if (item == null)
                 return NotFound($"Password item with ID {id} not found");
 
-            // TODO: Get user salt from current user (requires authentication)
-            // For now, this is a placeholder - you'll need to implement user authentication
-            // and retrieve the user's salt from the database
-            var userSalt = new byte[32]; // This should come from the authenticated user
-            
             if (item.LoginItem != null)
             {
                 // Convert the stored LoginItem to our model
@@ -345,12 +341,17 @@ public class PasswordItemsController : ControllerBase
                     Email = item.LoginItem.Email,
                     PhoneNumber = item.LoginItem.PhoneNumber,
                     TwoFactorType = item.LoginItem.TwoFactorType,
-                    // Add encrypted fields here when they exist in your DTO
+                    Password = item.LoginItem.Password, // This will be the encrypted password
+                    TotpSecret = item.LoginItem.TotpSecret,
+                    SecurityAnswer1 = item.LoginItem.SecurityAnswer1,
+                    SecurityAnswer2 = item.LoginItem.SecurityAnswer2,
+                    SecurityAnswer3 = item.LoginItem.SecurityAnswer3,
+                    Notes = item.LoginItem.Notes
                 };
 
-                // Decrypt the login item
+                // Decrypt the login item using session-based approach
                 var decryptedLoginItem = await _passwordEncryptionService.DecryptLoginItemAsync(
-                    loginItem, request.MasterPassword, userSalt);
+                    loginItem, sessionId);
 
                 // Return decrypted data
                 return Ok(new ApiDtos.DecryptedPasswordItemDto

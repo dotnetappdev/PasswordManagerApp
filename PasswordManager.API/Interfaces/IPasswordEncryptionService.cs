@@ -3,43 +3,64 @@ using PasswordManager.Crypto.Interfaces;
 namespace PasswordManager.API.Interfaces;
 
 /// <summary>
-/// Service interface for handling password item encryption and decryption
+/// Service interface for handling password item encryption and decryption using session-based vault operations
 /// </summary>
 public interface IPasswordEncryptionService
 {
     /// <summary>
-    /// Encrypts a login item's sensitive data using the user's master password
+    /// Encrypts a login item's sensitive data using the session master key
     /// </summary>
     /// <param name="loginItem">Login item to encrypt</param>
-    /// <param name="masterPassword">User's master password</param>
-    /// <param name="userSalt">User's salt</param>
+    /// <param name="sessionId">Session ID to identify the user's vault session</param>
+    Task EncryptLoginItemAsync(Models.LoginItem loginItem, string sessionId);
+
+    /// <summary>
+    /// Decrypts a login item's sensitive data using the session master key
+    /// </summary>
+    /// <param name="loginItem">Login item to decrypt</param>
+    /// <param name="sessionId">Session ID to identify the user's vault session</param>
+    /// <returns>Decrypted login item data</returns>
+    Task<DecryptedLoginItem> DecryptLoginItemAsync(Models.LoginItem loginItem, string sessionId);
+
+    /// <summary>
+    /// Encrypts a specific field using the session master key
+    /// </summary>
+    /// <param name="value">Value to encrypt</param>
+    /// <param name="sessionId">Session ID to identify the user's vault session</param>
+    /// <returns>Encrypted field data</returns>
+    Task<EncryptedPasswordData> EncryptFieldAsync(string value, string sessionId);
+
+    /// <summary>
+    /// Decrypts a specific field using the session master key
+    /// </summary>
+    /// <param name="encryptedData">Encrypted field data</param>
+    /// <param name="sessionId">Session ID to identify the user's vault session</param>
+    /// <returns>Decrypted value</returns>
+    Task<string> DecryptFieldAsync(EncryptedPasswordData encryptedData, string sessionId);
+
+    // Legacy methods for backward compatibility (deprecated)
+    /// <summary>
+    /// Encrypts a login item's sensitive data using the user's master password (legacy method)
+    /// </summary>
+    [Obsolete("Use EncryptLoginItemAsync(loginItem, sessionId) instead")]
     Task EncryptLoginItemAsync(Models.LoginItem loginItem, string masterPassword, byte[] userSalt);
 
     /// <summary>
-    /// Decrypts a login item's sensitive data using the user's master password
+    /// Decrypts a login item's sensitive data using the user's master password (legacy method)
     /// </summary>
-    /// <param name="loginItem">Login item to decrypt</param>
-    /// <param name="masterPassword">User's master password</param>
-    /// <param name="userSalt">User's salt</param>
-    /// <returns>Decrypted login item data</returns>
+    [Obsolete("Use DecryptLoginItemAsync(loginItem, sessionId) instead")]
     Task<DecryptedLoginItem> DecryptLoginItemAsync(Models.LoginItem loginItem, string masterPassword, byte[] userSalt);
 
     /// <summary>
-    /// Encrypts a specific field
+    /// Encrypts a specific field (legacy method)
     /// </summary>
-    /// <param name="value">Value to encrypt</param>
-    /// <param name="masterPassword">User's master password</param>
-    /// <param name="userSalt">User's salt</param>
-    /// <returns>Encrypted field data</returns>
+    [Obsolete("Use EncryptFieldAsync(value, sessionId) instead")]
     Task<EncryptedPasswordData> EncryptFieldAsync(string value, string masterPassword, byte[] userSalt);
 
     /// <summary>
-    /// Decrypts a specific field
+    /// Decrypts a specific field (legacy method)
     /// </summary>
-    /// <param name="encryptedData">Encrypted field data</param>
-    /// <param name="masterPassword">User's master password</param>
-    /// <param name="userSalt">User's salt</param>
-    /// <returns>Decrypted value</returns>
+    [Obsolete("Use DecryptFieldAsync(encryptedData, sessionId) instead")]
     Task<string> DecryptFieldAsync(EncryptedPasswordData encryptedData, string masterPassword, byte[] userSalt);
 }
 

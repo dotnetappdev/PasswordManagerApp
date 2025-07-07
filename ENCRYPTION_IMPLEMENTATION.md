@@ -8,7 +8,7 @@ I have successfully implemented a comprehensive encryption system for your Passw
 
 ### 1. **PasswordManager.Crypto DLL**
 - Created a separate cryptographic library with clean interfaces
-- Implements PBKDF2 with 100,000+ iterations (configurable)
+- Implements PBKDF2 with 600,000+ iterations (OWASP 2024 recommendation)
 - Uses AES-256-GCM for authenticated encryption
 - Follows zero-knowledge architecture principles
 
@@ -25,7 +25,7 @@ I have successfully implemented a comprehensive encryption system for your Passw
 
 #### Key Flow:
 ```
-Master Password + User Salt → PBKDF2(100k iterations) → Master Key
+Master Password + User Salt → PBKDF2(600k iterations) → Master Key
 Master Key → AES-256-GCM → Encrypted Password Data
 ```
 
@@ -37,7 +37,7 @@ Master Key → AES-256-GCM → Encrypted Password Data
 ## 🛡️ Security Features
 
 ### Strong Encryption Parameters
-- **PBKDF2 Iterations**: 100,000 (same as Bitwarden)
+- **PBKDF2 Iterations**: 600,000 (OWASP 2024 recommendation, increased from Bitwarden's 100,000)
 - **Key Length**: 256 bits (AES-256)
 - **Salt Length**: 256 bits (32 bytes)
 - **Nonce Length**: 96 bits (12 bytes) for GCM
@@ -75,10 +75,10 @@ PasswordManager.Crypto/
 ```json
 {
   "Encryption": {
-    "MasterKeyIterations": 100000,
-    "AuthHashIterations": 100000,
-    "MinIterations": 50000,
-    "MaxIterations": 200000
+    "MasterKeyIterations": 600000,
+    "AuthHashIterations": 600000,
+    "MinIterations": 600000,
+    "MaxIterations": 1000000
   }
 }
 ```
@@ -98,7 +98,7 @@ var user = new ApplicationUser
 {
     UserSalt = Convert.ToBase64String(userSalt),
     MasterPasswordHash = authHash,
-    MasterPasswordIterations = 100000
+    MasterPasswordIterations = 600000
 };
 ```
 
@@ -152,9 +152,9 @@ To use the new encryption system, you'll need to:
 
 ## 🌟 Benefits Achieved
 
-✅ **Bitwarden-Level Security**: Same encryption standards and key derivation
+✅ **Enhanced Security**: Upgraded to 600,000 PBKDF2 iterations (OWASP 2024 recommendation)
 ✅ **Zero-Knowledge Architecture**: Server cannot decrypt user data
-✅ **Strong Key Derivation**: 100,000 PBKDF2 iterations with SHA-256
+✅ **Strong Key Derivation**: 600,000 PBKDF2 iterations with SHA-256
 ✅ **Authenticated Encryption**: AES-256-GCM prevents tampering
 ✅ **Memory Safety**: Keys cleared immediately after use
 ✅ **Separation of Concerns**: Authentication vs. encryption keys

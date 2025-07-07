@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<ICryptographyService, CryptographyService>();
         services.AddSingleton<IPasswordCryptoService, PasswordCryptoService>();
+        services.AddScoped<IVaultSessionService, VaultSessionService>(); // Scoped for per-session use
         
         return services;
     }

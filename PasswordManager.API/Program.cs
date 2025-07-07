@@ -65,7 +65,7 @@ builder.Services.AddScoped<IPasswordEncryptionService, PasswordEncryptionService
 builder.Services.AddHostedService<AutoSyncService>();
 
 // Register cryptography services
-builder.Services.AddCryptographyServices();
+builder.Services.AddPasswordCrypto();
 
 // Add API documentation with Scalar
 builder.Services.AddOpenApi();

@@ -12,6 +12,7 @@ using PasswordManagerImports.OnePassword.Providers;
 using PasswordManager.App.Services.Interfaces;
 using PasswordManager.App.Services;
 using Microsoft.Extensions.Configuration;
+using PasswordManager.Crypto.Extensions;
 
 namespace PasswordManager.App;
 
@@ -56,6 +57,9 @@ public static class MauiProgram
 		builder.Services.AddScoped<ICategoryInterface, CategoryService>();
 		builder.Services.AddScoped<ICollectionService, CollectionService>();
 		builder.Services.AddScoped<Services.AuthService>();
+
+		// Register crypto services
+		builder.Services.AddPasswordCrypto();
 
 		// Register sync services
 		builder.Services.AddHttpClient();

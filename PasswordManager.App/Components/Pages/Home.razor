@@ -6,6 +6,7 @@
 @using PasswordManager.Interfaces
 @using PasswordManager.Services.Interfaces
 @using PasswordManager.Imports.Interfaces
+@using PasswordManager.Crypto.Interfaces
 @inject IPasswordItemService PasswordItemService
 @inject ITagService TagService
 @inject ICategoryInterface CategoryService
@@ -14,6 +15,7 @@
 @inject PasswordManager.App.Services.AuthService AuthService
 @inject NavigationManager Navigation
 @inject PasswordManager.Imports.Interfaces.IImportService ImportService
+@inject IVaultSessionService VaultSessionService
 
 <style>
     .validation-error {
@@ -545,9 +547,9 @@
                         <div class="detail-field">
                             <label>Password</label>
                             <div class="field-value">
-                                <span>••••••••••</span>
-                                <button class="copy-btn" @onclick="() => CopyToClipboard(selectedItem.LoginItem.Password)">📋</button>
-                                <button class="reveal-btn" @onclick="TogglePasswordVisibility">👁️</button>
+                                <span>@(passwordVisible ? GetDecryptedPassword(selectedItem.LoginItem.Password) : "••••••••••")</span>
+                                <button class="copy-btn" @onclick="() => CopyDecryptedPassword(selectedItem.LoginItem.Password)">📋</button>
+                                <button class="reveal-btn" @onclick="TogglePasswordVisibility">@(passwordVisible ? "🙈" : "👁️")</button>
                             </div>
                         </div>
                         @if (!string.IsNullOrEmpty(selectedItem.LoginItem.Website))
@@ -1830,6 +1832,40 @@ private void OnLengthChanged(ChangeEventArgs e)
     {
         passwordVisible = !passwordVisible;
         StateHasChanged();
+    }
+
+    private string GetDecryptedPassword(string encryptedPassword)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(encryptedPassword))
+                return "";
+            
+            // Use the VaultSessionService to decrypt the password
+            return VaultSessionService.DecryptPassword(encryptedPassword);
+        }
+        catch (Exception ex)
+        {
+            // Log the error and return a placeholder
+            Console.WriteLine($"Error decrypting password: {ex.Message}");
+            return "Error decrypting password";
+        }
+    }
+
+    private async Task CopyDecryptedPassword(string encryptedPassword)
+    {
+        try
+        {
+            var decryptedPassword = GetDecryptedPassword(encryptedPassword);
+            if (!string.IsNullOrEmpty(decryptedPassword))
+            {
+                await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", decryptedPassword);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error copying decrypted password: {ex.Message}");
+        }
     }
 
     private void ToggleNewPasswordVisibility()

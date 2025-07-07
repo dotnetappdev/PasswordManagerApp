@@ -4,9 +4,12 @@
 @using System.Text
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
+@using PasswordManager.Crypto.Interfaces
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject PasswordManager.App.Services.AuthService AuthService
+@inject IPasswordCryptoService PasswordCryptoService
+@inject IVaultSessionService VaultSessionService
 
 <div class="auth-container">
     <div class="auth-card">

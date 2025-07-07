@@ -4,10 +4,11 @@ A comprehensive cryptographic library for secure password management, implementi
 
 ## Features
 
-- **PBKDF2 Key Derivation**: Uses 100,000+ iterations with SHA-256 for strong key derivation
+- **PBKDF2 Key Derivation**: Uses 600,000+ iterations with SHA-256 (OWASP 2024 recommendation, exceeds Bitwarden's 100,000)
 - **AES-256-GCM Encryption**: Authenticated encryption for maximum security
 - **Zero-Knowledge Architecture**: Master passwords are never stored, only hashed for authentication
-- **Bitwarden-Compatible**: Similar security model and encryption approach
+- **Bitwarden-Compatible Flow**: Exact same user experience and security model as Bitwarden
+- **Session-Based Caching**: Master key derived once per session for optimal performance
 - **Memory Safety**: Sensitive keys are cleared from memory after use
 
 ## Architecture
@@ -37,24 +38,27 @@ High-level password management:
 
 ## Security Implementation
 
-### Master Password Flow
+### Bitwarden-Compatible Flow
 
-1. **User Registration**:
+1. **User Login & Key Derivation**:
    ```
-   User Master Password + Random Salt → PBKDF2(100k iterations) → Master Key
-   Master Key + Salt → PBKDF2(100k iterations) → Authentication Hash (stored in DB)
-   ```
-
-2. **Password Storage**:
-   ```
-   User Master Password + User Salt → PBKDF2(100k iterations) → Master Key
-   Plaintext Password + Master Key → AES-256-GCM → Encrypted Password (stored in DB)
+   User Master Password + User Salt → PBKDF2(600k iterations) → Master Key (cached in session)
+   Master Key + Master Password → PBKDF2(1 iteration) → Authentication Hash (stored in DB)
    ```
 
-3. **Password Retrieval**:
+2. **Password Storage** (fast - uses cached key):
    ```
-   User Master Password + User Salt → PBKDF2(100k iterations) → Master Key
-   Encrypted Password + Master Key → AES-256-GCM Decrypt → Plaintext Password
+   Plaintext Password + Cached Master Key → AES-256-GCM → Encrypted Password (stored in DB)
+   ```
+
+3. **Password Retrieval** (fast - uses cached key):
+   ```
+   Encrypted Password + Cached Master Key → AES-256-GCM Decrypt → Plaintext Password
+   ```
+
+4. **Password Reveal** (instantaneous):
+   ```
+   Already decrypted password displayed immediately (Bitwarden-style UX)
    ```
 
 ### Database Storage
@@ -117,7 +121,7 @@ public async Task<bool> RegisterUser(string email, string masterPassword)
         Email = email,
         UserSalt = Convert.ToBase64String(userSalt),
         MasterPasswordHash = authHash,
-        MasterPasswordIterations = 100000
+        MasterPasswordIterations = 600000
     };
     
     // Save user...
@@ -157,17 +161,17 @@ Add to `appsettings.json`:
 ```json
 {
   "Encryption": {
-    "MasterKeyIterations": 100000,
-    "AuthHashIterations": 100000,
-    "MinIterations": 50000,
-    "MaxIterations": 200000
+    "MasterKeyIterations": 600000,
+    "AuthHashIterations": 600000,
+    "MinIterations": 600000,
+    "MaxIterations": 1000000
   }
 }
 ```
 
 ## Security Considerations
 
-1. **Iteration Count**: Using 100,000 PBKDF2 iterations for strong protection against brute-force attacks
+1. **Iteration Count**: Using 600,000 PBKDF2 iterations for strong protection against brute-force attacks (OWASP 2024 recommendation)
 2. **Salt Storage**: User salts are stored in the database but are useless without the master password
 3. **Memory Safety**: Master keys are cleared from memory immediately after use
 4. **Authentication Separation**: Authentication hash cannot be used to decrypt data

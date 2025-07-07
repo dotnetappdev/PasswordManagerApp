@@ -27,7 +27,7 @@ public class ApplicationUser : IdentityUser
     /// <summary>
     /// PBKDF2 iterations used for master password hashing
     /// </summary>
-    public int MasterPasswordIterations { get; set; } = 100000;
+    public int MasterPasswordIterations { get; set; } = 600000;
     
     // Navigation properties for user's data
     public virtual ICollection<PasswordItem> PasswordItems { get; set; } = new List<PasswordItem>();

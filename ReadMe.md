@@ -71,10 +71,10 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 
 This password manager implements enterprise-grade security with zero-knowledge architecture:
 
-- **PBKDF2 Key Derivation**: 100,000+ iterations with SHA-256 for strong key derivation
+- **PBKDF2 Key Derivation**: 600,000+ iterations with SHA-256 for strong key derivation (OWASP 2024 recommendation)
 - **AES-256-GCM Encryption**: Authenticated encryption preventing tampering
 - **Zero-Knowledge Architecture**: Server cannot decrypt user data without master password
-- **Bitwarden-Compatible Security**: Same encryption standards and approach
+- **Enhanced Security Model**: Exceeds industry standards with modern cryptographic practices
 - **Memory Safety**: Encryption keys are immediately cleared from memory after use
 - **Secure Database Storage**: Only encrypted ciphertext and authentication hashes stored
 
@@ -269,10 +269,10 @@ PasswordManager/
 ## 🔐 Security Features
 
 ### Enterprise-Grade Encryption
-- **PBKDF2 Key Derivation**: 100,000+ iterations with SHA-256 for strong key derivation
+- **PBKDF2 Key Derivation**: 600,000+ iterations with SHA-256 for strong key derivation (OWASP 2024 recommendation)
 - **AES-256-GCM Encryption**: Authenticated encryption preventing tampering and ensuring confidentiality
 - **Zero-Knowledge Architecture**: Server cannot decrypt user data without master password
-- **Bitwarden-Compatible Security**: Same encryption standards and security model
+- **Enhanced Security Model**: Exceeds industry standards with modern cryptographic practices
 - **Memory Safety**: Encryption keys immediately cleared from memory after use
 - **Salt-Based Security**: Unique user salts prevent rainbow table attacks
 

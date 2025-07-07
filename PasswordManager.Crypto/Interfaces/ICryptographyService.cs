@@ -10,7 +10,7 @@ public interface ICryptographyService
     /// </summary>
     /// <param name="password">The password to derive key from</param>
     /// <param name="salt">The salt bytes</param>
-    /// <param name="iterations">Number of PBKDF2 iterations (recommended: 100,000+)</param>
+    /// <param name="iterations">Number of PBKDF2 iterations (OWASP 2024 recommendation: 600,000+)</param>
     /// <param name="keyLength">Length of derived key in bytes</param>
     /// <returns>Derived key bytes</returns>
     byte[] DeriveKey(string password, byte[] salt, int iterations, int keyLength);

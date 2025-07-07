@@ -22,7 +22,7 @@ public static class CryptoTest
         
         // Test key derivation
         var password = "TestMasterPassword123!";
-        var derivedKey = cryptoService.DeriveKey(password, salt, 100000, 32);
+        var derivedKey = cryptoService.DeriveKey(password, salt, 600000, 32);
         Console.WriteLine($"Derived key length: {derivedKey.Length} bytes");
         
         // Test AES-256-GCM encryption
