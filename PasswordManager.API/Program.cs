@@ -64,11 +64,11 @@ builder.Services.AddScoped<ITagApiService, TagApiService>();
 builder.Services.AddScoped<ISyncService, SyncService>();
 builder.Services.AddScoped<IDatabaseContextFactory, DatabaseContextFactory>();
 builder.Services.AddScoped<IPasswordEncryptionService, PasswordManager.Services.Services.PasswordEncryptionService>();
-builder.Services.AddScoped<IVaultSessionService, PasswordManager.Services.Services.VaultSessionService>();
+// VaultSessionService is registered in AddCryptographyServices extension method
 builder.Services.AddHostedService<AutoSyncService>();
 
 // Register cryptography services
-builder.Services.AddPasswordCrypto();
+builder.Services.AddCryptographyServices();
 
 // Add API documentation with Scalar
 builder.Services.AddOpenApi();

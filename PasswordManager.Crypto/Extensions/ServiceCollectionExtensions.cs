@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Crypto.Interfaces;
 using PasswordManager.Crypto.Services;
+using PasswordManager.Services.Interfaces;
+using PasswordManager.Services.Services;
 
 namespace PasswordManager.Crypto.Extensions;
 
@@ -18,7 +20,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<ICryptographyService, CryptographyService>();
         services.AddSingleton<IPasswordCryptoService, PasswordCryptoService>();
-        services.AddScoped<IVaultSessionService, VaultSessionService>(); // Scoped for per-session use
+        // VaultSessionService moved to Services layer
+        services.AddScoped<IVaultSessionService, PasswordManager.Services.Services.VaultSessionService>(); // Scoped for per-session use
         
         return services;
     }

@@ -58,7 +58,7 @@ public class AuthController : ControllerBase
             var masterKey = _passwordCryptoService.DeriveMasterKey(loginRequest.Password, Convert.FromBase64String(user.UserSalt));
 
             // Verify against stored hash using authentication
-            var authHash = _passwordCryptoService.CreateAuthHashh(masterKey, loginRequest.Password);
+            var authHash = _passwordCryptoService.CreateAuthHash(masterKey, loginRequest.Password);
             
             if (!_passwordCryptoService.VerifyMasterPassword(loginRequest.Password, user.MasterPasswordHash, Convert.FromBase64String(user.UserSalt), user.MasterPasswordIterations))
             {
@@ -123,7 +123,7 @@ public class AuthController : ControllerBase
             var masterKey = _passwordCryptoService.DeriveMasterKey(registerRequest.Password, salt);
 
             // Create authentication hash
-            var authHash = _passwordCryptoService.CreateAuthHashh(masterKey, registerRequest.Password);
+            var authHash = _passwordCryptoService.CreateAuthHash(masterKey, registerRequest.Password);
 
             // Create new user
             var user = new ApplicationUser
