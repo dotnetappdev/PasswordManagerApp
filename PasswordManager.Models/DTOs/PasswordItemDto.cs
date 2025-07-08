@@ -31,6 +31,7 @@ public class CreatePasswordItemDto
     public string? Description { get; set; }
     public ItemType Type { get; set; }
     public bool IsFavorite { get; set; }
+    public bool IsArchived { get; set; } // Added to fix missing property error
     public int CategoryId { get; set; }
     public int CollectionId { get; set; }
     public CreateLoginItemDto? LoginItem { get; set; }
