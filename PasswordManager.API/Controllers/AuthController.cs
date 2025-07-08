@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using PasswordManager.API.Interfaces;
-using PasswordManager.Models.DTOs.Auth;
+using PasswordMa            // Update last login time
+            user.LastLoginAt = DateTime.UtcNow;
+            await _userManager.UpdateAsync(user);er.Models.DTOs.Auth;
 using PasswordManager.Crypto.Interfaces;
 using PasswordManager.Models;
 using PasswordManager.DAL;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace PasswordManager.API.Controllers;
@@ -14,18 +17,21 @@ public class AuthController : ControllerBase
 {
     private readonly IPasswordCryptoService _passwordCryptoService;
     private readonly IVaultSessionService _vaultSessionService;
-    private readonly PasswordManagerDbContext _context;
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         IPasswordCryptoService passwordCryptoService,
         IVaultSessionService vaultSessionService,
-        PasswordManagerDbContext context,
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
         ILogger<AuthController> logger)
     {
         _passwordCryptoService = passwordCryptoService;
         _vaultSessionService = vaultSessionService;
-        _context = context;
+        _userManager = userManager;
+        _signInManager = signInManager;
         _logger = logger;
     }
 
@@ -43,8 +49,7 @@ public class AuthController : ControllerBase
             }
 
             // Find user by email
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email == loginRequest.Email);
+            var user = await _userManager.FindByEmailAsync(loginRequest.Email);
 
             if (user == null)
             {
@@ -52,12 +57,12 @@ public class AuthController : ControllerBase
             }
 
             // Derive master key from password
-            var masterKey = _passwordCryptoService.DeriveMasterKey(loginRequest.Password, user.Salt);
+            var masterKey = _passwordCryptoService.DeriveMasterKey(loginRequest.Password, Convert.FromBase64String(user.UserSalt));
 
             // Verify against stored hash using Bitwarden-style authentication
             var authHash = _passwordCryptoService.CreateBitwardenAuthHash(masterKey, loginRequest.Password);
             
-            if (!_passwordCryptoService.VerifyPassword(authHash, user.PasswordHash))
+            if (!_passwordCryptoService.VerifyMasterPassword(loginRequest.Password, user.MasterPasswordHash, Convert.FromBase64String(user.UserSalt), user.MasterPasswordIterations))
             {
                 return Unauthorized("Invalid email or password");
             }
@@ -108,8 +113,7 @@ public class AuthController : ControllerBase
             }
 
             // Check if user already exists
-            var existingUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email == registerRequest.Email);
+            var existingUser = await _userManager.FindByEmailAsync(registerRequest.Email);
 
             if (existingUser != null)
             {
@@ -117,7 +121,7 @@ public class AuthController : ControllerBase
             }
 
             // Generate salt and derive master key
-            var salt = _passwordCryptoService.GenerateSalt();
+            var salt = _passwordCryptoService.GenerateUserSalt();
             var masterKey = _passwordCryptoService.DeriveMasterKey(registerRequest.Password, salt);
 
             // Create Bitwarden-style authentication hash
@@ -126,17 +130,23 @@ public class AuthController : ControllerBase
             // Create new user
             var user = new ApplicationUser
             {
-                Id = Guid.NewGuid().ToString(),
                 Email = registerRequest.Email,
+                UserName = registerRequest.Email,
                 FirstName = registerRequest.FirstName,
                 LastName = registerRequest.LastName,
-                Salt = salt,
-                PasswordHash = authHash,
+                UserSalt = Convert.ToBase64String(salt),
+                MasterPasswordHash = authHash,
+                MasterPasswordIterations = 600000,
+                IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            var result = await _userManager.CreateAsync(user, registerRequest.Password);
+            
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { Errors = result.Errors.Select(e => e.Description) });
+            }
 
             // Initialize vault session
             var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
@@ -213,7 +223,7 @@ public class AuthController : ControllerBase
                 return Unauthorized("Invalid or expired session");
             }
 
-            var user = await _context.Users.FindAsync(userId);
+            var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
                 return Unauthorized("User not found");
@@ -225,6 +235,7 @@ public class AuthController : ControllerBase
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
+                IsActive = user.IsActive,
                 CreatedAt = user.CreatedAt,
                 LastLoginAt = user.LastLoginAt
             });
