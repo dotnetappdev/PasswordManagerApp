@@ -1,8 +1,8 @@
-using PasswordManager.API.Interfaces;
 using PasswordManager.Crypto.Interfaces;
 using PasswordManager.Models;
+using PasswordManager.Services.Interfaces;
 
-namespace PasswordManager.API.Services;
+namespace PasswordManager.Services.Services;
 
 /// <summary>
 /// Service for handling password item encryption and decryption using session-based vault operations
@@ -103,42 +103,38 @@ public class PasswordEncryptionService : IPasswordEncryptionService
                 JobTitle = loginItem.JobTitle
             };
 
-            // Decrypt sensitive fields using VaultSessionService
-            try
+            // Decrypt password if exists
+            if (!string.IsNullOrEmpty(loginItem.Password))
             {
-                if (!string.IsNullOrEmpty(loginItem.Password))
-                {
-                    decryptedItem.Password = _vaultSessionService.DecryptPassword(loginItem.Password, sessionId);
-                }
-
-                if (!string.IsNullOrEmpty(loginItem.TotpSecret))
-                {
-                    decryptedItem.TotpSecret = _vaultSessionService.DecryptPassword(loginItem.TotpSecret, sessionId);
-                }
-
-                if (!string.IsNullOrEmpty(loginItem.SecurityAnswer1))
-                {
-                    decryptedItem.SecurityAnswer1 = _vaultSessionService.DecryptPassword(loginItem.SecurityAnswer1, sessionId);
-                }
-
-                if (!string.IsNullOrEmpty(loginItem.SecurityAnswer2))
-                {
-                    decryptedItem.SecurityAnswer2 = _vaultSessionService.DecryptPassword(loginItem.SecurityAnswer2, sessionId);
-                }
-
-                if (!string.IsNullOrEmpty(loginItem.SecurityAnswer3))
-                {
-                    decryptedItem.SecurityAnswer3 = _vaultSessionService.DecryptPassword(loginItem.SecurityAnswer3, sessionId);
-                }
-
-                if (!string.IsNullOrEmpty(loginItem.Notes))
-                {
-                    decryptedItem.Notes = _vaultSessionService.DecryptPassword(loginItem.Notes, sessionId);
-                }
+                decryptedItem.Password = _vaultSessionService.DecryptPassword(loginItem.Password, sessionId);
             }
-            catch (Exception ex)
+
+            // Decrypt TOTP secret if exists
+            if (!string.IsNullOrEmpty(loginItem.TotpSecret))
             {
-                throw new InvalidOperationException("Failed to decrypt login item data", ex);
+                decryptedItem.TotpSecret = _vaultSessionService.DecryptPassword(loginItem.TotpSecret, sessionId);
+            }
+
+            // Decrypt security answers if they exist
+            if (!string.IsNullOrEmpty(loginItem.SecurityAnswer1))
+            {
+                decryptedItem.SecurityAnswer1 = _vaultSessionService.DecryptPassword(loginItem.SecurityAnswer1, sessionId);
+            }
+
+            if (!string.IsNullOrEmpty(loginItem.SecurityAnswer2))
+            {
+                decryptedItem.SecurityAnswer2 = _vaultSessionService.DecryptPassword(loginItem.SecurityAnswer2, sessionId);
+            }
+
+            if (!string.IsNullOrEmpty(loginItem.SecurityAnswer3))
+            {
+                decryptedItem.SecurityAnswer3 = _vaultSessionService.DecryptPassword(loginItem.SecurityAnswer3, sessionId);
+            }
+
+            // Decrypt notes if they exist
+            if (!string.IsNullOrEmpty(loginItem.Notes))
+            {
+                decryptedItem.Notes = _vaultSessionService.DecryptPassword(loginItem.Notes, sessionId);
             }
 
             return decryptedItem;
@@ -155,12 +151,18 @@ public class PasswordEncryptionService : IPasswordEncryptionService
 
         return await Task.Run(() =>
         {
-            var encryptedValue = _vaultSessionService.EncryptPassword(value, sessionId);
+            // Convert the string format from the vault session service into EncryptedPasswordData
+            var encrypted = _vaultSessionService.EncryptPassword(value, sessionId);
+            var parts = encrypted.Split('|');
+            
+            if (parts.Length != 3)
+                throw new FormatException("Invalid encrypted format returned from vault session service");
+
             return new EncryptedPasswordData
             {
-                EncryptedPassword = encryptedValue,
-                Nonce = "",
-                AuthenticationTag = ""
+                EncryptedPassword = parts[0],
+                Nonce = parts[1],
+                AuthenticationTag = parts[2]
             };
         });
     }
@@ -175,21 +177,14 @@ public class PasswordEncryptionService : IPasswordEncryptionService
 
         return await Task.Run(() =>
         {
-            try
-            {
-                return _vaultSessionService.DecryptPassword(encryptedData.EncryptedPassword, sessionId);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to decrypt field data", ex);
-            }
+            // Convert EncryptedPasswordData to the string format expected by vault session service
+            var formatted = $"{encryptedData.EncryptedPassword}|{encryptedData.Nonce}|{encryptedData.AuthenticationTag}";
+            return _vaultSessionService.DecryptPassword(formatted, sessionId);
         });
     }
 
-    // Legacy methods for backward compatibility (deprecated)
-    /// <summary>
-    /// Encrypts a login item's sensitive data using the user's master password (legacy method)
-    /// </summary>
+    #region Legacy Methods
+
     [Obsolete("Use EncryptLoginItemAsync(loginItem, sessionId) instead")]
     public async Task EncryptLoginItemAsync(LoginItem loginItem, string masterPassword, byte[] userSalt)
     {
@@ -202,26 +197,45 @@ public class PasswordEncryptionService : IPasswordEncryptionService
             // Encrypt password
             if (!string.IsNullOrEmpty(loginItem.Password))
             {
-                var encryptedPassword = _passwordCryptoService.EncryptPasswordWithMasterPassword(loginItem.Password, masterPassword, userSalt);
-                loginItem.EncryptedPassword = encryptedPassword.EncryptedPassword;
-                loginItem.PasswordNonce = encryptedPassword.Nonce;
-                loginItem.PasswordAuthTag = encryptedPassword.AuthenticationTag;
+                var encryptedData = _passwordCryptoService.EncryptPassword(loginItem.Password, masterPassword, userSalt);
+                loginItem.Password = $"{encryptedData.EncryptedPassword}|{encryptedData.Nonce}|{encryptedData.AuthenticationTag}";
             }
 
             // Encrypt TOTP secret
             if (!string.IsNullOrEmpty(loginItem.TotpSecret))
             {
-                var encryptedTotp = _passwordCryptoService.EncryptPasswordWithMasterPassword(loginItem.TotpSecret, masterPassword, userSalt);
-                loginItem.EncryptedTotpSecret = encryptedTotp.EncryptedPassword;
-                loginItem.TotpNonce = encryptedTotp.Nonce;
-                loginItem.TotpAuthTag = encryptedTotp.AuthenticationTag;
+                var encryptedData = _passwordCryptoService.EncryptPassword(loginItem.TotpSecret, masterPassword, userSalt);
+                loginItem.TotpSecret = $"{encryptedData.EncryptedPassword}|{encryptedData.Nonce}|{encryptedData.AuthenticationTag}";
+            }
+
+            // Encrypt security answers
+            if (!string.IsNullOrEmpty(loginItem.SecurityAnswer1))
+            {
+                var encryptedData = _passwordCryptoService.EncryptPassword(loginItem.SecurityAnswer1, masterPassword, userSalt);
+                loginItem.SecurityAnswer1 = $"{encryptedData.EncryptedPassword}|{encryptedData.Nonce}|{encryptedData.AuthenticationTag}";
+            }
+
+            if (!string.IsNullOrEmpty(loginItem.SecurityAnswer2))
+            {
+                var encryptedData = _passwordCryptoService.EncryptPassword(loginItem.SecurityAnswer2, masterPassword, userSalt);
+                loginItem.SecurityAnswer2 = $"{encryptedData.EncryptedPassword}|{encryptedData.Nonce}|{encryptedData.AuthenticationTag}";
+            }
+
+            if (!string.IsNullOrEmpty(loginItem.SecurityAnswer3))
+            {
+                var encryptedData = _passwordCryptoService.EncryptPassword(loginItem.SecurityAnswer3, masterPassword, userSalt);
+                loginItem.SecurityAnswer3 = $"{encryptedData.EncryptedPassword}|{encryptedData.Nonce}|{encryptedData.AuthenticationTag}";
+            }
+
+            // Encrypt notes
+            if (!string.IsNullOrEmpty(loginItem.Notes))
+            {
+                var encryptedData = _passwordCryptoService.EncryptPassword(loginItem.Notes, masterPassword, userSalt);
+                loginItem.Notes = $"{encryptedData.EncryptedPassword}|{encryptedData.Nonce}|{encryptedData.AuthenticationTag}";
             }
         });
     }
 
-    /// <summary>
-    /// Decrypts a login item's sensitive data using the user's master password (legacy method)
-    /// </summary>
     [Obsolete("Use DecryptLoginItemAsync(loginItem, sessionId) instead")]
     public async Task<DecryptedLoginItem> DecryptLoginItemAsync(LoginItem loginItem, string masterPassword, byte[] userSalt)
     {
@@ -257,41 +271,86 @@ public class PasswordEncryptionService : IPasswordEncryptionService
                 JobTitle = loginItem.JobTitle
             };
 
-            // Decrypt password
-            if (!string.IsNullOrEmpty(loginItem.EncryptedPassword) && 
-                !string.IsNullOrEmpty(loginItem.PasswordNonce) && 
-                !string.IsNullOrEmpty(loginItem.PasswordAuthTag))
+            // Helper function to parse and decrypt a field
+            EncryptedPasswordData ParseEncryptedData(string? value)
             {
-                var encryptedPasswordData = new EncryptedPasswordData
+                if (string.IsNullOrEmpty(value))
+                    return null;
+
+                var parts = value.Split('|');
+                if (parts.Length != 3)
+                    throw new FormatException("Invalid encrypted data format");
+
+                return new EncryptedPasswordData
                 {
-                    EncryptedPassword = loginItem.EncryptedPassword,
-                    Nonce = loginItem.PasswordNonce,
-                    AuthenticationTag = loginItem.PasswordAuthTag
+                    EncryptedPassword = parts[0],
+                    Nonce = parts[1],
+                    AuthenticationTag = parts[2]
                 };
-                decryptedItem.Password = _passwordCryptoService.DecryptPasswordWithMasterPassword(encryptedPasswordData, masterPassword, userSalt);
             }
 
-            // Decrypt TOTP secret
-            if (!string.IsNullOrEmpty(loginItem.EncryptedTotpSecret) && 
-                !string.IsNullOrEmpty(loginItem.TotpNonce) && 
-                !string.IsNullOrEmpty(loginItem.TotpAuthTag))
+            // Decrypt password if exists
+            if (!string.IsNullOrEmpty(loginItem.Password))
             {
-                var encryptedTotpData = new EncryptedPasswordData
+                var encryptedData = ParseEncryptedData(loginItem.Password);
+                if (encryptedData != null)
                 {
-                    EncryptedPassword = loginItem.EncryptedTotpSecret,
-                    Nonce = loginItem.TotpNonce,
-                    AuthenticationTag = loginItem.TotpAuthTag
-                };
-                decryptedItem.TotpSecret = _passwordCryptoService.DecryptPasswordWithMasterPassword(encryptedTotpData, masterPassword, userSalt);
+                    decryptedItem.Password = _passwordCryptoService.DecryptPassword(encryptedData, masterPassword, userSalt);
+                }
+            }
+
+            // Decrypt TOTP secret if exists
+            if (!string.IsNullOrEmpty(loginItem.TotpSecret))
+            {
+                var encryptedData = ParseEncryptedData(loginItem.TotpSecret);
+                if (encryptedData != null)
+                {
+                    decryptedItem.TotpSecret = _passwordCryptoService.DecryptPassword(encryptedData, masterPassword, userSalt);
+                }
+            }
+
+            // Decrypt security answers if they exist
+            if (!string.IsNullOrEmpty(loginItem.SecurityAnswer1))
+            {
+                var encryptedData = ParseEncryptedData(loginItem.SecurityAnswer1);
+                if (encryptedData != null)
+                {
+                    decryptedItem.SecurityAnswer1 = _passwordCryptoService.DecryptPassword(encryptedData, masterPassword, userSalt);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(loginItem.SecurityAnswer2))
+            {
+                var encryptedData = ParseEncryptedData(loginItem.SecurityAnswer2);
+                if (encryptedData != null)
+                {
+                    decryptedItem.SecurityAnswer2 = _passwordCryptoService.DecryptPassword(encryptedData, masterPassword, userSalt);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(loginItem.SecurityAnswer3))
+            {
+                var encryptedData = ParseEncryptedData(loginItem.SecurityAnswer3);
+                if (encryptedData != null)
+                {
+                    decryptedItem.SecurityAnswer3 = _passwordCryptoService.DecryptPassword(encryptedData, masterPassword, userSalt);
+                }
+            }
+
+            // Decrypt notes if they exist
+            if (!string.IsNullOrEmpty(loginItem.Notes))
+            {
+                var encryptedData = ParseEncryptedData(loginItem.Notes);
+                if (encryptedData != null)
+                {
+                    decryptedItem.Notes = _passwordCryptoService.DecryptPassword(encryptedData, masterPassword, userSalt);
+                }
             }
 
             return decryptedItem;
         });
     }
 
-    /// <summary>
-    /// Encrypts a specific field (legacy method)
-    /// </summary>
     [Obsolete("Use EncryptFieldAsync(value, sessionId) instead")]
     public async Task<EncryptedPasswordData> EncryptFieldAsync(string value, string masterPassword, byte[] userSalt)
     {
@@ -301,13 +360,10 @@ public class PasswordEncryptionService : IPasswordEncryptionService
 
         return await Task.Run(() =>
         {
-            return _passwordCryptoService.EncryptPasswordWithMasterPassword(value, masterPassword, userSalt);
+            return _passwordCryptoService.EncryptPassword(value, masterPassword, userSalt);
         });
     }
 
-    /// <summary>
-    /// Decrypts a specific field (legacy method)
-    /// </summary>
     [Obsolete("Use DecryptFieldAsync(encryptedData, sessionId) instead")]
     public async Task<string> DecryptFieldAsync(EncryptedPasswordData encryptedData, string masterPassword, byte[] userSalt)
     {
@@ -317,7 +373,9 @@ public class PasswordEncryptionService : IPasswordEncryptionService
 
         return await Task.Run(() =>
         {
-            return _passwordCryptoService.DecryptPasswordWithMasterPassword(encryptedData, masterPassword, userSalt);
+            return _passwordCryptoService.DecryptPassword(encryptedData, masterPassword, userSalt);
         });
     }
+
+    #endregion
 }

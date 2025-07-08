@@ -1,6 +1,6 @@
 using PasswordManager.Crypto.Interfaces;
 
-namespace PasswordManager.API.Interfaces;
+namespace PasswordManager.Services.Interfaces;
 
 /// <summary>
 /// Service interface for handling password item encryption and decryption using session-based vault operations
