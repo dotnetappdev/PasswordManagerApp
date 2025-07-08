@@ -1,14 +1,12 @@
 @page "/login"
 @page "/"
-@using System.Security.Cryptography
-@using System.Text
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
 @using PasswordManager.Crypto.Interfaces
+@using PasswordManager.Services.Interfaces
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@inject PasswordManager.App.Services.AuthService AuthService
-@inject IPasswordCryptoService PasswordCryptoService
+@inject IAuthService AuthService
 @inject IVaultSessionService VaultSessionService
 
 <div class="auth-container">
@@ -178,13 +176,12 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Check if master key is already set
-        var masterKeyHash = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "masterKeyHash");
-        isFirstTime = string.IsNullOrEmpty(masterKeyHash);
+        // Check if this is first time setup
+        isFirstTime = await AuthService.IsFirstTimeSetupAsync();
         
         if (!isFirstTime)
         {
-            storedHint = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "masterKeyHint") ?? string.Empty;
+            storedHint = await AuthService.GetMasterPasswordHintAsync();
         }
     }
 
@@ -262,29 +259,24 @@
         try
         {
             isLoading = true;
+            errorMessage = string.Empty;
             
-            // Hash the master key
-            var hash = HashPassword(masterKey);
+            // Setup master password using enhanced crypto service
+            var success = await AuthService.SetupMasterPasswordAsync(masterKey, masterKeyHint);
             
-            // Store the hash and hint
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "masterKeyHash", hash);
-            if (!string.IsNullOrEmpty(masterKeyHint))
+            if (success)
             {
-                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "masterKeyHint", masterKeyHint);
+                // Navigate to home page
+                Navigation.NavigateTo("/home");
             }
-            
-            // Store the master key for this session (in memory)
-            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "currentMasterKey", masterKey);
-            
-            // Set authentication state
-            await AuthService.SetAuthenticatedAsync(true);
-            
-            // Navigate to home page
-            Navigation.NavigateTo("/home");
+            else
+            {
+                errorMessage = "Failed to setup master password. Please try again.";
+            }
         }
         catch (Exception ex)
         {
-            errorMessage = "Failed to setup master key. Please try again.";
+            errorMessage = "Failed to setup master password. Please try again.";
         }
         finally
         {
@@ -301,30 +293,17 @@
             isLoading = true;
             errorMessage = string.Empty;
 
-            // Get stored hash
-            var storedHash = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "masterKeyHash");
+            // Authenticate using enhanced crypto service
+            var success = await AuthService.AuthenticateAsync(loginKey);
             
-            if (string.IsNullOrEmpty(storedHash))
+            if (success)
             {
-                errorMessage = "No master key found. Please reset your vault.";
-                return;
-            }
-
-            // Verify the master key
-            if (VerifyPassword(loginKey, storedHash))
-            {
-                // Store the master key for this session
-                await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "currentMasterKey", loginKey);
-                
-                // Set authentication state
-                await AuthService.SetAuthenticatedAsync(true);
-                
                 // Navigate to home page
                 Navigation.NavigateTo("/home");
             }
             else
             {
-                errorMessage = "Incorrect master key. Please try again.";
+                errorMessage = "Incorrect master password. Please try again.";
                 loginKey = string.Empty;
             }
         }
@@ -353,30 +332,23 @@
         
         if (confirmed)
         {
+            // Clear all storage
             await JSRuntime.InvokeVoidAsync("localStorage.clear");
             await JSRuntime.InvokeVoidAsync("sessionStorage.clear");
+            
+            // Reset component state
             isFirstTime = true;
             masterKey = string.Empty;
             confirmKey = string.Empty;
             loginKey = string.Empty;
             masterKeyHint = string.Empty;
             errorMessage = string.Empty;
+            
+            // Lock vault session
+            VaultSessionService.LockVault();
+            
             StateHasChanged();
         }
-    }
-
-    private string HashPassword(string password)
-    {
-        using var sha256 = SHA256.Create();
-        var saltedPassword = password + "PasswordManagerSalt2024"; // Add a salt
-        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(saltedPassword));
-        return Convert.ToBase64String(hashedBytes);
-    }
-
-    private bool VerifyPassword(string password, string hash)
-    {
-        var hashedInput = HashPassword(password);
-        return hashedInput == hash;
     }
 
     private async Task RegisterPasskey()
@@ -407,9 +379,9 @@
             var result = await JSRuntime.InvokeAsync<bool>("passkey.login", id);
             if (result)
             {
-                // Simulate login (set session)
-                await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "currentMasterKey", "PASSKEY_AUTH");
-                Navigation.NavigateTo("/");
+                // For passkey authentication, we need to implement a separate flow
+                // This would require additional security measures
+                Navigation.NavigateTo("/home");
             }
             else
             {

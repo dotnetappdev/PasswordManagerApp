@@ -1,7 +1,10 @@
 using PasswordManager.Models.DTOs.Sync;
 
-namespace PasswordManager.App.Services.Interfaces;
+namespace PasswordManager.Services.Interfaces;
 
+/// <summary>
+/// Service for synchronizing data with the web API
+/// </summary>
 public interface IAppSyncService
 {
     /// <summary>

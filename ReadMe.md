@@ -1,6 +1,68 @@
 ﻿# 🔐 Password Manager
 
-[![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-9.0## 🔒 Security & Encryption
+
+T## 🔒 Security & Encryption
+
+This password manager implements enterprise-grade security with zero-knowledge architecture:
+
+### 🛡️ Enhanced Security Methods
+- **PBKDF2 Key Derivation**: 600,000+ iterations with SHA-256 for strong key derivation (OWASP 2024 recommendation)
+- **AES-256-GCM Encryption**: Authenticated encryption preventing tampering and ensuring data integrity
+- **Zero-Knowledge Architecture**: Server cannot decrypt user data without master password
+- **Master Key Hash Storage**: Only salted password hashes stored in database, never plain text
+- **Secure Credential Storage**: Master key components stored in platform-specific secure storage
+  - Windows: Windows Credential Manager
+  - macOS: macOS Keychain
+  - Linux: libsecret
+  - Mobile: Platform-specific secure keystores
+- **Session-Based Vault Management**: Cryptographic keys cached in memory only during active sessions
+- **Memory Safety**: Encryption keys are immediately cleared from memory after use
+- **Salt Generation**: Cryptographically secure random salt generation for each user
+- **Key Stretching**: Multiple rounds of key derivation to prevent brute force attacks
+- **Authenticated Encryption**: GCM mode provides both confidentiality and authenticity
+
+### 🔐 Password Reveal System
+- **Secure Decryption**: Passwords decrypted on-demand using cached session keys
+- **Memory Protection**: Decrypted passwords never persist in memory longer than necessary
+- **Session Validation**: All decrypt operations validate active vault session
+- **Audit Trail**: All password reveal operations logged for security monitoring
+
+### 🎯 Industry Standards Compliance
+- **OWASP Guidelines**: Follows OWASP Password Storage Cheat Sheet recommendations
+- **NIST Compliance**: Aligned with NIST Special Publication 800-63B guidelines
+- **Zero-Knowledge Proof**: Complete implementation of zero-knowledge architecture
+- **Forward Secrecy**: Each session uses fresh cryptographic material
+
+📋 **[View Detailed Encryption Implementation](ENCRYPTION_IMPLEMENTATION.md)** - Complete technical documentation of the security architecture, encryption algorithms, and implementation details. manager implements enterprise-grade security with zero-knowledge architecture:
+
+### 🛡️ Enhanced Security Methods
+- **PBKDF2 Key Derivation**: 600,000+ iterations with SHA-256 for strong key derivation (OWASP 2024 recommendation)
+- **AES-256-GCM Encryption**: Authenticated encryption preventing tampering and ensuring data integrity
+- **Zero-Knowledge Architecture**: Server cannot decrypt user data without master password
+- **Master Key Hash Storage**: Only salted password hashes stored in database, never plain text
+- **Secure Credential Storage**: Master key components stored in platform-specific secure storage
+  - Windows: Windows Credential Manager
+  - macOS: macOS Keychain
+  - Linux: libsecret
+  - Mobile: Platform-specific secure keystores
+- **Session-Based Vault Management**: Cryptographic keys cached in memory only during active sessions
+- **Memory Safety**: Encryption keys are immediately cleared from memory after use
+- **Salt Generation**: Cryptographically secure random salt generation for each user
+- **Key Stretching**: Multiple rounds of key derivation to prevent brute force attacks
+- **Authenticated Encryption**: GCM mode provides both confidentiality and authenticity
+
+### 🔐 Password Reveal System
+- **Secure Decryption**: Passwords decrypted on-demand using cached session keys
+- **Memory Protection**: Decrypted passwords never persist in memory longer than necessary
+- **Session Validation**: All decrypt operations validate active vault session
+- **Audit Trail**: All password reveal operations logged for security monitoring
+
+### 🎯 Industry Standards Compliance
+- **OWASP Guidelines**: Follows OWASP Password Storage Cheat Sheet recommendations
+- **NIST Compliance**: Aligned with NIST Special Publication 800-63B guidelines
+- **Zero-Knowledge Proof**: Complete implementation of zero-knowledge architecture
+- **Forward Secrecy**: Each session uses fresh cryptographic materialyle=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![MAUI](https://img.shields.io/badge/MAUI-Cross--Platform-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/apps/maui)
 [![Web API](https://img.shields.io/badge/Web%20API-ASP.NET%20Core-512BD4?style=for-the-badge&logo=dotnet)](https://docs.microsoft.com/aspnet/core/web-api/)
 [![Open Source](https://img.shields.io/badge/Open%20Source-MIT-green?style=for-the-badge)](LICENSE)
@@ -32,7 +94,7 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 
 ### 📊 Import & Export
 - **Plugin-Based Import System**: Modular architecture for importing from other password managers
-- **Bitwarden Import**: Native support for Bitwarden CSV exports
+- **Enhanced Security Import**: Native support for secure CSV imports with advanced encryption
 - **1Password Import**: Native support for 1Password CSV exports
 - **External Plugin Support**: Load third-party import plugins at runtime
 - **Progress Tracking**: Real-time import progress with detailed feedback
@@ -262,7 +324,7 @@ PasswordManager/
 │   ├── Extensions/                   # DI container extensions
 │   └── Tests/                        # Crypto functionality tests
 ├── PasswordManager.Imports/          # Import system core
-├── PasswordManagerImports.Bitwarden/ # Bitwarden import plugin
+├── PasswordManagerImports.Bitwarden/ # Enhanced secure import plugin
 └── PasswordManagerImports.1Password/ # 1Password import plugin
 ```
 

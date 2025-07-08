@@ -1,0 +1,277 @@
+using System;
+using System.Threading.Tasks;
+using Microsoft.JSInterop;
+using PasswordManager.Crypto.Interfaces;
+using PasswordManager.DAL;
+using PasswordManager.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using PasswordManager.Services.Interfaces;
+
+namespace PasswordManager.Services.Services;
+
+/// <summary>
+/// Service for user authentication and session management
+/// </summary>
+public class AuthService : IAuthService
+{
+    private readonly IJSRuntime _jsRuntime;
+    private readonly IPasswordCryptoService _passwordCryptoService;
+    private readonly IVaultSessionService _vaultSessionService;
+    private readonly PasswordManagerDbContext _dbContext;
+    private readonly ILogger<AuthService> _logger;
+    private bool _isAuthenticated = false;
+    private ApplicationUser? _currentUser;
+
+    public AuthService(
+        IJSRuntime jsRuntime,
+        IPasswordCryptoService passwordCryptoService,
+        IVaultSessionService vaultSessionService,
+        PasswordManagerDbContext dbContext,
+        ILogger<AuthService> logger)
+    {
+        _jsRuntime = jsRuntime;
+        _passwordCryptoService = passwordCryptoService;
+        _vaultSessionService = vaultSessionService;
+        _dbContext = dbContext;
+        _logger = logger;
+    }
+
+    public bool IsAuthenticated => _isAuthenticated;
+    public ApplicationUser? CurrentUser => _currentUser;
+
+    /// <summary>
+    /// Sets up a new master password for first-time use
+    /// </summary>
+    public async Task<bool> SetupMasterPasswordAsync(string masterPassword, string hint = "")
+    {
+        try
+        {
+            // Generate user salt
+            var userSalt = _passwordCryptoService.GenerateUserSalt();
+            
+            // Create master password hash for authentication
+            var masterPasswordHash = _passwordCryptoService.CreateMasterPasswordHash(masterPassword, userSalt);
+            
+            // Create user record in database
+            var user = new ApplicationUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "user@passwordmanager.local", // Default email for single-user setup
+                UserSalt = userSalt,
+                MasterPasswordHash = masterPasswordHash,
+                MasterPasswordHint = hint,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _dbContext.Users.Add(user);
+            await _dbContext.SaveChangesAsync();
+
+            // Store user salt securely in Windows Credential Manager (for desktop) or secure storage
+            await StoreUserSaltSecurelyAsync(user.Id.ToString(), userSalt);
+
+            _logger.LogInformation("Master password setup completed for user {UserId}", user.Id);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to setup master password");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Authenticates user with master password
+    /// </summary>
+    public async Task<bool> AuthenticateAsync(string masterPassword)
+    {
+        try
+        {
+            // Get user from database (for single-user setup, get the first user)
+            var user = await _dbContext.Users.FirstOrDefaultAsync();
+            if (user == null)
+            {
+                _logger.LogWarning("No user found in database");
+                return false;
+            }
+
+            // Retrieve user salt from secure storage
+            var userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
+            if (userSalt == null)
+            {
+                _logger.LogError("Failed to retrieve user salt from secure storage");
+                return false;
+            }
+
+            // Verify master password
+            var isValid = _passwordCryptoService.VerifyMasterPassword(
+                masterPassword, 
+                user.MasterPasswordHash, 
+                userSalt);
+
+            if (isValid)
+            {
+                // Unlock vault session
+                var vaultUnlocked = _vaultSessionService.UnlockVault(
+                    masterPassword, 
+                    userSalt, 
+                    user.MasterPasswordHash);
+
+                if (vaultUnlocked)
+                {
+                    _isAuthenticated = true;
+                    _currentUser = user;
+                    await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "isAuthenticated", "true");
+                    
+                    _logger.LogInformation("User {UserId} authenticated successfully", user.Id);
+                    return true;
+                }
+            }
+
+            _logger.LogWarning("Authentication failed for user {UserId}", user.Id);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Authentication error");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Checks if user is already authenticated
+    /// </summary>
+    public async Task<bool> CheckAuthenticationStatusAsync()
+    {
+        try
+        {
+            var isAuth = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "isAuthenticated");
+            var isSessionValid = !string.IsNullOrEmpty(isAuth) && isAuth == "true";
+            
+            if (isSessionValid && _vaultSessionService.IsVaultUnlocked)
+            {
+                _isAuthenticated = true;
+                // Restore current user if not already set
+                if (_currentUser == null)
+                {
+                    _currentUser = await _dbContext.Users.FirstOrDefaultAsync();
+                }
+                return true;
+            }
+            
+            _isAuthenticated = false;
+            return false;
+        }
+        catch
+        {
+            _isAuthenticated = false;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Logs out the user and locks the vault
+    /// </summary>
+    public async Task LogoutAsync()
+    {
+        try
+        {
+            _isAuthenticated = false;
+            _currentUser = null;
+            _vaultSessionService.LockVault();
+            
+            await _jsRuntime.InvokeVoidAsync("sessionStorage.removeItem", "isAuthenticated");
+            
+            _logger.LogInformation("User logged out successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during logout");
+        }
+    }
+
+    /// <summary>
+    /// Checks if this is the first time setup
+    /// </summary>
+    public async Task<bool> IsFirstTimeSetupAsync()
+    {
+        try
+        {
+            var userExists = await _dbContext.Users.AnyAsync();
+            return !userExists;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking first time setup");
+            return true; // Default to first time setup on error
+        }
+    }
+
+    /// <summary>
+    /// Gets the master password hint
+    /// </summary>
+    public async Task<string> GetMasterPasswordHintAsync()
+    {
+        try
+        {
+            var user = await _dbContext.Users.FirstOrDefaultAsync();
+            return user?.MasterPasswordHint ?? "";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting master password hint");
+            return "";
+        }
+    }
+
+    /// <summary>
+    /// Stores user salt securely in Windows Credential Manager or platform-specific secure storage
+    /// </summary>
+    private async Task StoreUserSaltSecurelyAsync(string userId, byte[] userSalt)
+    {
+        try
+        {
+            // Convert salt to base64 for storage
+            var saltBase64 = Convert.ToBase64String(userSalt);
+            
+            // For now, store in localStorage (should be replaced with proper credential storage)
+            // In production, this should use:
+            // - Windows Credential Manager on Windows
+            // - Keychain on macOS
+            // - libsecret on Linux
+            // - Android Keystore on Android
+            // - iOS Keychain on iOS
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", $"userSalt_{userId}", saltBase64);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to store user salt securely");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Retrieves user salt from secure storage
+    /// </summary>
+    private async Task<byte[]?> GetUserSaltSecurelyAsync(string userId)
+    {
+        try
+        {
+            // For now, retrieve from localStorage (should be replaced with proper credential storage)
+            var saltBase64 = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", $"userSalt_{userId}");
+            
+            if (string.IsNullOrEmpty(saltBase64))
+            {
+                return null;
+            }
+
+            return Convert.FromBase64String(saltBase64);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve user salt from secure storage");
+            return null;
+        }
+    }
+}

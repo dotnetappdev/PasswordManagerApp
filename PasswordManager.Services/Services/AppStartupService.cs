@@ -1,9 +1,12 @@
 using Microsoft.Extensions.Logging;
-using PasswordManager.App.Services.Interfaces;
+using PasswordManager.Services.Interfaces;
 
-namespace PasswordManager.App.Services;
+namespace PasswordManager.Services.Services;
 
-public class AppStartupService
+/// <summary>
+/// Service for handling application startup operations
+/// </summary>
+public class AppStartupService : IAppStartupService
 {
     private readonly IAppSyncService _syncService;
     private readonly ILogger<AppStartupService> _logger;

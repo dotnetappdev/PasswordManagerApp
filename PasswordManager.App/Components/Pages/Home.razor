@@ -12,10 +12,11 @@
 @inject ICategoryInterface CategoryService
 @inject ICollectionService CollectionService
 @inject IJSRuntime JSRuntime
-@inject PasswordManager.App.Services.AuthService AuthService
+@inject IAuthService AuthService
 @inject NavigationManager Navigation
 @inject PasswordManager.Imports.Interfaces.IImportService ImportService
 @inject IVaultSessionService VaultSessionService
+@inject IPasswordRevealService PasswordRevealService
 
 <style>
     .validation-error {
@@ -547,8 +548,8 @@
                         <div class="detail-field">
                             <label>Password</label>
                             <div class="field-value">
-                                <span>@(passwordVisible ? GetDecryptedPassword(selectedItem.LoginItem.Password) : "••••••••••")</span>
-                                <button class="copy-btn" @onclick="() => CopyDecryptedPassword(selectedItem.LoginItem.Password)">📋</button>
+                                <span>@(passwordVisible ? GetDisplayPassword(selectedItem.LoginItem) : "••••••••••")</span>
+                                <button class="copy-btn" @onclick="() => CopyPasswordAsync(selectedItem.LoginItem)">📋</button>
                                 <button class="reveal-btn" @onclick="TogglePasswordVisibility">@(passwordVisible ? "🙈" : "👁️")</button>
                             </div>
                         </div>
@@ -1834,15 +1835,16 @@ private void OnLengthChanged(ChangeEventArgs e)
         StateHasChanged();
     }
 
-    private string GetDecryptedPassword(string encryptedPassword)
+    private string GetDisplayPassword(LoginItem loginItem)
     {
         try
         {
-            if (string.IsNullOrEmpty(encryptedPassword))
+            if (loginItem?.EncryptedPassword == null)
                 return "";
             
-            // Use the VaultSessionService to decrypt the password
-            return VaultSessionService.DecryptPassword(encryptedPassword);
+            // Use the PasswordRevealService to decrypt the password
+            var result = PasswordRevealService.RevealPasswordAsync(loginItem).Result;
+            return result ?? "Error decrypting password";
         }
         catch (Exception ex)
         {
@@ -1852,11 +1854,14 @@ private void OnLengthChanged(ChangeEventArgs e)
         }
     }
 
-    private async Task CopyDecryptedPassword(string encryptedPassword)
+    private async Task CopyPasswordAsync(LoginItem loginItem)
     {
         try
         {
-            var decryptedPassword = GetDecryptedPassword(encryptedPassword);
+            if (loginItem?.EncryptedPassword == null)
+                return;
+                
+            var decryptedPassword = await PasswordRevealService.RevealPasswordAsync(loginItem);
             if (!string.IsNullOrEmpty(decryptedPassword))
             {
                 await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", decryptedPassword);

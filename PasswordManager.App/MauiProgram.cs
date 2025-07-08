@@ -56,15 +56,16 @@ public static class MauiProgram
 		builder.Services.AddScoped<ITagService, TagService>();
 		builder.Services.AddScoped<ICategoryInterface, CategoryService>();
 		builder.Services.AddScoped<ICollectionService, CollectionService>();
-		builder.Services.AddScoped<Services.AuthService>();
+		builder.Services.AddScoped<IAuthService, AuthService>();
+		builder.Services.AddScoped<IPasswordRevealService, PasswordRevealService>();
+		builder.Services.AddScoped<IAppSyncService, AppSyncService>();
+		builder.Services.AddScoped<IAppStartupService, AppStartupService>();
 
 		// Register crypto services
-		builder.Services.AddPasswordCrypto();
+		builder.Services.AddCryptographyServices();
 
 		// Register sync services
 		builder.Services.AddHttpClient();
-		builder.Services.AddScoped<IAppSyncService, AppSyncService>();
-		builder.Services.AddScoped<AppStartupService>();
 
 		// Register import services
 		builder.Services.AddSingleton<PluginDiscoveryService>();
@@ -130,7 +131,7 @@ public static class MauiProgram
 			importService.RegisterProvider(onePasswordProvider);
 
 			// Initialize startup sync service
-			var startupService = scope.ServiceProvider.GetRequiredService<AppStartupService>();
+			var startupService = scope.ServiceProvider.GetRequiredService<IAppStartupService>();
 			await startupService.InitializeAsync();
 		}
 
