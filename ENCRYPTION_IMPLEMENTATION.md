@@ -11,6 +11,7 @@ I have successfully implemented a comprehensive encryption system for your Passw
 - Implements PBKDF2 with 600,000+ iterations (OWASP 2024 recommendation)
 - Uses AES-256-GCM for authenticated encryption
 - Follows zero-knowledge architecture principles
+- Standardized authentication hash generation using `CreateAuthHash` method
 
 ### 2. **Database Schema Updates**
 - Updated `ApplicationUser` model to store user salt and master password hash
@@ -26,6 +27,7 @@ I have successfully implemented a comprehensive encryption system for your Passw
 #### Key Flow:
 ```
 Master Password + User Salt → PBKDF2(600k iterations) → Master Key
+Master Key + Master Password → CreateAuthHash → Authentication Hash (stored for verification)
 Master Key → AES-256-GCM → Encrypted Password Data
 ```
 

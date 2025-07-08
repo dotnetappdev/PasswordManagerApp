@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PasswordManager.API.Interfaces;
-using PasswordMa            // Update last login time
-            user.LastLoginAt = DateTime.UtcNow;
-            await _userManager.UpdateAsync(user);er.Models.DTOs.Auth;
+using PasswordManager.Models.DTOs.Auth;
 using PasswordManager.Crypto.Interfaces;
 using PasswordManager.Models;
 using PasswordManager.DAL;
@@ -59,8 +57,8 @@ public class AuthController : ControllerBase
             // Derive master key from password
             var masterKey = _passwordCryptoService.DeriveMasterKey(loginRequest.Password, Convert.FromBase64String(user.UserSalt));
 
-            // Verify against stored hash using Bitwarden-style authentication
-            var authHash = _passwordCryptoService.CreateBitwardenAuthHash(masterKey, loginRequest.Password);
+            // Verify against stored hash using authentication
+            var authHash = _passwordCryptoService.CreateAuthHash(masterKey, loginRequest.Password);
             
             if (!_passwordCryptoService.VerifyMasterPassword(loginRequest.Password, user.MasterPasswordHash, Convert.FromBase64String(user.UserSalt), user.MasterPasswordIterations))
             {
@@ -88,7 +86,7 @@ public class AuthController : ControllerBase
 
             // Update last login time
             user.LastLoginAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await _userManager.UpdateAsync(user);
 
             return Ok(response);
         }
@@ -124,8 +122,8 @@ public class AuthController : ControllerBase
             var salt = _passwordCryptoService.GenerateUserSalt();
             var masterKey = _passwordCryptoService.DeriveMasterKey(registerRequest.Password, salt);
 
-            // Create Bitwarden-style authentication hash
-            var authHash = _passwordCryptoService.CreateBitwardenAuthHash(masterKey, registerRequest.Password);
+            // Create authentication hash
+            var authHash = _passwordCryptoService.CreateAuthHash(masterKey, registerRequest.Password);
 
             // Create new user
             var user = new ApplicationUser

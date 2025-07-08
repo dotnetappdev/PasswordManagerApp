@@ -144,6 +144,41 @@ public class PasswordCryptoService : IPasswordCryptoService
     }
 
     /// <summary>
+    /// Creates an authentication hash using pre-derived master key and master password
+    /// This is more efficient when the master key is already available (e.g. during login)
+    /// </summary>
+    public string CreateAuthHash(byte[] masterKey, string masterPassword)
+    {
+        if (masterKey == null || masterKey.Length == 0)
+            throw new ArgumentException("Master key cannot be null or empty", nameof(masterKey));
+        
+        if (string.IsNullOrEmpty(masterPassword))
+            throw new ArgumentException("Master password cannot be null or empty", nameof(masterPassword));
+
+        // Create authentication hash following Bitwarden's approach
+        var masterKeyBytes = Encoding.UTF8.GetBytes(Convert.ToBase64String(masterKey));
+        var masterPasswordBytes = Encoding.UTF8.GetBytes(masterPassword);
+        
+        // Combine master key + master password as salt for authentication hash
+        var authSalt = new byte[masterKeyBytes.Length + masterPasswordBytes.Length];
+        Buffer.BlockCopy(masterKeyBytes, 0, authSalt, 0, masterKeyBytes.Length);
+        Buffer.BlockCopy(masterPasswordBytes, 0, authSalt, masterKeyBytes.Length, masterPasswordBytes.Length);
+        
+        try
+        {
+            // Use single iteration for authentication hash (Bitwarden approach)
+            return _cryptographyService.HashPassword(Convert.ToBase64String(masterKey), authSalt, 1);
+        }
+        finally
+        {
+            // Clear sensitive data from memory
+            Array.Clear(authSalt, 0, authSalt.Length);
+            Array.Clear(masterKeyBytes, 0, masterKeyBytes.Length);
+            Array.Clear(masterPasswordBytes, 0, masterPasswordBytes.Length);
+        }
+    }
+
+    /// <summary>
     /// Verifies a master password against stored hash
     /// </summary>
     public bool VerifyMasterPassword(string masterPassword, string storedHash, byte[] userSalt, int iterations = AuthHashIterations)

@@ -33,6 +33,14 @@ public interface IPasswordCryptoService
     string CreateMasterPasswordHash(string masterPassword, byte[] userSalt, int iterations = 600000);
 
     /// <summary>
+    /// Creates an authentication hash using pre-derived master key and master password
+    /// </summary>
+    /// <param name="masterKey">Pre-derived master key</param>
+    /// <param name="masterPassword">User's master password</param>
+    /// <returns>Authentication hash for user verification</returns>
+    string CreateAuthHash(byte[] masterKey, string masterPassword);
+
+    /// <summary>
     /// Verifies a master password against stored hash
     /// </summary>
     /// <param name="masterPassword">Password to verify</param>
