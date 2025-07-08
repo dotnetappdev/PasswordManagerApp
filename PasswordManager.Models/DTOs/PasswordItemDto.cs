@@ -13,6 +13,7 @@ public class PasswordItemDto
     public bool IsFavorite { get; set; }
     public bool IsArchived { get; set; }
     public bool IsDeleted { get; set; }
+    public string? UserId { get; set; }
     public int CategoryId { get; set; }
     public int CollectionId { get; set; }
     public CategoryDto? Category { get; set; }

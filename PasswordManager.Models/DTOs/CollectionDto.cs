@@ -9,6 +9,7 @@ public class CollectionDto
     public string? Color { get; set; }
     public DateTime CreatedAt { get; set; }
     public bool IsDefault { get; set; }
+    public string? UserId { get; set; }
     public int? ParentCollectionId { get; set; }
     public CollectionDto? ParentCollection { get; set; }
     public List<CollectionDto> Children { get; set; } = new();
