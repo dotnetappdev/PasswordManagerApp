@@ -479,16 +479,22 @@ public class PasswordItemsController : ControllerBase
                 await _passwordEncryptionService.EncryptLoginItemAsync(loginItem, createDto.MasterPassword, userSalt);
 
                 // Convert to DTO format for the existing service
+                // Use mapping helper to convert LoginItem to CreateLoginItemDto if needed
                 var loginItemDto = new CreateLoginItemDto
                 {
                     Website = loginItem.Website,
                     Username = loginItem.Username,
                     Email = loginItem.Email,
+                    Password = loginItem.Password,
                     PhoneNumber = loginItem.PhoneNumber,
+                    TotpSecret = loginItem.TotpSecret,
                     TwoFactorType = loginItem.TwoFactorType,
                     SecurityQuestion1 = loginItem.SecurityQuestion1,
+                    SecurityAnswer1 = loginItem.SecurityAnswer1,
                     SecurityQuestion2 = loginItem.SecurityQuestion2,
+                    SecurityAnswer2 = loginItem.SecurityAnswer2,
                     SecurityQuestion3 = loginItem.SecurityQuestion3,
+                    SecurityAnswer3 = loginItem.SecurityAnswer3,
                     RecoveryEmail = loginItem.RecoveryEmail,
                     RecoveryPhone = loginItem.RecoveryPhone,
                     LoginUrl = loginItem.LoginUrl,
@@ -498,10 +504,9 @@ public class PasswordItemsController : ControllerBase
                     RequiresPasswordChange = loginItem.RequiresPasswordChange,
                     CompanyName = loginItem.CompanyName,
                     Department = loginItem.Department,
-                    JobTitle = loginItem.JobTitle
-                    // Note: Encrypted fields are already set in the LoginItem entity
+                    JobTitle = loginItem.JobTitle,
+                    Notes = loginItem.Notes
                 };
-
                 passwordItem.LoginItem = loginItemDto;
             }
 
@@ -515,7 +520,7 @@ public class PasswordItemsController : ControllerBase
                 IsArchived = passwordItem.IsArchived,
                 CategoryId = passwordItem.CategoryId,
                 CollectionId = passwordItem.CollectionId,
-                LoginItem = passwordItem.LoginItem,
+                LoginItem = createDto.LoginItem, // Use the original DTO
                 TagIds = createDto.TagIds
             };
 
