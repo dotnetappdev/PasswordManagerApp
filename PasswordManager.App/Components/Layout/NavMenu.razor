@@ -14,14 +14,32 @@
             </NavLink>
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            <NavLink class="nav-link" href="passwords">
+                <span class="bi bi-key-fill-nav-menu" aria-hidden="true"></span> Passwords
             </NavLink>
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+            <NavLink class="nav-link" href="categories">
+                <span class="bi bi-folder-fill-nav-menu" aria-hidden="true"></span> Categories
             </NavLink>
         </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="collections">
+                <span class="bi bi-collection-fill-nav-menu" aria-hidden="true"></span> Collections
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="tags">
+                <span class="bi bi-tag-fill-nav-menu" aria-hidden="true"></span> Tags
+            </NavLink>
+        </div>
+        
+        <AuthorizeView Roles="Admin">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="admin/users">
+                    <span class="bi bi-people-fill-nav-menu" aria-hidden="true"></span> User Management
+                </NavLink>
+            </div>
+        </AuthorizeView>
     </nav>
 </div>

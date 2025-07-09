@@ -63,6 +63,7 @@ builder.Services.AddScoped<ISyncService, PasswordManager.Services.Services.SyncS
 builder.Services.AddScoped<IDatabaseContextFactory, PasswordManager.Services.Services.DatabaseContextFactory>();
 builder.Services.AddScoped<IPasswordEncryptionService, PasswordManager.Services.Services.PasswordEncryptionService>();
 builder.Services.AddScoped<IJwtService, PasswordManager.Services.Services.JwtService>();
+builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 // VaultSessionService is registered in AddCryptographyServices extension method
 builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncService>();
 
