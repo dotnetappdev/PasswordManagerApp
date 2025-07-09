@@ -3,8 +3,6 @@ using PasswordManager.DAL;
 using PasswordManager.Crypto.Extensions;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
-using PasswordManager.API.Interfaces;
-using PasswordManager.API.Services;
 using Serilog;
 using Scalar.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,15 +55,16 @@ switch (databaseProvider.ToLower())
 }
 
 // Register application services
-builder.Services.AddScoped<IPasswordItemApiService, PasswordItemApiService>();
-builder.Services.AddScoped<ICategoryApiService, CategoryApiService>();
-builder.Services.AddScoped<ICollectionApiService, CollectionApiService>();
-builder.Services.AddScoped<ITagApiService, TagApiService>();
-builder.Services.AddScoped<ISyncService, SyncService>();
-builder.Services.AddScoped<IDatabaseContextFactory, DatabaseContextFactory>();
+builder.Services.AddScoped<IPasswordItemApiService, PasswordManager.Services.Services.PasswordItemApiService>();
+builder.Services.AddScoped<ICategoryApiService, PasswordManager.Services.Services.CategoryApiService>();
+builder.Services.AddScoped<ICollectionApiService, PasswordManager.Services.Services.CollectionApiService>();
+builder.Services.AddScoped<ITagApiService, PasswordManager.Services.Services.TagApiService>();
+builder.Services.AddScoped<ISyncService, PasswordManager.Services.Services.SyncService>();
+builder.Services.AddScoped<IDatabaseContextFactory, PasswordManager.Services.Services.DatabaseContextFactory>();
 builder.Services.AddScoped<IPasswordEncryptionService, PasswordManager.Services.Services.PasswordEncryptionService>();
+builder.Services.AddScoped<IJwtService, PasswordManager.Services.Services.JwtService>();
 // VaultSessionService is registered in AddCryptographyServices extension method
-builder.Services.AddHostedService<AutoSyncService>();
+builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncService>();
 
 // Register cryptography services
 builder.Services.AddCryptographyServices();

@@ -44,4 +44,9 @@ public interface IVaultSessionService
     /// <param name="sessionId">Session ID</param>
     /// <returns>Decrypted password</returns>
     string DecryptPassword(string encryptedPassword, string sessionId);
+
+    // Vault lock/unlock methods
+    bool IsVaultUnlocked(string sessionId);
+    void LockVault(string sessionId);
+    bool UnlockVault(string sessionId, byte[] masterKey);
 }

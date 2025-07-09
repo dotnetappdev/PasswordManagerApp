@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using PasswordManager.API.Interfaces;
+using PasswordManager.Services.Interfaces;
 using PasswordManager.Models.DTOs.Sync;
 
 namespace PasswordManager.API.Controllers;

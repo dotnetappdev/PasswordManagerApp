@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using PasswordManager.API.Interfaces;
+using PasswordManager.Services.Interfaces;
 using PasswordManager.API.DTOs;
 using PasswordManager.Models.DTOs;
 using ApiDtos = PasswordManager.API.DTOs;
