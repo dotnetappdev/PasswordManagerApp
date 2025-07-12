@@ -59,7 +59,7 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 
 ### 🔄 Cloud Synchronization
 - **Web API Integration**: RESTful API for secure data synchronization
-- **Multi-Database Support**: Sync between SQLite, SQL Server, and PostgreSQL
+- **Multi-Database Support**: Sync between SQLite, SQL Server, PostgreSQL, and MySQL
 - **JWT Authentication**: Secure API access with Bearer token authentication
 - **Auto-Sync**: Automatic synchronization on app startup and periodic intervals
 - **Conflict Resolution**: Smart conflict handling with configurable resolution strategies
@@ -72,20 +72,19 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 This password manager implements enterprise-grade security with zero-knowledge architecture:
 
 ### 🛡️ Enhanced Security Methods
-- **PBKDF2 Key Derivation**: 600,000+ iterations with SHA-256 for strong key derivation (OWASP 2024 recommendation)
+- **PBKDF2 Key Derivation**: 600,000 iterations with SHA-256 (OWASP 2024 recommendation, 6x stronger than Bitwarden's default)
 - **AES-256-GCM Encryption**: Authenticated encryption preventing tampering and ensuring data integrity
 - **Zero-Knowledge Architecture**: Server cannot decrypt user data without master password
-- **Master Key Hash Storage**: Only salted password hashes stored in database, never plain text
-- **Secure Credential Storage**: Master key components stored in platform-specific secure storage
-  - Windows: Windows Credential Manager
-  - macOS: macOS Keychain
-  - Linux: libsecret
-  - Mobile: Platform-specific secure keystores
+- **Bitwarden-Compatible Flow**: Master password → PBKDF2 → Master Key → AES-256-GCM encryption
+- **Two-Layer Security Model**: 
+  - Authentication Layer: PBKDF2 hash stored for login verification
+  - Encryption Layer: Separate master key encrypts user data
 - **Session-Based Vault Management**: Cryptographic keys cached in memory only during active sessions
 - **Memory Safety**: Encryption keys are immediately cleared from memory after use
-- **Salt Generation**: Cryptographically secure random salt generation for each user
-- **Key Stretching**: Multiple rounds of key derivation to prevent brute force attacks
+- **Salt Generation**: Cryptographically secure random salt generation for each user (256-bit)
+- **Key Stretching**: 600,000 PBKDF2 iterations to prevent brute force attacks
 - **Authenticated Encryption**: GCM mode provides both confidentiality and authenticity
+- **Password Reveal on Demand**: Instant password decryption using cached session keys (Bitwarden-style UX)
 
 ### 🔐 Password Reveal System
 - **Secure Decryption**: Passwords decrypted on-demand using cached session keys
@@ -121,13 +120,17 @@ This password manager implements enterprise-grade security with zero-knowledge a
 - **Entity Framework Migrations**: Version-controlled database schema changes
 - **SQL Server**: Enterprise database support for production deployments
 - **PostgreSQL**: Open-source database option for cloud deployments
+- **MySQL**: Popular open-source database with full Entity Framework support
 
 ### Security & Cryptography
-- **PasswordManager.Crypto**: Custom cryptography library
-- **PBKDF2**: Industry-standard key derivation function
-- **AES-256-GCM**: Authenticated encryption algorithm
-- **Secure Random**: Cryptographically secure random number generation
-- **Platform Keystores**: OS-specific secure credential storage
+- **PasswordManager.Crypto**: Custom cryptography library with Bitwarden-compatible encryption
+- **PBKDF2**: 600,000 iterations (OWASP 2024 recommendation) for key derivation
+- **AES-256-GCM**: Authenticated encryption preventing tampering and ensuring data integrity
+- **Zero-Knowledge Architecture**: Server cannot decrypt user data without master password
+- **Master Key Derivation**: Bitwarden-compatible master password + salt → encryption key flow
+- **Session-Based Vault Management**: Cryptographic keys cached securely during user sessions
+- **Memory Safety**: Encryption keys immediately cleared from memory after use
+- **Secure Random**: Cryptographically secure random salt generation for each user
 
 ### Cloud & API
 - **ASP.NET Core**: Web API framework for cloud services
@@ -217,9 +220,17 @@ PasswordManagerApp/
 
 ### Database Configuration
 
-The application supports multiple database providers:
+The application supports multiple database providers. Set the `DatabaseProvider` in `appsettings.json`:
 
 #### SQLite (Default)
+```json
+{
+  "DatabaseProvider": "sqlite",
+  "ConnectionStrings": {
+    "SqliteConnection": "Data Source=passwordmanager.db"
+  }
+}
+```
 - Automatically configured for local development
 - Database file stored in app data directory
 - No additional setup required
@@ -227,6 +238,7 @@ The application supports multiple database providers:
 #### SQL Server
 ```json
 {
+  "DatabaseProvider": "sqlserver",
   "ConnectionStrings": {
     "DefaultConnection": "Server=localhost;Database=PasswordManager;Trusted_Connection=true;TrustServerCertificate=true;"
   }
@@ -236,11 +248,26 @@ The application supports multiple database providers:
 #### PostgreSQL
 ```json
 {
+  "DatabaseProvider": "postgresql",
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Database=passwordmanager;Username=postgres;Password=yourpassword"
+    "PostgresConnection": "Host=localhost;Database=passwordmanager;Username=postgres;Password=yourpassword"
   }
 }
 ```
+
+#### MySQL
+```json
+{
+  "DatabaseProvider": "mysql",
+  "ConnectionStrings": {
+    "MySqlConnection": "Server=localhost;Database=PasswordManager;User=root;Password=yourpassword;Port=3306;"
+  }
+}
+```
+
+📋 **[MySQL Setup Guide](MYSQL_SETUP_GUIDE.md)** - Complete guide for setting up MySQL with the Password Manager API.
+
+**Note**: All database providers support the full encryption feature set with 600,000 PBKDF2 iterations and AES-256-GCM encryption.
 
 ## 📖 Usage
 

@@ -39,6 +39,9 @@ public class DatabaseContextFactory : IDatabaseContextFactory
             case "postgresql":
                 optionsBuilder.UseNpgsql(connectionString);
                 break;
+            case "mysql":
+                optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+                break;
             default:
                 throw new ArgumentException($"Unsupported database provider: {provider}");
         }

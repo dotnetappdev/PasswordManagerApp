@@ -1,7 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Identity;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.API.DTOs;
 using PasswordManager.Models.DTOs;
+using PasswordManager.Models;
+using PasswordManager.Crypto.Interfaces;
+using PasswordManager.Crypto.Services;
 using ApiDtos = PasswordManager.API.DTOs;
 
 namespace PasswordManager.API.Controllers;
@@ -12,15 +16,24 @@ public class PasswordItemsController : ControllerBase
 {
     private readonly IPasswordItemApiService _passwordItemService;
     private readonly IPasswordEncryptionService _passwordEncryptionService;
+    private readonly IVaultSessionService _vaultSessionService;
+    private readonly IPasswordCryptoService _passwordCryptoService;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<PasswordItemsController> _logger;
 
     public PasswordItemsController(
         IPasswordItemApiService passwordItemService,
         IPasswordEncryptionService passwordEncryptionService,
+        IVaultSessionService vaultSessionService,
+        IPasswordCryptoService passwordCryptoService,
+        UserManager<ApplicationUser> userManager,
         ILogger<PasswordItemsController> logger)
     {
         _passwordItemService = passwordItemService;
         _passwordEncryptionService = passwordEncryptionService;
+        _vaultSessionService = vaultSessionService;
+        _passwordCryptoService = passwordCryptoService;
+        _userManager = userManager;
         _logger = logger;
     }
 
@@ -417,18 +430,31 @@ public class PasswordItemsController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new encrypted password item
+    /// Create a new encrypted password item using session-based vault
     /// </summary>
     [HttpPost("encrypted")]
     public async Task<ActionResult<PasswordItemDto>> CreateEncrypted([FromBody] ApiDtos.CreateEncryptedPasswordItemDto createDto)
     {
         try
         {
-            if (string.IsNullOrEmpty(createDto.MasterPassword))
-                return BadRequest("Master password is required for encryption");
+            // Get session ID from Authorization header
+            var sessionId = HttpContext.Request.Headers["Authorization"]
+                .FirstOrDefault()?.Replace("Bearer ", "");
 
-            // TODO: Get user salt from authenticated user
-            var userSalt = new byte[32]; // This should come from the authenticated user
+            if (string.IsNullOrEmpty(sessionId))
+                return Unauthorized("Session token required");
+
+            // Get user ID from session
+            var userId = _vaultSessionService.GetSessionUserId(sessionId);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("Invalid session");
+
+            // Get user from database to retrieve salt
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return Unauthorized("User not found");
+
+            var userSalt = Convert.FromBase64String(user.UserSalt);
 
             // Create the password item model
             var passwordItem = new Models.PasswordItem
@@ -476,7 +502,7 @@ public class PasswordItemsController : ControllerBase
                 };
 
                 // Encrypt all sensitive fields using the encryption service
-                await _passwordEncryptionService.EncryptLoginItemAsync(loginItem, createDto.MasterPassword, userSalt);
+                await _passwordEncryptionService.EncryptLoginItemWithMasterPasswordAsync(loginItem, createDto.MasterPassword, userSalt);
 
                 // Convert to DTO format for the existing service
                 // Use mapping helper to convert LoginItem to CreateLoginItemDto if needed
@@ -531,6 +557,82 @@ public class PasswordItemsController : ControllerBase
         {
             _logger.LogError(ex, "Error creating encrypted password item");
             return StatusCode(500, "An error occurred while creating the password item");
+        }
+    }
+
+    /// <summary>
+    /// Reveal password for a specific item using master password (Bitwarden-style)
+    /// </summary>
+    [HttpPost("{id}/reveal")]
+    public async Task<ActionResult<ApiDtos.RevealPasswordResponseDto>> RevealPassword(int id, [FromBody] ApiDtos.RevealPasswordRequestDto request)
+    {
+        try
+        {
+            // Get session ID from Authorization header
+            var sessionId = HttpContext.Request.Headers["Authorization"]
+                .FirstOrDefault()?.Replace("Bearer ", "");
+
+            if (string.IsNullOrEmpty(sessionId))
+                return Unauthorized("Session token required");
+
+            // Get user ID from session
+            var userId = _vaultSessionService.GetSessionUserId(sessionId);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("Invalid session");
+
+            // Get user from database
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return Unauthorized("User not found");
+
+            // Verify master password using PBKDF2 with 600,000 iterations
+            if (!_passwordCryptoService.VerifyMasterPassword(
+                request.MasterPassword, 
+                user.MasterPasswordHash, 
+                Convert.FromBase64String(user.UserSalt), 
+                user.MasterPasswordIterations))
+            {
+                return Unauthorized("Invalid master password");
+            }
+
+            // Get the password item from database
+            var item = await _passwordItemService.GetByIdAsync(id);
+            if (item == null)
+                return NotFound($"Password item with ID {id} not found");
+
+            // Verify the item belongs to the user
+            if (item.UserId != userId)
+                return Forbid("Access denied");
+
+            if (item.LoginItem != null && !string.IsNullOrEmpty(item.LoginItem.EncryptedPassword))
+            {
+                // Decrypt the password using master password and user salt
+                var encryptedPasswordData = new EncryptedPasswordData
+                {
+                    EncryptedPassword = item.LoginItem.EncryptedPassword,
+                    Nonce = item.LoginItem.PasswordNonce,
+                    AuthenticationTag = item.LoginItem.PasswordAuthTag
+                };
+
+                var decryptedPassword = _passwordCryptoService.DecryptPassword(
+                    encryptedPasswordData, 
+                    request.MasterPassword, 
+                    Convert.FromBase64String(user.UserSalt));
+
+                return Ok(new ApiDtos.RevealPasswordResponseDto
+                {
+                    Password = decryptedPassword,
+                    ItemId = id,
+                    RevealedAt = DateTime.UtcNow
+                });
+            }
+
+            return BadRequest("Password item does not contain encrypted password data");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error revealing password for item ID {Id}", id);
+            return StatusCode(500, "An error occurred while revealing the password");
         }
     }
 }

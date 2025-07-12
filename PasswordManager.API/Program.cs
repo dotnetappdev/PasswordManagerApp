@@ -28,6 +28,7 @@ var connectionString = databaseProvider.ToLower() switch
 {
     "sqlite" => builder.Configuration.GetConnectionString("SqliteConnection"),
     "postgres" or "postgresql" => builder.Configuration.GetConnectionString("PostgresConnection"),
+    "mysql" => builder.Configuration.GetConnectionString("MySqlConnection"),
     _ => builder.Configuration.GetConnectionString("DefaultConnection")
 };
 
@@ -48,6 +49,10 @@ switch (databaseProvider.ToLower())
         builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
             options.UseNpgsql(connectionString));
         break;
+    case "mysql":
+        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+        break;
     default:
         builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
             options.UseSqlServer(connectionString));
@@ -64,7 +69,7 @@ builder.Services.AddScoped<IDatabaseContextFactory, PasswordManager.Services.Ser
 builder.Services.AddScoped<IPasswordEncryptionService, PasswordManager.Services.Services.PasswordEncryptionService>();
 builder.Services.AddScoped<IJwtService, PasswordManager.Services.Services.JwtService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
-// VaultSessionService is registered in AddCryptographyServices extension method
+builder.Services.AddScoped<IVaultSessionService, PasswordManager.Services.Services.VaultSessionService>();
 builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncService>();
 
 // Register cryptography services

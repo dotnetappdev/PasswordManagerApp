@@ -38,7 +38,6 @@ public interface IPasswordEncryptionService
     /// <returns>Decrypted value</returns>
     Task<string> DecryptFieldAsync(EncryptedPasswordData encryptedData, string sessionId);
 
-    // Legacy methods for backward compatibility (deprecated)
     /// <summary>
     /// Encrypts a login item's sensitive data using the user's master password (legacy method)
     /// </summary>
@@ -62,6 +61,14 @@ public interface IPasswordEncryptionService
     /// </summary>
     [Obsolete("Use DecryptFieldAsync(encryptedData, sessionId) instead")]
     Task<string> DecryptFieldAsync(EncryptedPasswordData encryptedData, string masterPassword, byte[] userSalt);
+
+    /// <summary>
+    /// Encrypts a login item's sensitive data using master password directly (for creation/update operations)
+    /// </summary>
+    /// <param name="loginItem">Login item to encrypt</param>
+    /// <param name="masterPassword">User's master password</param>
+    /// <param name="userSalt">User's salt</param>
+    Task EncryptLoginItemWithMasterPasswordAsync(Models.LoginItem loginItem, string masterPassword, byte[] userSalt);
 }
 
 /// <summary>
