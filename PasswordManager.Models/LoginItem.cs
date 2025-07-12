@@ -1,3 +1,4 @@
+using PasswordManager.Models.DTOs;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -150,4 +151,9 @@ public class LoginItem
     
     // Navigation property
     public PasswordItem PasswordItem { get; set; } = null!;
+
+    public static implicit operator LoginItem(CreateLoginItemDto v)
+    {
+        throw new NotImplementedException();
+    }
 }

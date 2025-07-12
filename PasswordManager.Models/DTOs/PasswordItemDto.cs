@@ -39,6 +39,11 @@ public class CreatePasswordItemDto
     public CreateSecureNoteItemDto? SecureNoteItem { get; set; }
     public CreateWiFiItemDto? WiFiItem { get; set; }
     public List<int> TagIds { get; set; } = new();
+
+    public static implicit operator CreatePasswordItemDto(CreatePasswordItemDto v)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 public class UpdatePasswordItemDto
