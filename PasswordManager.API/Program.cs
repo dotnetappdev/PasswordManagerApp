@@ -50,8 +50,9 @@ switch (databaseProvider.ToLower())
             options.UseNpgsql(connectionString));
         break;
     case "mysql":
-        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
-            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+        var TEST = 1;
+       // builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+     //       options.MY(connectionString, ServerVersion.AutoDetect(connectionString)));
         break;
     default:
         builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
