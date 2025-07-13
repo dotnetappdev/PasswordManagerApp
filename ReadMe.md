@@ -187,6 +187,13 @@ PasswordManagerApp/
 - **Visual Studio 2024** or **JetBrains Rider** (recommended)
 - **Git** for version control
 
+> **Note:** This project now requires the .NET 9 SDK. Please ensure you have it installed to build and run the solution.
+
+Recent fixes:
+- Removed invalid implicit operator overloads in DTOs and models.
+- All project references are now relative and cross-platform.
+- If you see .NET 9 SDK errors, install the SDK from https://aka.ms/dotnet/download.
+
 ### Installation
 
 1. **Clone the repository**
