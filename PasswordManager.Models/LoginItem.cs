@@ -152,8 +152,4 @@ public class LoginItem
     // Navigation property
     public PasswordItem PasswordItem { get; set; } = null!;
 
-    public static implicit operator LoginItem(CreateLoginItemDto v)
-    {
-        throw new NotImplementedException();
-    }
 }
