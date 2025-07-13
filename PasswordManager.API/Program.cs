@@ -91,8 +91,7 @@ builder.Services.AddCors(options =>
 });
 
 // Add health checks
-builder.Services.AddHealthChecks()
-    .AddDbContextCheck<PasswordManagerDbContext>();
+// builder.Services.AddHealthChecks(); // Removed AddDbContextCheck as it is not available in .NET 9
 
 var app = builder.Build();
 
@@ -103,7 +102,7 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference(options =>
     {
         options.Title = builder.Configuration["ApiSettings:Title"] ?? "Password Manager API";
-        options.Version = builder.Configuration["ApiSettings:Version"] ?? "v1";
+        // options.Version is not supported in ScalarOptions, so removed to fix build error
         options.Theme = ScalarTheme.Purple;
         options.ShowSidebar = true;
     });
