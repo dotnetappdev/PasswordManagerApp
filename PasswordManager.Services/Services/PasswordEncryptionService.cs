@@ -6,19 +6,7 @@ using PasswordManager.Services.Interfaces;
 namespace PasswordManager.Services.Services;
 
 /// <summary>
-/// Service for     /// <summary>
-    /// Decrypts a specific field using the session master key
-    /// </summary>
-    public async Task<string> DecryptFieldAsync(EncryptedPasswordData encryptedData, string sessionId)
-    {
-        if (encryptedData == null) throw new ArgumentNullException(nameof(encryptedData));
-        if (string.IsNullOrEmpty(sessionId)) throw new ArgumentException("Session ID cannot be null or empty", nameof(sessionId));
-
-        return await Task.Run(() =>
-        {
-            return _vaultSessionService.DecryptPassword(encryptedData, sessionId);
-        });
-    }rd item encryption and decryption using session-based vault operations
+/// Service for password item encryption and decryption using session-based vault operations
 /// </summary>
 public class PasswordEncryptionService : IPasswordEncryptionService
 {
