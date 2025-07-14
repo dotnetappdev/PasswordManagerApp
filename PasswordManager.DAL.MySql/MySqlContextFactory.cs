@@ -5,19 +5,19 @@ using PasswordManager.Models;
 
 namespace PasswordManager.DAL.MySql
 {
-    public class MySqlContextFactory : IDesignTimeDbContextFactory<PasswordManagerDbContext>
+    public class MySqlContextFactory : IDesignTimeDbContextFactory<PasswordManagerDbContextApp>
     {
-        public PasswordManagerDbContext CreateDbContext(string[] args)
+        public PasswordManagerDbContextApp CreateDbContext(string[] args)
         {
             var config = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true)
                 .Build();
             var connectionString = config.GetConnectionString("MySqlConnection");
-            var optionsBuilder = new DbContextOptionsBuilder<PasswordManagerDbContext>();
+            var optionsBuilder = new DbContextOptionsBuilder<PasswordManagerDbContextApp>();
             // Use Pomelo.EntityFrameworkCore.MySql (ensure correct version)
             optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
-            return new PasswordManagerDbContext(optionsBuilder.Options);
+            return new PasswordManagerDbContextApp(optionsBuilder.Options);
         }
     }
 }

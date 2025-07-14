@@ -8,11 +8,11 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace PasswordManager.DAL
 {
-    public class PasswordManagerDbContextFactory : IDesignTimeDbContextFactory<PasswordManagerDbContext>
+    public class PasswordManagerDbContextFactory : IDesignTimeDbContextFactory<PasswordManagerDbContextApp>
     {
-        public PasswordManagerDbContext CreateDbContext(string[] args)
+        public PasswordManagerDbContextApp CreateDbContext(string[] args)
         {
-            var optionsBuilder = new DbContextOptionsBuilder<PasswordManagerDbContext>();
+            var optionsBuilder = new DbContextOptionsBuilder<PasswordManagerDbContextApp>();
             // For migrations, we'll use a path in AppData folder to match runtime behavior
             var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var dbPath = Path.Combine(appDataPath, "PasswordManager", "data", "passwordmanager.db");
@@ -25,7 +25,7 @@ namespace PasswordManager.DAL
             }
             
             optionsBuilder.UseSqlite($"Data Source={dbPath}");
-            return new PasswordManagerDbContext(optionsBuilder.Options);
+            return new PasswordManagerDbContextApp(optionsBuilder.Options);
         }
     }
 }
