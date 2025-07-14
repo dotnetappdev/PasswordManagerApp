@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using PasswordManager.Crypto.Interfaces;
 using PasswordManager.Services.Interfaces;
 using System.Collections.Concurrent;
