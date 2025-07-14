@@ -1,5 +1,7 @@
+using Microsoft.Extensions.Logging;
 using PasswordManager.Crypto.Interfaces;
 using PasswordManager.Crypto.Services;
+using PasswordManager.DAL.Interfaces;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
 
