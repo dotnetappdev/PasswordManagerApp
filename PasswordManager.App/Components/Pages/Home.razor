@@ -454,8 +454,53 @@
             <div class="header-buttons">
                 <button class="import-btn" @onclick="ShowImportModal">📥 Import</button>
                 <button class="add-item-btn" @onclick="ShowAddItemModal">+ Add Item</button>
+                <div class="profile-dropdown" style="position:relative;">
+                    <button class="profile-icon-btn" @onclick="ToggleProfileMenu" style="background:none;border:none;cursor:pointer;">
+                        <span class="profile-icon" style="font-size:1.7rem;">👤</span>
+                    </button>
+                    @if (showProfileMenu)
+                    {
+                        <div class="profile-menu" style="position:absolute;right:0;top:2.5rem;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);z-index:1000;min-width:140px;">
+                            <button class="profile-menu-item" style="width:100%;background:none;border:none;padding:10px 16px;text-align:left;cursor:pointer;" @onclick="ShowProfile">Profile</button>
+                            <button class="profile-menu-item" style="width:100%;background:none;border:none;padding:10px 16px;text-align:left;cursor:pointer;" @onclick="ShowSettingsPopup">Settings</button>
+                        </div>
+                    }
+                </div>
             </div>
         </div>
+@* Settings Popup Modal *@
+@if (showSettingsPopup)
+{
+    <PasswordManager.App.Components.SettingsPopup ShowSettings="showSettingsPopup" ShowSettingsChanged="OnSettingsPopupChanged" />
+}
+@code {
+    private bool showProfileMenu = false;
+    private bool showSettingsPopup = false;
+
+    private void ToggleProfileMenu()
+    {
+        showProfileMenu = !showProfileMenu;
+    }
+
+    private void ShowProfile()
+    {
+        showProfileMenu = false;
+        // TODO: Show profile modal or page
+    }
+
+    private void ShowSettingsPopup()
+    {
+        showProfileMenu = false;
+        showSettingsPopup = true;
+    }
+
+    private Task OnSettingsPopupChanged(bool value)
+    {
+        showSettingsPopup = value;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+}
 
         <!-- Items List -->
         <div class="items-container">
