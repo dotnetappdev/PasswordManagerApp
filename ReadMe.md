@@ -6,7 +6,34 @@
 [![Open Source](https://img.shields.io/badge/Open%20Source-MIT-green?style=for-the-badge)](LICENSE)
 [![Blazor](https://img.shields.io/badge/Blazor-Web%20UI-512BD4?style=for-the-badge&logo=blazor)](https://blazor.net/)
 
-A modern, secure, and cross-platform password manager built with **.NET 8**, **.NET MAUI**, **Blazor Server**, and **ASP.NET Core Web API**. Keep your passwords, credit cards, secure notes, and WiFi credentials safe and organized across all your devices with cloud synchronization capabilities.
+A modern, secure, and cross-platform password manager built with **.NET 9**, **.NET MAUI**, **Blazor Server**, and **ASP.NET Core Web API**. Keep your passwords, credit cards, secure notes, and WiFi credentials safe and organized across all your devices with cloud synchronization capabilities.
+
+## 📚 Documentation
+
+### 🏗️ Project Documentation
+| Component | Description | Documentation |
+|-----------|-------------|---------------|
+| **Main Project** | Overview and getting started | [ReadMe.md](ReadMe.md) |
+| **Blazor Web App** | Web application with dark theme | [PasswordManager.Web](PasswordManager.Web/README.md) |
+| **Shared Components** | Cross-platform UI components | [PasswordManager.Components.Shared](PasswordManager.Components.Shared/README.md) |
+| **Cryptography** | Security and encryption details | [PasswordManager.Crypto](PasswordManager.Crypto/README.md) |
+
+### 🗃️ Database Providers
+| Provider | Description | Documentation |
+|----------|-------------|---------------|
+| **SQL Server** | Microsoft SQL Server support | [PasswordManager.DAL.SqlServer](PasswordManager.DAL.SqlServer/README.md) |
+| **MySQL** | MySQL database support | [PasswordManager.DAL.MySql](PasswordManager.DAL.MySql/README.md) |
+| **PostgreSQL** | PostgreSQL database support | [PasswordManager.DAL.Postgres](PasswordManager.DAL.Postgres/README.md) |
+| **Supabase** | Supabase cloud database support | [PasswordManager.DAL.SupaBase](PasswordManager.DAL.SupaBase/README.md) |
+
+### 📋 Additional Documentation
+| Document | Description |
+|----------|-------------|
+| **Database Setup** | Database configuration guide | [ReadMe.DatabaseProviders.md](ReadMe.DatabaseProviders.md) |
+| **MySQL Setup** | MySQL-specific setup guide | [MYSQL_SETUP_GUIDE.md](MYSQL_SETUP_GUIDE.md) |
+| **Encryption Details** | Technical encryption implementation | [ENCRYPTION_IMPLEMENTATION.md](ENCRYPTION_IMPLEMENTATION.md) |
+| **Bitwarden Flow** | Bitwarden compatibility details | [BITWARDEN_FLOW_IMPLEMENTATION.md](BITWARDEN_FLOW_IMPLEMENTATION.md) |
+| **PBKDF2 Upgrade** | Security upgrade summary | [OWASP_PBKDF2_UPGRADE_SUMMARY.md](OWASP_PBKDF2_UPGRADE_SUMMARY.md) |
 
 ## ✨ Features
 
@@ -120,7 +147,7 @@ This password manager implements enterprise-grade security with zero-knowledge a
 ## 🛠️ Technology Stack
 
 ### Core Frameworks
-- **.NET 8**: Latest stable version of Microsoft's unified development platform
+- **.NET 9**: Latest stable version of Microsoft's unified development platform
 - **.NET MAUI**: Cross-platform framework for native mobile and desktop apps
 - **ASP.NET Core Web API**: RESTful API for cloud synchronization and data access
 - **Blazor Server**: Modern web UI framework using C# with server-side rendering
@@ -263,13 +290,14 @@ The web app supports all database providers with ASP.NET Core Identity:
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **.NET 8 SDK** or later
+- **.NET 9 SDK** or later
 - **Visual Studio 2024** or **JetBrains Rider** (recommended)
 - **Git** for version control
 
-> **Note:** This project uses .NET 8 for maximum compatibility. Please ensure you have the .NET 8 SDK installed to build and run the solution.
+> **Note:** This project uses .NET 9 for the latest features and performance improvements. Please ensure you have the .NET 9 SDK installed to build and run the solution.
 
 Recent updates:
+- Upgraded to .NET 9 for improved performance and latest features
 - Added Blazor Server Web Application with dark theme
 - Implemented shared component library for code reuse
 - Added API key management system
@@ -476,4 +504,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ using .NET 8, MAUI, Blazor Server, and MudBlazor**
+**Made with ❤️ using .NET 9, MAUI, Blazor Server, and MudBlazor**
