@@ -12,6 +12,7 @@ This document describes how to support multiple database providers (MySQL, SQL S
 - `PasswordManager.DAL.SqlServer/` — Contains context factory and migrations for SQL Server
 - `PasswordManager.DAL.MySql/` — Contains context factory and migrations for MySQL
 - `PasswordManager.DAL.Postgres/` — Contains context factory and migrations for PostgreSQL
+- `PasswordManager.DAL.SupaBase/` — Contains context factory and migrations for Supabase (Postgres)
 - `PasswordManager.DAL/` — Contains context factory and migrations for SQLite (default)
 
 ## Configuration
@@ -19,12 +20,16 @@ In both `PasswordManager.API/appsettings.json` and `PasswordManager.App/appsetti
 
 ```json
 {
-  "DatabaseProvider": "SqlServer", // or "MySql", "Postgres", "Sqlite"
+  "DatabaseProvider": "SqlServer", // or "MySql", "Postgres", "Supabase", "Sqlite"
   "ConnectionStrings": {
     "SqlServerConnection": "...",
     "MySqlConnection": "...",
     "PostgresConnection": "...",
     "SqliteConnection": "..."
+  },
+  "Supabase": {
+    "Url": "https://your-project.supabase.co",
+    "ApiKey": "your-supabase-api-key"
   }
 }
 ```
@@ -68,10 +73,16 @@ dotnet ef migrations add <MigrationName> --project PasswordManager.DAL.MySql --s
 dotnet ef migrations add <MigrationName> --project PasswordManager.DAL.Postgres --startup-project PasswordManager.API --context PasswordManager.DAL.Postgres.PostgresContextFactory
 ```
 
+
+### Supabase (Postgres)
+```
+dotnet ef migrations add <MigrationName> --project PasswordManager.DAL.SupaBase --startup-project PasswordManager.API --context SupabaseDbContext
+```
+
 ### Applying Migrations
 - Migrations are applied automatically at runtime by the API startup code.
 - To apply manually, use:
 ```
 dotnet ef database update --project <ProviderProject> --startup-project PasswordManager.API
 ```
-Replace `<ProviderProject>` with the appropriate DAL project (e.g., `PasswordManager.DAL.SqlServer`).
+Replace `<ProviderProject>` with the appropriate DAL project (e.g., `PasswordManager.DAL.SqlServer`, `PasswordManager.DAL.SupaBase`).
