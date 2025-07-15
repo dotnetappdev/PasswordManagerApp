@@ -15,4 +15,5 @@ public interface IPasswordManagerDbContext : IDisposable
     DbSet<CreditCardItem> CreditCardItems { get; set; }
     DbSet<SecureNoteItem> SecureNoteItems { get; set; }
     DbSet<WiFiItem> WiFiItems { get; set; }
+    DbSet<ApiKey> ApiKeys { get; set; }
 }

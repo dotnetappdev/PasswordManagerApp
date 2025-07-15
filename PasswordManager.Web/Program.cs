@@ -10,6 +10,7 @@ using PasswordManager.Crypto.Extensions;
 using MudBlazor.Services;
 using Microsoft.AspNetCore.Identity;
 using PasswordManager.Models;
+using Pomelo.EntityFrameworkCore.MySql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,7 +34,7 @@ if (databaseProvider.ToLower() == "supabase")
     if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseApiKey))
         throw new InvalidOperationException("Supabase configuration missing in appsettings.json");
     
-    builder.Services.AddDbContext<PasswordManagerDbContext, SupabaseDbContext>(options =>
+    builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
         options.UseNpgsql(supabaseUrl));
 }
 else
@@ -49,12 +50,12 @@ else
 
     if (databaseProvider.ToLower() == "mysql")
     {
-        builder.Services.AddDbContext<PasswordManagerDbContext, MySqlContextFactory>(options =>
+        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
     }
     else
     {
-        builder.Services.AddDbContext<PasswordManagerDbContext, SqlServerContextFactory>(options =>
+        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
             options.UseSqlServer(connectionString));
     }
 }
@@ -69,7 +70,7 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     options.Password.RequireUppercase = true;
     options.Password.RequireLowercase = true;
 })
-.AddEntityFrameworkStores<PasswordManagerDbContext>();
+.AddEntityFrameworkStores<PasswordManagerDbContextApp>();
 
 // Register application services
 builder.Services.AddScoped<IPasswordItemService, PasswordItemService>();
@@ -112,7 +113,7 @@ app.MapRazorPages();
 // Ensure database is created and migrated
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+    var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
     await dbContext.Database.EnsureCreatedAsync();
 }
 
