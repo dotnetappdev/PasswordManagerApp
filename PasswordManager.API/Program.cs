@@ -24,17 +24,27 @@ builder.Services.AddControllers();
 
 // Configure Entity Framework
 var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
-var connectionString = databaseProvider.ToLower() switch
+string? connectionString = null;
+string? supabaseUrl = null;
+string? supabaseApiKey = null;
+if (databaseProvider.ToLower() == "supabase")
 {
-    "sqlite" => builder.Configuration.GetConnectionString("SqliteConnection"),
-    "postgres" or "postgresql" => builder.Configuration.GetConnectionString("PostgresConnection"),
-    "mysql" => builder.Configuration.GetConnectionString("MySqlConnection"),
-    _ => builder.Configuration.GetConnectionString("DefaultConnection")
-};
-
-if (string.IsNullOrEmpty(connectionString))
+    supabaseUrl = builder.Configuration["Supabase:Url"];
+    supabaseApiKey = builder.Configuration["Supabase:ApiKey"];
+    if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseApiKey))
+        throw new InvalidOperationException("Supabase configuration missing in appsettings.json");
+}
+else
 {
-    throw new InvalidOperationException($"Connection string for {databaseProvider} not found.");
+    connectionString = databaseProvider.ToLower() switch
+    {
+        "sqlite" => builder.Configuration.GetConnectionString("SqliteConnection"),
+        "postgres" or "postgresql" => builder.Configuration.GetConnectionString("PostgresConnection"),
+        "mysql" => builder.Configuration.GetConnectionString("MySqlConnection"),
+        _ => builder.Configuration.GetConnectionString("DefaultConnection")
+    };
+    if (string.IsNullOrEmpty(connectionString))
+        throw new InvalidOperationException($"Connection string for {databaseProvider} not found.");
 }
 
 // Configure DbContext based on provider
@@ -50,9 +60,11 @@ switch (databaseProvider.ToLower())
             options.UseNpgsql(connectionString));
         break;
     case "mysql":
-        var TEST = 1;
-       // builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
-     //       options.MY(connectionString, ServerVersion.AutoDetect(connectionString)));
+        // builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        //     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+        break;
+    case "supabase":
+        builder.Services.AddSupabaseDbContext(builder.Configuration);
         break;
     default:
         builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
