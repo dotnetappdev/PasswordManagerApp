@@ -1,0 +1,138 @@
+@using PasswordManager.Models.DTOs.Auth
+@using PasswordManager.Services.Interfaces
+@inject IUserProfileService UserProfileService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudForm Model="@_model" @ref="@_form" Validation="@(_validator.ValidateValue)" ValidationDelay="0">
+            <MudTextField @bind-Value="_model.Email" 
+                          Label="Email" 
+                          Required="true" 
+                          RequiredError="Email is required"
+                          Validation="@(new Func<string, IEnumerable<string>>(ValidateEmail))" />
+
+            <MudTextField @bind-Value="_model.Password" 
+                          Label="Password" 
+                          InputType="InputType.Password"
+                          Required="true"
+                          RequiredError="Password is required"
+                          Validation="@(new Func<string, IEnumerable<string>>(ValidatePassword))" />
+
+            <MudTextField @bind-Value="_model.ConfirmPassword" 
+                          Label="Confirm Password" 
+                          InputType="InputType.Password"
+                          Required="true"
+                          RequiredError="Please confirm password"
+                          Validation="@(new Func<string, IEnumerable<string>>(ValidateConfirmPassword))" />
+
+            <MudTextField @bind-Value="_model.FirstName" Label="First Name" />
+            <MudTextField @bind-Value="_model.LastName" Label="Last Name" />
+            <MudTextField @bind-Value="_model.MasterPasswordHint" Label="Password Hint" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" Disabled="@_processing">
+            @if (_processing)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Processing</MudText>
+            }
+            else
+            {
+                <MudText>Create User</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+
+    private CreateUserProfileDto _model = new();
+    private MudForm _form = default!;
+    private bool _processing = false;
+
+    private FluentValidationValidator _validator = new();
+    private readonly CreateUserValidator _userValidator = new();
+
+    private async Task Submit()
+    {
+        await _form.Validate();
+        
+        if (!_form.IsValid)
+            return;
+
+        _processing = true;
+
+        try
+        {
+            var (result, user, errorMessage) = await UserProfileService.CreateUserAsync(_model);
+            
+            if (result.Succeeded && user != null)
+            {
+                MudDialog.Close(DialogResult.Ok(user));
+            }
+            else
+            {
+                Snackbar.Add(errorMessage ?? "Failed to create user", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _processing = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private IEnumerable<string> ValidateEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            yield return "Email is required";
+        else if (!Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            yield return "Please enter a valid email address";
+    }
+
+    private IEnumerable<string> ValidatePassword(string password)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+            yield return "Password is required";
+        else if (password.Length < 8)
+            yield return "Password must be at least 8 characters long";
+    }
+
+    private IEnumerable<string> ValidateConfirmPassword(string confirmPassword)
+    {
+        if (string.IsNullOrWhiteSpace(confirmPassword))
+            yield return "Please confirm your password";
+        else if (confirmPassword != _model.Password)
+            yield return "Passwords do not match";
+    }
+}
+
+@using System.Text.RegularExpressions
+@using FluentValidation
+@using PasswordManager.Models.DTOs.Auth
+
+public class CreateUserValidator : AbstractValidator<CreateUserProfileDto>
+{
+    public CreateUserValidator()
+    {
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("Email is required")
+            .EmailAddress().WithMessage("Please enter a valid email address");
+
+        RuleFor(x => x.Password)
+            .NotEmpty().WithMessage("Password is required")
+            .MinimumLength(8).WithMessage("Password must be at least 8 characters long");
+
+        RuleFor(x => x.ConfirmPassword)
+            .Equal(x => x.Password).WithMessage("Passwords do not match");
+    }
+}

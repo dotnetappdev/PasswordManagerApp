@@ -1,0 +1,205 @@
+@page "/profile"
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Models
+@inject IUserProfileService UserProfileService
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<MudContainer MaxWidth="MaxWidth.Medium" Style="padding: 20px;">
+    <MudStack Spacing="4">
+        <!-- Header -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudText Typo="Typo.h4" Style="color: white;">
+                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Large" Style="vertical-align: middle; margin-right: 8px;" />
+                User Profile
+            </MudText>
+        </MudPaper>
+
+        <!-- Profile Information -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Profile Information</MudText>
+            
+            <MudStack Spacing="3">
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="userProfile.UserName" 
+                                     Label="Display Name" 
+                                     Variant="Variant.Outlined"
+                                     Style="background-color: #2a2a2a;" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="userProfile.Email" 
+                                     Label="Email" 
+                                     Variant="Variant.Outlined"
+                                     Style="background-color: #2a2a2a;" />
+                    </MudItem>
+                </MudGrid>
+                
+                <MudTextField @bind-Value="userProfile.PhoneNumber" 
+                             Label="Phone Number" 
+                             Variant="Variant.Outlined"
+                             Style="background-color: #2a2a2a;" />
+            </MudStack>
+        </MudPaper>
+
+        <!-- Security Settings -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Security Settings</MudText>
+            
+            <MudStack Spacing="3">
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Warning" 
+                          OnClick="ShowChangePasswordDialog"
+                          StartIcon="@Icons.Material.Filled.Lock">
+                    Change Master Password
+                </MudButton>
+                
+                <MudText Typo="Typo.body2" Style="color: #cccccc;">
+                    Last login: @(userProfile.LastLogin?.ToString("MMM dd, yyyy 'at' hh:mm tt") ?? "Unknown")
+                </MudText>
+            </MudStack>
+        </MudPaper>
+
+        <!-- Account Statistics -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Account Statistics</MudText>
+            
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3" Style="background-color: #2a2a2a; color: white; text-align: center;">
+                        <MudText Typo="Typo.h4" Style="color: #bb86fc;">@passwordCount</MudText>
+                        <MudText Typo="Typo.body2">Total Passwords</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3" Style="background-color: #2a2a2a; color: white; text-align: center;">
+                        <MudText Typo="Typo.h4" Style="color: #03dac6;">@categoryCount</MudText>
+                        <MudText Typo="Typo.body2">Categories</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3" Style="background-color: #2a2a2a; color: white; text-align: center;">
+                        <MudText Typo="Typo.h4" Style="color: #cf6679;">@weakPasswordCount</MudText>
+                        <MudText Typo="Typo.body2">Weak Passwords</MudText>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <!-- Account Actions -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Account Actions</MudText>
+            
+            <MudStack Spacing="2">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          OnClick="SaveProfile"
+                          Disabled="isSaving">
+                    @if (isSaving)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ml-2">Saving...</MudText>
+                    }
+                    else
+                    {
+                        <MudText>Save Profile</MudText>
+                    }
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Secondary" 
+                          OnClick="() => Navigation.NavigateTo("/vault")">
+                    Back to Vault
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Error" 
+                          OnClick="ShowDeleteAccountDialog">
+                    Delete Account
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    </MudStack>
+</MudContainer>
+
+@code {
+    private ApplicationUser userProfile = new();
+    private bool isSaving = false;
+    private int passwordCount = 0;
+    private int categoryCount = 0;
+    private int weakPasswordCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check authentication
+        var isAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (!isAuthenticated)
+        {
+            Navigation.NavigateTo("/masterpassword");
+            return;
+        }
+
+        await LoadUserProfile();
+        await LoadStatistics();
+    }
+
+    private async Task LoadUserProfile()
+    {
+        try
+        {
+            userProfile = await UserProfileService.GetCurrentUserAsync() ?? new ApplicationUser();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user profile: {ex.Message}");
+        }
+    }
+
+    private async Task LoadStatistics()
+    {
+        try
+        {
+            // Load account statistics
+            // This would be implemented with actual service calls
+            passwordCount = 0; // await PasswordItemService.GetCountAsync();
+            categoryCount = 0; // await CategoryService.GetCountAsync();
+            weakPasswordCount = 0; // await PasswordItemService.GetWeakPasswordCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading statistics: {ex.Message}");
+        }
+    }
+
+    private async Task SaveProfile()
+    {
+        try
+        {
+            isSaving = true;
+            await UserProfileService.UpdateAsync(userProfile);
+            // Show success notification
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving profile: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void ShowChangePasswordDialog()
+    {
+        // This would open a dialog for changing the master password
+        // For now, just navigate to a dedicated page
+        Navigation.NavigateTo("/change-password");
+    }
+
+    private void ShowDeleteAccountDialog()
+    {
+        // This would show a confirmation dialog before deleting the account
+        // Implementation would depend on your specific requirements
+    }
+}

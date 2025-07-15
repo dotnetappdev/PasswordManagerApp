@@ -1,0 +1,71 @@
+@using Microsoft.AspNetCore.Components.Forms
+@inject NavigationManager Navigation
+
+<BlazoredModal @bind-IsVisible="ShowSettings" Class="settings-modal">
+    <div class="settings-header">
+        <span>Settings</span>
+        <button class="close-btn" @onclick="Close">&times;</button>
+    </div>
+    <EditForm Model="settingsModel" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="settings-section">
+            <label>Profile QR Code</label>
+            <div class="qr-container">
+                <img src="@QrCodeUrl" alt="QR Code" />
+            </div>
+        </div>
+        <div class="settings-section">
+            <label>Database Provider</label>
+            <InputSelect @bind-Value="settingsModel.DatabaseProvider">
+                <option value="SqlServer">SQL Server</option>
+                <option value="MySql">MySQL</option>
+                <option value="Postgres">Postgres</option>
+                <option value="Supabase">Supabase</option>
+            </InputSelect>
+        </div>
+        <div class="settings-section">
+            <label>Change Master Password</label>
+            <InputText @bind-Value="settingsModel.NewMasterPassword" type="password" class="@GetInputClass(nameof(settingsModel.NewMasterPassword))" />
+            <ValidationMessage For="() => settingsModel.NewMasterPassword" />
+        </div>
+        <div class="settings-section">
+            <label>Theme</label>
+            <InputSelect @bind-Value="settingsModel.Theme">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+            </InputSelect>
+        </div>
+        <button type="submit" class="save-btn">Save</button>
+    </EditForm>
+</BlazoredModal>
+
+@code {
+    [Parameter] public bool ShowSettings { get; set; }
+    [Parameter] public EventCallback<bool> ShowSettingsChanged { get; set; }
+
+    private SettingsModel settingsModel = new();
+    private string QrCodeUrl => $"/api/qr?profile={settingsModel.ProfileId}";
+
+    private void Close() => ShowSettingsChanged.InvokeAsync(false);
+
+    private void HandleValidSubmit()
+    {
+        // Save logic here
+        Close();
+    }
+
+    private string GetInputClass(string field)
+    {
+        // Add logic to highlight and flash on error
+        return "input";
+    }
+
+    public class SettingsModel
+    {
+        public string DatabaseProvider { get; set; } = "SqlServer";
+        public string NewMasterPassword { get; set; }
+        public string Theme { get; set; } = "light";
+        public string ProfileId { get; set; } = "user";
+    }
+}

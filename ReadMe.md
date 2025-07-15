@@ -6,7 +6,7 @@
 [![Open Source](https://img.shields.io/badge/Open%20Source-MIT-green?style=for-the-badge)](LICENSE)
 [![Blazor](https://img.shields.io/badge/Blazor-Web%20UI-512BD4?style=for-the-badge&logo=blazor)](https://blazor.net/)
 
-A modern, secure, and cross-platform password manager built with **.NET 9**, **.NET MAUI**, **Blazor**, and **ASP.NET Core Web API**. Keep your passwords, credit cards, secure notes, and WiFi credentials safe and organized across all your devices with cloud synchronization capabilities.
+A modern, secure, and cross-platform password manager built with **.NET 8**, **.NET MAUI**, **Blazor Server**, and **ASP.NET Core Web API**. Keep your passwords, credit cards, secure notes, and WiFi credentials safe and organized across all your devices with cloud synchronization capabilities.
 
 ## ✨ Features
 
@@ -38,24 +38,41 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 - **Progress Tracking**: Real-time import progress with detailed feedback
 
 ### 🎨 Modern User Interface
-- **Blazor Web UI**: Responsive, modern web-based interface
-- **Dark/Light Themes**: Customizable appearance
+- **Blazor Web UI**: Responsive, modern web-based interface with MudBlazor components
+- **MAUI Blazor Mobile**: Cross-platform mobile app with shared UI components
+- **Dark Theme**: Beautiful dark-only theme for reduced eye strain
 - **Intuitive Navigation**: Sidebar navigation with expandable sections
 - **Modal Dialogs**: Clean, focused editing experiences
 - **Real-time Updates**: Live search and filtering
 - **Progress Indicators**: Visual feedback for long-running operations
 
+### 🌐 Blazor Web App Features
+- **Dark Mode Only**: Sleek, modern dark theme optimized for professional use
+- **MudBlazor Components**: Rich, Material Design-based UI components
+- **Responsive Design**: Works perfectly on desktop, tablet, and mobile browsers
+- **API Key Management**: Built-in API key generation and management interface
+- **Settings Panel**: Comprehensive settings management with database provider selection
+- **Profile Management**: User profile editing and management
+- **Master Password Authentication**: Secure vault unlock with master password
+- **1Password-Style Vault**: Familiar password vault interface with card-based layout
+- **Real-time Search**: Instant search across all password items
+- **Category Filtering**: Filter passwords by categories and collections
+- **Copy to Clipboard**: One-click password copying with security notifications
+- **CRUD Operations**: Full create, read, update, delete operations for all password items
+
 ### 🔧 Advanced Features
+- **Shared Component Library**: Reusable Blazor components shared between MAUI and Web apps
 - **Plugin Architecture**: Extensible plugin system for import providers
 - **Database Migrations**: Automatic database schema updates
-- **Cross-Platform**: Runs on Windows, macOS, Linux, iOS, and Android
-- **Web API**: ASP.NET Core Web API for cloud synchronization
-- **Multi-Database**: Support for SQLite, SQL Server, and PostgreSQL
+- **Cross-Platform**: Runs on Windows, macOS, Linux, iOS, Android, and web browsers
+- **Web API**: ASP.NET Core Web API for cloud synchronization and API access
+- **Multi-Database**: Support for SQLite, SQL Server, PostgreSQL, MySQL, and Supabase
 - **Scalar API Documentation**: Interactive API documentation with JWT support
 - **Health Checks**: Built-in API health monitoring
-- **Offline First**: Works without internet connection
+- **Offline First**: Mobile app works without internet connection
 - **Data Validation**: Comprehensive input validation and error handling
 - **Bulk Operations**: Import hundreds of items at once
+- **Identity Integration**: ASP.NET Core Identity for user management across different database providers
 
 ### 🔄 Cloud Synchronization
 - **Web API Integration**: RESTful API for secure data synchronization
@@ -103,15 +120,17 @@ This password manager implements enterprise-grade security with zero-knowledge a
 ## 🛠️ Technology Stack
 
 ### Core Frameworks
-- **.NET 9**: Latest version of Microsoft's unified development platform
+- **.NET 8**: Latest stable version of Microsoft's unified development platform
 - **.NET MAUI**: Cross-platform framework for native mobile and desktop apps
 - **ASP.NET Core Web API**: RESTful API for cloud synchronization and data access
-- **Blazor**: Modern web UI framework using C# instead of JavaScript
+- **Blazor Server**: Modern web UI framework using C# with server-side rendering
 - **Entity Framework Core**: Object-relational mapping for database operations
 
 ### UI & Graphics
+- **MudBlazor**: Rich Material Design component library for Blazor
 - **MAUI Graphics**: Cross-platform graphics API for custom drawing and animations
 - **Blazor Components**: Reusable UI components with two-way data binding
+- **Shared Component Library**: Common UI components shared between MAUI and Web apps
 - **CSS Grid & Flexbox**: Modern CSS layout for responsive design
 - **Custom Animations**: Smooth transitions and loading indicators
 
@@ -121,6 +140,7 @@ This password manager implements enterprise-grade security with zero-knowledge a
 - **SQL Server**: Enterprise database support for production deployments
 - **PostgreSQL**: Open-source database option for cloud deployments
 - **MySQL**: Popular open-source database with full Entity Framework support
+- **Supabase**: Cloud-native PostgreSQL with real-time features
 
 ### Security & Cryptography
 - **PasswordManager.Crypto**: Custom cryptography library with Bitwarden-compatible encryption
@@ -153,11 +173,27 @@ PasswordManagerApp/
 │   ├── Controllers/                  # API controllers
 │   ├── Services/                     # API-specific services
 │   └── Program.cs                    # API startup configuration
+├── PasswordManager.Web/              # Blazor Server Web Application
+│   ├── Components/                   # Web-specific components
+│   │   ├── Pages/                    # Web page components
+│   │   └── _Imports.razor            # Web imports
+│   ├── Program.cs                    # Web app startup configuration
+│   └── appsettings.json              # Web app configuration
+├── PasswordManager.Components.Shared/ # Shared Blazor Component Library
+│   ├── Pages/                        # Shared page components
+│   │   ├── MasterPassword.razor      # Master password unlock
+│   │   ├── Vault.razor               # Main password vault
+│   │   ├── Settings.razor            # Settings management
+│   │   └── Admin/                    # Admin components
+│   ├── Components/                   # Shared UI components
+│   │   ├── Auth/                     # Authentication components
+│   │   └── Layout/                   # Layout components
+│   └── _Imports.razor                # Shared imports
 ├── PasswordManager.App/              # .NET MAUI Blazor App
-│   ├── Components/                   # Blazor components
-│   │   ├── Pages/                    # Page components
-│   │   ├── Layout/                   # Layout components
-│   │   └── Auth/                     # Authentication components
+│   ├── Components/                   # MAUI-specific components
+│   │   ├── Pages/                    # MAUI page components
+│   │   ├── Layout/                   # MAUI layout components
+│   │   └── Auth/                     # MAUI authentication components
 │   ├── Platforms/                    # Platform-specific code
 │   └── MauiProgram.cs               # App startup configuration
 ├── PasswordManager.Crypto/           # Cryptography library
@@ -168,11 +204,17 @@ PasswordManagerApp/
 │   ├── Models/                       # Entity models
 │   ├── Migrations/                   # EF migrations
 │   └── PasswordManagerDbContext.cs  # Database context
+├── PasswordManager.DAL.SqlServer/    # SQL Server provider
+├── PasswordManager.DAL.MySql/        # MySQL provider
+├── PasswordManager.DAL.SupaBase/     # Supabase provider
 ├── PasswordManager.Models/           # Shared models and DTOs
+│   ├── ApiKey.cs                     # API key model
 │   └── DTOs/                         # Data transfer objects
 ├── PasswordManager.Services/         # Business logic services
 │   ├── Interfaces/                   # Service interfaces
+│   │   └── IApiKeyService.cs         # API key management
 │   └── Services/                     # Service implementations
+│       └── ApiKeyService.cs          # API key implementation
 ├── PasswordManager.Imports/          # Import framework
 │   ├── Interfaces/                   # Import service interfaces
 │   └── Services/                     # Import implementations
@@ -180,19 +222,59 @@ PasswordManagerApp/
 └── PasswordManagerImports.Bitwarden/ # Enhanced secure import plugin
 ```
 
+## 🌐 Web Application Architecture
+
+The Password Manager now includes a **Blazor Server Web Application** that provides a modern web interface for managing your passwords:
+
+### Web App Features
+- **🎨 Dark-Only Theme**: Professional dark theme using MudBlazor components
+- **🔐 Master Password Authentication**: Secure vault unlock identical to mobile app
+- **📱 Responsive Design**: Works on desktop, tablet, and mobile browsers
+- **🔑 API Key Management**: Built-in interface for generating and managing API keys
+- **⚙️ Settings Panel**: Database provider selection and configuration
+- **👤 Profile Management**: User profile editing and account management
+- **🔍 Real-time Search**: Instant search across all password items
+- **📁 Category Filtering**: Filter by categories, collections, and tags
+- **📋 One-Click Copy**: Copy passwords to clipboard with visual feedback
+- **✏️ Full CRUD Operations**: Create, edit, delete passwords and other items
+
+### Shared Component Architecture
+The web app and MAUI app share components through `PasswordManager.Components.Shared`:
+
+- **Pages**: Master password, vault, settings, and admin pages
+- **Components**: Authentication, layout, and UI components
+- **Routing**: Discoverable routes work in both web and mobile contexts
+- **Services**: Shared business logic and data access patterns
+
+### Database Provider Support
+The web app supports all database providers with ASP.NET Core Identity:
+
+- **SQL Server**: ASP.NET Core Identity with Entity Framework
+- **MySQL**: ASP.NET Core Identity with MySQL Entity Framework provider
+- **Supabase**: Custom authentication using Supabase auth tables
+- **PostgreSQL**: ASP.NET Core Identity with Npgsql provider
+
+### API Integration
+- **JWT Authentication**: Secure API access with Bearer tokens
+- **API Key Management**: Generate, view, and revoke API keys through web interface
+- **Real-time Sync**: Changes in web app sync with mobile apps via API
+- **Cross-Platform Data**: Same encryption and data format across all platforms
+
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **.NET 9 SDK** or later
+- **.NET 8 SDK** or later
 - **Visual Studio 2024** or **JetBrains Rider** (recommended)
 - **Git** for version control
 
-> **Note:** This project now requires the .NET 9 SDK. Please ensure you have it installed to build and run the solution.
+> **Note:** This project uses .NET 8 for maximum compatibility. Please ensure you have the .NET 8 SDK installed to build and run the solution.
 
-Recent fixes:
-- Removed invalid implicit operator overloads in DTOs and models.
-- All project references are now relative and cross-platform.
-- If you see .NET 9 SDK errors, install the SDK from https://aka.ms/dotnet/download.
+Recent updates:
+- Added Blazor Server Web Application with dark theme
+- Implemented shared component library for code reuse
+- Added API key management system
+- Enhanced database provider support including Supabase
+- If you see .NET SDK errors, install the SDK from https://aka.ms/dotnet/download.
 
 ### Installation
 
@@ -214,16 +296,26 @@ Recent fixes:
    dotnet ef database update
    ```
 
-4. **Run the application**
+4. **Run the applications**
    ```bash
-   # Run the API (optional, for sync features)
+   # Run the API (for sync features and web app backend)
    cd PasswordManager.API
    dotnet run
 
-   # Run the MAUI app
+   # Run the Blazor Web App (in a new terminal)
+   cd PasswordManager.Web
+   dotnet run
+
+   # Run the MAUI app (in a new terminal)
    cd PasswordManager.App
    dotnet run
    ```
+
+### Web App Access
+- **URL**: `https://localhost:5001` (or the URL shown in the terminal)
+- **Features**: Full password management, API key generation, settings
+- **Authentication**: Master password (same as mobile app)
+- **Theme**: Dark mode only for professional appearance
 
 ### Database Configuration
 
@@ -278,16 +370,36 @@ The application supports multiple database providers. Set the `DatabaseProvider`
 
 ## 📖 Usage
 
-### First Time Setup
-1. Launch the application
-2. Create a strong master password
-3. Optionally set a password hint
-4. Start adding your passwords and secure data
+### Web Application
+1. Open your browser and navigate to `https://localhost:5001`
+2. Enter your master password to unlock the vault
+3. Use the sidebar navigation to access different features:
+   - **Vault**: View and manage all your passwords
+   - **Settings**: Generate API keys and configure database providers
+   - **Profile**: Manage your user profile and account settings
+4. Create, edit, and organize your passwords using the intuitive interface
+5. Use the search functionality to quickly find specific items
+6. Generate API keys for programmatic access to your data
+
+### Mobile Application (MAUI)
+1. Launch the mobile application on your device
+2. Create a strong master password on first launch
+3. Optionally set a password hint for recovery
+4. Start adding your passwords and secure data using the same UI as the web app
 
 ### Adding Items
 - Click the "+" button to add new items
 - Choose from Login, Credit Card, Secure Note, or WiFi item types
 - Fill in the details and save
+- Items are automatically encrypted and synchronized across platforms
+
+### API Key Management
+- Navigate to Settings in the web app
+- Enter a descriptive name for your API key
+- Click "Generate API Key" to create a new key
+- Copy the generated key immediately (it won't be shown again)
+- Use the API key for programmatic access to the REST API
+- Delete unused keys from the management interface
 
 ### Organization
 - Create collections to group related items
@@ -311,8 +423,10 @@ The application supports multiple database providers. Set the `DatabaseProvider`
 # Build all projects
 dotnet build
 
-# Build specific project
-dotnet build PasswordManager.App
+# Build specific projects
+dotnet build PasswordManager.Web          # Web application
+dotnet build PasswordManager.App          # MAUI application
+dotnet build PasswordManager.Components.Shared  # Shared components
 
 # Run tests
 dotnet test
@@ -362,4 +476,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ using .NET 9, MAUI, and Blazor**
+**Made with ❤️ using .NET 8, MAUI, Blazor Server, and MudBlazor**

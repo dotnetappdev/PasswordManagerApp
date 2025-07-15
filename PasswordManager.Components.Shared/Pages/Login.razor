@@ -1,0 +1,406 @@
+@page "/login"
+@page "/"
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@using PasswordManager.Crypto.Interfaces
+@using PasswordManager.Services.Interfaces
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject IAuthService AuthService
+@inject IVaultSessionService VaultSessionService
+
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">
+                <span class="logo-icon">�</span>
+                <h1>Password Manager</h1>
+            </div>
+            <p class="auth-subtitle">@GetSubtitle()</p>
+        </div>
+
+        <div class="auth-form">
+            @if (isFirstTime)
+            {
+                <!-- Setup Master Key -->
+                <div class="form-section">
+                    <h2>Create Master Key</h2>
+                    <p class="form-description">Create a strong master key to protect your vault. This key cannot be recovered, so make sure to remember it.</p>
+                    
+                    <div class="form-group">
+                        <label for="masterKey">Master Key</label>
+                        <div class="password-input-group">
+                            <input type="@(showPassword ? "text" : "password")" 
+                                   id="masterKey" 
+                                   @bind="masterKey" 
+                                   @onkeyup="ValidatePassword"
+                                   placeholder="Enter your master key"
+                                   class="form-input" />
+                            <button type="button" class="password-toggle" @onclick="TogglePasswordVisibility">
+                                @(showPassword ? "👁️‍🗨️" : "👁️")
+                            </button>
+                        </div>
+                        
+                        @if (!string.IsNullOrEmpty(masterKey))
+                        {
+                            <div class="password-strength">
+                                <div class="strength-bar">
+                                    <div class="strength-fill strength-@passwordStrength.ToLower()" style="width: @GetStrengthPercentage()%"></div>
+                                </div>
+                                <span class="strength-text">Password strength: @passwordStrength</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmKey">Confirm Master Key</label>
+                        <input type="@(showConfirmPassword ? "text" : "password")" 
+                               id="confirmKey" 
+                               @bind="confirmKey" 
+                               placeholder="Confirm your master key"
+                               class="form-input" />
+                        <button type="button" class="password-toggle" @onclick="ToggleConfirmPasswordVisibility">
+                            @(showConfirmPassword ? "👁️‍🗨️" : "👁️")
+                        </button>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(confirmKey) && masterKey != confirmKey)
+                    {
+                        <div class="error-message">
+                            Master keys do not match.
+                        </div>
+                    }
+
+                    <div class="form-group">
+                        <label for="hint">Master Key Hint (Optional)</label>
+                        <input type="text" 
+                               id="hint" 
+                               @bind="masterKeyHint" 
+                               placeholder="Enter a hint to help you remember"
+                               class="form-input" />
+                        <small class="form-help">This hint will be shown if you forget your master key.</small>
+                    </div>
+
+                    <button type="button" 
+                            class="auth-button" 
+                            @onclick="SetupMasterKey"
+                            disabled="@(!CanSetupMasterKey())">
+                        Create Master Key
+                    </button>
+                    <button type="button" class="auth-button" style="margin-top:12px;background:#fff;color:#0066cc;border:1px solid #0066cc;" @onclick="RegisterPasskey">
+                        <span style="font-size:20px;vertical-align:middle;">🔑</span> Register Passkey (Biometric)
+                    </button>
+                </div>
+            }
+            else
+            {
+                <!-- Login with Master Key -->
+                <div class="form-section">
+                    <h2>Sign in to 1Password</h2>
+                    <p class="form-description">Enter your account password to continue.</p>
+                    
+                    <div class="form-group">
+                        <label for="loginKey">Account password</label>
+                        <div class="password-input-group">
+                            <input type="@(showPassword ? "text" : "password")" 
+                                   id="loginKey" 
+                                   @bind="loginKey" 
+                                   @onkeypress="HandleKeyPress"
+                                   placeholder="Enter your account password"
+                                   class="form-input" />
+                            <button type="button" class="password-toggle" @onclick="TogglePasswordVisibility">
+                                @(showPassword ? "👁️" : "👁️")
+                            </button>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(storedHint))
+                    {
+                        <div class="hint-section">
+                            <details>
+                                <summary>Show hint</summary>
+                                <p class="hint-text">@storedHint</p>
+                            </details>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="error-message">
+                            @errorMessage
+                        </div>
+                    }
+
+                    <button type="button" 
+                            class="auth-button" 
+                            @onclick="AuthenticateUser"
+                            disabled="@(string.IsNullOrEmpty(loginKey) || isLoading)">
+                        @if (isLoading)
+                        {
+                            <span class="loading-spinner">⟳</span>
+                            <span>Unlocking...</span>
+                        }
+                        else
+                        {
+                            <span>Continue</span>
+                        }
+                    </button>
+                    <button type="button" class="auth-button" style="margin-top:12px;background:#fff;color:#0066cc;border:1px solid #0066cc;" @onclick="LoginWithPasskey">
+                        <span style="font-size:20px;vertical-align:middle;">🔑</span> Sign in with Passkey
+                    </button>
+
+                    <div class="auth-footer">
+                        <button type="button" class="link-button" @onclick="ResetVault">
+                            Forgot your password?
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isFirstTime = false;
+    private bool showPassword = false;
+    private bool showConfirmPassword = false;
+    private bool isLoading = false;
+    private string masterKey = string.Empty;
+    private string confirmKey = string.Empty;
+    private string loginKey = string.Empty;
+    private string masterKeyHint = string.Empty;
+    private string storedHint = string.Empty;
+    private string errorMessage = string.Empty;
+    private string passwordStrength = "Weak";
+    private string passkeyId = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if this is first time setup
+        isFirstTime = await AuthService.IsFirstTimeSetupAsync();
+        
+        if (!isFirstTime)
+        {
+            storedHint = await AuthService.GetMasterPasswordHintAsync();
+        }
+    }
+
+    private string GetSubtitle()
+    {
+        return isFirstTime 
+            ? "Welcome! Let's set up your secure vault with a master key."
+            : "Welcome back! Please enter your master key to continue.";
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+
+    private void ToggleConfirmPasswordVisibility()
+    {
+        showConfirmPassword = !showConfirmPassword;
+    }
+
+    private void ValidatePassword()
+    {
+        if (string.IsNullOrEmpty(masterKey))
+        {
+            passwordStrength = "Weak";
+            return;
+        }
+
+        var score = CalculatePasswordStrength(masterKey);
+        passwordStrength = score switch
+        {
+            >= 4 => "Very Strong",
+            3 => "Strong",
+            2 => "Medium",
+            1 => "Weak",
+            _ => "Very Weak"
+        };
+    }
+
+    private int CalculatePasswordStrength(string password)
+    {
+        var score = 0;
+        if (password.Length >= 8) score++;
+        if (password.Any(char.IsUpper)) score++;
+        if (password.Any(char.IsLower)) score++;
+        if (password.Any(char.IsDigit)) score++;
+        if (password.Any(ch => !char.IsLetterOrDigit(ch))) score++;
+        return score;
+    }
+
+    private int GetStrengthPercentage()
+    {
+        return passwordStrength switch
+        {
+            "Very Strong" => 100,
+            "Strong" => 80,
+            "Medium" => 60,
+            "Weak" => 40,
+            _ => 20
+        };
+    }
+
+    private bool CanSetupMasterKey()
+    {
+        return !string.IsNullOrEmpty(masterKey) && 
+               !string.IsNullOrEmpty(confirmKey) && 
+               masterKey == confirmKey && 
+               masterKey.Length >= 8;
+    }
+
+    private async Task SetupMasterKey()
+    {
+        if (!CanSetupMasterKey()) return;
+
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+            
+            // Setup master password using enhanced crypto service
+            var success = await AuthService.SetupMasterPasswordAsync(masterKey, masterKeyHint);
+            
+            if (success)
+            {
+                // Navigate to home page
+                Navigation.NavigateTo("/home");
+            }
+            else
+            {
+                errorMessage = "Failed to setup master password. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to setup master password. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task AuthenticateUser()
+    {
+        if (string.IsNullOrEmpty(loginKey)) return;
+
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+
+            // Authenticate using enhanced crypto service
+            var success = await AuthService.AuthenticateAsync(loginKey);
+            
+            if (success)
+            {
+                // Navigate to home page
+                Navigation.NavigateTo("/home");
+            }
+            else
+            {
+                errorMessage = "Incorrect master password. Please try again.";
+                loginKey = string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Authentication failed. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await AuthenticateUser();
+        }
+    }
+
+    private async Task ResetVault()
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            "Are you sure you want to reset your vault? This will delete all stored data and cannot be undone.");
+        
+        if (confirmed)
+        {
+            // Clear all storage
+            await JSRuntime.InvokeVoidAsync("localStorage.clear");
+            await JSRuntime.InvokeVoidAsync("sessionStorage.clear");
+            
+            // Reset component state
+            isFirstTime = true;
+            masterKey = string.Empty;
+            confirmKey = string.Empty;
+            loginKey = string.Empty;
+            masterKeyHint = string.Empty;
+            errorMessage = string.Empty;
+            
+            // Lock vault session
+            VaultSessionService.LockVault();
+            
+            StateHasChanged();
+        }
+    }
+
+    private async Task RegisterPasskey()
+    {
+        try
+        {
+            var id = await JSRuntime.InvokeAsync<string>("passkey.register");
+            passkeyId = id;
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "passkeyId", id);
+            errorMessage = "Passkey registered! You can now sign in with your device.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Passkey registration failed: " + ex.Message;
+        }
+    }
+
+    private async Task LoginWithPasskey()
+    {
+        try
+        {
+            var id = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "passkeyId");
+            if (string.IsNullOrEmpty(id))
+            {
+                errorMessage = "No passkey registered. Please register first.";
+                return;
+            }
+            var result = await JSRuntime.InvokeAsync<bool>("passkey.login", id);
+            if (result)
+            {
+                // For passkey authentication, we need to implement a separate flow
+                // This would require additional security measures
+                Navigation.NavigateTo("/home");
+            }
+            else
+            {
+                errorMessage = "Passkey login failed.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Passkey login failed: " + ex.Message;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Focus the password field and animate the logo
+            await JSRuntime.InvokeVoidAsync("focusPasswordField");
+            await JSRuntime.InvokeVoidAsync("animateLogo");
+        }
+    }
+}

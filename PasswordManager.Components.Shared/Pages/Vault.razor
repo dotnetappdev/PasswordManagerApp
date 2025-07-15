@@ -1,0 +1,215 @@
+@page "/vault"
+@page "/passwords"
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Models
+@inject IPasswordItemService PasswordItemService
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<MudContainer MaxWidth="MaxWidth.Large" Style="padding: 20px;">
+    <MudStack Spacing="4">
+        <!-- Header -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudGrid AlignItems="Center">
+                <MudItem xs="6">
+                    <MudText Typo="Typo.h4" Style="color: white;">
+                        <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Large" Style="vertical-align: middle; margin-right: 8px;" />
+                        Password Vault
+                    </MudText>
+                </MudItem>
+                <MudItem xs="6" Class="d-flex justify-end">
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Success" 
+                              StartIcon="@Icons.Material.Filled.Add"
+                              OnClick="AddNewPassword">
+                        Add Password
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <!-- Search and Filter -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudGrid>
+                <MudItem xs="12" md="8">
+                    <MudTextField @bind-Value="searchQuery" 
+                                 Label="Search passwords" 
+                                 Variant="Variant.Outlined"
+                                 Style="background-color: #2a2a2a;"
+                                 Adornment="Adornment.Start"
+                                 AdornmentIcon="@Icons.Material.Filled.Search"
+                                 @onkeyup="OnSearchChanged" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect @bind-Value="selectedCategory" 
+                              Label="Category" 
+                              Variant="Variant.Outlined"
+                              Style="background-color: #2a2a2a;">
+                        <MudSelectItem Value="@("")">All Categories</MudSelectItem>
+                        @foreach (var category in categories)
+                        {
+                            <MudSelectItem Value="@category">@category</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <!-- Password List -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            @if (isLoading)
+            {
+                <MudProgressCircular Indeterminate="true" />
+                <MudText Class="ml-2">Loading passwords...</MudText>
+            }
+            else if (filteredPasswords.Any())
+            {
+                <MudGrid>
+                    @foreach (var password in filteredPasswords)
+                    {
+                        <MudItem xs="12" md="6" lg="4">
+                            <MudCard Style="background-color: #2a2a2a; color: white; margin-bottom: 16px;">
+                                <MudCardContent>
+                                    <MudStack>
+                                        <MudText Typo="Typo.h6" Style="color: white;">
+                                            <MudIcon Icon="@GetPasswordIcon(password)" Size="Size.Small" Style="margin-right: 8px;" />
+                                            @password.Title
+                                        </MudText>
+                                        <MudText Typo="Typo.body2" Style="color: #cccccc;">
+                                            @password.Username
+                                        </MudText>
+                                        <MudText Typo="Typo.body2" Style="color: #999999;">
+                                            @password.WebsiteUrl
+                                        </MudText>
+                                    </MudStack>
+                                </MudCardContent>
+                                <MudCardActions>
+                                    <MudButton Size="Size.Small" 
+                                              Color="Color.Primary" 
+                                              OnClick="() => ViewPassword(password)">
+                                        View
+                                    </MudButton>
+                                    <MudButton Size="Size.Small" 
+                                              Color="Color.Secondary" 
+                                              OnClick="() => CopyPassword(password)">
+                                        Copy
+                                    </MudButton>
+                                    <MudButton Size="Size.Small" 
+                                              Color="Color.Warning" 
+                                              OnClick="() => EditPassword(password)">
+                                        Edit
+                                    </MudButton>
+                                </MudCardActions>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+            else
+            {
+                <MudText Typo="Typo.h6" Align="Align.Center" Style="color: #cccccc; margin: 40px 0;">
+                    No passwords found. Click "Add Password" to create your first entry.
+                </MudText>
+            }
+        </MudPaper>
+    </MudStack>
+</MudContainer>
+
+@code {
+    private List<PasswordItem> passwords = new();
+    private List<PasswordItem> filteredPasswords = new();
+    private List<string> categories = new();
+    private string searchQuery = "";
+    private string selectedCategory = "";
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check authentication
+        var isAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (!isAuthenticated)
+        {
+            Navigation.NavigateTo("/masterpassword");
+            return;
+        }
+
+        await LoadPasswords();
+    }
+
+    private async Task LoadPasswords()
+    {
+        try
+        {
+            isLoading = true;
+            passwords = await PasswordItemService.GetAllAsync();
+            filteredPasswords = passwords;
+            categories = passwords.Select(p => p.Category?.Name ?? "Uncategorized").Distinct().ToList();
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OnSearchChanged()
+    {
+        FilterPasswords();
+    }
+
+    private void FilterPasswords()
+    {
+        filteredPasswords = passwords.Where(p => 
+            (string.IsNullOrEmpty(searchQuery) || 
+             p.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+             p.Username.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+             p.WebsiteUrl.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(selectedCategory) || 
+             (p.Category?.Name ?? "Uncategorized") == selectedCategory)
+        ).ToList();
+    }
+
+    private string GetPasswordIcon(PasswordItem password)
+    {
+        return password.WebsiteUrl switch
+        {
+            var url when url.Contains("google") => Icons.Material.Filled.Google,
+            var url when url.Contains("facebook") => Icons.Material.Filled.Facebook,
+            var url when url.Contains("twitter") => Icons.Material.Filled.Twitter,
+            var url when url.Contains("github") => Icons.Material.Filled.GitHub,
+            _ => Icons.Material.Filled.Password
+        };
+    }
+
+    private async Task ViewPassword(PasswordItem password)
+    {
+        Navigation.NavigateTo($"/password/{password.Id}");
+    }
+
+    private async Task CopyPassword(PasswordItem password)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", password.Password);
+            // Show success notification
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+        }
+    }
+
+    private void EditPassword(PasswordItem password)
+    {
+        Navigation.NavigateTo($"/password/{password.Id}/edit");
+    }
+
+    private void AddNewPassword()
+    {
+        Navigation.NavigateTo("/password/new");
+    }
+}

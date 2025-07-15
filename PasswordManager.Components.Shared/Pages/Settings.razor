@@ -1,0 +1,298 @@
+@page "/settings"
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Models
+@inject IUserProfileService UserProfileService
+@inject IApiKeyService ApiKeyService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<MudContainer MaxWidth="MaxWidth.Medium" Style="padding: 20px;">
+    <MudStack Spacing="4">
+        <!-- Header -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudText Typo="Typo.h4" Style="color: white;">
+                <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Large" Style="vertical-align: middle; margin-right: 8px;" />
+                Settings
+            </MudText>
+        </MudPaper>
+
+        <!-- Profile Section -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Profile</MudText>
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="userProfile.UserName" 
+                                 Label="Display Name" 
+                                 Variant="Variant.Outlined"
+                                 Style="background-color: #2a2a2a;" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="userProfile.Email" 
+                                 Label="Email" 
+                                 Variant="Variant.Outlined"
+                                 Style="background-color: #2a2a2a;" />
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <!-- API Key Management -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">API Key Management</MudText>
+            
+            <MudGrid>
+                <MudItem xs="12" md="8">
+                    <MudTextField @bind-Value="newApiKeyName" 
+                                 Label="API Key Name" 
+                                 Variant="Variant.Outlined"
+                                 Style="background-color: #2a2a2a;"
+                                 HelperText="Enter a descriptive name for your API key" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Primary" 
+                              OnClick="GenerateApiKey"
+                              Disabled="string.IsNullOrEmpty(newApiKeyName) || isGenerating"
+                              FullWidth="true">
+                        @if (isGenerating)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                            <MudText Class="ml-2">Generating...</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Generate API Key</MudText>
+                        }
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+
+            @if (!string.IsNullOrEmpty(generatedApiKey))
+            {
+                <MudAlert Severity="Severity.Success" Style="background-color: #1a4a1a; color: white; margin-top: 16px;">
+                    <MudText Style="color: white;">API Key Generated Successfully!</MudText>
+                    <MudTextField Value="@generatedApiKey" 
+                                 Label="Your API Key" 
+                                 Variant="Variant.Outlined"
+                                 Style="background-color: #2a2a2a; margin-top: 8px;"
+                                 ReadOnly="true"
+                                 Adornment="Adornment.End"
+                                 AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                                 OnAdornmentClick="CopyApiKey" />
+                    <MudText Typo="Typo.caption" Style="color: #cccccc; margin-top: 8px;">
+                        ⚠️ Store this API key securely. It will not be shown again.
+                    </MudText>
+                </MudAlert>
+            }
+
+            <!-- Existing API Keys -->
+            <MudText Typo="Typo.subtitle1" Style="color: white; margin-top: 24px; margin-bottom: 16px;">
+                Your API Keys
+            </MudText>
+
+            @if (apiKeys.Any())
+            {
+                <MudTable Items="@apiKeys" 
+                         Dense="true" 
+                         Style="background-color: #2a2a2a; color: white;">
+                    <HeaderContent>
+                        <MudTh Style="color: white;">Name</MudTh>
+                        <MudTh Style="color: white;">Created</MudTh>
+                        <MudTh Style="color: white;">Last Used</MudTh>
+                        <MudTh Style="color: white;">Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Name">@context.Name</MudTd>
+                        <MudTd DataLabel="Created">@context.CreatedAt.ToString("MMM dd, yyyy")</MudTd>
+                        <MudTd DataLabel="Last Used">
+                            @(context.LastUsedAt?.ToString("MMM dd, yyyy") ?? "Never")
+                        </MudTd>
+                        <MudTd DataLabel="Actions">
+                            <MudButton Size="Size.Small" 
+                                      Color="Color.Error" 
+                                      OnClick="() => DeleteApiKey(context.Id)">
+                                Delete
+                            </MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+            else
+            {
+                <MudText Style="color: #cccccc;">No API keys found. Generate one to get started.</MudText>
+            }
+        </MudPaper>
+
+        <!-- Database Settings -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Database Settings</MudText>
+            
+            <MudSelect @bind-Value="databaseProvider" 
+                      Label="Database Provider" 
+                      Variant="Variant.Outlined"
+                      Style="background-color: #2a2a2a;">
+                <MudSelectItem Value="@("SqlServer")">SQL Server</MudSelectItem>
+                <MudSelectItem Value="@("MySql")">MySQL</MudSelectItem>
+                <MudSelectItem Value="@("Supabase")">Supabase</MudSelectItem>
+            </MudSelect>
+
+            @if (databaseProvider == "Supabase")
+            {
+                <MudGrid Style="margin-top: 16px;">
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="supabaseUrl" 
+                                     Label="Supabase URL" 
+                                     Variant="Variant.Outlined"
+                                     Style="background-color: #2a2a2a;" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="supabaseApiKey" 
+                                     Label="Supabase API Key" 
+                                     Variant="Variant.Outlined"
+                                     InputType="InputType.Password"
+                                     Style="background-color: #2a2a2a;" />
+                    </MudItem>
+                </MudGrid>
+            }
+        </MudPaper>
+
+        <!-- Save Button -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      OnClick="SaveSettings"
+                      Size="Size.Large"
+                      Disabled="isSaving">
+                @if (isSaving)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ml-2">Saving...</MudText>
+                }
+                else
+                {
+                    <MudText>Save Settings</MudText>
+                }
+            </MudButton>
+        </MudPaper>
+    </MudStack>
+</MudContainer>
+
+@code {
+    private ApplicationUser userProfile = new();
+    private List<ApiKey> apiKeys = new();
+    private string newApiKeyName = "";
+    private string generatedApiKey = "";
+    private string databaseProvider = "SqlServer";
+    private string supabaseUrl = "";
+    private string supabaseApiKey = "";
+    private bool isGenerating = false;
+    private bool isSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserProfile();
+        await LoadApiKeys();
+    }
+
+    private async Task LoadUserProfile()
+    {
+        try
+        {
+            userProfile = await UserProfileService.GetCurrentUserAsync() ?? new ApplicationUser();
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+            Console.WriteLine($"Error loading user profile: {ex.Message}");
+        }
+    }
+
+    private async Task LoadApiKeys()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(userProfile.Id))
+            {
+                apiKeys = await ApiKeyService.GetUserApiKeysAsync(userProfile.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading API keys: {ex.Message}");
+        }
+    }
+
+    private async Task GenerateApiKey()
+    {
+        try
+        {
+            isGenerating = true;
+            
+            var apiKey = await ApiKeyService.CreateApiKeyAsync(newApiKeyName, userProfile.Id);
+            generatedApiKey = apiKey.KeyHash; // This contains the unhashed value temporarily
+            
+            // Refresh the list
+            await LoadApiKeys();
+            
+            // Clear the input
+            newApiKeyName = "";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating API key: {ex.Message}");
+        }
+        finally
+        {
+            isGenerating = false;
+        }
+    }
+
+    private async Task CopyApiKey()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", generatedApiKey);
+            // Show success notification
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error copying API key: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteApiKey(Guid keyId)
+    {
+        try
+        {
+            await ApiKeyService.DeleteApiKeyAsync(keyId, userProfile.Id);
+            await LoadApiKeys();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting API key: {ex.Message}");
+        }
+    }
+
+    private async Task SaveSettings()
+    {
+        try
+        {
+            isSaving = true;
+            
+            // Save user profile
+            await UserProfileService.UpdateAsync(userProfile);
+            
+            // Save database settings
+            // This would typically be saved to configuration
+            
+            // Show success notification
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving settings: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

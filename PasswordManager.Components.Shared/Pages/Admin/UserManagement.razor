@@ -1,0 +1,277 @@
+@page "/admin/users"
+@using PasswordManager.Models.DTOs.Auth
+@using PasswordManager.Services.Interfaces
+@attribute [Authorize(Roles = "Admin")]
+@inject IUserProfileService UserProfileService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>User Management</PageTitle>
+
+<MudContainer Class="pa-4">
+    <MudText Typo="Typo.h4" Class="mb-4">User Management</MudText>
+
+    <MudPaper Class="pa-4 mb-4" Elevation="2">
+        <MudButton Variant="Variant.Filled" 
+                  Color="Color.Primary" 
+                  StartIcon="@Icons.Material.Filled.PersonAdd" 
+                  OnClick="@(() => OpenCreateUserDialog())"
+                  Class="mb-4">
+            Add New User
+        </MudButton>
+
+        <MudDataGrid T="UserDto" 
+                    Items="@_users" 
+                    ReadOnly="false" 
+                    Dense="true" 
+                    Striped="true" 
+                    Hover="true"
+                    Loading="@_loading"
+                    SortMode="SortMode.Multiple"
+                    Filterable="true">
+            <Columns>
+                <PropertyColumn Property="x => x.Email" Title="Email" />
+                <PropertyColumn Property="x => x.FirstName" Title="First Name" />
+                <PropertyColumn Property="x => x.LastName" Title="Last Name" />
+                <PropertyColumn Property="x => x.CreatedAt" Title="Created" Format="yyyy-MM-dd" />
+                <PropertyColumn Property="x => x.LastLoginAt" Title="Last Login" Format="yyyy-MM-dd HH:mm" />
+                <PropertyColumn Property="x => x.IsActive" Title="Active">
+                    <CellTemplate>
+                        <MudChip Color="@(context.Item.IsActive ? Color.Success : Color.Error)"
+                                Size="Size.Small">
+                            @(context.Item.IsActive ? "Active" : "Inactive")
+                        </MudChip>
+                    </CellTemplate>
+                </PropertyColumn>
+                <TemplateColumn Title="Actions" CellClass="d-flex">
+                    <CellTemplate>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                     Color="Color.Primary" 
+                                     Size="Size.Small"
+                                     OnClick="@(() => OpenEditUserDialog(context.Item))" 
+                                     Title="Edit User" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Key" 
+                                     Color="Color.Warning" 
+                                     Size="Size.Small"
+                                     OnClick="@(() => OpenChangePasswordDialog(context.Item))" 
+                                     Title="Change Password" />
+                        @if (context.Item.IsActive)
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Lock" 
+                                         Color="Color.Error" 
+                                         Size="Size.Small"
+                                         OnClick="@(() => ConfirmDeactivateUser(context.Item))" 
+                                         Title="Deactivate User" />
+                        }
+                        else
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.LockOpen" 
+                                         Color="Color.Success" 
+                                         Size="Size.Small"
+                                         OnClick="@(() => ConfirmReactivateUser(context.Item))" 
+                                         Title="Reactivate User" />
+                        }
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                     Color="Color.Error" 
+                                     Size="Size.Small"
+                                     OnClick="@(() => ConfirmDeleteUser(context.Item))" 
+                                     Title="Delete User" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <NoRecordsContent>
+                <MudText>No users found.</MudText>
+            </NoRecordsContent>
+            <LoadingContent>
+                <MudText>Loading users...</MudText>
+            </LoadingContent>
+            <PagerContent>
+                <MudDataGridPager T="UserDto" />
+            </PagerContent>
+        </MudDataGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<UserDto> _users = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        _loading = true;
+        try
+        {
+            _users = await UserProfileService.GetAllUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading users: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OpenCreateUserDialog()
+    {
+        var parameters = new DialogParameters();
+        var dialog = await DialogService.ShowAsync<CreateUserDialog>("Create New User", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadUsers();
+            Snackbar.Add("User created successfully", Severity.Success);
+        }
+    }
+
+    private async Task OpenEditUserDialog(UserDto user)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("UserId", user.Id);
+        var dialog = await DialogService.ShowAsync<EditUserDialog>("Edit User", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadUsers();
+            Snackbar.Add("User updated successfully", Severity.Success);
+        }
+    }
+
+    private async Task OpenChangePasswordDialog(UserDto user)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("UserId", user.Id);
+        var dialog = await DialogService.ShowAsync<ChangePasswordDialog>("Change Password", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Snackbar.Add("Password changed successfully", Severity.Success);
+        }
+    }
+
+    private async Task ConfirmDeactivateUser(UserDto user)
+    {
+        var parameters = new DialogParameters
+        {
+            { "ContentText", $"Are you sure you want to deactivate user {user.Email}?" },
+            { "ButtonText", "Deactivate" },
+            { "Color", Color.Error }
+        };
+
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirm Deactivation", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await DeactivateUser(user.Id);
+        }
+    }
+
+    private async Task DeactivateUser(string userId)
+    {
+        try
+        {
+            var success = await UserProfileService.DeactivateUserAsync(userId);
+            if (success)
+            {
+                await LoadUsers();
+                Snackbar.Add("User deactivated successfully", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to deactivate user", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error deactivating user: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ConfirmReactivateUser(UserDto user)
+    {
+        var parameters = new DialogParameters
+        {
+            { "ContentText", $"Are you sure you want to reactivate user {user.Email}?" },
+            { "ButtonText", "Reactivate" },
+            { "Color", Color.Success }
+        };
+
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirm Reactivation", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await ReactivateUser(user.Id);
+        }
+    }
+
+    private async Task ReactivateUser(string userId)
+    {
+        try
+        {
+            var success = await UserProfileService.ReactivateUserAsync(userId);
+            if (success)
+            {
+                await LoadUsers();
+                Snackbar.Add("User reactivated successfully", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to reactivate user", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error reactivating user: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ConfirmDeleteUser(UserDto user)
+    {
+        var parameters = new DialogParameters
+        {
+            { "ContentText", $"Are you sure you want to permanently delete user {user.Email}? This action cannot be undone." },
+            { "ButtonText", "Delete" },
+            { "Color", Color.Error }
+        };
+
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirm Deletion", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await DeleteUser(user.Id);
+        }
+    }
+
+    private async Task DeleteUser(string userId)
+    {
+        try
+        {
+            var success = await UserProfileService.DeleteUserAsync(userId);
+            if (success)
+            {
+                await LoadUsers();
+                Snackbar.Add("User deleted successfully", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete user", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error deleting user: {ex.Message}", Severity.Error);
+        }
+    }
+}

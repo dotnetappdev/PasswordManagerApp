@@ -83,6 +83,7 @@ builder.Services.AddScoped<IPasswordEncryptionService, PasswordManager.Services.
 builder.Services.AddScoped<IJwtService, PasswordManager.Services.Services.JwtService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IVaultSessionService, PasswordManager.Services.Services.VaultSessionService>();
+builder.Services.AddScoped<IApiKeyService, PasswordManager.Services.Services.ApiKeyService>();
 builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncService>();
 
 // Register cryptography services
