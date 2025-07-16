@@ -113,18 +113,21 @@ public class AuthService : IAuthService
 
             if (isValid)
             {
-                // Unlock vault session
-                var vaultUnlocked = _vaultSessionService.UnlockVault(user.Id);
-
-                if (vaultUnlocked)
-                {
-                    _isAuthenticated = true;
-                    _currentUser = user;
-                    await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "isAuthenticated", "true");
-                    
-                    _logger.LogInformation("User {UserId} authenticated successfully", user.Id);
-                    return true;
-                }
+                // Derive master key for session
+                var masterKey = _passwordCryptoService.DeriveMasterKey(masterPassword, userSalt);
+                
+                // Initialize session with master key
+                var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
+                
+                // Store session ID for later use
+                await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "sessionId", sessionId);
+                
+                _isAuthenticated = true;
+                _currentUser = user;
+                await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "isAuthenticated", "true");
+                
+                _logger.LogInformation("User {UserId} authenticated successfully", user.Id);
+                return true;
             }
 
             _logger.LogWarning("Authentication failed for user {UserId}", user.Id);
@@ -145,9 +148,10 @@ public class AuthService : IAuthService
         try
         {
             var isAuth = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "isAuthenticated");
+            var sessionId = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "sessionId");
             var isSessionValid = !string.IsNullOrEmpty(isAuth) && isAuth == "true";
             
-            if (isSessionValid && _vaultSessionService.IsVaultUnlocked())
+            if (isSessionValid && !string.IsNullOrEmpty(sessionId) && _vaultSessionService.IsVaultUnlocked(sessionId))
             {
                 _isAuthenticated = true;
                 // Restore current user if not already set
@@ -175,11 +179,18 @@ public class AuthService : IAuthService
     {
         try
         {
+            var sessionId = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "sessionId");
+            
             _isAuthenticated = false;
             _currentUser = null;
-            _vaultSessionService.LockVault(_currentUser?.Id);
+            
+            if (!string.IsNullOrEmpty(sessionId))
+            {
+                _vaultSessionService.ClearSession(sessionId);
+            }
             
             await _jsRuntime.InvokeVoidAsync("sessionStorage.removeItem", "isAuthenticated");
+            await _jsRuntime.InvokeVoidAsync("sessionStorage.removeItem", "sessionId");
             
             _logger.LogInformation("User logged out successfully");
         }

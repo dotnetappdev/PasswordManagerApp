@@ -1,0 +1,25 @@
+There is no argument given that corresponds to the required parameter 'masterKey' of 'IVaultSessionService.UnlockVault(string, byte[])'
+The type or namespace name 'PasswordManagerDbContext' could not be found (are you missing a using directive or an assembly reference?)
+The type or namespace name 'PasswordManagerDbContext' could not be found (are you missing a using directive or an assembly reference?)
+The type or namespace name 'ISyncService' could not be found (are you missing a using directive or an assembly reference?)
+The type or namespace name 'IDatabaseContextFactory' could not be found (are you missing a using directive or an assembly reference?)
+The type or namespace name 'IDatabaseContextFactory' could not be found (are you missing a using directive or an assembly reference?)
+The type or namespace name 'IDatabaseContextFactory' could not be found (are you missing a using directive or an assembly reference?)
+The type or namespace name 'ConfigurationBuilder' could not be found (are you missing a using directive or an assembly reference?)
+The type or namespace name 'ConfigurationBuilder' could not be found (are you missing a using directive or an assembly reference?)
+The name 'ServerVersion' does not exist in the current context
+The name 'ConflictResolution' does not exist in the current context
+The name 'ConflictResolution' does not exist in the current context
+The name 'ConflictResolution' does not exist in the current context
+The name 'ConflictResolution' does not exist in the current context
+Operator '??' cannot be applied to operands of type 'bool' and 'bool'
+Operator '??' cannot be applied to operands of type 'int' and 'int'
+Operator '??' cannot be applied to operands of type 'int' and 'int'
+'bool' does not contain a definition for 'Value' and no accessible extension method 'Value' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
+'bool' does not contain a definition for 'Value' and no accessible extension method 'Value' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
+'bool' does not contain a definition for 'Value' and no accessible extension method 'Value' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
+'bool' does not contain a definition for 'Value' and no accessible extension method 'Value' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
+'bool' does not contain a definition for 'HasValue' and no accessible extension method 'HasValue' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
+'bool' does not contain a definition for 'HasValue' and no accessible extension method 'HasValue' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
+'bool' does not contain a definition for 'HasValue' and no accessible extension method 'HasValue' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
+'bool' does not contain a definition for 'HasValue' and no accessible extension method 'HasValue' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)

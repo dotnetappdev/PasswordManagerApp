@@ -1,14 +1,16 @@
 using PasswordManager.DAL.Interfaces;
+using PasswordManager.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PasswordManager.DAL;
 using PasswordManager.Models;
 using PasswordManager.Models.DTOs.Sync;
+using PasswordManager.Services.Interfaces;
 
 namespace PasswordManager.Services.Services;
 
-public class SyncService : ISyncService
+public class SyncService : PasswordManager.Services.Interfaces.ISyncService
 {
     private readonly IDatabaseContextFactory _contextFactory;
     private readonly ILogger<SyncService> _logger;
@@ -355,7 +357,7 @@ public class SyncService : ISyncService
                         EntityId = sourceItem.Id,
                         SourceLastModified = sourceItem.LastModified,
                         TargetLastModified = targetItem.LastModified,
-                        Resolution = ConflictResolution.KeepTarget,
+                        Resolution = SyncConflictResolution.TargetWins,
                         Message = $"Target item '{targetItem.Title}' is newer than source item '{sourceItem.Title}'"
                     });
                     statistics.Skipped++;
@@ -469,7 +471,7 @@ public class SyncService : ISyncService
                         EntityId = sourceCategory.Id,
                         SourceLastModified = sourceCategory.LastModified,
                         TargetLastModified = targetCategory.LastModified,
-                        Resolution = ConflictResolution.KeepTarget,
+                        Resolution = SyncConflictResolution.TargetWins,
                         Message = $"Target category '{targetCategory.Name}' is newer than source category '{sourceCategory.Name}'"
                     });
                     statistics.Skipped++;
@@ -536,7 +538,7 @@ public class SyncService : ISyncService
                         EntityId = sourceCollection.Id,
                         SourceLastModified = sourceCollection.LastModified,
                         TargetLastModified = targetCollection.LastModified,
-                        Resolution = ConflictResolution.KeepTarget,
+                        Resolution = SyncConflictResolution.TargetWins,
                         Message = $"Target collection '{targetCollection.Name}' is newer than source collection '{sourceCollection.Name}'"
                     });
                     statistics.Skipped++;
@@ -601,7 +603,7 @@ public class SyncService : ISyncService
                         EntityId = sourceTag.Id,
                         SourceLastModified = sourceTag.LastModified,
                         TargetLastModified = targetTag.LastModified,
-                        Resolution = ConflictResolution.KeepTarget,
+                        Resolution = SyncConflictResolution.TargetWins,
                         Message = $"Target tag '{targetTag.Name}' is newer than source tag '{sourceTag.Name}'"
                     });
                     statistics.Skipped++;

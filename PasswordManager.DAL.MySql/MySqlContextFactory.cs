@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using System.IO;
 using PasswordManager.DAL;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace PasswordManager.DAL.MySql
 {

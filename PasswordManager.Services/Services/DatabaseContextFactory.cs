@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PasswordManager.DAL.Interfaces;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace PasswordManager.Services.Services;
 
