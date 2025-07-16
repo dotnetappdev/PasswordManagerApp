@@ -17,9 +17,13 @@ public class Tag
     public string? Description { get; set; }
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
+    public DateTime LastModified { get; set; } = DateTime.UtcNow;
     public bool IsSystemTag { get; set; } // For built-in tags like "favorite", "work", etc.
-    
+
+    // User relationship
+    public string? UserId { get; set; }
+    public ApplicationUser? User { get; set; }
+
     // Navigation properties
     public List<PasswordItem> PasswordItems { get; set; } = new();
 }

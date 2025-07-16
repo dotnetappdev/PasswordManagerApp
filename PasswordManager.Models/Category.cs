@@ -7,6 +7,11 @@ namespace PasswordManager.Models
         public string? Icon { get; set; } // Optional: emoji or icon name
         public string? Color { get; set; } // Optional: for UI
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime LastModified { get; set; } = DateTime.UtcNow;
+
+        // User relationship
+        public string? UserId { get; set; }
+        public ApplicationUser? User { get; set; }
         
         // Collection relationship
         public int? CollectionId { get; set; }

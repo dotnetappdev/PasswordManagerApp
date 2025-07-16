@@ -8,6 +8,18 @@ public class LoginItem
 {
     public int Id { get; set; }
     public int PasswordItemId { get; set; }
+
+    // Audit fields
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime LastModified { get; set; } = DateTime.UtcNow;
+
+    // User relationship
+    public string? UserId { get; set; }
+    public ApplicationUser? User { get; set; }
+
+    // WebsiteUrl
+    [MaxLength(200)]
+    public string? WebsiteUrl { get; set; }
     
     [MaxLength(200)]
     public string? Website { get; set; }

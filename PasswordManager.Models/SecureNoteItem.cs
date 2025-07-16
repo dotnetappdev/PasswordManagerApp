@@ -6,6 +6,18 @@ public class SecureNoteItem
 {
     public int Id { get; set; }
     public int PasswordItemId { get; set; }
+
+    // Audit fields
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime LastModified { get; set; } = DateTime.UtcNow;
+
+    // User relationship
+    public string? UserId { get; set; }
+    public ApplicationUser? User { get; set; }
+
+    // Title
+    [MaxLength(100)]
+    public string? Title { get; set; }
     
     [MaxLength(10000)]
     public string? Content { get; set; }

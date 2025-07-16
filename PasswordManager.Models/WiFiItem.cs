@@ -6,6 +6,14 @@ public class WiFiItem
 {
     public int Id { get; set; }
     public int PasswordItemId { get; set; }
+
+    // Audit fields
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime LastModified { get; set; } = DateTime.UtcNow;
+
+    // User relationship
+    public string? UserId { get; set; }
+    public ApplicationUser? User { get; set; }
     
     // Basic WiFi Information
     [MaxLength(100)]
