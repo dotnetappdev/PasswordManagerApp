@@ -1,4 +1,9 @@
-# 🔐 Password Manager
+# 🔐 Passw## 🚀 Quick Start
+
+- **[Setup Guide](SETUP.md)** - Complete setup and configuration guide
+- **[Getting Started](GETTING_STARTED.md)** - Installation and setup guide
+- **[User Guide](USER_GUIDE.md)** - Complete user documentation
+- **[Development Guide](DEVELOPMENT.md)** - Developer setup and contributinganager
 
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![MAUI](https://img.shields.io/badge/MAUI-Cross--Platform-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/apps/maui)
@@ -34,6 +39,7 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 ### 📋 Additional Documentation
 | Document | Description |
 |----------|-------------|
+| **Complete Setup Guide** | Full setup and configuration guide | [SETUP.md](SETUP.md) |
 | **Database Setup** | Database configuration guide | [ReadMe.DatabaseProviders.md](ReadMe.DatabaseProviders.md) |
 | **MySQL Setup** | MySQL-specific setup guide | [MYSQL_SETUP_GUIDE.md](MYSQL_SETUP_GUIDE.md) |
 | **Technology Stack** | Complete technology overview | [TECHNOLOGY_STACK.md](TECHNOLOGY_STACK.md) |
