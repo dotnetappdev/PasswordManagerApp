@@ -56,9 +56,9 @@ public class AuthService : IAuthService
             // Create user record in database
             var user = new ApplicationUser
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.NewGuid().ToString(),
                 Email = "user@passwordmanager.local", // Default email for single-user setup
-                UserSalt = userSalt,
+                UserSalt = Convert.ToBase64String(userSalt),
                 MasterPasswordHash = masterPasswordHash,
                 MasterPasswordHint = hint,
                 CreatedAt = DateTime.UtcNow,
@@ -107,16 +107,14 @@ public class AuthService : IAuthService
             // Verify master password
             var isValid = _passwordCryptoService.VerifyMasterPassword(
                 masterPassword, 
-                user.MasterPasswordHash, 
-                userSalt);
+                user.MasterPasswordHash!, 
+                Convert.FromBase64String(user.UserSalt!)
+            );
 
             if (isValid)
             {
                 // Unlock vault session
-                var vaultUnlocked = _vaultSessionService.UnlockVault(
-                    masterPassword, 
-                    userSalt, 
-                    user.MasterPasswordHash);
+                var vaultUnlocked = _vaultSessionService.UnlockVault(user.Id);
 
                 if (vaultUnlocked)
                 {
@@ -149,7 +147,7 @@ public class AuthService : IAuthService
             var isAuth = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "isAuthenticated");
             var isSessionValid = !string.IsNullOrEmpty(isAuth) && isAuth == "true";
             
-            if (isSessionValid && _vaultSessionService.IsVaultUnlocked)
+            if (isSessionValid && _vaultSessionService.IsVaultUnlocked())
             {
                 _isAuthenticated = true;
                 // Restore current user if not already set
@@ -179,7 +177,7 @@ public class AuthService : IAuthService
         {
             _isAuthenticated = false;
             _currentUser = null;
-            _vaultSessionService.LockVault();
+            _vaultSessionService.LockVault(_currentUser?.Id);
             
             await _jsRuntime.InvokeVoidAsync("sessionStorage.removeItem", "isAuthenticated");
             

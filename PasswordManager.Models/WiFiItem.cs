@@ -145,4 +145,8 @@ public class WiFiItem
     
     // Navigation property
     public PasswordItem PasswordItem { get; set; } = null!;
+    
+    // Mapping properties
+    public bool RequiresMasterPassword { get; set; } // For mapping
+    public int? PasswordId { get; set; } // For mapping
 }

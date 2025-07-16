@@ -18,6 +18,11 @@ public class SecureNoteItemDto
     public string? LastEditedBy { get; set; }
     public DateTime? LastUsed { get; set; }
     public int UsageCount { get; set; }
+    public bool RequiresMasterPassword { get; set; }
+    public int? PasswordId { get; set; }
+    public string? EncryptedContent { get; set; }
+    public string? ContentNonce { get; set; }
+    public string? ContentAuthTag { get; set; }
 }
 
 public class CreateSecureNoteItemDto
@@ -33,6 +38,8 @@ public class CreateSecureNoteItemDto
     public bool IsShared { get; set; }
     public string? SharedWith { get; set; }
     public string? LastEditedBy { get; set; }
+    public bool RequiresMasterPassword { get; set; }
+    public int? PasswordId { get; set; }
 }
 
 public class UpdateSecureNoteItemDto
@@ -48,4 +55,6 @@ public class UpdateSecureNoteItemDto
     public bool IsShared { get; set; }
     public string? SharedWith { get; set; }
     public string? LastEditedBy { get; set; }
+    public bool RequiresMasterPassword { get; set; }
+    public int? PasswordId { get; set; }
 }

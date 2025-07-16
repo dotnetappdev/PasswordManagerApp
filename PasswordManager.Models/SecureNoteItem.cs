@@ -21,6 +21,12 @@ public class SecureNoteItem
     
     [MaxLength(10000)]
     public string? Content { get; set; }
+    [MaxLength(10000)]
+    public string? EncryptedContent { get; set; }
+    [MaxLength(200)]
+    public string? ContentNonce { get; set; }
+    [MaxLength(200)]
+    public string? ContentAuthTag { get; set; }
     
     public bool IsMarkdown { get; set; }
     
@@ -63,4 +69,7 @@ public class SecureNoteItem
     
     // Navigation property
     public PasswordItem PasswordItem { get; set; } = null!;
+    
+    public bool RequiresMasterPassword { get; set; } // For mapping
+    public int? PasswordId { get; set; } // For mapping
 }

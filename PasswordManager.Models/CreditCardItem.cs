@@ -125,4 +125,24 @@ public class CreditCardItem
     
     // Navigation property
     public PasswordItem PasswordItem { get; set; } = null!;
+
+    // Additional fields for mapping and compatibility
+    public string? ExpirationMonth { get; set; } // For mapping
+    public string? ExpirationYear { get; set; } // For mapping
+    public string? SecurityCode { get; set; } // For mapping
+    public bool RequiresMasterPassword { get; set; } // For mapping
+    public int? PasswordId { get; set; } // For mapping
+
+    [MaxLength(1000)]
+    public string? EncryptedCardNumber { get; set; }
+    [MaxLength(200)]
+    public string? CardNumberNonce { get; set; }
+    [MaxLength(200)]
+    public string? CardNumberAuthTag { get; set; }
+    [MaxLength(1000)]
+    public string? EncryptedCvv { get; set; }
+    [MaxLength(200)]
+    public string? CvvNonce { get; set; }
+    [MaxLength(200)]
+    public string? CvvAuthTag { get; set; }
 }

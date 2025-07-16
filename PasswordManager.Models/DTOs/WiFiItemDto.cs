@@ -48,6 +48,8 @@ public class WiFiItemDto
     public DateTime? LastUsed { get; set; }
     public int UsageCount { get; set; }
     public string? Notes { get; set; }
+    public bool RequiresMasterPassword { get; set; }
+    public int? PasswordId { get; set; }
 }
 
 public class CreateWiFiItemDto
@@ -92,6 +94,8 @@ public class CreateWiFiItemDto
     public bool HasGuestNetwork { get; set; }
     public string? QRCodeData { get; set; }
     public string? Notes { get; set; }
+    public bool RequiresMasterPassword { get; set; }
+    public int? PasswordId { get; set; }
 }
 
 public class UpdateWiFiItemDto
@@ -136,4 +140,6 @@ public class UpdateWiFiItemDto
     public bool HasGuestNetwork { get; set; }
     public string? QRCodeData { get; set; }
     public string? Notes { get; set; }
+    public bool RequiresMasterPassword { get; set; }
+    public int? PasswordId { get; set; }
 }

@@ -31,16 +31,19 @@ public class PasswordEncryptionService : IPasswordEncryptionService
         if (loginItem == null) throw new ArgumentNullException(nameof(loginItem));
         if (string.IsNullOrEmpty(sessionId)) throw new ArgumentException("Session ID cannot be null or empty", nameof(sessionId));
 
-        // Use VaultSessionService to encrypt with session-based master key
         await Task.Run(() =>
         {
             // Encrypt password
             if (!string.IsNullOrEmpty(loginItem.Password))
             {
                 var encryptedPassword = _vaultSessionService.EncryptPassword(loginItem.Password, sessionId);
-                loginItem.EncryptedPassword = encryptedPassword.EncryptedPassword;
-                loginItem.PasswordNonce = encryptedPassword.Nonce;
-                loginItem.PasswordAuthTag = encryptedPassword.AuthenticationTag;
+                var parts = encryptedPassword.Split('|');
+                if (parts.Length == 3)
+                {
+                    loginItem.EncryptedPassword = parts[0];
+                    loginItem.PasswordNonce = parts[1];
+                    loginItem.PasswordAuthTag = parts[2];
+                }
                 loginItem.Password = null; // Clear plaintext
             }
 
@@ -48,9 +51,13 @@ public class PasswordEncryptionService : IPasswordEncryptionService
             if (!string.IsNullOrEmpty(loginItem.TotpSecret))
             {
                 var encryptedTotp = _vaultSessionService.EncryptPassword(loginItem.TotpSecret, sessionId);
-                loginItem.EncryptedTotpSecret = encryptedTotp.EncryptedPassword;
-                loginItem.TotpNonce = encryptedTotp.Nonce;
-                loginItem.TotpAuthTag = encryptedTotp.AuthenticationTag;
+                var parts = encryptedTotp.Split('|');
+                if (parts.Length == 3)
+                {
+                    loginItem.EncryptedTotpSecret = parts[0];
+                    loginItem.TotpNonce = parts[1];
+                    loginItem.TotpAuthTag = parts[2];
+                }
                 loginItem.TotpSecret = null; // Clear plaintext
             }
 
@@ -58,27 +65,39 @@ public class PasswordEncryptionService : IPasswordEncryptionService
             if (!string.IsNullOrEmpty(loginItem.SecurityAnswer1))
             {
                 var encryptedAnswer1 = _vaultSessionService.EncryptPassword(loginItem.SecurityAnswer1, sessionId);
-                loginItem.EncryptedSecurityAnswer1 = encryptedAnswer1.EncryptedPassword;
-                loginItem.SecurityAnswer1Nonce = encryptedAnswer1.Nonce;
-                loginItem.SecurityAnswer1AuthTag = encryptedAnswer1.AuthenticationTag;
+                var parts = encryptedAnswer1.Split('|');
+                if (parts.Length == 3)
+                {
+                    loginItem.EncryptedSecurityAnswer1 = parts[0];
+                    loginItem.SecurityAnswer1Nonce = parts[1];
+                    loginItem.SecurityAnswer1AuthTag = parts[2];
+                }
                 loginItem.SecurityAnswer1 = null; // Clear plaintext
             }
 
             if (!string.IsNullOrEmpty(loginItem.SecurityAnswer2))
             {
                 var encryptedAnswer2 = _vaultSessionService.EncryptPassword(loginItem.SecurityAnswer2, sessionId);
-                loginItem.EncryptedSecurityAnswer2 = encryptedAnswer2.EncryptedPassword;
-                loginItem.SecurityAnswer2Nonce = encryptedAnswer2.Nonce;
-                loginItem.SecurityAnswer2AuthTag = encryptedAnswer2.AuthenticationTag;
+                var parts = encryptedAnswer2.Split('|');
+                if (parts.Length == 3)
+                {
+                    loginItem.EncryptedSecurityAnswer2 = parts[0];
+                    loginItem.SecurityAnswer2Nonce = parts[1];
+                    loginItem.SecurityAnswer2AuthTag = parts[2];
+                }
                 loginItem.SecurityAnswer2 = null; // Clear plaintext
             }
 
             if (!string.IsNullOrEmpty(loginItem.SecurityAnswer3))
             {
                 var encryptedAnswer3 = _vaultSessionService.EncryptPassword(loginItem.SecurityAnswer3, sessionId);
-                loginItem.EncryptedSecurityAnswer3 = encryptedAnswer3.EncryptedPassword;
-                loginItem.SecurityAnswer3Nonce = encryptedAnswer3.Nonce;
-                loginItem.SecurityAnswer3AuthTag = encryptedAnswer3.AuthenticationTag;
+                var parts = encryptedAnswer3.Split('|');
+                if (parts.Length == 3)
+                {
+                    loginItem.EncryptedSecurityAnswer3 = parts[0];
+                    loginItem.SecurityAnswer3Nonce = parts[1];
+                    loginItem.SecurityAnswer3AuthTag = parts[2];
+                }
                 loginItem.SecurityAnswer3 = null; // Clear plaintext
             }
 
@@ -86,9 +105,13 @@ public class PasswordEncryptionService : IPasswordEncryptionService
             if (!string.IsNullOrEmpty(loginItem.Notes))
             {
                 var encryptedNotes = _vaultSessionService.EncryptPassword(loginItem.Notes, sessionId);
-                loginItem.EncryptedNotes = encryptedNotes.EncryptedPassword;
-                loginItem.NotesNonce = encryptedNotes.Nonce;
-                loginItem.NotesAuthTag = encryptedNotes.AuthenticationTag;
+                var parts = encryptedNotes.Split('|');
+                if (parts.Length == 3)
+                {
+                    loginItem.EncryptedNotes = parts[0];
+                    loginItem.NotesNonce = parts[1];
+                    loginItem.NotesAuthTag = parts[2];
+                }
                 loginItem.Notes = null; // Clear plaintext
             }
         });
@@ -135,12 +158,7 @@ public class PasswordEncryptionService : IPasswordEncryptionService
                 !string.IsNullOrEmpty(loginItem.PasswordNonce) && 
                 !string.IsNullOrEmpty(loginItem.PasswordAuthTag))
             {
-                var encryptedPasswordData = new EncryptedPasswordData
-                {
-                    EncryptedPassword = loginItem.EncryptedPassword,
-                    Nonce = loginItem.PasswordNonce,
-                    AuthenticationTag = loginItem.PasswordAuthTag
-                };
+                var encryptedPasswordData = string.Join("|", loginItem.EncryptedPassword, loginItem.PasswordNonce, loginItem.PasswordAuthTag);
                 decryptedItem.Password = _vaultSessionService.DecryptPassword(encryptedPasswordData, sessionId);
             }
 
@@ -149,12 +167,7 @@ public class PasswordEncryptionService : IPasswordEncryptionService
                 !string.IsNullOrEmpty(loginItem.TotpNonce) && 
                 !string.IsNullOrEmpty(loginItem.TotpAuthTag))
             {
-                var encryptedTotpData = new EncryptedPasswordData
-                {
-                    EncryptedPassword = loginItem.EncryptedTotpSecret,
-                    Nonce = loginItem.TotpNonce,
-                    AuthenticationTag = loginItem.TotpAuthTag
-                };
+                var encryptedTotpData = string.Join("|", loginItem.EncryptedTotpSecret, loginItem.TotpNonce, loginItem.TotpAuthTag);
                 decryptedItem.TotpSecret = _vaultSessionService.DecryptPassword(encryptedTotpData, sessionId);
             }
 
@@ -163,12 +176,7 @@ public class PasswordEncryptionService : IPasswordEncryptionService
                 !string.IsNullOrEmpty(loginItem.SecurityAnswer1Nonce) && 
                 !string.IsNullOrEmpty(loginItem.SecurityAnswer1AuthTag))
             {
-                var encryptedAnswer1Data = new EncryptedPasswordData
-                {
-                    EncryptedPassword = loginItem.EncryptedSecurityAnswer1,
-                    Nonce = loginItem.SecurityAnswer1Nonce,
-                    AuthenticationTag = loginItem.SecurityAnswer1AuthTag
-                };
+                var encryptedAnswer1Data = string.Join("|", loginItem.EncryptedSecurityAnswer1, loginItem.SecurityAnswer1Nonce, loginItem.SecurityAnswer1AuthTag);
                 decryptedItem.SecurityAnswer1 = _vaultSessionService.DecryptPassword(encryptedAnswer1Data, sessionId);
             }
 
@@ -176,12 +184,7 @@ public class PasswordEncryptionService : IPasswordEncryptionService
                 !string.IsNullOrEmpty(loginItem.SecurityAnswer2Nonce) && 
                 !string.IsNullOrEmpty(loginItem.SecurityAnswer2AuthTag))
             {
-                var encryptedAnswer2Data = new EncryptedPasswordData
-                {
-                    EncryptedPassword = loginItem.EncryptedSecurityAnswer2,
-                    Nonce = loginItem.SecurityAnswer2Nonce,
-                    AuthenticationTag = loginItem.SecurityAnswer2AuthTag
-                };
+                var encryptedAnswer2Data = string.Join("|", loginItem.EncryptedSecurityAnswer2, loginItem.SecurityAnswer2Nonce, loginItem.SecurityAnswer2AuthTag);
                 decryptedItem.SecurityAnswer2 = _vaultSessionService.DecryptPassword(encryptedAnswer2Data, sessionId);
             }
 
@@ -189,12 +192,7 @@ public class PasswordEncryptionService : IPasswordEncryptionService
                 !string.IsNullOrEmpty(loginItem.SecurityAnswer3Nonce) && 
                 !string.IsNullOrEmpty(loginItem.SecurityAnswer3AuthTag))
             {
-                var encryptedAnswer3Data = new EncryptedPasswordData
-                {
-                    EncryptedPassword = loginItem.EncryptedSecurityAnswer3,
-                    Nonce = loginItem.SecurityAnswer3Nonce,
-                    AuthenticationTag = loginItem.SecurityAnswer3AuthTag
-                };
+                var encryptedAnswer3Data = string.Join("|", loginItem.EncryptedSecurityAnswer3, loginItem.SecurityAnswer3Nonce, loginItem.SecurityAnswer3AuthTag);
                 decryptedItem.SecurityAnswer3 = _vaultSessionService.DecryptPassword(encryptedAnswer3Data, sessionId);
             }
 
@@ -203,12 +201,7 @@ public class PasswordEncryptionService : IPasswordEncryptionService
                 !string.IsNullOrEmpty(loginItem.NotesNonce) && 
                 !string.IsNullOrEmpty(loginItem.NotesAuthTag))
             {
-                var encryptedNotesData = new EncryptedPasswordData
-                {
-                    EncryptedPassword = loginItem.EncryptedNotes,
-                    Nonce = loginItem.NotesNonce,
-                    AuthenticationTag = loginItem.NotesAuthTag
-                };
+                var encryptedNotesData = string.Join("|", loginItem.EncryptedNotes, loginItem.NotesNonce, loginItem.NotesAuthTag);
                 decryptedItem.Notes = _vaultSessionService.DecryptPassword(encryptedNotesData, sessionId);
             }
 
@@ -226,7 +219,18 @@ public class PasswordEncryptionService : IPasswordEncryptionService
 
         return await Task.Run(() =>
         {
-            return _vaultSessionService.EncryptPassword(value, sessionId);
+            var encrypted = _vaultSessionService.EncryptPassword(value, sessionId);
+            var parts = encrypted.Split('|');
+            if (parts.Length == 3)
+            {
+                return new EncryptedPasswordData
+                {
+                    EncryptedPassword = parts[0],
+                    Nonce = parts[1],
+                    AuthenticationTag = parts[2]
+                };
+            }
+            throw new FormatException("Invalid encrypted data format");
         });
     }
 
@@ -240,7 +244,8 @@ public class PasswordEncryptionService : IPasswordEncryptionService
 
         return await Task.Run(() =>
         {
-            return _vaultSessionService.DecryptPassword(encryptedData, sessionId);
+            var encrypted = string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag);
+            return _vaultSessionService.DecryptPassword(encrypted, sessionId);
         });
     }
 

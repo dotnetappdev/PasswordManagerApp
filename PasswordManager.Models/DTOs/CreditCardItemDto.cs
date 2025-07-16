@@ -40,6 +40,17 @@ public class CreditCardItemDto
     public DateTime? LastUsed { get; set; }
     public int UsageCount { get; set; }
     public string? Notes { get; set; }
+    public string? ExpirationMonth { get; set; }
+    public string? ExpirationYear { get; set; }
+    public string? SecurityCode { get; set; }
+    public bool RequiresMasterPassword { get; set; }
+    public int? PasswordId { get; set; }
+    public string? EncryptedCardNumber { get; set; }
+    public string? CardNumberNonce { get; set; }
+    public string? CardNumberAuthTag { get; set; }
+    public string? EncryptedCvv { get; set; }
+    public string? CvvNonce { get; set; }
+    public string? CvvAuthTag { get; set; }
 }
 
 public class CreateCreditCardItemDto
@@ -76,6 +87,11 @@ public class CreateCreditCardItemDto
     public string? FraudAlertPhone { get; set; }
     public string? FraudAlertEmail { get; set; }
     public string? Notes { get; set; }
+    public string? ExpirationMonth { get; set; }
+    public string? ExpirationYear { get; set; }
+    public string? SecurityCode { get; set; }
+    public bool RequiresMasterPassword { get; set; }
+    public int? PasswordId { get; set; }
 }
 
 public class UpdateCreditCardItemDto
@@ -112,4 +128,9 @@ public class UpdateCreditCardItemDto
     public string? FraudAlertPhone { get; set; }
     public string? FraudAlertEmail { get; set; }
     public string? Notes { get; set; }
+    public string? ExpirationMonth { get; set; }
+    public string? ExpirationYear { get; set; }
+    public string? SecurityCode { get; set; }
+    public bool RequiresMasterPassword { get; set; }
+    public int? PasswordId { get; set; }
 }

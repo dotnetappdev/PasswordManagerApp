@@ -8,6 +8,7 @@ public class CategoryDto
     public string? Icon { get; set; }
     public string? Color { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime LastModified { get; set; } // Added for mapping
     public int? CollectionId { get; set; }
     public CollectionDto? Collection { get; set; }
 }
@@ -19,6 +20,7 @@ public class CreateCategoryDto
     public string? Icon { get; set; }
     public string? Color { get; set; }
     public int? CollectionId { get; set; }
+    public DateTime LastModified { get; set; }
 }
 
 public class UpdateCategoryDto
@@ -28,4 +30,5 @@ public class UpdateCategoryDto
     public string? Icon { get; set; }
     public string? Color { get; set; }
     public int? CollectionId { get; set; }
+    public DateTime LastModified { get; set; }
 }

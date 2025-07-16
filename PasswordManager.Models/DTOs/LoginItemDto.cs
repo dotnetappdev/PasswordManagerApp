@@ -30,6 +30,10 @@ public class LoginItemDto
     public string? Department { get; set; }
     public string? JobTitle { get; set; }
     public string? Notes { get; set; }
+    // Added properties for mapping and sync
+    public DateTime? LastAutoFill { get; set; }
+    public bool RequiresMasterPassword { get; set; }
+    public int? PasswordId { get; set; }
 }
 
 public class CreateLoginItemDto
@@ -58,6 +62,9 @@ public class CreateLoginItemDto
     public string? Department { get; set; }
     public string? JobTitle { get; set; }
     public string? Notes { get; set; }
+    public DateTime? LastAutoFill { get; set; }
+    public bool RequiresMasterPassword { get; set; }
+    public int? PasswordId { get; set; }
 }
 
 public class UpdateLoginItemDto
@@ -86,4 +93,7 @@ public class UpdateLoginItemDto
     public string? Department { get; set; }
     public string? JobTitle { get; set; }
     public string? Notes { get; set; }
+    public DateTime? LastAutoFill { get; set; }
+    public bool RequiresMasterPassword { get; set; }
+    public int? PasswordId { get; set; }
 }

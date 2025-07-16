@@ -16,6 +16,7 @@ public class SyncResponseDto
     public DateTime SyncTime { get; set; }
     public SyncStatisticsDto Statistics { get; set; } = new();
     public List<SyncConflictDto> Conflicts { get; set; } = new();
+    public long ExecutionTimeMs { get; set; } // Added for compatibility
 }
 
 public class SyncStatisticsDto
@@ -26,6 +27,10 @@ public class SyncStatisticsDto
     public int RecordsDeleted { get; set; }
     public int ConflictsResolved { get; set; }
     public TimeSpan Duration { get; set; }
+    public int Created { get; set; }
+    public int Updated { get; set; }
+    public int Deleted { get; set; }
+    public int Skipped { get; set; }
 }
 
 public class SyncConflictDto
@@ -36,6 +41,9 @@ public class SyncConflictDto
     public string Resolution { get; set; } = string.Empty;
     public DateTime SourceModified { get; set; }
     public DateTime TargetModified { get; set; }
+    public DateTime SourceLastModified { get; set; }
+    public DateTime TargetLastModified { get; set; }
+    public string Message { get; set; } = string.Empty;
 }
 
 public enum SyncConflictResolution
@@ -50,5 +58,7 @@ public enum SyncDirection
 {
     Push,
     Pull,
-    Bidirectional
+    Bidirectional,
+    SqliteToSqlServer,
+    SqlServerToSqlite
 }

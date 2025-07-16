@@ -23,7 +23,7 @@ public class PasswordRevealService : IPasswordRevealService
         _logger = logger;
     }
 
-    public bool CanRevealPasswords => _vaultSessionService.IsVaultUnlocked;
+    public bool CanRevealPasswords => _vaultSessionService.IsVaultUnlocked();
 
     public async Task<string?> RevealPasswordAsync(LoginItem loginItem)
     {
@@ -40,14 +40,23 @@ public class PasswordRevealService : IPasswordRevealService
                 return string.Empty;
             }
 
-            var encryptedData = DeserializeEncryptedData(loginItem.EncryptedPassword);
-            if (encryptedData == null)
+            // Parse encrypted data from pipe-delimited string
+            var parts = loginItem.EncryptedPassword.Split('|');
+            if (parts.Length != 3)
             {
-                _logger.LogError("Failed to deserialize encrypted password data for login item {Id}", loginItem.Id);
+                _logger.LogError("Invalid encrypted password format for login item {Id}", loginItem.Id);
                 return null;
             }
+            var encryptedData = new EncryptedPasswordData
+            {
+                EncryptedPassword = parts[0],
+                Nonce = parts[1],
+                AuthenticationTag = parts[2]
+            };
 
-            var decryptedPassword = _vaultSessionService.RevealPassword(encryptedData);
+            var decryptedPassword = _vaultSessionService.DecryptPassword(
+                string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
+                loginItem.UserId);
             return decryptedPassword;
         }
         catch (Exception ex)
@@ -67,19 +76,27 @@ public class PasswordRevealService : IPasswordRevealService
                 return null;
             }
 
-            if (string.IsNullOrEmpty(wifiItem.EncryptedPassword))
+            if (string.IsNullOrEmpty(wifiItem.Password))
             {
                 return string.Empty;
             }
 
-            var encryptedData = DeserializeEncryptedData(wifiItem.EncryptedPassword);
-            if (encryptedData == null)
+            var parts = wifiItem.Password.Split('|');
+            if (parts.Length != 3)
             {
-                _logger.LogError("Failed to deserialize encrypted WiFi password data for item {Id}", wifiItem.Id);
+                _logger.LogError("Invalid encrypted WiFi password format for item {Id}", wifiItem.Id);
                 return null;
             }
+            var encryptedData = new EncryptedPasswordData
+            {
+                EncryptedPassword = parts[0],
+                Nonce = parts[1],
+                AuthenticationTag = parts[2]
+            };
 
-            var decryptedPassword = _vaultSessionService.RevealPassword(encryptedData);
+            var decryptedPassword = _vaultSessionService.DecryptPassword(
+                string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
+                wifiItem.UserId);
             return decryptedPassword;
         }
         catch (Exception ex)
@@ -99,19 +116,23 @@ public class PasswordRevealService : IPasswordRevealService
                 return null;
             }
 
-            if (string.IsNullOrEmpty(creditCardItem.EncryptedCardNumber))
+            if (string.IsNullOrEmpty(creditCardItem.EncryptedCardNumber) ||
+                string.IsNullOrEmpty(creditCardItem.CardNumberNonce) ||
+                string.IsNullOrEmpty(creditCardItem.CardNumberAuthTag))
             {
                 return string.Empty;
             }
 
-            var encryptedData = DeserializeEncryptedData(creditCardItem.EncryptedCardNumber);
-            if (encryptedData == null)
+            var encryptedData = new EncryptedPasswordData
             {
-                _logger.LogError("Failed to deserialize encrypted card number data for item {Id}", creditCardItem.Id);
-                return null;
-            }
+                EncryptedPassword = creditCardItem.EncryptedCardNumber,
+                Nonce = creditCardItem.CardNumberNonce,
+                AuthenticationTag = creditCardItem.CardNumberAuthTag
+            };
 
-            var decryptedCardNumber = _vaultSessionService.RevealPassword(encryptedData);
+            var decryptedCardNumber = _vaultSessionService.DecryptPassword(
+                string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
+                creditCardItem.UserId);
             return decryptedCardNumber;
         }
         catch (Exception ex)
@@ -131,19 +152,23 @@ public class PasswordRevealService : IPasswordRevealService
                 return null;
             }
 
-            if (string.IsNullOrEmpty(creditCardItem.EncryptedCvv))
+            if (string.IsNullOrEmpty(creditCardItem.EncryptedCvv) ||
+                string.IsNullOrEmpty(creditCardItem.CvvNonce) ||
+                string.IsNullOrEmpty(creditCardItem.CvvAuthTag))
             {
                 return string.Empty;
             }
 
-            var encryptedData = DeserializeEncryptedData(creditCardItem.EncryptedCvv);
-            if (encryptedData == null)
+            var encryptedData = new EncryptedPasswordData
             {
-                _logger.LogError("Failed to deserialize encrypted CVV data for item {Id}", creditCardItem.Id);
-                return null;
-            }
+                EncryptedPassword = creditCardItem.EncryptedCvv,
+                Nonce = creditCardItem.CvvNonce,
+                AuthenticationTag = creditCardItem.CvvAuthTag
+            };
 
-            var decryptedCvv = _vaultSessionService.RevealPassword(encryptedData);
+            var decryptedCvv = _vaultSessionService.DecryptPassword(
+                string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
+                creditCardItem.UserId);
             return decryptedCvv;
         }
         catch (Exception ex)
@@ -163,19 +188,23 @@ public class PasswordRevealService : IPasswordRevealService
                 return null;
             }
 
-            if (string.IsNullOrEmpty(secureNoteItem.EncryptedContent))
+            if (string.IsNullOrEmpty(secureNoteItem.EncryptedContent) ||
+                string.IsNullOrEmpty(secureNoteItem.ContentNonce) ||
+                string.IsNullOrEmpty(secureNoteItem.ContentAuthTag))
             {
                 return string.Empty;
             }
 
-            var encryptedData = DeserializeEncryptedData(secureNoteItem.EncryptedContent);
-            if (encryptedData == null)
+            var encryptedData = new EncryptedPasswordData
             {
-                _logger.LogError("Failed to deserialize encrypted content data for secure note {Id}", secureNoteItem.Id);
-                return null;
-            }
+                EncryptedPassword = secureNoteItem.EncryptedContent,
+                Nonce = secureNoteItem.ContentNonce,
+                AuthenticationTag = secureNoteItem.ContentAuthTag
+            };
 
-            var decryptedContent = _vaultSessionService.RevealPassword(encryptedData);
+            var decryptedContent = _vaultSessionService.DecryptPassword(
+                string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
+                secureNoteItem.UserId);
             return decryptedContent;
         }
         catch (Exception ex)

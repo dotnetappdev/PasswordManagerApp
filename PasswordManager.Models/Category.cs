@@ -4,6 +4,7 @@ namespace PasswordManager.Models
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; } // Added for mapping
         public string? Icon { get; set; } // Optional: emoji or icon name
         public string? Color { get; set; } // Optional: for UI
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -92,7 +92,8 @@ public static class MappingHelper
         entity.Password = dto.Password ?? entity.Password;
         entity.Website = dto.Website ?? entity.Website;
         entity.Notes = dto.Notes ?? entity.Notes;
-        entity.RequiresMasterPassword = dto.RequiresMasterPassword ?? entity.RequiresMasterPassword;
+        if (dto.RequiresMasterPassword.HasValue)
+            entity.RequiresMasterPassword = dto.RequiresMasterPassword.Value;
     }
 
     // CreditCardItem mappings
@@ -109,7 +110,13 @@ public static class MappingHelper
             CardType = entity.CardType,
             Notes = entity.Notes,
             RequiresMasterPassword = entity.RequiresMasterPassword,
-            PasswordId = entity.PasswordId
+            PasswordId = entity.PasswordId,
+            EncryptedCardNumber = entity.EncryptedCardNumber,
+            CardNumberNonce = entity.CardNumberNonce,
+            CardNumberAuthTag = entity.CardNumberAuthTag,
+            EncryptedCvv = entity.EncryptedCvv,
+            CvvNonce = entity.CvvNonce,
+            CvvAuthTag = entity.CvvAuthTag
         };
     }
 
@@ -135,9 +142,10 @@ public static class MappingHelper
         entity.ExpirationMonth = dto.ExpirationMonth ?? entity.ExpirationMonth;
         entity.ExpirationYear = dto.ExpirationYear ?? entity.ExpirationYear;
         entity.SecurityCode = dto.SecurityCode ?? entity.SecurityCode;
-        entity.CardType = dto.CardType ?? entity.CardType;
+        entity.CardType = dto.CardType;
         entity.Notes = dto.Notes ?? entity.Notes;
-        entity.RequiresMasterPassword = dto.RequiresMasterPassword ?? entity.RequiresMasterPassword;
+        if (dto.RequiresMasterPassword.HasValue)
+            entity.RequiresMasterPassword = dto.RequiresMasterPassword.Value;
     }
 
     // SecureNoteItem mappings
@@ -148,7 +156,10 @@ public static class MappingHelper
             Id = entity.Id,
             Content = entity.Content,
             RequiresMasterPassword = entity.RequiresMasterPassword,
-            PasswordId = entity.PasswordId
+            PasswordId = entity.PasswordId,
+            EncryptedContent = entity.EncryptedContent,
+            ContentNonce = entity.ContentNonce,
+            ContentAuthTag = entity.ContentAuthTag
         };
     }
 
@@ -164,7 +175,8 @@ public static class MappingHelper
     public static void UpdateFromDto(this SecureNoteItem entity, UpdateSecureNoteItemDto dto)
     {
         entity.Content = dto.Content ?? entity.Content;
-        entity.RequiresMasterPassword = dto.RequiresMasterPassword ?? entity.RequiresMasterPassword;
+        if (dto.RequiresMasterPassword.HasValue)
+            entity.RequiresMasterPassword = dto.RequiresMasterPassword.Value;
     }
 
     // WiFiItem mappings
@@ -198,9 +210,10 @@ public static class MappingHelper
     {
         entity.NetworkName = dto.NetworkName ?? entity.NetworkName;
         entity.Password = dto.Password ?? entity.Password;
-        entity.SecurityType = dto.SecurityType ?? entity.SecurityType;
+        entity.SecurityType = dto.SecurityType;
         entity.Notes = dto.Notes ?? entity.Notes;
-        entity.RequiresMasterPassword = dto.RequiresMasterPassword ?? entity.RequiresMasterPassword;
+        if (dto.RequiresMasterPassword.HasValue)
+            entity.RequiresMasterPassword = dto.RequiresMasterPassword.Value;
     }
 
     // Category mappings
@@ -229,8 +242,13 @@ public static class MappingHelper
             Icon = entity.Icon,
             Color = entity.Color,
             ParentId = entity.ParentId,
+            Parent = entity.Parent != null ? entity.Parent.ToDto() : null,
+            Children = entity.Children?.Select(c => c.ToDto()).ToList() ?? new List<CollectionDto>(),
+            Categories = entity.Categories?.Select(c => c.ToDto()).ToList() ?? new List<CategoryDto>(),
             CreatedAt = entity.CreatedAt,
-            LastModified = entity.LastModified
+            LastModified = entity.LastModified,
+            IsDefault = entity.IsDefault,
+            UserId = entity.UserId
         };
     }
 

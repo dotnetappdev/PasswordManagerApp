@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
-using PasswordManager.Models;
+using System.IO;
+using PasswordManager.DAL;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 
 namespace PasswordManager.DAL.MySql
 {

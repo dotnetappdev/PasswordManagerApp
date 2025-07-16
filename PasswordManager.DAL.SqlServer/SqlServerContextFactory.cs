@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
-using PasswordManager.Models;
 using System.IO;
+using PasswordManager.DAL;
 
 namespace PasswordManager.DAL.SqlServer
 {

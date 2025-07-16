@@ -22,5 +22,7 @@ namespace PasswordManager.Models
         // Navigation properties
         public List<Category> Categories { get; set; } = new();
         public List<PasswordItem> PasswordItems { get; set; } = new();
+        public int? ParentId { get => ParentCollectionId; set => ParentCollectionId = value; } // For mapping
+        public Collection? Parent { get => ParentCollection; set => ParentCollection = value; } // For mapping
     }
 }

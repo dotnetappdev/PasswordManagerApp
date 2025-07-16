@@ -163,5 +163,8 @@ public class LoginItem
     
     // Navigation property
     public PasswordItem PasswordItem { get; set; } = null!;
-
+    
+    public DateTime? LastAutoFill { get; set; } // For mapping
+    public bool RequiresMasterPassword { get; set; } // For mapping
+    public int? PasswordId { get; set; } // For mapping
 }

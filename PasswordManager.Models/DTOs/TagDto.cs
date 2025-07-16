@@ -8,6 +8,7 @@ public class TagDto
     public string? Description { get; set; }
     public bool IsSystemTag { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime LastModified { get; set; } // Added for mapping
 }
 
 public class CreateTagDto
@@ -16,6 +17,7 @@ public class CreateTagDto
     public string? Color { get; set; }
     public string? Description { get; set; }
     public bool IsSystemTag { get; set; }
+    public DateTime LastModified { get; set; }
 }
 
 public class UpdateTagDto
@@ -24,4 +26,5 @@ public class UpdateTagDto
     public string? Color { get; set; }
     public string? Description { get; set; }
     public bool IsSystemTag { get; set; }
+    public DateTime LastModified { get; set; }
 }
