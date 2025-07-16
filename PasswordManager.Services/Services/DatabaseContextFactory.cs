@@ -54,4 +54,25 @@ public class DatabaseContextFactory : IDatabaseContextFactory
 
         return context;
     }
+
+    public async Task<IPasswordManagerDbContext> CreateSqliteContextAsync()
+    {
+        var connectionString = _configuration.GetConnectionString("SQLiteConnection") ?? "Data Source=passwordmanager.db";
+        return await CreateContextAsync("sqlite", connectionString);
+    }
+
+    public async Task<IPasswordManagerDbContext> CreateSqlServerContextAsync()
+    {
+        var connectionString = _configuration.GetConnectionString("DefaultConnection") ?? 
+                              _configuration.GetConnectionString("SqlServerConnection") ?? 
+                              throw new InvalidOperationException("SQL Server connection string not found");
+        return await CreateContextAsync("sqlserver", connectionString);
+    }
+
+    public async Task<IPasswordManagerDbContext> CreatePostgresContextAsync()
+    {
+        var connectionString = _configuration.GetConnectionString("PostgresConnection") ?? 
+                              throw new InvalidOperationException("Postgres connection string not found");
+        return await CreateContextAsync("postgres", connectionString);
+    }
 }
