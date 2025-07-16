@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PasswordManager.API.Interfaces;
+using PasswordManager.Services.Interfaces;
 using PasswordManager.DAL;
 using PasswordManager.Models;
 using PasswordManager.Models.DTOs.Sync;

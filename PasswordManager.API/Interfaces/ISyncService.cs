@@ -15,14 +15,6 @@ public interface ISyncService
     Task UpdateLastSyncTimeAsync(string sourceDb, string targetDb, DateTime syncTime);
 }
 
-public interface IDatabaseContextFactory
-{
-    Task<IPasswordManagerDbContext> CreateContextAsync(string provider, string connectionString);
-    Task<IPasswordManagerDbContext> CreateSqliteContextAsync();
-    Task<IPasswordManagerDbContext> CreateSqlServerContextAsync();
-    Task<IPasswordManagerDbContext> CreatePostgresContextAsync();
-}
-
 public interface IPasswordManagerDbContext : IDisposable
 {
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

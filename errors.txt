@@ -1,18 +1,15 @@
-Unable to find package Pomelo.EntityFrameworkCore.MySql with version (>= 9.0.0)
-  - Found 170 version(s) in nuget.org [ Nearest version: 9.0.0-preview.3.efcore.9.0.0 ]
-  - Found 0 version(s) in Microsoft Visual Studio Offline Packages
-  - Found 0 version(s) in C:\Program Files\dotnet\library-packs
-Metadata file 'C:\DB\blazor\passmanger\PasswordManagerImports.1Password\obj\Debug\net9.0\ref\PasswordManagerImports.OnePassword.dll' could not be found
-Metadata file 'C:\DB\blazor\passmanger\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
-Metadata file 'C:\DB\blazor\passmanger\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
-Metadata file 'C:\DB\blazor\passmanger\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
-Metadata file 'C:\DB\blazor\passmanger\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
-Metadata file 'C:\DB\blazor\passmanger\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
-Metadata file 'C:\DB\blazor\passmanger\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
-Metadata file 'C:\DB\blazor\passmanger\PasswordManager.Imports\obj\Debug\net9.0\ref\PasswordManager.Imports.dll' could not be found
-Metadata file 'C:\DB\blazor\passmanger\PasswordManager.Imports\obj\Debug\net9.0\ref\PasswordManager.Imports.dll' could not be found
-Metadata file 'C:\DB\blazor\passmanger\PasswordManager.Imports\obj\Debug\net9.0\ref\PasswordManager.Imports.dll' could not be found
-Metadata file 'C:\DB\blazor\passmanger\PasswordManager.Components.Shared\obj\Debug\net9.0\ref\PasswordManager.Components.Shared.dll' could not be found
-'DatabaseContextFactory' does not implement interface member 'IDatabaseContextFactory.CreateSqlServerContextAsync()'
-'DatabaseContextFactory' does not implement interface member 'IDatabaseContextFactory.CreateSqliteContextAsync()'
-'DatabaseContextFactory' does not implement interface member 'IDatabaseContextFactory.CreatePostgresContextAsync()'
+Unable to find project information for 'C:\DB\blazor\passwordmanager\PasswordManager.DAL.SupaBase\PasswordManager.DAL.SupaBase.csproj'. If you are using Visual Studio, this may be because the project is unloaded or not part of the current solution so run a restore from the command-line. Otherwise, the project file may be invalid or missing targets required for restore.
+The type or namespace name 'IDatabaseContextFactory' could not be found (are you missing a using directive or an assembly reference?)
+The type or namespace name 'ConfigurationBuilder' could not be found (are you missing a using directive or an assembly reference?)
+The type or namespace name 'ConfigurationBuilder' could not be found (are you missing a using directive or an assembly reference?)
+Metadata file 'C:\DB\blazor\passwordmanager\PasswordManagerImports.1Password\obj\Debug\net9.0\ref\PasswordManagerImports.OnePassword.dll' could not be found
+Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
+Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
+Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
+Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
+Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
+Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
+Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Imports\obj\Debug\net9.0\ref\PasswordManager.Imports.dll' could not be found
+Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Imports\obj\Debug\net9.0\ref\PasswordManager.Imports.dll' could not be found
+Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Imports\obj\Debug\net9.0\ref\PasswordManager.Imports.dll' could not be found
+Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Components.Shared\obj\Debug\net9.0\ref\PasswordManager.Components.Shared.dll' could not be found
