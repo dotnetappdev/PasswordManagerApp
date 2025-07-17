@@ -1,0 +1,29 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug API",
+            "type": "dotnet",
+            "request": "launch",
+            "preLaunchTask": "Build Solution",
+            "program": "${workspaceFolder}/PasswordManager.API/bin/Debug/net9.0/PasswordManager.API.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/PasswordManager.API",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        },
+        {
+            "name": "Debug Web",
+            "type": "dotnet",
+            "request": "launch",
+            "preLaunchTask": "Build Solution",
+            "program": "${workspaceFolder}/PasswordManager.Web/bin/Debug/net9.0/PasswordManager.Web.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/PasswordManager.Web",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        }
+    ]
+}

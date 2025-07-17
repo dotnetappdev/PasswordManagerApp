@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # Development build - includes all projects
+  password-manager-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: default
+    container_name: password-manager-dev
+    volumes:
+      - .:/app
+      - /app/bin
+      - /app/obj
+    working_dir: /app
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - password-manager-network
+    depends_on:
+      - database
+    command: sleep infinity
+
+  # Database for development
+  database:
+    image: postgres:16
+    container_name: password-manager-dev-db
+    environment:
+      - POSTGRES_DB=passwordmanager_dev
+      - POSTGRES_USER=dev
+      - POSTGRES_PASSWORD=dev123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - password-manager-network
+
+volumes:
+  postgres_dev_data:
+
+networks:
+  password-manager-network:
+    driver: bridge

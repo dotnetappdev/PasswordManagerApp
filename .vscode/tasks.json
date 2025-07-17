@@ -13,6 +13,100 @@
 			"problemMatcher": [
 				"$msCompile"
 			]
+		},
+		{
+			"label": "Build Solution",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"PasswordManager.sln"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "silent",
+				"focus": false,
+				"panel": "shared"
+			},
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "Run API",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"run",
+				"--project",
+				"PasswordManager.API"
+			],
+			"group": "test",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new"
+			},
+			"isBackground": true
+		},
+		{
+			"label": "Run Web",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"run",
+				"--project",
+				"PasswordManager.Web"
+			],
+			"group": "test",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new"
+			},
+			"isBackground": true
+		},
+		{
+			"label": "Build MAUI Android",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"PasswordManager.App",
+				"-f",
+				"net9.0-android"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			},
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "Docker Build All",
+			"type": "shell",
+			"command": "./docker-run.sh",
+			"args": [
+				"build-all"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Docker Run All",
+			"type": "shell",
+			"command": "./docker-run.sh",
+			"args": [
+				"run-all"
+			],
+			"group": "test",
+			"isBackground": true
 		}
 	]
 }
