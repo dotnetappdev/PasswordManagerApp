@@ -42,12 +42,8 @@ RUN yes | sdkmanager --licenses && \
 USER root
 
 # Install .NET MAUI workloads (Android only)
-RUN dotnet workload install maui android --skip-sign-check
 
 # Set environment variables to exclude iOS/macOS
-ENV EXCLUDE_IOS_MACOS=true
-ENV DOTNET_MAUI_SKIP_IOS=true
-ENV DOTNET_MAUI_SKIP_MACCATALYST=true
 
 # Create a script to set up the development environment
 RUN echo '#!/bin/bash\n\
@@ -75,6 +71,36 @@ echo ""\n\
 
 # Set the default user back to vscode
 USER vscode
+
+USER root
+
+# Create a script to set up the development environment
+RUN echo '#!/bin/bash\n\
+echo "=== Password Manager Development Container ==="\n\
+echo "✅ .NET 9 SDK installed"\n\
+echo "❌ MAUI Android workload not installed by default"\n\
+echo "✅ Android SDK configured"\n\
+echo "❌ iOS/macOS builds excluded (not supported in Codespaces)"\n\
+echo ""\n\
+echo "Available commands:"\n\
+echo "  dotnet build                    - Build the entire solution"\n\
+echo "  dotnet run --project PasswordManager.API     - Run the API"\n\
+echo "  dotnet run --project PasswordManager.Web     - Run the Web app"\n\
+echo "  ./docker-run.sh build-all      - Build Docker containers"\n\
+echo "  ./docker-run.sh run-all         - Run all services"\n\
+echo "  ./install-maui-workload.sh      - Install MAUI workload for .App project"\n\
+echo ""\n\
+echo "Ports:"\n\
+echo "  5000/5001 - API (HTTP/HTTPS)"\n\
+echo "  5002/5003 - Web (HTTP/HTTPS)"\n\
+echo "  5432      - PostgreSQL"\n\
+echo "  3306      - MySQL"\n\
+echo "  1433      - SQL Server"\n\
+echo ""\n\
+' > /usr/local/bin/dev-info && chmod +x /usr/local/bin/dev-info
+
+USER vscode
+WORKDIR /workspaces/PasswordManagerApp
 
 # Set the working directory
 WORKDIR /workspaces/PasswordManagerApp
