@@ -16,7 +16,6 @@ print_usage() {
     echo "Commands:"
     echo "  build-api       Build the API container"
     echo "  build-web       Build the Web container"
-    echo "  build-maui      Build the MAUI Android container"
     echo "  build-all       Build all containers"
     echo "  run-api         Run the API container"
     echo "  run-web         Run the Web container"
@@ -25,6 +24,9 @@ print_usage() {
     echo "  stop            Stop all containers"
     echo "  clean           Clean all containers and images"
     echo "  logs            Show logs for all containers"
+    echo ""
+    echo "Note: MAUI builds are not supported in Linux containers"
+    echo "      For MAUI development, use the dev container or Windows/macOS"
     echo ""
     echo "Database Options (use with run-all):"
     echo "  --mysql         Use MySQL database"
@@ -59,11 +61,6 @@ build_api() {
 build_web() {
     log "Building Password Manager Web container..."
     docker build --target runtime-web -t password-manager-web:latest .
-}
-
-build_maui() {
-    log "Building Password Manager MAUI Android container..."
-    docker build --target build-maui-android --build-arg BUILD_CONFIGURATION=Release --build-arg MAUI_TARGET_FRAMEWORK=net9.0-android -t password-manager-maui-android:latest .
 }
 
 build_all() {
@@ -133,9 +130,6 @@ case "$1" in
         ;;
     build-web)
         build_web
-        ;;
-    build-maui)
-        build_maui
         ;;
     build-all)
         build_all

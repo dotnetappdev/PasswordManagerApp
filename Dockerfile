@@ -10,32 +10,9 @@ WORKDIR /app
 ARG BUILD_CONFIGURATION=Release
 ARG MAUI_TARGET_FRAMEWORK=net9.0-android
 
-# Install MAUI workloads (required for MAUI projects)
-RUN dotnet workload install maui android
-
-# Install Android SDK (required for MAUI Android builds)
-RUN apt-get update && apt-get install -y \
-    wget \
-    unzip \
-    openjdk-17-jdk \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set JAVA_HOME
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-
-# Install Android SDK
-ENV ANDROID_SDK_ROOT=/opt/android-sdk
-ENV PATH="${PATH}:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools"
-
-RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
-    cd ${ANDROID_SDK_ROOT}/cmdline-tools && \
-    wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip && \
-    unzip commandlinetools-linux-9477386_latest.zip && \
-    mv cmdline-tools latest && \
-    rm commandlinetools-linux-9477386_latest.zip
-
-# Accept Android SDK licenses
-RUN yes | sdkmanager --licenses
+# Note: MAUI workloads are not supported on Linux containers
+# MAUI projects must be built on Windows or macOS with appropriate SDKs
+# This Dockerfile focuses on API and Web projects that can run on Linux
 
 # Copy solution file
 COPY PasswordManager.sln .
@@ -73,13 +50,8 @@ FROM build AS build-web
 RUN dotnet build PasswordManager.Web/PasswordManager.Web.csproj -c ${BUILD_CONFIGURATION} --no-restore
 RUN dotnet publish PasswordManager.Web/PasswordManager.Web.csproj -c ${BUILD_CONFIGURATION} -o /app/publish/web --no-restore
 
-# Build stage for MAUI (Android only - iOS/macOS builds not supported on Linux)
-FROM build AS build-maui-android
-# Set environment to skip iOS/macOS builds
-ENV EXCLUDE_IOS_MACOS=true
-# Build only Android target
-RUN dotnet build PasswordManager.App/PasswordManager.App.csproj -c ${BUILD_CONFIGURATION} -f ${MAUI_TARGET_FRAMEWORK} --no-restore
-RUN dotnet publish PasswordManager.App/PasswordManager.App.csproj -c ${BUILD_CONFIGURATION} -f ${MAUI_TARGET_FRAMEWORK} -o /app/publish/maui-android --no-restore
+# Note: MAUI Android builds are not supported in Linux containers
+# For MAUI development, use the dev container or build on Windows/macOS
 
 # Runtime stage for API
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime-api

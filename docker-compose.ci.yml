@@ -43,22 +43,6 @@ services:
       - database
       - password-manager-api
 
-  # MAUI Android build for CI (build only, no runtime)
-  password-manager-maui-android:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: build-maui-android
-      args:
-        BUILD_CONFIGURATION: Release
-        MAUI_TARGET_FRAMEWORK: net9.0-android
-    container_name: password-manager-maui-android-ci
-    volumes:
-      - ./artifacts:/app/publish/maui-android
-    networks:
-      - password-manager-network
-    command: echo "MAUI Android build completed"
-
   # Database for CI
   database:
     image: postgres:16
@@ -73,6 +57,9 @@ services:
       - /var/lib/postgresql/data
     networks:
       - password-manager-network
+
+# Note: MAUI Android builds are not supported in Linux containers
+# For MAUI development, use Windows or macOS with appropriate SDKs
 
 volumes:
   artifacts:
