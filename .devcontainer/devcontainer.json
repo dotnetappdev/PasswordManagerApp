@@ -4,7 +4,6 @@
 		"dockerfile": "Dockerfile",
 		"context": ".."
 	},
-	
 	"features": {
 		"ghcr.io/devcontainers/features/git:1": {},
 		"ghcr.io/devcontainers/features/github-cli:1": {},
@@ -14,7 +13,6 @@
 			"version": "lts"
 		}
 	},
-
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -47,24 +45,20 @@
 			}
 		}
 	},
-
 	"onCreateCommand": [
 		"bash",
 		".devcontainer/setup.sh"
 	],
-
 	"postCreateCommand": [
 		"bash",
 		"-c",
 		"echo 'Starting database services...' && docker-compose -f .devcontainer/docker-compose.yml up -d && echo 'Database services started!'"
 	],
-
 	"postStartCommand": [
 		"bash",
 		"-c",
 		"echo 'Development container started successfully!' && echo 'Available commands:' && echo '  - dotnet build (build solution)' && echo '  - dotnet run --project PasswordManager.API (run API)' && echo '  - dotnet run --project PasswordManager.Web (run Web)' && echo '  - ./docker-run.sh build-all (build Docker containers)'"
 	],
-
 	"forwardPorts": [
 		5000,
 		5001,
@@ -74,7 +68,6 @@
 		3306,
 		1433
 	],
-
 	"portsAttributes": {
 		"5000": {
 			"label": "Password Manager API (HTTP)",
@@ -105,17 +98,14 @@
 			"onAutoForward": "silent"
 		}
 	},
-
 	"mounts": [
 		"source=passwordmanager-nuget,target=/home/vscode/.nuget,type=volume"
 	],
-
 	"remoteEnv": {
 		"DOTNET_USE_POLLING_FILE_WATCHER": "true",
 		"DOTNET_RUNNING_IN_CONTAINER": "true",
 		"ASPNETCORE_ENVIRONMENT": "Development",
 		"EXCLUDE_IOS_MACOS": "true"
 	},
-
 	"remoteUser": "vscode"
 }
