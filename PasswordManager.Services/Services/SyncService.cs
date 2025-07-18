@@ -339,7 +339,10 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
                         .ToListAsync();
 
                     var newItemInDb = await target.PasswordItems.FindAsync(newItem.Id);
-                    newItemInDb.Tags = existingTags;
+                    if (newItemInDb != null)
+                    {
+                        newItemInDb.Tags = existingTags;
+                    }
                 }
 
                 await target.SaveChangesAsync();
