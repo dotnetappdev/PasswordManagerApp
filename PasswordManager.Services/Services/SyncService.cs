@@ -104,7 +104,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
             SourceDatabase = "sqlite",
             TargetDatabase = "sqlserver",
             EntitiesToSync = new List<string> { "passworditems", "categories", "collections", "tags" },
-            LastSyncTime = lastSyncTime ?? await GetLastSyncTimeAsync("sqlite", "sqlserver")
+            LastSyncTime = lastSyncTime != null ? lastSyncTime : await GetLastSyncTimeAsync("sqlite", "sqlserver")
         };
 
         return await SyncDatabasesAsync(request);
@@ -117,7 +117,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
             SourceDatabase = "sqlserver",
             TargetDatabase = "sqlite",
             EntitiesToSync = new List<string> { "passworditems", "categories", "collections", "tags" },
-            LastSyncTime = lastSyncTime ?? await GetLastSyncTimeAsync("sqlserver", "sqlite")
+            LastSyncTime = lastSyncTime != null ? lastSyncTime : await GetLastSyncTimeAsync("sqlserver", "sqlite")
         };
 
         return await SyncDatabasesAsync(request);
@@ -236,7 +236,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
             .Include(p => p.Tags)
-            .Where(p => !lastSyncTime || p.LastModified > lastSyncTime)
+            .Where(p => lastSyncTime == null || p.LastModified > lastSyncTime)
             .ToListAsync();
 
         foreach (var sourceItem in sourceItems)
@@ -359,7 +359,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
                         EntityType = "PasswordItem",
                         EntityId = sourceItem.Id,
                         SourceLastModified = sourceItem.LastModified,
-                        TargetLastModified = targetItem.LastModified,
+                .Where(p => lastSyncTime == null || p.LastModified > lastSyncTime)
                     Resolution = SyncConflictResolution.TargetWins.ToString(),
                         Message = $"Target item '{targetItem.Title}' is newer than source item '{sourceItem.Title}'"
                     });

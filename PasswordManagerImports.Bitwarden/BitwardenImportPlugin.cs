@@ -157,14 +157,14 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
             return false;
         }
     }
-
-    public async Task<IEnumerable<PasswordItem>> GetImportPreviewAsync(Stream stream, string fileName)
-    {
-        try
-        {
-            stream.Position = 0;
-            using var reader = new StreamReader(stream);
-            var csvContent = await reader.ReadToEndAsync();
+                if (configuration.TryGetValue("displayName", out var displayName))
+                    Metadata.DisplayName = displayName != null ? displayName.ToString() : Metadata.DisplayName;
+                if (configuration.TryGetValue("description", out var description))
+                    Metadata.Description = description != null ? description.ToString() : Metadata.Description;
+                if (configuration.TryGetValue("version", out var version))
+                    Metadata.Version = version != null ? version.ToString() : Metadata.Version;
+                if (configuration.TryGetValue("author", out var author))
+                    Metadata.Author = author != null ? author.ToString() : Metadata.Author;
             stream.Position = 0;
             
             var engine = new FileHelperEngine<BitwardenCsvRecord>();

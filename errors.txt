@@ -1,15 +1,4 @@
-Cannot implicitly convert type 'int?' to 'int'. An explicit conversion exists (are you missing a cast?)
-Cannot implicitly convert type 'int?' to 'int'. An explicit conversion exists (are you missing a cast?)
 Operator '??' cannot be applied to operands of type 'Guid?' and 'int?'
 Operator '??' cannot be applied to operands of type 'Guid?' and 'int?'
-'bool' does not contain a definition for 'HasValue' and no accessible extension method 'HasValue' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
-'bool' does not contain a definition for 'Value' and no accessible extension method 'Value' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
-'bool' does not contain a definition for 'HasValue' and no accessible extension method 'HasValue' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
-'bool' does not contain a definition for 'Value' and no accessible extension method 'Value' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
-'bool' does not contain a definition for 'HasValue' and no accessible extension method 'HasValue' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
-'bool' does not contain a definition for 'Value' and no accessible extension method 'Value' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
-'bool' does not contain a definition for 'HasValue' and no accessible extension method 'HasValue' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
-'bool' does not contain a definition for 'Value' and no accessible extension method 'Value' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?)
-'IConfiguration' does not contain a definition for 'GetValue' and no accessible extension method 'GetValue' accepting a first argument of type 'IConfiguration' could be found (are you missing a using directive or an assembly reference?)
-'IConfiguration' does not contain a definition for 'GetValue' and no accessible extension method 'GetValue' accepting a first argument of type 'IConfiguration' could be found (are you missing a using directive or an assembly reference?)
-The type or namespace name 'PasswordManagerDbContext' could not be found (are you missing a using directive or an assembly reference?)
+Cannot implicitly convert type 'int?' to 'int'. An explicit conversion exists (are you missing a cast?)
+Cannot implicitly convert type 'int?' to 'int'. An explicit conversion exists (are you missing a cast?)
