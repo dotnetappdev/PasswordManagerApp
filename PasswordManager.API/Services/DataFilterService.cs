@@ -80,7 +80,7 @@ public static class DataFilterService
             filteredItem.WiFiItem = new WiFiItem
             {
                 Id = item.WiFiItem.Id,
-                SSID = item.WiFiItem.SSID,
+                NetworkName = item.WiFiItem.NetworkName,
                 Password = item.WiFiItem.Password,
                 SecurityType = item.WiFiItem.SecurityType,
                 Frequency = item.WiFiItem.Frequency,

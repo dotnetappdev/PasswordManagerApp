@@ -484,7 +484,7 @@ public class SyncService : PasswordManager.API.Interfaces.ISyncService
             clone.WiFiItem = new WiFiItem
             {
                 Id = source.WiFiItem.Id,
-                SSID = source.WiFiItem.SSID,
+                NetworkName = source.WiFiItem.NetworkName,
                 Password = source.WiFiItem.Password,
                 SecurityType = source.WiFiItem.SecurityType,
                 Frequency = source.WiFiItem.Frequency,
@@ -538,7 +538,7 @@ public class SyncService : PasswordManager.API.Interfaces.ISyncService
 
         if (source.WiFiItem != null && target.WiFiItem != null)
         {
-            target.WiFiItem.SSID = source.WiFiItem.SSID;
+            target.WiFiItem.NetworkName = source.WiFiItem.NetworkName;
             target.WiFiItem.Password = source.WiFiItem.Password;
             target.WiFiItem.SecurityType = source.WiFiItem.SecurityType;
             target.WiFiItem.Frequency = source.WiFiItem.Frequency;

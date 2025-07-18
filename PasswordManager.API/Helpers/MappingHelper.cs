@@ -170,7 +170,7 @@ public static class MappingHelper
         return new WiFiItemDto
         {
             Id = entity.Id,
-            SSID = entity.SSID,
+            NetworkName = entity.NetworkName,
             Password = entity.Password,
             SecurityType = entity.SecurityType,
             Frequency = entity.Frequency,
@@ -184,7 +184,7 @@ public static class MappingHelper
     {
         return new WiFiItem
         {
-            SSID = dto.SSID,
+            NetworkName = dto.NetworkName,
             Password = dto.Password,
             SecurityType = dto.SecurityType,
             Frequency = dto.Frequency,
@@ -195,7 +195,7 @@ public static class MappingHelper
 
     public static void UpdateFromDto(this WiFiItem entity, UpdateWiFiItemDto dto)
     {
-        entity.SSID = dto.SSID;
+        entity.NetworkName = dto.NetworkName;
         entity.Password = dto.Password;
         entity.SecurityType = dto.SecurityType;
         entity.Frequency = dto.Frequency;
