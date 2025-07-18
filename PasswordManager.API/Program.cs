@@ -3,6 +3,7 @@ using PasswordManager.DAL;
 using PasswordManager.Crypto.Extensions;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
+using PasswordManager.API.Extensions;
 using Serilog;
 using Scalar.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
