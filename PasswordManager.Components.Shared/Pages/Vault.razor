@@ -108,7 +108,7 @@
             }
             else
             {
-                <MudText Typo="Typo.h6" Align="Align.Center" Style="color: #cccccc; margin: 40px 0;">
+                <MudText Typo="Typo.h6" Align="MudBlazor.Align.Center" Style="color: #cccccc; margin: 40px 0;">
                     No passwords found. Click "Add Password" to create your first entry.
                 </MudText>
             }
@@ -142,7 +142,7 @@
         try
         {
             isLoading = true;
-            passwords = await PasswordItemService.GetAllAsync();
+            passwords = (await PasswordItemService.GetAllAsync()).ToList();
             filteredPasswords = passwords;
             categories = passwords.Select(p => p.Category?.Name ?? "Uncategorized").Distinct().ToList();
         }
@@ -177,10 +177,10 @@
     {
         return password.WebsiteUrl switch
         {
-            var url when url.Contains("google") => Icons.Material.Filled.Google,
-            var url when url.Contains("facebook") => Icons.Material.Filled.Facebook,
-            var url when url.Contains("twitter") => Icons.Material.Filled.Twitter,
-            var url when url.Contains("github") => Icons.Material.Filled.GitHub,
+            var url when url.Contains("google") => Icons.Material.Filled.Language,
+            var url when url.Contains("facebook") => Icons.Material.Filled.Language,
+            var url when url.Contains("twitter") => Icons.Material.Filled.Language,
+            var url when url.Contains("github") => Icons.Material.Filled.Code,
             _ => Icons.Material.Filled.Password
         };
     }

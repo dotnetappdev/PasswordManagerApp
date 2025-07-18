@@ -235,6 +235,58 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
+    /// Checks if user is already authenticated (alias for CheckAuthenticationStatusAsync)
+    /// </summary>
+    public async Task<bool> IsAuthenticatedAsync()
+    {
+        return await CheckAuthenticationStatusAsync();
+    }
+
+    /// <summary>
+    /// Logs in a user with credentials
+    /// </summary>
+    public async Task<bool> LoginAsync(string email, string password)
+    {
+        try
+        {
+            // Find user by email
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null)
+            {
+                _logger.LogWarning("Login attempt with invalid email: {Email}", email);
+                return false;
+            }
+
+            // Verify password using the stored hash
+            if (!string.IsNullOrEmpty(user.MasterPasswordHash) && !string.IsNullOrEmpty(user.UserSalt))
+            {
+                var userSalt = Convert.FromBase64String(user.UserSalt);
+                var isValidPassword = _passwordCryptoService.VerifyMasterPassword(password, user.MasterPasswordHash, userSalt, user.MasterPasswordIterations);
+                
+                if (isValidPassword)
+                {
+                    _isAuthenticated = true;
+                    _currentUser = user;
+                    
+                    // Update last login
+                    user.LastLoginAt = DateTime.UtcNow;
+                    await _dbContext.SaveChangesAsync();
+                    
+                    return true;
+                }
+            }
+            
+            _logger.LogWarning("Login attempt with invalid password for email: {Email}", email);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during login for email: {Email}", email);
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Stores user salt securely in Windows Credential Manager or platform-specific secure storage
     /// </summary>
     private async Task StoreUserSaltSecurelyAsync(string userId, byte[] userSalt)

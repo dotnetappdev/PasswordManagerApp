@@ -345,7 +345,11 @@
             errorMessage = string.Empty;
             
             // Lock vault session
-            VaultSessionService.LockVault();
+            var sessionId = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "sessionId");
+            if (!string.IsNullOrEmpty(sessionId))
+            {
+                VaultSessionService.LockVault(sessionId);
+            }
             
             StateHasChanged();
         }

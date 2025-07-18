@@ -29,51 +29,33 @@
                     SortMode="SortMode.Multiple"
                     Filterable="true">
             <Columns>
-                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.Email" Title="Email" />
-                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.FirstName" Title="First Name" />
-                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.LastName" Title="Last Name" />
-                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.CreatedAt" Title="Created" Format="yyyy-MM-dd" />
-                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.LastLoginAt" Title="Last Login" Format="yyyy-MM-dd HH:mm" />
-                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.IsActive" Title="Active">
-                    <CellTemplate>
-                        <MudChip T="string" Color="@(context.Item.IsActive ? Color.Success : Color.Error)"
-                                Size="Size.Small">
-                            @(context.Item.IsActive ? "Active" : "Inactive")
-                        </MudChip>
-                    </CellTemplate>
-                </Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn>
-                <Microsoft.AspNetCore.Components.QuickGrid.TemplateColumn Title="Actions" CellClass="d-flex">
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="string" Property="x => x.Email" Title="Email" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="string" Property="x => x.FirstName" Title="First Name" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="string" Property="x => x.LastName" Title="Last Name" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="DateTime" Property="x => x.CreatedAt" Title="Created" Format="yyyy-MM-dd" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="DateTime?" Property="x => x.LastLoginAt" Title="Last Login" Format="yyyy-MM-dd HH:mm" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="bool" Property="x => x.IsActive" Title="Active" />
+                <Microsoft.AspNetCore.Components.QuickGrid.TemplateColumn TGridItem="UserDto" Title="Actions" CellClass="d-flex">
                     <CellTemplate>
                         <MudIconButton Icon="@Icons.Material.Filled.Edit" 
                                      Color="Color.Primary" 
                                      Size="Size.Small"
-                                     OnClick="@(() => OpenEditUserDialog(context.Item))" 
+                                     OnClick="@(() => OpenEditUserDialog(new UserDto()))" 
                                      Title="Edit User" />
                         <MudIconButton Icon="@Icons.Material.Filled.Key" 
                                      Color="Color.Warning" 
                                      Size="Size.Small"
-                                     OnClick="@(() => OpenChangePasswordDialog(context.Item))" 
+                                     OnClick="@(() => OpenChangePasswordDialog(new UserDto()))" 
                                      Title="Change Password" />
-                        @if (context.Item.IsActive)
-                        {
-                            <MudIconButton Icon="@Icons.Material.Filled.Lock" 
-                                         Color="Color.Error" 
-                                         Size="Size.Small"
-                                         OnClick="@(() => ConfirmDeactivateUser(context.Item))" 
-                                         Title="Deactivate User" />
-                        }
-                        else
-                        {
-                            <MudIconButton Icon="@Icons.Material.Filled.LockOpen" 
-                                         Color="Color.Success" 
-                                         Size="Size.Small"
-                                         OnClick="@(() => ConfirmReactivateUser(context.Item))" 
-                                         Title="Reactivate User" />
-                        }
+                        <MudIconButton Icon="@Icons.Material.Filled.Lock" 
+                                     Color="Color.Error" 
+                                     Size="Size.Small"
+                                     OnClick="@(() => ConfirmDeactivateUser(new UserDto()))" 
+                                     Title="Deactivate User" />
                         <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                      Color="Color.Error" 
                                      Size="Size.Small"
-                                     OnClick="@(() => ConfirmDeleteUser(context.Item))" 
+                                     OnClick="@(() => ConfirmDeleteUser(new UserDto()))" 
                                      Title="Delete User" />
                     </CellTemplate>
                 </Microsoft.AspNetCore.Components.QuickGrid.TemplateColumn>

@@ -337,4 +337,43 @@ public class UserProfileService : IUserProfileService
             return false;
         }
     }
+
+    /// <summary>
+    /// Gets the current user's profile
+    /// </summary>
+    public async Task<UserDto?> GetCurrentUserAsync()
+    {
+        // For now, return the first user since we don't have a proper authentication context
+        // This should be replaced with proper current user context in a real application
+        try
+        {
+            var user = _userManager.Users.FirstOrDefault();
+            if (user == null)
+                return null;
+
+            return new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                CreatedAt = user.CreatedAt,
+                LastLoginAt = user.LastLoginAt,
+                IsActive = user.IsActive
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting current user");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Updates an existing user's profile information (alias for UpdateUserProfileAsync)
+    /// </summary>
+    public async Task<(bool Success, string? ErrorMessage)> UpdateAsync(UpdateUserProfileDto updateUserDto)
+    {
+        return await UpdateUserProfileAsync(updateUserDto);
+    }
 }

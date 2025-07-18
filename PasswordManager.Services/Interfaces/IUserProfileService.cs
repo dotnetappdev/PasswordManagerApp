@@ -22,6 +22,11 @@ public interface IUserProfileService
     Task<UserDto?> GetUserByEmailAsync(string email);
     
     /// <summary>
+    /// Gets the current user's profile
+    /// </summary>
+    Task<UserDto?> GetCurrentUserAsync();
+    
+    /// <summary>
     /// Creates a new user with proper salt generation
     /// </summary>
     Task<(IdentityResult Result, ApplicationUser? User, string? ErrorMessage)> CreateUserAsync(CreateUserProfileDto createUserDto);
@@ -30,6 +35,11 @@ public interface IUserProfileService
     /// Updates an existing user's profile information
     /// </summary>
     Task<(bool Success, string? ErrorMessage)> UpdateUserProfileAsync(UpdateUserProfileDto updateUserDto);
+    
+    /// <summary>
+    /// Updates an existing user's profile information (alias for UpdateUserProfileAsync)
+    /// </summary>
+    Task<(bool Success, string? ErrorMessage)> UpdateAsync(UpdateUserProfileDto updateUserDto);
     
     /// <summary>
     /// Changes a user's master password

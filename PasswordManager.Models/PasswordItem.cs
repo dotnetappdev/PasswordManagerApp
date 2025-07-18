@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PasswordManager.Models;
 
@@ -42,4 +43,38 @@ public class PasswordItem
     public Category Category { get; set; } = null!; // Required navigation property
     public Collection Collection { get; set; } = null!; // Required navigation property
     public List<Tag> Tags { get; set; } = new();
+    
+    // Computed properties for backward compatibility with UI components
+    [NotMapped]
+    public string? Username 
+    { 
+        get => LoginItem?.Username; 
+        set 
+        { 
+            if (LoginItem != null) 
+                LoginItem.Username = value; 
+        } 
+    }
+    
+    [NotMapped]
+    public string? Password 
+    { 
+        get => LoginItem?.Password; 
+        set 
+        { 
+            if (LoginItem != null) 
+                LoginItem.Password = value; 
+        } 
+    }
+    
+    [NotMapped]
+    public string? WebsiteUrl 
+    { 
+        get => LoginItem?.WebsiteUrl; 
+        set 
+        { 
+            if (LoginItem != null) 
+                LoginItem.WebsiteUrl = value; 
+        } 
+    }
 }
