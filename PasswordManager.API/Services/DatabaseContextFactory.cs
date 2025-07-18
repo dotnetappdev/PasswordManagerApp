@@ -103,6 +103,8 @@ public class PasswordManagerDbContextWrapper : IPasswordManagerDbContext
     public DbSet<CreditCardItem> CreditCardItems { get => _context.CreditCardItems; set => _context.CreditCardItems = value; }
     public DbSet<SecureNoteItem> SecureNoteItems { get => _context.SecureNoteItems; set => _context.SecureNoteItems = value; }
     public DbSet<WiFiItem> WiFiItems { get => _context.WiFiItems; set => _context.WiFiItems = value; }
+    public DbSet<ApplicationUser> Users { get => _context.Users; set => _context.Users = value; }
+    public DbSet<ApiKey> ApiKeys { get => _context.ApiKeys; set => _context.ApiKeys = value; }
     public Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade Database => _context.Database;
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
