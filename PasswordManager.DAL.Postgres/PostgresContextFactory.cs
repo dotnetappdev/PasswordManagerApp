@@ -6,18 +6,18 @@ using System.IO;
 
 namespace PasswordManager.DAL.Postgres
 {
-    public class PostgresContextFactory : IDesignTimeDbContextFactory<PasswordManagerDbContext>
+public class PostgresContextFactory : IDesignTimeDbContextFactory<PasswordManagerDbContextApp>
     {
-        public PasswordManagerDbContext CreateDbContext(string[] args)
+    public PasswordManagerDbContextApp CreateDbContext(string[] args)
         {
             var config = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true)
                 .Build();
             var connectionString = config.GetConnectionString("PostgresConnection");
-            var optionsBuilder = new DbContextOptionsBuilder<PasswordManagerDbContext>();
+        var optionsBuilder = new DbContextOptionsBuilder<PasswordManagerDbContextApp>();
             optionsBuilder.UseNpgsql(connectionString);
-            return new PasswordManagerDbContext(optionsBuilder.Options);
+        return new PasswordManagerDbContextApp(optionsBuilder.Options);
         }
     }
 }

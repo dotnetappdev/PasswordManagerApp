@@ -236,7 +236,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
             .Include(p => p.Tags)
-            .Where(p => !lastSyncTime.HasValue || p.LastModified > lastSyncTime)
+            .Where(p => !lastSyncTime || p.LastModified > lastSyncTime)
             .ToListAsync();
 
         foreach (var sourceItem in sourceItems)
@@ -436,7 +436,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
     {
         _logger.LogInformation("Syncing categories");
         var sourceCategories = await source.Categories
-            .Where(c => !lastSyncTime.HasValue || c.LastModified > lastSyncTime)
+            .Where(c => !lastSyncTime || c.LastModified > lastSyncTime)
             .ToListAsync();
 
         foreach (var sourceCategory in sourceCategories)
@@ -502,7 +502,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
     {
         _logger.LogInformation("Syncing collections");
         var sourceCollections = await source.Collections
-            .Where(c => !lastSyncTime.HasValue || c.LastModified > lastSyncTime)
+            .Where(c => !lastSyncTime || c.LastModified > lastSyncTime)
             .ToListAsync();
 
         foreach (var sourceCollection in sourceCollections)
@@ -570,7 +570,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
     {
         _logger.LogInformation("Syncing tags");
         var sourceTags = await source.Tags
-            .Where(t => !lastSyncTime.HasValue || t.LastModified > lastSyncTime)
+            .Where(t => !lastSyncTime || t.LastModified > lastSyncTime)
             .ToListAsync();
 
         foreach (var sourceTag in sourceTags)

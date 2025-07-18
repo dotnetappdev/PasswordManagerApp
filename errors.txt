@@ -1,9 +1,4 @@
 Cannot implicitly convert type 'int?' to 'int'. An explicit conversion exists (are you missing a cast?)
-Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Imports\obj\Debug\net9.0\ref\PasswordManager.Imports.dll' could not be found
-Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
-Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Imports\obj\Debug\net9.0\ref\PasswordManager.Imports.dll' could not be found
-Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
-Unable to find project information for 'C:\DB\blazor\passwordmanager\PasswordManager.DAL.SupaBase\PasswordManager.DAL.SupaBase.csproj'. If you are using Visual Studio, this may be because the project is unloaded or not part of the current solution so run a restore from the command-line. Otherwise, the project file may be invalid or missing targets required for restore.
 Cannot implicitly convert type 'int?' to 'int'. An explicit conversion exists (are you missing a cast?)
 Operator '??' cannot be applied to operands of type 'Guid?' and 'int?'
 Operator '??' cannot be applied to operands of type 'Guid?' and 'int?'
@@ -18,21 +13,3 @@ Operator '??' cannot be applied to operands of type 'Guid?' and 'int?'
 'IConfiguration' does not contain a definition for 'GetValue' and no accessible extension method 'GetValue' accepting a first argument of type 'IConfiguration' could be found (are you missing a using directive or an assembly reference?)
 'IConfiguration' does not contain a definition for 'GetValue' and no accessible extension method 'GetValue' accepting a first argument of type 'IConfiguration' could be found (are you missing a using directive or an assembly reference?)
 The type or namespace name 'PasswordManagerDbContext' could not be found (are you missing a using directive or an assembly reference?)
-'DbContextOptionsBuilder<PasswordManagerDbContext>' does not contain a definition for 'UseMySql' and no accessible extension method 'UseMySql' accepting a first argument of type 'DbContextOptionsBuilder<PasswordManagerDbContext>' could be found (are you missing a using directive or an assembly reference?)
-The name 'ServerVersion' does not exist in the current context
-The type or namespace name 'PasswordManagerDbContext' could not be found (are you missing a using directive or an assembly reference?)
-'IPasswordManagerDbContext' does not contain a definition for 'Database' and no accessible extension method 'Database' accepting a first argument of type 'IPasswordManagerDbContext' could be found (are you missing a using directive or an assembly reference?)
-'IPasswordManagerDbContext' does not contain a definition for 'Database' and no accessible extension method 'Database' accepting a first argument of type 'IPasswordManagerDbContext' could be found (are you missing a using directive or an assembly reference?)
-'IPasswordManagerDbContext' does not contain a definition for 'Database' and no accessible extension method 'Database' accepting a first argument of type 'IPasswordManagerDbContext' could be found (are you missing a using directive or an assembly reference?)
-Cannot implicitly convert type 'PasswordManager.Models.DTOs.Sync.SyncConflictResolution' to 'string'
-Cannot implicitly convert type 'PasswordManager.Models.DTOs.Sync.SyncConflictResolution' to 'string'
-Cannot implicitly convert type 'PasswordManager.Models.DTOs.Sync.SyncConflictResolution' to 'string'
-Cannot implicitly convert type 'PasswordManager.Models.DTOs.Sync.SyncConflictResolution' to 'string'
-Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
-The type or namespace name 'bConfigurationBuilder' could not be found (are you missing a using directive or an assembly reference?)
-Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
-Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Components.Shared\obj\Debug\net9.0\ref\PasswordManager.Components.Shared.dll' could not be found
-Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Imports\obj\Debug\net9.0\ref\PasswordManager.Imports.dll' could not be found
-Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found
-Metadata file 'C:\DB\blazor\passwordmanager\PasswordManagerImports.1Password\obj\Debug\net9.0\ref\PasswordManagerImports.OnePassword.dll' could not be found
-Metadata file 'C:\DB\blazor\passwordmanager\PasswordManager.Services\obj\Debug\net9.0\ref\PasswordManager.Services.dll' could not be found

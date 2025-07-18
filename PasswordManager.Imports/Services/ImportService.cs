@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using PasswordManager.Imports.Interfaces;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;

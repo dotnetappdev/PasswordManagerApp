@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using PasswordManager.API.Interfaces;
 using PasswordManager.Models.DTOs.Sync;
 
