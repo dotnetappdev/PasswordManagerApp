@@ -145,6 +145,15 @@
                             <span>Continue</span>
                         }
                     </button>
+                    
+                    <!-- QR Code Login Button -->
+                    <button type="button" 
+                            class="auth-button qr-button" 
+                            @onclick="ShowQrLogin"
+                            style="margin-top:12px;background:#fff;color:#0066cc;border:1px solid #0066cc;">
+                        <span style="font-size:20px;vertical-align:middle;">📱</span> Login with QR Code
+                    </button>
+                    
                     <button type="button" class="auth-button" style="margin-top:12px;background:#fff;color:#0066cc;border:1px solid #0066cc;" @onclick="LoginWithPasskey">
                         <span style="font-size:20px;vertical-align:middle;">🔑</span> Sign in with Passkey
                     </button>
@@ -160,6 +169,108 @@
     </div>
 </div>
 
+<!-- QR Code Login Modal -->
+@if (showQrModal)
+{
+    <div class="qr-modal-overlay" @onclick="CloseQrLogin">
+        <div class="qr-modal-content" @onclick:stopPropagation="true">
+            <div class="qr-modal-header">
+                <h3>Login with QR Code</h3>
+                <button type="button" class="qr-modal-close" @onclick="CloseQrLogin">×</button>
+            </div>
+            
+            <div class="qr-modal-body">
+                @if (qrCodeGenerating)
+                {
+                    <div class="qr-loading">
+                        <div class="loading-spinner">⟳</div>
+                        <p>Generating QR code...</p>
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(qrCodeError))
+                {
+                    <div class="qr-error">
+                        <p>⚠️ @qrCodeError</p>
+                        <button type="button" class="auth-button" @onclick="RetryQrGeneration">
+                            Try Again
+                        </button>
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(qrCodeImage))
+                {
+                    <div class="qr-display">
+                        <div class="qr-instructions">
+                            <h4>Scan with your mobile device</h4>
+                            <p>1. Open the Password Manager app on your phone</p>
+                            <p>2. Go to Settings > QR Login</p>
+                            <p>3. Scan this QR code</p>
+                        </div>
+                        
+                        <div class="qr-code-container">
+                            <img src="data:image/png;base64,@qrCodeImage" alt="QR Code" class="qr-code" />
+                        </div>
+                        
+                        <div class="qr-timer">
+                            <div class="timer-bar">
+                                <div class="timer-fill" style="width: @((qrTimeRemaining / 60.0) * 100)%"></div>
+                            </div>
+                            <p>Code expires in @qrTimeRemaining seconds</p>
+                        </div>
+                        
+                        @if (qrAuthenticating)
+                        {
+                            <div class="qr-authenticating">
+                                <div class="loading-spinner">⟳</div>
+                                <p>Authenticating...</p>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="qr-setup">
+                        <div class="qr-setup-instructions">
+                            <h4>Setup QR Login</h4>
+                            <p>To use QR login, you need to first authenticate with your master password.</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="qrSetupPassword">Master Password</label>
+                            <div class="password-input-group">
+                                <input type="@(showQrPassword ? "text" : "password")" 
+                                       id="qrSetupPassword" 
+                                       @bind="qrSetupPassword" 
+                                       @onkeypress="HandleQrKeyPress"
+                                       placeholder="Enter your master password"
+                                       class="form-input" />
+                                <button type="button" class="password-toggle" @onclick="ToggleQrPasswordVisibility">
+                                    @(showQrPassword ? "👁️‍🗨️" : "👁️")
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="qrSetupEmail">Email Address</label>
+                            <input type="email" 
+                                   id="qrSetupEmail" 
+                                   @bind="qrSetupEmail" 
+                                   placeholder="Enter your email"
+                                   class="form-input" />
+                        </div>
+                        
+                        <button type="button" 
+                                class="auth-button" 
+                                @onclick="GenerateQrCode"
+                                disabled="@(string.IsNullOrEmpty(qrSetupPassword) || string.IsNullOrEmpty(qrSetupEmail) || qrCodeGenerating)">
+                            Generate QR Code
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private bool isFirstTime = false;
     private bool showPassword = false;
@@ -173,6 +284,19 @@
     private string errorMessage = string.Empty;
     private string passwordStrength = "Weak";
     private string passkeyId = string.Empty;
+    
+    // QR Login variables
+    private bool showQrModal = false;
+    private bool showQrPassword = false;
+    private bool qrCodeGenerating = false;
+    private bool qrAuthenticating = false;
+    private string qrSetupPassword = string.Empty;
+    private string qrSetupEmail = string.Empty;
+    private string qrCodeImage = string.Empty;
+    private string qrCodeError = string.Empty;
+    private string qrToken = string.Empty;
+    private int qrTimeRemaining = 60;
+    private System.Threading.Timer? qrTimer = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -398,6 +522,174 @@
         }
     }
 
+    // QR Login Methods
+    private void ShowQrLogin()
+    {
+        showQrModal = true;
+        qrSetupEmail = string.Empty;
+        qrSetupPassword = string.Empty;
+        qrCodeImage = string.Empty;
+        qrCodeError = string.Empty;
+        qrToken = string.Empty;
+        qrTimeRemaining = 60;
+        StateHasChanged();
+    }
+
+    private void CloseQrLogin()
+    {
+        showQrModal = false;
+        qrTimer?.Dispose();
+        qrTimer = null;
+        StateHasChanged();
+    }
+
+    private void ToggleQrPasswordVisibility()
+    {
+        showQrPassword = !showQrPassword;
+    }
+
+    private async Task HandleQrKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await GenerateQrCode();
+        }
+    }
+
+    private async Task GenerateQrCode()
+    {
+        if (string.IsNullOrEmpty(qrSetupEmail) || string.IsNullOrEmpty(qrSetupPassword))
+        {
+            qrCodeError = "Please enter both email and password.";
+            return;
+        }
+
+        try
+        {
+            qrCodeGenerating = true;
+            qrCodeError = string.Empty;
+            StateHasChanged();
+
+            // Call the API to generate QR code
+            using var httpClient = new HttpClient();
+            var requestData = new
+            {
+                Email = qrSetupEmail,
+                Password = qrSetupPassword
+            };
+
+            var json = System.Text.Json.JsonSerializer.Serialize(requestData);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await httpClient.PostAsync("https://localhost:7001/api/qrlogin/initiate", content);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var qrResponse = System.Text.Json.JsonSerializer.Deserialize<QrLoginResponse>(responseContent, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                
+                if (qrResponse != null)
+                {
+                    qrCodeImage = qrResponse.QrCodeImage;
+                    qrToken = qrResponse.QrToken;
+                    qrTimeRemaining = qrResponse.ExpiresInSeconds;
+                    StartQrTimer();
+                    StartPollingForAuth();
+                }
+                else
+                {
+                    qrCodeError = "Failed to generate QR code.";
+                }
+            }
+            else
+            {
+                qrCodeError = "Failed to authenticate. Please check your email and password.";
+            }
+        }
+        catch (Exception ex)
+        {
+            qrCodeError = $"Error generating QR code: {ex.Message}";
+        }
+        finally
+        {
+            qrCodeGenerating = false;
+            StateHasChanged();
+        }
+    }
+
+    private void StartQrTimer()
+    {
+        qrTimer?.Dispose();
+        qrTimer = new System.Threading.Timer(async _ =>
+        {
+            qrTimeRemaining--;
+            if (qrTimeRemaining <= 0)
+            {
+                await InvokeAsync(() =>
+                {
+                    CloseQrLogin();
+                    StateHasChanged();
+                });
+            }
+            else
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    }
+
+    private async Task StartPollingForAuth()
+    {
+        // Poll for authentication every 2 seconds
+        while (showQrModal && qrTimeRemaining > 0 && !string.IsNullOrEmpty(qrToken))
+        {
+            await Task.Delay(2000);
+            await CheckQrAuthStatus();
+        }
+    }
+
+    private async Task CheckQrAuthStatus()
+    {
+        if (string.IsNullOrEmpty(qrToken))
+            return;
+
+        try
+        {
+            using var httpClient = new HttpClient();
+            var response = await httpClient.GetAsync($"https://localhost:7001/api/qrlogin/status/{qrToken}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var statusResponse = System.Text.Json.JsonSerializer.Deserialize<QrLoginStatusResponse>(responseContent, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (statusResponse != null && statusResponse.IsAuthenticated)
+                {
+                    qrAuthenticating = true;
+                    StateHasChanged();
+
+                    // Store the session token and navigate to home
+                    await JSRuntime.InvokeVoidAsync("localStorage.setItem", "sessionToken", statusResponse.SessionToken);
+                    
+                    // Small delay to show the authenticating state
+                    await Task.Delay(1000);
+                    
+                    Navigation.NavigateTo("/home");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking QR auth status: {ex.Message}");
+        }
+    }
+
+    private async Task RetryQrGeneration()
+    {
+        qrCodeError = string.Empty;
+        await GenerateQrCode();
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -407,4 +699,21 @@
             await JSRuntime.InvokeVoidAsync("animateLogo");
         }
     }
+}
+
+// QR Login Response Models
+public class QrLoginResponse
+{
+    public string QrToken { get; set; } = string.Empty;
+    public string QrCodeImage { get; set; } = string.Empty;
+    public DateTime ExpiresAt { get; set; }
+    public int ExpiresInSeconds { get; set; }
+}
+
+public class QrLoginStatusResponse
+{
+    public bool IsAuthenticated { get; set; }
+    public bool IsExpired { get; set; }
+    public string? SessionToken { get; set; }
+    public string? Message { get; set; }
 }
