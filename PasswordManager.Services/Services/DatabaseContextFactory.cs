@@ -5,6 +5,8 @@ using PasswordManager.DAL.Interfaces;
 using Microsoft.EntityFrameworkCore.Storage;
 using PasswordManager.Services.Interfaces;
 
+
+using PasswordManager.DAL;
 namespace PasswordManager.Services.Services;
 
 public class DatabaseContextFactory : IDatabaseContextFactory
@@ -40,7 +42,7 @@ public class DatabaseContextFactory : IDatabaseContextFactory
                 optionsBuilder.UseNpgsql(connectionString);
                 break;
             case "mysql":
-                optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+                object value = optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
                 break;
             default:
                 throw new ArgumentException($"Unsupported database provider: {provider}");

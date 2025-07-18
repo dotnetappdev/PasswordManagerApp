@@ -29,10 +29,10 @@ public class PasswordItem
     public string? UserId { get; set; }
     public ApplicationUser? User { get; set; }
     
-    public int? CategoryId { get; set; } // Foreign key to Category - now required
+    public Guid? CategoryId { get; set; } // Foreign key to Category - now required
     
     // Collection relationship
-    public int? CollectionId { get; set; } // Foreign key to Collection - required
+    public Guid? CollectionId { get; set; } // Foreign key to Collection - required
 
     // Navigation properties
     public LoginItem? LoginItem { get; set; }

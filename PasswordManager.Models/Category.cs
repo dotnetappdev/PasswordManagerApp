@@ -2,7 +2,7 @@ namespace PasswordManager.Models
 {
     public class Category
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; } // Added for mapping
         public string? Icon { get; set; } // Optional: emoji or icon name
