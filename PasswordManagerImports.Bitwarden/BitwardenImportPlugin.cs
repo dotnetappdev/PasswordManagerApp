@@ -53,7 +53,7 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
         }
     }
 
-    public async Task<ImportResult> ImportPasswordsAsync(Stream stream, string fileName)
+    public async Task<ImportResult> ImportFromFileAsync(Stream stream, string fileName)
     {
         try
         {
@@ -117,13 +117,13 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
             return new ImportResult
             {
                 Success = true,
-                Message = $"Successfully imported {passwordItems.Count} items from Bitwarden",
+                ErrorMessage = $"Successfully imported {passwordItems.Count} items from Bitwarden",
                 ImportedItems = passwordItems,
                 RequiredCollections = requiredCollections,
                 RequiredCategories = requiredCategories,
-                TotalItems = passwordItems.Count,
-                ProcessedItems = passwordItems.Count,
-                SuccessfulImports = passwordItems.Count
+                TotalItemsProcessed = passwordItems.Count,
+                SuccessfulImports = passwordItems.Count,
+                FailedImports = 0
             };
         }
         catch (Exception ex)
@@ -132,7 +132,11 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
             {
                 Success = false,
                 ErrorMessage = $"Failed to import Bitwarden file: {ex.Message}",
-                Errors = new List<string> { ex.Message }
+                ImportedItems = new List<PasswordItem>(),
+                TotalItemsProcessed = 0,
+                SuccessfulImports = 0,
+                FailedImports = 1,
+                Warnings = new List<string> { ex.Message }
             };
         }
     }
@@ -157,15 +161,14 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
             return false;
         }
     }
-                if (configuration.TryGetValue("displayName", out var displayName))
-                    Metadata.DisplayName = displayName != null ? displayName.ToString() : Metadata.DisplayName;
-                if (configuration.TryGetValue("description", out var description))
-                    Metadata.Description = description != null ? description.ToString() : Metadata.Description;
-                if (configuration.TryGetValue("version", out var version))
-                    Metadata.Version = version != null ? version.ToString() : Metadata.Version;
-                if (configuration.TryGetValue("author", out var author))
-                    Metadata.Author = author != null ? author.ToString() : Metadata.Author;
+
+    public async Task<IEnumerable<PasswordItem>> GetImportPreviewAsync(Stream stream, string fileName)
+    {
+        try
+        {
             stream.Position = 0;
+            using var reader = new StreamReader(stream);
+            var csvContent = await reader.ReadToEndAsync();
             
             var engine = new FileHelperEngine<BitwardenCsvRecord>();
             var records = engine.ReadString(csvContent).Take(5); // Preview first 5 items
@@ -183,9 +186,9 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
                     LoginItem = new LoginItem
                     {
                         Username = record.Username ?? string.Empty,
-                        Password = "••••••••", // Hide password in preview (temporary property)
+                        Password = "••••••••", // Hide password in preview
                         Website = record.Url,
-                        Notes = record.Notes // Temporary property for import
+                        Notes = record.Notes
                     }
                 };
                 
