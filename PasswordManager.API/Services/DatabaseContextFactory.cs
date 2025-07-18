@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.DAL;
+using PasswordManager.DAL.Interfaces;
 using PasswordManager.Models;
 
 namespace PasswordManager.API.Services;

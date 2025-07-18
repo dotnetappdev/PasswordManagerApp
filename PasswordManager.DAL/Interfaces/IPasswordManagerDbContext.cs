@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using PasswordManager.Models;
 
 namespace PasswordManager.DAL.Interfaces;
 
 public interface IPasswordManagerDbContext : IDisposable
 {
+    DatabaseFacade Database { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     DbSet<PasswordItem> PasswordItems { get; set; }
     DbSet<Category> Categories { get; set; }
