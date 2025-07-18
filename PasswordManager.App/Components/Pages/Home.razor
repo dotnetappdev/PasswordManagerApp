@@ -7,6 +7,7 @@
 @using PasswordManager.Services.Interfaces
 @using PasswordManager.Imports.Interfaces
 @using PasswordManager.Crypto.Interfaces
+@using PasswordManager.Models.DTOs.Sync
 @inject IPasswordItemService PasswordItemService
 @inject ITagService TagService
 @inject ICategoryInterface CategoryService
@@ -17,6 +18,7 @@
 @inject PasswordManager.Imports.Interfaces.IImportService ImportService
 @inject IVaultSessionService VaultSessionService
 @inject IPasswordRevealService PasswordRevealService
+@inject IAppSyncService AppSyncService
 
 <style>
     .validation-error {
@@ -50,6 +52,79 @@
 
     .import-btn:hover {
         background: #059669;
+    }
+
+    .sync-btn {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .sync-btn:hover {
+        background: #2563eb;
+    }
+
+    .sync-btn:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+    }
+
+    .sync-info {
+        background: #f0f9ff;
+        border: 1px solid #0ea5e9;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .sync-warning {
+        background: #fef3c7;
+        border: 1px solid #d97706;
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 12px;
+    }
+
+    .sync-warning p {
+        margin: 0;
+        color: #92400e;
+    }
+
+    .text-success {
+        color: #10b981;
+        font-weight: 600;
+    }
+
+    .text-danger {
+        color: #ef4444;
+        font-weight: 600;
+    }
+
+    .sync-step {
+        margin-bottom: 24px;
+    }
+
+    .sync-step h4 {
+        margin: 0 0 12px 0;
+        color: #1f2937;
+        font-weight: 600;
+    }
+
+    .sync-progress {
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    .sync-results {
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
     }
 
     .provider-selection {
@@ -452,6 +527,7 @@
                 </div>
             </div>
             <div class="header-buttons">
+                <button class="sync-btn" @onclick="ShowSyncModal" title="Sync with API">🔄 Sync</button>
                 <button class="import-btn" @onclick="ShowImportModal">📥 Import</button>
                 <button class="add-item-btn" @onclick="ShowAddItemModal">+ Add Item</button>
                 <div class="profile-dropdown" style="position:relative;">
@@ -1219,6 +1295,119 @@
     </div>
 }
 
+<!-- Sync Modal -->
+@if (showSyncModal)
+{
+    <div class="modal-overlay" @onclick="HideSyncModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>Sync with API</h2>
+                <button class="close-btn" @onclick="HideSyncModal">×</button>
+            </div>
+            <div class="modal-body">
+                @if (!syncInProgress)
+                {
+                    <div class="sync-step">
+                        <h4>API Configuration</h4>
+                        
+                        @if (string.IsNullOrEmpty(currentApiKey))
+                        {
+                            <div class="alert alert-warning">
+                                <p><strong>API Key Required</strong></p>
+                                <p>You need to configure an API key to sync with the server.</p>
+                                <div style="margin-top: 16px;">
+                                    <label>API Key:</label>
+                                    <input type="password" @bind="newApiKey" class="form-control" placeholder="Enter your API key" />
+                                    <button type="button" class="btn btn-primary" @onclick="ConfigureApiKey" style="margin-top: 8px;">Configure API Key</button>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="sync-info">
+                                <p><strong>API Key:</strong> ••••••••••••••••••••••••••••••••</p>
+                                <p><strong>Status:</strong> <span class="@(syncAvailable ? "text-success" : "text-danger")">@(syncAvailable ? "Available" : "Unavailable")</span></p>
+                                <p><strong>Last Sync:</strong> @(lastSyncTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Never")</p>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(currentApiKey))
+                    {
+                        <div class="sync-step">
+                            <h4>Sync Options</h4>
+                            <p>This will sync your password data with the configured API server.</p>
+                            <div class="sync-warning">
+                                <p><strong>⚠️ Important:</strong> This will synchronize your local data with the server. Make sure you trust the API endpoint.</p>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="sync-progress">
+                        <h4>Syncing...</h4>
+                        <div class="progress-indicator">
+                            <div class="spinner"></div>
+                            <p class="progress-text">@syncProgressText</p>
+                        </div>
+                    </div>
+                }
+
+                @if (syncResult != null)
+                {
+                    <div class="sync-results">
+                        <h4>Sync Results</h4>
+                        @if (syncResult.Success)
+                        {
+                            <div class="success-message">
+                                <span>✅</span>
+                                <div>
+                                    <p><strong>Sync completed successfully!</strong></p>
+                                    <p>@syncResult.Message</p>
+                                    @if (syncResult.Statistics != null)
+                                    {
+                                        <ul>
+                                            <li>Records processed: @syncResult.Statistics.TotalRecordsProcessed</li>
+                                            <li>Duration: @syncResult.Statistics.Duration.TotalSeconds seconds</li>
+                                        </ul>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="error-message">
+                                <span>❌</span>
+                                <div>
+                                    <p><strong>Sync failed</strong></p>
+                                    <p>@syncResult.Message</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="modal-actions">
+                    @if (!syncInProgress && syncResult == null)
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="HideSyncModal">Cancel</button>
+                        <button type="button" class="btn btn-primary" 
+                                @onclick="StartSync" 
+                                disabled="@(string.IsNullOrEmpty(currentApiKey) || !syncAvailable)">
+                            Start Sync
+                        </button>
+                    }
+                    else if (syncResult != null)
+                    {
+                        <button type="button" class="btn btn-primary" @onclick="FinishSync">Done</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     // Collection management
     private List<Collection> collections = new();
@@ -1312,6 +1501,7 @@
     private bool showEditCollectionModal = false;
     private bool showDeleteCollectionModal = false;
     private bool showImportModal = false;
+    private bool showSyncModal = false;
     private bool passwordVisible = false;
     private bool showNewPassword = false;
     private bool showPasswordGenerator = false;
@@ -1351,6 +1541,15 @@
     private PasswordManager.Imports.Interfaces.ImportResult? importResult;
     private int importProgress = 0;
     private string importProgressText = "Processing your file, please wait...";
+
+    // Sync related properties
+    private string? currentApiKey = null;
+    private string newApiKey = string.Empty;
+    private bool syncInProgress = false;
+    private bool syncAvailable = false;
+    private SyncResponseDto? syncResult = null;
+    private string syncProgressText = "Starting sync...";
+    private DateTime? lastSyncTime = null;
 
     // Validation state
     private bool collectionValidationError = false;
@@ -2406,6 +2605,107 @@ private void OnCollectionChanged(ChangeEventArgs e)
         HideImportModal();
         
         // Refresh the data to show imported items
+        await LoadData();
+        await LoadCategories();
+        await LoadCollections();
+        
+        StateHasChanged();
+    }
+    
+    // Sync methods
+    private async Task ShowSyncModal()
+    {
+        showSyncModal = true;
+        syncResult = null;
+        syncInProgress = false;
+        syncProgressText = "Starting sync...";
+        
+        // Load current API key if available
+        currentApiKey = await AppSyncService.GetApiKeyAsync();
+        
+        // Check if sync is available
+        if (!string.IsNullOrEmpty(currentApiKey))
+        {
+            syncAvailable = await AppSyncService.IsSyncAvailableAsync();
+            lastSyncTime = await AppSyncService.GetLastSyncTimeAsync();
+        }
+        
+        StateHasChanged();
+    }
+
+    private void HideSyncModal()
+    {
+        showSyncModal = false;
+        syncResult = null;
+        syncInProgress = false;
+        newApiKey = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task ConfigureApiKey()
+    {
+        if (string.IsNullOrEmpty(newApiKey))
+            return;
+
+        try
+        {
+            await AppSyncService.SetApiKeyAsync(newApiKey);
+            currentApiKey = newApiKey;
+            newApiKey = string.Empty;
+            
+            // Check if sync is available with the new API key
+            syncAvailable = await AppSyncService.IsSyncAvailableAsync();
+            lastSyncTime = await AppSyncService.GetLastSyncTimeAsync();
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Handle error (could show error message)
+            System.Diagnostics.Debug.WriteLine($"Error configuring API key: {ex.Message}");
+        }
+    }
+
+    private async Task StartSync()
+    {
+        if (string.IsNullOrEmpty(currentApiKey))
+            return;
+
+        syncInProgress = true;
+        syncResult = null;
+        syncProgressText = "Starting sync...";
+        StateHasChanged();
+
+        try
+        {
+            syncProgressText = "Syncing with API...";
+            StateHasChanged();
+            
+            syncResult = await AppSyncService.SyncManuallyAsync();
+            
+            syncProgressText = "Sync completed!";
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            syncResult = new SyncResponseDto
+            {
+                Success = false,
+                Message = $"Sync failed: {ex.Message}"
+            };
+        }
+        finally
+        {
+            syncInProgress = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task FinishSync()
+    {
+        HideSyncModal();
+        
+        // Refresh data to show any synced items
         await LoadData();
         await LoadCategories();
         await LoadCollections();

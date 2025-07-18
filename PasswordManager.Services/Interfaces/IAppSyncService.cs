@@ -23,6 +23,11 @@ public interface IAppSyncService
     Task<SyncResponseDto> SyncFromApiAsync();
 
     /// <summary>
+    /// Manually trigger sync when user clicks the sync button
+    /// </summary>
+    Task<SyncResponseDto> SyncManuallyAsync();
+
+    /// <summary>
     /// Check if sync is available (API is reachable)
     /// </summary>
     Task<bool> IsSyncAvailableAsync();
@@ -36,4 +41,14 @@ public interface IAppSyncService
     /// Update the last sync time
     /// </summary>
     Task UpdateLastSyncTimeAsync(DateTime syncTime);
+
+    /// <summary>
+    /// Configure the API key for authentication
+    /// </summary>
+    Task SetApiKeyAsync(string apiKey);
+
+    /// <summary>
+    /// Get the configured API key
+    /// </summary>
+    Task<string?> GetApiKeyAsync();
 }
