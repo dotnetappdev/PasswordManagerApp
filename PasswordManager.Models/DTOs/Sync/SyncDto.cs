@@ -7,6 +7,7 @@ public class SyncRequestDto
     public DateTime? LastSyncTime { get; set; }
     public List<string> EntitiesToSync { get; set; } = new();
     public SyncConflictResolution ConflictResolution { get; set; } = SyncConflictResolution.LastWriteWins;
+    public string? UserId { get; set; } // Added for user-scoped sync operations
 }
 
 public class SyncResponseDto

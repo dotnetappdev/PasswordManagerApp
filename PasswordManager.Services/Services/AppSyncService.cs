@@ -4,6 +4,7 @@ using PasswordManager.Models.DTOs.Sync;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text;
+using Microsoft.Extensions.Configuration;
 
 namespace PasswordManager.Services.Services;
 
@@ -14,14 +15,19 @@ public class AppSyncService : IAppSyncService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<AppSyncService> _logger;
-    private const string ApiBaseUrl = "https://api.passwordmanager.local"; // Configure this appropriately
+    private readonly IConfiguration _configuration;
+    private readonly string _apiBaseUrl;
+    private string? _apiKey;
 
     public AppSyncService(
         HttpClient httpClient,
-        ILogger<AppSyncService> logger)
+        ILogger<AppSyncService> logger,
+        IConfiguration configuration)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _configuration = configuration;
+        _apiBaseUrl = _configuration["ApiSettings:BaseUrl"] ?? "https://api.passwordmanager.local";
     }
 
     public async Task<SyncResponseDto> SyncOnStartupAsync()
@@ -59,31 +65,129 @@ public class AppSyncService : IAppSyncService
         }
     }
 
+    public async Task<SyncResponseDto> SyncManuallyAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Starting manual sync");
+            
+            if (string.IsNullOrEmpty(_apiKey))
+            {
+                return new SyncResponseDto
+                {
+                    Success = false,
+                    Message = "API key not configured. Please generate and configure an API key first."
+                };
+            }
+
+            // Check if sync is available first
+            if (!await IsSyncAvailableAsync())
+            {
+                return new SyncResponseDto
+                {
+                    Success = false,
+                    Message = "API is not available for sync"
+                };
+            }
+
+            // First try to sync from API to get latest data
+            var syncFromResult = await SyncFromApiAsync();
+            
+            if (syncFromResult.Success)
+            {
+                // Then sync to API to upload any local changes
+                var syncToResult = await SyncToApiAsync();
+                
+                return new SyncResponseDto
+                {
+                    Success = syncToResult.Success,
+                    Message = "Manual sync completed",
+                    Statistics = CombineStatistics(syncFromResult.Statistics, syncToResult.Statistics)
+                };
+            }
+            
+            return syncFromResult;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during manual sync");
+            return new SyncResponseDto
+            {
+                Success = false,
+                Message = "Manual sync failed: " + ex.Message
+            };
+        }
+    }
+
+    public async Task SetApiKeyAsync(string apiKey)
+    {
+        _apiKey = apiKey;
+        _logger.LogInformation("API key configured for sync service");
+    }
+
+    public async Task<string?> GetApiKeyAsync()
+    {
+        return _apiKey;
+    }
+
     public async Task<SyncResponseDto> SyncToApiAsync()
     {
         try
         {
             _logger.LogInformation("Syncing data to API");
             
-            // TODO: Implement actual sync to API logic
-            // This would involve:
-            // 1. Get local changes since last sync
-            // 2. Send changes to API
-            // 3. Handle conflicts
-            // 4. Update local sync timestamp
-            
-            await Task.Delay(1000); // Simulate API call
-            
-            return new SyncResponseDto
+            if (string.IsNullOrEmpty(_apiKey))
             {
-                Success = true,
-                Message = "Sync to API completed",
-                Statistics = new SyncStatisticsDto
+                return new SyncResponseDto
                 {
-                    TotalRecordsProcessed = 0,
-                    Duration = TimeSpan.FromSeconds(1)
-                }
+                    Success = false,
+                    Message = "API key not configured"
+                };
+            }
+
+            // Add API key to request headers
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-API-Key", _apiKey);
+
+            // Create sync request
+            var syncRequest = new SyncRequestDto
+            {
+                SourceDatabase = "LocalSqlite",
+                TargetDatabase = "RemoteApi",
+                LastSyncTime = await GetLastSyncTimeAsync(),
+                EntitiesToSync = new List<string> { "PasswordItems", "Collections", "Categories", "Tags" }
             };
+
+            var jsonContent = JsonSerializer.Serialize(syncRequest);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/sync/sync", content);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<SyncResponseDto>(responseContent);
+                
+                if (result?.Success == true)
+                {
+                    await UpdateLastSyncTimeAsync(DateTime.UtcNow);
+                }
+                
+                return result ?? new SyncResponseDto
+                {
+                    Success = false,
+                    Message = "Invalid response from API"
+                };
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                return new SyncResponseDto
+                {
+                    Success = false,
+                    Message = $"Sync to API failed: {response.StatusCode} - {errorContent}"
+                };
+            }
         }
         catch (Exception ex)
         {
@@ -102,26 +206,53 @@ public class AppSyncService : IAppSyncService
         {
             _logger.LogInformation("Syncing data from API");
             
-            // TODO: Implement actual sync from API logic
-            // This would involve:
-            // 1. Get timestamp of last sync
-            // 2. Request changes from API since last sync
-            // 3. Apply changes to local database
-            // 4. Handle conflicts
-            // 5. Update local sync timestamp
-            
-            await Task.Delay(1000); // Simulate API call
-            
-            return new SyncResponseDto
+            if (string.IsNullOrEmpty(_apiKey))
             {
-                Success = true,
-                Message = "Sync from API completed",
-                Statistics = new SyncStatisticsDto
+                return new SyncResponseDto
                 {
-                    TotalRecordsProcessed = 0,
-                    Duration = TimeSpan.FromSeconds(1)
-                }
-            };
+                    Success = false,
+                    Message = "API key not configured"
+                };
+            }
+
+            // Add API key to request headers
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-API-Key", _apiKey);
+
+            var response = await _httpClient.GetAsync($"{_apiBaseUrl}/api/sync/last-sync-time?sourceDb=RemoteApi&targetDb=LocalSqlite");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                // TODO: Implement actual sync from API logic
+                // This would involve:
+                // 1. Get timestamp of last sync
+                // 2. Request changes from API since last sync
+                // 3. Apply changes to local database
+                // 4. Handle conflicts
+                // 5. Update local sync timestamp
+                
+                await Task.Delay(1000); // Simulate API call
+                
+                return new SyncResponseDto
+                {
+                    Success = true,
+                    Message = "Sync from API completed",
+                    Statistics = new SyncStatisticsDto
+                    {
+                        TotalRecordsProcessed = 0,
+                        Duration = TimeSpan.FromSeconds(1)
+                    }
+                };
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                return new SyncResponseDto
+                {
+                    Success = false,
+                    Message = $"Sync from API failed: {response.StatusCode} - {errorContent}"
+                };
+            }
         }
         catch (Exception ex)
         {
@@ -139,7 +270,7 @@ public class AppSyncService : IAppSyncService
         try
         {
             // Check if API is reachable
-            var response = await _httpClient.GetAsync($"{ApiBaseUrl}/health");
+            var response = await _httpClient.GetAsync($"{_apiBaseUrl}/health");
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)

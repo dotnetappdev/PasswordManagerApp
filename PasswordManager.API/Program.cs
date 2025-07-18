@@ -4,6 +4,7 @@ using PasswordManager.Crypto.Extensions;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
 using PasswordManager.API.Extensions;
+using PasswordManager.API.Middleware;
 using Serilog;
 using Scalar.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -125,6 +126,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
+
+// Add API key authentication middleware
+app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
 
 app.UseAuthorization();
 

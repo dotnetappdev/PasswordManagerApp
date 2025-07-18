@@ -1,11 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Models.DTOs.Sync;
+using System.Security.Claims;
 
 namespace PasswordManager.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class SyncController : ControllerBase
 {
     private readonly ISyncService _syncService;
@@ -20,17 +23,27 @@ public class SyncController : ControllerBase
     }
 
     /// <summary>
-    /// Sync data between databases
+    /// Sync data between databases for the authenticated user
     /// </summary>
     [HttpPost("sync")]
     public async Task<ActionResult<SyncResponseDto>> SyncDatabases([FromBody] SyncRequestDto request)
     {
         try
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("User ID not found in token");
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            // Add user context to the request
+            request.UserId = userId;
             var result = await _syncService.SyncDatabasesAsync(request);
+            
+            _logger.LogInformation("Database sync completed for user {UserId} with result: {Success}", 
+                userId, result.Success);
+                
             return Ok(result);
         }
         catch (Exception ex)

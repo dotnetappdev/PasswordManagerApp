@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Models;
@@ -8,7 +7,6 @@ namespace PasswordManager.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
     public class ApiKeysController : ControllerBase
     {
         private readonly IApiKeyService _apiKeyService;
