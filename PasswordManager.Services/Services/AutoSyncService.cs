@@ -1,6 +1,4 @@
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -24,13 +22,13 @@ public class AutoSyncService : BackgroundService
         _configuration = configuration;
         _logger = logger;
         
-        var intervalMinutes = _configuration.GetValue<int>("Sync:SyncIntervalMinutes", 30);
+        var intervalMinutes = int.TryParse(_configuration["Sync:SyncIntervalMinutes"], out var interval) ? interval : 30;
         _syncInterval = TimeSpan.FromMinutes(intervalMinutes);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var enableAutoSync = _configuration.GetValue<bool>("Sync:EnableAutoSync", true);
+        var enableAutoSync = bool.TryParse(_configuration["Sync:EnableAutoSync"], out var enabled) ? enabled : true;
         
         if (!enableAutoSync)
         {

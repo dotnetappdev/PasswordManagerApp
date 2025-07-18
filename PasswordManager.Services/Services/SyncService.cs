@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using PasswordManager.DAL;
 using PasswordManager.Models;
 using PasswordManager.Models.DTOs.Sync;
-using PasswordManager.Services.Interfaces;
 
 namespace PasswordManager.Services.Services;
 
@@ -435,7 +434,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
     {
         _logger.LogInformation("Syncing categories");
         var sourceCategories = await source.Categories
-            .Where(c => !lastSyncTime || c.LastModified > lastSyncTime)
+            .Where(c => lastSyncTime == null || c.LastModified > lastSyncTime)
             .ToListAsync();
 
         foreach (var sourceCategory in sourceCategories)
@@ -501,7 +500,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
     {
         _logger.LogInformation("Syncing collections");
         var sourceCollections = await source.Collections
-            .Where(c => !lastSyncTime || c.LastModified > lastSyncTime)
+            .Where(c => lastSyncTime == null || c.LastModified > lastSyncTime)
             .ToListAsync();
 
         foreach (var sourceCollection in sourceCollections)
@@ -569,7 +568,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
     {
         _logger.LogInformation("Syncing tags");
         var sourceTags = await source.Tags
-            .Where(t => !lastSyncTime || t.LastModified > lastSyncTime)
+            .Where(t => lastSyncTime == null || t.LastModified > lastSyncTime)
             .ToListAsync();
 
         foreach (var sourceTag in sourceTags)

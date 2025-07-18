@@ -7,7 +7,7 @@ using PasswordManager.Models.DTOs.Sync;
 
 namespace PasswordManager.API.Services;
 
-public class SyncService : ISyncService
+public class SyncService : PasswordManager.API.Interfaces.ISyncService
 {
     private readonly IDatabaseContextFactory _contextFactory;
     private readonly ILogger<SyncService> _logger;
