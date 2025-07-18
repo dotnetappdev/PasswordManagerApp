@@ -22,13 +22,13 @@
             <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Profile</MudText>
             <MudGrid>
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="userProfile.FirstName" 
+                    <MudTextField @bind-value="userProfile.FirstName" 
                                  Label="First Name" 
                                  Variant="Variant.Outlined"
                                  Style="background-color: #2a2a2a;" />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="userProfile.Email" 
+                    <MudTextField @bind-value="userProfile.Email" 
                                  Label="Email" 
                                  Variant="Variant.Outlined"
                                  Style="background-color: #2a2a2a;" />
@@ -42,7 +42,7 @@
             
             <MudGrid>
                 <MudItem xs="12" md="8">
-                    <MudTextField @bind-Value="newApiKeyName" 
+                    <MudTextField @bind-value="newApiKeyName" 
                                  Label="API Key Name" 
                                  Variant="Variant.Outlined"
                                  Style="background-color: #2a2a2a;"
@@ -127,7 +127,7 @@
         <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
             <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Database Settings</MudText>
             
-            <MudSelect @bind-Value="databaseProvider" 
+            <MudSelect @bind-value="databaseProvider" 
                       Label="Database Provider" 
                       Variant="Variant.Outlined"
                       Style="background-color: #2a2a2a;">
@@ -140,13 +140,13 @@
             {
                 <MudGrid Style="margin-top: 16px;">
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="supabaseUrl" 
+                        <MudTextField @bind-value="supabaseUrl" 
                                      Label="Supabase URL" 
                                      Variant="Variant.Outlined"
                                      Style="background-color: #2a2a2a;" />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="supabaseApiKey" 
+                        <MudTextField @bind-value="supabaseApiKey" 
                                      Label="Supabase API Key" 
                                      Variant="Variant.Outlined"
                                      InputType="InputType.Password"
