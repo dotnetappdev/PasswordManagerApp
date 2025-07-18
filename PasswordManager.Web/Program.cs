@@ -44,6 +44,7 @@ else
     connectionString = databaseProvider.ToLower() switch
     {
         "mysql" => builder.Configuration.GetConnectionString("MySqlConnection"),
+        "sqlite" => builder.Configuration.GetConnectionString("SqliteConnection"),
         _ => builder.Configuration.GetConnectionString("DefaultConnection")
     };
     
@@ -56,6 +57,13 @@ else
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
         builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+    }
+    else if (databaseProvider.ToLower() == "sqlite")
+    {
+        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+            options.UseSqlite(connectionString));
+        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+            options.UseSqlite(connectionString));
     }
     else
     {

@@ -53,7 +53,9 @@
                     <MudText Typo="Typo.body2" Class="mb-2">
                         3. Include the key in your API requests:
                     </MudText>
-                    <MudCode>X-API-Key: your-api-key-here</MudCode>
+                    <MudPaper Class="pa-2" Elevation="1" Style="background-color: #f5f5f5; font-family: monospace;">
+                        X-API-Key: your-api-key-here
+                    </MudPaper>
                 </MudPaper>
             </MudItem>
         </MudGrid>
@@ -88,7 +90,7 @@
                         @(context.LastUsedAt?.ToString("MMM dd, yyyy HH:mm") ?? "Never")
                     </MudTd>
                     <MudTd DataLabel="Status">
-                        <MudChip Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">
+                        <MudChip Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small" T="string">
                             @(context.IsActive ? "Active" : "Inactive")
                         </MudChip>
                     </MudTd>
@@ -97,7 +99,7 @@
                                        Color="Color.Error" 
                                        Size="Size.Small"
                                        OnClick="() => DeleteApiKey(context.Id)"
-                                       Title="Delete API Key" />
+                                       title="Delete API Key" />
                     </MudTd>
                 </RowTemplate>
             </MudTable>
@@ -112,7 +114,7 @@
 </MudContainer>
 
 <!-- API Key Display Dialog -->
-<MudDialog @bind-IsVisible="showApiKeyDialog" Options="dialogOptions">
+<MudDialog @bind-Visible="showApiKeyDialog" Options="dialogOptions">
     <DialogContent>
         <MudAlert Severity="Severity.Success" Class="mb-4">
             <MudText Typo="Typo.h6">API Key Created Successfully!</MudText>
@@ -152,7 +154,7 @@
     private DialogOptions dialogOptions = new()
     {
         CloseOnEscapeKey = false,
-        DisableBackdropClick = true,
+        CloseButton = false,
         MaxWidth = MaxWidth.Medium,
         FullWidth = true
     };
