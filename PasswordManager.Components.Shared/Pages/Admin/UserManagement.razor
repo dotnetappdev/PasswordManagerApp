@@ -1,6 +1,7 @@
 @page "/admin/users"
 @using PasswordManager.Models.DTOs.Auth
 @using PasswordManager.Services.Interfaces
+@attribute [Authorize(Roles = "Admin")]
 @inject IUserProfileService UserProfileService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar

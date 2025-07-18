@@ -2,6 +2,7 @@
 @using PasswordManager.Services.Interfaces
 @using PasswordManager.Models
 @using PasswordManager.Models.DTOs.Auth
+@attribute [Authorize]
 @inject IUserProfileService UserProfileService
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
@@ -24,20 +25,20 @@
             <MudStack Spacing="3">
                 <MudGrid>
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="userProfile.FirstName" 
+                        <MudTextField @bind-value="userProfile.FirstName" 
                                      Label="First Name" 
                                      Variant="Variant.Outlined"
                                      Style="background-color: #2a2a2a;" />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="userProfile.LastName" 
+                        <MudTextField @bind-value="userProfile.LastName" 
                                      Label="Last Name" 
                                      Variant="Variant.Outlined"
                                      Style="background-color: #2a2a2a;" />
                     </MudItem>
                 </MudGrid>
                 
-                <MudTextField @bind-Value="userProfile.Email" 
+                <MudTextField @bind-value="userProfile.Email" 
                              Label="Email" 
                              Variant="Variant.Outlined"
                              Style="background-color: #2a2a2a;" />
