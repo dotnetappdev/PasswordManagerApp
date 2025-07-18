@@ -29,12 +29,12 @@
                     SortMode="SortMode.Multiple"
                     Filterable="true">
             <Columns>
-                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.Email" Title="Email" />
-                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.FirstName" Title="First Name" />
-                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.LastName" Title="Last Name" />
-                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.CreatedAt" Title="Created" Format="yyyy-MM-dd" />
-                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.LastLoginAt" Title="Last Login" Format="yyyy-MM-dd HH:mm" />
-                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.IsActive" Title="Active">
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="string" Property="x => x.Email" Title="Email" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="string" Property="x => x.FirstName" Title="First Name" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="string" Property="x => x.LastName" Title="Last Name" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="DateTime" Property="x => x.CreatedAt" Title="Created" Format="yyyy-MM-dd" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="DateTime?" Property="x => x.LastLoginAt" Title="Last Login" Format="yyyy-MM-dd HH:mm" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="bool" Property="x => x.IsActive" Title="Active">
                     <CellTemplate>
                         <MudChip T="string" Color="@(context.Item.IsActive ? Color.Success : Color.Error)"
                                 Size="Size.Small">
@@ -42,7 +42,7 @@
                         </MudChip>
                     </CellTemplate>
                 </Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn>
-                <Microsoft.AspNetCore.Components.QuickGrid.TemplateColumn Title="Actions" CellClass="d-flex">
+                <Microsoft.AspNetCore.Components.QuickGrid.TemplateColumn TGridItem="UserDto" Title="Actions" CellClass="d-flex">
                     <CellTemplate>
                         <MudIconButton Icon="@Icons.Material.Filled.Edit" 
                                      Color="Color.Primary" 

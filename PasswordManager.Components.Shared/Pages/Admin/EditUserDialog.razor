@@ -1,11 +1,12 @@
 @using PasswordManager.Models.DTOs.Auth
 @using PasswordManager.Services.Interfaces
+@using System.Text.RegularExpressions
 @inject IUserProfileService UserProfileService
 @inject ISnackbar Snackbar
 
 <MudDialog>
     <DialogContent>
-        <MudForm Model="@_model" @ref="@_form" Validation="@(_validator.ValidateValue)" ValidationDelay="0">
+        <MudForm Model="@_model" @ref="@_form" Validation="@(_validator.Validate)" ValidationDelay="0">
             <MudTextField @bind-Value="_model.Email" 
                           Label="Email" 
                           Required="true"
