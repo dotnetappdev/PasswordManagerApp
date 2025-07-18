@@ -1,0 +1,284 @@
+@page "/api-keys"
+@using PasswordManager.Models
+@using PasswordManager.Services.Interfaces
+@using System.Net.Http.Headers
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>API Key Management</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudPaper Class="pa-6">
+        <MudText Typo="Typo.h4" Class="mb-4">API Key Management</MudText>
+        
+        <MudAlert Severity="Severity.Info" Class="mb-4">
+            <MudText>
+                API keys allow you to access your password manager data through external applications or automation tools. 
+                Each API key acts as a secure authentication token that identifies your account.
+            </MudText>
+        </MudAlert>
+
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 mb-4">
+                    <MudText Typo="Typo.h5" Class="mb-3">Create New API Key</MudText>
+                    
+                    <MudTextField @bind-Value="newApiKeyName" 
+                                  Label="API Key Name" 
+                                  Variant="Variant.Outlined"
+                                  HelperText="Give your API key a descriptive name (e.g., 'Copilot Agent', 'Backup Script')"
+                                  Class="mb-3" />
+                    
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Primary" 
+                               OnClick="CreateApiKey"
+                               Disabled="string.IsNullOrWhiteSpace(newApiKeyName)"
+                               StartIcon="@Icons.Material.Filled.Add">
+                        Create API Key
+                    </MudButton>
+                </MudPaper>
+            </MudItem>
+            
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 mb-4">
+                    <MudText Typo="Typo.h5" Class="mb-3">How to Use API Keys</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-2">
+                        1. Create an API key with a descriptive name
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="mb-2">
+                        2. Copy the generated key value (you'll only see it once)
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="mb-2">
+                        3. Include the key in your API requests:
+                    </MudText>
+                    <MudCode>X-API-Key: your-api-key-here</MudCode>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <MudDivider Class="my-4" />
+
+        <MudText Typo="Typo.h5" Class="mb-3">Your API Keys</MudText>
+
+        @if (isLoading)
+        {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (apiKeys?.Any() == true)
+        {
+            <MudTable Items="@apiKeys" Dense="true" Hover="true" Class="mt-4">
+                <HeaderContent>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Created</MudTh>
+                    <MudTh>Last Used</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Name">
+                        <MudIcon Icon="@Icons.Material.Filled.Key" Size="Size.Small" Class="mr-2" />
+                        @context.Name
+                    </MudTd>
+                    <MudTd DataLabel="Created">
+                        @context.CreatedAt.ToString("MMM dd, yyyy")
+                    </MudTd>
+                    <MudTd DataLabel="Last Used">
+                        @(context.LastUsedAt?.ToString("MMM dd, yyyy HH:mm") ?? "Never")
+                    </MudTd>
+                    <MudTd DataLabel="Status">
+                        <MudChip Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">
+                            @(context.IsActive ? "Active" : "Inactive")
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                       Color="Color.Error" 
+                                       Size="Size.Small"
+                                       OnClick="() => DeleteApiKey(context.Id)"
+                                       Title="Delete API Key" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">
+                <MudText>No API keys found. Create your first API key to get started.</MudText>
+            </MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+<!-- API Key Display Dialog -->
+<MudDialog @bind-IsVisible="showApiKeyDialog" Options="dialogOptions">
+    <DialogContent>
+        <MudAlert Severity="Severity.Success" Class="mb-4">
+            <MudText Typo="Typo.h6">API Key Created Successfully!</MudText>
+        </MudAlert>
+        
+        <MudText Class="mb-2">Your new API key:</MudText>
+        <MudTextField @bind-Value="generatedApiKey" 
+                      Label="API Key" 
+                      Variant="Variant.Outlined"
+                      ReadOnly="true"
+                      AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                      Adornment="Adornment.End"
+                      OnAdornmentClick="CopyApiKey"
+                      Class="mb-3" />
+        
+        <MudAlert Severity="Severity.Warning">
+            <MudText Typo="Typo.body2">
+                <strong>Important:</strong> This is the only time you'll see this API key. 
+                Make sure to copy it now and store it securely.
+            </MudText>
+        </MudAlert>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseApiKeyDialog" Color="Color.Primary" Variant="Variant.Filled">
+            I've Copied the Key
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<ApiKey>? apiKeys;
+    private string newApiKeyName = string.Empty;
+    private string generatedApiKey = string.Empty;
+    private bool isLoading = false;
+    private bool showApiKeyDialog = false;
+    
+    private DialogOptions dialogOptions = new()
+    {
+        CloseOnEscapeKey = false,
+        DisableBackdropClick = true,
+        MaxWidth = MaxWidth.Medium,
+        FullWidth = true
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadApiKeys();
+    }
+
+    private async Task LoadApiKeys()
+    {
+        try
+        {
+            isLoading = true;
+            // TODO: Replace with actual API call
+            // var response = await Http.GetAsync("/api/apikeys");
+            // if (response.IsSuccessStatusCode)
+            // {
+            //     apiKeys = await response.Content.ReadFromJsonAsync<List<ApiKey>>();
+            // }
+            
+            // Mock data for demonstration
+            apiKeys = new List<ApiKey>
+            {
+                new ApiKey
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Copilot Agent",
+                    CreatedAt = DateTime.Now.AddDays(-5),
+                    LastUsedAt = DateTime.Now.AddHours(-2),
+                    IsActive = true
+                },
+                new ApiKey
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Backup Script",
+                    CreatedAt = DateTime.Now.AddDays(-10),
+                    LastUsedAt = null,
+                    IsActive = true
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading API keys: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task CreateApiKey()
+    {
+        if (string.IsNullOrWhiteSpace(newApiKeyName))
+            return;
+
+        try
+        {
+            // TODO: Replace with actual API call
+            // var request = new { Name = newApiKeyName };
+            // var response = await Http.PostAsJsonAsync("/api/apikeys", request);
+            // if (response.IsSuccessStatusCode)
+            // {
+            //     var result = await response.Content.ReadFromJsonAsync<ApiKeyResponse>();
+            //     generatedApiKey = result.KeyValue;
+            //     showApiKeyDialog = true;
+            //     newApiKeyName = string.Empty;
+            //     await LoadApiKeys();
+            // }
+            
+            // Mock implementation
+            generatedApiKey = "pm_" + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString())).Replace("+", "-").Replace("/", "_").Replace("=", "");
+            showApiKeyDialog = true;
+            newApiKeyName = string.Empty;
+            await LoadApiKeys();
+            
+            Snackbar.Add("API key created successfully!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating API key: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteApiKey(Guid apiKeyId)
+    {
+        try
+        {
+            // TODO: Replace with actual API call
+            // var response = await Http.DeleteAsync($"/api/apikeys/{apiKeyId}");
+            // if (response.IsSuccessStatusCode)
+            // {
+            //     await LoadApiKeys();
+            //     Snackbar.Add("API key deleted successfully!", Severity.Success);
+            // }
+            
+            // Mock implementation
+            if (apiKeys != null)
+            {
+                apiKeys.RemoveAll(k => k.Id == apiKeyId);
+            }
+            Snackbar.Add("API key deleted successfully!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error deleting API key: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CopyApiKey()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", generatedApiKey);
+            Snackbar.Add("API key copied to clipboard!", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to copy to clipboard. Please copy manually.", Severity.Warning);
+        }
+    }
+
+    private void CloseApiKeyDialog()
+    {
+        showApiKeyDialog = false;
+        generatedApiKey = string.Empty;
+    }
+}

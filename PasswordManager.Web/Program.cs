@@ -36,6 +36,8 @@ if (databaseProvider.ToLower() == "supabase")
     
     builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
         options.UseNpgsql(supabaseUrl));
+    builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        options.UseNpgsql(supabaseUrl));
 }
 else
 {
@@ -52,10 +54,14 @@ else
     {
         builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
     }
     else
     {
         builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+            options.UseSqlServer(connectionString));
+        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
             options.UseSqlServer(connectionString));
     }
 }
@@ -73,13 +79,15 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 .AddEntityFrameworkStores<PasswordManagerDbContextApp>();
 
 // Register application services
-builder.Services.AddScoped<IPasswordItemService, PasswordItemService>();
-builder.Services.AddScoped<ITagService, TagService>();
-builder.Services.AddScoped<ICategoryInterface, CategoryService>();
-builder.Services.AddScoped<ICollectionService, CollectionService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+builder.Services.AddScoped<IPasswordItemService, PasswordManager.Services.PasswordItemService>();
+builder.Services.AddScoped<ITagService, PasswordManager.Services.TagService>();
+builder.Services.AddScoped<ICategoryInterface, PasswordManager.Services.Services.CategoryService>();
+builder.Services.AddScoped<ICollectionService, PasswordManager.Services.Services.CollectionService>();
+builder.Services.AddScoped<IAuthService, PasswordManager.Services.Services.AuthService>();
+builder.Services.AddScoped<IUserProfileService, PasswordManager.Services.Services.UserProfileService>();
 builder.Services.AddScoped<IApiKeyService, PasswordManager.Services.Services.ApiKeyService>();
+builder.Services.AddScoped<IVaultSessionService, PasswordManager.Services.Services.VaultSessionService>();
+builder.Services.AddScoped<IPasswordEncryptionService, PasswordManager.Services.Services.PasswordEncryptionService>();
 
 // Register crypto services
 builder.Services.AddCryptographyServices();
