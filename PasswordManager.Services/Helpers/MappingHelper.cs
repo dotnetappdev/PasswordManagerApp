@@ -53,8 +53,8 @@ public static class MappingHelper
         entity.Title = dto.Title ?? entity.Title;
         entity.Description = dto.Description ?? entity.Description;
         entity.IsFavorite = dto.IsFavorite ?? entity.IsFavorite;
-        entity.CategoryId = dto.CategoryId ?? entity.CategoryId;
-        entity.CollectionId = dto.CollectionId ?? entity.CollectionId;
+        entity.CategoryId = dto.CategoryId.HasValue ? dto.CategoryId.Value : entity.CategoryId;
+        entity.CollectionId = dto.CollectionId.HasValue ? dto.CollectionId.Value : entity.CollectionId;
         entity.LastModified = DateTime.UtcNow;
     }
 
