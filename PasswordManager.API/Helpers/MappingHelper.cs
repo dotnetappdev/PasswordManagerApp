@@ -52,8 +52,7 @@ public static class MappingHelper
     {
         entity.Title = dto.Title;
         entity.Description = dto.Description;
-        entity.Type = dto.Type;
-        entity.IsFavorite = dto.IsFavorite;
+        entity.IsFavorite = dto.IsFavorite ?? entity.IsFavorite;
         entity.IsArchived = dto.IsArchived;
         entity.CategoryId = dto.CategoryId;
         entity.CollectionId = dto.CollectionId;

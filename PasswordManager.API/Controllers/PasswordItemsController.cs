@@ -379,8 +379,8 @@ public class PasswordItemsController : ControllerBase
                     IsArchived = item.IsArchived,
                     IsDeleted = item.IsDeleted,
                     UserId = item.UserId,
-                    CategoryId = item.CategoryId,
-                    CollectionId = item.CollectionId,
+                    CategoryId = item.CategoryId ?? 0,
+                    CollectionId = item.CollectionId ?? 0,
                     LoginItem = new ApiDtos.DecryptedLoginItemDto
                     {
                         Id = decryptedLoginItem.Id,
