@@ -1,6 +1,7 @@
 @page "/profile"
 @using PasswordManager.Services.Interfaces
 @using PasswordManager.Models
+@using PasswordManager.Models.DTOs.Auth
 @inject IUserProfileService UserProfileService
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
@@ -23,21 +24,21 @@
             <MudStack Spacing="3">
                 <MudGrid>
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="userProfile.UserName" 
-                                     Label="Display Name" 
+                        <MudTextField @bind-Value="userProfile.FirstName" 
+                                     Label="First Name" 
                                      Variant="Variant.Outlined"
                                      Style="background-color: #2a2a2a;" />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="userProfile.Email" 
-                                     Label="Email" 
+                        <MudTextField @bind-Value="userProfile.LastName" 
+                                     Label="Last Name" 
                                      Variant="Variant.Outlined"
                                      Style="background-color: #2a2a2a;" />
                     </MudItem>
                 </MudGrid>
                 
-                <MudTextField @bind-Value="userProfile.PhoneNumber" 
-                             Label="Phone Number" 
+                <MudTextField @bind-Value="userProfile.Email" 
+                             Label="Email" 
                              Variant="Variant.Outlined"
                              Style="background-color: #2a2a2a;" />
             </MudStack>
@@ -56,7 +57,7 @@
                 </MudButton>
                 
                 <MudText Typo="Typo.body2" Style="color: #cccccc;">
-                    Last login: @(userProfile.LastLogin?.ToString("MMM dd, yyyy 'at' hh:mm tt") ?? "Unknown")
+                    Last login: @(userProfile.LastLoginAt?.ToString("MMM dd, yyyy 'at' hh:mm tt") ?? "Unknown")
                 </MudText>
             </MudStack>
         </MudPaper>
@@ -124,7 +125,7 @@
 </MudContainer>
 
 @code {
-    private ApplicationUser userProfile = new();
+    private UserDto userProfile = new();
     private bool isSaving = false;
     private int passwordCount = 0;
     private int categoryCount = 0;
@@ -148,7 +149,7 @@
     {
         try
         {
-            userProfile = await UserProfileService.GetCurrentUserAsync() ?? new ApplicationUser();
+            userProfile = await UserProfileService.GetCurrentUserAsync() ?? new UserDto();
         }
         catch (Exception ex)
         {
@@ -177,7 +178,13 @@
         try
         {
             isSaving = true;
-            await UserProfileService.UpdateAsync(userProfile);
+            var updateDto = new UpdateUserProfileDto
+            {
+                Email = userProfile.Email,
+                FirstName = userProfile.FirstName,
+                LastName = userProfile.LastName
+            };
+            await UserProfileService.UpdateAsync(updateDto);
             // Show success notification
         }
         catch (Exception ex)

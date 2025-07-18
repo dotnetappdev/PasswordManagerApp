@@ -1879,7 +1879,7 @@ private void OnLengthChanged(ChangeEventArgs e)
         StateHasChanged();
     }
 
-    private string GetDisplayPassword(LoginItem loginItem)
+    private async Task<string> GetDisplayPassword(LoginItem loginItem)
     {
         try
         {

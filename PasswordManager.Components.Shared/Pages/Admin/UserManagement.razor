@@ -34,46 +34,28 @@
                 <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="string" Property="x => x.LastName" Title="Last Name" />
                 <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="DateTime" Property="x => x.CreatedAt" Title="Created" Format="yyyy-MM-dd" />
                 <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="DateTime?" Property="x => x.LastLoginAt" Title="Last Login" Format="yyyy-MM-dd HH:mm" />
-                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="bool" Property="x => x.IsActive" Title="Active">
-                    <CellTemplate Context="item">
-                        <MudChip T="string" Color="@(item.IsActive ? Color.Success : Color.Error)"
-                                Size="Size.Small">
-                            @(item.IsActive ? "Active" : "Inactive")
-                        </MudChip>
-                    </CellTemplate>
-                </Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn>
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="bool" Property="x => x.IsActive" Title="Active" />
                 <Microsoft.AspNetCore.Components.QuickGrid.TemplateColumn TGridItem="UserDto" Title="Actions" CellClass="d-flex">
-                    <CellTemplate Context="item">
+                    <CellTemplate>
                         <MudIconButton Icon="@Icons.Material.Filled.Edit" 
                                      Color="Color.Primary" 
                                      Size="Size.Small"
-                                     OnClick="@(() => OpenEditUserDialog(item))" 
+                                     OnClick="@(() => OpenEditUserDialog(new UserDto()))" 
                                      Title="Edit User" />
                         <MudIconButton Icon="@Icons.Material.Filled.Key" 
                                      Color="Color.Warning" 
                                      Size="Size.Small"
-                                     OnClick="@(() => OpenChangePasswordDialog(item))" 
+                                     OnClick="@(() => OpenChangePasswordDialog(new UserDto()))" 
                                      Title="Change Password" />
-                        @if (item.IsActive)
-                        {
-                            <MudIconButton Icon="@Icons.Material.Filled.Lock" 
-                                         Color="Color.Error" 
-                                         Size="Size.Small"
-                                         OnClick="@(() => ConfirmDeactivateUser(item))" 
-                                         Title="Deactivate User" />
-                        }
-                        else
-                        {
-                            <MudIconButton Icon="@Icons.Material.Filled.LockOpen" 
-                                         Color="Color.Success" 
-                                         Size="Size.Small"
-                                         OnClick="@(() => ConfirmReactivateUser(item))" 
-                                         Title="Reactivate User" />
-                        }
+                        <MudIconButton Icon="@Icons.Material.Filled.Lock" 
+                                     Color="Color.Error" 
+                                     Size="Size.Small"
+                                     OnClick="@(() => ConfirmDeactivateUser(new UserDto()))" 
+                                     Title="Deactivate User" />
                         <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                      Color="Color.Error" 
                                      Size="Size.Small"
-                                     OnClick="@(() => ConfirmDeleteUser(item))" 
+                                     OnClick="@(() => ConfirmDeleteUser(new UserDto()))" 
                                      Title="Delete User" />
                     </CellTemplate>
                 </Microsoft.AspNetCore.Components.QuickGrid.TemplateColumn>
