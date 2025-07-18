@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PasswordManager.DAL.Interfaces;
 using Microsoft.EntityFrameworkCore.Storage;
+using PasswordManager.Services.Interfaces;
 
 namespace PasswordManager.Services.Services;
 

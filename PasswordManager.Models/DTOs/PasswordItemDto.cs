@@ -44,13 +44,13 @@ public class CreatePasswordItemDto
 
 public class UpdatePasswordItemDto
 {
-    public string Title { get; set; } = string.Empty;
+    public string? Title { get; set; }
     public string? Description { get; set; }
-    public ItemType Type { get; set; }
-    public bool IsFavorite { get; set; }
+    public bool? IsFavorite { get; set; }
+    public Guid? CategoryId { get; set; }
+    public Guid? CollectionId { get; set; }
     public bool IsArchived { get; set; }
-    public int CategoryId { get; set; }
-    public int CollectionId { get; set; }
+
     public UpdateLoginItemDto? LoginItem { get; set; }
     public UpdateCreditCardItemDto? CreditCardItem { get; set; }
     public UpdateSecureNoteItemDto? SecureNoteItem { get; set; }

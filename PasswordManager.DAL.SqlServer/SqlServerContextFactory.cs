@@ -10,7 +10,7 @@ namespace PasswordManager.DAL.SqlServer
     {
         public PasswordManagerDbContextApp CreateDbContext(string[] args)
         {
-            var config = new ConfigurationBuilder()
+            var config = new  bConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true)
                 .Build();
