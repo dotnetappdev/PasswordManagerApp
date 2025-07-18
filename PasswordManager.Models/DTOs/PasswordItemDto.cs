@@ -14,8 +14,8 @@ public class PasswordItemDto
     public bool IsArchived { get; set; }
     public bool IsDeleted { get; set; }
     public string? UserId { get; set; }
-    public Guid? CategoryId { get; set; }
-    public Guid? CollectionId { get; set; }
+    public int? CategoryId { get; set; }
+    public int? CollectionId { get; set; }
     public CategoryDto? Category { get; set; }
     public CollectionDto? Collection { get; set; }
     public LoginItemDto? LoginItem { get; set; }
@@ -32,8 +32,8 @@ public class CreatePasswordItemDto
     public ItemType Type { get; set; }
     public bool IsFavorite { get; set; }
     public bool IsArchived { get; set; } // Added to fix missing property error
-    public Guid? CategoryId { get; set; }
-    public Guid? CollectionId { get; set; }
+    public int? CategoryId { get; set; }
+    public int? CollectionId { get; set; }
     public CreateLoginItemDto? LoginItem { get; set; }
     public CreateCreditCardItemDto? CreditCardItem { get; set; }
     public CreateSecureNoteItemDto? SecureNoteItem { get; set; }
@@ -47,8 +47,8 @@ public class UpdatePasswordItemDto
     public string? Title { get; set; }
     public string? Description { get; set; }
     public bool? IsFavorite { get; set; }
-    public Guid? CategoryId { get; set; }
-    public Guid? CollectionId { get; set; }
+    public int? CategoryId { get; set; }
+    public int? CollectionId { get; set; }
     public bool IsArchived { get; set; }
 
     public UpdateLoginItemDto? LoginItem { get; set; }
