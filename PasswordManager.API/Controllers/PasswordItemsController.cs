@@ -470,6 +470,9 @@ public class PasswordItemsController : ControllerBase
                 LastModified = DateTime.UtcNow
             };
 
+            // Declare itemDto variable
+            CreatePasswordItemDto itemDto;
+
             if (createDto.LoginItem != null)
             {
                 var loginItem = new Models.LoginItem
@@ -533,22 +536,36 @@ public class PasswordItemsController : ControllerBase
                     JobTitle = loginItem.JobTitle,
                     Notes = loginItem.Notes
                 };
-                passwordItem.LoginItem = loginItemDto;
+                
+                // Convert to DTO format for the service
+                itemDto = new CreatePasswordItemDto
+                {
+                    Title = passwordItem.Title,
+                    Description = passwordItem.Description,
+                    Type = passwordItem.Type,
+                    IsFavorite = passwordItem.IsFavorite,
+                    IsArchived = passwordItem.IsArchived,
+                    CategoryId = passwordItem.CategoryId,
+                    CollectionId = passwordItem.CollectionId,
+                    LoginItem = loginItemDto, // Use the converted DTO
+                    TagIds = createDto.TagIds
+                };
             }
-
-            // Convert to DTO format for the service
-            var itemDto = new CreatePasswordItemDto
+            else
             {
-                Title = passwordItem.Title,
-                Description = passwordItem.Description,
-                Type = passwordItem.Type,
-                IsFavorite = passwordItem.IsFavorite,
-                IsArchived = passwordItem.IsArchived,
-                CategoryId = passwordItem.CategoryId,
-                CollectionId = passwordItem.CollectionId,
-                LoginItem = createDto.LoginItem, // Use the original DTO
-                TagIds = createDto.TagIds
-            };
+                // Convert to DTO format for the service when no LoginItem
+                itemDto = new CreatePasswordItemDto
+                {
+                    Title = passwordItem.Title,
+                    Description = passwordItem.Description,
+                    Type = passwordItem.Type,
+                    IsFavorite = passwordItem.IsFavorite,
+                    IsArchived = passwordItem.IsArchived,
+                    CategoryId = passwordItem.CategoryId,
+                    CollectionId = passwordItem.CollectionId,
+                    TagIds = createDto.TagIds
+                };
+            }
 
             var createdItem = await _passwordItemService.CreateAsync(itemDto);
             return CreatedAtAction(nameof(GetById), new { id = createdItem.Id }, createdItem);
