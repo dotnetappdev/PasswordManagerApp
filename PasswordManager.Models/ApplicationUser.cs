@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PasswordManager.Models;
 
@@ -13,6 +14,10 @@ public class ApplicationUser : IdentityUser
     public bool IsActive { get; set; } = true;
     public string? MasterPasswordHint { get; set; }
     public DateTime? UpdatedAt { get; set; }
+
+    // Computed property for backward compatibility
+    [NotMapped]
+    public DateTime? LastLogin => LastLoginAt;
 
     // Cryptographic properties for secure password storage
     /// <summary>

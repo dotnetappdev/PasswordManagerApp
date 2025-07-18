@@ -39,6 +39,20 @@ public interface IAuthService
     Task<bool> CheckAuthenticationStatusAsync();
 
     /// <summary>
+    /// Checks if user is already authenticated (alias for CheckAuthenticationStatusAsync)
+    /// </summary>
+    /// <returns>True if user is authenticated</returns>
+    Task<bool> IsAuthenticatedAsync();
+
+    /// <summary>
+    /// Logs in a user with credentials
+    /// </summary>
+    /// <param name="email">User email</param>
+    /// <param name="password">User password</param>
+    /// <returns>True if login was successful</returns>
+    Task<bool> LoginAsync(string email, string password);
+
+    /// <summary>
     /// Logs out the user and locks the vault
     /// </summary>
     Task LogoutAsync();
