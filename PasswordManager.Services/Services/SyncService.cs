@@ -357,7 +357,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
                         EntityId = sourceItem.Id,
                         SourceLastModified = sourceItem.LastModified,
                         TargetLastModified = targetItem.LastModified,
-                        Resolution = SyncConflictResolution.TargetWins,
+                    Resolution = SyncConflictResolution.TargetWins.ToString(),
                         Message = $"Target item '{targetItem.Title}' is newer than source item '{sourceItem.Title}'"
                     });
                     statistics.Skipped++;
@@ -471,7 +471,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
                         EntityId = sourceCategory.Id,
                         SourceLastModified = sourceCategory.LastModified,
                         TargetLastModified = targetCategory.LastModified,
-                        Resolution = SyncConflictResolution.TargetWins,
+                        Resolution = SyncConflictResolution.TargetWins.ToString(),
                         Message = $"Target category '{targetCategory.Name}' is newer than source category '{sourceCategory.Name}'"
                     });
                     statistics.Skipped++;
@@ -538,7 +538,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
                         EntityId = sourceCollection.Id,
                         SourceLastModified = sourceCollection.LastModified,
                         TargetLastModified = targetCollection.LastModified,
-                        Resolution = SyncConflictResolution.TargetWins,
+                        Resolution = SyncConflictResolution.TargetWins.ToString(),
                         Message = $"Target collection '{targetCollection.Name}' is newer than source collection '{sourceCollection.Name}'"
                     });
                     statistics.Skipped++;
@@ -603,7 +603,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
                         EntityId = sourceTag.Id,
                         SourceLastModified = sourceTag.LastModified,
                         TargetLastModified = targetTag.LastModified,
-                        Resolution = SyncConflictResolution.TargetWins,
+                        Resolution = SyncConflictResolution.TargetWins.ToString(),
                         Message = $"Target tag '{targetTag.Name}' is newer than source tag '{sourceTag.Name}'"
                     });
                     statistics.Skipped++;
