@@ -1,23 +1,20 @@
-# 🔐 Passw## 🚀 Quick Start
+# 🔐 Password Manager
 
-- **[Setup Guide](SETUP.md)** - Complete setup and configuration guide
-- **[Getting Started](GETTING_STARTED.md)** - Installation and setup guide
-- **[User Guide](USER_GUIDE.md)** - Complete user documentation
-- **[Development Guide](DEVELOPMENT.md)** - Developer setup and contributinganager
-
+[![Build Status](https://github.com/dotnetappdev/PasswordManagerApp/workflows/Build/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions)
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![MAUI](https://img.shields.io/badge/MAUI-Cross--Platform-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/apps/maui)
 [![Web API](https://img.shields.io/badge/Web%20API-ASP.NET%20Core-512BD4?style=for-the-badge&logo=dotnet)](https://docs.microsoft.com/aspnet/core/web-api/)
 [![Open Source](https://img.shields.io/badge/Open%20Source-MIT-green?style=for-the-badge)](LICENSE)
 [![Blazor](https://img.shields.io/badge/Blazor-Web%20UI-512BD4?style=for-the-badge&logo=blazor)](https://blazor.net/)
 
-A modern, secure, and cross-platform password manager built with **.NET 9**, **.NET MAUI**, **Blazor Server**, and **ASP.NET Core Web API**. Keep your passwords, credit cards, secure notes, and WiFi credentials safe and organized across all your devices with cloud synchronization capabilities.
+## 🚀 Quick Start
 
-## � Quick Start
-
+- **[Setup Guide](SETUP.md)** - Complete setup and configuration guide
 - **[Getting Started](GETTING_STARTED.md)** - Installation and setup guide
 - **[User Guide](USER_GUIDE.md)** - Complete user documentation
 - **[Development Guide](DEVELOPMENT.md)** - Developer setup and contributing
+
+A modern, secure, and cross-platform password manager built with **.NET 9**, **.NET MAUI**, **Blazor Server**, and **ASP.NET Core Web API**. Keep your passwords, credit cards, secure notes, and WiFi credentials safe and organized across all your devices with cloud synchronization capabilities.
 
 ## �📚 Documentation
 
