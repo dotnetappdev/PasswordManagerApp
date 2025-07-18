@@ -148,3 +148,20 @@ public class QrLoginStatusResponseDto
     public UserDto? User { get; set; }
     public string? Message { get; set; }
 }
+
+// Frontend QR Login Response Models (for UI)
+public class QrLoginResponse
+{
+    public string QrToken { get; set; } = string.Empty;
+    public string QrCodeImage { get; set; } = string.Empty;
+    public DateTime ExpiresAt { get; set; }
+    public int ExpiresInSeconds { get; set; }
+}
+
+public class QrLoginStatusResponse
+{
+    public bool IsAuthenticated { get; set; }
+    public bool IsExpired { get; set; }
+    public string? SessionToken { get; set; }
+    public string? Message { get; set; }
+}

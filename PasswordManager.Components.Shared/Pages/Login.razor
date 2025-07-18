@@ -4,6 +4,7 @@
 @using Microsoft.JSInterop
 @using PasswordManager.Crypto.Interfaces
 @using PasswordManager.Services.Interfaces
+@using PasswordManager.Models.DTOs.Auth
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject IAuthService AuthService
@@ -699,21 +700,4 @@
             await JSRuntime.InvokeVoidAsync("animateLogo");
         }
     }
-}
-
-// QR Login Response Models
-public class QrLoginResponse
-{
-    public string QrToken { get; set; } = string.Empty;
-    public string QrCodeImage { get; set; } = string.Empty;
-    public DateTime ExpiresAt { get; set; }
-    public int ExpiresInSeconds { get; set; }
-}
-
-public class QrLoginStatusResponse
-{
-    public bool IsAuthenticated { get; set; }
-    public bool IsExpired { get; set; }
-    public string? SessionToken { get; set; }
-    public string? Message { get; set; }
 }
