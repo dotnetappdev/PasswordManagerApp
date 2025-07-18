@@ -1,0 +1,58 @@
+name: Web App Build
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'PasswordManager.Web/**'
+      - 'PasswordManager.Models/**'
+      - 'PasswordManager.Components.Shared/**'
+      - 'PasswordManager.DAL/**'
+      - 'PasswordManager.Services/**'
+      - 'PasswordManager.Crypto/**'
+      - 'PasswordManager.Imports/**'
+      - 'PasswordManager.DAL.SqlServer/**'
+      - 'PasswordManager.DAL.MySql/**'
+      - 'PasswordManager.DAL.Postgres/**'
+      - 'PasswordManager.DAL.SupaBase/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'PasswordManager.Web/**'
+      - 'PasswordManager.Models/**'
+      - 'PasswordManager.Components.Shared/**'
+      - 'PasswordManager.DAL/**'
+      - 'PasswordManager.Services/**'
+      - 'PasswordManager.Crypto/**'
+      - 'PasswordManager.Imports/**'
+      - 'PasswordManager.DAL.SqlServer/**'
+      - 'PasswordManager.DAL.MySql/**'
+      - 'PasswordManager.DAL.Postgres/**'
+      - 'PasswordManager.DAL.SupaBase/**'
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    name: Build Web App
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore PasswordManager.Web/PasswordManager.Web.csproj
+
+    - name: Build Web App
+      run: dotnet build PasswordManager.Web/PasswordManager.Web.csproj --no-restore --configuration Release
+
+    - name: Test Web App (if tests exist)
+      run: |
+        if [ -d "PasswordManager.Web.Tests" ]; then
+          dotnet test PasswordManager.Web.Tests --no-build --configuration Release
+        else
+          echo "No Web app tests found, skipping test step"
+        fi

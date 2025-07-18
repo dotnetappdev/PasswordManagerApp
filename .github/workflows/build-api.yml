@@ -1,0 +1,54 @@
+name: API Build
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'PasswordManager.API/**'
+      - 'PasswordManager.Models/**'
+      - 'PasswordManager.DAL/**'
+      - 'PasswordManager.Services/**'
+      - 'PasswordManager.Crypto/**'
+      - 'PasswordManager.DAL.SqlServer/**'
+      - 'PasswordManager.DAL.MySql/**'
+      - 'PasswordManager.DAL.Postgres/**'
+      - 'PasswordManager.DAL.SupaBase/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'PasswordManager.API/**'
+      - 'PasswordManager.Models/**'
+      - 'PasswordManager.DAL/**'
+      - 'PasswordManager.Services/**'
+      - 'PasswordManager.Crypto/**'
+      - 'PasswordManager.DAL.SqlServer/**'
+      - 'PasswordManager.DAL.MySql/**'
+      - 'PasswordManager.DAL.Postgres/**'
+      - 'PasswordManager.DAL.SupaBase/**'
+
+jobs:
+  build-api:
+    runs-on: ubuntu-latest
+    name: Build API
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore PasswordManager.API/PasswordManager.API.csproj
+
+    - name: Build API
+      run: dotnet build PasswordManager.API/PasswordManager.API.csproj --no-restore --configuration Release
+
+    - name: Test API (if tests exist)
+      run: |
+        if [ -d "PasswordManager.API.Tests" ]; then
+          dotnet test PasswordManager.API.Tests --no-build --configuration Release
+        else
+          echo "No API tests found, skipping test step"
+        fi
