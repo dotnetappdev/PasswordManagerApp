@@ -49,22 +49,22 @@ public class SyncService : PasswordManager.API.Interfaces.ISyncService
                 switch (entityType.ToLower())
                 {
                     case "passworditems":
-                        var passwordItemStats = await SyncPasswordItems(sourceContext, targetContext, request.LastSyncTime, request.ConflictResolution);
+                        var passwordItemStats = await SyncPasswordItems((PasswordManagerDbContext)sourceContext, (PasswordManagerDbContext)targetContext, request.LastSyncTime, request.ConflictResolution);
                         statistics = MergeStatistics(statistics, passwordItemStats.statistics);
                         conflicts.AddRange(passwordItemStats.conflicts);
                         break;
                     case "categories":
-                        var categoryStats = await SyncCategories(sourceContext, targetContext, request.LastSyncTime, request.ConflictResolution);
+                        var categoryStats = await SyncCategories((PasswordManagerDbContext)sourceContext, (PasswordManagerDbContext)targetContext, request.LastSyncTime, request.ConflictResolution);
                         statistics = MergeStatistics(statistics, categoryStats.statistics);
                         conflicts.AddRange(categoryStats.conflicts);
                         break;
                     case "collections":
-                        var collectionStats = await SyncCollections(sourceContext, targetContext, request.LastSyncTime, request.ConflictResolution);
+                        var collectionStats = await SyncCollections((PasswordManagerDbContext)sourceContext, (PasswordManagerDbContext)targetContext, request.LastSyncTime, request.ConflictResolution);
                         statistics = MergeStatistics(statistics, collectionStats.statistics);
                         conflicts.AddRange(collectionStats.conflicts);
                         break;
                     case "tags":
-                        var tagStats = await SyncTags(sourceContext, targetContext, request.LastSyncTime, request.ConflictResolution);
+                        var tagStats = await SyncTags((PasswordManagerDbContext)sourceContext, (PasswordManagerDbContext)targetContext, request.LastSyncTime, request.ConflictResolution);
                         statistics = MergeStatistics(statistics, tagStats.statistics);
                         conflicts.AddRange(tagStats.conflicts);
                         break;
