@@ -35,31 +35,31 @@
                 <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="DateTime" Property="x => x.CreatedAt" Title="Created" Format="yyyy-MM-dd" />
                 <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="DateTime?" Property="x => x.LastLoginAt" Title="Last Login" Format="yyyy-MM-dd HH:mm" />
                 <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn TGridItem="UserDto" TProp="bool" Property="x => x.IsActive" Title="Active">
-                    <CellTemplate>
-                        <MudChip T="string" Color="@(context.Item.IsActive ? Color.Success : Color.Error)"
+                    <CellTemplate Context="item">
+                        <MudChip T="string" Color="@(item.IsActive ? Color.Success : Color.Error)"
                                 Size="Size.Small">
-                            @(context.Item.IsActive ? "Active" : "Inactive")
+                            @(item.IsActive ? "Active" : "Inactive")
                         </MudChip>
                     </CellTemplate>
                 </Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn>
                 <Microsoft.AspNetCore.Components.QuickGrid.TemplateColumn TGridItem="UserDto" Title="Actions" CellClass="d-flex">
-                    <CellTemplate>
+                    <CellTemplate Context="item">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit" 
                                      Color="Color.Primary" 
                                      Size="Size.Small"
-                                     OnClick="@(() => OpenEditUserDialog(context.Item))" 
+                                     OnClick="@(() => OpenEditUserDialog(item))" 
                                      Title="Edit User" />
                         <MudIconButton Icon="@Icons.Material.Filled.Key" 
                                      Color="Color.Warning" 
                                      Size="Size.Small"
-                                     OnClick="@(() => OpenChangePasswordDialog(context.Item))" 
+                                     OnClick="@(() => OpenChangePasswordDialog(item))" 
                                      Title="Change Password" />
-                        @if (context.Item.IsActive)
+                        @if (item.IsActive)
                         {
                             <MudIconButton Icon="@Icons.Material.Filled.Lock" 
                                          Color="Color.Error" 
                                          Size="Size.Small"
-                                         OnClick="@(() => ConfirmDeactivateUser(context.Item))" 
+                                         OnClick="@(() => ConfirmDeactivateUser(item))" 
                                          Title="Deactivate User" />
                         }
                         else
@@ -67,13 +67,13 @@
                             <MudIconButton Icon="@Icons.Material.Filled.LockOpen" 
                                          Color="Color.Success" 
                                          Size="Size.Small"
-                                         OnClick="@(() => ConfirmReactivateUser(context.Item))" 
+                                         OnClick="@(() => ConfirmReactivateUser(item))" 
                                          Title="Reactivate User" />
                         }
                         <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                      Color="Color.Error" 
                                      Size="Size.Small"
-                                     OnClick="@(() => ConfirmDeleteUser(context.Item))" 
+                                     OnClick="@(() => ConfirmDeleteUser(item))" 
                                      Title="Delete User" />
                     </CellTemplate>
                 </Microsoft.AspNetCore.Components.QuickGrid.TemplateColumn>

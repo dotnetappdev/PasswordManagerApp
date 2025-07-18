@@ -46,11 +46,35 @@ public class PasswordItem
     
     // Computed properties for backward compatibility with UI components
     [NotMapped]
-    public string? Username => LoginItem?.Username;
+    public string? Username 
+    { 
+        get => LoginItem?.Username; 
+        set 
+        { 
+            if (LoginItem != null) 
+                LoginItem.Username = value; 
+        } 
+    }
     
     [NotMapped]
-    public string? Password => LoginItem?.Password;
+    public string? Password 
+    { 
+        get => LoginItem?.Password; 
+        set 
+        { 
+            if (LoginItem != null) 
+                LoginItem.Password = value; 
+        } 
+    }
     
     [NotMapped]
-    public string? WebsiteUrl => LoginItem?.WebsiteUrl;
+    public string? WebsiteUrl 
+    { 
+        get => LoginItem?.WebsiteUrl; 
+        set 
+        { 
+            if (LoginItem != null) 
+                LoginItem.WebsiteUrl = value; 
+        } 
+    }
 }
