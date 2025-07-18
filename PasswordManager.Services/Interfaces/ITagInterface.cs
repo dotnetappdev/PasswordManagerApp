@@ -1,6 +1,6 @@
 using PasswordManager.Models;
 
-namespace PasswordManager.Interfaces;
+namespace PasswordManager.Services.Interfaces;
 
 public interface ITagService
 {
