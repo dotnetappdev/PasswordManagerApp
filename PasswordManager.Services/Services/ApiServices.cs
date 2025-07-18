@@ -228,7 +228,7 @@ public class CollectionApiService : ICollectionApiService
                 Description = createDto.Description,
                 Icon = createDto.Icon,
                 Color = createDto.Color,
-                ParentId = createDto.ParentId,
+                ParentCollectionId = createDto.ParentCollectionId,
                 CreatedAt = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow
             };
@@ -257,7 +257,7 @@ public class CollectionApiService : ICollectionApiService
             collection.Description = updateDto.Description ?? collection.Description;
             collection.Icon = updateDto.Icon ?? collection.Icon;
             collection.Color = updateDto.Color ?? collection.Color;
-            collection.ParentId = updateDto.ParentId ?? collection.ParentId;
+            collection.ParentCollectionId = updateDto.ParentCollectionId ?? collection.ParentCollectionId;
             collection.LastModified = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
