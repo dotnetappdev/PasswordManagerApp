@@ -1,44 +1,48 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject NavigationManager Navigation
 
-<BlazoredModal @bind-IsVisible="ShowSettings" Class="settings-modal">
-    <div class="settings-header">
-        <span>Settings</span>
-        <button class="close-btn" @onclick="Close">&times;</button>
-    </div>
-    <EditForm Model="settingsModel" OnValidSubmit="HandleValidSubmit">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
-        <div class="settings-section">
-            <label>Profile QR Code</label>
-            <div class="qr-container">
-                <img src="@QrCodeUrl" alt="QR Code" />
+<MudDialog @bind-Visible="ShowSettings" Style="max-width: 500px;">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Settings</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="settingsModel" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div class="settings-section">
+                <label>Profile QR Code</label>
+                <div class="qr-container">
+                    <img src="@QrCodeUrl" alt="QR Code" />
+                </div>
             </div>
-        </div>
-        <div class="settings-section">
-            <label>Database Provider</label>
-            <InputSelect @bind-Value="settingsModel.DatabaseProvider">
-                <option value="SqlServer">SQL Server</option>
-                <option value="MySql">MySQL</option>
-                <option value="Postgres">Postgres</option>
-                <option value="Supabase">Supabase</option>
-            </InputSelect>
-        </div>
-        <div class="settings-section">
-            <label>Change Master Password</label>
-            <InputText @bind-Value="settingsModel.NewMasterPassword" type="password" class="@GetInputClass(nameof(settingsModel.NewMasterPassword))" />
-            <ValidationMessage For="() => settingsModel.NewMasterPassword" />
-        </div>
-        <div class="settings-section">
-            <label>Theme</label>
-            <InputSelect @bind-Value="settingsModel.Theme">
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-            </InputSelect>
-        </div>
-        <button type="submit" class="save-btn">Save</button>
-    </EditForm>
-</BlazoredModal>
+            <div class="settings-section">
+                <label>Database Provider</label>
+                <InputSelect @bind-Value="settingsModel.DatabaseProvider">
+                    <option value="SqlServer">SQL Server</option>
+                    <option value="MySql">MySQL</option>
+                    <option value="Postgres">Postgres</option>
+                    <option value="Supabase">Supabase</option>
+                </InputSelect>
+            </div>
+            <div class="settings-section">
+                <label>Change Master Password</label>
+                <InputText @bind-Value="settingsModel.NewMasterPassword" type="password" class="@GetInputClass(nameof(settingsModel.NewMasterPassword))" />
+                <ValidationMessage For="() => settingsModel.NewMasterPassword" />
+            </div>
+            <div class="settings-section">
+                <label>Theme</label>
+                <InputSelect @bind-Value="settingsModel.Theme">
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                </InputSelect>
+            </div>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="HandleValidSubmit">Save</MudButton>
+        <MudButton Color="Color.Secondary" OnClick="Close">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
     [Parameter] public bool ShowSettings { get; set; }

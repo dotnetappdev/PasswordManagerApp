@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PasswordManager.DAL;
-using PasswordManager.Interfaces;
+using PasswordManager.Services.Interfaces;
 using PasswordManager.Models;
 
 namespace PasswordManager.Services;

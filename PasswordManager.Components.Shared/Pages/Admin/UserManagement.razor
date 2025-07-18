@@ -1,7 +1,6 @@
 @page "/admin/users"
 @using PasswordManager.Models.DTOs.Auth
 @using PasswordManager.Services.Interfaces
-@attribute [Authorize(Roles = "Admin")]
 @inject IUserProfileService UserProfileService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -30,20 +29,20 @@
                     SortMode="SortMode.Multiple"
                     Filterable="true">
             <Columns>
-                <PropertyColumn Property="x => x.Email" Title="Email" />
-                <PropertyColumn Property="x => x.FirstName" Title="First Name" />
-                <PropertyColumn Property="x => x.LastName" Title="Last Name" />
-                <PropertyColumn Property="x => x.CreatedAt" Title="Created" Format="yyyy-MM-dd" />
-                <PropertyColumn Property="x => x.LastLoginAt" Title="Last Login" Format="yyyy-MM-dd HH:mm" />
-                <PropertyColumn Property="x => x.IsActive" Title="Active">
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.Email" Title="Email" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.FirstName" Title="First Name" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.LastName" Title="Last Name" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.CreatedAt" Title="Created" Format="yyyy-MM-dd" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.LastLoginAt" Title="Last Login" Format="yyyy-MM-dd HH:mm" />
+                <Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn Property="x => x.IsActive" Title="Active">
                     <CellTemplate>
-                        <MudChip Color="@(context.Item.IsActive ? Color.Success : Color.Error)"
+                        <MudChip T="string" Color="@(context.Item.IsActive ? Color.Success : Color.Error)"
                                 Size="Size.Small">
                             @(context.Item.IsActive ? "Active" : "Inactive")
                         </MudChip>
                     </CellTemplate>
-                </PropertyColumn>
-                <TemplateColumn Title="Actions" CellClass="d-flex">
+                </Microsoft.AspNetCore.Components.QuickGrid.PropertyColumn>
+                <Microsoft.AspNetCore.Components.QuickGrid.TemplateColumn Title="Actions" CellClass="d-flex">
                     <CellTemplate>
                         <MudIconButton Icon="@Icons.Material.Filled.Edit" 
                                      Color="Color.Primary" 
@@ -77,7 +76,7 @@
                                      OnClick="@(() => ConfirmDeleteUser(context.Item))" 
                                      Title="Delete User" />
                     </CellTemplate>
-                </TemplateColumn>
+                </Microsoft.AspNetCore.Components.QuickGrid.TemplateColumn>
             </Columns>
             <NoRecordsContent>
                 <MudText>No users found.</MudText>

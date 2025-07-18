@@ -48,7 +48,8 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
 
     private CreateUserProfileDto _model = new();
     private MudForm _form = default!;
@@ -72,7 +73,7 @@
             
             if (result.Succeeded && user != null)
             {
-                MudDialog.Close(DialogResult.Ok(user));
+                await OnSave.InvokeAsync();
             }
             else
             {
@@ -89,7 +90,7 @@
         }
     }
 
-    private void Cancel() => MudDialog.Cancel();
+    private async Task Cancel() => await OnCancel.InvokeAsync();
 
     private IEnumerable<string> ValidateEmail(string email)
     {
@@ -116,23 +117,4 @@
     }
 }
 
-@using System.Text.RegularExpressions
-@using FluentValidation
-@using PasswordManager.Models.DTOs.Auth
-
-public class CreateUserValidator : AbstractValidator<CreateUserProfileDto>
-{
-    public CreateUserValidator()
-    {
-        RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("Email is required")
-            .EmailAddress().WithMessage("Please enter a valid email address");
-
-        RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("Password is required")
-            .MinimumLength(8).WithMessage("Password must be at least 8 characters long");
-
-        RuleFor(x => x.ConfirmPassword)
-            .Equal(x => x.Password).WithMessage("Passwords do not match");
-    }
-}
+@using PasswordManager.Services.Validators
