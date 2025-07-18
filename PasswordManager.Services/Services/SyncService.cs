@@ -359,7 +359,6 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
                         EntityType = "PasswordItem",
                         EntityId = sourceItem.Id,
                         SourceLastModified = sourceItem.LastModified,
-                .Where(p => lastSyncTime == null || p.LastModified > lastSyncTime)
                     Resolution = SyncConflictResolution.TargetWins.ToString(),
                         Message = $"Target item '{targetItem.Title}' is newer than source item '{sourceItem.Title}'"
                     });
