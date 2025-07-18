@@ -34,6 +34,11 @@ public class LoginItemDto
     public DateTime? LastAutoFill { get; set; }
     public bool RequiresMasterPassword { get; set; }
     public int? PasswordId { get; set; }
+    
+    // Encrypted fields (for API access)
+    public string? EncryptedPassword { get; set; }
+    public string? PasswordNonce { get; set; }
+    public string? PasswordAuthTag { get; set; }
 }
 
 public class CreateLoginItemDto

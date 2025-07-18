@@ -6,11 +6,13 @@ using PasswordManager.DAL.MySql;
 using PasswordManager.DAL.SupaBase;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
+using PasswordManager.Services; // Add this line for the service classes
 using PasswordManager.Crypto.Extensions;
 using MudBlazor.Services;
 using Microsoft.AspNetCore.Identity;
 using PasswordManager.Models;
 using Pomelo.EntityFrameworkCore.MySql;
+using PasswordManager.DAL.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
