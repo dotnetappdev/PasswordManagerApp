@@ -20,6 +20,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
     public DbSet<Collection> Collections { get; set; } = null!;
     public DbSet<ApiKey> ApiKeys { get; set; } = null!;
     public DbSet<ApplicationUser> Users { get; set; } = null!;
+    public DbSet<QrLoginToken> QrLoginTokens { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -216,6 +217,31 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.Email).HasMaxLength(256);
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.LastModified).IsRequired();
+        });
+
+        // Configure QrLoginToken
+        modelBuilder.Entity<QrLoginToken>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Token).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(256);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.ExpiresAt).IsRequired();
+            entity.Property(e => e.IpAddress).HasMaxLength(50);
+            entity.Property(e => e.UserAgent).HasMaxLength(500);
+
+            // Configure User relationship
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.QrLoginTokens)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Create index on Token for faster lookups
+            entity.HasIndex(e => e.Token).IsUnique();
+            
+            // Create index on ExpiresAt for cleanup queries
+            entity.HasIndex(e => e.ExpiresAt);
         });
     }
 }

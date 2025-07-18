@@ -84,3 +84,67 @@ public class ChangePasswordRequestDto
     [MinLength(6)]
     public string NewPassword { get; set; } = string.Empty;
 }
+
+// QR Login DTOs
+public class QrLoginInitiateRequestDto
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    public string Password { get; set; } = string.Empty;
+}
+
+public class QrLoginInitiateResponseDto
+{
+    public string QrToken { get; set; } = string.Empty;
+    public string QrCodeImage { get; set; } = string.Empty; // Base64 encoded QR code image
+    public DateTime ExpiresAt { get; set; }
+    public int ExpiresInSeconds { get; set; }
+}
+
+public class QrLoginValidateRequestDto
+{
+    [Required]
+    public string QrToken { get; set; } = string.Empty;
+}
+
+public class QrLoginValidateResponseDto
+{
+    public bool IsValid { get; set; }
+    public string? UserId { get; set; }
+    public string? Email { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+    public bool IsUsed { get; set; }
+}
+
+public class QrLoginAuthenticateRequestDto
+{
+    [Required]
+    public string QrToken { get; set; } = string.Empty;
+}
+
+public class QrLoginAuthenticateResponseDto
+{
+    public bool Success { get; set; }
+    public string? SessionToken { get; set; }
+    public UserDto? User { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+    public string? Message { get; set; }
+}
+
+public class QrLoginStatusRequestDto
+{
+    [Required]
+    public string QrToken { get; set; } = string.Empty;
+}
+
+public class QrLoginStatusResponseDto
+{
+    public bool IsAuthenticated { get; set; }
+    public bool IsExpired { get; set; }
+    public string? SessionToken { get; set; }
+    public UserDto? User { get; set; }
+    public string? Message { get; set; }
+}
