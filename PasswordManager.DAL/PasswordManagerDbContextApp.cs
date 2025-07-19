@@ -19,10 +19,45 @@ public class PasswordManagerDbContextApp : IdentityDbContext<ApplicationUser>, I
     public DbSet<Tag> Tags { get; set; } = null!;
     public DbSet<Category> Categories { get; set; } = null!;
     public DbSet<Collection> Collections { get; set; } = null!;
+    public DbSet<ApiKey> ApiKeys { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        // Identity-specific configuration can go here if needed
+        
+        // Configure Collection
+        modelBuilder.Entity<Collection>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Icon).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Color).IsRequired().HasMaxLength(7);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.LastModified).IsRequired();
+
+            // Configure User relationship
+            entity.Property(e => e.UserId).IsRequired();
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.Collections)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure ApiKey
+        modelBuilder.Entity<ApiKey>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.KeyHash).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UserId).IsRequired();
+
+            // Configure User relationship
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.ApiKeys)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }

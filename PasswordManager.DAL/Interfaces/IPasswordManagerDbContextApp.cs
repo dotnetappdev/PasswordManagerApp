@@ -50,6 +50,11 @@ public interface IPasswordManagerDbContextApp : IDisposable
     DbSet<Collection> Collections { get; set; }
     
     /// <summary>
+    /// Gets or sets the API keys
+    /// </summary>
+    DbSet<ApiKey> ApiKeys { get; set; }
+    
+    /// <summary>
     /// Gets or sets the application users
     /// </summary>
     DbSet<ApplicationUser> Users { get; set; }
