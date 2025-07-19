@@ -20,6 +20,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
     public DbSet<Collection> Collections { get; set; } = null!;
     public DbSet<ApiKey> ApiKeys { get; set; } = null!;
     public DbSet<ApplicationUser> Users { get; set; } = null!;
+    public DbSet<QRLoginToken> QRLoginTokens { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

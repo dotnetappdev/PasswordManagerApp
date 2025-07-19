@@ -55,10 +55,14 @@ switch (databaseProvider.ToLower())
     case "sqlite":
         builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
             options.UseSqlite(connectionString));
+        builder.Services.AddDbContextFactory<PasswordManagerDbContext>(options =>
+            options.UseSqlite(connectionString));
         break;
     case "postgres":
     case "postgresql":
         builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+            options.UseNpgsql(connectionString));
+        builder.Services.AddDbContextFactory<PasswordManagerDbContext>(options =>
             options.UseNpgsql(connectionString));
         break;
     case "mysql":
@@ -70,6 +74,8 @@ switch (databaseProvider.ToLower())
         break;
     default:
         builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+            options.UseSqlServer(connectionString));
+        builder.Services.AddDbContextFactory<PasswordManagerDbContext>(options =>
             options.UseSqlServer(connectionString));
         break;
 }
@@ -86,6 +92,7 @@ builder.Services.AddScoped<IJwtService, PasswordManager.Services.Services.JwtSer
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IVaultSessionService, PasswordManager.Services.Services.VaultSessionService>();
 builder.Services.AddScoped<IApiKeyService, PasswordManager.Services.Services.ApiKeyService>();
+builder.Services.AddScoped<IQRLoginService, PasswordManager.Services.Services.QRLoginService>();
 builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncService>();
 
 // Register cryptography services

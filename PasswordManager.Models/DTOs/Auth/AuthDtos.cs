@@ -84,3 +84,46 @@ public class ChangePasswordRequestDto
     [MinLength(6)]
     public string NewPassword { get; set; } = string.Empty;
 }
+
+// QR Login DTOs
+public class QRLoginGenerateRequestDto
+{
+    public string? DeviceInfo { get; set; }
+}
+
+public class QRLoginGenerateResponseDto
+{
+    public string QRToken { get; set; } = string.Empty;
+    public string QRCodeData { get; set; } = string.Empty;
+    public string QRCodeImage { get; set; } = string.Empty; // Base64 encoded PNG
+    public DateTime ExpiresAt { get; set; }
+    public int ExpiresInSeconds { get; set; }
+}
+
+public class QRLoginValidateRequestDto
+{
+    [Required]
+    public string QRToken { get; set; } = string.Empty;
+}
+
+public class QRLoginValidateResponseDto
+{
+    public bool IsValid { get; set; }
+    public string Status { get; set; } = string.Empty; // "pending", "authenticated", "expired", "invalid"
+    public AuthResponseDto? AuthResponse { get; set; }
+}
+
+public class QRLoginAuthenticateRequestDto
+{
+    [Required]
+    public string QRToken { get; set; } = string.Empty;
+    
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+    
+    [Required]
+    public string Password { get; set; } = string.Empty;
+    
+    public string? DeviceInfo { get; set; }
+}
