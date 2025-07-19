@@ -14,7 +14,7 @@ namespace PasswordManager.Services.Services;
 
 public class QRLoginService : IQRLoginService
 {
-    private readonly IDbContextFactory<PasswordManagerDbContext> _contextFactory;
+    private readonly IDbContextFactory<PasswordManagerDbContextApp> _contextFactory;
     private readonly IPasswordCryptoService _passwordCryptoService;
     private readonly IVaultSessionService _vaultSessionService;
     private readonly UserManager<ApplicationUser> _userManager;
@@ -23,7 +23,7 @@ public class QRLoginService : IQRLoginService
     private const int QR_TOKEN_EXPIRY_MINUTES = 1; // 60 seconds as specified
 
     public QRLoginService(
-        IDbContextFactory<PasswordManagerDbContext> contextFactory,
+        IDbContextFactory<PasswordManagerDbContextApp> contextFactory,
         IPasswordCryptoService passwordCryptoService,
         IVaultSessionService vaultSessionService,
         UserManager<ApplicationUser> userManager,

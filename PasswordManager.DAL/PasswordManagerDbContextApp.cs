@@ -19,6 +19,7 @@ public class PasswordManagerDbContextApp : IdentityDbContext<ApplicationUser>, I
     public DbSet<Tag> Tags { get; set; } = null!;
     public DbSet<Category> Categories { get; set; } = null!;
     public DbSet<Collection> Collections { get; set; } = null!;
+    public DbSet<QRLoginToken> QRLoginTokens { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

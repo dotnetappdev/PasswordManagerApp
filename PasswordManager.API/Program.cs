@@ -5,6 +5,9 @@ using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
 using PasswordManager.API.Extensions;
 using PasswordManager.API.Middleware;
+using PasswordManager.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Serilog;
 using Scalar.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,32 +56,45 @@ else
 switch (databaseProvider.ToLower())
 {
     case "sqlite":
-        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
             options.UseSqlite(connectionString));
-        builder.Services.AddDbContextFactory<PasswordManagerDbContext>(options =>
+        builder.Services.AddDbContextFactory<PasswordManagerDbContextApp>(options =>
             options.UseSqlite(connectionString));
         break;
     case "postgres":
     case "postgresql":
-        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
             options.UseNpgsql(connectionString));
-        builder.Services.AddDbContextFactory<PasswordManagerDbContext>(options =>
+        builder.Services.AddDbContextFactory<PasswordManagerDbContextApp>(options =>
             options.UseNpgsql(connectionString));
         break;
     case "mysql":
-        // builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        // builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
         //     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
         break;
     case "supabase":
         builder.Services.AddSupabaseDbContext(builder.Configuration);
         break;
     default:
-        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
             options.UseSqlServer(connectionString));
-        builder.Services.AddDbContextFactory<PasswordManagerDbContext>(options =>
+        builder.Services.AddDbContextFactory<PasswordManagerDbContextApp>(options =>
             options.UseSqlServer(connectionString));
         break;
 }
+
+// Add Identity services
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = false;
+    options.Password.RequireDigit = true;
+    options.Password.RequiredLength = 8;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireLowercase = true;
+})
+.AddEntityFrameworkStores<PasswordManagerDbContextApp>()
+.AddDefaultTokenProviders();
 
 // Register application services
 builder.Services.AddScoped<IPasswordItemApiService, PasswordManager.Services.Services.PasswordItemApiService>();
@@ -131,6 +147,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseCors("AllowAll");
 
