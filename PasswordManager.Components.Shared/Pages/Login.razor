@@ -148,6 +148,9 @@
                     <button type="button" class="auth-button" style="margin-top:12px;background:#fff;color:#0066cc;border:1px solid #0066cc;" @onclick="LoginWithPasskey">
                         <span style="font-size:20px;vertical-align:middle;">🔑</span> Sign in with Passkey
                     </button>
+                    <button type="button" class="auth-button qr-login-button" @onclick="ShowQRLogin">
+                        <span style="font-size:20px;vertical-align:middle;">📱</span> QR Login
+                    </button>
 
                     <div class="auth-footer">
                         <button type="button" class="link-button" @onclick="ResetVault">
@@ -159,6 +162,26 @@
         </div>
     </div>
 </div>
+
+<QRLoginModal IsVisible="showQRModal" 
+              OnClose="CloseQRModal" 
+              OnSuccess="OnQRLoginSuccess" />
+
+<style>
+.qr-login-button {
+    margin-top: 12px;
+    background: linear-gradient(135deg, #25D366, #128C7E);
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.qr-login-button:hover {
+    background: linear-gradient(135deg, #20C157, #0F756A);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+</style>
 
 @code {
     private bool isFirstTime = false;
@@ -173,6 +196,7 @@
     private string errorMessage = string.Empty;
     private string passwordStrength = "Weak";
     private string passkeyId = string.Empty;
+    private bool showQRModal = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -405,6 +429,36 @@
             // Focus the password field and animate the logo
             await JSRuntime.InvokeVoidAsync("focusPasswordField");
             await JSRuntime.InvokeVoidAsync("animateLogo");
+        }
+    }
+
+    // QR Login Methods
+    private void ShowQRLogin()
+    {
+        showQRModal = true;
+        StateHasChanged();
+    }
+
+    private async Task CloseQRModal()
+    {
+        showQRModal = false;
+        StateHasChanged();
+    }
+
+    private async Task OnQRLoginSuccess(AuthResponseDto authResponse)
+    {
+        try
+        {
+            // Store authentication token
+            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "authToken", authResponse.Token);
+            
+            // Navigate to home page
+            Navigation.NavigateTo("/home");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "QR login succeeded but navigation failed. Please try logging in manually.";
+            StateHasChanged();
         }
     }
 }
