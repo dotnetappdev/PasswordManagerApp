@@ -164,7 +164,7 @@ public class CollectionApiService : ICollectionApiService
         try
         {
             var collections = await _context.Collections
-                .Include(c => c.Parent)
+                .Include(c => c.ParentCollection)
                 .ToListAsync();
 
             return collections.Select(c => c.ToDto()).ToList();
@@ -181,7 +181,7 @@ public class CollectionApiService : ICollectionApiService
         try
         {
             var collection = await _context.Collections
-                .Include(c => c.Parent)
+                .Include(c => c.ParentCollection)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             return collection?.ToDto();
@@ -199,7 +199,7 @@ public class CollectionApiService : ICollectionApiService
         {
             // Get all collections
             var allCollections = await _context.Collections
-                .Include(c => c.Parent)
+                .Include(c => c.ParentCollection)
                 .Include(c => c.Children)
                 .ToListAsync();
 
