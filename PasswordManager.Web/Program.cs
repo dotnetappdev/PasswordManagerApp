@@ -38,12 +38,15 @@ if (databaseProvider.ToLower() == "supabase")
     
     builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
         options.UseNpgsql(supabaseUrl));
+    builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        options.UseNpgsql(supabaseUrl));
 }
 else
 {
     connectionString = databaseProvider.ToLower() switch
     {
         "mysql" => builder.Configuration.GetConnectionString("MySqlConnection"),
+        "sqlite" => builder.Configuration.GetConnectionString("DefaultConnection"),
         _ => builder.Configuration.GetConnectionString("DefaultConnection")
     };
     
@@ -54,10 +57,21 @@ else
     {
         builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+    }
+    else if (databaseProvider.ToLower() == "sqlite")
+    {
+        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+            options.UseSqlite(connectionString));
+        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+            options.UseSqlite(connectionString));
     }
     else
     {
         builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+            options.UseSqlServer(connectionString));
+        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
             options.UseSqlServer(connectionString));
     }
 }
@@ -82,6 +96,7 @@ builder.Services.AddScoped<ICollectionService, CollectionService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IApiKeyService, PasswordManager.Services.Services.ApiKeyService>();
+builder.Services.AddScoped<IVaultSessionService, VaultSessionService>();
 
 // Register crypto services
 builder.Services.AddCryptographyServices();
