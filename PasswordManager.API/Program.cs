@@ -6,7 +6,6 @@ using PasswordManager.Services.Services;
 using PasswordManager.API.Extensions;
 using PasswordManager.API.Middleware;
 using Serilog;
-using Scalar.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Identity;
 using PasswordManager.Models;
@@ -113,8 +112,9 @@ builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncServ
 // Register cryptography services
 builder.Services.AddCryptographyServices();
 
-// Add API documentation with Scalar
-builder.Services.AddOpenApi();
+// Add API documentation with Swagger (compatible with .NET 8)
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -135,13 +135,10 @@ var app = builder.Build();
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.MapScalarApiReference(options =>
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
     {
-        options.Title = builder.Configuration["ApiSettings:Title"] ?? "Password Manager API";
-        // options.Version is not supported in ScalarOptions, so removed to fix build error
-        options.Theme = ScalarTheme.Purple;
-        options.ShowSidebar = true;
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", builder.Configuration["ApiSettings:Title"] ?? "Password Manager API");
     });
 }
 
