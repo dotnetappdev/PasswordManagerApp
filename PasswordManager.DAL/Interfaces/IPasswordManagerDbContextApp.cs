@@ -55,6 +55,11 @@ public interface IPasswordManagerDbContextApp : IDisposable
     DbSet<ApiKey> ApiKeys { get; set; }
     
     /// <summary>
+    /// Gets or sets the QR login tokens
+    /// </summary>
+    DbSet<QrLoginToken> QrLoginTokens { get; set; }
+    
+    /// <summary>
     /// Gets or sets the application users
     /// </summary>
     DbSet<ApplicationUser> Users { get; set; }

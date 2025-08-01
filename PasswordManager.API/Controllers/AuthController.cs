@@ -6,6 +6,7 @@ using PasswordManager.DAL;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PasswordManager.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace PasswordManager.API.Controllers;
 
@@ -15,6 +16,7 @@ public class AuthController : ControllerBase
 {
     private readonly IPasswordCryptoService _passwordCryptoService;
     private readonly IVaultSessionService _vaultSessionService;
+    private readonly IQrLoginService _qrLoginService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly ILogger<AuthController> _logger;
@@ -22,12 +24,14 @@ public class AuthController : ControllerBase
     public AuthController(
         IPasswordCryptoService passwordCryptoService,
         IVaultSessionService vaultSessionService,
+        IQrLoginService qrLoginService,
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         ILogger<AuthController> logger)
     {
         _passwordCryptoService = passwordCryptoService;
         _vaultSessionService = vaultSessionService;
+        _qrLoginService = qrLoginService;
         _userManager = userManager;
         _signInManager = signInManager;
         _logger = logger;
@@ -242,6 +246,98 @@ public class AuthController : ControllerBase
         {
             _logger.LogError(ex, "Error during session verification");
             return StatusCode(500, "An error occurred during session verification");
+        }
+    }
+
+    /// <summary>
+    /// Generate QR code for login
+    /// </summary>
+    [HttpPost("qr/generate")]
+    [Authorize]
+    public async Task<ActionResult<QrLoginGenerateResponseDto>> GenerateQrLogin()
+    {
+        try
+        {
+            var sessionId = HttpContext.Request.Headers["Authorization"]
+                .FirstOrDefault()?.Replace("Bearer ", "");
+
+            if (string.IsNullOrEmpty(sessionId))
+            {
+                return Unauthorized("Session token required");
+            }
+
+            var userId = _vaultSessionService.GetSessionUserId(sessionId);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("Invalid or expired session");
+            }
+
+            var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}";
+            var response = await _qrLoginService.GenerateQrLoginTokenAsync(userId, baseUrl);
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating QR login token");
+            return StatusCode(500, "An error occurred while generating QR code");
+        }
+    }
+
+    /// <summary>
+    /// Authenticate using QR code token
+    /// </summary>
+    [HttpPost("qr/authenticate")]
+    public async Task<ActionResult<QrLoginAuthenticateResponseDto>> AuthenticateQrLogin([FromBody] QrLoginAuthenticateRequestDto request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userAgent = HttpContext.Request.Headers["User-Agent"].FirstOrDefault();
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            var response = await _qrLoginService.AuthenticateQrTokenAsync(request, userAgent, ipAddress);
+
+            if (response.Success)
+            {
+                return Ok(response);
+            }
+            else
+            {
+                return BadRequest(response);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during QR authentication for token {Token}", request.Token);
+            return StatusCode(500, "An error occurred during authentication");
+        }
+    }
+
+    /// <summary>
+    /// Check QR login status
+    /// </summary>
+    [HttpGet("qr/status/{token}")]
+    public async Task<ActionResult<QrLoginStatusResponseDto>> GetQrLoginStatus(string token)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return BadRequest("Token is required");
+            }
+
+            var response = await _qrLoginService.GetQrLoginStatusAsync(token);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking QR login status for token {Token}", token);
+            return StatusCode(500, "An error occurred while checking status");
         }
     }
 }

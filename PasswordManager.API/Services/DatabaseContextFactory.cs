@@ -105,6 +105,7 @@ public class PasswordManagerDbContextWrapper : IPasswordManagerDbContext
     public DbSet<WiFiItem> WiFiItems { get => _context.WiFiItems; set => _context.WiFiItems = value; }
     public DbSet<ApplicationUser> Users { get => _context.Users; set => _context.Users = value; }
     public DbSet<ApiKey> ApiKeys { get => _context.ApiKeys; set => _context.ApiKeys = value; }
+    public DbSet<QrLoginToken> QrLoginTokens { get => _context.QrLoginTokens; set => _context.QrLoginTokens = value; }
     public Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade Database => _context.Database;
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
