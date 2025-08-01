@@ -18,4 +18,5 @@ public interface IPasswordManagerDbContext : IDisposable
     DbSet<SecureNoteItem> SecureNoteItems { get; set; }
     DbSet<WiFiItem> WiFiItems { get; set; }
     DbSet<ApiKey> ApiKeys { get; set; }
+    DbSet<QrLoginToken> QrLoginTokens { get; set; }
 }

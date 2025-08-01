@@ -1,0 +1,383 @@
+@using PasswordManager.Models.DTOs.Auth
+@using System.Text.Json
+@using System.Timers
+@using System.Net.Http.Headers
+@using Microsoft.Extensions.Configuration
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@inject IConfiguration Configuration
+@implements IDisposable
+
+<div class="qr-login-container">
+    @if (IsLoading)
+    {
+        <div class="qr-loading">
+            <div class="spinner"></div>
+            <p>Generating QR code...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="qr-error">
+            <p class="error-text">@ErrorMessage</p>
+            <button class="retry-button" @onclick="GenerateQrCode">Try Again</button>
+        </div>
+    }
+    else if (QrData != null)
+    {
+        <div class="qr-display">
+            <div class="qr-header">
+                <h3>Sign in with QR Code</h3>
+                <p>Scan this QR code with your mobile app to sign in quickly</p>
+            </div>
+            
+            <div class="qr-code-container">
+                <div id="qrcode-@ComponentId"></div>
+                @if (IsExpired)
+                {
+                    <div class="qr-overlay">
+                        <p>QR code expired</p>
+                        <button class="retry-button" @onclick="GenerateQrCode">Generate New Code</button>
+                    </div>
+                }
+            </div>
+            
+            <div class="qr-info">
+                <div class="qr-timer">
+                    <span class="timer-icon">⏱️</span>
+                    <span>Expires in @RemainingSeconds seconds</span>
+                </div>
+                
+                @if (Status == QrLoginStatus.Pending)
+                {
+                    <div class="qr-status pending">
+                        <span class="status-icon">📱</span>
+                        <span>Waiting for mobile device...</span>
+                    </div>
+                }
+                else if (Status == QrLoginStatus.Authenticated)
+                {
+                    <div class="qr-status success">
+                        <span class="status-icon">✅</span>
+                        <span>Authentication successful! Redirecting...</span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .qr-login-container {
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 24px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .qr-loading, .qr-error {
+        text-align: center;
+        padding: 32px;
+    }
+
+    .spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #0066cc;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .qr-header {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+
+    .qr-header h3 {
+        color: #333;
+        margin: 0 0 8px 0;
+        font-size: 1.5rem;
+    }
+
+    .qr-header p {
+        color: #666;
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .qr-code-container {
+        position: relative;
+        text-align: center;
+        margin-bottom: 24px;
+        background: white;
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #e1e5e9;
+    }
+
+    .qr-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+    }
+
+    .qr-info {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .qr-timer, .qr-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+
+    .qr-timer {
+        background: #e3f2fd;
+        color: #1976d2;
+    }
+
+    .qr-status.pending {
+        background: #fff3e0;
+        color: #f57c00;
+    }
+
+    .qr-status.success {
+        background: #e8f5e8;
+        color: #388e3c;
+    }
+
+    .error-text {
+        color: #d32f2f;
+        margin-bottom: 16px;
+    }
+
+    .retry-button {
+        background: #0066cc;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+
+    .retry-button:hover {
+        background: #0052a3;
+    }
+</style>
+
+@code {
+    [Parameter] public string? SessionToken { get; set; }
+    [Parameter] public EventCallback<bool> OnAuthenticationComplete { get; set; }
+
+    private QrLoginGenerateResponseDto? QrData { get; set; }
+    private QrLoginStatus Status { get; set; } = QrLoginStatus.Pending;
+    private bool IsLoading { get; set; } = false;
+    private bool IsExpired { get; set; } = false;
+    private string ErrorMessage { get; set; } = string.Empty;
+    private int RemainingSeconds { get; set; } = 60;
+    private string ComponentId { get; set; } = Guid.NewGuid().ToString("N")[..8];
+
+    private Timer? _statusTimer;
+    private Timer? _countdownTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GenerateQrCode();
+    }
+
+    private async Task GenerateQrCode()
+    {
+        IsLoading = true;
+        ErrorMessage = string.Empty;
+        IsExpired = false;
+        StateHasChanged();
+
+        try
+        {
+            // Configure HttpClient base address to point to the API
+            var apiBaseUrl = Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7001";
+            Http.BaseAddress = new Uri(apiBaseUrl);
+            
+            // Add authorization header if we have a session token
+            if (!string.IsNullOrEmpty(SessionToken))
+            {
+                Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", SessionToken);
+            }
+
+            // Call the API to generate QR code
+            var response = await Http.PostAsync("/api/auth/qr/generate", null);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                QrData = JsonSerializer.Deserialize<QrLoginGenerateResponseDto>(json, new JsonSerializerOptions 
+                { 
+                    PropertyNameCaseInsensitive = true 
+                });
+
+                if (QrData != null)
+                {
+                    RemainingSeconds = QrData.ExpiresInSeconds;
+                    await RenderQrCode();
+                    StartPolling();
+                    StartCountdown();
+                }
+                else
+                {
+                    ErrorMessage = "Failed to parse QR code response.";
+                }
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                ErrorMessage = $"Failed to generate QR code: {response.StatusCode}";
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            ErrorMessage = "Unable to connect to the authentication service. Please ensure the API is running.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "An error occurred while generating the QR code.";
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RenderQrCode()
+    {
+        if (QrData == null) return;
+
+        try
+        {
+            // Use a JavaScript library to render the QR code
+            await JSRuntime.InvokeVoidAsync("renderQrCode", $"qrcode-{ComponentId}", QrData.QrCodeData);
+        }
+        catch (Exception)
+        {
+            // Fallback: create a simple text representation
+            ErrorMessage = "Could not render QR code. Please check if QR code library is loaded.";
+        }
+    }
+
+    private void StartPolling()
+    {
+        if (QrData == null) return;
+
+        _statusTimer = new Timer(2000); // Poll every 2 seconds
+        _statusTimer.Elapsed += async (sender, e) =>
+        {
+            await CheckStatus();
+        };
+        _statusTimer.Start();
+    }
+
+    private void StartCountdown()
+    {
+        _countdownTimer = new Timer(1000); // Update every second
+        _countdownTimer.Elapsed += (sender, e) =>
+        {
+            RemainingSeconds--;
+            
+            if (RemainingSeconds <= 0)
+            {
+                IsExpired = true;
+                StopTimers();
+            }
+            
+            InvokeAsync(StateHasChanged);
+        };
+        _countdownTimer.Start();
+    }
+
+    private async Task CheckStatus()
+    {
+        if (QrData == null || IsExpired) return;
+
+        try
+        {
+            var response = await Http.GetAsync($"/api/auth/qr/status/{QrData.Token}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                var statusResponse = JsonSerializer.Deserialize<QrLoginStatusResponseDto>(json, new JsonSerializerOptions 
+                { 
+                    PropertyNameCaseInsensitive = true 
+                });
+
+                if (statusResponse != null)
+                {
+                    Status = statusResponse.Status;
+                    
+                    if (Status == QrLoginStatus.Authenticated)
+                    {
+                        StopTimers();
+                        await OnAuthenticationComplete.InvokeAsync(true);
+                        
+                        // Redirect to vault or home page
+                        await Task.Delay(1500); // Show success message briefly
+                        Navigation.NavigateTo("/vault");
+                    }
+                    else if (Status == QrLoginStatus.Expired || statusResponse.IsExpired)
+                    {
+                        IsExpired = true;
+                        StopTimers();
+                    }
+                }
+            }
+        }
+        catch (HttpRequestException)
+        {
+            // API might not be available - silently continue polling
+        }
+        catch (Exception)
+        {
+            // Silently fail - polling errors are not critical
+        }
+        
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void StopTimers()
+    {
+        _statusTimer?.Stop();
+        _statusTimer?.Dispose();
+        _countdownTimer?.Stop();
+        _countdownTimer?.Dispose();
+    }
+
+    public void Dispose()
+    {
+        StopTimers();
+    }
+}

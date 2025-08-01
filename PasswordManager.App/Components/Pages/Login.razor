@@ -148,6 +148,10 @@
                     <button type="button" class="auth-button" style="margin-top:12px;background:#fff;color:#0066cc;border:1px solid #0066cc;" @onclick="LoginWithPasskey">
                         <span style="font-size:20px;vertical-align:middle;">🔑</span> Sign in with Passkey
                     </button>
+                    
+                    <button type="button" class="auth-button" style="margin-top:12px;background:#28a745;color:white;border:1px solid #28a745;" @onclick="ShowQrLogin">
+                        <span style="font-size:20px;vertical-align:middle;">📱</span> Sign in with QR Code
+                    </button>
 
                     <div class="auth-footer">
                         <button type="button" class="link-button" @onclick="ResetVault">
@@ -159,6 +163,24 @@
         </div>
     </div>
 </div>
+
+<!-- QR Login Modal -->
+@if (showQrLoginModal)
+{
+    <div class="modal-overlay" @onclick="HideQrLogin">
+        <div class="modal-content qr-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>Sign in with QR Code</h2>
+                <button class="close-btn" @onclick="HideQrLogin">×</button>
+            </div>
+            <div class="modal-body">
+                <PasswordManager.Components.Shared.Components.QrLogin 
+                    SessionToken="@sessionToken" 
+                    OnAuthenticationComplete="OnQrAuthenticationComplete" />
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     private bool isFirstTime = false;
@@ -173,6 +195,8 @@
     private string errorMessage = string.Empty;
     private string passwordStrength = "Weak";
     private string passkeyId = string.Empty;
+    private bool showQrLoginModal = false;
+    private string sessionToken = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -391,6 +415,44 @@
         catch (Exception ex)
         {
             errorMessage = "Passkey login failed: " + ex.Message;
+        }
+    }
+
+    private async Task ShowQrLogin()
+    {
+        try
+        {
+            // For QR login, we need to create a temporary session token for authenticated generation
+            // In a real implementation, this might require a different flow
+            sessionToken = Guid.NewGuid().ToString("N");
+            showQrLoginModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to initialize QR login: " + ex.Message;
+        }
+    }
+
+    private void HideQrLogin()
+    {
+        showQrLoginModal = false;
+        sessionToken = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task OnQrAuthenticationComplete(bool success)
+    {
+        if (success)
+        {
+            // QR authentication was successful, navigate to home
+            await Task.Delay(1000); // Brief delay to show success state
+            Navigation.NavigateTo("/home");
+        }
+        else
+        {
+            errorMessage = "QR authentication failed. Please try again.";
+            HideQrLogin();
         }
     }
 
