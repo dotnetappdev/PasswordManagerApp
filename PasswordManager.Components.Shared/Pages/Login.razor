@@ -148,6 +148,9 @@
                     <button type="button" class="auth-button" style="margin-top:12px;background:#fff;color:#0066cc;border:1px solid #0066cc;" @onclick="LoginWithPasskey">
                         <span style="font-size:20px;vertical-align:middle;">🔑</span> Sign in with Passkey
                     </button>
+                    <button type="button" class="auth-button" style="margin-top:12px;background:#fff;color:#28a745;border:1px solid #28a745;" @onclick="ShowQrLogin">
+                        <span style="font-size:20px;vertical-align:middle;">📱</span> Sign in with QR Code
+                    </button>
 
                     <div class="auth-footer">
                         <button type="button" class="link-button" @onclick="ResetVault">
@@ -159,6 +162,22 @@
         </div>
     </div>
 </div>
+
+<!-- QR Login Modal -->
+@if (showQrLogin)
+{
+    <div class="modal-overlay" @onclick="CloseQrLogin">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>QR Code Login</h3>
+                <button type="button" class="modal-close" @onclick="CloseQrLogin">×</button>
+            </div>
+            <div class="modal-body">
+                <QrLogin OnAuthenticationComplete="OnQrAuthenticationComplete" />
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     private bool isFirstTime = false;
@@ -173,6 +192,7 @@
     private string errorMessage = string.Empty;
     private string passwordStrength = "Weak";
     private string passkeyId = string.Empty;
+    private bool showQrLogin = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -405,6 +425,25 @@
             // Focus the password field and animate the logo
             await JSRuntime.InvokeVoidAsync("focusPasswordField");
             await JSRuntime.InvokeVoidAsync("animateLogo");
+        }
+    }
+
+    private void ShowQrLogin()
+    {
+        showQrLogin = true;
+    }
+
+    private void CloseQrLogin()
+    {
+        showQrLogin = false;
+    }
+
+    private async Task OnQrAuthenticationComplete(bool success)
+    {
+        if (success)
+        {
+            showQrLogin = false;
+            // The QrLogin component will handle navigation
         }
     }
 }
