@@ -8,6 +8,8 @@ using PasswordManager.API.Middleware;
 using Serilog;
 using Scalar.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Identity;
+using PasswordManager.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,10 +57,14 @@ switch (databaseProvider.ToLower())
     case "sqlite":
         builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
             options.UseSqlite(connectionString));
+        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+            options.UseSqlite(connectionString));
         break;
     case "postgres":
     case "postgresql":
         builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+            options.UseNpgsql(connectionString));
+        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
             options.UseNpgsql(connectionString));
         break;
     case "mysql":
@@ -71,8 +77,23 @@ switch (databaseProvider.ToLower())
     default:
         builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
             options.UseSqlServer(connectionString));
+        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+            options.UseSqlServer(connectionString));
         break;
 }
+
+// Add Identity services
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = false;
+    options.Password.RequireDigit = true;
+    options.Password.RequiredLength = 8;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireLowercase = true;
+})
+.AddEntityFrameworkStores<PasswordManagerDbContextApp>()
+.AddDefaultTokenProviders();
 
 // Register application services
 builder.Services.AddScoped<IPasswordItemApiService, PasswordManager.Services.Services.PasswordItemApiService>();
@@ -106,7 +127,7 @@ builder.Services.AddCors(options =>
 });
 
 // Add health checks
-// builder.Services.AddHealthChecks(); // Removed AddDbContextCheck as it is not available in .NET 9
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -140,9 +161,11 @@ app.MapHealthChecks("/health");
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+    var contextApp = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
     try
     {
         await context.Database.EnsureCreatedAsync();
+        await contextApp.Database.EnsureCreatedAsync();
         Log.Information("Database ensured for provider: {Provider}", databaseProvider);
     }
     catch (Exception ex)
