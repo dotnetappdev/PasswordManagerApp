@@ -1,5 +1,6 @@
 @page "/vault"
 @page "/passwords"
+@attribute [Authorize]
 @using PasswordManager.Services.Interfaces
 @using PasswordManager.Models
 @inject IPasswordItemService PasswordItemService
@@ -33,7 +34,7 @@
         <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
             <MudGrid>
                 <MudItem xs="12" md="8">
-                    <MudTextField @bind-Value="searchQuery" 
+                    <MudTextField @bind-value="searchQuery" 
                                  Label="Search passwords" 
                                  Variant="Variant.Outlined"
                                  Style="background-color: #2a2a2a;"
@@ -42,7 +43,7 @@
                                  @onkeyup="OnSearchChanged" />
                 </MudItem>
                 <MudItem xs="12" md="4">
-                    <MudSelect @bind-Value="selectedCategory" 
+                    <MudSelect @bind-value="selectedCategory" 
                               Label="Category" 
                               Variant="Variant.Outlined"
                               Style="background-color: #2a2a2a;">

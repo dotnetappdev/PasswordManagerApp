@@ -17,7 +17,7 @@
         </div>
         <div class="settings-section">
             <label>Database Provider</label>
-            <InputSelect @bind-Value="settingsModel.DatabaseProvider">
+            <InputSelect @bind-value="settingsModel.DatabaseProvider">
                 <option value="SqlServer">SQL Server</option>
                 <option value="MySql">MySQL</option>
                 <option value="Postgres">Postgres</option>
@@ -26,12 +26,12 @@
         </div>
         <div class="settings-section">
             <label>Change Master Password</label>
-            <InputText @bind-Value="settingsModel.NewMasterPassword" type="password" class="@GetInputClass(nameof(settingsModel.NewMasterPassword))" />
+            <InputText @bind-value="settingsModel.NewMasterPassword" type="password" class="@GetInputClass(nameof(settingsModel.NewMasterPassword))" />
             <ValidationMessage For="() => settingsModel.NewMasterPassword" />
         </div>
         <div class="settings-section">
             <label>Theme</label>
-            <InputSelect @bind-Value="settingsModel.Theme">
+            <InputSelect @bind-value="settingsModel.Theme">
                 <option value="light">Light</option>
                 <option value="dark">Dark</option>
             </InputSelect>
