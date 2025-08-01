@@ -13,9 +13,9 @@
                           RequiredError="Email is required"
                           Validation="@(new Func<string, IEnumerable<string>>(ValidateEmail))" />
 
-            <MudTextField @bind-value="_model.FirstName" Label="First Name" />
-            <MudTextField @bind-value="_model.LastName" Label="Last Name" />
-            <MudTextField @bind-value="_model.MasterPasswordHint" Label="Password Hint" />
+            <MudTextField T="string" @bind-value="_model.FirstName" Label="First Name" />
+            <MudTextField T="string" @bind-value="_model.LastName" Label="Last Name" />
+            <MudTextField T="string" @bind-value="_model.MasterPasswordHint" Label="Password Hint" />
         </MudForm>
     </DialogContent>
     <DialogActions>
