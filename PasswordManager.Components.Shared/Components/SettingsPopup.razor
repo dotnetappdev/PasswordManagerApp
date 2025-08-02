@@ -17,7 +17,7 @@
             </div>
             <div class="settings-section">
                 <label>Database Provider</label>
-                <InputSelect @bind-value="settingsModel.DatabaseProvider">
+                <InputSelect TValue="string" @bind-value="settingsModel.DatabaseProvider">
                     <option value="SqlServer">SQL Server</option>
                     <option value="MySql">MySQL</option>
                     <option value="Postgres">Postgres</option>
@@ -31,7 +31,7 @@
             </div>
             <div class="settings-section">
                 <label>Theme</label>
-                <InputSelect @bind-value="settingsModel.Theme">
+                <InputSelect TValue="string" @bind-value="settingsModel.Theme">
                     <option value="light">Light</option>
                     <option value="dark">Dark</option>
                 </InputSelect>
