@@ -55,21 +55,21 @@ public static class TestDataSeeder
             var collections = db.Collections.ToList();
             
             // Get collection IDs with fallbacks
-            var bankingCollectionId = (collections.FirstOrDefault(c => c.Name == "Banking")?.Id) ?? 1;
-            var insuranceCollectionId = (collections.FirstOrDefault(c => c.Name == "Insurance")?.Id) ?? 2;
-            var utilitiesCollectionId = (collections.FirstOrDefault(c => c.Name == "Utilities")?.Id) ?? 3;
-            var workCollectionId = (collections.FirstOrDefault(c => c.Name == "Work")?.Id) ?? 4;
-            var personalCollectionId = (collections.FirstOrDefault(c => c.Name == "Personal")?.Id) ?? 5;
+            var bankingCollectionId = collections.FirstOrDefault(c => c.Name == "Banking")?.Id ?? 1;
+            var insuranceCollectionId = collections.FirstOrDefault(c => c.Name == "Insurance")?.Id ?? 2;
+            var utilitiesCollectionId = collections.FirstOrDefault(c => c.Name == "Utilities")?.Id ?? 3;
+            var workCollectionId = collections.FirstOrDefault(c => c.Name == "Work")?.Id ?? 4;
+            var personalCollectionId = collections.FirstOrDefault(c => c.Name == "Personal")?.Id ?? 5;
             
             // Get category IDs with fallbacks
-            var checkingCategoryId = (categories.FirstOrDefault(c => c.Name == "Checking Account")?.Id) ?? 1;
-            var creditCardCategoryId = (categories.FirstOrDefault(c => c.Name == "Credit Cards")?.Id) ?? 2;
-            var healthInsuranceCategoryId = (categories.FirstOrDefault(c => c.Name == "Health Insurance")?.Id) ?? 4;
-            var autoInsuranceCategoryId = (categories.FirstOrDefault(c => c.Name == "Auto Insurance")?.Id) ?? 5;
-            var electricCategoryId = (categories.FirstOrDefault(c => c.Name == "Electric")?.Id) ?? 7;
-            var internetCategoryId = (categories.FirstOrDefault(c => c.Name == "Internet")?.Id) ?? 9;
-            var businessCategoryId = (categories.FirstOrDefault(c => c.Name == "Business")?.Id) ?? 10;
-            var emailCategoryId = (categories.FirstOrDefault(c => c.Name == "Email")?.Id) ?? 11;
+            var checkingCategoryId = categories.FirstOrDefault(c => c.Name == "Checking Account")?.Id ?? 1;
+            var creditCardCategoryId = categories.FirstOrDefault(c => c.Name == "Credit Cards")?.Id ?? 2;
+            var healthInsuranceCategoryId = categories.FirstOrDefault(c => c.Name == "Health Insurance")?.Id ?? 4;
+            var autoInsuranceCategoryId = categories.FirstOrDefault(c => c.Name == "Auto Insurance")?.Id ?? 5;
+            var electricCategoryId = categories.FirstOrDefault(c => c.Name == "Electric")?.Id ?? 7;
+            var internetCategoryId = categories.FirstOrDefault(c => c.Name == "Internet")?.Id ?? 9;
+            var businessCategoryId = categories.FirstOrDefault(c => c.Name == "Business")?.Id ?? 10;
+            var emailCategoryId = categories.FirstOrDefault(c => c.Name == "Email")?.Id ?? 11;
             
             // NOTE: All passwords are now encrypted. These are sample items without actual passwords.
             // Real passwords will be added through the API with proper encryption using the user's master password.

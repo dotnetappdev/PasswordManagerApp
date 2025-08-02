@@ -7,20 +7,20 @@
 <MudDialog>
     <DialogContent>
         <MudForm Model="@_model" @ref="@_form" Validation="@(_validator.Validate)" ValidationDelay="0">
-            <MudTextField @bind-value="_model.Email" 
+            <MudTextField T="string" @bind-value="_model.Email" 
                           Label="Email" 
                           Required="true" 
                           RequiredError="Email is required"
                           Validation="@(new Func<string, IEnumerable<string>>(ValidateEmail))" />
 
-            <MudTextField @bind-value="_model.Password" 
+            <MudTextField T="string" @bind-value="_model.Password" 
                           Label="Password" 
                           InputType="InputType.Password"
                           Required="true"
                           RequiredError="Password is required"
                           Validation="@(new Func<string, IEnumerable<string>>(ValidatePassword))" />
 
-            <MudTextField @bind-value="_model.ConfirmPassword" 
+            <MudTextField T="string" @bind-value="_model.ConfirmPassword" 
                           Label="Confirm Password" 
                           InputType="InputType.Password"
                           Required="true"

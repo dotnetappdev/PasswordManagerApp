@@ -25,7 +25,7 @@
                 <MudPaper Class="pa-4 mb-4">
                     <MudText Typo="Typo.h5" Class="mb-3">Create New API Key</MudText>
                     
-                    <MudTextField @bind-value="newApiKeyName" 
+                    <MudTextField T="string" @bind-value="newApiKeyName" 
                                   Label="API Key Name" 
                                   Variant="Variant.Outlined"
                                   HelperText="Give your API key a descriptive name (e.g., 'Copilot Agent', 'Backup Script')"
@@ -121,7 +121,7 @@
         </MudAlert>
         
         <MudText Class="mb-2">Your new API key:</MudText>
-        <MudTextField @bind-value="generatedApiKey" 
+        <MudTextField T="string" @bind-value="generatedApiKey" 
                       Label="API Key" 
                       Variant="Variant.Outlined"
                       ReadOnly="true"
