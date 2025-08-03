@@ -1,3 +1,4 @@
+@using MudBlazor
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -11,7 +12,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    // [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
     
     [Parameter] public string ContentText { get; set; } = default!;
     [Parameter] public string ButtonText { get; set; } = "Confirm";

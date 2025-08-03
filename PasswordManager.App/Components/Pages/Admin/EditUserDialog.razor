@@ -1,5 +1,6 @@
 @using PasswordManager.Models.DTOs.Auth
 @using PasswordManager.Services.Interfaces
+@using MudBlazor
 @inject IUserProfileService UserProfileService
 @inject ISnackbar Snackbar
 
@@ -34,7 +35,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    // [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public string UserId { get; set; } = default!;
 
     private UpdateUserProfileDto _model = new();
@@ -117,19 +118,4 @@
     }
 }
 
-@using System.Text.RegularExpressions
-@using FluentValidation
-@using PasswordManager.Models.DTOs.Auth
 
-public class UpdateUserValidator : AbstractValidator<UpdateUserProfileDto>
-{
-    public UpdateUserValidator()
-    {
-        RuleFor(x => x.Id)
-            .NotEmpty().WithMessage("User ID is required");
-
-        RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("Email is required")
-            .EmailAddress().WithMessage("Please enter a valid email address");
-    }
-}

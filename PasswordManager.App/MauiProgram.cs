@@ -8,8 +8,6 @@ using PasswordManager.Services.Services;
 using PasswordManager.Imports.Interfaces;
 using PasswordManager.Imports.Services;
 using PasswordManagerImports.OnePassword.Providers;
-using PasswordManager.App.Services.Interfaces;
-using PasswordManager.App.Services;
 using Microsoft.Extensions.Configuration;
 using PasswordManager.Crypto.Extensions;
 
