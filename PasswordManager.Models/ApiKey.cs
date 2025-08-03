@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using PasswordManager.Models.Configuration;
 
 namespace PasswordManager.Models
 {
@@ -28,5 +29,16 @@ namespace PasswordManager.Models
         public virtual ApplicationUser User { get; set; } = null!;
         
         public bool IsActive { get; set; } = true;
+        
+        /// <summary>
+        /// Associated database provider for this API key (optional)
+        /// </summary>
+        public DatabaseProvider? Provider { get; set; }
+        
+        /// <summary>
+        /// Provider-specific configuration details (JSON serialized)
+        /// </summary>
+        [MaxLength(1000)]
+        public string? ProviderConfig { get; set; }
     }
 }

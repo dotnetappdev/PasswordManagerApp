@@ -44,12 +44,26 @@
             <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">API Key Management</MudText>
             
             <MudGrid>
-                <MudItem xs="12" md="8">
+                <MudItem xs="12" md="4">
                     <MudTextField T="string" @bind-value="newApiKeyName" 
                                  Label="API Key Name" 
                                  Variant="Variant.Outlined"
                                  Style="background-color: #2a2a2a;"
                                  HelperText="Enter a descriptive name for your API key" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect T="string" @bind-value="selectedProviderForApiKey" 
+                              Label="Database Provider (Optional)" 
+                              Variant="Variant.Outlined"
+                              Style="background-color: #2a2a2a;"
+                              HelperText="Select provider to use existing config">
+                        <MudSelectItem Value="@("")">General (No Provider)</MudSelectItem>
+                        <MudSelectItem Value="@("Sqlite")">SQLite</MudSelectItem>
+                        <MudSelectItem Value="@("SqlServer")">SQL Server</MudSelectItem>
+                        <MudSelectItem Value="@("MySql")">MySQL</MudSelectItem>
+                        <MudSelectItem Value="@("PostgreSql")">PostgreSQL</MudSelectItem>
+                        <MudSelectItem Value="@("Supabase")">Supabase</MudSelectItem>
+                    </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <MudButton Variant="Variant.Filled" 
@@ -82,6 +96,14 @@
                                  Adornment="Adornment.End"
                                  AdornmentIcon="@Icons.Material.Filled.ContentCopy"
                                  OnAdornmentClick="CopyApiKey" />
+                    @if (!string.IsNullOrEmpty(generatedApiUrl))
+                    {
+                        <MudTextField T="string" Value="@generatedApiUrl" 
+                                     Label="Associated API URL" 
+                                     Variant="Variant.Outlined"
+                                     Style="background-color: #2a2a2a; margin-top: 8px;"
+                                     ReadOnly="true" />
+                    }
                     <MudText Typo="Typo.caption" Style="color: #cccccc; margin-top: 8px;">
                         ⚠️ Store this API key securely. It will not be shown again.
                     </MudText>
@@ -100,12 +122,25 @@
                          Style="background-color: #2a2a2a; color: white;">
                     <HeaderContent>
                         <MudTh Style="color: white;">Name</MudTh>
+                        <MudTh Style="color: white;">Provider</MudTh>
                         <MudTh Style="color: white;">Created</MudTh>
                         <MudTh Style="color: white;">Last Used</MudTh>
                         <MudTh Style="color: white;">Actions</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="Name">@context.Name</MudTd>
+                        <MudTd DataLabel="Provider">
+                            @if (context.Provider.HasValue)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Primary">
+                                    @GetProviderDisplayName(context.Provider)
+                                </MudChip>
+                            }
+                            else
+                            {
+                                <MudText Style="color: #cccccc;">General</MudText>
+                            }
+                        </MudTd>
                         <MudTd DataLabel="Created">@context.CreatedAt.ToString("MMM dd, yyyy")</MudTd>
                         <MudTd DataLabel="Last Used">
                             @(context.LastUsedAt?.ToString("MMM dd, yyyy") ?? "Never")
@@ -208,7 +243,9 @@
     private UserDto userProfile = new();
     private List<ApiKey> apiKeys = new();
     private string newApiKeyName = "";
+    private string selectedProviderForApiKey = "";
     private string generatedApiKey = "";
+    private string generatedApiUrl = "";
     private string databaseProvider = "SqlServer";
     private string supabaseUrl = "";
     private string supabaseApiKey = "";
@@ -281,15 +318,40 @@
         try
         {
             isGenerating = true;
+            generatedApiKey = "";
+            generatedApiUrl = "";
             
-            var apiKey = await ApiKeyService.CreateApiKeyAsync(newApiKeyName, userProfile.Id);
-            generatedApiKey = apiKey.KeyHash; // This contains the unhashed value temporarily
+            // Check if a provider is selected for provider-specific API key
+            if (!string.IsNullOrEmpty(selectedProviderForApiKey))
+            {
+                // Create provider-specific API key
+                if (Enum.TryParse<DatabaseProvider>(selectedProviderForApiKey, out var provider))
+                {
+                    var request = new PasswordManager.Models.DTOs.ApiKeyRequestDto
+                    {
+                        Name = newApiKeyName,
+                        Provider = provider,
+                        UseExistingConfig = true
+                    };
+                    
+                    var response = await ApiKeyService.CreateProviderApiKeyAsync(request, userProfile.Id);
+                    generatedApiKey = response.ApiKey;
+                    generatedApiUrl = response.ApiUrl ?? "";
+                }
+            }
+            else
+            {
+                // Create general API key
+                var apiKeyResult = await ApiKeyService.CreateApiKeyAsync(newApiKeyName, userProfile.Id);
+                generatedApiKey = apiKeyResult.KeyHash; // This contains the unhashed value temporarily
+            }
             
             // Refresh the list
             await LoadApiKeys();
             
-            // Clear the input
+            // Clear the inputs
             newApiKeyName = "";
+            selectedProviderForApiKey = "";
         }
         catch (Exception ex)
         {
@@ -325,6 +387,19 @@
         {
             Console.WriteLine($"Error deleting API key: {ex.Message}");
         }
+    }
+
+    private string GetProviderDisplayName(DatabaseProvider? provider)
+    {
+        return provider switch
+        {
+            DatabaseProvider.SqlServer => "SQL Server",
+            DatabaseProvider.MySql => "MySQL",
+            DatabaseProvider.PostgreSql => "PostgreSQL",
+            DatabaseProvider.Supabase => "Supabase",
+            DatabaseProvider.Sqlite => "SQLite",
+            _ => "General"
+        };
     }
 
     private async Task SaveSettings()
