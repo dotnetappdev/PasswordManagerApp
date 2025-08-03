@@ -15,6 +15,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
 {
     private readonly IConfiguration _configuration;
     private readonly ICryptographyService _cryptographyService;
+    private readonly IPlatformService _platformService;
     private readonly ILogger<DatabaseConfigurationService> _logger;
     private readonly string _configFilePath;
     private readonly byte[] _encryptionKey;
@@ -22,17 +23,17 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
     public DatabaseConfigurationService(
         IConfiguration configuration,
         ICryptographyService cryptographyService,
+        IPlatformService platformService,
         ILogger<DatabaseConfigurationService> logger)
     {
         _configuration = configuration;
         _cryptographyService = cryptographyService;
+        _platformService = platformService;
         _logger = logger;
         
-        // For now, use a default path that works on all platforms
-        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        // Get the path to the appsettings.json file in the app data directory
         _configFilePath = Path.Combine(
-            appDataPath, 
-            "PasswordManager", 
+            _platformService.GetAppDataDirectory(), 
             "appsettings.json");
 
         // Generate or load encryption key for database passwords
@@ -208,14 +209,13 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
 
     public DatabaseConfiguration GetDefaultConfiguration()
     {
-        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var config = new DatabaseConfiguration
         {
             Provider = DatabaseProvider.Sqlite,
             IsFirstRun = true,
             Sqlite = new SqliteConfig
             {
-                DatabasePath = Path.Combine(appDataPath, "PasswordManager", "data", "passwordmanager.db")
+                DatabasePath = Path.Combine(_platformService.GetAppDataDirectory(), "data", "passwordmanager.db")
             }
         };
 
@@ -224,15 +224,12 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
 
     public bool ShouldShowDatabaseSelection()
     {
-        // For now, show database selection on all platforms except mobile
-        // This will need to be updated when we have platform detection
-        return true;
+        return _platformService.ShouldShowDatabaseSelection();
     }
 
     private byte[] GetOrCreateEncryptionKey()
     {
-        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var keyPath = Path.Combine(appDataPath, "PasswordManager", ".dbkey");
+        var keyPath = Path.Combine(_platformService.GetAppDataDirectory(), ".dbkey");
         
         try
         {
@@ -257,8 +254,8 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Could not create/read encryption key file, using fallback key");
-            // Fallback: derive key from machine/app info (less secure but functional)
-            var fallbackSeed = $"{Environment.MachineName}-{Environment.OSVersion}-PasswordManager";
+            // Fallback: derive key from device/app info (less secure but functional)
+            var fallbackSeed = $"{_platformService.GetDeviceIdentifier()}-PasswordManager";
             return _cryptographyService.DeriveKey(fallbackSeed, 
                 System.Text.Encoding.UTF8.GetBytes("PasswordManagerDbKey"), 
                 100000, 32);

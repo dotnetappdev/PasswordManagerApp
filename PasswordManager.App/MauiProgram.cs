@@ -10,6 +10,7 @@ using PasswordManager.Imports.Services;
 using PasswordManagerImports.OnePassword.Providers;
 using Microsoft.Extensions.Configuration;
 using PasswordManager.Crypto.Extensions;
+using PasswordManager.App.Services;
 
 namespace PasswordManager.App;
 
@@ -59,12 +60,17 @@ public static class MauiProgram
 		// Register crypto services (needed for database configuration)
 		builder.Services.AddCryptographyServices();
 
+		// Register platform service
+		builder.Services.AddSingleton<IPlatformService, MauiPlatformService>();
+
 		// Register database configuration service
 		builder.Services.AddScoped<IDatabaseConfigurationService, DatabaseConfigurationService>();
 		builder.Services.AddScoped<DynamicDatabaseContextFactory>();
 
 		// Configure database context with default SQLite (will be reconfigured after setup)
-		var defaultDbPath = Path.Combine(FileSystem.AppDataDirectory, "PasswordManager", "data", "passwordmanager.db");
+		// Create a temporary platform service to get the default path
+		var tempPlatformService = new MauiPlatformService();
+		var defaultDbPath = Path.Combine(tempPlatformService.GetAppDataDirectory(), "data", "passwordmanager.db");
 		var defaultDirectory = Path.GetDirectoryName(defaultDbPath);
 		if (!Directory.Exists(defaultDirectory))
 		{
