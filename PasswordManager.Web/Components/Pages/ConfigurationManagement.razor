@@ -1,0 +1,494 @@
+@page "/configuration-management"
+@using PasswordManager.Models
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Services.Helpers
+@inject IConfigurationSettingService ConfigService
+@inject ConfigurationMigrationHelper MigrationHelper
+@inject ILogger<ConfigurationManagement> Logger
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Configuration Management</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2"></i>
+                        Unified Configuration Management
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Manage all configuration settings in a unified table with support for grouping by type, provider, and user.
+                    </p>
+
+                    @if (!string.IsNullOrEmpty(statusMessage))
+                    {
+                        <div class="alert @(isError ? "alert-danger" : "alert-success") alert-dismissible fade show">
+                            <i class="fas @(isError ? "fa-exclamation-triangle" : "fa-check-circle") me-2"></i>
+                            @statusMessage
+                            <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
+                        </div>
+                    }
+
+                    <!-- Migration Section -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Migration & Setup</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button class="btn btn-outline-primary me-2" @onclick="MigrateConfigurations" disabled="@isLoading">
+                                        @if (isLoading)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        <i class="fas fa-database me-2"></i>
+                                        Migrate Existing Configurations
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button class="btn btn-outline-success me-2" @onclick="ValidateConfiguration" disabled="@isLoading">
+                                        <i class="fas fa-check-double me-2"></i>
+                                        Validate System
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuration Browser -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Configuration Browser</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Group</label>
+                                    <select class="form-select" @bind="selectedGroup" @oninput="OnGroupChanged">
+                                        <option value="">-- Select Group --</option>
+                                        @foreach (var group in availableGroups)
+                                        {
+                                            <option value="@group">@group</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Type</label>
+                                    <select class="form-select" @bind="selectedType" @oninput="OnTypeChanged">
+                                        <option value="">-- Select Type --</option>
+                                        @foreach (var type in availableTypes)
+                                        {
+                                            <option value="@type">@type</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">User ID (optional)</label>
+                                    <input type="text" class="form-control" @bind="selectedUserId" placeholder="Leave empty for system settings" />
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" @onclick="LoadConfiguration" disabled="@(string.IsNullOrEmpty(selectedGroup) || string.IsNullOrEmpty(selectedType))">
+                                <i class="fas fa-search me-2"></i>
+                                Load Configuration
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Configuration Display -->
+                    @if (currentConfiguration.Any())
+                    {
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Configuration: @selectedGroup/@selectedType</h5>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="ClearConfiguration">
+                                    <i class="fas fa-trash me-1"></i>
+                                    Clear Group
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Key</th>
+                                                <th>Value</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var config in currentConfiguration)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <code>@config.Key</code>
+                                                    </td>
+                                                    <td>
+                                                        @if (config.Key.ToLower().Contains("password") || config.Key.ToLower().Contains("key"))
+                                                        {
+                                                            <span class="text-muted">••••••••</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>@config.Value</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteConfigurationKey(config.Key)">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Add New Configuration -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Add New Configuration</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label class="form-label">Group</label>
+                                    <input type="text" class="form-control" @bind="newConfigGroup" placeholder="e.g., DatabaseConfig" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Type</label>
+                                    <input type="text" class="form-control" @bind="newConfigType" placeholder="e.g., SQLite" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Key</label>
+                                    <input type="text" class="form-control" @bind="newConfigKey" placeholder="e.g., DatabasePath" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Value</label>
+                                    <input type="text" class="form-control" @bind="newConfigValue" placeholder="Configuration value" />
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="newConfigEncrypted" id="encryptedCheck">
+                                        <label class="form-check-label" for="encryptedCheck">
+                                            Encrypt Value
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <button class="btn btn-success" @onclick="AddConfiguration" 
+                                            disabled="@(string.IsNullOrEmpty(newConfigGroup) || string.IsNullOrEmpty(newConfigType) || string.IsNullOrEmpty(newConfigKey))">
+                                        <i class="fas fa-plus me-2"></i>
+                                        Add Configuration
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">System Statistics</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <h4 class="text-primary">@availableGroups.Count</h4>
+                                        <p class="text-muted">Configuration Groups</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <h4 class="text-info">@availableTypes.Count</h4>
+                                        <p class="text-muted">Configuration Types</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <h4 class="text-success">@currentConfiguration.Count</h4>
+                                        <p class="text-muted">Current Settings</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string statusMessage = string.Empty;
+    private bool isError = false;
+    private bool isLoading = false;
+
+    // Configuration browser
+    private List<string> availableGroups = new();
+    private List<string> availableTypes = new();
+    private string selectedGroup = string.Empty;
+    private string selectedType = string.Empty;
+    private string selectedUserId = string.Empty;
+    private Dictionary<string, string> currentConfiguration = new();
+
+    // Add new configuration
+    private string newConfigGroup = string.Empty;
+    private string newConfigType = string.Empty;
+    private string newConfigKey = string.Empty;
+    private string newConfigValue = string.Empty;
+    private bool newConfigEncrypted = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAvailableGroups();
+    }
+
+    private async Task LoadAvailableGroups()
+    {
+        try
+        {
+            availableGroups = await ConfigService.GetConfigurationGroupsAsync();
+            
+            // Add predefined groups if not present
+            var predefinedGroups = new[] { 
+                ConfigurationGroups.DatabaseConfig, 
+                ConfigurationGroups.UserSettings, 
+                ConfigurationGroups.AppSettings,
+                ConfigurationGroups.ApiConfig 
+            };
+            
+            foreach (var group in predefinedGroups)
+            {
+                if (!availableGroups.Contains(group))
+                {
+                    availableGroups.Add(group);
+                }
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Failed to load groups: {ex.Message}");
+        }
+    }
+
+    private async Task OnGroupChanged(ChangeEventArgs e)
+    {
+        selectedGroup = e.Value?.ToString() ?? string.Empty;
+        await LoadAvailableTypes();
+    }
+
+    private async Task LoadAvailableTypes()
+    {
+        if (string.IsNullOrEmpty(selectedGroup))
+        {
+            availableTypes.Clear();
+            return;
+        }
+
+        try
+        {
+            availableTypes = await ConfigService.GetConfigurationTypesAsync(selectedGroup);
+            
+            // Add predefined types for database config
+            if (selectedGroup == ConfigurationGroups.DatabaseConfig)
+            {
+                var predefinedTypes = new[] { 
+                    DatabaseConfigTypes.General,
+                    DatabaseConfigTypes.SQLite, 
+                    DatabaseConfigTypes.SqlServer, 
+                    DatabaseConfigTypes.MySql,
+                    DatabaseConfigTypes.PostgreSql,
+                    DatabaseConfigTypes.Supabase 
+                };
+                
+                foreach (var type in predefinedTypes)
+                {
+                    if (!availableTypes.Contains(type))
+                    {
+                        availableTypes.Add(type);
+                    }
+                }
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Failed to load types: {ex.Message}");
+        }
+    }
+
+    private async Task OnTypeChanged(ChangeEventArgs e)
+    {
+        selectedType = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private async Task LoadConfiguration()
+    {
+        if (string.IsNullOrEmpty(selectedGroup) || string.IsNullOrEmpty(selectedType))
+            return;
+
+        try
+        {
+            var userId = string.IsNullOrWhiteSpace(selectedUserId) ? null : selectedUserId;
+            currentConfiguration = await ConfigService.GetConfigurationGroupAsync(selectedGroup, selectedType, userId);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Failed to load configuration: {ex.Message}");
+        }
+    }
+
+    private async Task AddConfiguration()
+    {
+        if (string.IsNullOrEmpty(newConfigGroup) || string.IsNullOrEmpty(newConfigType) || string.IsNullOrEmpty(newConfigKey))
+            return;
+
+        try
+        {
+            var userId = string.IsNullOrWhiteSpace(selectedUserId) ? null : selectedUserId;
+            await ConfigService.SetConfigurationValueAsync(
+                newConfigGroup, 
+                newConfigType, 
+                newConfigKey, 
+                newConfigValue, 
+                userId, 
+                newConfigEncrypted);
+
+            ShowSuccess($"Configuration {newConfigKey} added successfully");
+            
+            // Clear form
+            newConfigKey = string.Empty;
+            newConfigValue = string.Empty;
+            newConfigEncrypted = false;
+
+            // Reload if this matches current selection
+            if (newConfigGroup == selectedGroup && newConfigType == selectedType)
+            {
+                await LoadConfiguration();
+            }
+
+            await LoadAvailableGroups();
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Failed to add configuration: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteConfigurationKey(string key)
+    {
+        if (string.IsNullOrEmpty(selectedGroup) || string.IsNullOrEmpty(selectedType))
+            return;
+
+        try
+        {
+            var userId = string.IsNullOrWhiteSpace(selectedUserId) ? null : selectedUserId;
+            await ConfigService.DeleteConfigurationAsync(selectedGroup, selectedType, key, userId);
+            ShowSuccess($"Configuration {key} deleted successfully");
+            await LoadConfiguration();
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Failed to delete configuration: {ex.Message}");
+        }
+    }
+
+    private async Task ClearConfiguration()
+    {
+        if (string.IsNullOrEmpty(selectedGroup) || string.IsNullOrEmpty(selectedType))
+            return;
+
+        try
+        {
+            var userId = string.IsNullOrWhiteSpace(selectedUserId) ? null : selectedUserId;
+            await ConfigService.DeleteConfigurationGroupAsync(selectedGroup, selectedType, userId);
+            ShowSuccess($"Configuration group {selectedGroup}/{selectedType} cleared successfully");
+            currentConfiguration.Clear();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Failed to clear configuration: {ex.Message}");
+        }
+    }
+
+    private async Task MigrateConfigurations()
+    {
+        isLoading = true;
+        try
+        {
+            var userId = string.IsNullOrWhiteSpace(selectedUserId) ? null : selectedUserId;
+            var result = await MigrationHelper.MigrateAllConfigurationsAsync(userId);
+            
+            if (result.Success)
+            {
+                ShowSuccess("Configuration migration completed successfully");
+            }
+            else
+            {
+                ShowError($"Migration failed: {result.ErrorMessage}");
+            }
+
+            await LoadAvailableGroups();
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Migration failed: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task ValidateConfiguration()
+    {
+        try
+        {
+            var userId = string.IsNullOrWhiteSpace(selectedUserId) ? null : selectedUserId;
+            var result = await MigrationHelper.ValidateUnifiedConfigurationAsync(userId);
+            
+            if (result.Success)
+            {
+                ShowSuccess("Configuration validation passed - all systems working correctly");
+            }
+            else
+            {
+                ShowError($"Validation failed: {result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Validation failed: {ex.Message}");
+        }
+    }
+
+    private void ShowSuccess(string message)
+    {
+        statusMessage = message;
+        isError = false;
+        StateHasChanged();
+    }
+
+    private void ShowError(string message)
+    {
+        statusMessage = message;
+        isError = true;
+        StateHasChanged();
+    }
+}

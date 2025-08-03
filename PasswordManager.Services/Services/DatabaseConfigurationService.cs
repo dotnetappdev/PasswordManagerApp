@@ -9,7 +9,7 @@ using PasswordManager.Services.Interfaces;
 namespace PasswordManager.Services.Services;
 
 /// <summary>
-/// Service for managing database configuration with encryption
+/// Service for managing database configuration with encryption and unified storage support
 /// </summary>
 public class DatabaseConfigurationService : IDatabaseConfigurationService
 {
@@ -17,19 +17,25 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
     private readonly ICryptographyService _cryptographyService;
     private readonly IPlatformService _platformService;
     private readonly ILogger<DatabaseConfigurationService> _logger;
+    private readonly IServiceProvider _serviceProvider;
     private readonly string _configFilePath;
     private readonly byte[] _encryptionKey;
+
+    // Flag to indicate if we should use unified configuration (database-based)
+    private bool _useUnifiedConfig = false;
 
     public DatabaseConfigurationService(
         IConfiguration configuration,
         ICryptographyService cryptographyService,
         IPlatformService platformService,
-        ILogger<DatabaseConfigurationService> logger)
+        ILogger<DatabaseConfigurationService> logger,
+        IServiceProvider serviceProvider)
     {
         _configuration = configuration;
         _cryptographyService = cryptographyService;
         _platformService = platformService;
         _logger = logger;
+        _serviceProvider = serviceProvider;
         
         // Get the path to the appsettings.json file in the app data directory
         _configFilePath = Path.Combine(
@@ -44,6 +50,18 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
     {
         try
         {
+            // Try to get configuration from unified storage first
+            if (_useUnifiedConfig && await CanUseUnifiedConfigAsync())
+            {
+                var unifiedConfig = await GetConfigurationFromUnifiedStorageAsync();
+                if (unifiedConfig != null)
+                {
+                    _logger.LogInformation("Database configuration loaded from unified storage");
+                    return unifiedConfig;
+                }
+            }
+
+            // Fallback to file-based configuration
             if (!File.Exists(_configFilePath))
             {
                 _logger.LogInformation("No database configuration file found, returning default configuration");
@@ -56,7 +74,15 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
                 PropertyNameCaseInsensitive = true
             });
 
-            return config ?? GetDefaultConfiguration();
+            var result = config ?? GetDefaultConfiguration();
+
+            // Attempt to migrate to unified storage if possible
+            if (await CanUseUnifiedConfigAsync())
+            {
+                await MigrateToUnifiedStorageAsync(result);
+            }
+
+            return result;
         }
         catch (Exception ex)
         {
@@ -69,25 +95,21 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
     {
         try
         {
-            // Ensure the directory exists
-            var directory = Path.GetDirectoryName(_configFilePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
             // Mark as no longer first run
             configuration.IsFirstRun = false;
 
-            var jsonContent = JsonSerializer.Serialize(configuration, new JsonSerializerOptions
+            // Try to save to unified storage first
+            if (_useUnifiedConfig && await CanUseUnifiedConfigAsync())
             {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
-
-            await File.WriteAllTextAsync(_configFilePath, jsonContent);
-            
-            _logger.LogInformation("Database configuration saved successfully");
+                await SaveConfigurationToUnifiedStorageAsync(configuration);
+                _logger.LogInformation("Database configuration saved to unified storage");
+            }
+            else
+            {
+                // Fallback to file-based storage
+                await SaveConfigurationToFileAsync(configuration);
+                _logger.LogInformation("Database configuration saved to file");
+            }
         }
         catch (Exception ex)
         {
@@ -443,4 +465,116 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
             return (false, ex.Message);
         }
     }
+
+    #region Unified Configuration Support
+
+    /// <summary>
+    /// Checks if unified configuration service is available
+    /// </summary>
+    private async Task<bool> CanUseUnifiedConfigAsync()
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var configService = scope.ServiceProvider.GetService<IConfigurationSettingService>();
+            return configService != null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Loads configuration from unified storage
+    /// </summary>
+    private async Task<DatabaseConfiguration?> GetConfigurationFromUnifiedStorageAsync()
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var configService = scope.ServiceProvider.GetService<IConfigurationSettingService>();
+            if (configService == null) return null;
+
+            return await configService.LoadDatabaseConfigurationAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load configuration from unified storage");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Saves configuration to unified storage
+    /// </summary>
+    private async Task SaveConfigurationToUnifiedStorageAsync(DatabaseConfiguration configuration)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var configService = scope.ServiceProvider.GetService<IConfigurationSettingService>();
+        if (configService == null)
+            throw new InvalidOperationException("Unified configuration service not available");
+
+        await configService.MigrateDatabaseConfigurationAsync(configuration);
+    }
+
+    /// <summary>
+    /// Migrates existing file-based configuration to unified storage
+    /// </summary>
+    private async Task MigrateToUnifiedStorageAsync(DatabaseConfiguration configuration)
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var configService = scope.ServiceProvider.GetService<IConfigurationSettingService>();
+            if (configService == null) return;
+
+            await configService.MigrateDatabaseConfigurationAsync(configuration);
+            _useUnifiedConfig = true;
+            _logger.LogInformation("Successfully migrated configuration to unified storage");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to migrate configuration to unified storage");
+        }
+    }
+
+    /// <summary>
+    /// Saves configuration to file (fallback method)
+    /// </summary>
+    private async Task SaveConfigurationToFileAsync(DatabaseConfiguration configuration)
+    {
+        // Ensure the directory exists
+        var directory = Path.GetDirectoryName(_configFilePath);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        var jsonContent = JsonSerializer.Serialize(configuration, new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        await File.WriteAllTextAsync(_configFilePath, jsonContent);
+    }
+
+    /// <summary>
+    /// Enables unified configuration mode
+    /// </summary>
+    public void EnableUnifiedConfiguration()
+    {
+        _useUnifiedConfig = true;
+    }
+
+    /// <summary>
+    /// Disables unified configuration mode (fallback to file-based)
+    /// </summary>
+    public void DisableUnifiedConfiguration()
+    {
+        _useUnifiedConfig = false;
+    }
+
+    #endregion
 }

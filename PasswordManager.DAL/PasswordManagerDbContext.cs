@@ -21,6 +21,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
     public DbSet<ApiKey> ApiKeys { get; set; } = null!;
     public DbSet<ApplicationUser> Users { get; set; } = null!;
     public DbSet<QrLoginToken> QrLoginTokens { get; set; } = null!;
+    public DbSet<ConfigurationSetting> ConfigurationSettings { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -231,6 +232,32 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.UserAgent).HasMaxLength(500);
             entity.Property(e => e.IpAddress).HasMaxLength(45);
             entity.Property(e => e.Status).HasConversion<int>();
+        });
+
+        // Configure ConfigurationSetting
+        modelBuilder.Entity<ConfigurationSetting>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.GroupKey).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.ConfigType).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Key).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Value).IsRequired().HasMaxLength(2000);
+            entity.Property(e => e.UserId).HasMaxLength(450);
+            entity.Property(e => e.IsEncrypted).IsRequired();
+            entity.Property(e => e.IsSystemLevel).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.LastModified).IsRequired();
+
+            // Create unique index for group, type, key, and user combination
+            entity.HasIndex(e => new { e.GroupKey, e.ConfigType, e.Key, e.UserId })
+                  .IsUnique()
+                  .HasDatabaseName("IX_ConfigurationSettings_GroupTypeKeyUser");
+
+            // Configure User relationship (optional for system-level settings)
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
