@@ -10,6 +10,7 @@ using PasswordManager.Imports.Services;
 using PasswordManagerImports.OnePassword.Providers;
 using Microsoft.Extensions.Configuration;
 using PasswordManager.Crypto.Extensions;
+using PasswordManager.App.Services;
 
 namespace PasswordManager.App;
 
@@ -56,18 +57,28 @@ public static class MauiProgram
 		// Add configuration
 		builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
-		// Add Entity Framework
-		var dbPath = Path.Combine(FileSystem.AppDataDirectory, "PasswordManager", "data", "passwordmanager.db");
+		// Register crypto services (needed for database configuration)
+		builder.Services.AddCryptographyServices();
 
-		// Ensure the directory exists
-		var dbDirectory = Path.GetDirectoryName(dbPath);
-		if (!Directory.Exists(dbDirectory))
+		// Register platform service
+		builder.Services.AddSingleton<IPlatformService, MauiPlatformService>();
+
+		// Register database configuration service
+		builder.Services.AddScoped<IDatabaseConfigurationService, DatabaseConfigurationService>();
+		builder.Services.AddScoped<DynamicDatabaseContextFactory>();
+
+		// Configure database context with default SQLite (will be reconfigured after setup)
+		// Create a temporary platform service to get the default path
+		var tempPlatformService = new MauiPlatformService();
+		var defaultDbPath = Path.Combine(tempPlatformService.GetAppDataDirectory(), "data", "passwordmanager.db");
+		var defaultDirectory = Path.GetDirectoryName(defaultDbPath);
+		if (!Directory.Exists(defaultDirectory))
 		{
-			Directory.CreateDirectory(dbDirectory!);
+			Directory.CreateDirectory(defaultDirectory!);
 		}
 
 		builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
-			options.UseSqlite($"Data Source={dbPath}"));
+			options.UseSqlite($"Data Source={defaultDbPath}"));
 
 		// Fix for CS0246: Correct the interface name from 'IPasswordItemIterface' to 'IPasswordItemService'  
 		builder.Services.AddScoped<IPasswordItemService, PasswordItemService>();
@@ -81,9 +92,6 @@ public static class MauiProgram
 		builder.Services.AddScoped<IAppStartupService, AppStartupService>();
 		builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 		builder.Services.AddScoped<IVaultSessionService, VaultSessionService>();
-
-		// Register crypto services
-		builder.Services.AddCryptographyServices();
 
 		// Register sync services
 		builder.Services.AddHttpClient();
@@ -104,59 +112,20 @@ public static class MauiProgram
 
 		var app = builder.Build();
 
-		// Ensure database migrations are applied on first run
+		// Initialize database configuration and startup services
 		using (var scope = app.Services.CreateScope())
 		{
 			try
 			{
-				var db = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+				var startupService = scope.ServiceProvider.GetRequiredService<IAppStartupService>();
 
-#if DEBUG
-				// Log the database path for debugging
-				System.Diagnostics.Debug.WriteLine($"Database path: {dbPath}");
-				System.Diagnostics.Debug.WriteLine($"App data directory: {FileSystem.AppDataDirectory}");
-				System.Diagnostics.Debug.WriteLine($"Directory exists: {Directory.Exists(Path.GetDirectoryName(dbPath))}");
-#endif
-
-				// Check if this is the first run (no migration history exists)
-#if DEBUG
-				try
-				{
-					// Try to check if migration history table exists
-					var hasMigrationHistory = db.Database.GetAppliedMigrations().Any();
-
-					// If database exists but has no migration history (created with EnsureCreated), delete it
-					if (db.Database.CanConnect() && !hasMigrationHistory)
-					{
-						db.Database.EnsureDeleted();
-					}
-				}
-				catch
-				{
-					// If we can't check migration history, it's likely the first run or database doesn't exist
-					// Just proceed with migration
-				}
-#endif
-
-				// Only migrate if there are pending migrations
-				var pendingMigrations = db.Database.GetPendingMigrations();
-				if (pendingMigrations.Any())
-				{
-					db.Database.Migrate();
-				}
-
-				// Alternative approach for simple scenarios (no migrations):
-				// db.Database.EnsureCreated();
+				// Don't await this to prevent blocking app startup
+				_ = startupService.InitializeAsync();
 
 				// Initialize import service with providers
 				var importService = scope.ServiceProvider.GetRequiredService<IImportService>();
 				var onePasswordProvider = scope.ServiceProvider.GetRequiredService<IPasswordImportProvider>();
 				importService.RegisterProvider(onePasswordProvider);
-
-				// Initialize startup sync service (non-blocking)
-				var startupService = scope.ServiceProvider.GetRequiredService<IAppStartupService>();
-				// Don't await this to prevent blocking app startup
-				_ = startupService.InitializeAsync();
 			}
 			catch (Exception ex)
 			{

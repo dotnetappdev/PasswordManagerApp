@@ -9,4 +9,14 @@ public interface IAppStartupService
     /// Initializes the application during startup
     /// </summary>
     Task InitializeAsync();
+
+    /// <summary>
+    /// Initializes the database with the configured provider
+    /// </summary>
+    Task InitializeDatabaseAsync();
+
+    /// <summary>
+    /// Checks if database configuration is complete
+    /// </summary>
+    Task<bool> IsDatabaseConfiguredAsync();
 }
