@@ -80,6 +80,7 @@ public static class MauiProgram
 		builder.Services.AddScoped<IAppSyncService, AppSyncService>();
 		builder.Services.AddScoped<IAppStartupService, AppStartupService>();
 		builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+		builder.Services.AddScoped<IVaultSessionService, VaultSessionService>();
 
 		// Register crypto services
 		builder.Services.AddCryptographyServices();
