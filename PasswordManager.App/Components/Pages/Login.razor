@@ -369,7 +369,7 @@
             errorMessage = string.Empty;
             
             // Lock vault session
-            VaultSessionService.LockVault();
+            VaultSessionService.LockVault(sessionToken);
             
             StateHasChanged();
         }

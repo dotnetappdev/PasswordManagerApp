@@ -767,7 +767,7 @@
                 <label>Category <span style="color:red;">*</span></label>
                 <select @bind="newItem.CategoryId" class="form-control @(categoryValidationError ? "validation-error" : "")">
                     <option value="0">-- Select Category --</option>
-                    @foreach (var category in GetCategoriesForCollection(newItem.CollectionId))
+                    @foreach (var category in GetCategoriesForCollection(newItem.CollectionId ?? 0))
                     {
                         <option value="@category.Id">@category.Name</option>
                     }
@@ -1831,7 +1831,7 @@ private void OnLengthChanged(ChangeEventArgs e)
         }
         
         // Set default category ID based on collection
-        var availableCategories = GetCategoriesForCollection(newItem.CollectionId);
+        var availableCategories = GetCategoriesForCollection(newItem.CollectionId ?? 0);
         if (availableCategories.Any())
         {
             newItem.CategoryId = availableCategories.First().Id;
@@ -2086,7 +2086,7 @@ private void OnLengthChanged(ChangeEventArgs e)
                 return "";
             
             // Use the PasswordRevealService to decrypt the password
-            var result = PasswordRevealService.RevealPasswordAsync(loginItem).Result;
+            var result = PasswordRevealService.RevealPasswordAsync(loginItem, "session").Result;
             return result ?? "Error decrypting password";
         }
         catch (Exception ex)
@@ -2104,7 +2104,7 @@ private void OnLengthChanged(ChangeEventArgs e)
             if (loginItem?.EncryptedPassword == null)
                 return;
                 
-            var decryptedPassword = await PasswordRevealService.RevealPasswordAsync(loginItem);
+            var decryptedPassword = await PasswordRevealService.RevealPasswordAsync(loginItem, "session");
             if (!string.IsNullOrEmpty(decryptedPassword))
             {
                 await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", decryptedPassword);

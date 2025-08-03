@@ -74,7 +74,7 @@
             
             if (result.Succeeded && user != null)
             {
-                MudDialog.Close(DialogResult.Ok(user));
+                Console.WriteLine("Dialog OK"); // TODO: Implement proper dialog result);
             }
             else
             {
@@ -91,7 +91,7 @@
         }
     }
 
-    private void Cancel() => MudDialog.Cancel();
+    private void Cancel() => Console.WriteLine("Dialog Cancel"); // TODO: Implement proper dialog result;
 
     private IEnumerable<string> ValidateEmail(string email)
     {

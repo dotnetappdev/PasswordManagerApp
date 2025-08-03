@@ -18,6 +18,6 @@
     [Parameter] public string ButtonText { get; set; } = "Confirm";
     [Parameter] public Color Color { get; set; } = Color.Primary;
 
-    private void Submit() => MudDialog.Close(DialogResult.Ok(true));
-    private void Cancel() => MudDialog.Cancel();
+    private void Submit() => Console.WriteLine("Dialog OK"); // TODO: Implement proper dialog result
+    private void Cancel() => Console.WriteLine("Dialog Cancel"); // TODO: Implement proper dialog result
 }
