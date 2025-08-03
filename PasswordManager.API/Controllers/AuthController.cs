@@ -182,7 +182,7 @@ public class AuthController : ControllerBase
     /// Logout and clear vault session
     /// </summary>
     [HttpPost("logout")]
-    public async Task<ActionResult> Logout()
+    public ActionResult Logout()
     {
         try
         {

@@ -1,0 +1,245 @@
+@page "/admin/migrations"
+@using PasswordManager.Services.DTOs
+@using PasswordManager.Services.Interfaces
+@using Microsoft.JSInterop
+@inject IDatabaseMigrationService MigrationService
+@inject IJSRuntime JSRuntime
+
+<h3>Database Migrations</h3>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-database me-2"></i>
+                    Database Migrations
+                </h2>
+                <button class="btn btn-primary" @onclick="RefreshStatus">
+                    <i class="fas fa-sync-alt me-2"></i>
+                    Refresh
+                </button>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading migration status...</p>
+                </div>
+            }
+            else if (migrationStatus != null)
+            {
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Migration Status
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <strong>Database Created:</strong>
+                                    <span class="badge @(migrationStatus.IsDatabaseCreated ? "bg-success" : "bg-warning") ms-2">
+                                        @(migrationStatus.IsDatabaseCreated ? "Yes" : "No")
+                                    </span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Pending Migrations:</strong>
+                                    <span class="badge @(migrationStatus.HasPendingMigrations ? "bg-warning" : "bg-success") ms-2">
+                                        @(migrationStatus.HasPendingMigrations ? migrationStatus.PendingMigrations.Count() : 0)
+                                    </span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Applied Migrations:</strong>
+                                    <span class="badge bg-info ms-2">
+                                        @migrationStatus.AppliedMigrations.Count()
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-tools me-2"></i>
+                                    Actions
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                @if (migrationStatus.HasPendingMigrations)
+                                {
+                                    <div class="alert alert-warning">
+                                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Pending Migrations Detected</h6>
+                                        <p class="mb-2">There are pending database migrations that need to be applied.</p>
+                                        <button class="btn btn-warning btn-sm" @onclick="ApplyMigrations" disabled="@isApplying">
+                                            @if (isApplying)
+                                            {
+                                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                            }
+                                            else
+                                            {
+                                                <i class="fas fa-play me-2"></i>
+                                            }
+                                            Apply Migrations
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-success">
+                                        <h6><i class="fas fa-check-circle me-2"></i>Database Up to Date</h6>
+                                        <p class="mb-0">All migrations have been applied successfully.</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (migrationStatus.PendingMigrations.Any())
+                {
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-clock me-2"></i>
+                                Pending Migrations
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                @foreach (var migration in migrationStatus.PendingMigrations)
+                                {
+                                    <li class="list-group-item">
+                                        <i class="fas fa-file-code me-2 text-warning"></i>
+                                        @migration
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                }
+
+                @if (migrationStatus.AppliedMigrations.Any())
+                {
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-check me-2"></i>
+                                Applied Migrations
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                @foreach (var migration in migrationStatus.AppliedMigrations.Take(10))
+                                {
+                                    <div class="col-md-6 mb-2">
+                                        <span class="badge bg-success me-2">
+                                            <i class="fas fa-check me-1"></i>
+                                        </span>
+                                        @migration
+                                    </div>
+                                }
+                            </div>
+                            @if (migrationStatus.AppliedMigrations.Count() > 10)
+                            {
+                                <p class="text-muted mt-2">
+                                    ... and @(migrationStatus.AppliedMigrations.Count() - 10) more migrations
+                                </p>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <div class="alert @alertClass mt-4" role="alert">
+                    @message
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private MigrationStatusDto? migrationStatus;
+    private bool isLoading = true;
+    private bool isApplying = false;
+    private string message = string.Empty;
+    private string alertClass = "alert-info";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshStatus();
+    }
+
+    private async Task RefreshStatus()
+    {
+        isLoading = true;
+        message = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            migrationStatus = await MigrationService.GetMigrationStatusAsync();
+        }
+        catch (Exception ex)
+        {
+            message = $"Error loading migration status: {ex.Message}";
+            alertClass = "alert-danger";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ApplyMigrations()
+    {
+        if (migrationStatus?.HasPendingMigrations != true) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            "Are you sure you want to apply the pending migrations? This operation cannot be undone.");
+        
+        if (!confirmed) return;
+
+        isApplying = true;
+        message = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var result = await MigrationService.ApplyPendingMigrationsAsync();
+            
+            if (result.Success)
+            {
+                message = $"✅ {result.Message}";
+                alertClass = "alert-success";
+                await RefreshStatus();
+            }
+            else
+            {
+                message = $"❌ {result.Message}";
+                alertClass = "alert-danger";
+            }
+        }
+        catch (Exception ex)
+        {
+            message = $"Error applying migrations: {ex.Message}";
+            alertClass = "alert-danger";
+        }
+        finally
+        {
+            isApplying = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -10,15 +10,143 @@ using PasswordManager.DAL;
 
 namespace PasswordManager.DAL.Migrations
 {
-    [DbContext(typeof(PasswordManagerDbContext))]
-    [Migration("20250701223330_ADDCOLLECTIONS2")]
-    partial class ADDCOLLECTIONS2
+    [DbContext(typeof(PasswordManagerDbContextApp))]
+    [Migration("20250803101910_firstmigration")]
+    partial class firstmigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.6");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex");
+
+                    b.ToTable("AspNetRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetRoleClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserLogins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RoleId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetUserRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("AspNetUserTokens", (string)null);
+                });
 
             modelBuilder.Entity("PasswordItemTag", b =>
                 {
@@ -32,7 +160,142 @@ namespace PasswordManager.DAL.Migrations
 
                     b.HasIndex("TagsId");
 
-                    b.ToTable("PasswordItemTags", (string)null);
+                    b.ToTable("PasswordItemTag");
+                });
+
+            modelBuilder.Entity("PasswordManager.Models.ApiKey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("KeyHash")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ApiKeys");
+                });
+
+            modelBuilder.Entity("PasswordManager.Models.ApplicationUser", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MasterPasswordHash")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MasterPasswordHint")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MasterPasswordIterations")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserSalt")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex");
+
+                    b.ToTable("AspNetUsers", (string)null);
                 });
 
             modelBuilder.Entity("PasswordManager.Models.Category", b =>
@@ -45,103 +308,34 @@ namespace PasswordManager.DAL.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Color")
-                        .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Icon")
-                        .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModified")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CollectionId");
 
-                    b.HasIndex("Name")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("Categories");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CollectionId = 1,
-                            Color = "#3B82F6",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Icon = "👤",
-                            Name = "Personal"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CollectionId = 2,
-                            Color = "#10B981",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Icon = "💼",
-                            Name = "Work"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CollectionId = 1,
-                            Color = "#F59E0B",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Icon = "💰",
-                            Name = "Finance"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            CollectionId = 1,
-                            Color = "#8B5CF6",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Icon = "🌐",
-                            Name = "Social"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            CollectionId = 1,
-                            Color = "#EF4444",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Icon = "🛒",
-                            Name = "Shopping"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            CollectionId = 3,
-                            Color = "#EC4899",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Icon = "🎮",
-                            Name = "Entertainment"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            CollectionId = 3,
-                            Color = "#06B6D4",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Icon = "✈️",
-                            Name = "Travel"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            CollectionId = 1,
-                            Color = "#84CC16",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Icon = "🏥",
-                            Name = "Health"
-                        });
                 });
 
             modelBuilder.Entity("PasswordManager.Models.Collection", b =>
@@ -151,7 +345,8 @@ namespace PasswordManager.DAL.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Color")
-                        .HasMaxLength(10)
+                        .IsRequired()
+                        .HasMaxLength(7)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
@@ -162,57 +357,38 @@ namespace PasswordManager.DAL.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Icon")
-                        .HasMaxLength(10)
+                        .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsDefault")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(50)
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("ParentCollectionId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("Id");
+                    b.Property<int?>("ParentId")
+                        .HasColumnType("INTEGER");
 
-                    b.HasIndex("Name")
-                        .IsUnique();
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("ParentCollectionId");
 
-                    b.ToTable("Collections");
+                    b.HasIndex("UserId");
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Color = "#3B82F6",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Icon = "👤",
-                            IsDefault = true,
-                            Name = "Personal"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Color = "#10B981",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Icon = "💼",
-                            IsDefault = false,
-                            Name = "Work"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Color = "#8B5CF6",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Icon = "👪",
-                            IsDefault = false,
-                            Name = "Family"
-                        });
+                    b.ToTable("Collections");
                 });
 
             modelBuilder.Entity("PasswordManager.Models.CreditCardItem", b =>
@@ -273,6 +449,14 @@ namespace PasswordManager.DAL.Migrations
                         .HasMaxLength(19)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CardNumberAuthTag")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CardNumberNonce")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("CardType")
                         .HasColumnType("INTEGER");
 
@@ -284,12 +468,37 @@ namespace PasswordManager.DAL.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("CreditLimit")
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CustomerServicePhone")
                         .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CvvAuthTag")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CvvNonce")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EncryptedCardNumber")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EncryptedCvv")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExpirationMonth")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExpirationYear")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ExpiryDate")
@@ -310,6 +519,9 @@ namespace PasswordManager.DAL.Migrations
 
                     b.Property<string>("IssuingBank")
                         .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModified")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("LastUsed")
@@ -335,7 +547,13 @@ namespace PasswordManager.DAL.Migrations
                         .HasMaxLength(6)
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("PasswordId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("PasswordItemId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("RequiresMasterPassword")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("RewardsNumber")
@@ -346,12 +564,18 @@ namespace PasswordManager.DAL.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SecurityCode")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("TravelInsurance")
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("UsageCount")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ValidFrom")
                         .HasMaxLength(7)
@@ -361,6 +585,8 @@ namespace PasswordManager.DAL.Migrations
 
                     b.HasIndex("PasswordItemId")
                         .IsUnique();
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("CreditCardItems");
                 });
@@ -379,6 +605,9 @@ namespace PasswordManager.DAL.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Department")
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
@@ -387,8 +616,38 @@ namespace PasswordManager.DAL.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("EncryptedNotes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EncryptedPassword")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EncryptedSecurityAnswer1")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EncryptedSecurityAnswer2")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EncryptedSecurityAnswer3")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EncryptedTotpSecret")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("JobTitle")
                         .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastAutoFill")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModified")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("LastUsed")
@@ -398,18 +657,29 @@ namespace PasswordManager.DAL.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
+                    b.Property<string>("NotesAuthTag")
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Password")
-                        .HasMaxLength(500)
+                    b.Property<string>("NotesNonce")
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordAuthTag")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("PasswordId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("PasswordItemId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("PasswordLastChanged")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordNonce")
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PhoneNumber")
@@ -424,19 +694,34 @@ namespace PasswordManager.DAL.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("RequiresMasterPassword")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("RequiresPasswordChange")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("SecurityAnswer1")
-                        .HasMaxLength(300)
+                    b.Property<string>("SecurityAnswer1AuthTag")
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("SecurityAnswer2")
-                        .HasMaxLength(300)
+                    b.Property<string>("SecurityAnswer1Nonce")
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("SecurityAnswer3")
-                        .HasMaxLength(300)
+                    b.Property<string>("SecurityAnswer2AuthTag")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecurityAnswer2Nonce")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecurityAnswer3AuthTag")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecurityAnswer3Nonce")
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SecurityQuestion1")
@@ -455,8 +740,12 @@ namespace PasswordManager.DAL.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("TotpSecret")
-                        .HasMaxLength(500)
+                    b.Property<string>("TotpAuthTag")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TotpNonce")
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("TwoFactorType")
@@ -466,6 +755,9 @@ namespace PasswordManager.DAL.Migrations
                     b.Property<int>("UsageCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Username")
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
@@ -474,10 +766,16 @@ namespace PasswordManager.DAL.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("WebsiteUrl")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PasswordItemId")
                         .IsUnique();
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("LoginItems");
                 });
@@ -488,10 +786,10 @@ namespace PasswordManager.DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CategoryId")
+                    b.Property<int?>("CategoryId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CollectionId")
+                    b.Property<int?>("CollectionId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
@@ -521,13 +819,56 @@ namespace PasswordManager.DAL.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
 
                     b.HasIndex("CollectionId");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("PasswordItems");
+                });
+
+            modelBuilder.Entity("PasswordManager.Models.QrLoginToken", b =>
+                {
+                    b.Property<string>("Token")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Token");
+
+                    b.ToTable("QrLoginTokens");
                 });
 
             modelBuilder.Entity("PasswordManager.Models.SecureNoteItem", b =>
@@ -545,6 +886,21 @@ namespace PasswordManager.DAL.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Content")
+                        .HasMaxLength(10000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContentAuthTag")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContentNonce")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EncryptedContent")
                         .HasMaxLength(10000)
                         .HasColumnType("TEXT");
 
@@ -567,10 +923,19 @@ namespace PasswordManager.DAL.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("LastUsed")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("PasswordId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("PasswordItemId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("RequiresMasterPassword")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("SharedWith")
@@ -581,8 +946,15 @@ namespace PasswordManager.DAL.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Title")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("UsageCount")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Version")
                         .HasColumnType("INTEGER");
@@ -591,6 +963,8 @@ namespace PasswordManager.DAL.Migrations
 
                     b.HasIndex("PasswordItemId")
                         .IsUnique();
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("SecureNoteItems");
                 });
@@ -615,59 +989,22 @@ namespace PasswordManager.DAL.Migrations
                     b.Property<bool>("IsSystemTag")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("Tags");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Color = "#3B82F6",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsSystemTag = true,
-                            Name = "Personal"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Color = "#10B981",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsSystemTag = true,
-                            Name = "Work"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Color = "#F59E0B",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsSystemTag = true,
-                            Name = "Finance"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Color = "#8B5CF6",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsSystemTag = true,
-                            Name = "Social"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Color = "#EF4444",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsSystemTag = true,
-                            Name = "Shopping"
-                        });
                 });
 
             modelBuilder.Entity("PasswordManager.Models.WiFiItem", b =>
@@ -694,6 +1031,9 @@ namespace PasswordManager.DAL.Migrations
 
                     b.Property<string>("Channel")
                         .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("DataLimit")
@@ -745,6 +1085,9 @@ namespace PasswordManager.DAL.Migrations
                     b.Property<bool>("IsHidden")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("LastUsed")
                         .HasColumnType("TEXT");
 
@@ -768,6 +1111,9 @@ namespace PasswordManager.DAL.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("PasswordId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("PasswordItemId")
                         .HasColumnType("INTEGER");
 
@@ -782,6 +1128,9 @@ namespace PasswordManager.DAL.Migrations
                     b.Property<string>("QRCodeData")
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("RequiresMasterPassword")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Room")
                         .HasMaxLength(50)
@@ -836,6 +1185,9 @@ namespace PasswordManager.DAL.Migrations
                     b.Property<bool>("UseStaticIP")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("WirelessStandard")
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
@@ -845,7 +1197,60 @@ namespace PasswordManager.DAL.Migrations
                     b.HasIndex("PasswordItemId")
                         .IsUnique();
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("WiFiItems");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.HasOne("PasswordManager.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.HasOne("PasswordManager.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PasswordManager.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.HasOne("PasswordManager.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("PasswordItemTag", b =>
@@ -863,24 +1268,47 @@ namespace PasswordManager.DAL.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PasswordManager.Models.ApiKey", b =>
+                {
+                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                        .WithMany("ApiKeys")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("PasswordManager.Models.Category", b =>
                 {
                     b.HasOne("PasswordManager.Models.Collection", "Collection")
                         .WithMany("Categories")
-                        .HasForeignKey("CollectionId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("CollectionId");
+
+                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                        .WithMany("Categories")
+                        .HasForeignKey("UserId");
 
                     b.Navigation("Collection");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PasswordManager.Models.Collection", b =>
                 {
                     b.HasOne("PasswordManager.Models.Collection", "ParentCollection")
                         .WithMany("Children")
-                        .HasForeignKey("ParentCollectionId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("ParentCollectionId");
+
+                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                        .WithMany("Collections")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("ParentCollection");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PasswordManager.Models.CreditCardItem", b =>
@@ -891,7 +1319,13 @@ namespace PasswordManager.DAL.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                        .WithMany("CreditCardItems")
+                        .HasForeignKey("UserId");
+
                     b.Navigation("PasswordItem");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PasswordManager.Models.LoginItem", b =>
@@ -902,26 +1336,34 @@ namespace PasswordManager.DAL.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                        .WithMany("LoginItems")
+                        .HasForeignKey("UserId");
+
                     b.Navigation("PasswordItem");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PasswordManager.Models.PasswordItem", b =>
                 {
                     b.HasOne("PasswordManager.Models.Category", "Category")
                         .WithMany("PasswordItems")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("CategoryId");
 
                     b.HasOne("PasswordManager.Models.Collection", "Collection")
                         .WithMany("PasswordItems")
-                        .HasForeignKey("CollectionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("CollectionId");
+
+                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                        .WithMany("PasswordItems")
+                        .HasForeignKey("UserId");
 
                     b.Navigation("Category");
 
                     b.Navigation("Collection");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PasswordManager.Models.SecureNoteItem", b =>
@@ -932,7 +1374,22 @@ namespace PasswordManager.DAL.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                        .WithMany("SecureNoteItems")
+                        .HasForeignKey("UserId");
+
                     b.Navigation("PasswordItem");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PasswordManager.Models.Tag", b =>
+                {
+                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                        .WithMany("Tags")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PasswordManager.Models.WiFiItem", b =>
@@ -943,7 +1400,34 @@ namespace PasswordManager.DAL.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                        .WithMany("WiFiItems")
+                        .HasForeignKey("UserId");
+
                     b.Navigation("PasswordItem");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PasswordManager.Models.ApplicationUser", b =>
+                {
+                    b.Navigation("ApiKeys");
+
+                    b.Navigation("Categories");
+
+                    b.Navigation("Collections");
+
+                    b.Navigation("CreditCardItems");
+
+                    b.Navigation("LoginItems");
+
+                    b.Navigation("PasswordItems");
+
+                    b.Navigation("SecureNoteItems");
+
+                    b.Navigation("Tags");
+
+                    b.Navigation("WiFiItems");
                 });
 
             modelBuilder.Entity("PasswordManager.Models.Category", b =>

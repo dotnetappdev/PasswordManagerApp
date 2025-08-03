@@ -35,7 +35,7 @@ if (databaseProvider.ToLower() == "supabase")
     supabaseApiKey = builder.Configuration["Supabase:ApiKey"];
     if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseApiKey))
         throw new InvalidOperationException("Supabase configuration missing in appsettings.json");
-    
+
     builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
         options.UseNpgsql(supabaseUrl));
     builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
@@ -49,7 +49,7 @@ else
         "sqlite" => builder.Configuration.GetConnectionString("SqliteConnection"),
         _ => builder.Configuration.GetConnectionString("DefaultConnection")
     };
-    
+
     if (string.IsNullOrEmpty(connectionString))
         throw new InvalidOperationException($"Connection string for {databaseProvider} not found.");
 
@@ -100,6 +100,7 @@ builder.Services.AddScoped<IVaultSessionService, PasswordManager.Services.Servic
 builder.Services.AddScoped<IQrLoginService, PasswordManager.Services.Services.QrLoginService>();
 builder.Services.AddScoped<IDatabaseContextFactory, PasswordManager.Services.Services.DatabaseContextFactory>();
 builder.Services.AddScoped<IPasswordEncryptionService, PasswordManager.Services.Services.PasswordEncryptionService>();
+builder.Services.AddScoped<IDatabaseMigrationService, PasswordManager.Services.Services.DatabaseMigrationService>();
 
 // Register crypto services
 builder.Services.AddCryptographyServices();
@@ -130,11 +131,47 @@ app.MapRazorComponents<App>()
 
 app.MapRazorPages();
 
-// Ensure database is created and migrated
+// Initialize database with migration handling
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
-    await dbContext.Database.EnsureCreatedAsync();
+    try
+    {
+        // Check for pending migrations before applying
+        var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
+
+        if (pendingMigrations.Any())
+        {
+            // Log pending migrations but don't block startup
+            Console.WriteLine($"⚠️  Warning: Pending migrations found: {string.Join(", ", pendingMigrations)}");
+            Console.WriteLine("🔄 Applying pending migrations...");
+            await dbContext.Database.MigrateAsync();
+            Console.WriteLine("✅ Migrations applied successfully");
+        }
+        else
+        {
+            // Only use EnsureCreated if no migrations exist
+            var appliedMigrations = await dbContext.Database.GetAppliedMigrationsAsync();
+            if (!appliedMigrations.Any())
+            {
+                await dbContext.Database.EnsureCreatedAsync();
+                Console.WriteLine("📁 Database created using EnsureCreated");
+            }
+            else
+            {
+                Console.WriteLine("✅ Database already exists and is up to date");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        // Log the error but don't stop the application
+        Console.WriteLine($"⚠️  Database initialization warning: {ex.Message}");
+        Console.WriteLine("🚀 Application will continue to start...");
+        Console.WriteLine("💡 If you encounter database issues, you may need to:");
+        Console.WriteLine("   1. Run 'dotnet ef database update' manually");
+        Console.WriteLine("   2. Or reset the database and migrations");
+    }
 }
 
 app.Run();

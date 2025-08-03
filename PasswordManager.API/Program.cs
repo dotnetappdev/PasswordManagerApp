@@ -107,6 +107,7 @@ builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IVaultSessionService, PasswordManager.Services.Services.VaultSessionService>();
 builder.Services.AddScoped<IQrLoginService, PasswordManager.Services.Services.QrLoginService>();
 builder.Services.AddScoped<IApiKeyService, PasswordManager.Services.Services.ApiKeyService>();
+builder.Services.AddScoped<IDatabaseMigrationService, PasswordManager.Services.Services.DatabaseMigrationService>();
 builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncService>();
 
 // Register cryptography services
@@ -155,20 +156,70 @@ app.MapControllers();
 
 app.MapHealthChecks("/health");
 
-// Ensure database is created and migrated
+// Initialize database with migration handling
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
     var contextApp = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
     try
     {
-        await context.Database.EnsureCreatedAsync();
-        await contextApp.Database.EnsureCreatedAsync();
-        Log.Information("Database ensured for provider: {Provider}", databaseProvider);
+        // Check for pending migrations before applying
+        var pendingMigrations = await contextApp.Database.GetPendingMigrationsAsync();
+        var pendingMigrationsApi = await context.Database.GetPendingMigrationsAsync();
+
+        if (pendingMigrations.Any())
+        {
+            Log.Warning("Pending migrations found for PasswordManagerDbContextApp: {Migrations}", string.Join(", ", pendingMigrations));
+            Log.Information("Applying pending migrations for PasswordManagerDbContextApp...");
+            await contextApp.Database.MigrateAsync();
+            Log.Information("Migrations applied successfully for PasswordManagerDbContextApp");
+        }
+        else
+        {
+            // Only use EnsureCreated if no migrations exist
+            var appliedMigrations = await contextApp.Database.GetAppliedMigrationsAsync();
+            if (!appliedMigrations.Any())
+            {
+                await contextApp.Database.EnsureCreatedAsync();
+                Log.Information("Database created for PasswordManagerDbContextApp using EnsureCreated");
+            }
+            else
+            {
+                Log.Information("Database already exists for PasswordManagerDbContextApp");
+            }
+        }
+
+        if (pendingMigrationsApi.Any())
+        {
+            Log.Warning("Pending migrations found for PasswordManagerDbContext: {Migrations}", string.Join(", ", pendingMigrationsApi));
+            Log.Information("Applying pending migrations for PasswordManagerDbContext...");
+            await context.Database.MigrateAsync();
+            Log.Information("Migrations applied successfully for PasswordManagerDbContext");
+        }
+        else
+        {
+            // Only use EnsureCreated if no migrations exist
+            var appliedMigrationsApi = await context.Database.GetAppliedMigrationsAsync();
+            if (!appliedMigrationsApi.Any())
+            {
+                await context.Database.EnsureCreatedAsync();
+                Log.Information("Database created for PasswordManagerDbContext using EnsureCreated");
+            }
+            else
+            {
+                Log.Information("Database already exists for PasswordManagerDbContext");
+            }
+        }
+
+        Log.Information("Database initialization completed for provider: {Provider}", databaseProvider);
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "Error ensuring database exists");
+        Log.Error(ex, "Error during database initialization. The application will continue to start, but some database operations may fail.");
+        Log.Warning("If you see 'table already exists' errors, you may need to either:");
+        Log.Warning("1. Delete the migration files and recreate them, or");
+        Log.Warning("2. Reset the database, or");
+        Log.Warning("3. Manually apply the migrations using 'dotnet ef database update'");
     }
 }
 
