@@ -80,4 +80,5 @@ public class ApplicationUser : IdentityUser
     public virtual ICollection<SecureNoteItem> SecureNoteItems { get; set; } = new List<SecureNoteItem>();
     public virtual ICollection<WiFiItem> WiFiItems { get; set; } = new List<WiFiItem>();
     public virtual ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
+    public virtual ICollection<SmsSettings> SmsSettings { get; set; } = new List<SmsSettings>();
 }

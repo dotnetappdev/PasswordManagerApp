@@ -49,4 +49,11 @@ public interface IVaultSessionService
     bool IsVaultUnlocked(string sessionId);
     void LockVault(string sessionId);
     bool UnlockVault(string sessionId, byte[] masterKey);
+
+    /// <summary>
+    /// Get the master key for a session (for advanced operations)
+    /// </summary>
+    /// <param name="sessionId">Session ID</param>
+    /// <returns>Master key or null if session is invalid or locked</returns>
+    byte[]? GetMasterKey(string sessionId);
 }
