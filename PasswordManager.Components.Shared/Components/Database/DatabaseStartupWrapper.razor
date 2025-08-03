@@ -1,0 +1,54 @@
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Components.Shared.Components.Database
+@inject IDatabaseConfigurationService DatabaseConfigService
+@inject NavigationManager Navigation
+
+@if (ShowDatabaseSelection)
+{
+    <DatabaseSelectionDialog IsVisible="true" OnConfigurationSaved="OnDatabaseConfigured" />
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnConfigurationComplete { get; set; }
+
+    private bool ShowDatabaseSelection { get; set; }
+    private bool IsInitialized { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Check if we should show database selection dialog
+            var shouldShow = DatabaseConfigService.ShouldShowDatabaseSelection();
+            var isFirstRun = await DatabaseConfigService.IsFirstRunAsync();
+
+            ShowDatabaseSelection = shouldShow && isFirstRun;
+            IsInitialized = true;
+            
+            if (!ShowDatabaseSelection)
+            {
+                // If not showing dialog, notify that configuration is complete
+                await OnConfigurationComplete.InvokeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error and continue without showing dialog
+            Console.WriteLine($"Error checking database configuration: {ex.Message}");
+            IsInitialized = true;
+            await OnConfigurationComplete.InvokeAsync();
+        }
+    }
+
+    private async Task OnDatabaseConfigured()
+    {
+        ShowDatabaseSelection = false;
+        await OnConfigurationComplete.InvokeAsync();
+        StateHasChanged();
+    }
+}

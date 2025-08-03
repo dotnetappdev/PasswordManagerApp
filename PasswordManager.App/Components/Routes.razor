@@ -1,28 +1,43 @@
-﻿<Router AppAssembly="@typeof(MauiProgram).Assembly" 
-        AdditionalAssemblies="new[] { typeof(PasswordManager.Components.Shared._Imports).Assembly }">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-    <NotFound>
-        <PageTitle>Not Found</PageTitle>
-        @{
-            NavigationManager.NavigateTo("/login");
-        }
-    </NotFound>
-</Router>
+﻿@using PasswordManager.Components.Shared.Components.Database
+
+<DatabaseStartupWrapper OnConfigurationComplete="OnDatabaseConfigured">
+    <Router AppAssembly="@typeof(MauiProgram).Assembly" 
+            AdditionalAssemblies="new[] { typeof(PasswordManager.Components.Shared._Imports).Assembly }">
+        <Found Context="routeData">
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>Not Found</PageTitle>
+            @{
+                NavigationManager.NavigateTo("/login");
+            }
+        </NotFound>
+    </Router>
+</DatabaseStartupWrapper>
 
 @code {
     [Inject] 
     private NavigationManager NavigationManager { get; set; } = default!;
     
+    private bool isDatabaseConfigured = false;
+    
     protected override void OnInitialized()
     {
-        // Redirect to login page when app starts
+        // Initial navigation will be handled after database configuration
+    }
+    
+    private void OnDatabaseConfigured()
+    {
+        isDatabaseConfigured = true;
+        
+        // Redirect to login page when database is configured and app starts
         if (NavigationManager.Uri.EndsWith("/"))
         {
             NavigationManager.NavigateTo("/login", true);
         }
+        
+        StateHasChanged();
     }
 }
 

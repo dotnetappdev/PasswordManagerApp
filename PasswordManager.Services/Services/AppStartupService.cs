@@ -1,5 +1,8 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
+using PasswordManager.DAL;
+using Microsoft.EntityFrameworkCore;
 
 namespace PasswordManager.Services.Services;
 
@@ -9,33 +12,94 @@ namespace PasswordManager.Services.Services;
 public class AppStartupService : IAppStartupService
 {
     private readonly IAppSyncService? _syncService;
+    private readonly IDatabaseConfigurationService _databaseConfigService;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AppStartupService> _logger;
 
     public AppStartupService(
         IAppSyncService? syncService,
+        IDatabaseConfigurationService databaseConfigService,
+        IServiceProvider serviceProvider,
         ILogger<AppStartupService> logger)
     {
         _syncService = syncService;
+        _databaseConfigService = databaseConfigService;
+        _serviceProvider = serviceProvider;
         _logger = logger;
     }
 
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
         try
         {
             _logger.LogInformation("Starting app initialization");
 
+            // Initialize database first
+            await InitializeDatabaseAsync();
+
             // Perform startup sync in a fire-and-forget manner to not block app startup
             _ = Task.Run(async () => await PerformStartupSyncAsync());
 
             _logger.LogInformation("App initialization completed (sync running in background)");
-            return Task.CompletedTask;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during app initialization");
             // Don't re-throw - allow app to continue starting
-            return Task.CompletedTask;
+        }
+    }
+
+    public async Task InitializeDatabaseAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Initializing database");
+
+            // Check if database is configured
+            var isConfigured = await IsDatabaseConfiguredAsync();
+            if (!isConfigured)
+            {
+                _logger.LogWarning("Database not configured, skipping database initialization");
+                return;
+            }
+
+            // Get database context and apply migrations
+            using var scope = _serviceProvider.CreateScope();
+            var dbContext = scope.ServiceProvider.GetService<PasswordManagerDbContext>();
+            
+            if (dbContext != null)
+            {
+                // Check for pending migrations
+                var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
+                if (pendingMigrations.Any())
+                {
+                    _logger.LogInformation("Applying database migrations");
+                    await dbContext.Database.MigrateAsync();
+                    _logger.LogInformation("Database migrations applied successfully");
+                }
+                else
+                {
+                    _logger.LogInformation("Database is up to date");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error initializing database");
+            throw;
+        }
+    }
+
+    public async Task<bool> IsDatabaseConfiguredAsync()
+    {
+        try
+        {
+            var isFirstRun = await _databaseConfigService.IsFirstRunAsync();
+            return !isFirstRun;
+        }
+        catch
+        {
+            return false;
         }
     }
 
