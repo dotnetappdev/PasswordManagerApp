@@ -1,3 +1,4 @@
+@using MudBlazor
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -11,12 +12,12 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    // [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
     
     [Parameter] public string ContentText { get; set; } = default!;
     [Parameter] public string ButtonText { get; set; } = "Confirm";
     [Parameter] public Color Color { get; set; } = Color.Primary;
 
-    private void Submit() => MudDialog.Close(DialogResult.Ok(true));
-    private void Cancel() => MudDialog.Cancel();
+    private void Submit() => Console.WriteLine("Dialog OK"); // TODO: Implement proper dialog result
+    private void Cancel() => Console.WriteLine("Dialog Cancel"); // TODO: Implement proper dialog result
 }

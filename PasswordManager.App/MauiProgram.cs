@@ -8,8 +8,6 @@ using PasswordManager.Services.Services;
 using PasswordManager.Imports.Interfaces;
 using PasswordManager.Imports.Services;
 using PasswordManagerImports.OnePassword.Providers;
-using PasswordManager.App.Services.Interfaces;
-using PasswordManager.App.Services;
 using Microsoft.Extensions.Configuration;
 using PasswordManager.Crypto.Extensions;
 
@@ -19,6 +17,11 @@ public static class MauiProgram
 {
 
  
+
+	public static MauiApp CreateMauiApp()
+	{
+		return CreateMauiAppAsync().GetAwaiter().GetResult();
+	}
 
 	public static async Task<MauiApp> CreateMauiAppAsync()
 	{
