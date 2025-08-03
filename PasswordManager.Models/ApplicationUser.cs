@@ -47,12 +47,12 @@ public class ApplicationUser : IdentityUser
     /// Phone number for SMS OTP delivery (E.164 format)
     /// </summary>
     [MaxLength(20)]
-    public string? PhoneNumber { get; set; }
+    public new string? PhoneNumber { get; set; }
 
     /// <summary>
     /// Whether the phone number has been verified
     /// </summary>
-    public bool PhoneNumberConfirmed { get; set; } = false;
+    public new bool PhoneNumberConfirmed { get; set; } = false;
 
     /// <summary>
     /// When the phone number was last verified

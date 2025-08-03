@@ -20,6 +20,7 @@ public class AuthController : ControllerBase
     private readonly IVaultSessionService _vaultSessionService;
     private readonly IQrLoginService _qrLoginService;
     private readonly IOtpService _otpService;
+    private readonly IPlatformDetectionService _platformDetectionService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly SmsConfiguration _smsConfig;
@@ -30,6 +31,7 @@ public class AuthController : ControllerBase
         IVaultSessionService vaultSessionService,
         IQrLoginService qrLoginService,
         IOtpService otpService,
+        IPlatformDetectionService platformDetectionService,
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         IOptions<SmsConfiguration> smsConfig,
@@ -39,6 +41,7 @@ public class AuthController : ControllerBase
         _vaultSessionService = vaultSessionService;
         _qrLoginService = qrLoginService;
         _otpService = otpService;
+        _platformDetectionService = platformDetectionService;
         _userManager = userManager;
         _signInManager = signInManager;
         _smsConfig = smsConfig.Value;
@@ -368,6 +371,13 @@ public class AuthController : ControllerBase
                 return BadRequest("SMS OTP is not enabled on this server");
             }
 
+            // Check if OTP is supported on this platform
+            var userAgent = HttpContext.Request.Headers["User-Agent"].FirstOrDefault();
+            if (!_platformDetectionService.IsOtpSupported(userAgent))
+            {
+                return BadRequest("Two-factor authentication via SMS is not supported on this platform");
+            }
+
             var sessionId = HttpContext.Request.Headers["Authorization"]
                 .FirstOrDefault()?.Replace("Bearer ", "");
 
@@ -498,6 +508,13 @@ public class AuthController : ControllerBase
             if (!_smsConfig.Enabled)
             {
                 return BadRequest("SMS OTP is not enabled on this server");
+            }
+
+            // Check if OTP is supported on this platform
+            var userAgent = HttpContext.Request.Headers["User-Agent"].FirstOrDefault();
+            if (!_platformDetectionService.IsOtpSupported(userAgent))
+            {
+                return BadRequest("Two-factor authentication via SMS is not supported on this platform");
             }
 
             // Find user and verify credentials first

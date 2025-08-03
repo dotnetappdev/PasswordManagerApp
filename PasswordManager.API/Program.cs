@@ -121,6 +121,7 @@ builder.Services.Configure<PasswordManager.Models.Configuration.SmsConfiguration
 builder.Services.AddHttpClient<PasswordManager.Services.Services.TwilioSmsService>();
 builder.Services.AddScoped<ISmsService, PasswordManager.Services.Services.TwilioSmsService>();
 builder.Services.AddScoped<IOtpService, PasswordManager.Services.Services.OtpService>();
+builder.Services.AddScoped<IPlatformDetectionService, PasswordManager.Services.Services.PlatformDetectionService>();
 
 // Add API documentation with Swagger (compatible with .NET 8)
 builder.Services.AddEndpointsApiExplorer();
