@@ -5,6 +5,7 @@ using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
 using PasswordManager.API.Extensions;
 using PasswordManager.API.Middleware;
+using PasswordManager.DAL.Interfaces;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Identity;
@@ -95,6 +96,11 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 // Register application services
+builder.Services.AddScoped<IPasswordManagerDbContext>(provider =>
+{
+    var dbContext = provider.GetRequiredService<PasswordManagerDbContext>();
+    return new PasswordManager.API.Services.PasswordManagerDbContextWrapper(dbContext);
+});
 builder.Services.AddScoped<IPasswordItemApiService, PasswordManager.Services.Services.PasswordItemApiService>();
 builder.Services.AddScoped<ICategoryApiService, PasswordManager.Services.Services.CategoryApiService>();
 builder.Services.AddScoped<ICollectionApiService, PasswordManager.Services.Services.CollectionApiService>();
