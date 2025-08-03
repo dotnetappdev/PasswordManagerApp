@@ -113,6 +113,15 @@ builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncServ
 // Register cryptography services
 builder.Services.AddCryptographyServices();
 
+// Configure SMS settings
+builder.Services.Configure<PasswordManager.Models.Configuration.SmsConfiguration>(
+    builder.Configuration.GetSection(PasswordManager.Models.Configuration.SmsConfiguration.SectionName));
+
+// Register SMS and OTP services
+builder.Services.AddHttpClient<PasswordManager.Services.Services.TwilioSmsService>();
+builder.Services.AddScoped<ISmsService, PasswordManager.Services.Services.TwilioSmsService>();
+builder.Services.AddScoped<IOtpService, PasswordManager.Services.Services.OtpService>();
+
 // Add API documentation with Swagger (compatible with .NET 8)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

@@ -21,6 +21,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
     public DbSet<ApiKey> ApiKeys { get; set; } = null!;
     public DbSet<ApplicationUser> Users { get; set; } = null!;
     public DbSet<QrLoginToken> QrLoginTokens { get; set; } = null!;
+    public DbSet<OtpCode> OtpCodes { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -231,6 +232,32 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.UserAgent).HasMaxLength(500);
             entity.Property(e => e.IpAddress).HasMaxLength(45);
             entity.Property(e => e.Status).HasConversion<int>();
+        });
+
+        // Configure OtpCode
+        modelBuilder.Entity<OtpCode>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.CodeHash).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.PhoneNumber).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.ExpiresAt).IsRequired();
+            entity.Property(e => e.AttemptCount).IsRequired();
+            entity.Property(e => e.IsUsed).IsRequired();
+            entity.Property(e => e.RequestIpAddress).HasMaxLength(45);
+            entity.Property(e => e.RequestUserAgent).HasMaxLength(500);
+
+            // Configure User relationship
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Add indexes for performance
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => new { e.UserId, e.ExpiresAt });
+            entity.HasIndex(e => e.CreatedAt);
         });
     }
 }

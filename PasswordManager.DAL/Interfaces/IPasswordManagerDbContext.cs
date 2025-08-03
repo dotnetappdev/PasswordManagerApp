@@ -19,4 +19,5 @@ public interface IPasswordManagerDbContext : IDisposable
     DbSet<WiFiItem> WiFiItems { get; set; }
     DbSet<ApiKey> ApiKeys { get; set; }
     DbSet<QrLoginToken> QrLoginTokens { get; set; }
+    DbSet<OtpCode> OtpCodes { get; set; }
 }
