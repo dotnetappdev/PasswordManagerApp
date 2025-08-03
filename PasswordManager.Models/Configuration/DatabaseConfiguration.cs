@@ -10,7 +10,8 @@ public enum DatabaseProvider
     Sqlite,
     SqlServer,
     MySql,
-    PostgreSql
+    PostgreSql,
+    Supabase
 }
 
 /// <summary>
@@ -27,6 +28,16 @@ public class DatabaseConfiguration
     /// Whether this is the first run and configuration is needed
     /// </summary>
     public bool IsFirstRun { get; set; } = true;
+
+    /// <summary>
+    /// API URL for sync operations
+    /// </summary>
+    public string? ApiUrl { get; set; }
+
+    /// <summary>
+    /// API Key for authentication
+    /// </summary>
+    public string? ApiKey { get; set; }
 
     /// <summary>
     /// SQLite-specific configuration
@@ -47,6 +58,11 @@ public class DatabaseConfiguration
     /// PostgreSQL-specific configuration
     /// </summary>
     public PostgreSqlConfig? PostgreSql { get; set; }
+
+    /// <summary>
+    /// Supabase-specific configuration
+    /// </summary>
+    public SupabaseConfig? Supabase { get; set; }
 }
 
 /// <summary>
@@ -58,6 +74,16 @@ public class SqliteConfig
     /// Database file path (relative or absolute)
     /// </summary>
     public string DatabasePath { get; set; } = "passwordmanager.db";
+
+    /// <summary>
+    /// API URL for sync operations
+    /// </summary>
+    public string? ApiUrl { get; set; }
+
+    /// <summary>
+    /// API Key for authentication
+    /// </summary>
+    public string? ApiKey { get; set; }
 }
 
 /// <summary>
@@ -106,6 +132,16 @@ public class SqlServerConfig
     /// Connection timeout in seconds
     /// </summary>
     public int ConnectionTimeout { get; set; } = 30;
+
+    /// <summary>
+    /// API URL for sync operations
+    /// </summary>
+    public string? ApiUrl { get; set; }
+
+    /// <summary>
+    /// API Key for authentication
+    /// </summary>
+    public string? ApiKey { get; set; }
 }
 
 /// <summary>
@@ -150,6 +186,16 @@ public class MySqlConfig
     /// Connection timeout in seconds
     /// </summary>
     public int ConnectionTimeout { get; set; } = 30;
+
+    /// <summary>
+    /// API URL for sync operations
+    /// </summary>
+    public string? ApiUrl { get; set; }
+
+    /// <summary>
+    /// API Key for authentication
+    /// </summary>
+    public string? ApiKey { get; set; }
 }
 
 /// <summary>
@@ -194,4 +240,46 @@ public class PostgreSqlConfig
     /// Connection timeout in seconds
     /// </summary>
     public int ConnectionTimeout { get; set; } = 30;
+
+    /// <summary>
+    /// API URL for sync operations
+    /// </summary>
+    public string? ApiUrl { get; set; }
+
+    /// <summary>
+    /// API Key for authentication
+    /// </summary>
+    public string? ApiKey { get; set; }
+}
+/// <summary>
+/// Supabase database configuration
+/// </summary>
+public class SupabaseConfig
+{
+    /// <summary>
+    /// Supabase project URL
+    /// </summary>
+    [Required]
+    public string Url { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Supabase service role or anon key
+    /// </summary>
+    [Required]
+    public string ServiceKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Connection timeout in seconds
+    /// </summary>
+    public int ConnectionTimeout { get; set; } = 30;
+
+    /// <summary>
+    /// API URL for sync operations
+    /// </summary>
+    public string? ApiUrl { get; set; }
+
+    /// <summary>
+    /// API Key for authentication
+    /// </summary>
+    public string? ApiKey { get; set; }
 }

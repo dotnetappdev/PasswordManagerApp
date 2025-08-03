@@ -117,6 +117,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
             DatabaseProvider.SqlServer => BuildSqlServerConnectionString(configuration.SqlServer!),
             DatabaseProvider.MySql => BuildMySqlConnectionString(configuration.MySql!),
             DatabaseProvider.PostgreSql => BuildPostgreSqlConnectionString(configuration.PostgreSql!),
+            DatabaseProvider.Supabase => BuildSupabaseConnectionString(configuration.Supabase!),
             _ => throw new NotSupportedException($"Database provider {configuration.Provider} is not supported")
         };
     }
@@ -138,6 +139,8 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
                     return await TestMySqlConnectionAsync(connectionString);
                 case DatabaseProvider.PostgreSql:
                     return await TestPostgreSqlConnectionAsync(connectionString);
+                case DatabaseProvider.Supabase:
+                    return await TestSupabaseConnectionAsync(connectionString);
                 default:
                     return (false, $"Unsupported database provider: {configuration.Provider}");
             }
@@ -347,6 +350,29 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
         return builder.ToString();
     }
 
+    private string BuildSupabaseConnectionString(SupabaseConfig config)
+    {
+        // For Supabase, we use PostgreSQL connection string format with SSL
+        var builder = new System.Text.StringBuilder();
+        
+        // Extract host from Supabase URL (e.g., https://abc123.supabase.co -> abc123.supabase.co)
+        var uri = new Uri(config.Url);
+        builder.Append($"Host={uri.Host}");
+        builder.Append(";Port=5432"); // Supabase uses PostgreSQL on port 5432
+        builder.Append(";Database=postgres"); // Supabase default database
+        builder.Append(";Username=postgres"); // Supabase default username
+        
+        if (!string.IsNullOrEmpty(config.ServiceKey))
+        {
+            builder.Append($";Password={config.ServiceKey}");
+        }
+        
+        builder.Append(";SSL Mode=Require"); // Supabase requires SSL
+        builder.Append($";Timeout={config.ConnectionTimeout}");
+        
+        return builder.ToString();
+    }
+
     private async Task<(bool Success, string ErrorMessage)> TestSqliteConnectionAsync(string connectionString)
     {
         try
@@ -393,6 +419,21 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
     {
         try
         {
+            using var connection = new Npgsql.NpgsqlConnection(connectionString);
+            await connection.OpenAsync();
+            return (true, string.Empty);
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
+    }
+
+    private async Task<(bool Success, string ErrorMessage)> TestSupabaseConnectionAsync(string connectionString)
+    {
+        try
+        {
+            // Supabase uses PostgreSQL under the hood
             using var connection = new Npgsql.NpgsqlConnection(connectionString);
             await connection.OpenAsync();
             return (true, string.Empty);

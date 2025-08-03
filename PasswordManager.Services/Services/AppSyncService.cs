@@ -16,18 +16,19 @@ public class AppSyncService : IAppSyncService
     private readonly HttpClient _httpClient;
     private readonly ILogger<AppSyncService> _logger;
     private readonly IConfiguration _configuration;
-    private readonly string _apiBaseUrl;
+    private readonly IDatabaseConfigurationService _databaseConfigurationService;
     private string? _apiKey;
 
     public AppSyncService(
         HttpClient httpClient,
         ILogger<AppSyncService> logger,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IDatabaseConfigurationService databaseConfigurationService)
     {
         _httpClient = httpClient;
         _logger = logger;
         _configuration = configuration;
-        _apiBaseUrl = _configuration["ApiSettings:BaseUrl"] ?? "https://api.passwordmanager.local";
+        _databaseConfigurationService = databaseConfigurationService;
     }
 
     public async Task<SyncResponseDto> SyncOnStartupAsync()
@@ -130,6 +131,44 @@ public class AppSyncService : IAppSyncService
         return _apiKey;
     }
 
+    private async Task<string> GetApiBaseUrlAsync()
+    {
+        try
+        {
+            var dbConfig = await _databaseConfigurationService.GetConfigurationAsync();
+            
+            // First try to get API URL from database configuration
+            if (!string.IsNullOrEmpty(dbConfig.ApiUrl))
+            {
+                return dbConfig.ApiUrl;
+            }
+            
+            // Then try provider-specific API URL
+            var providerApiUrl = dbConfig.Provider switch
+            {
+                Models.Configuration.DatabaseProvider.Sqlite => dbConfig.Sqlite?.ApiUrl,
+                Models.Configuration.DatabaseProvider.SqlServer => dbConfig.SqlServer?.ApiUrl,
+                Models.Configuration.DatabaseProvider.MySql => dbConfig.MySql?.ApiUrl,
+                Models.Configuration.DatabaseProvider.PostgreSql => dbConfig.PostgreSql?.ApiUrl,
+                Models.Configuration.DatabaseProvider.Supabase => dbConfig.Supabase?.ApiUrl,
+                _ => null
+            };
+            
+            if (!string.IsNullOrEmpty(providerApiUrl))
+            {
+                return providerApiUrl;
+            }
+            
+            // Fallback to configuration file
+            return _configuration["Api:BaseUrl"] ?? _configuration["ApiSettings:BaseUrl"] ?? "https://api.passwordmanager.local";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error getting API URL from database configuration, using fallback");
+            return _configuration["Api:BaseUrl"] ?? _configuration["ApiSettings:BaseUrl"] ?? "https://api.passwordmanager.local";
+        }
+    }
+
     public async Task<SyncResponseDto> SyncToApiAsync()
     {
         try
@@ -144,6 +183,8 @@ public class AppSyncService : IAppSyncService
                     Message = "API key not configured"
                 };
             }
+
+            var apiBaseUrl = await GetApiBaseUrlAsync();
 
             // Add API key to request headers
             _httpClient.DefaultRequestHeaders.Clear();
@@ -161,7 +202,7 @@ public class AppSyncService : IAppSyncService
             var jsonContent = JsonSerializer.Serialize(syncRequest);
             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync($"{_apiBaseUrl}/api/sync/sync", content);
+            var response = await _httpClient.PostAsync($"{apiBaseUrl}/api/sync/sync", content);
             
             if (response.IsSuccessStatusCode)
             {
@@ -215,11 +256,13 @@ public class AppSyncService : IAppSyncService
                 };
             }
 
+            var apiBaseUrl = await GetApiBaseUrlAsync();
+
             // Add API key to request headers
             _httpClient.DefaultRequestHeaders.Clear();
             _httpClient.DefaultRequestHeaders.Add("X-API-Key", _apiKey);
 
-            var response = await _httpClient.GetAsync($"{_apiBaseUrl}/api/sync/last-sync-time?sourceDb=RemoteApi&targetDb=LocalSqlite");
+            var response = await _httpClient.GetAsync($"{apiBaseUrl}/api/sync/last-sync-time?sourceDb=RemoteApi&targetDb=LocalSqlite");
             
             if (response.IsSuccessStatusCode)
             {
@@ -269,8 +312,9 @@ public class AppSyncService : IAppSyncService
     {
         try
         {
+            var apiBaseUrl = await GetApiBaseUrlAsync();
             // Check if API is reachable
-            var response = await _httpClient.GetAsync($"{_apiBaseUrl}/health");
+            var response = await _httpClient.GetAsync($"{apiBaseUrl}/health");
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)

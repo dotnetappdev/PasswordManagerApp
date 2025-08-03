@@ -3,8 +3,10 @@
 @using PasswordManager.Services.Interfaces
 @using PasswordManager.Models
 @using PasswordManager.Models.DTOs.Auth
+@using PasswordManager.Models.Configuration
 @inject IUserProfileService UserProfileService
 @inject IApiKeyService ApiKeyService
+@inject IDatabaseConfigurationService DatabaseConfigurationService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
@@ -42,12 +44,26 @@
             <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">API Key Management</MudText>
             
             <MudGrid>
-                <MudItem xs="12" md="8">
+                <MudItem xs="12" md="4">
                     <MudTextField T="string" @bind-value="newApiKeyName" 
                                  Label="API Key Name" 
                                  Variant="Variant.Outlined"
                                  Style="background-color: #2a2a2a;"
                                  HelperText="Enter a descriptive name for your API key" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect T="string" @bind-value="selectedProviderForApiKey" 
+                              Label="Database Provider (Optional)" 
+                              Variant="Variant.Outlined"
+                              Style="background-color: #2a2a2a;"
+                              HelperText="Select provider to use existing config">
+                        <MudSelectItem Value="@("")">General (No Provider)</MudSelectItem>
+                        <MudSelectItem Value="@("Sqlite")">SQLite</MudSelectItem>
+                        <MudSelectItem Value="@("SqlServer")">SQL Server</MudSelectItem>
+                        <MudSelectItem Value="@("MySql")">MySQL</MudSelectItem>
+                        <MudSelectItem Value="@("PostgreSql")">PostgreSQL</MudSelectItem>
+                        <MudSelectItem Value="@("Supabase")">Supabase</MudSelectItem>
+                    </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <MudButton Variant="Variant.Filled" 
@@ -80,6 +96,14 @@
                                  Adornment="Adornment.End"
                                  AdornmentIcon="@Icons.Material.Filled.ContentCopy"
                                  OnAdornmentClick="CopyApiKey" />
+                    @if (!string.IsNullOrEmpty(generatedApiUrl))
+                    {
+                        <MudTextField T="string" Value="@generatedApiUrl" 
+                                     Label="Associated API URL" 
+                                     Variant="Variant.Outlined"
+                                     Style="background-color: #2a2a2a; margin-top: 8px;"
+                                     ReadOnly="true" />
+                    }
                     <MudText Typo="Typo.caption" Style="color: #cccccc; margin-top: 8px;">
                         ⚠️ Store this API key securely. It will not be shown again.
                     </MudText>
@@ -98,12 +122,25 @@
                          Style="background-color: #2a2a2a; color: white;">
                     <HeaderContent>
                         <MudTh Style="color: white;">Name</MudTh>
+                        <MudTh Style="color: white;">Provider</MudTh>
                         <MudTh Style="color: white;">Created</MudTh>
                         <MudTh Style="color: white;">Last Used</MudTh>
                         <MudTh Style="color: white;">Actions</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="Name">@context.Name</MudTd>
+                        <MudTd DataLabel="Provider">
+                            @if (context.Provider.HasValue)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Primary">
+                                    @GetProviderDisplayName(context.Provider)
+                                </MudChip>
+                            }
+                            else
+                            {
+                                <MudText Style="color: #cccccc;">General</MudText>
+                            }
+                        </MudTd>
                         <MudTd DataLabel="Created">@context.CreatedAt.ToString("MMM dd, yyyy")</MudTd>
                         <MudTd DataLabel="Last Used">
                             @(context.LastUsedAt?.ToString("MMM dd, yyyy") ?? "Never")
@@ -124,6 +161,29 @@
             }
         </MudPaper>
 
+        <!-- API Configuration -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">API Configuration</MudText>
+            
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudTextField T="string" @bind-value="apiUrl" 
+                                 Label="API URL" 
+                                 Variant="Variant.Outlined"
+                                 Style="background-color: #2a2a2a;"
+                                 HelperText="URL of the Password Manager API for sync operations" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField T="string" @bind-value="apiKey" 
+                                 Label="API Key" 
+                                 Variant="Variant.Outlined"
+                                 InputType="InputType.Password"
+                                 Style="background-color: #2a2a2a;"
+                                 HelperText="API key for authentication with the sync API" />
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
         <!-- Database Settings -->
         <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
             <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Database Settings</MudText>
@@ -134,6 +194,7 @@
                       Style="background-color: #2a2a2a;">
                 <MudSelectItem Value="@("SqlServer")">SQL Server</MudSelectItem>
                 <MudSelectItem Value="@("MySql")">MySQL</MudSelectItem>
+                <MudSelectItem Value="@("PostgreSql")">PostgreSQL</MudSelectItem>
                 <MudSelectItem Value="@("Supabase")">Supabase</MudSelectItem>
             </MudSelect>
 
@@ -182,10 +243,14 @@
     private UserDto userProfile = new();
     private List<ApiKey> apiKeys = new();
     private string newApiKeyName = "";
+    private string selectedProviderForApiKey = "";
     private string generatedApiKey = "";
+    private string generatedApiUrl = "";
     private string databaseProvider = "SqlServer";
     private string supabaseUrl = "";
     private string supabaseApiKey = "";
+    private string apiUrl = "";
+    private string apiKey = "";
     private bool isGenerating = false;
     private bool isSaving = false;
 
@@ -193,6 +258,7 @@
     {
         await LoadUserProfile();
         await LoadApiKeys();
+        await LoadDatabaseConfiguration();
     }
 
     private async Task LoadUserProfile()
@@ -223,20 +289,69 @@
         }
     }
 
+    private async Task LoadDatabaseConfiguration()
+    {
+        try
+        {
+            var dbConfig = await DatabaseConfigurationService.GetConfigurationAsync();
+            databaseProvider = dbConfig.Provider.ToString();
+            apiUrl = dbConfig.ApiUrl ?? "";
+            apiKey = dbConfig.ApiKey ?? "";
+            
+            // Load provider-specific settings
+            switch (dbConfig.Provider)
+            {
+                case DatabaseProvider.Supabase when dbConfig.Supabase != null:
+                    supabaseUrl = dbConfig.Supabase.Url;
+                    supabaseApiKey = dbConfig.Supabase.ServiceKey;
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading database configuration: {ex.Message}");
+        }
+    }
+
     private async Task GenerateApiKey()
     {
         try
         {
             isGenerating = true;
+            generatedApiKey = "";
+            generatedApiUrl = "";
             
-            var apiKey = await ApiKeyService.CreateApiKeyAsync(newApiKeyName, userProfile.Id);
-            generatedApiKey = apiKey.KeyHash; // This contains the unhashed value temporarily
+            // Check if a provider is selected for provider-specific API key
+            if (!string.IsNullOrEmpty(selectedProviderForApiKey))
+            {
+                // Create provider-specific API key
+                if (Enum.TryParse<DatabaseProvider>(selectedProviderForApiKey, out var provider))
+                {
+                    var request = new PasswordManager.Models.DTOs.ApiKeyRequestDto
+                    {
+                        Name = newApiKeyName,
+                        Provider = provider,
+                        UseExistingConfig = true
+                    };
+                    
+                    var response = await ApiKeyService.CreateProviderApiKeyAsync(request, userProfile.Id);
+                    generatedApiKey = response.ApiKey;
+                    generatedApiUrl = response.ApiUrl ?? "";
+                }
+            }
+            else
+            {
+                // Create general API key
+                var apiKeyResult = await ApiKeyService.CreateApiKeyAsync(newApiKeyName, userProfile.Id);
+                generatedApiKey = apiKeyResult.KeyHash; // This contains the unhashed value temporarily
+            }
             
             // Refresh the list
             await LoadApiKeys();
             
-            // Clear the input
+            // Clear the inputs
             newApiKeyName = "";
+            selectedProviderForApiKey = "";
         }
         catch (Exception ex)
         {
@@ -274,6 +389,19 @@
         }
     }
 
+    private string GetProviderDisplayName(DatabaseProvider? provider)
+    {
+        return provider switch
+        {
+            DatabaseProvider.SqlServer => "SQL Server",
+            DatabaseProvider.MySql => "MySQL",
+            DatabaseProvider.PostgreSql => "PostgreSQL",
+            DatabaseProvider.Supabase => "Supabase",
+            DatabaseProvider.Sqlite => "SQLite",
+            _ => "General"
+        };
+    }
+
     private async Task SaveSettings()
     {
         try
@@ -289,8 +417,33 @@
             };
             await UserProfileService.UpdateAsync(updateDto);
             
-            // Save database settings
-            // This would typically be saved to configuration
+            // Save database and API configuration
+            var dbConfig = await DatabaseConfigurationService.GetConfigurationAsync();
+            
+            // Update API configuration
+            dbConfig.ApiUrl = apiUrl;
+            dbConfig.ApiKey = apiKey;
+            
+            // Update database provider if changed
+            if (Enum.TryParse<DatabaseProvider>(databaseProvider, out var provider))
+            {
+                dbConfig.Provider = provider;
+            }
+            
+            // Update provider-specific settings
+            switch (provider)
+            {
+                case DatabaseProvider.Supabase:
+                    if (dbConfig.Supabase == null)
+                        dbConfig.Supabase = new SupabaseConfig();
+                    dbConfig.Supabase.Url = supabaseUrl;
+                    dbConfig.Supabase.ServiceKey = supabaseApiKey;
+                    dbConfig.Supabase.ApiUrl = apiUrl;
+                    dbConfig.Supabase.ApiKey = apiKey;
+                    break;
+            }
+            
+            await DatabaseConfigurationService.SaveConfigurationAsync(dbConfig);
             
             // Show success notification
         }
