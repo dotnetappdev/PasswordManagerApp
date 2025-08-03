@@ -18,6 +18,11 @@ public static class MauiProgram
 
  
 
+	public static MauiApp CreateMauiApp()
+	{
+		return CreateMauiAppAsync().GetAwaiter().GetResult();
+	}
+
 	public static async Task<MauiApp> CreateMauiAppAsync()
 	{
 		var builder = MauiApp.CreateBuilder();
