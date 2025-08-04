@@ -387,6 +387,21 @@ class PasswordManagerPopup {
         if (currentModeField) {
           currentModeField.value = settings.useApiMode ? 'API Server Mode' : 'Direct Database Mode';
         }
+
+        // Load editable settings
+        const apiUrlField = document.getElementById('apiUrl');
+        const apiKeyField = document.getElementById('apiKey');
+        const databaseNameField = document.getElementById('databaseName');
+        
+        if (apiUrlField) {
+          apiUrlField.value = settings.editableApiUrl || '';
+        }
+        if (apiKeyField) {
+          apiKeyField.value = settings.editableApiKey || '';
+        }
+        if (databaseNameField) {
+          databaseNameField.value = settings.editableDatabaseName || '';
+        }
       }
     } catch (error) {
       console.error('Error updating settings display:', error);
@@ -399,15 +414,37 @@ class PasswordManagerPopup {
     const messageDiv = document.getElementById('settingsMessage');
     
     try {
+      // Get values from editable fields
+      const apiUrl = document.getElementById('apiUrl').value.trim();
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const databaseName = document.getElementById('databaseName').value.trim();
+      
+      // Validate API settings if provided
+      if (apiUrl && !apiKey) {
+        throw new Error('API Key is required when API URL is provided');
+      }
+      if (apiKey && !apiUrl) {
+        throw new Error('API URL is required when API Key is provided');
+      }
+      
       const response = await chrome.runtime.sendMessage({
         action: 'saveSettings',
         settings: {
-          // Settings are mostly read-only now, but keeping for future extensions
+          editableApiUrl: apiUrl,
+          editableApiKey: apiKey,
+          editableDatabaseName: databaseName
         }
       });
       
       if (response.success) {
         this.showMessage(messageDiv, 'Settings saved successfully!', 'success');
+        
+        // If API settings were provided, offer to test connection
+        if (apiUrl && apiKey) {
+          setTimeout(() => {
+            this.showMessage(messageDiv, 'API settings saved. You can now use "Load from settings file" to test the connection.', 'info');
+          }, 2000);
+        }
       } else {
         throw new Error(response.error);
       }

@@ -582,7 +582,10 @@ class PasswordManagerBackground {
         'userPreferences',
         'useApiMode',
         'configuredApiUrl',
-        'apiUrl'
+        'apiUrl',
+        'editableApiUrl',
+        'editableApiKey',
+        'editableDatabaseName'
       ]);
       
       sendResponse({ 
@@ -598,6 +601,9 @@ class PasswordManagerBackground {
           userPreferences: result.userPreferences || {},
           useApiMode: this.useApiMode,
           configuredApiUrl: result.configuredApiUrl || result.apiUrl || '',
+          editableApiUrl: result.editableApiUrl || '',
+          editableApiKey: result.editableApiKey || '',
+          editableDatabaseName: result.editableDatabaseName || '',
           isReady: this.useApiMode ? 
             (result.settingsLoaded && this.apiService.isReady()) : 
             result.databaseLoaded
@@ -624,6 +630,19 @@ class PasswordManagerBackground {
       if (settings.userEmail !== undefined) {
         toSave.userEmail = settings.userEmail;
         this.currentUser = settings.userEmail;
+      }
+      
+      // Handle new editable API settings
+      if (settings.editableApiUrl !== undefined) {
+        toSave.editableApiUrl = settings.editableApiUrl;
+      }
+      
+      if (settings.editableApiKey !== undefined) {
+        toSave.editableApiKey = settings.editableApiKey;
+      }
+      
+      if (settings.editableDatabaseName !== undefined) {
+        toSave.editableDatabaseName = settings.editableDatabaseName;
       }
       
       await chrome.storage.sync.set(toSave);
