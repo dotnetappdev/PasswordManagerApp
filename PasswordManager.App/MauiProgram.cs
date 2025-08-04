@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using PasswordManager.DAL;
 using PasswordManager.Services;
 using PasswordManager.Services.Interfaces;
@@ -11,6 +9,9 @@ using PasswordManagerImports.OnePassword.Providers;
 using Microsoft.Extensions.Configuration;
 using PasswordManager.Crypto.Extensions;
 using PasswordManager.App.Services;
+using Microsoft.AspNetCore.Identity;
+using PasswordManager.Models;
+using Microsoft.Extensions.Logging;
 
 namespace PasswordManager.App;
 
@@ -78,8 +79,24 @@ public static class MauiProgram
 			Directory.CreateDirectory(defaultDirectory!);
 		}
 
+		builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+			options.UseSqlite($"Data Source={defaultDbPath}"));
+		
+		// Add the regular context for compatibility
 		builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
 			options.UseSqlite($"Data Source={defaultDbPath}"));
+
+		// Add Identity services
+		builder.Services.AddIdentityCore<ApplicationUser>(options =>
+		{
+			options.SignIn.RequireConfirmedAccount = false;
+			options.Password.RequireDigit = true;
+			options.Password.RequiredLength = 8;
+			options.Password.RequireNonAlphanumeric = false;
+			options.Password.RequireUppercase = true;
+			options.Password.RequireLowercase = true;
+		})
+		.AddEntityFrameworkStores<PasswordManagerDbContextApp>();
 
 		// Fix for CS0246: Correct the interface name from 'IPasswordItemIterface' to 'IPasswordItemService'  
 		builder.Services.AddScoped<IPasswordItemService, PasswordItemService>();
@@ -87,7 +104,7 @@ public static class MauiProgram
 		builder.Services.AddScoped<ITagService, TagService>();
 		builder.Services.AddScoped<ICategoryInterface, CategoryService>();
 		builder.Services.AddScoped<ICollectionService, CollectionService>();
-		builder.Services.AddScoped<IAuthService, AuthService>();
+		builder.Services.AddScoped<IAuthService, IdentityAuthService>();
 		builder.Services.AddScoped<IPasswordRevealService, PasswordRevealService>();
 		builder.Services.AddScoped<IAppSyncService, AppSyncService>();
 		builder.Services.AddScoped<IAppStartupService, AppStartupService>();
@@ -109,7 +126,7 @@ public static class MauiProgram
 
 #if DEBUG
 		builder.Services.AddBlazorWebViewDeveloperTools();
-		builder.Logging.AddDebug();
+		builder.Logging.SetMinimumLevel(LogLevel.Debug);
 #endif
 
 		var app = builder.Build();
