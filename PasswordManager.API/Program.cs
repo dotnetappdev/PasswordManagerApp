@@ -121,8 +121,14 @@ builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncServ
 // Register cryptography services
 builder.Services.AddCryptographyServices();
 
+
 // Register platform and database configuration services
 builder.Services.AddScoped<IPlatformService, PasswordManager.Services.Services.DefaultPlatformService>();
+// Register platform service (needed for database configuration)
+builder.Services.AddSingleton<IPlatformService, PasswordManager.Services.Services.DefaultPlatformService>();
+
+// Register database configuration service (needed by ApiKeyService)
+
 builder.Services.AddScoped<IDatabaseConfigurationService, PasswordManager.Services.Services.DatabaseConfigurationService>();
 
 
