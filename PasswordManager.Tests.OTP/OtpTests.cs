@@ -84,7 +84,7 @@ public class PlatformDetectionServiceTests
     [InlineData("PasswordManager/1.0 (Windows NT 10.0; MAUI)", PlatformType.DesktopWindows)]
     [InlineData("", PlatformType.Unknown)]
     [InlineData(null, PlatformType.Unknown)]
-    public void DetectPlatform_ShouldReturnCorrectPlatformType(string userAgent, PlatformType expectedPlatform)
+    public void DetectPlatform_ShouldReturnCorrectPlatformType(string? userAgent, PlatformType expectedPlatform)
     {
         // Act
         var result = _platformService.DetectPlatform(userAgent);
@@ -101,7 +101,7 @@ public class PlatformDetectionServiceTests
     [InlineData("PasswordManager/1.0 (Macintosh; MAUI)", false)]  // Desktop macOS
     [InlineData("", false)]  // Unknown
     [InlineData(null, false)]  // Unknown
-    public void IsOtpSupported_ShouldReturnCorrectSupport(string userAgent, bool expectedSupport)
+    public void IsOtpSupported_ShouldReturnCorrectSupport(string? userAgent, bool expectedSupport)
     {
         // Act
         var result = _platformService.IsOtpSupported(userAgent);

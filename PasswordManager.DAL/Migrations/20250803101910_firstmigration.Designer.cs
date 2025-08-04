@@ -12,7 +12,7 @@ namespace PasswordManager.DAL.Migrations
 {
     [DbContext(typeof(PasswordManagerDbContextApp))]
     [Migration("20250803101910_firstmigration")]
-    partial class firstmigration
+    partial class FirstMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

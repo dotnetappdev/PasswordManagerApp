@@ -219,7 +219,7 @@ public class SmsSettingsService : ISmsSettingsService
         }
     }
 
-    public async Task<SmsConfiguration> ConvertToConfigurationAsync(SmsSettings smsSettings, byte[] masterKey)
+    public Task<SmsConfiguration> ConvertToConfigurationAsync(SmsSettings smsSettings, byte[] masterKey)
     {
         try
         {
@@ -268,7 +268,7 @@ public class SmsSettingsService : ISmsSettingsService
                     break;
             }
 
-            return config;
+            return Task.FromResult(config);
         }
         catch (Exception ex)
         {
