@@ -16,6 +16,7 @@ The extension now operates with a **direct database access** model:
 ## Features
 
 - **🔐 Direct Database Access**: Read directly from your Password Manager database file
+- **⚙️ Settings File Configuration**: Pre-configure database locations via JSON settings files
 - **⚡ Local Decryption**: Decrypt passwords locally using your master password
 - **🎯 Smart Detection**: Recognizes username, email, and password fields across websites
 - **🔒 Zero API Dependencies**: Works completely offline with your database file
@@ -44,9 +45,24 @@ The extension now operates with a **direct database access** model:
 
 ### First Time Setup
 
+#### Option 1: Direct Database Loading
 1. **Load Database**: Click the extension icon and select your Password Manager database file (.db/.sqlite/.sal)
 2. **Authenticate**: Enter your email and master password (same as main application)
 3. **Start Using**: Visit websites - icons will appear next to username and password fields
+
+#### Option 2: Settings File Configuration (New!)
+1. **Create Settings File**: Create a JSON configuration file with your database path:
+   ```json
+   {
+     "databasePath": "/path/to/your/password-database.db",
+     "databaseName": "My Password Database"
+   }
+   ```
+2. **Load Settings**: In the extension, select "Load from settings file" and choose your JSON file
+3. **Select Database**: Follow the guidance to select your database file at the configured location
+4. **Authenticate**: Enter your email and master password
+
+📖 **See [SETTINGS_FILE_FORMAT.md](SETTINGS_FILE_FORMAT.md) for detailed settings file documentation**
 
 ### Daily Usage
 

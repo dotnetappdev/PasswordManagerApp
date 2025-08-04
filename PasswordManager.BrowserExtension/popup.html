@@ -26,10 +26,46 @@
       </div>
       
       <div class="form">
+        <!-- Option selector -->
         <div class="form-group">
-          <label for="databaseFile">Select Password Manager Database File:</label>
-          <input type="file" id="databaseFile" accept=".db,.sqlite,.sal" required>
-          <small class="help-text">Choose your Password Manager database file (.db, .sqlite, or .sal)</small>
+          <label>Choose loading method:</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="loadMethod" value="direct" checked>
+              <span class="radio-checkmark"></span>
+              Select database file directly
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="loadMethod" value="settings">
+              <span class="radio-checkmark"></span>
+              Load from settings file
+            </label>
+          </div>
+        </div>
+
+        <!-- Direct database file selection -->
+        <div id="directMethod" class="method-section">
+          <div class="form-group">
+            <label for="databaseFile">Select Password Manager Database File:</label>
+            <input type="file" id="databaseFile" accept=".db,.sqlite,.sal">
+            <small class="help-text">Choose your Password Manager database file (.db, .sqlite, or .sal)</small>
+          </div>
+        </div>
+
+        <!-- Settings file method -->
+        <div id="settingsMethod" class="method-section" style="display: none;">
+          <div class="form-group">
+            <label for="settingsFile">Select Settings Configuration File:</label>
+            <input type="file" id="settingsFile" accept=".json,.config">
+            <small class="help-text">Choose your settings file (JSON format) that specifies database location</small>
+          </div>
+          <div class="info-box">
+            <p><strong>Settings file format:</strong></p>
+            <pre>{
+  "databasePath": "path/to/your/database.db",
+  "databaseName": "MyPasswordDB"
+}</pre>
+          </div>
         </div>
         
         <button type="button" id="loadDatabaseBtn" class="btn btn-primary">
@@ -169,6 +205,12 @@
           <label for="currentUser">Current User:</label>
           <input type="email" id="currentUser" readonly>
           <small class="help-text">Currently authenticated user</small>
+        </div>
+
+        <div class="form-group">
+          <label for="configuredPath">Configured Database Path:</label>
+          <input type="text" id="configuredPath" readonly>
+          <small class="help-text">Database path from settings file (if configured)</small>
         </div>
         
         <button type="button" id="changeDatabaseBtn" class="btn btn-secondary">Change Database</button>

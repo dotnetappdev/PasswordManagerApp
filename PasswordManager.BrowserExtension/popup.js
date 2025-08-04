@@ -38,6 +38,11 @@ class PasswordManagerPopup {
     document.getElementById('changeDatabaseLink')?.addEventListener('click', () => this.showScreen('database'));
     document.getElementById('changeDatabaseBtn')?.addEventListener('click', () => this.showScreen('database'));
 
+    // Radio button listeners for load method
+    document.querySelectorAll('input[name="loadMethod"]').forEach(radio => {
+      radio.addEventListener('change', (e) => this.toggleLoadMethod(e.target.value));
+    });
+
     // Database loading
     document.getElementById('loadDatabaseBtn')?.addEventListener('click', () => this.loadDatabase());
 
@@ -127,9 +132,46 @@ class PasswordManagerPopup {
     }
   }
 
+  toggleLoadMethod(method) {
+    const directMethod = document.getElementById('directMethod');
+    const settingsMethod = document.getElementById('settingsMethod');
+    
+    if (method === 'direct') {
+      directMethod.style.display = 'block';
+      settingsMethod.style.display = 'none';
+    } else if (method === 'settings') {
+      directMethod.style.display = 'none';
+      settingsMethod.style.display = 'block';
+    }
+  }
+
   async loadDatabase() {
-    const fileInput = document.getElementById('databaseFile');
     const loadBtn = document.getElementById('loadDatabaseBtn');
+    const errorDiv = document.getElementById('databaseError');
+    const selectedMethod = document.querySelector('input[name="loadMethod"]:checked').value;
+    
+    // Show loading state
+    loadBtn.textContent = 'Loading...';
+    loadBtn.disabled = true;
+    errorDiv.style.display = 'none';
+    
+    try {
+      if (selectedMethod === 'direct') {
+        await this.loadDatabaseDirect();
+      } else if (selectedMethod === 'settings') {
+        await this.loadDatabaseFromSettings();
+      }
+    } catch (error) {
+      console.error('Database load error:', error);
+      this.showError(errorDiv, 'Error loading database: ' + error.message);
+    } finally {
+      loadBtn.textContent = 'Load Database';
+      loadBtn.disabled = false;
+    }
+  }
+
+  async loadDatabaseDirect() {
+    const fileInput = document.getElementById('databaseFile');
     const errorDiv = document.getElementById('databaseError');
     
     if (!fileInput.files[0]) {
@@ -138,11 +180,6 @@ class PasswordManagerPopup {
     }
     
     const databaseFile = fileInput.files[0];
-    
-    // Show loading state
-    loadBtn.textContent = 'Loading...';
-    loadBtn.disabled = true;
-    errorDiv.style.display = 'none';
     
     try {
       const response = await chrome.runtime.sendMessage({
@@ -157,12 +194,82 @@ class PasswordManagerPopup {
         this.showError(errorDiv, response.error || 'Failed to load database');
       }
     } catch (error) {
-      console.error('Database load error:', error);
-      this.showError(errorDiv, 'Error loading database: ' + error.message);
-    } finally {
-      loadBtn.textContent = 'Load Database';
-      loadBtn.disabled = false;
+      throw error;
     }
+  }
+
+  async loadDatabaseFromSettings() {
+    const settingsFileInput = document.getElementById('settingsFile');
+    const errorDiv = document.getElementById('databaseError');
+    
+    if (!settingsFileInput.files[0]) {
+      this.showError(errorDiv, 'Please select a settings file');
+      return;
+    }
+    
+    const settingsFile = settingsFileInput.files[0];
+    
+    try {
+      // Read and parse settings file
+      const settingsText = await this.readFileAsText(settingsFile);
+      let settings;
+      
+      try {
+        settings = JSON.parse(settingsText);
+      } catch (parseError) {
+        throw new Error('Invalid JSON format in settings file');
+      }
+      
+      // Validate settings structure
+      if (!settings.databasePath) {
+        throw new Error('Settings file must contain "databasePath" field');
+      }
+      
+      // Send settings to background script
+      const response = await chrome.runtime.sendMessage({
+        action: 'loadDatabaseFromSettings',
+        settings: settings
+      });
+      
+      if (response.success) {
+        // Show success message and switch to direct method with guidance
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        successDiv.innerHTML = `
+          <p><strong>Settings loaded successfully!</strong></p>
+          <p>Your preferences have been saved. Please now select your database file:</p>
+          <p><strong>Expected location:</strong> ${response.configuredPath}</p>
+        `;
+        errorDiv.parentNode.insertBefore(successDiv, errorDiv);
+        
+        // Auto-switch to direct method for user convenience
+        document.querySelector('input[name="loadMethod"][value="direct"]').checked = true;
+        this.toggleLoadMethod('direct');
+        
+        // Clear the settings file input
+        settingsFileInput.value = '';
+        
+        // Hide the success message after a few seconds
+        setTimeout(() => {
+          if (successDiv.parentNode) {
+            successDiv.parentNode.removeChild(successDiv);
+          }
+        }, 8000);
+      } else {
+        this.showError(errorDiv, response.error || 'Failed to load database from settings');
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = (e) => reject(new Error('Failed to read file'));
+      reader.readAsText(file);
+    });
   }
 
   async handleLogin(e) {
@@ -226,6 +333,12 @@ class PasswordManagerPopup {
         const settings = response.settings;
         document.getElementById('currentDatabase').value = settings.databaseName || 'No database loaded';
         document.getElementById('currentUser').value = settings.userEmail || 'Not authenticated';
+        
+        // Show configured database path if available
+        const configPathField = document.getElementById('configuredPath');
+        if (configPathField) {
+          configPathField.value = settings.configuredDatabasePath || 'Not configured';
+        }
       }
     } catch (error) {
       console.error('Error updating settings display:', error);

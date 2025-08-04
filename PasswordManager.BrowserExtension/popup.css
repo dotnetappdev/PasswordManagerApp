@@ -362,6 +362,115 @@ body {
   background: #a8a8a8;
 }
 
+/* Radio button styles */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: normal;
+  padding: 8px 0;
+}
+
+.radio-label input[type="radio"] {
+  display: none;
+}
+
+.radio-checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ced4da;
+  border-radius: 50%;
+  margin-right: 10px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.radio-label input[type="radio"]:checked + .radio-checkmark {
+  border-color: #007acc;
+  background: #007acc;
+}
+
+.radio-label input[type="radio"]:checked + .radio-checkmark:after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Method section styles */
+.method-section {
+  padding: 12px 0;
+  border-top: 1px solid #e0e6ed;
+  margin-top: 12px;
+}
+
+.method-section:first-of-type {
+  border-top: none;
+  margin-top: 0;
+}
+
+/* Info box styles */
+.info-box {
+  background: #e7f3ff;
+  border: 1px solid #b8daff;
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.info-box p {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  color: #004085;
+}
+
+.info-box pre {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 11px;
+  color: #495057;
+  overflow-x: auto;
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Success message styles */
+.success-message {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+  color: #155724;
+  padding: 12px;
+  margin: 12px 0;
+  font-size: 13px;
+}
+
+.success-message p {
+  margin: 0 0 8px 0;
+}
+
+.success-message p:last-child {
+  margin: 0;
+}
+
+.success-message strong {
+  font-weight: 600;
+}
+
 /* Responsive adjustments */
 @media (max-width: 400px) {
   body {

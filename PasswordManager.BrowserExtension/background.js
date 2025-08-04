@@ -44,6 +44,9 @@ class PasswordManagerBackground {
         case 'loadDatabase':
           await this.loadDatabase(request, sendResponse);
           break;
+        case 'loadDatabaseFromSettings':
+          await this.loadDatabaseFromSettings(request, sendResponse);
+          break;
         case 'authenticate':
           await this.authenticate(request, sendResponse);
           break;
@@ -107,6 +110,50 @@ class PasswordManagerBackground {
       sendResponse({ 
         success: false, 
         error: 'Failed to load database: ' + error.message 
+      });
+    }
+  }
+
+  async loadDatabaseFromSettings(request, sendResponse) {
+    try {
+      if (!request.settings) {
+        sendResponse({ success: false, error: 'No settings provided' });
+        return;
+      }
+
+      const settings = request.settings;
+      
+      // Validate required settings
+      if (!settings.databasePath) {
+        sendResponse({ success: false, error: 'Settings must contain databasePath' });
+        return;
+      }
+
+      // Store the settings for user reference and future use
+      await chrome.storage.sync.set({ 
+        settingsLoaded: true,
+        configuredDatabasePath: settings.databasePath,
+        configuredDatabaseName: settings.databaseName || 'Database from settings',
+        userPreferences: {
+          databasePath: settings.databasePath,
+          databaseName: settings.databaseName,
+          autoRememberLocation: settings.autoRememberLocation || false
+        }
+      });
+      
+      // Return success with guidance message
+      sendResponse({ 
+        success: true, 
+        message: 'Settings loaded successfully! Your preferences have been saved.',
+        configuredPath: settings.databasePath,
+        note: 'When selecting your database file, please choose the file located at: ' + settings.databasePath
+      });
+      
+    } catch (error) {
+      console.error('Password Manager: Error loading database from settings:', error);
+      sendResponse({ 
+        success: false, 
+        error: 'Failed to load database from settings: ' + error.message 
       });
     }
   }
@@ -356,7 +403,16 @@ class PasswordManagerBackground {
 
   async getSettings(sendResponse) {
     try {
-      const result = await chrome.storage.sync.get(['databaseName', 'userEmail', 'isAuthenticated', 'databaseLoaded']);
+      const result = await chrome.storage.sync.get([
+        'databaseName', 
+        'userEmail', 
+        'isAuthenticated', 
+        'databaseLoaded',
+        'configuredDatabasePath',
+        'configuredDatabaseName',
+        'settingsLoaded',
+        'userPreferences'
+      ]);
       
       sendResponse({ 
         success: true, 
@@ -364,7 +420,11 @@ class PasswordManagerBackground {
           databaseName: result.databaseName || '',
           userEmail: result.userEmail || '',
           isAuthenticated: this.isAuthenticated,
-          databaseLoaded: result.databaseLoaded || false
+          databaseLoaded: result.databaseLoaded || false,
+          configuredDatabasePath: result.configuredDatabasePath || '',
+          configuredDatabaseName: result.configuredDatabaseName || '',
+          settingsLoaded: result.settingsLoaded || false,
+          userPreferences: result.userPreferences || {}
         }
       });
     } catch (error) {

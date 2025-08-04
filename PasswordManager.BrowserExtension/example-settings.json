@@ -1,0 +1,5 @@
+{
+  "databasePath": "/Users/yourname/Documents/PasswordManager/passwords.db",
+  "databaseName": "My Password Database",
+  "autoRememberLocation": true
+}
