@@ -49,6 +49,9 @@ class PasswordManagerPopup {
     // Login form
     document.getElementById('loginForm')?.addEventListener('submit', (e) => this.handleLogin(e));
 
+    // Settings form
+    document.getElementById('settingsForm')?.addEventListener('submit', (e) => this.handleSettingsSave(e));
+
     // Tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
@@ -415,6 +418,51 @@ class PasswordManagerPopup {
     }
   }
 
+  async handleSettingsSave(e) {
+    e.preventDefault();
+    
+    const messageDiv = document.getElementById('settingsMessage');
+    
+    try {
+      // Get values from editable fields
+      const apiUrl = document.getElementById('apiUrl').value.trim();
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const databaseName = document.getElementById('databaseName').value.trim();
+      
+      // Validate API settings if provided
+      if (apiUrl && !apiKey) {
+        throw new Error('API Key is required when API URL is provided');
+      }
+      if (apiKey && !apiUrl) {
+        throw new Error('API URL is required when API Key is provided');
+      }
+      
+      const response = await chrome.runtime.sendMessage({
+        action: 'saveSettings',
+        settings: {
+          editableApiUrl: apiUrl,
+          editableApiKey: apiKey,
+          editableDatabaseName: databaseName
+        }
+      });
+      
+      if (response.success) {
+        this.showMessage(messageDiv, 'Settings saved successfully!', 'success');
+        
+        // If API settings were provided, offer to test connection
+        if (apiUrl && apiKey) {
+          setTimeout(() => {
+            this.showMessage(messageDiv, 'API settings saved. You can now use "Load from settings file" to test the connection.', 'info');
+          }, 2000);
+        }
+      } else {
+        throw new Error(response.error);
+      }
+    } catch (error) {
+      this.showMessage(messageDiv, error.message || 'Failed to save settings', 'error');
+    }
+  }
+
   async logout() {
     try {
       await chrome.runtime.sendMessage({ action: 'logout' });
@@ -441,43 +489,37 @@ class PasswordManagerPopup {
         document.getElementById('currentDatabase').value = settings.databaseName || 'No database loaded';
         document.getElementById('currentUser').value = settings.userEmail || 'Not authenticated';
         
-        // Show configured database path if available
+        // Show configured database path if available (readonly)
         const configPathField = document.getElementById('configuredPath');
         if (configPathField) {
           configPathField.value = settings.configuredDatabasePath || 'Not configured';
         }
 
-        // Show configured API URL if available
+        // Show configured API URL if available (readonly)
         const configApiField = document.getElementById('configuredApiUrl');
         if (configApiField) {
           configApiField.value = settings.configuredApiUrl || 'Not configured';
         }
 
-        // Show current mode
+        // Show current mode (readonly)
         const currentModeField = document.getElementById('currentMode');
         if (currentModeField) {
           currentModeField.value = settings.useApiMode ? 'API Server Mode' : 'Direct Database Mode';
         }
 
-        // Show readonly configuration values
+        // Populate editable API configuration fields with saved values
         const apiUrlField = document.getElementById('apiUrl');
         const apiKeyField = document.getElementById('apiKey');
         const databaseNameField = document.getElementById('databaseName');
         
         if (apiUrlField) {
-          apiUrlField.value = settings.configuredApiUrl || 'Not configured';
+          apiUrlField.value = settings.editableApiUrl || '';
         }
         if (apiKeyField) {
-          // Don't show the actual API key, just indicate if it's configured
-          apiKeyField.value = settings.editableApiKey ? '••••••••••••••••' : 'Not configured';
+          apiKeyField.value = settings.editableApiKey || '';
         }
         if (databaseNameField) {
-          // Since we changed this to Database Path, show the appropriate path
-          if (settings.useApiMode) {
-            databaseNameField.value = settings.configuredApiUrl || 'Not configured';
-          } else {
-            databaseNameField.value = settings.configuredDatabasePath || 'Not configured';
-          }
+          databaseNameField.value = settings.editableDatabaseName || '';
         }
       }
     } catch (error) {
