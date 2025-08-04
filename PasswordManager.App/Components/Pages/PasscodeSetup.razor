@@ -42,8 +42,9 @@
                     }
                     else
                     {
+                        var zeroNumber = "0";
                         <button class="keypad-btn keypad-empty"></button>
-                        <button class="keypad-btn" @onclick="() => OnNumberPressed(@"0")">0</button>
+                        <button class="keypad-btn" @onclick="() => OnNumberPressed(zeroNumber)">0</button>
                         <button class="keypad-btn keypad-delete" @onclick="OnDeletePressed">
                             <span class="delete-icon">⌫</span>
                         </button>

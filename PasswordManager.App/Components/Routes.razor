@@ -9,9 +9,9 @@
         </Found>
         <NotFound>
             <PageTitle>Not Found</PageTitle>
-            @{
-                NavigationManager.NavigateTo("/login");
-            }
+            <div class="not-found-message">
+                <p>Page not found. Redirecting to login...</p>
+            </div>
         </NotFound>
     </Router>
 </DatabaseStartupWrapper>

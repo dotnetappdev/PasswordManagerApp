@@ -72,8 +72,9 @@
                                 }
                                 else
                                 {
+                                    var zeroNumber = "0";
                                     <button class="keypad-btn keypad-empty"></button>
-                                    <button class="keypad-btn" @onclick="() => OnNumberPressed(@"0")">0</button>
+                                    <button class="keypad-btn" @onclick="() => OnNumberPressed(zeroNumber)">0</button>
                                     <button class="keypad-btn keypad-delete" @onclick="OnDeletePressed">
                                         <span class="delete-icon">⌫</span>
                                     </button>
@@ -260,7 +261,7 @@
         animation: shake 0.5s ease-in-out;
     }
 
-    @keyframes shake {
+    @@keyframes shake {
         0%, 100% { transform: translateX(0); }
         25% { transform: translateX(-5px); }
         75% { transform: translateX(5px); }
