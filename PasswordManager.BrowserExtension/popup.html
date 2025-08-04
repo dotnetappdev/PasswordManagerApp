@@ -252,20 +252,20 @@
         
         <div class="form-group">
           <label for="apiUrl">API URL:</label>
-          <input type="url" id="apiUrl" placeholder="https://your-api-server.com">
-          <small class="help-text">Enter the URL of your Password Manager API server</small>
+          <input type="text" id="apiUrl" readonly>
+          <small class="help-text">URL of your Password Manager API server</small>
         </div>
 
         <div class="form-group">
           <label for="apiKey">API Key:</label>
-          <input type="password" id="apiKey" placeholder="your-api-key-here">
-          <small class="help-text">Enter your API key for authentication</small>
+          <input type="text" id="apiKey" readonly>
+          <small class="help-text">API key for authentication</small>
         </div>
 
         <div class="form-group">
-          <label for="databaseName">Database Name:</label>
-          <input type="text" id="databaseName" placeholder="My Password Database">
-          <small class="help-text">Optional: Display name for your password database</small>
+          <label for="databaseName">Database Path:</label>
+          <input type="text" id="databaseName" readonly>
+          <small class="help-text">Database path for your password database</small>
         </div>
 
         <hr style="margin: 20px 0; border: 1px solid #ddd;">
@@ -285,7 +285,6 @@
         </div>
         
         <button type="button" id="changeDatabaseBtn" class="btn btn-secondary">Change Database</button>
-        <button type="submit" class="btn btn-primary">Save Settings</button>
       </form>
       
       <div id="settingsMessage" class="message" style="display: none;"></div>
