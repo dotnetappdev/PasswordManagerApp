@@ -2,6 +2,8 @@
 
 [![API Build](https://github.com/dotnetappdev/PasswordManagerApp/workflows/API%20Build/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-api.yml)
 [![Web App Build](https://github.com/dotnetappdev/PasswordManagerApp/workflows/Web%20App%20Build/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml)
+[![UI Tests](https://github.com/dotnetappdev/PasswordManagerApp/workflows/UI%20Tests/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/test-ui.yml)
+[![Backend Tests](https://github.com/dotnetappdev/PasswordManagerApp/workflows/Backend%20Tests/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/test-backend.yml)
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![MAUI](https://img.shields.io/badge/MAUI-Cross--Platform-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/apps/maui)
 [![Web API](https://img.shields.io/badge/Web%20API-ASP.NET%20Core-512BD4?style=for-the-badge&logo=dotnet)](https://docs.microsoft.com/aspnet/core/web-api/)

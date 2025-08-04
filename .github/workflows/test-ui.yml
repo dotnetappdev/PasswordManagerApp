@@ -1,0 +1,45 @@
+name: UI Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'PasswordManager.Tests.UI/**'
+      - 'PasswordManager.Web/**'
+      - 'PasswordManager.Models/**'
+      - 'PasswordManager.Components.Shared/**'
+      - 'PasswordManager.DAL/**'
+      - 'PasswordManager.Services/**'
+      - 'PasswordManager.Crypto/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'PasswordManager.Tests.UI/**'
+      - 'PasswordManager.Web/**'
+      - 'PasswordManager.Models/**'
+      - 'PasswordManager.Components.Shared/**'
+      - 'PasswordManager.DAL/**'
+      - 'PasswordManager.Services/**'
+      - 'PasswordManager.Crypto/**'
+
+jobs:
+  test-ui:
+    runs-on: ubuntu-latest
+    name: Run UI Tests
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore PasswordManager.Tests.UI/PasswordManager.Tests.UI.csproj
+
+    - name: Build UI Tests
+      run: dotnet build PasswordManager.Tests.UI/PasswordManager.Tests.UI.csproj --no-restore --configuration Release
+
+    - name: Run UI Tests
+      run: dotnet test PasswordManager.Tests.UI/PasswordManager.Tests.UI.csproj --no-build --configuration Release --verbosity normal

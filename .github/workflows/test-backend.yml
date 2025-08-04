@@ -1,0 +1,43 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'PasswordManager.Tests.OTP/**'
+      - 'PasswordManager.API/**'
+      - 'PasswordManager.Models/**'
+      - 'PasswordManager.DAL/**'
+      - 'PasswordManager.Services/**'
+      - 'PasswordManager.Crypto/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'PasswordManager.Tests.OTP/**'
+      - 'PasswordManager.API/**'
+      - 'PasswordManager.Models/**'
+      - 'PasswordManager.DAL/**'
+      - 'PasswordManager.Services/**'
+      - 'PasswordManager.Crypto/**'
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    name: Run Backend Tests
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore OTP Test dependencies
+      run: dotnet restore PasswordManager.Tests.OTP/PasswordManager.Tests.OTP.csproj
+
+    - name: Build OTP Tests
+      run: dotnet build PasswordManager.Tests.OTP/PasswordManager.Tests.OTP.csproj --no-restore --configuration Release
+
+    - name: Run OTP Tests
+      run: dotnet test PasswordManager.Tests.OTP/PasswordManager.Tests.OTP.csproj --no-build --configuration Release --verbosity normal
