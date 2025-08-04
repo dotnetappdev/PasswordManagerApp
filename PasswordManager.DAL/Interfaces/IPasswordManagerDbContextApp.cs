@@ -60,6 +60,16 @@ public interface IPasswordManagerDbContextApp : IDisposable
     DbSet<QrLoginToken> QrLoginTokens { get; set; }
     
     /// <summary>
+    /// Gets or sets the user passkeys
+    /// </summary>
+    DbSet<UserPasskey> UserPasskeys { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the user two-factor backup codes
+    /// </summary>
+    DbSet<UserTwoFactorBackupCode> UserTwoFactorBackupCodes { get; set; }
+    
+    /// <summary>
     /// Gets or sets the application users
     /// </summary>
     DbSet<ApplicationUser> Users { get; set; }

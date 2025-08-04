@@ -62,6 +62,7 @@ public static class MauiProgram
 
 		// Register platform service
 		builder.Services.AddSingleton<IPlatformService, MauiPlatformService>();
+		builder.Services.AddSingleton<ISecureStorageService, MauiSecureStorageService>();
 
 		// Register database configuration service
 		builder.Services.AddScoped<IDatabaseConfigurationService, DatabaseConfigurationService>();
@@ -92,6 +93,7 @@ public static class MauiProgram
 		builder.Services.AddScoped<IAppStartupService, AppStartupService>();
 		builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 		builder.Services.AddScoped<IVaultSessionService, VaultSessionService>();
+		builder.Services.AddScoped<IPasscodeService, PasscodeService>();
 
 		// Register sync services
 		builder.Services.AddHttpClient();

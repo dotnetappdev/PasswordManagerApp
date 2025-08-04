@@ -19,8 +19,12 @@ public class AuthController : ControllerBase
     private readonly IPasswordCryptoService _passwordCryptoService;
     private readonly IVaultSessionService _vaultSessionService;
     private readonly IQrLoginService _qrLoginService;
+
     private readonly IOtpService _otpService;
     private readonly IPlatformDetectionService _platformDetectionService;
+
+    private readonly ITwoFactorService _twoFactorService;
+    private readonly IPasskeyService _passkeyService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly SmsConfiguration _smsConfig;
@@ -32,16 +36,22 @@ public class AuthController : ControllerBase
         IQrLoginService qrLoginService,
         IOtpService otpService,
         IPlatformDetectionService platformDetectionService,
+        ITwoFactorService twoFactorService,
+        IPasskeyService passkeyService,
+ 
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         IOptions<SmsConfiguration> smsConfig,
         ILogger<AuthController> logger)
-    {
+    
         _passwordCryptoService = passwordCryptoService;
         _vaultSessionService = vaultSessionService;
         _qrLoginService = qrLoginService;
         _otpService = otpService;
         _platformDetectionService = platformDetectionService;
+
+        _twoFactorService = twoFactorService;
+        _passkeyService = passkeyService;
         _userManager = userManager;
         _signInManager = signInManager;
         _smsConfig = smsConfig.Value;
@@ -110,6 +120,104 @@ public class AuthController : ControllerBase
             _logger.LogError(ex, "Error during login for user {Email}", loginRequest.Email);
             return StatusCode(500, "An error occurred during login");
         }
+    }
+
+    /// <summary>
+    /// Enhanced login with 2FA and passkey support
+    /// </summary>
+    [HttpPost("login/enhanced")]
+    public async Task<ActionResult<LoginResponseDto>> LoginEnhanced([FromBody] EnhancedLoginRequestDto loginRequest)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Find user by email
+            var user = await _userManager.FindByEmailAsync(loginRequest.Email);
+            if (user == null)
+            {
+                return Unauthorized("Invalid email or password");
+            }
+
+            // Verify master password
+            if (!_passwordCryptoService.VerifyMasterPassword(loginRequest.Password, user.MasterPasswordHash, Convert.FromBase64String(user.UserSalt), user.MasterPasswordIterations))
+            {
+                return Unauthorized("Invalid email or password");
+            }
+
+            // Check if user has 2FA enabled
+            if (user.TwoFactorEnabled)
+            {
+                // If 2FA code is provided, verify it
+                if (!string.IsNullOrEmpty(loginRequest.TwoFactorCode))
+                {
+                    var clientIp = Request.HttpContext.Connection.RemoteIpAddress?.ToString();
+                    var isValidCode = await _twoFactorService.VerifyTwoFactorCodeAsync(user.Id, loginRequest.TwoFactorCode, loginRequest.IsTwoFactorBackupCode, clientIp);
+                    
+                    if (!isValidCode)
+                    {
+                        return BadRequest("Invalid 2FA code");
+                    }
+                }
+                else
+                {
+                    // Return response indicating 2FA is required
+                    return Ok(new LoginResponseDto
+                    {
+                        RequiresTwoFactor = true,
+                        SupportsPasskey = user.PasskeysEnabled,
+                        TwoFactorToken = GenerateTemporaryToken(user.Id)
+                    });
+                }
+            }
+
+            // Complete login process
+            var masterKey = _passwordCryptoService.DeriveMasterKey(loginRequest.Password, Convert.FromBase64String(user.UserSalt));
+            var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
+
+            var authResponse = new AuthResponseDto
+            {
+                Token = sessionId,
+                RefreshToken = "",
+                ExpiresAt = DateTime.UtcNow.AddHours(8),
+                User = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    CreatedAt = user.CreatedAt,
+                    LastLoginAt = user.LastLoginAt,
+                    IsActive = user.IsActive
+                }
+            };
+
+            // Update last login time
+            user.LastLoginAt = DateTime.UtcNow;
+            await _userManager.UpdateAsync(user);
+
+            return Ok(new LoginResponseDto
+            {
+                RequiresTwoFactor = false,
+                SupportsPasskey = user.PasskeysEnabled,
+                AuthResponse = authResponse
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during enhanced login for user {Email}", loginRequest.Email);
+            return StatusCode(500, "An error occurred during login");
+        }
+    }
+
+    private string GenerateTemporaryToken(string userId)
+    {
+        // Implement temporary token generation for 2FA
+        // This should be secure and expire after a short time
+        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{userId}:{DateTime.UtcNow:O}"));
     }
 
     /// <summary>

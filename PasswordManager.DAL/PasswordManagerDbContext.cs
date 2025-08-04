@@ -21,8 +21,13 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
     public DbSet<ApiKey> ApiKeys { get; set; } = null!;
     public DbSet<ApplicationUser> Users { get; set; } = null!;
     public DbSet<QrLoginToken> QrLoginTokens { get; set; } = null!;
+
     public DbSet<OtpCode> OtpCodes { get; set; } = null!;
     public DbSet<SmsSettings> SmsSettings { get; set; } = null!;
+
+    public DbSet<UserPasskey> UserPasskeys { get; set; } = null!;
+    public DbSet<UserTwoFactorBackupCode> UserTwoFactorBackupCodes { get; set; } = null!;
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

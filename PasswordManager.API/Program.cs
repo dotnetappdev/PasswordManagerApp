@@ -5,6 +5,7 @@ using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
 using PasswordManager.API.Extensions;
 using PasswordManager.API.Middleware;
+using PasswordManager.DAL.Interfaces;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Identity;
@@ -95,6 +96,11 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 // Register application services
+builder.Services.AddScoped<IPasswordManagerDbContext>(provider =>
+{
+    var dbContext = provider.GetRequiredService<PasswordManagerDbContext>();
+    return new PasswordManager.API.Services.PasswordManagerDbContextWrapper(dbContext);
+});
 builder.Services.AddScoped<IPasswordItemApiService, PasswordManager.Services.Services.PasswordItemApiService>();
 builder.Services.AddScoped<ICategoryApiService, PasswordManager.Services.Services.CategoryApiService>();
 builder.Services.AddScoped<ICollectionApiService, PasswordManager.Services.Services.CollectionApiService>();
@@ -108,10 +114,13 @@ builder.Services.AddScoped<IVaultSessionService, PasswordManager.Services.Servic
 builder.Services.AddScoped<IQrLoginService, PasswordManager.Services.Services.QrLoginService>();
 builder.Services.AddScoped<IApiKeyService, PasswordManager.Services.Services.ApiKeyService>();
 builder.Services.AddScoped<IDatabaseMigrationService, PasswordManager.Services.Services.DatabaseMigrationService>();
+builder.Services.AddScoped<ITwoFactorService, PasswordManager.Services.Services.TwoFactorService>();
+builder.Services.AddScoped<IPasskeyService, PasswordManager.Services.Services.PasskeyService>();
 builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncService>();
 
 // Register cryptography services
 builder.Services.AddCryptographyServices();
+
 
 // Configure SMS settings
 builder.Services.Configure<PasswordManager.Models.Configuration.SmsConfiguration>(
@@ -123,6 +132,20 @@ builder.Services.AddScoped<ISmsService, PasswordManager.Services.Services.Twilio
 builder.Services.AddScoped<IOtpService, PasswordManager.Services.Services.OtpService>();
 builder.Services.AddScoped<IPlatformDetectionService, PasswordManager.Services.Services.PlatformDetectionService>();
 builder.Services.AddScoped<ISmsSettingsService, PasswordManager.Services.Services.SmsSettingsService>();
+=======
+// Register Fido2 service for passkeys
+builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
+{
+    var config = new Fido2NetLib.Fido2Configuration
+    {
+        ServerDomain = "localhost", // Update this for production
+        ServerName = "PasswordManager",
+        Origins = new HashSet<string> { "https://localhost", "http://localhost" },
+        TimestampDriftTolerance = 300000
+    };
+    return new Fido2NetLib.Fido2(config);
+
+  
 
 // Add API documentation with Swagger (compatible with .NET 8)
 builder.Services.AddEndpointsApiExplorer();
