@@ -105,18 +105,19 @@
     <div class="container">
         <h1>🔐 Password Manager Extension Test Page</h1>
         <div class="test-info">
-            <strong>Testing Instructions:</strong>
+            <strong>Testing Instructions (Direct Database Access):</strong>
             <ol>
-                <li>Install the Password Manager browser extension</li>
-                <li>Set up the API URL in extension settings (default: http://localhost:5000)</li>
-                <li>Login to your Password Manager account through the extension</li>
-                <li>Look for blue icons (👤 and 🔑) next to input fields below</li>
+                <li>Install the updated Password Manager browser extension</li>
+                <li>Load your Password Manager database file (.db/.sqlite/.sal)</li>
+                <li>Enter your email and master password to unlock the database</li>
+                <li>Look for icons (👤 and 🔑) next to input fields below</li>
                 <li>Click icons to test autofill and password generation</li>
             </ol>
         </div>
         
         <div class="note">
-            <strong>Expected Behavior:</strong> Blue icons should appear next to username/email and password fields. 
+            <strong>New Feature:</strong> The extension now reads directly from your database file - no API server required!
+            Icons should appear next to username/email and password fields. 
             Clicking them will show options to fill credentials or generate passwords.
         </div>
     </div>

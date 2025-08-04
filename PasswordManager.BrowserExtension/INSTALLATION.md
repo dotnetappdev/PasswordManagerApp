@@ -1,22 +1,163 @@
-# Password Manager Browser Extension Installation Guide
+# Password Manager Browser Extension - Installation Guide
 
-This guide will help you install and set up the Password Manager browser extension to work with your Password Manager App.
+## Quick Setup for Direct Database Access
 
-## Prerequisites
+This guide will help you complete the setup of the Password Manager browser extension to work with SQLite database files directly.
 
-Before installing the extension, ensure you have:
+### Prerequisites
 
-1. **Password Manager API Running**: The Password Manager API should be running and accessible
-   - Default URL: `http://localhost:5000`
-   - Ensure it's accessible from your browser
-   - Test by visiting `http://localhost:5000/api/passworditems` (should return 401 if not authenticated)
+- Password Manager application with a created database file
+- Chrome/Chromium-based browser (Chrome 88+, Edge 88+)
+- Access to download external libraries
 
-2. **User Account**: You need a valid user account in the Password Manager system
+### Step 1: Download Required Libraries
 
-3. **Supported Browser**: 
-   - Chrome 88+ (recommended)
-   - Firefox 109+
-   - Edge 88+ (Chromium-based)
+The extension needs SQL.js to read SQLite database files. Download the required files:
+
+```bash
+# Navigate to the extension directory
+cd PasswordManager.BrowserExtension/lib/
+
+# Download SQL.js library (replace placeholder file)
+curl -L https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js -o sql-wasm.js
+
+# Download SQL.js WebAssembly module  
+curl -L https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.wasm -o sql-wasm.wasm
+```
+
+**Alternative: Manual Download**
+1. Visit https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/
+2. Download `sql-wasm.js` and `sql-wasm.wasm`
+3. Place both files in the `PasswordManager.BrowserExtension/lib/` folder
+
+### Step 2: Install Browser Extension
+
+#### Chrome/Chromium Browsers:
+1. Open Chrome and go to `chrome://extensions/`
+2. Enable "Developer mode" (toggle in top right)
+3. Click "Load unpacked"
+4. Select the `PasswordManager.BrowserExtension` folder
+5. Extension will appear in your browser toolbar
+
+#### Firefox (Alternative):
+1. Open Firefox and go to `about:debugging#/runtime/this-firefox`
+2. Click "Load Temporary Add-on"
+3. Select the `manifest.json` file from the extension folder
+
+### Step 3: Prepare Your Database
+
+1. **Create Database**: Use the main Password Manager application to create your database
+2. **Add Credentials**: Add some login credentials through the main app
+3. **Note Database Location**: Remember where your database file is saved (usually `.db` or `.sqlite`)
+
+### Step 4: First Use
+
+1. **Click Extension Icon**: Look for the Password Manager icon in your browser toolbar
+2. **Load Database**: 
+   - Click "Load Database" on the first screen
+   - Select your Password Manager database file (.db/.sqlite/.sal)
+   - Click "Load Database" button
+3. **Authenticate**:
+   - Enter the same email you use in the main app
+   - Enter your master password
+   - Click "Unlock"
+
+### Step 5: Test Functionality
+
+1. **Visit a Website**: Go to any website with a login form
+2. **Look for Icons**: You should see 👤 and 🔑 icons next to username/password fields
+3. **Test Autofill**: Click the username icon to see your stored credentials
+4. **Select Credential**: Click on a credential to auto-fill the form
+
+## Troubleshooting
+
+### Common Issues
+
+**"Failed to load database"**
+- Ensure you downloaded the SQL.js files correctly
+- Check that your database file isn't corrupted
+- Verify the file has a .db, .sqlite, or .sal extension
+
+**"Authentication failed"**
+- Double-check your email address (must match exactly)
+- Verify your master password is correct
+- Ensure the database was created with the same user
+
+**No icons appear on websites**
+- Refresh the page after installing the extension
+- Check browser console (F12) for JavaScript errors
+- Verify the extension has necessary permissions
+
+**"No credentials found"**
+- Ensure you have login items stored for the current website
+- Check that the website URL matches what you saved
+- Try clicking "View All" to see all credentials
+
+### Developer Console
+
+If issues persist, check the browser console:
+1. Press F12 to open developer tools
+2. Go to Console tab
+3. Look for Password Manager related errors
+4. Check for SQL.js loading errors
+
+### Permissions
+
+Ensure the extension has these permissions:
+- ✅ `storage` - For database and authentication state
+- ✅ `activeTab` - For form interaction
+- ✅ `unlimitedStorage` - For large database files
+- ✅ `notifications` - For user feedback
+
+## Security Notes
+
+- **Database Files**: Keep your database files secure and backed up
+- **Master Password**: Never share your master password
+- **Browser Storage**: Extension only stores authentication state, not passwords
+- **Local Operation**: All decryption happens locally - no data sent to servers
+
+## File Verification
+
+After setup, verify these files exist:
+
+```
+PasswordManager.BrowserExtension/
+├── lib/
+│   ├── sql-wasm.js              # ✅ Should be ~150KB
+│   └── sql-wasm.wasm            # ✅ Should be ~400KB
+├── database-service.js          # ✅ Database operations
+├── crypto-service.js            # ✅ Encryption/decryption
+├── background.js                # ✅ Updated for database access
+├── popup.html                   # ✅ Updated UI with database screens
+└── manifest.json                # ✅ Updated permissions
+```
+
+## Support
+
+If you encounter issues:
+
+1. **Check Console Logs**: Browser developer console shows detailed errors
+2. **Verify File Sizes**: SQL.js files should be substantial (not empty placeholder files)
+3. **Database Integrity**: Ensure your database file opens in the main Password Manager app
+4. **Extension Permissions**: Verify all required permissions are granted
+
+## Success Indicators
+
+You'll know everything is working when:
+- ✅ Extension loads without console errors
+- ✅ Database file loads successfully  
+- ✅ Authentication succeeds with your master password
+- ✅ Icons appear next to form fields on websites
+- ✅ Clicking icons shows your stored credentials
+- ✅ Credentials auto-fill correctly
+
+## Next Steps
+
+Once installed and working:
+- **Bookmark Important Sites**: Test the extension on your frequently used websites
+- **Generate Passwords**: Use the built-in password generator for new accounts
+- **Manage Settings**: Access settings to change database files if needed
+- **Stay Secure**: Regularly backup your database file
 
 ## Installation Steps
 

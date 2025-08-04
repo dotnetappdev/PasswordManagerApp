@@ -1,155 +1,193 @@
-# Password Manager Browser Extension
+# Password Manager Browser Extension - Direct Database Access
 
-A secure browser extension that integrates with the Password Manager App to provide seamless autofill functionality for login and registration forms.
+**Updated to read directly from SQLite database files like 1Password - no API server required!**
+
+A secure browser extension that reads directly from Password Manager database files to provide seamless autofill functionality without requiring a running API server.
+
+## 🚀 New Architecture - Direct Database Access
+
+The extension now operates with a **direct database access** model:
+
+1. **Database Loading**: Users select their Password Manager database file (.db/.sqlite/.sal)
+2. **Local Authentication**: Master password verification happens locally using stored hashes
+3. **Local Decryption**: Passwords are decrypted client-side using the derived master key
+4. **No API Dependencies**: No need for a running API server
 
 ## Features
 
-- **🔐 Secure Autofill**: Automatically detect and fill login forms using your stored credentials
-- **⚡ Password Generation**: Generate strong passwords with customizable options
+- **🔐 Direct Database Access**: Read directly from your Password Manager database file
+- **⚡ Local Decryption**: Decrypt passwords locally using your master password
 - **🎯 Smart Detection**: Recognizes username, email, and password fields across websites
-- **🔒 API Integration**: Communicates securely with your Password Manager API
-- **🎨 1Password-style UI**: Familiar icon-based interface for easy credential access
+- **🔒 Zero API Dependencies**: Works completely offline with your database file
+- **🎨 1Password-style UI**: Familiar interface for database loading and credential access
 - **🌐 Cross-browser Support**: Works with Chrome, Firefox, and other Chromium-based browsers
+- **🛡️ Enterprise Security**: Uses same encryption as the main app (AES-256-GCM + PBKDF2)
 
 ## Installation
 
-### For Development
+### Complete Setup
 
-1. Open Chrome and navigate to `chrome://extensions/`
-2. Enable "Developer mode" in the top right
-3. Click "Load unpacked" and select the `PasswordManager.BrowserExtension` folder
-4. The extension will appear in your browser toolbar
+1. **Download SQL.js library** (required for database access):
+   ```bash
+   cd PasswordManager.BrowserExtension/lib/
+   curl -L https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js -o sql-wasm.js
+   curl -L https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.wasm -o sql-wasm.wasm
+   ```
 
-### For Firefox
+2. **Install Extension**:
+   - Open Chrome and navigate to `chrome://extensions/`
+   - Enable "Developer mode" in the top right
+   - Click "Load unpacked" and select the `PasswordManager.BrowserExtension` folder
+   - The extension will appear in your browser toolbar
 
-1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
-2. Click "Load Temporary Add-on"
-3. Select the `manifest.json` file from the extension folder
+## Setup & Usage
 
-## Setup
+### First Time Setup
 
-1. **Configure API URL**: Click the extension icon and go to Settings to set your Password Manager API URL (default: http://localhost:5000)
-2. **Login**: Use your Password Manager credentials to authenticate
-3. **Start Using**: Visit any website with login forms - icons will appear next to username and password fields
+1. **Load Database**: Click the extension icon and select your Password Manager database file (.db/.sqlite/.sal)
+2. **Authenticate**: Enter your email and master password (same as main application)
+3. **Start Using**: Visit websites - icons will appear next to username and password fields
 
-## How It Works
+### Daily Usage
 
-### Form Detection
-The extension automatically scans web pages for:
-- Login forms with username/email and password fields
-- Registration forms
-- Standalone credential input fields
+1. **Navigate to a website** with login forms
+2. **Click the username icon** (👤) to see matching credentials
+3. **Select a credential** to auto-fill both username and password
+4. **Generate passwords** using the password icon (🔑) or generator tab
 
-### Autofill Process
-1. **Icon Display**: Blue icons (👤 for username, 🔑 for password) appear next to detected fields
-2. **Credential Selection**: Click username icon to see matching credentials for the current website
-3. **Auto-fill**: Select a credential to automatically fill both username and password fields
-4. **Password Generation**: Click password icon to generate or fill existing passwords
+## Key Components
 
-### Security Features
-- **No Local Storage**: Does not store credentials locally - communicates with your secure API
-- **Encrypted Communication**: Uses the same encryption as your main Password Manager app
-- **Session-based**: Requires authentication with your Password Manager API
-- **Domain Matching**: Intelligently matches stored websites with current domains
+### DatabaseService (`database-service.js`)
+- Handles SQLite database operations using SQL.js
+- Reads user authentication data and encrypted password items
+- Queries credentials based on domain matching
 
-## Password Generator
+### CryptoService (`crypto-service.js`)
+- JavaScript implementation of the C# cryptographic operations
+- PBKDF2 key derivation with 600,000 iterations (OWASP 2024 standard)
+- AES-256-GCM encryption/decryption
+- Compatible with the C# backend encryption format
 
-The extension includes a full-featured password generator with options for:
-- **Length**: 8-50 characters
-- **Character Types**: Uppercase, lowercase, numbers, symbols
-- **Direct Fill**: Generate and immediately fill password fields
-- **Copy to Clipboard**: Copy generated passwords for manual use
+### Updated UI Flow
+1. **Database Selection Screen**: Choose database file
+2. **Authentication Screen**: Enter email and master password
+3. **Main Screen**: Browse and autofill credentials
+4. **Settings Screen**: Manage database and user settings
 
-## API Integration
+## Security Features
 
-The extension connects to your Password Manager API endpoints:
-- `GET /api/passworditems` - Retrieve stored credentials
-- `POST /api/auth/login` - Authenticate extension user
-- `GET /api/health` - Test API connectivity
-
-### Authentication
-Uses JWT token-based authentication, securely stored in the browser's sync storage.
+- **Zero API Dependencies**: All operations happen locally
+- **600,000 PBKDF2 Iterations**: OWASP 2024 recommended security level
+- **AES-256-GCM Encryption**: Authenticated encryption with integrity protection
+- **Master Key Caching**: Derived key cached securely in memory during session
+- **Automatic Memory Clearing**: Sensitive data cleared after use
+- **Database Compatibility**: Same encryption format as C# backend
 
 ## Browser Permissions
 
-The extension requests minimal permissions:
-- `activeTab`: Access current tab for form detection and filling
-- `storage`: Store API settings and authentication tokens
-- `notifications`: Show success/error messages
-- `http://localhost:*/*`: Access local Password Manager API (configurable)
+The extension requires these permissions:
+- `storage`: For storing database and authentication state
+- `activeTab`: For interacting with current tab
+- `unlimitedStorage`: For storing large database files
+- `notifications`: For user feedback
 
-## Development
+## File Structure
 
-### File Structure
 ```
 PasswordManager.BrowserExtension/
-├── manifest.json          # Extension manifest (Manifest V3)
-├── background.js          # Service worker for API communication
-├── content.js            # Content script for form detection
-├── content.css           # Styling for injected UI elements
-├── popup.html            # Extension popup interface
-├── popup.js              # Popup functionality
-├── popup.css             # Popup styling
-├── icons/                # Extension icons
-└── README.md            # This file
+├── manifest.json                 # Extension manifest with permissions
+├── background.js                 # Service worker with database/crypto logic
+├── content.js                    # Content script for form detection
+├── popup.html/js/css            # Extension popup UI
+├── database-service.js           # SQLite database operations
+├── crypto-service.js             # Encryption/decryption operations
+├── lib/
+│   ├── sql-wasm.js              # SQL.js library
+│   └── sql-wasm.wasm            # SQL.js WebAssembly module
+└── icons/                       # Extension icons
 ```
 
-### Key Components
+## Migration from API-Based Extension
 
-**Content Script (`content.js`)**
-- Detects login/registration forms
-- Injects autofill icons
-- Handles user interactions with forms
+If you were using the previous API-based extension:
 
-**Background Script (`background.js`)**
-- Manages API communication
-- Handles authentication
-- Generates passwords
-- Stores/retrieves settings
-
-**Popup (`popup.html/js/css`)**
-- Main extension interface
-- Login/settings management
-- Password generator
-- Credential browser
-
-## Security Considerations
-
-- **No Plaintext Storage**: Passwords are never stored in plaintext within the extension
-- **API-Only Access**: All credential access goes through your secure Password Manager API
-- **Same-Origin Policy**: Respects browser security boundaries
-- **Encrypted Transit**: All API communication uses HTTPS (when configured)
+1. **No Data Migration Needed**: Same database format is used
+2. **Remove API Dependencies**: No need to run the API server
+3. **Update Authentication**: Use master password instead of API login
+4. **Same Functionality**: All features work the same way
 
 ## Troubleshooting
 
-### Extension not detecting forms
+### Common Issues
+
+- **"Database not loaded"**: Ensure you've selected a valid SQLite database file
+- **"Authentication failed"**: Verify email and master password are correct
+- **"No credentials found"**: Check that the database contains login items for the current domain
+- **Extension not working**: Ensure SQL.js library is properly downloaded to lib/ folder
+
+### Form Detection Issues
 - Ensure the page has fully loaded
 - Check that fields are standard HTML input elements
 - Some dynamic forms may need a page refresh
 
-### Login fails
-- Verify API URL in extension settings
-- Ensure Password Manager API is running and accessible
-- Check browser console for connection errors
+### Browser Console Errors
+- Check browser console (F12) for JavaScript errors
+- Verify extension permissions are granted
+- Ensure database file is accessible and not corrupted
 
-### Icons not appearing
-- Refresh the page after installing the extension
-- Check if the website's CSP blocks extension content scripts
-- Verify extension has proper permissions
+## Development
+
+### Testing the Implementation
+
+1. Create a test database with encrypted passwords using the main application
+2. Load the database file in the extension
+3. Verify authentication works with your master password
+4. Test credential autofill on various websites
+
+### Key Components
+
+**DatabaseService (`database-service.js`)**
+- Reads SQLite database using SQL.js
+- Queries user authentication data
+- Retrieves encrypted login items
+
+**CryptoService (`crypto-service.js`)**
+- PBKDF2 key derivation (600K iterations)
+- AES-256-GCM decryption
+- Master password verification
+
+**Background Script (`background.js`)**
+- Manages database loading and authentication
+- Handles encryption/decryption operations
+- Coordinates between UI and database
+
+**Content Script (`content.js`)**
+- Detects login/registration forms
+- Injects autofill icons
+- Handles user interactions
+
+## Future Enhancements
+
+Potential improvements:
+
+- **Biometric Authentication**: Add fingerprint/face unlock support
+- **Multiple Database Support**: Switch between different database files
+- **Sync Indicators**: Show when database file is out of sync
+- **Database Updates**: Direct password editing capabilities
 
 ## Contributing
 
 This extension is part of the larger Password Manager App project. To contribute:
 
 1. Fork the repository
-2. Create a feature branch
-3. Test thoroughly across different websites
+2. Create a feature branch focused on the database access functionality
+3. Test thoroughly with real database files
 4. Submit a pull request
 
 ## Browser Compatibility
 
 - **Chrome**: 88+ (Manifest V3 support)
-- **Firefox**: 109+ (Manifest V3 support)
+- **Firefox**: 109+ (Manifest V3 support)  
 - **Edge**: 88+ (Chromium-based)
 - **Safari**: Not supported (different extension system)
 
