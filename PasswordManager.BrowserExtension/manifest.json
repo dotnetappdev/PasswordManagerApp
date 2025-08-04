@@ -13,7 +13,9 @@
   
   "host_permissions": [
     "http://localhost:*/*",
-    "https://localhost:*/*"
+    "https://localhost:*/*",
+    "http://*/*",
+    "https://*/*"
   ],
   
   "background": {

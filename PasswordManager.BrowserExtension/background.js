@@ -1,14 +1,16 @@
-// Background script for Password Manager browser extension - Direct SQLite Database Access
+// Background script for Password Manager browser extension - Direct SQLite Database Access & API Server Support
 // Importing required services
-importScripts('lib/sql-wasm.js', 'crypto-service.js', 'database-service.js');
+importScripts('lib/sql-wasm.js', 'crypto-service.js', 'database-service.js', 'api-service.js');
 
 class PasswordManagerBackground {
   constructor() {
     this.databaseService = new DatabaseService();
     this.cryptoService = new CryptoService();
+    this.apiService = new ApiService();
     this.masterKey = null;
     this.currentUser = null;
     this.isAuthenticated = false;
+    this.useApiMode = false; // Track whether we're using API or direct database access
     this.init();
   }
 
@@ -25,14 +27,30 @@ class PasswordManagerBackground {
 
   async loadSettings() {
     try {
-      const result = await chrome.storage.sync.get(['databasePath', 'userEmail', 'isAuthenticated']);
+      const result = await chrome.storage.sync.get([
+        'databasePath', 
+        'userEmail', 
+        'isAuthenticated', 
+        'useApiMode', 
+        'apiUrl', 
+        'apiKey'
+      ]);
+      
       if (result.databasePath) {
         this.databasePath = result.databasePath;
       }
       if (result.userEmail) {
         this.currentUser = result.userEmail;
       }
+      
       this.isAuthenticated = result.isAuthenticated || false;
+      this.useApiMode = result.useApiMode || false;
+      
+      // Configure API service if API credentials are available
+      if (result.apiUrl && result.apiKey) {
+        this.apiService.configure(result.apiUrl, result.apiKey);
+        this.useApiMode = true;
+      }
     } catch (error) {
       console.error('Password Manager: Error loading settings:', error);
     }
@@ -123,30 +141,85 @@ class PasswordManagerBackground {
 
       const settings = request.settings;
       
-      // Validate required settings
-      if (!settings.databasePath) {
-        sendResponse({ success: false, error: 'Settings must contain databasePath' });
+      // Check if this is API mode or direct database mode
+      const isApiMode = settings.apiUrl && settings.apiKey;
+      const isDatabaseMode = settings.databasePath;
+      
+      if (!isApiMode && !isDatabaseMode) {
+        sendResponse({ 
+          success: false, 
+          error: 'Settings must contain either (apiUrl + apiKey) for API mode or databasePath for direct database mode' 
+        });
         return;
       }
 
-      // Store the settings for user reference and future use
-      await chrome.storage.sync.set({ 
+      if (isApiMode && isDatabaseMode) {
+        sendResponse({ 
+          success: false, 
+          error: 'Settings cannot contain both API configuration and database path. Choose one mode.' 
+        });
+        return;
+      }
+
+      let storageData = {
         settingsLoaded: true,
-        configuredDatabasePath: settings.databasePath,
-        configuredDatabaseName: settings.databaseName || 'Database from settings',
+        configuredDatabaseName: settings.databaseName || 'Configuration from settings',
         userPreferences: {
-          databasePath: settings.databasePath,
           databaseName: settings.databaseName,
           autoRememberLocation: settings.autoRememberLocation || false
         }
-      });
+      };
+
+      let responseMessage = '';
+      let responseNote = '';
+
+      if (isApiMode) {
+        // API Mode Configuration
+        try {
+          // Test API connection
+          this.apiService.configure(settings.apiUrl, settings.apiKey);
+          await this.apiService.healthCheck();
+          
+          // Store API configuration
+          storageData.useApiMode = true;
+          storageData.apiUrl = settings.apiUrl;
+          storageData.apiKey = settings.apiKey;
+          storageData.configuredApiUrl = settings.apiUrl;
+          
+          this.useApiMode = true;
+          
+          responseMessage = 'API settings loaded successfully! You can now authenticate using your email and master password.';
+          responseNote = `Connected to API server at: ${settings.apiUrl}`;
+          
+        } catch (error) {
+          sendResponse({ 
+            success: false, 
+            error: `Failed to connect to API server: ${error.message}` 
+          });
+          return;
+        }
+      } else {
+        // Direct Database Mode Configuration
+        storageData.useApiMode = false;
+        storageData.configuredDatabasePath = settings.databasePath;
+        storageData.userPreferences.databasePath = settings.databasePath;
+        
+        this.useApiMode = false;
+        
+        responseMessage = 'Database settings loaded successfully! Your preferences have been saved.';
+        responseNote = 'When selecting your database file, please choose the file located at: ' + settings.databasePath;
+      }
+
+      // Store the settings
+      await chrome.storage.sync.set(storageData);
       
-      // Return success with guidance message
+      // Return success with appropriate message
       sendResponse({ 
         success: true, 
-        message: 'Settings loaded successfully! Your preferences have been saved.',
-        configuredPath: settings.databasePath,
-        note: 'When selecting your database file, please choose the file located at: ' + settings.databasePath
+        message: responseMessage,
+        configuredPath: settings.databasePath || settings.apiUrl,
+        note: responseNote,
+        useApiMode: isApiMode
       });
       
     } catch (error) {
@@ -167,44 +240,79 @@ class PasswordManagerBackground {
         return;
       }
 
-      // Get user salt from database
-      const userSaltBase64 = await this.databaseService.getUserSalt(userEmail);
-      if (!userSaltBase64) {
-        sendResponse({ success: false, error: 'User not found' });
-        return;
-      }
-
-      // Get stored password hash
-      const storedHash = await this.databaseService.getUserPasswordHash(userEmail);
-      if (!storedHash) {
-        sendResponse({ success: false, error: 'User authentication data not found' });
-        return;
-      }
-
-      // Verify master password
-      const isValid = await this.cryptoService.verifyMasterPassword(masterPassword, userSaltBase64, storedHash);
-      
-      if (isValid) {
-        // Derive and cache master key
-        this.masterKey = await this.cryptoService.deriveMasterKey(masterPassword, userSaltBase64);
-        this.currentUser = userEmail;
-        this.isAuthenticated = true;
+      if (this.useApiMode) {
+        // API Mode Authentication
+        try {
+          const response = await this.apiService.authenticate(userEmail, masterPassword);
+          
+          if (response && response.success) {
+            this.currentUser = userEmail;
+            this.isAuthenticated = true;
+            
+            // Save authentication state
+            await chrome.storage.sync.set({ 
+              userEmail: userEmail,
+              isAuthenticated: true 
+            });
+            
+            sendResponse({ 
+              success: true, 
+              message: 'Authentication successful (API mode)' 
+            });
+          } else {
+            sendResponse({ 
+              success: false, 
+              error: response?.message || 'Authentication failed' 
+            });
+          }
+        } catch (error) {
+          sendResponse({ 
+            success: false, 
+            error: `API authentication failed: ${error.message}` 
+          });
+        }
         
-        // Save authentication state
-        await chrome.storage.sync.set({ 
-          userEmail: userEmail,
-          isAuthenticated: true 
-        });
-        
-        sendResponse({ 
-          success: true, 
-          message: 'Authentication successful' 
-        });
       } else {
-        sendResponse({ 
-          success: false, 
-          error: 'Invalid master password' 
-        });
+        // Direct Database Mode Authentication (existing logic)
+        // Get user salt from database
+        const userSaltBase64 = await this.databaseService.getUserSalt(userEmail);
+        if (!userSaltBase64) {
+          sendResponse({ success: false, error: 'User not found' });
+          return;
+        }
+
+        // Get stored password hash
+        const storedHash = await this.databaseService.getUserPasswordHash(userEmail);
+        if (!storedHash) {
+          sendResponse({ success: false, error: 'User authentication data not found' });
+          return;
+        }
+
+        // Verify master password
+        const isValid = await this.cryptoService.verifyMasterPassword(masterPassword, userSaltBase64, storedHash);
+        
+        if (isValid) {
+          // Derive and cache master key
+          this.masterKey = await this.cryptoService.deriveMasterKey(masterPassword, userSaltBase64);
+          this.currentUser = userEmail;
+          this.isAuthenticated = true;
+          
+          // Save authentication state
+          await chrome.storage.sync.set({ 
+            userEmail: userEmail,
+            isAuthenticated: true 
+          });
+          
+          sendResponse({ 
+            success: true, 
+            message: 'Authentication successful (Database mode)' 
+          });
+        } else {
+          sendResponse({ 
+            success: false, 
+            error: 'Invalid master password' 
+          });
+        }
       }
     } catch (error) {
       console.error('Password Manager: Authentication error:', error);
@@ -216,66 +324,107 @@ class PasswordManagerBackground {
   }
 
   async getCredentials(request, sendResponse) {
-    if (!this.isAuthenticated || !this.masterKey) {
+    if (!this.isAuthenticated) {
       sendResponse({ success: false, error: 'Not authenticated' });
       return;
     }
 
     try {
-      // Get encrypted login items from database
       const domain = request.domain;
-      const loginItems = await this.databaseService.getLoginItems(this.currentUser, domain);
       
-      // Decrypt passwords
-      const credentials = [];
-      for (const item of loginItems) {
+      if (this.useApiMode) {
+        // API Mode - Get credentials from API server
         try {
-          let decryptedPassword = '';
+          const response = await this.apiService.getCredentials(domain);
           
-          // Only decrypt if we have encrypted password data
-          if (item.encryptedPassword && item.passwordNonce && item.passwordAuthTag) {
-            const encryptedPasswordData = {
-              encryptedPassword: item.encryptedPassword,
-              passwordNonce: item.passwordNonce,
-              passwordAuthTag: item.passwordAuthTag
-            };
+          if (response && response.success) {
+            // Transform API response to match expected format
+            const credentials = response.data || response.credentials || [];
             
-            decryptedPassword = await this.cryptoService.decryptPassword(encryptedPasswordData, this.masterKey);
+            sendResponse({ 
+              success: true, 
+              credentials: credentials.map(item => ({
+                id: item.id,
+                title: item.title || item.name,
+                username: item.username || item.email || '',
+                password: item.password || '',
+                websiteUrl: item.websiteUrl || item.url || ''
+              }))
+            });
+          } else {
+            sendResponse({ 
+              success: false, 
+              error: response?.message || 'Failed to fetch credentials from API' 
+            });
           }
-          
-          credentials.push({
-            id: item.id,
-            title: item.title,
-            username: item.username || '',
-            password: decryptedPassword,
-            websiteUrl: item.websiteUrl || ''
-          });
-        } catch (decryptError) {
-          console.error('Error decrypting password for item:', item.id, decryptError);
-          // Still include the item but without the password
-          credentials.push({
-            id: item.id,
-            title: item.title,
-            username: item.username || '',
-            password: '', // Empty password if decryption fails
-            websiteUrl: item.websiteUrl || ''
+        } catch (error) {
+          sendResponse({ 
+            success: false, 
+            error: `API request failed: ${error.message}` 
           });
         }
-      }
+        
+      } else {
+        // Direct Database Mode (existing logic)
+        if (!this.masterKey) {
+          sendResponse({ success: false, error: 'Master key not available' });
+          return;
+        }
 
-      // Filter credentials that match the domain if specified
-      let filteredCredentials = credentials;
-      if (domain) {
-        filteredCredentials = credentials.filter(cred => {
-          const websiteUrl = cred.websiteUrl || '';
-          return this.domainMatches(websiteUrl, domain);
+        // Get encrypted login items from database
+        const loginItems = await this.databaseService.getLoginItems(this.currentUser, domain);
+        
+        // Decrypt passwords
+        const credentials = [];
+        for (const item of loginItems) {
+          try {
+            let decryptedPassword = '';
+            
+            // Only decrypt if we have encrypted password data
+            if (item.encryptedPassword && item.passwordNonce && item.passwordAuthTag) {
+              const encryptedPasswordData = {
+                encryptedPassword: item.encryptedPassword,
+                passwordNonce: item.passwordNonce,
+                passwordAuthTag: item.passwordAuthTag
+              };
+              
+              decryptedPassword = await this.cryptoService.decryptPassword(encryptedPasswordData, this.masterKey);
+            }
+            
+            credentials.push({
+              id: item.id,
+              title: item.title,
+              username: item.username || '',
+              password: decryptedPassword,
+              websiteUrl: item.websiteUrl || ''
+            });
+          } catch (decryptError) {
+            console.error('Error decrypting password for item:', item.id, decryptError);
+            // Still include the item but without the password
+            credentials.push({
+              id: item.id,
+              title: item.title,
+              username: item.username || '',
+              password: '', // Empty password if decryption fails
+              websiteUrl: item.websiteUrl || ''
+            });
+          }
+        }
+
+        // Filter credentials that match the domain if specified
+        let filteredCredentials = credentials;
+        if (domain) {
+          filteredCredentials = credentials.filter(cred => {
+            const websiteUrl = cred.websiteUrl || '';
+            return this.domainMatches(websiteUrl, domain);
+          });
+        }
+
+        sendResponse({ 
+          success: true, 
+          credentials: filteredCredentials 
         });
       }
-
-      sendResponse({ 
-        success: true, 
-        credentials: filteredCredentials 
-      });
     } catch (error) {
       console.error('Password Manager: Error fetching credentials:', error);
       sendResponse({ 
@@ -357,16 +506,22 @@ class PasswordManagerBackground {
 
   async logout(sendResponse) {
     try {
-      // Clear master key from memory
+      // Clear master key from memory (for database mode)
       if (this.masterKey) {
         this.cryptoService.clearArray(this.masterKey);
         this.masterKey = null;
       }
       
+      // Clear API service configuration if in API mode
+      if (this.useApiMode) {
+        // Note: We don't clear the stored API config, just the active session
+        // The API service doesn't need explicit logout for token-based auth
+      }
+      
       this.currentUser = null;
       this.isAuthenticated = false;
       
-      // Clear stored authentication state
+      // Clear stored authentication state (but keep API/database configuration)
       await chrome.storage.sync.remove(['isAuthenticated', 'userEmail']);
       
       sendResponse({ 
@@ -384,13 +539,26 @@ class PasswordManagerBackground {
 
   async checkAuthentication(sendResponse) {
     try {
-      const result = await chrome.storage.sync.get(['isAuthenticated', 'userEmail', 'databaseLoaded']);
+      const result = await chrome.storage.sync.get([
+        'isAuthenticated', 
+        'userEmail', 
+        'databaseLoaded', 
+        'useApiMode', 
+        'settingsLoaded'
+      ]);
+      
+      // For API mode, we don't need databaseLoaded, we need settingsLoaded with API config
+      const isReady = this.useApiMode ? 
+        (result.settingsLoaded && this.apiService.isReady()) : 
+        result.databaseLoaded;
       
       sendResponse({ 
         success: true, 
-        isAuthenticated: this.isAuthenticated && !!this.masterKey,
+        isAuthenticated: this.isAuthenticated && (this.useApiMode || !!this.masterKey),
         userEmail: this.currentUser,
-        databaseLoaded: result.databaseLoaded || false
+        databaseLoaded: result.databaseLoaded || false,
+        useApiMode: this.useApiMode,
+        isReady: isReady || false
       });
     } catch (error) {
       console.error('Password Manager: Error checking authentication:', error);
@@ -411,7 +579,10 @@ class PasswordManagerBackground {
         'configuredDatabasePath',
         'configuredDatabaseName',
         'settingsLoaded',
-        'userPreferences'
+        'userPreferences',
+        'useApiMode',
+        'configuredApiUrl',
+        'apiUrl'
       ]);
       
       sendResponse({ 
@@ -424,7 +595,12 @@ class PasswordManagerBackground {
           configuredDatabasePath: result.configuredDatabasePath || '',
           configuredDatabaseName: result.configuredDatabaseName || '',
           settingsLoaded: result.settingsLoaded || false,
-          userPreferences: result.userPreferences || {}
+          userPreferences: result.userPreferences || {},
+          useApiMode: this.useApiMode,
+          configuredApiUrl: result.configuredApiUrl || result.apiUrl || '',
+          isReady: this.useApiMode ? 
+            (result.settingsLoaded && this.apiService.isReady()) : 
+            result.databaseLoaded
         }
       });
     } catch (error) {

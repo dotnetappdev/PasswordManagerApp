@@ -60,9 +60,16 @@
             <small class="help-text">Choose your settings file (JSON format) that specifies database location</small>
           </div>
           <div class="info-box">
-            <p><strong>Settings file format:</strong></p>
+            <p><strong>Settings file formats:</strong></p>
+            <p><em>For direct database access:</em></p>
             <pre>{
   "databasePath": "path/to/your/database.db",
+  "databaseName": "MyPasswordDB"
+}</pre>
+            <p><em>For API server access:</em></p>
+            <pre>{
+  "apiUrl": "https://your-api-server.com",
+  "apiKey": "your-api-key-here",
   "databaseName": "MyPasswordDB"
 }</pre>
           </div>
@@ -211,6 +218,18 @@
           <label for="configuredPath">Configured Database Path:</label>
           <input type="text" id="configuredPath" readonly>
           <small class="help-text">Database path from settings file (if configured)</small>
+        </div>
+
+        <div class="form-group">
+          <label for="configuredApiUrl">Configured API URL:</label>
+          <input type="text" id="configuredApiUrl" readonly>
+          <small class="help-text">API server URL from settings file (if configured)</small>
+        </div>
+
+        <div class="form-group">
+          <label for="currentMode">Current Mode:</label>
+          <input type="text" id="currentMode" readonly>
+          <small class="help-text">Whether using direct database access or API server</small>
         </div>
         
         <button type="button" id="changeDatabaseBtn" class="btn btn-secondary">Change Database</button>

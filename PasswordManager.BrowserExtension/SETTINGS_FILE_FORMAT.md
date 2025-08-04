@@ -6,6 +6,7 @@ The Password Manager browser extension now supports loading database configurati
 
 Create a JSON file with the following structure:
 
+### Direct Database Access Mode
 ```json
 {
   "databasePath": "/path/to/your/password-database.db",
@@ -14,14 +15,28 @@ Create a JSON file with the following structure:
 }
 ```
 
-### Required Fields
+### API Server Mode
+```json
+{
+  "apiUrl": "https://your-password-manager-api.com",
+  "apiKey": "your-api-key-here",
+  "databaseName": "My Password Database",
+  "autoRememberLocation": true
+}
+```
 
+### Configuration Options
+
+**For Direct Database Access:**
 - **`databasePath`** (string, required): The full path to your Password Manager database file. This serves as a reference for where your database is located.
 
-### Optional Fields
+**For API Server Mode:**
+- **`apiUrl`** (string, required): The base URL of your Password Manager API server (e.g., "https://api.yourpasswordmanager.com" or "http://localhost:5000").
+- **`apiKey`** (string, required): Your API authentication key for accessing the Password Manager API.
 
-- **`databaseName`** (string, optional): A friendly name for your database. Defaults to "Database from settings" if not provided.
-- **`autoRememberLocation`** (boolean, optional): Whether to remember this database location for future sessions. Defaults to false.
+**Common Optional Fields:**
+- **`databaseName`** (string, optional): A friendly name for your database/configuration. Defaults to "Database from settings" if not provided.
+- **`autoRememberLocation`** (boolean, optional): Whether to remember this configuration for future sessions. Defaults to false.
 
 ## How to Use
 
@@ -31,16 +46,17 @@ Create a JSON file with the following structure:
    - Open the Password Manager extension
    - Select "Load from settings file" option
    - Choose your settings JSON file
-   - The extension will save your preferences and guide you to select your database file
+   - **Direct Database Mode**: The extension will save your preferences and guide you to select your database file
+   - **API Server Mode**: The extension will configure API access and allow you to authenticate directly
 
-3. **Database Selection**: After loading settings, you'll still need to manually select your database file due to browser security restrictions, but the extension will:
-   - Remember your configured path
-   - Show you the expected location
-   - Store your preferences for future reference
+3. **Authentication**: 
+   - **Direct Database Mode**: After loading settings, you'll still need to manually select your database file due to browser security restrictions, but the extension will remember your configured path and show you the expected location
+   - **API Server Mode**: Enter your email and master password to authenticate directly with the API server
 
 ## Example Settings Files
 
-### Basic Configuration
+### Direct Database Access
+**Basic Configuration:**
 ```json
 {
   "databasePath": "C:\\Users\\YourName\\Documents\\PasswordManager\\passwords.db",
@@ -48,7 +64,7 @@ Create a JSON file with the following structure:
 }
 ```
 
-### Advanced Configuration
+**Advanced Configuration:**
 ```json
 {
   "databasePath": "/home/user/Documents/password-manager/work-passwords.db",
@@ -57,10 +73,30 @@ Create a JSON file with the following structure:
 }
 ```
 
+### API Server Access
+**Local API Server:**
+```json
+{
+  "apiUrl": "http://localhost:5000",
+  "apiKey": "your-local-api-key",
+  "databaseName": "Local Password Server"
+}
+```
+
+**Remote API Server:**
+```json
+{
+  "apiUrl": "https://your-password-api.example.com",
+  "apiKey": "your-secure-api-key-here",
+  "databaseName": "Remote Password Database",
+  "autoRememberLocation": true
+}
+```
+
 ### Multiple Database Setup
 You can create different settings files for different databases:
 
-**personal-settings.json:**
+**personal-settings.json (Direct Database):**
 ```json
 {
   "databasePath": "/Users/yourname/personal-passwords.db",
@@ -68,10 +104,11 @@ You can create different settings files for different databases:
 }
 ```
 
-**work-settings.json:**
+**work-settings.json (API Server):**
 ```json
 {
-  "databasePath": "/Users/yourname/work-passwords.db", 
+  "apiUrl": "https://work-password-api.company.com",
+  "apiKey": "work-api-key-here",
   "databaseName": "Work Passwords"
 }
 ```

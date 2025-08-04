@@ -1,0 +1,6 @@
+{
+  "apiUrl": "http://localhost:5000",
+  "apiKey": "your-api-key-here",
+  "databaseName": "API Password Database",
+  "autoRememberLocation": true
+}

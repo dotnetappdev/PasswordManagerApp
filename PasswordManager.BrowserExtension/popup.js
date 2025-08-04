@@ -79,11 +79,13 @@ class PasswordManagerPopup {
       if (response.success) {
         this.isAuthenticated = response.isAuthenticated;
         this.databaseLoaded = response.databaseLoaded;
+        this.useApiMode = response.useApiMode || false;
+        this.isReady = response.isReady || false;
         
-        if (this.isAuthenticated && this.databaseLoaded) {
+        if (this.isAuthenticated && this.isReady) {
           this.showScreen('main');
           await this.loadCredentials();
-        } else if (this.databaseLoaded) {
+        } else if (this.isReady) {
           this.showScreen('login');
           // Pre-fill user email if available
           if (response.userEmail) {
@@ -221,8 +223,15 @@ class PasswordManagerPopup {
       }
       
       // Validate settings structure
-      if (!settings.databasePath) {
-        throw new Error('Settings file must contain "databasePath" field');
+      const hasApiConfig = settings.apiUrl && settings.apiKey;
+      const hasDatabaseConfig = settings.databasePath;
+      
+      if (!hasApiConfig && !hasDatabaseConfig) {
+        throw new Error('Settings file must contain either (apiUrl + apiKey) for API mode or databasePath for direct database mode');
+      }
+      
+      if (hasApiConfig && hasDatabaseConfig) {
+        throw new Error('Settings file cannot contain both API configuration and database path. Choose one mode.');
       }
       
       // Send settings to background script
@@ -232,29 +241,56 @@ class PasswordManagerPopup {
       });
       
       if (response.success) {
-        // Show success message and switch to direct method with guidance
+        // Show success message - different for API vs Database mode
         const successDiv = document.createElement('div');
         successDiv.className = 'success-message';
-        successDiv.innerHTML = `
-          <p><strong>Settings loaded successfully!</strong></p>
-          <p>Your preferences have been saved. Please now select your database file:</p>
-          <p><strong>Expected location:</strong> ${response.configuredPath}</p>
-        `;
-        errorDiv.parentNode.insertBefore(successDiv, errorDiv);
         
-        // Auto-switch to direct method for user convenience
-        document.querySelector('input[name="loadMethod"][value="direct"]').checked = true;
-        this.toggleLoadMethod('direct');
-        
-        // Clear the settings file input
-        settingsFileInput.value = '';
-        
-        // Hide the success message after a few seconds
-        setTimeout(() => {
-          if (successDiv.parentNode) {
-            successDiv.parentNode.removeChild(successDiv);
-          }
-        }, 8000);
+        if (response.useApiMode) {
+          // API Mode success
+          successDiv.innerHTML = `
+            <p><strong>API Settings loaded successfully!</strong></p>
+            <p>Your API configuration has been saved and tested.</p>
+            <p><strong>API Server:</strong> ${response.configuredPath}</p>
+            <p>You can now authenticate using your email and master password.</p>
+          `;
+          
+          // For API mode, we can go directly to login
+          errorDiv.parentNode.insertBefore(successDiv, errorDiv);
+          
+          // Clear the settings file input
+          settingsFileInput.value = '';
+          
+          // Auto-navigate to login screen after a short delay
+          setTimeout(() => {
+            if (successDiv.parentNode) {
+              successDiv.parentNode.removeChild(successDiv);
+            }
+            this.showScreen('login');
+          }, 3000);
+          
+        } else {
+          // Database Mode success (existing behavior)
+          successDiv.innerHTML = `
+            <p><strong>Database Settings loaded successfully!</strong></p>
+            <p>Your preferences have been saved. Please now select your database file:</p>
+            <p><strong>Expected location:</strong> ${response.configuredPath}</p>
+          `;
+          errorDiv.parentNode.insertBefore(successDiv, errorDiv);
+          
+          // Auto-switch to direct method for user convenience
+          document.querySelector('input[name="loadMethod"][value="direct"]').checked = true;
+          this.toggleLoadMethod('direct');
+          
+          // Clear the settings file input
+          settingsFileInput.value = '';
+          
+          // Hide the success message after a few seconds
+          setTimeout(() => {
+            if (successDiv.parentNode) {
+              successDiv.parentNode.removeChild(successDiv);
+            }
+          }, 8000);
+        }
       } else {
         this.showError(errorDiv, response.error || 'Failed to load database from settings');
       }
@@ -338,6 +374,18 @@ class PasswordManagerPopup {
         const configPathField = document.getElementById('configuredPath');
         if (configPathField) {
           configPathField.value = settings.configuredDatabasePath || 'Not configured';
+        }
+
+        // Show configured API URL if available
+        const configApiField = document.getElementById('configuredApiUrl');
+        if (configApiField) {
+          configApiField.value = settings.configuredApiUrl || 'Not configured';
+        }
+
+        // Show current mode
+        const currentModeField = document.getElementById('currentMode');
+        if (currentModeField) {
+          currentModeField.value = settings.useApiMode ? 'API Server Mode' : 'Direct Database Mode';
         }
       }
     } catch (error) {
