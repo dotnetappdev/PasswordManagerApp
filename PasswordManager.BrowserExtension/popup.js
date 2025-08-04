@@ -1,4 +1,4 @@
-// Password Manager Browser Extension Popup Script
+// Password Manager Browser Extension Popup Script - Direct Database Access
 class PasswordManagerPopup {
   constructor() {
     this.currentScreen = 'loading';
@@ -6,13 +6,15 @@ class PasswordManagerPopup {
     this.credentials = [];
     this.filteredCredentials = [];
     this.currentDomain = '';
+    this.isAuthenticated = false;
+    this.databaseLoaded = false;
     this.init();
   }
 
   async init() {
     this.setupEventListeners();
     await this.getCurrentTabDomain();
-    await this.checkAuthStatus();
+    await this.checkInitialState();
   }
 
   async getCurrentTabDomain() {
@@ -29,16 +31,21 @@ class PasswordManagerPopup {
 
   setupEventListeners() {
     // Navigation
-    document.getElementById('settingsLink').addEventListener('click', () => this.showScreen('settings'));
-    document.getElementById('backBtn').addEventListener('click', () => this.showScreen('main'));
-    document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
+    document.getElementById('settingsLink')?.addEventListener('click', () => this.showScreen('settings'));
+    document.getElementById('settingsLinkFromDb')?.addEventListener('click', () => this.showScreen('settings'));
+    document.getElementById('backBtn')?.addEventListener('click', () => this.goBack());
+    document.getElementById('logoutBtn')?.addEventListener('click', () => this.logout());
+    document.getElementById('changeDatabaseLink')?.addEventListener('click', () => this.showScreen('database'));
+    document.getElementById('changeDatabaseBtn')?.addEventListener('click', () => this.showScreen('database'));
+
+    // Database loading
+    document.getElementById('loadDatabaseBtn')?.addEventListener('click', () => this.loadDatabase());
 
     // Login form
-    document.getElementById('loginForm').addEventListener('submit', (e) => this.handleLogin(e));
+    document.getElementById('loginForm')?.addEventListener('submit', (e) => this.handleLogin(e));
 
     // Settings form
-    document.getElementById('settingsForm').addEventListener('submit', (e) => this.handleSettingsSave(e));
-    document.getElementById('testConnectionBtn').addEventListener('click', () => this.testConnection());
+    document.getElementById('settingsForm')?.addEventListener('submit', (e) => this.handleSettingsSave(e));
 
     // Tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -46,40 +53,46 @@ class PasswordManagerPopup {
     });
 
     // Search
-    document.getElementById('searchInput').addEventListener('input', (e) => this.filterCredentials(e.target.value));
+    document.getElementById('searchInput')?.addEventListener('input', (e) => this.filterCredentials(e.target.value));
 
     // View all credentials
-    document.getElementById('viewAllBtn').addEventListener('click', () => this.loadAllCredentials());
+    document.getElementById('viewAllBtn')?.addEventListener('click', () => this.loadAllCredentials());
 
     // Password generator
-    document.getElementById('passwordLength').addEventListener('input', (e) => {
+    document.getElementById('passwordLength')?.addEventListener('input', (e) => {
       document.getElementById('lengthValue').textContent = e.target.value;
     });
-    document.getElementById('generateBtn').addEventListener('click', () => this.generatePassword());
-    document.getElementById('copyPasswordBtn').addEventListener('click', () => this.copyPasswordToClipboard());
-    document.getElementById('fillPasswordBtn').addEventListener('click', () => this.fillPasswordInCurrentTab());
+    document.getElementById('generateBtn')?.addEventListener('click', () => this.generatePassword());
+    document.getElementById('copyPasswordBtn')?.addEventListener('click', () => this.copyPasswordToClipboard());
+    document.getElementById('fillPasswordBtn')?.addEventListener('click', () => this.fillPasswordInCurrentTab());
   }
 
-  async checkAuthStatus() {
+  async checkInitialState() {
     try {
-      const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
+      const response = await chrome.runtime.sendMessage({ action: 'isAuthenticated' });
       
       if (response.success) {
-        // Update API URL in settings
-        document.getElementById('apiUrl').value = response.settings.apiUrl;
+        this.isAuthenticated = response.isAuthenticated;
+        this.databaseLoaded = response.databaseLoaded;
         
-        if (response.settings.isLoggedIn) {
+        if (this.isAuthenticated && this.databaseLoaded) {
           this.showScreen('main');
           await this.loadCredentials();
-        } else {
+        } else if (this.databaseLoaded) {
           this.showScreen('login');
+          // Pre-fill user email if available
+          if (response.userEmail) {
+            document.getElementById('userEmail').value = response.userEmail;
+          }
+        } else {
+          this.showScreen('database');
         }
       } else {
-        this.showScreen('login');
+        this.showScreen('database');
       }
     } catch (error) {
-      console.error('Error checking auth status:', error);
-      this.showScreen('login');
+      console.error('Error checking initial state:', error);
+      this.showScreen('database');
     }
   }
 
@@ -90,8 +103,156 @@ class PasswordManagerPopup {
     });
     
     // Show target screen
-    document.getElementById(screenName).style.display = 'flex';
-    this.currentScreen = screenName;
+    const targetScreen = document.getElementById(screenName);
+    if (targetScreen) {
+      targetScreen.style.display = 'flex';
+      this.currentScreen = screenName;
+      
+      // Update settings when showing settings screen
+      if (screenName === 'settings') {
+        this.updateSettingsDisplay();
+      }
+    }
+  }
+
+  goBack() {
+    if (this.currentScreen === 'settings') {
+      if (this.isAuthenticated) {
+        this.showScreen('main');
+      } else if (this.databaseLoaded) {
+        this.showScreen('login');
+      } else {
+        this.showScreen('database');
+      }
+    }
+  }
+
+  async loadDatabase() {
+    const fileInput = document.getElementById('databaseFile');
+    const loadBtn = document.getElementById('loadDatabaseBtn');
+    const errorDiv = document.getElementById('databaseError');
+    
+    if (!fileInput.files[0]) {
+      this.showError(errorDiv, 'Please select a database file');
+      return;
+    }
+    
+    const databaseFile = fileInput.files[0];
+    
+    // Show loading state
+    loadBtn.textContent = 'Loading...';
+    loadBtn.disabled = true;
+    errorDiv.style.display = 'none';
+    
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'loadDatabase',
+        databaseFile: databaseFile
+      });
+      
+      if (response.success) {
+        this.databaseLoaded = true;
+        this.showScreen('login');
+      } else {
+        this.showError(errorDiv, response.error || 'Failed to load database');
+      }
+    } catch (error) {
+      console.error('Database load error:', error);
+      this.showError(errorDiv, 'Error loading database: ' + error.message);
+    } finally {
+      loadBtn.textContent = 'Load Database';
+      loadBtn.disabled = false;
+    }
+  }
+
+  async handleLogin(e) {
+    e.preventDefault();
+    
+    const userEmail = document.getElementById('userEmail').value;
+    const masterPassword = document.getElementById('masterPassword').value;
+    const loginBtn = document.getElementById('loginBtn');
+    const errorDiv = document.getElementById('loginError');
+    
+    // Show loading state
+    loginBtn.textContent = 'Unlocking...';
+    loginBtn.disabled = true;
+    errorDiv.style.display = 'none';
+    
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'authenticate',
+        userEmail: userEmail,
+        masterPassword: masterPassword
+      });
+      
+      if (response.success) {
+        this.isAuthenticated = true;
+        this.showScreen('main');
+        await this.loadCredentials();
+      } else {
+        this.showError(errorDiv, response.error || 'Authentication failed');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      this.showError(errorDiv, 'Connection error: ' + error.message);
+    } finally {
+      loginBtn.textContent = 'Unlock';
+      loginBtn.disabled = false;
+    }
+  }
+
+  async logout() {
+    try {
+      await chrome.runtime.sendMessage({ action: 'logout' });
+      this.isAuthenticated = false;
+      
+      // Clear form data
+      document.getElementById('userEmail').value = '';
+      document.getElementById('masterPassword').value = '';
+      this.credentials = [];
+      this.filteredCredentials = [];
+      
+      this.showScreen('login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  }
+
+  async updateSettingsDisplay() {
+    try {
+      const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
+      
+      if (response.success) {
+        const settings = response.settings;
+        document.getElementById('currentDatabase').value = settings.databaseName || 'No database loaded';
+        document.getElementById('currentUser').value = settings.userEmail || 'Not authenticated';
+      }
+    } catch (error) {
+      console.error('Error updating settings display:', error);
+    }
+  }
+
+  async handleSettingsSave(e) {
+    e.preventDefault();
+    
+    const messageDiv = document.getElementById('settingsMessage');
+    
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'saveSettings',
+        settings: {
+          // Settings are mostly read-only now, but keeping for future extensions
+        }
+      });
+      
+      if (response.success) {
+        this.showMessage(messageDiv, 'Settings saved successfully!', 'success');
+      } else {
+        throw new Error(response.error);
+      }
+    } catch (error) {
+      this.showMessage(messageDiv, error.message || 'Failed to save settings', 'error');
+    }
   }
 
   switchTab(tabName) {
@@ -99,7 +260,7 @@ class PasswordManagerPopup {
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.remove('active');
     });
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
     
     // Update tab content
     document.querySelectorAll('.tab-content').forEach(content => {
@@ -108,120 +269,6 @@ class PasswordManagerPopup {
     document.getElementById(`${tabName}Tab`).style.display = 'block';
     
     this.currentTab = tabName;
-  }
-
-  async handleLogin(e) {
-    e.preventDefault();
-    
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const loginBtn = document.getElementById('loginBtn');
-    const errorDiv = document.getElementById('loginError');
-    
-    // Show loading state
-    loginBtn.textContent = 'Logging in...';
-    loginBtn.disabled = true;
-    errorDiv.style.display = 'none';
-    
-    try {
-      const response = await chrome.runtime.sendMessage({
-        action: 'login',
-        username: username,
-        password: password
-      });
-      
-      if (response.success) {
-        this.showScreen('main');
-        await this.loadCredentials();
-      } else {
-        errorDiv.textContent = response.error || 'Login failed';
-        errorDiv.style.display = 'block';
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      errorDiv.textContent = 'Connection error. Please check your settings.';
-      errorDiv.style.display = 'block';
-    } finally {
-      loginBtn.textContent = 'Login';
-      loginBtn.disabled = false;
-    }
-  }
-
-  async logout() {
-    try {
-      await chrome.runtime.sendMessage({ action: 'logout' });
-      this.showScreen('login');
-      
-      // Clear form data
-      document.getElementById('username').value = '';
-      document.getElementById('password').value = '';
-      this.credentials = [];
-      this.filteredCredentials = [];
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  }
-
-  async handleSettingsSave(e) {
-    e.preventDefault();
-    
-    const apiUrl = document.getElementById('apiUrl').value;
-    const messageDiv = document.getElementById('settingsMessage');
-    
-    try {
-      const response = await chrome.runtime.sendMessage({
-        action: 'saveSettings',
-        settings: { apiUrl: apiUrl }
-      });
-      
-      if (response.success) {
-        messageDiv.textContent = 'Settings saved successfully!';
-        messageDiv.className = 'message success';
-        messageDiv.style.display = 'block';
-        
-        setTimeout(() => {
-          messageDiv.style.display = 'none';
-        }, 3000);
-      } else {
-        throw new Error(response.error);
-      }
-    } catch (error) {
-      messageDiv.textContent = error.message || 'Failed to save settings';
-      messageDiv.className = 'message error';
-      messageDiv.style.display = 'block';
-    }
-  }
-
-  async testConnection() {
-    const testBtn = document.getElementById('testConnectionBtn');
-    const messageDiv = document.getElementById('settingsMessage');
-    
-    testBtn.textContent = 'Testing...';
-    testBtn.disabled = true;
-    
-    try {
-      const response = await chrome.runtime.sendMessage({ action: 'testConnection' });
-      
-      if (response.success) {
-        messageDiv.textContent = 'Connection successful!';
-        messageDiv.className = 'message success';
-      } else {
-        messageDiv.textContent = response.error || 'Connection failed';
-        messageDiv.className = 'message error';
-      }
-      
-      messageDiv.style.display = 'block';
-      setTimeout(() => {
-        messageDiv.style.display = 'none';
-      }, 3000);
-    } catch (error) {
-      messageDiv.textContent = 'Connection test failed';
-      messageDiv.className = 'message error';
-      messageDiv.style.display = 'block';
-    } finally {
-      testBtn.textContent = 'Test Connection';
-      testBtn.disabled = false;
-    }
   }
 
   async loadCredentials() {
@@ -398,6 +445,21 @@ class PasswordManagerPopup {
     } catch (error) {
       console.error('Error filling password:', error);
     }
+  }
+
+  showError(errorDiv, message) {
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+  }
+
+  showMessage(messageDiv, message, type) {
+    messageDiv.textContent = message;
+    messageDiv.className = `message ${type}`;
+    messageDiv.style.display = 'block';
+    
+    setTimeout(() => {
+      messageDiv.style.display = 'none';
+    }, 3000);
   }
 
   escapeHtml(text) {

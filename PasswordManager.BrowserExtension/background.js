@@ -1,8 +1,14 @@
-// Background script for Password Manager browser extension
+// Background script for Password Manager browser extension - Direct SQLite Database Access
+// Importing required services
+importScripts('lib/sql-wasm.js', 'crypto-service.js', 'database-service.js');
+
 class PasswordManagerBackground {
   constructor() {
-    this.apiUrl = 'http://localhost:5000';
-    this.authToken = null;
+    this.databaseService = new DatabaseService();
+    this.cryptoService = new CryptoService();
+    this.masterKey = null;
+    this.currentUser = null;
+    this.isAuthenticated = false;
     this.init();
   }
 
@@ -19,13 +25,14 @@ class PasswordManagerBackground {
 
   async loadSettings() {
     try {
-      const result = await chrome.storage.sync.get(['apiUrl', 'authToken']);
-      if (result.apiUrl) {
-        this.apiUrl = result.apiUrl;
+      const result = await chrome.storage.sync.get(['databasePath', 'userEmail', 'isAuthenticated']);
+      if (result.databasePath) {
+        this.databasePath = result.databasePath;
       }
-      if (result.authToken) {
-        this.authToken = result.authToken;
+      if (result.userEmail) {
+        this.currentUser = result.userEmail;
       }
+      this.isAuthenticated = result.isAuthenticated || false;
     } catch (error) {
       console.error('Password Manager: Error loading settings:', error);
     }
@@ -34,14 +41,17 @@ class PasswordManagerBackground {
   async handleMessage(request, sender, sendResponse) {
     try {
       switch (request.action) {
+        case 'loadDatabase':
+          await this.loadDatabase(request, sendResponse);
+          break;
+        case 'authenticate':
+          await this.authenticate(request, sendResponse);
+          break;
         case 'getCredentials':
           await this.getCredentials(request, sendResponse);
           break;
         case 'generatePassword':
           await this.generatePassword(request, sendResponse);
-          break;
-        case 'login':
-          await this.login(request, sendResponse);
           break;
         case 'logout':
           await this.logout(sendResponse);
@@ -52,8 +62,8 @@ class PasswordManagerBackground {
         case 'saveSettings':
           await this.saveSettings(request, sendResponse);
           break;
-        case 'testConnection':
-          await this.testConnection(sendResponse);
+        case 'isAuthenticated':
+          await this.checkAuthentication(sendResponse);
           break;
         default:
           sendResponse({ success: false, error: 'Unknown action' });
@@ -64,52 +74,166 @@ class PasswordManagerBackground {
     }
   }
 
+  async loadDatabase(request, sendResponse) {
+    try {
+      if (!request.databaseFile) {
+        sendResponse({ success: false, error: 'No database file provided' });
+        return;
+      }
+
+      // Initialize database service with the file
+      const result = await this.databaseService.initialize(request.databaseFile);
+      
+      if (result.success) {
+        // Store the database file name/path info
+        await chrome.storage.sync.set({ 
+          databaseLoaded: true,
+          databaseName: request.databaseFile.name 
+        });
+        
+        sendResponse({ 
+          success: true, 
+          message: 'Database loaded successfully',
+          databaseName: request.databaseFile.name 
+        });
+      } else {
+        sendResponse({ 
+          success: false, 
+          error: result.error || 'Failed to load database' 
+        });
+      }
+    } catch (error) {
+      console.error('Password Manager: Error loading database:', error);
+      sendResponse({ 
+        success: false, 
+        error: 'Failed to load database: ' + error.message 
+      });
+    }
+  }
+
+  async authenticate(request, sendResponse) {
+    try {
+      const { userEmail, masterPassword } = request;
+      
+      if (!userEmail || !masterPassword) {
+        sendResponse({ success: false, error: 'Email and master password required' });
+        return;
+      }
+
+      // Get user salt from database
+      const userSaltBase64 = await this.databaseService.getUserSalt(userEmail);
+      if (!userSaltBase64) {
+        sendResponse({ success: false, error: 'User not found' });
+        return;
+      }
+
+      // Get stored password hash
+      const storedHash = await this.databaseService.getUserPasswordHash(userEmail);
+      if (!storedHash) {
+        sendResponse({ success: false, error: 'User authentication data not found' });
+        return;
+      }
+
+      // Verify master password
+      const isValid = await this.cryptoService.verifyMasterPassword(masterPassword, userSaltBase64, storedHash);
+      
+      if (isValid) {
+        // Derive and cache master key
+        this.masterKey = await this.cryptoService.deriveMasterKey(masterPassword, userSaltBase64);
+        this.currentUser = userEmail;
+        this.isAuthenticated = true;
+        
+        // Save authentication state
+        await chrome.storage.sync.set({ 
+          userEmail: userEmail,
+          isAuthenticated: true 
+        });
+        
+        sendResponse({ 
+          success: true, 
+          message: 'Authentication successful' 
+        });
+      } else {
+        sendResponse({ 
+          success: false, 
+          error: 'Invalid master password' 
+        });
+      }
+    } catch (error) {
+      console.error('Password Manager: Authentication error:', error);
+      sendResponse({ 
+        success: false, 
+        error: error.message || 'Authentication failed' 
+      });
+    }
+  }
+
   async getCredentials(request, sendResponse) {
-    if (!this.authToken) {
+    if (!this.isAuthenticated || !this.masterKey) {
       sendResponse({ success: false, error: 'Not authenticated' });
       return;
     }
 
     try {
-      const response = await fetch(`${this.apiUrl}/api/passworditems`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.authToken}`,
-          'Content-Type': 'application/json'
+      // Get encrypted login items from database
+      const domain = request.domain;
+      const loginItems = await this.databaseService.getLoginItems(this.currentUser, domain);
+      
+      // Decrypt passwords
+      const credentials = [];
+      for (const item of loginItems) {
+        try {
+          let decryptedPassword = '';
+          
+          // Only decrypt if we have encrypted password data
+          if (item.encryptedPassword && item.passwordNonce && item.passwordAuthTag) {
+            const encryptedPasswordData = {
+              encryptedPassword: item.encryptedPassword,
+              passwordNonce: item.passwordNonce,
+              passwordAuthTag: item.passwordAuthTag
+            };
+            
+            decryptedPassword = await this.cryptoService.decryptPassword(encryptedPasswordData, this.masterKey);
+          }
+          
+          credentials.push({
+            id: item.id,
+            title: item.title,
+            username: item.username || '',
+            password: decryptedPassword,
+            websiteUrl: item.websiteUrl || ''
+          });
+        } catch (decryptError) {
+          console.error('Error decrypting password for item:', item.id, decryptError);
+          // Still include the item but without the password
+          credentials.push({
+            id: item.id,
+            title: item.title,
+            username: item.username || '',
+            password: '', // Empty password if decryption fails
+            websiteUrl: item.websiteUrl || ''
+          });
         }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const items = await response.json();
-      
-      // Filter credentials that match the domain
-      const domain = request.domain;
-      const matchingCredentials = items.filter(item => {
-        if (item.type !== 0) return false; // Only login items (type 0)
-        if (!item.loginItem) return false;
-        
-        const websiteUrl = item.loginItem.websiteUrl || item.loginItem.website || '';
-        return this.domainMatches(websiteUrl, domain);
-      }).map(item => ({
-        id: item.id,
-        title: item.title,
-        username: item.loginItem.username || '',
-        password: item.loginItem.password || '', // Will be decrypted by API
-        websiteUrl: item.loginItem.websiteUrl || item.loginItem.website || ''
-      }));
+      // Filter credentials that match the domain if specified
+      let filteredCredentials = credentials;
+      if (domain) {
+        filteredCredentials = credentials.filter(cred => {
+          const websiteUrl = cred.websiteUrl || '';
+          return this.domainMatches(websiteUrl, domain);
+        });
+      }
 
       sendResponse({ 
         success: true, 
-        credentials: matchingCredentials 
+        credentials: filteredCredentials 
       });
     } catch (error) {
       console.error('Password Manager: Error fetching credentials:', error);
       sendResponse({ 
         success: false, 
-        error: 'Failed to fetch credentials. Please check your connection and try again.' 
+        error: 'Failed to fetch credentials: ' + error.message 
       });
     }
   }
@@ -184,47 +308,19 @@ class PasswordManagerBackground {
     return password;
   }
 
-  async login(request, sendResponse) {
-    try {
-      const response = await fetch(`${this.apiUrl}/api/authentication/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: request.username, // The API might expect email
-          password: request.password
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      this.authToken = data.token;
-      
-      // Save token to storage
-      await chrome.storage.sync.set({ authToken: this.authToken });
-      
-      sendResponse({ 
-        success: true, 
-        message: 'Login successful' 
-      });
-    } catch (error) {
-      console.error('Password Manager: Login error:', error);
-      sendResponse({ 
-        success: false, 
-        error: error.message || 'Login failed' 
-      });
-    }
-  }
-
   async logout(sendResponse) {
     try {
-      this.authToken = null;
-      await chrome.storage.sync.remove(['authToken']);
+      // Clear master key from memory
+      if (this.masterKey) {
+        this.cryptoService.clearArray(this.masterKey);
+        this.masterKey = null;
+      }
+      
+      this.currentUser = null;
+      this.isAuthenticated = false;
+      
+      // Clear stored authentication state
+      await chrome.storage.sync.remove(['isAuthenticated', 'userEmail']);
       
       sendResponse({ 
         success: true, 
@@ -239,15 +335,36 @@ class PasswordManagerBackground {
     }
   }
 
+  async checkAuthentication(sendResponse) {
+    try {
+      const result = await chrome.storage.sync.get(['isAuthenticated', 'userEmail', 'databaseLoaded']);
+      
+      sendResponse({ 
+        success: true, 
+        isAuthenticated: this.isAuthenticated && !!this.masterKey,
+        userEmail: this.currentUser,
+        databaseLoaded: result.databaseLoaded || false
+      });
+    } catch (error) {
+      console.error('Password Manager: Error checking authentication:', error);
+      sendResponse({ 
+        success: false, 
+        error: 'Failed to check authentication status' 
+      });
+    }
+  }
+
   async getSettings(sendResponse) {
     try {
-      const result = await chrome.storage.sync.get(['apiUrl', 'authToken']);
+      const result = await chrome.storage.sync.get(['databaseName', 'userEmail', 'isAuthenticated', 'databaseLoaded']);
       
       sendResponse({ 
         success: true, 
         settings: {
-          apiUrl: result.apiUrl || this.apiUrl,
-          isLoggedIn: !!result.authToken
+          databaseName: result.databaseName || '',
+          userEmail: result.userEmail || '',
+          isAuthenticated: this.isAuthenticated,
+          databaseLoaded: result.databaseLoaded || false
         }
       });
     } catch (error) {
@@ -262,11 +379,18 @@ class PasswordManagerBackground {
   async saveSettings(request, sendResponse) {
     try {
       const settings = request.settings;
+      const toSave = {};
       
-      if (settings.apiUrl) {
-        this.apiUrl = settings.apiUrl;
-        await chrome.storage.sync.set({ apiUrl: settings.apiUrl });
+      if (settings.databaseName !== undefined) {
+        toSave.databaseName = settings.databaseName;
       }
+      
+      if (settings.userEmail !== undefined) {
+        toSave.userEmail = settings.userEmail;
+        this.currentUser = settings.userEmail;
+      }
+      
+      await chrome.storage.sync.set(toSave);
       
       sendResponse({ 
         success: true, 
@@ -277,42 +401,6 @@ class PasswordManagerBackground {
       sendResponse({ 
         success: false, 
         error: 'Failed to save settings' 
-      });
-    }
-  }
-
-  async testConnection(sendResponse) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
-      const response = await fetch(`${this.apiUrl}/api/passworditems`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (response.ok || response.status === 401) {
-        // 401 is expected without auth, but means API is reachable
-        sendResponse({ 
-          success: true, 
-          message: 'Connection successful' 
-        });
-      } else {
-        sendResponse({ 
-          success: false, 
-          error: `Server responded with status ${response.status}` 
-        });
-      }
-    } catch (error) {
-      console.error('Password Manager: Connection test failed:', error);
-      sendResponse({ 
-        success: false, 
-        error: 'Failed to connect to Password Manager API. Please check the URL.' 
       });
     }
   }

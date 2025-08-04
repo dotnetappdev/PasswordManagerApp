@@ -1,9 +1,9 @@
 // Content script for detecting and enhancing login forms
 class PasswordManagerContentScript {
   constructor() {
-    this.apiUrl = 'http://localhost:5000'; // Default API URL
     this.observer = null;
     this.icons = new Map();
+    this.isAuthenticated = false;
     this.init();
   }
 
@@ -15,11 +15,8 @@ class PasswordManagerContentScript {
 
   async loadSettings() {
     try {
-      const result = await chrome.storage.sync.get(['apiUrl', 'authToken']);
-      if (result.apiUrl) {
-        this.apiUrl = result.apiUrl;
-      }
-      this.authToken = result.authToken;
+      const result = await chrome.storage.sync.get(['isAuthenticated']);
+      this.isAuthenticated = result.isAuthenticated || false;
     } catch (error) {
       console.log('Password Manager: Settings not found, using defaults');
     }
@@ -199,8 +196,8 @@ class PasswordManagerContentScript {
 
   async handleIconClick(type, field) {
     try {
-      if (!this.authToken) {
-        this.showNotification('Please log in to the Password Manager extension first.');
+      if (!this.isAuthenticated) {
+        this.showNotification('Please unlock your Password Manager vault first.');
         return;
       }
 
@@ -211,7 +208,7 @@ class PasswordManagerContentScript {
       }
     } catch (error) {
       console.error('Password Manager: Error handling icon click:', error);
-      this.showNotification('Error accessing Password Manager. Please check your connection.');
+      this.showNotification('Error accessing Password Manager. Please check that your database is loaded.');
     }
   }
 
