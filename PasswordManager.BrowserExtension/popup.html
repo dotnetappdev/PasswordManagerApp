@@ -131,18 +131,20 @@
         <h1>Settings</h1>
       </div>
       
-      <form id="settingsForm" class="form">
-        <div class="form-group">
-          <label for="apiUrl">API URL:</label>
-          <input type="url" id="apiUrl" name="apiUrl" value="http://localhost:5000" required>
-          <small class="help-text">URL of your Password Manager API</small>
-        </div>
+      <div class="settings-info">
+        <h3>Database Connection</h3>
+        <p>This extension connects directly to your local SQLite database through a native messaging host.</p>
         
-        <button type="button" id="testConnectionBtn" class="btn btn-secondary">Test Connection</button>
-        <button type="submit" class="btn btn-primary">Save Settings</button>
-      </form>
-      
-      <div id="settingsMessage" class="message" style="display: none;"></div>
+        <button type="button" id="testConnectionBtn" class="btn btn-primary">Test Database Connection</button>
+        
+        <div id="settingsMessage" class="message" style="display: none;"></div>
+        
+        <div class="help-section">
+          <h4>Installation Status</h4>
+          <p>The native messaging host enables secure communication between the browser extension and your local password database.</p>
+          <p><strong>Note:</strong> Make sure the native messaging host is properly installed and registered for your browser.</p>
+        </div>
+      </div>
     </div>
   </div>
 

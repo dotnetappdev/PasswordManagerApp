@@ -1,26 +1,36 @@
 # Password Manager Browser Extension
 
-A secure browser extension that integrates with the Password Manager App to provide seamless autofill functionality for login and registration forms.
+A secure browser extension that integrates directly with your local Password Manager SQLite database to provide seamless autofill functionality for login and registration forms.
 
 ## Features
 
 - **🔐 Secure Autofill**: Automatically detect and fill login forms using your stored credentials
 - **⚡ Password Generation**: Generate strong passwords with customizable options
 - **🎯 Smart Detection**: Recognizes username, email, and password fields across websites
-- **🔒 API Integration**: Communicates securely with your Password Manager API
-- **🎨 1Password-style UI**: Familiar icon-based interface for easy credential access
+- **💾 Local Database Access**: Connects directly to your SQLite database - no API server required
+- **🔒 Native Messaging**: Uses secure native messaging for database communication
+- **🎨 1Password-style UI**: Familiar icon-based interface for easy credential access  
 - **🌐 Cross-browser Support**: Works with Chrome, Firefox, and other Chromium-based browsers
+- **🔌 Offline Support**: Works completely offline once configured
 
 ## Installation
 
-### For Development
+### Prerequisites
+
+1. **Native Messaging Host**: You must install the native messaging host component first
+   - See `PasswordManager.BrowserExtension.NativeHost/README.md` for detailed instructions
+   - This component handles secure communication with your local database
+
+### Browser Extension Installation
+
+#### For Development
 
 1. Open Chrome and navigate to `chrome://extensions/`
 2. Enable "Developer mode" in the top right
 3. Click "Load unpacked" and select the `PasswordManager.BrowserExtension` folder
 4. The extension will appear in your browser toolbar
 
-### For Firefox
+#### For Firefox
 
 1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
 2. Click "Load Temporary Add-on"
@@ -28,9 +38,10 @@ A secure browser extension that integrates with the Password Manager App to prov
 
 ## Setup
 
-1. **Configure API URL**: Click the extension icon and go to Settings to set your Password Manager API URL (default: http://localhost:5000)
-2. **Login**: Use your Password Manager credentials to authenticate
-3. **Start Using**: Visit any website with login forms - icons will appear next to username and password fields
+1. **Install Native Host**: Follow the installation guide in `PasswordManager.BrowserExtension.NativeHost/README.md`
+2. **Configure Database**: Ensure your Password Manager database is in a location the native host can access
+3. **Login**: Use your Password Manager email and master password to authenticate
+4. **Start Using**: Visit any website with login forms - icons will appear next to username and password fields
 
 ## How It Works
 
@@ -47,36 +58,34 @@ The extension automatically scans web pages for:
 4. **Password Generation**: Click password icon to generate or fill existing passwords
 
 ### Security Features
-- **No Local Storage**: Does not store credentials locally - communicates with your secure API
-- **Encrypted Communication**: Uses the same encryption as your main Password Manager app
-- **Session-based**: Requires authentication with your Password Manager API
+- **Local Database Access**: Directly accesses your encrypted SQLite database - no network communication required
+- **Master Password Protection**: Uses your master password to decrypt credentials locally
+- **Native Messaging Security**: Secure communication through browser's native messaging API
+- **Session-based**: Requires authentication with your master password
 - **Domain Matching**: Intelligently matches stored websites with current domains
+- **Memory Protection**: Encryption keys are cleared from memory after use
 
-## Password Generator
+## Database Integration
 
-The extension includes a full-featured password generator with options for:
-- **Length**: 8-50 characters
-- **Character Types**: Uppercase, lowercase, numbers, symbols
-- **Direct Fill**: Generate and immediately fill password fields
-- **Copy to Clipboard**: Copy generated passwords for manual use
+The extension connects to your local Password Manager SQLite database through a native messaging host:
+- **Direct SQLite Access**: No API server required - reads directly from your database
+- **Local Decryption**: Passwords are decrypted locally using your master password
+- **Offline Operation**: Works completely offline once authentication is complete
+- **Cross-platform**: Supports Windows, macOS, and Linux
 
-## API Integration
-
-The extension connects to your Password Manager API endpoints:
-- `GET /api/passworditems` - Retrieve stored credentials
-- `POST /api/auth/login` - Authenticate extension user
-- `GET /api/health` - Test API connectivity
-
-### Authentication
-Uses JWT token-based authentication, securely stored in the browser's sync storage.
+### Database Security
+- Passwords are stored encrypted using AES-256-GCM
+- Master password derives encryption keys using PBKDF2 with 600,000 iterations
+- All decryption happens in the native messaging host process
+- No plaintext credentials are ever stored locally
 
 ## Browser Permissions
 
 The extension requests minimal permissions:
 - `activeTab`: Access current tab for form detection and filling
-- `storage`: Store API settings and authentication tokens
-- `notifications`: Show success/error messages
-- `http://localhost:*/*`: Access local Password Manager API (configurable)
+- `storage`: Store authentication tokens and settings
+- `notifications`: Show success/error messages  
+- `nativeMessaging`: Communicate with the native messaging host
 
 ## Development
 
@@ -102,35 +111,37 @@ PasswordManager.BrowserExtension/
 - Handles user interactions with forms
 
 **Background Script (`background.js`)**
-- Manages API communication
-- Handles authentication
-- Generates passwords
+- Manages native messaging communication
+- Handles authentication through native host
+- Generates passwords locally
 - Stores/retrieves settings
-
-**Popup (`popup.html/js/css`)**
-- Main extension interface
-- Login/settings management
-- Password generator
-- Credential browser
 
 ## Security Considerations
 
-- **No Plaintext Storage**: Passwords are never stored in plaintext within the extension
-- **API-Only Access**: All credential access goes through your secure Password Manager API
-- **Same-Origin Policy**: Respects browser security boundaries
-- **Encrypted Transit**: All API communication uses HTTPS (when configured)
+- **Local Encryption**: All decryption happens locally in the native messaging host
+- **Master Password Required**: Your master password is required for each session
+- **Memory Protection**: Encryption keys are cleared from memory after use
+- **No Network Dependencies**: No internet connection required after setup
+- **Browser Sandbox**: Native messaging host runs outside browser sandbox for security
 
 ## Troubleshooting
 
-### Extension not detecting forms
-- Ensure the page has fully loaded
-- Check that fields are standard HTML input elements
-- Some dynamic forms may need a page refresh
+### Extension shows "Failed to communicate with native host"
+- Verify the native messaging host is properly installed and registered
+- Check that the extension ID in the native host manifest matches your extension
+- Ensure the native host executable path is correct
+- Try restarting the browser after installation
+
+### "Database connection failed"
+- Verify the database file exists and is accessible
+- Check that the database file isn't locked by another process  
+- Ensure the native messaging host has read permissions for the database
+- Verify the database path in the native host configuration
 
 ### Login fails
-- Verify API URL in extension settings
-- Ensure Password Manager API is running and accessible
-- Check browser console for connection errors
+- Ensure you're using the correct email and master password
+- Check that your user exists in the database
+- Verify the database contains your encrypted passwords
 
 ### Icons not appearing
 - Refresh the page after installing the extension

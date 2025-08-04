@@ -1,7 +1,7 @@
 // Background script for Password Manager browser extension
 class PasswordManagerBackground {
   constructor() {
-    this.apiUrl = 'http://localhost:5000';
+    this.nativeHostName = 'com.passwordmanager.native_host';
     this.authToken = null;
     this.init();
   }
@@ -19,10 +19,7 @@ class PasswordManagerBackground {
 
   async loadSettings() {
     try {
-      const result = await chrome.storage.sync.get(['apiUrl', 'authToken']);
-      if (result.apiUrl) {
-        this.apiUrl = result.apiUrl;
-      }
+      const result = await chrome.storage.sync.get(['authToken']);
       if (result.authToken) {
         this.authToken = result.authToken;
       }
@@ -49,9 +46,6 @@ class PasswordManagerBackground {
         case 'getSettings':
           await this.getSettings(sendResponse);
           break;
-        case 'saveSettings':
-          await this.saveSettings(request, sendResponse);
-          break;
         case 'testConnection':
           await this.testConnection(sendResponse);
           break;
@@ -64,6 +58,18 @@ class PasswordManagerBackground {
     }
   }
 
+  async sendNativeMessage(message) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendNativeMessage(this.nativeHostName, message, (response) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+        } else {
+          resolve(response);
+        }
+      });
+    });
+  }
+
   async getCredentials(request, sendResponse) {
     if (!this.authToken) {
       sendResponse({ success: false, error: 'Not authenticated' });
@@ -71,45 +77,28 @@ class PasswordManagerBackground {
     }
 
     try {
-      const response = await fetch(`${this.apiUrl}/api/passworditems`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.authToken}`,
-          'Content-Type': 'application/json'
-        }
+      const response = await this.sendNativeMessage({
+        action: 'getCredentials',
+        token: this.authToken,
+        domain: request.domain || ''
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (response.success) {
+        sendResponse({ 
+          success: true, 
+          credentials: response.credentials 
+        });
+      } else {
+        sendResponse({ 
+          success: false, 
+          error: response.error || 'Failed to get credentials' 
+        });
       }
-
-      const items = await response.json();
-      
-      // Filter credentials that match the domain
-      const domain = request.domain;
-      const matchingCredentials = items.filter(item => {
-        if (item.type !== 0) return false; // Only login items (type 0)
-        if (!item.loginItem) return false;
-        
-        const websiteUrl = item.loginItem.websiteUrl || item.loginItem.website || '';
-        return this.domainMatches(websiteUrl, domain);
-      }).map(item => ({
-        id: item.id,
-        title: item.title,
-        username: item.loginItem.username || '',
-        password: item.loginItem.password || '', // Will be decrypted by API
-        websiteUrl: item.loginItem.websiteUrl || item.loginItem.website || ''
-      }));
-
-      sendResponse({ 
-        success: true, 
-        credentials: matchingCredentials 
-      });
     } catch (error) {
       console.error('Password Manager: Error fetching credentials:', error);
       sendResponse({ 
         success: false, 
-        error: 'Failed to fetch credentials. Please check your connection and try again.' 
+        error: 'Failed to communicate with native host. Please ensure the native host is installed.' 
       });
     }
   }
@@ -146,77 +135,60 @@ class PasswordManagerBackground {
         includeSymbols: true
       };
 
-      const password = this.createPassword(options);
-      
-      sendResponse({ 
-        success: true, 
-        password: password 
+      const response = await this.sendNativeMessage({
+        action: 'generatePassword',
+        options: options
       });
+
+      if (response.success) {
+        sendResponse({ 
+          success: true, 
+          password: response.password 
+        });
+      } else {
+        sendResponse({ 
+          success: false, 
+          error: response.error || 'Failed to generate password' 
+        });
+      }
     } catch (error) {
       console.error('Password Manager: Error generating password:', error);
       sendResponse({ 
         success: false, 
-        error: 'Failed to generate password' 
+        error: 'Failed to communicate with native host for password generation' 
       });
     }
-  }
-
-  createPassword(options) {
-    let charset = '';
-    
-    if (options.includeLowercase) charset += 'abcdefghijklmnopqrstuvwxyz';
-    if (options.includeUppercase) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    if (options.includeNumbers) charset += '0123456789';
-    if (options.includeSymbols) charset += '!@#$%^&*()_+-=[]{}|;:,.<>?';
-    
-    if (!charset) {
-      charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    }
-    
-    let password = '';
-    const array = new Uint8Array(options.length);
-    crypto.getRandomValues(array);
-    
-    for (let i = 0; i < options.length; i++) {
-      password += charset[array[i] % charset.length];
-    }
-    
-    return password;
   }
 
   async login(request, sendResponse) {
     try {
-      const response = await fetch(`${this.apiUrl}/api/authentication/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: request.username, // The API might expect email
-          password: request.password
-        })
+      const response = await this.sendNativeMessage({
+        action: 'login',
+        email: request.username, // Browser extension sends username, but native host expects email
+        password: request.password
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      if (response.success) {
+        this.authToken = response.token;
+        
+        // Save token to storage
+        await chrome.storage.sync.set({ authToken: this.authToken });
+        
+        sendResponse({ 
+          success: true, 
+          message: response.message || 'Login successful' 
+        });
+      } else {
+        sendResponse({ 
+          success: false, 
+          error: response.error || 'Login failed' 
+        });
       }
-
-      const data = await response.json();
-      this.authToken = data.token;
-      
-      // Save token to storage
-      await chrome.storage.sync.set({ authToken: this.authToken });
-      
-      sendResponse({ 
-        success: true, 
-        message: 'Login successful' 
-      });
     } catch (error) {
       console.error('Password Manager: Login error:', error);
       sendResponse({ 
         success: false, 
-        error: error.message || 'Login failed' 
+        error: 'Failed to communicate with native host. Please ensure the native host is installed.' 
       });
     }
   }
@@ -241,12 +213,11 @@ class PasswordManagerBackground {
 
   async getSettings(sendResponse) {
     try {
-      const result = await chrome.storage.sync.get(['apiUrl', 'authToken']);
+      const result = await chrome.storage.sync.get(['authToken']);
       
       sendResponse({ 
         success: true, 
         settings: {
-          apiUrl: result.apiUrl || this.apiUrl,
           isLoggedIn: !!result.authToken
         }
       });
@@ -259,60 +230,28 @@ class PasswordManagerBackground {
     }
   }
 
-  async saveSettings(request, sendResponse) {
-    try {
-      const settings = request.settings;
-      
-      if (settings.apiUrl) {
-        this.apiUrl = settings.apiUrl;
-        await chrome.storage.sync.set({ apiUrl: settings.apiUrl });
-      }
-      
-      sendResponse({ 
-        success: true, 
-        message: 'Settings saved successfully' 
-      });
-    } catch (error) {
-      console.error('Password Manager: Error saving settings:', error);
-      sendResponse({ 
-        success: false, 
-        error: 'Failed to save settings' 
-      });
-    }
-  }
-
   async testConnection(sendResponse) {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
-      const response = await fetch(`${this.apiUrl}/api/passworditems`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        signal: controller.signal
+      const response = await this.sendNativeMessage({
+        action: 'testConnection'
       });
 
-      clearTimeout(timeoutId);
-
-      if (response.ok || response.status === 401) {
-        // 401 is expected without auth, but means API is reachable
+      if (response.success) {
         sendResponse({ 
           success: true, 
-          message: 'Connection successful' 
+          message: response.message || 'Connection successful' 
         });
       } else {
         sendResponse({ 
           success: false, 
-          error: `Server responded with status ${response.status}` 
+          error: response.error || 'Connection test failed' 
         });
       }
     } catch (error) {
       console.error('Password Manager: Connection test failed:', error);
       sendResponse({ 
         success: false, 
-        error: 'Failed to connect to Password Manager API. Please check the URL.' 
+        error: 'Failed to communicate with native host. Please ensure the native host is installed and registered.' 
       });
     }
   }
