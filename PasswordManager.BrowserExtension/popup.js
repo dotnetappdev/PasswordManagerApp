@@ -36,8 +36,7 @@ class PasswordManagerPopup {
     // Login form
     document.getElementById('loginForm').addEventListener('submit', (e) => this.handleLogin(e));
 
-    // Settings form
-    document.getElementById('settingsForm').addEventListener('submit', (e) => this.handleSettingsSave(e));
+    // Settings
     document.getElementById('testConnectionBtn').addEventListener('click', () => this.testConnection());
 
     // Tabs
@@ -65,9 +64,6 @@ class PasswordManagerPopup {
       const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
       
       if (response.success) {
-        // Update API URL in settings
-        document.getElementById('apiUrl').value = response.settings.apiUrl;
-        
         if (response.settings.isLoggedIn) {
           this.showScreen('main');
           await this.loadCredentials();
@@ -162,35 +158,6 @@ class PasswordManagerPopup {
     }
   }
 
-  async handleSettingsSave(e) {
-    e.preventDefault();
-    
-    const apiUrl = document.getElementById('apiUrl').value;
-    const messageDiv = document.getElementById('settingsMessage');
-    
-    try {
-      const response = await chrome.runtime.sendMessage({
-        action: 'saveSettings',
-        settings: { apiUrl: apiUrl }
-      });
-      
-      if (response.success) {
-        messageDiv.textContent = 'Settings saved successfully!';
-        messageDiv.className = 'message success';
-        messageDiv.style.display = 'block';
-        
-        setTimeout(() => {
-          messageDiv.style.display = 'none';
-        }, 3000);
-      } else {
-        throw new Error(response.error);
-      }
-    } catch (error) {
-      messageDiv.textContent = error.message || 'Failed to save settings';
-      messageDiv.className = 'message error';
-      messageDiv.style.display = 'block';
-    }
-  }
 
   async testConnection() {
     const testBtn = document.getElementById('testConnectionBtn');
