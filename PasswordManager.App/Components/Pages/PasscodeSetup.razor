@@ -43,7 +43,7 @@
                     else
                     {
                         <button class="keypad-btn keypad-empty"></button>
-                        <button class="keypad-btn" @onclick="() => OnNumberPressed(\"0\")">0</button>
+                        <button class="keypad-btn" @onclick="() => OnNumberPressed(@"0")">0</button>
                         <button class="keypad-btn keypad-delete" @onclick="OnDeletePressed">
                             <span class="delete-icon">⌫</span>
                         </button>
@@ -220,7 +220,7 @@
         border-color: #ccc;
     }
 
-    @media (max-width: 480px) {
+    @@media (max-width: 480px) {
         .passcode-container {
             padding: 10px;
         }
