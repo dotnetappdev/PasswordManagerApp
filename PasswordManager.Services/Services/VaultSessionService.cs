@@ -128,4 +128,15 @@ public class VaultSessionService : IVaultSessionService
         }
         return false;
     }
+
+    public byte[]? GetMasterKey(string sessionId)
+    {
+        if (string.IsNullOrEmpty(sessionId))
+            return null;
+        if (_sessions.TryGetValue(sessionId, out var session))
+        {
+            return session.unlocked ? session.masterKey : null;
+        }
+        return null;
+    }
 }

@@ -17,7 +17,7 @@ public class SupabaseDbContext : IdentityDbContext<ApplicationUser>, ISupabaseDb
     public DbSet<Tag> Tags { get; set; } = null!;
     public DbSet<Category> Categories { get; set; } = null!;
     public DbSet<Collection> Collections { get; set; } = null!;
-    public DbSet<ApplicationUser> Users { get; set; } = null!;
+    public new DbSet<ApplicationUser> Users { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

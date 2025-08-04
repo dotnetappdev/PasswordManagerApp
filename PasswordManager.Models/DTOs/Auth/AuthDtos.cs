@@ -84,3 +84,62 @@ public class ChangePasswordRequestDto
     [MinLength(6)]
     public string NewPassword { get; set; } = string.Empty;
 }
+
+// OTP (One-Time Passcode) DTOs
+public class SetupOtpRequestDto
+{
+    [Required]
+    [Phone]
+    public string PhoneNumber { get; set; } = string.Empty;
+}
+
+public class VerifyOtpSetupRequestDto
+{
+    [Required]
+    [Phone]
+    public string PhoneNumber { get; set; } = string.Empty;
+    
+    [Required]
+    [StringLength(6, MinimumLength = 6)]
+    public string Code { get; set; } = string.Empty;
+}
+
+public class OtpLoginRequestDto
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    public string Password { get; set; } = string.Empty;
+    
+    [Required]
+    [StringLength(6, MinimumLength = 6)]
+    public string OtpCode { get; set; } = string.Empty;
+}
+
+public class SendOtpRequestDto
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    public string Password { get; set; } = string.Empty;
+}
+
+public class OtpSetupResponseDto
+{
+    public string PhoneNumber { get; set; } = string.Empty;
+    public List<string> BackupCodes { get; set; } = new();
+    public bool IsSetupComplete { get; set; }
+}
+
+public class DisableOtpRequestDto
+{
+    [Required]
+    public string Password { get; set; } = string.Empty;
+    
+    public string? OtpCode { get; set; }
+    public string? BackupCode { get; set; }
+}

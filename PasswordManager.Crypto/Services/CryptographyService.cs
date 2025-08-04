@@ -68,7 +68,7 @@ public class CryptographyService : ICryptographyService
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(nonce);
 
-        using var aes = new AesGcm(key);
+        using var aes = new AesGcm(key, AuthTagLength);
         aes.Encrypt(nonce, plaintextBytes, ciphertext, authTag);
 
         return new EncryptedData
@@ -98,7 +98,7 @@ public class CryptographyService : ICryptographyService
 
         var plaintext = new byte[encryptedData.Ciphertext.Length];
 
-        using var aes = new AesGcm(key);
+        using var aes = new AesGcm(key, AuthTagLength);
         aes.Decrypt(encryptedData.Nonce, encryptedData.Ciphertext, encryptedData.AuthenticationTag, plaintext);
 
         return Encoding.UTF8.GetString(plaintext);

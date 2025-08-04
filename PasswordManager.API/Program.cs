@@ -121,6 +121,18 @@ builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncServ
 // Register cryptography services
 builder.Services.AddCryptographyServices();
 
+
+// Configure SMS settings
+builder.Services.Configure<PasswordManager.Models.Configuration.SmsConfiguration>(
+    builder.Configuration.GetSection(PasswordManager.Models.Configuration.SmsConfiguration.SectionName));
+
+// Register SMS and OTP services
+builder.Services.AddHttpClient<PasswordManager.Services.Services.TwilioSmsService>();
+builder.Services.AddScoped<ISmsService, PasswordManager.Services.Services.TwilioSmsService>();
+builder.Services.AddScoped<IOtpService, PasswordManager.Services.Services.OtpService>();
+builder.Services.AddScoped<IPlatformDetectionService, PasswordManager.Services.Services.PlatformDetectionService>();
+builder.Services.AddScoped<ISmsSettingsService, PasswordManager.Services.Services.SmsSettingsService>();
+=======
 // Register Fido2 service for passkeys
 builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
 {
@@ -132,7 +144,8 @@ builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
         TimestampDriftTolerance = 300000
     };
     return new Fido2NetLib.Fido2(config);
-});
+
+  
 
 // Add API documentation with Swagger (compatible with .NET 8)
 builder.Services.AddEndpointsApiExplorer();

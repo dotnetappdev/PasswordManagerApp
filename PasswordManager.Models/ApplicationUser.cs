@@ -37,6 +37,40 @@ public class ApplicationUser : IdentityUser
     /// </summary>
     public int MasterPasswordIterations { get; set; } = 600000;
 
+
+    // One-Time Passcode (OTP) properties
+    /// <summary>
+    /// Whether two-factor authentication via SMS OTP is enabled
+    /// </summary>
+    public bool IsTwoFactorEnabled { get; set; } = false;
+
+    /// <summary>
+    /// Phone number for SMS OTP delivery (E.164 format)
+    /// </summary>
+    [MaxLength(20)]
+    public new string? PhoneNumber { get; set; }
+
+    /// <summary>
+    /// Whether the phone number has been verified
+    /// </summary>
+    public new bool PhoneNumberConfirmed { get; set; } = false;
+
+    /// <summary>
+    /// When the phone number was last verified
+    /// </summary>
+    public DateTime? PhoneNumberConfirmedAt { get; set; }
+
+    /// <summary>
+    /// Encrypted backup codes for account recovery (JSON array)
+    /// </summary>
+    [MaxLength(2000)]
+    public string? BackupCodes { get; set; }
+
+    /// <summary>
+    /// Number of backup codes used
+    /// </summary>
+    public int BackupCodesUsed { get; set; } = 0;
+
     // Two-Factor Authentication properties
     /// <summary>
     /// Whether 2FA is enabled for this user
@@ -81,6 +115,7 @@ public class ApplicationUser : IdentityUser
     /// </summary>
     public bool StorePasskeysInVault { get; set; } = true;
 
+
     // Navigation properties for user's data
     public virtual ICollection<PasswordItem> PasswordItems { get; set; } = new List<PasswordItem>();
     public virtual ICollection<Collection> Collections { get; set; } = new List<Collection>();
@@ -91,6 +126,9 @@ public class ApplicationUser : IdentityUser
     public virtual ICollection<SecureNoteItem> SecureNoteItems { get; set; } = new List<SecureNoteItem>();
     public virtual ICollection<WiFiItem> WiFiItems { get; set; } = new List<WiFiItem>();
     public virtual ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
+    public virtual ICollection<SmsSettings> SmsSettings { get; set; } = new List<SmsSettings>();
+
     public virtual ICollection<UserPasskey> UserPasskeys { get; set; } = new List<UserPasskey>();
     public virtual ICollection<UserTwoFactorBackupCode> TwoFactorBackupCodes { get; set; } = new List<UserTwoFactorBackupCode>();
+
 }

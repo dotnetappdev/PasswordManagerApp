@@ -189,7 +189,7 @@ public class QrLoginSecurityTests
         var authResponse = new QrLoginAuthenticateResponseDto
         {
             Success = true,
-            Message = null
+            Message = string.Empty
         };
 
         // Assert responses only contain expected public data

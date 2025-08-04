@@ -40,6 +40,7 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 | **Complete Setup Guide** | Full setup and configuration guide | [SETUP.md](SETUP.md) |
 | **Database Setup** | Database configuration guide | [ReadMe.DatabaseProviders.md](ReadMe.DatabaseProviders.md) |
 | **MySQL Setup** | MySQL-specific setup guide | [MYSQL_SETUP_GUIDE.md](MYSQL_SETUP_GUIDE.md) |
+| **OTP Authentication** | SMS-based 2FA implementation guide | [OTP_IMPLEMENTATION_GUIDE.md](OTP_IMPLEMENTATION_GUIDE.md) |
 | **Technology Stack** | Complete technology overview | [TECHNOLOGY_STACK.md](TECHNOLOGY_STACK.md) |
 | **Encryption Details** | Technical encryption implementation | [ENCRYPTION_IMPLEMENTATION.md](ENCRYPTION_IMPLEMENTATION.md) |
 | **Bitwarden Flow** | Bitwarden compatibility details | [BITWARDEN_FLOW_IMPLEMENTATION.md](BITWARDEN_FLOW_IMPLEMENTATION.md) |
@@ -50,6 +51,8 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 ### 🔒 Secure Password Management
 - **Enterprise-grade encryption** with AES-256-GCM and PBKDF2 (600,000 iterations)
 - **Zero-knowledge architecture** - your data stays private
+- **SMS-based Two-Factor Authentication (2FA)** - OTP codes via SMS for enhanced security
+- **Database-managed SMS settings** - Configure multiple SMS providers through API
 - **Password generator** with customizable strength settings
 - **Bitwarden-compatible** encryption flow for familiar experience
 
@@ -77,12 +80,42 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 - **Bulk Operations** - Import hundreds of items efficiently
 - **Progress Tracking** - Real-time feedback during operations
 
+## 📱 SMS Two-Factor Authentication
+
+Enhanced security with SMS-based Two-Factor Authentication (2FA):
+
+### 🔐 OTP Features
+- **Six-digit OTP codes** sent via SMS with configurable expiration (default: 5 minutes)
+- **Platform-specific support** - Available on web browsers, Android, and iOS (desktop excluded)
+- **Multiple SMS providers** - Twilio, AWS SNS, and Azure Communication Services
+- **Rate limiting** - Configurable SMS limits to prevent abuse
+- **Backup codes** - Eight-digit recovery codes for emergency access
+
+### 🗄️ Database-Managed SMS Settings
+- **API-managed configuration** - Complete REST API for SMS settings management
+- **Encrypted credential storage** - SMS provider credentials encrypted with user's master key
+- **Multi-provider support** - Configure and switch between multiple SMS providers
+- **Platform detection** - Automatic restriction to supported platforms
+
+### 📋 SMS Configuration API
+- `GET /api/smssettings` - Retrieve all SMS configurations
+- `POST /api/smssettings` - Create new SMS settings with encrypted credentials
+- `PUT /api/smssettings/{id}` - Update existing SMS configuration
+- `DELETE /api/smssettings/{id}` - Remove SMS settings
+- `POST /api/smssettings/{id}/activate` - Switch active SMS configuration
+- `POST /api/smssettings/{id}/test` - Test SMS settings with sample message
+
+📋 **[View Complete OTP Implementation Guide](OTP_IMPLEMENTATION_GUIDE.md)**
+
 ## �️ Security First
 
 This password manager implements enterprise-grade security with a zero-knowledge architecture:
 
 - **600,000 PBKDF2 iterations** (OWASP 2024 recommendation, 6x stronger than Bitwarden's default)
 - **AES-256-GCM encryption** with authenticated encryption preventing tampering
+- **SMS-based Two-Factor Authentication** with platform-specific support (web and mobile)
+- **Database-managed SMS settings** with encrypted provider credentials
+- **Backup codes** for emergency account recovery
 - **Zero-knowledge design** - server cannot decrypt your data without master password
 - **Session-based vault management** - cryptographic keys cached securely
 - **Memory safety** - encryption keys immediately cleared after use
@@ -111,6 +144,9 @@ PasswordManagerApp/
 │   └── PasswordManager.DAL.SupaBase/     # Supabase Provider
 ├── 🔐 Security & Crypto
 │   └── PasswordManager.Crypto/           # Encryption & Security
+├── 🧪 Testing
+│   ├── PasswordManager.Tests.OTP/        # OTP & SMS Authentication Tests
+│   └── PasswordManager.Tests.QrLogin/    # QR Login Tests
 └── 📥 Import System
     ├── PasswordManager.Imports/          # Import Framework
     ├── PasswordManagerImports.1Password/ # 1Password Plugin

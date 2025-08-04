@@ -29,7 +29,7 @@ public class UserProfileService : IUserProfileService
         return users.Select(u => new UserDto
         {
             Id = u.Id,
-            Email = u.Email,
+            Email = u.Email ?? string.Empty,
             FirstName = u.FirstName,
             LastName = u.LastName,
             CreatedAt = u.CreatedAt,
@@ -47,7 +47,7 @@ public class UserProfileService : IUserProfileService
         return new UserProfileDetailsDto
         {
             Id = user.Id,
-            Email = user.Email,
+            Email = user.Email ?? string.Empty,
             FirstName = user.FirstName,
             LastName = user.LastName,
             CreatedAt = user.CreatedAt,
@@ -67,7 +67,7 @@ public class UserProfileService : IUserProfileService
         return new UserProfileDetailsDto
         {
             Id = user.Id,
-            Email = user.Email,
+            Email = user.Email ?? string.Empty,
             FirstName = user.FirstName,
             LastName = user.LastName,
             CreatedAt = user.CreatedAt,
@@ -354,7 +354,7 @@ public class UserProfileService : IUserProfileService
             return new UserDto
             {
                 Id = user.Id,
-                Email = user.Email,
+                Email = user.Email ?? string.Empty,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 CreatedAt = user.CreatedAt,
