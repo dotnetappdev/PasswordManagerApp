@@ -6,6 +6,8 @@ using PasswordManager.DAL;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace PasswordManager.Tests.QrLogin;
 
@@ -19,7 +21,37 @@ public class AuthenticatedTestBase : IClassFixture<WebApplicationFactory<Program
 
     public AuthenticatedTestBase(WebApplicationFactory<Program> factory)
     {
-        _factory = factory;
+        _factory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Testing");
+            builder.ConfigureServices(services =>
+            {
+                // Remove all existing DbContext registrations
+                var descriptors = services.Where(d => 
+                    d.ServiceType == typeof(DbContextOptions<PasswordManagerDbContext>) ||
+                    d.ServiceType == typeof(DbContextOptions<PasswordManagerDbContextApp>) ||
+                    d.ServiceType == typeof(PasswordManagerDbContext) ||
+                    d.ServiceType == typeof(PasswordManagerDbContextApp) ||
+                    d.ServiceType.Name.Contains("DbContext")).ToList();
+                
+                foreach (var descriptor in descriptors)
+                {
+                    services.Remove(descriptor);
+                }
+
+                // Add in-memory database for testing
+                services.AddDbContext<PasswordManagerDbContext>(options =>
+                {
+                    options.UseInMemoryDatabase("TestDatabase");
+                });
+                
+                services.AddDbContext<PasswordManagerDbContextApp>(options =>
+                {
+                    options.UseInMemoryDatabase("TestDatabase");
+                });
+            });
+        });
+        
         _client = _factory.CreateClient();
         _authenticatedClient = _factory.CreateClient();
     }
@@ -33,7 +65,6 @@ public class AuthenticatedTestBase : IClassFixture<WebApplicationFactory<Program
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
         // Ensure database is created and migrated
-        await context.Database.EnsureDeletedAsync();
         await context.Database.EnsureCreatedAsync();
 
         // Create test user
