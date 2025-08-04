@@ -138,12 +138,13 @@ public class UserProfileServiceTests
     public async Task CreateUserAsync_WithValidData_ShouldCreateUserWithApplicationUserId()
     {
         // Arrange
-        var createDto = new RegisterRequestDto
+        var createDto = new CreateUserProfileDto
         {
             Email = TestEmail,
             FirstName = "John",
             LastName = "Doe",
-            Password = "SecurePassword123!"
+            Password = "SecurePassword123!",
+            ConfirmPassword = "SecurePassword123!"
         };
 
         var userSalt = new byte[32];
@@ -189,12 +190,13 @@ public class UserProfileServiceTests
     public async Task CreateUserAsync_WhenUserCreationFails_ShouldReturnFailureResult()
     {
         // Arrange
-        var createDto = new RegisterRequestDto
+        var createDto = new CreateUserProfileDto
         {
             Email = TestEmail,
             FirstName = "John",
             LastName = "Doe",
-            Password = "SecurePassword123!"
+            Password = "SecurePassword123!",
+            ConfirmPassword = "SecurePassword123!"
         };
 
         var userSalt = new byte[32];

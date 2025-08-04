@@ -75,7 +75,7 @@ public class ApplicationUser : IdentityUser
     /// <summary>
     /// Whether 2FA is enabled for this user
     /// </summary>
-    public bool TwoFactorEnabled { get; set; } = false;
+    public override bool TwoFactorEnabled { get; set; } = false;
 
     /// <summary>
     /// Base32-encoded secret key for TOTP generation
