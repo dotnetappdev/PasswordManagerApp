@@ -239,31 +239,26 @@
 .auth-button {
     width: 100%;
     padding: 14px;
-    background: #0066cc;
+    background-color: #007bff;
     color: white;
     border: none;
     border-radius: 6px;
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .auth-button:hover:not(:disabled) {
-    background-color: #0058b3;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    background-color: #0056b3;
 }
 
 .auth-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
 }
 
 .loading-spinner {
@@ -350,14 +345,14 @@ body {
 
 button.auth-button:nth-child(2) {
     background-color: white;
-    color: #0066cc;
-    border: 1px solid #d1d5db;
+    color: #007bff;
+    border: 1px solid #007bff;
     margin-top: 10px;
 }
 
 button.auth-button:nth-child(2):hover {
-    border-color: #0066cc;
-    background-color: #f0f7ff;
+    background-color: #007bff;
+    color: white;
 }
 
 .password-toggle {

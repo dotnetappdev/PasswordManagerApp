@@ -312,7 +312,26 @@ public class AppSyncService : IAppSyncService
     {
         try
         {
+            // Check if sync is disabled in configuration  
+            var syncEnabledString = _configuration["Sync:Enabled"];
+            var syncEnabled = string.IsNullOrEmpty(syncEnabledString) || !bool.TryParse(syncEnabledString, out var enabled) || enabled;
+            if (!syncEnabled)
+            {
+                _logger.LogDebug("Sync is disabled in configuration");
+                return false;
+            }
+
+            // Check if we're in SQLite-only mode without API
+            var databaseProvider = _configuration["DatabaseProvider"]?.ToLower() ?? "sqlite";
             var apiBaseUrl = await GetApiBaseUrlAsync();
+            
+            // If using SQLite and no API base URL is properly configured, consider sync unavailable
+            if (databaseProvider == "sqlite" && (string.IsNullOrEmpty(apiBaseUrl) || apiBaseUrl.Contains("localhost")))
+            {
+                _logger.LogDebug("SQLite mode detected with localhost API URL - sync disabled");
+                return false;
+            }
+
             // Check if API is reachable
             var response = await _httpClient.GetAsync($"{apiBaseUrl}/health");
             return response.IsSuccessStatusCode;
