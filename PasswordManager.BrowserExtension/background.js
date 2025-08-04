@@ -65,6 +65,9 @@ class PasswordManagerBackground {
         case 'loadDatabaseFromSettings':
           await this.loadDatabaseFromSettings(request, sendResponse);
           break;
+        case 'loadDatabaseFromAPI':
+          await this.loadDatabaseFromAPI(request, sendResponse);
+          break;
         case 'authenticate':
           await this.authenticate(request, sendResponse);
           break;
@@ -227,6 +230,69 @@ class PasswordManagerBackground {
       sendResponse({ 
         success: false, 
         error: 'Failed to load database from settings: ' + error.message 
+      });
+    }
+  }
+
+  async loadDatabaseFromAPI(request, sendResponse) {
+    try {
+      if (!request.apiConfig) {
+        sendResponse({ success: false, error: 'No API configuration provided' });
+        return;
+      }
+
+      const { apiUrl, apiKey, databaseName } = request.apiConfig;
+      
+      if (!apiUrl || !apiKey) {
+        sendResponse({ 
+          success: false, 
+          error: 'API URL and API key are required' 
+        });
+        return;
+      }
+
+      try {
+        // Test API connection
+        this.apiService.configure(apiUrl, apiKey);
+        await this.apiService.healthCheck();
+        
+        // Store API configuration
+        const storageData = {
+          settingsLoaded: true,
+          useApiMode: true,
+          apiUrl: apiUrl,
+          apiKey: apiKey,
+          configuredApiUrl: apiUrl,
+          configuredDatabaseName: databaseName || 'API Password Database',
+          userPreferences: {
+            databaseName: databaseName,
+            autoRememberLocation: true
+          }
+        };
+        
+        await chrome.storage.sync.set(storageData);
+        
+        this.useApiMode = true;
+        
+        sendResponse({ 
+          success: true, 
+          message: 'API configuration loaded successfully!',
+          configuredPath: apiUrl,
+          useApiMode: true
+        });
+        
+      } catch (error) {
+        sendResponse({ 
+          success: false, 
+          error: `Failed to connect to API server: ${error.message}` 
+        });
+      }
+      
+    } catch (error) {
+      console.error('Password Manager: Error loading database from API:', error);
+      sendResponse({ 
+        success: false, 
+        error: 'Failed to configure API connection: ' + error.message 
       });
     }
   }

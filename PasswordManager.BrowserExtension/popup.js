@@ -137,13 +137,20 @@ class PasswordManagerPopup {
   toggleLoadMethod(method) {
     const directMethod = document.getElementById('directMethod');
     const settingsMethod = document.getElementById('settingsMethod');
+    const apiMethod = document.getElementById('apiMethod');
     
     if (method === 'direct') {
       directMethod.style.display = 'block';
       settingsMethod.style.display = 'none';
+      apiMethod.style.display = 'none';
     } else if (method === 'settings') {
       directMethod.style.display = 'none';
       settingsMethod.style.display = 'block';
+      apiMethod.style.display = 'none';
+    } else if (method === 'api') {
+      directMethod.style.display = 'none';
+      settingsMethod.style.display = 'none';
+      apiMethod.style.display = 'block';
     }
   }
 
@@ -162,6 +169,8 @@ class PasswordManagerPopup {
         await this.loadDatabaseDirect();
       } else if (selectedMethod === 'settings') {
         await this.loadDatabaseFromSettings();
+      } else if (selectedMethod === 'api') {
+        await this.loadDatabaseFromAPI();
       }
     } catch (error) {
       console.error('Database load error:', error);
@@ -306,6 +315,71 @@ class PasswordManagerPopup {
       reader.onerror = (e) => reject(new Error('Failed to read file'));
       reader.readAsText(file);
     });
+  }
+
+  async loadDatabaseFromAPI() {
+    const apiUrlField = document.getElementById('apiUrlField');
+    const apiKeyField = document.getElementById('apiKeyField');
+    const databaseNameField = document.getElementById('databaseNameField');
+    const errorDiv = document.getElementById('databaseError');
+    
+    // Validate required fields
+    if (!apiUrlField.value.trim()) {
+      this.showError(errorDiv, 'Please enter an API URL');
+      return;
+    }
+    
+    if (!apiKeyField.value.trim()) {
+      this.showError(errorDiv, 'Please enter an API key');
+      return;
+    }
+    
+    try {
+      // Create API configuration object
+      const apiConfig = {
+        apiUrl: apiUrlField.value.trim(),
+        apiKey: apiKeyField.value.trim(),
+        databaseName: databaseNameField.value.trim() || 'API Password Database'
+      };
+      
+      // Send API configuration to background script
+      const response = await chrome.runtime.sendMessage({
+        action: 'loadDatabaseFromAPI',
+        apiConfig: apiConfig
+      });
+      
+      if (response.success) {
+        // Show success message for API mode
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        successDiv.innerHTML = `
+          <p><strong>API Configuration loaded successfully!</strong></p>
+          <p>Your API server has been configured and tested.</p>
+          <p><strong>API Server:</strong> ${apiConfig.apiUrl}</p>
+          <p>You can now authenticate using your email and master password.</p>
+        `;
+        
+        errorDiv.parentNode.insertBefore(successDiv, errorDiv);
+        
+        // Clear the form fields
+        apiUrlField.value = '';
+        apiKeyField.value = '';
+        databaseNameField.value = '';
+        
+        // Auto-navigate to login screen after a short delay
+        setTimeout(() => {
+          if (successDiv.parentNode) {
+            successDiv.parentNode.removeChild(successDiv);
+          }
+          this.showScreen('login');
+        }, 3000);
+        
+      } else {
+        this.showError(errorDiv, response.error || 'Failed to configure API connection');
+      }
+    } catch (error) {
+      throw error;
+    }
   }
 
   async handleLogin(e) {
