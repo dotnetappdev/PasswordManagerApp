@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Manager Extension Test Page</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        h2 {
+            color: #007acc;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #007acc;
+        }
+        
+        .btn {
+            background: #007acc;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .btn:hover {
+            background: #005a9e;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        .note {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #1565c0;
+        }
+        
+        .test-info {
+            background: #f0f4f8;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007acc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Password Manager Extension Test Page</h1>
+        <div class="test-info">
+            <strong>Testing Instructions:</strong>
+            <ol>
+                <li>Install the Password Manager browser extension</li>
+                <li>Set up the API URL in extension settings (default: http://localhost:5000)</li>
+                <li>Login to your Password Manager account through the extension</li>
+                <li>Look for blue icons (👤 and 🔑) next to input fields below</li>
+                <li>Click icons to test autofill and password generation</li>
+            </ol>
+        </div>
+        
+        <div class="note">
+            <strong>Expected Behavior:</strong> Blue icons should appear next to username/email and password fields. 
+            Clicking them will show options to fill credentials or generate passwords.
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Standard Login Form</h2>
+        <form>
+            <div class="form-group">
+                <label for="login-username">Username or Email:</label>
+                <input type="text" id="login-username" name="username" placeholder="Enter your username">
+            </div>
+            
+            <div class="form-group">
+                <label for="login-password">Password:</label>
+                <input type="password" id="login-password" name="password" placeholder="Enter your password">
+            </div>
+            
+            <button type="submit" class="btn">Login</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>Email-based Login Form</h2>
+        <form>
+            <div class="form-group">
+                <label for="email-login">Email Address:</label>
+                <input type="email" id="email-login" name="email" placeholder="your.email@example.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="email-password">Password:</label>
+                <input type="password" id="email-password" name="password" placeholder="Your secure password">
+            </div>
+            
+            <button type="submit" class="btn">Sign In</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>Registration Form</h2>
+        <form>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="reg-firstname">First Name:</label>
+                    <input type="text" id="reg-firstname" name="firstName" placeholder="John">
+                </div>
+                
+                <div class="form-group">
+                    <label for="reg-lastname">Last Name:</label>
+                    <input type="text" id="reg-lastname" name="lastName" placeholder="Doe">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="reg-email">Email Address:</label>
+                <input type="email" id="reg-email" name="email" placeholder="john.doe@example.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="reg-username">Choose Username:</label>
+                <input type="text" id="reg-username" name="username" placeholder="johndoe123">
+            </div>
+            
+            <div class="form-group">
+                <label for="reg-password">Password:</label>
+                <input type="password" id="reg-password" name="password" placeholder="Create a strong password">
+            </div>
+            
+            <div class="form-group">
+                <label for="reg-confirm">Confirm Password:</label>
+                <input type="password" id="reg-confirm" name="confirmPassword" placeholder="Confirm your password">
+            </div>
+            
+            <button type="submit" class="btn">Create Account</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>Advanced Login Form (with autocomplete)</h2>
+        <form>
+            <div class="form-group">
+                <label for="auto-username">Username:</label>
+                <input type="text" 
+                       id="auto-username" 
+                       name="username" 
+                       autocomplete="username"
+                       placeholder="Username with autocomplete">
+            </div>
+            
+            <div class="form-group">
+                <label for="auto-password">Password:</label>
+                <input type="password" 
+                       id="auto-password" 
+                       name="password" 
+                       autocomplete="current-password"
+                       placeholder="Password with autocomplete">
+            </div>
+            
+            <button type="submit" class="btn">Advanced Login</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>Scattered Input Fields (No Form)</h2>
+        <p>These fields are not inside a form element to test standalone field detection:</p>
+        
+        <div class="form-group">
+            <label for="standalone-user">Standalone Username:</label>
+            <input type="text" id="standalone-user" placeholder="Standalone username field">
+        </div>
+        
+        <div class="form-group">
+            <label for="standalone-pass">Standalone Password:</label>
+            <input type="password" id="standalone-pass" placeholder="Standalone password field">
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Dynamic Form (Test DOM Observer)</h2>
+        <button id="addFormBtn" class="btn" onclick="addDynamicForm()">Add Dynamic Login Form</button>
+        <div id="dynamicFormContainer"></div>
+    </div>
+
+    <script>
+        function addDynamicForm() {
+            const container = document.getElementById('dynamicFormContainer');
+            container.innerHTML = `
+                <div style="margin-top: 20px; padding: 20px; border: 2px dashed #007acc; border-radius: 4px;">
+                    <h3>Dynamically Added Form</h3>
+                    <div class="form-group">
+                        <label for="dynamic-user">Dynamic Username:</label>
+                        <input type="text" id="dynamic-user" name="username" placeholder="Dynamic username field">
+                    </div>
+                    <div class="form-group">
+                        <label for="dynamic-pass">Dynamic Password:</label>
+                        <input type="password" id="dynamic-pass" name="password" placeholder="Dynamic password field">
+                    </div>
+                    <button type="button" class="btn">Dynamic Login</button>
+                </div>
+            `;
+        }
+
+        // Add some sample data for testing
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Password Manager Extension Test Page Loaded');
+            console.log('Testing various form patterns and field types');
+        });
+
+        // Prevent actual form submissions for testing
+        document.addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Form submission prevented for testing. Check if the extension filled the fields correctly!');
+        });
+    </script>
+</body>
+</html>
