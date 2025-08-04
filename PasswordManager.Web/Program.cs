@@ -101,6 +101,8 @@ builder.Services.AddScoped<IQrLoginService, PasswordManager.Services.Services.Qr
 builder.Services.AddScoped<IDatabaseContextFactory, PasswordManager.Services.Services.DatabaseContextFactory>();
 builder.Services.AddScoped<IPasswordEncryptionService, PasswordManager.Services.Services.PasswordEncryptionService>();
 builder.Services.AddScoped<IDatabaseMigrationService, PasswordManager.Services.Services.DatabaseMigrationService>();
+builder.Services.AddScoped<IDatabaseConfigurationService, PasswordManager.Services.Services.DatabaseConfigurationService>();
+builder.Services.AddScoped<IPlatformService, PasswordManager.Services.Services.DefaultPlatformService>();
 
 // Register crypto services
 builder.Services.AddCryptographyServices();
