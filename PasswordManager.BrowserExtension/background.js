@@ -218,7 +218,8 @@ class PasswordManagerBackground {
       sendResponse({ 
         success: true, 
         settings: {
-          isLoggedIn: !!result.authToken
+          isLoggedIn: !!result.authToken,
+          supportInfo: 'This extension uses native messaging to connect directly to your local SQLite database.'
         }
       });
     } catch (error) {

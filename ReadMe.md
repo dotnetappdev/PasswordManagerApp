@@ -23,6 +23,7 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 | Component | Description | Documentation |
 |-----------|-------------|---------------|
 | **Blazor Web App** | Web application with dark theme | [PasswordManager.Web](PasswordManager.Web/README.md) |
+| **Browser Extension** | Chrome/Edge/Firefox extension with native messaging | [PasswordManager.BrowserExtension](PasswordManager.BrowserExtension/README.md) |
 | **Shared Components** | Cross-platform UI components | [PasswordManager.Components.Shared](PasswordManager.Components.Shared/README.md) |
 | **Cryptography** | Security and encryption details | [PasswordManager.Crypto](PasswordManager.Crypto/README.md) |
 
@@ -38,6 +39,7 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 | Document | Description |
 |----------|-------------|
 | **Complete Setup Guide** | Full setup and configuration guide | [SETUP.md](SETUP.md) |
+| **Browser Extension Setup** | Browser extension installation guide | [INSTALLATION.md](INSTALLATION.md) |
 | **Database Setup** | Database configuration guide | [ReadMe.DatabaseProviders.md](ReadMe.DatabaseProviders.md) |
 | **MySQL Setup** | MySQL-specific setup guide | [MYSQL_SETUP_GUIDE.md](MYSQL_SETUP_GUIDE.md) |
 | **OTP Authentication** | SMS-based 2FA implementation guide | [OTP_IMPLEMENTATION_GUIDE.md](OTP_IMPLEMENTATION_GUIDE.md) |
