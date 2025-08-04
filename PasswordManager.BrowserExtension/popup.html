@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Manager</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Loading State -->
+    <div id="loading" class="screen">
+      <div class="header">
+        <img src="icons/icon32.svg" alt="Password Manager" class="logo">
+        <h1>Password Manager</h1>
+      </div>
+      <div class="loading-spinner"></div>
+      <p>Loading...</p>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login" class="screen" style="display: none;">
+      <div class="header">
+        <img src="icons/icon32.svg" alt="Password Manager" class="logo">
+        <h1>Password Manager</h1>
+      </div>
+      
+      <form id="loginForm" class="form">
+        <div class="form-group">
+          <label for="username">Username/Email:</label>
+          <input type="text" id="username" name="username" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" required>
+        </div>
+        
+        <button type="submit" id="loginBtn" class="btn btn-primary">
+          Login
+        </button>
+      </form>
+      
+      <div id="loginError" class="error" style="display: none;"></div>
+      
+      <div class="footer-links">
+        <a href="#" id="settingsLink">Settings</a>
+      </div>
+    </div>
+
+    <!-- Main Screen -->
+    <div id="main" class="screen" style="display: none;">
+      <div class="header">
+        <img src="icons/icon32.svg" alt="Password Manager" class="logo">
+        <h1>Password Manager</h1>
+        <button id="logoutBtn" class="btn btn-secondary btn-small">Logout</button>
+      </div>
+      
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="credentials">Credentials</button>
+        <button class="tab-btn" data-tab="generator">Generate</button>
+      </div>
+      
+      <!-- Credentials Tab -->
+      <div id="credentialsTab" class="tab-content active">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Search credentials...">
+        </div>
+        
+        <div id="credentialsList" class="credentials-list">
+          <!-- Credentials will be populated here -->
+        </div>
+        
+        <div id="noCredentials" class="empty-state" style="display: none;">
+          <p>No credentials found for this website.</p>
+          <button id="viewAllBtn" class="btn btn-secondary">View All</button>
+        </div>
+      </div>
+      
+      <!-- Password Generator Tab -->
+      <div id="generatorTab" class="tab-content" style="display: none;">
+        <div class="generator-options">
+          <div class="form-group">
+            <label for="passwordLength">Length: <span id="lengthValue">16</span></label>
+            <input type="range" id="passwordLength" min="8" max="50" value="16">
+          </div>
+          
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeUppercase" checked>
+              <span class="checkmark"></span>
+              Uppercase (A-Z)
+            </label>
+            
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeLowercase" checked>
+              <span class="checkmark"></span>
+              Lowercase (a-z)
+            </label>
+            
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeNumbers" checked>
+              <span class="checkmark"></span>
+              Numbers (0-9)
+            </label>
+            
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeSymbols" checked>
+              <span class="checkmark"></span>
+              Symbols (!@#$%)
+            </label>
+          </div>
+        </div>
+        
+        <button id="generateBtn" class="btn btn-primary">Generate Password</button>
+        
+        <div id="generatedPassword" class="generated-password" style="display: none;">
+          <div class="password-container">
+            <input type="text" id="passwordOutput" readonly>
+            <button id="copyPasswordBtn" class="btn btn-icon" title="Copy to clipboard">📋</button>
+          </div>
+          <button id="fillPasswordBtn" class="btn btn-secondary">Fill in Current Tab</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings" class="screen" style="display: none;">
+      <div class="header">
+        <button id="backBtn" class="btn btn-icon">←</button>
+        <h1>Settings</h1>
+      </div>
+      
+      <form id="settingsForm" class="form">
+        <div class="form-group">
+          <label for="apiUrl">API URL:</label>
+          <input type="url" id="apiUrl" name="apiUrl" value="http://localhost:5000" required>
+          <small class="help-text">URL of your Password Manager API</small>
+        </div>
+        
+        <button type="button" id="testConnectionBtn" class="btn btn-secondary">Test Connection</button>
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+      </form>
+      
+      <div id="settingsMessage" class="message" style="display: none;"></div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
