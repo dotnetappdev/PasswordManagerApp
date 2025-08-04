@@ -121,6 +121,10 @@ builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncServ
 // Register cryptography services
 builder.Services.AddCryptographyServices();
 
+// Register platform and database configuration services
+builder.Services.AddScoped<IPlatformService, PasswordManager.Services.Services.DefaultPlatformService>();
+builder.Services.AddScoped<IDatabaseConfigurationService, PasswordManager.Services.Services.DatabaseConfigurationService>();
+
 
 // Configure SMS settings
 builder.Services.Configure<PasswordManager.Models.Configuration.SmsConfiguration>(
