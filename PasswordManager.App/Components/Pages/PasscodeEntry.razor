@@ -52,7 +52,7 @@
                     else
                     {
                         <button class="keypad-btn keypad-empty"></button>
-                        <button class="keypad-btn" @onclick="() => OnNumberPressed(\"0\")" disabled="@isLocked">0</button>
+                        <button class="keypad-btn" @onclick="() => OnNumberPressed(@"0")" disabled="@isLocked">0</button>
                         <button class="keypad-btn keypad-delete" @onclick="OnDeletePressed" disabled="@isLocked">
                             <span class="delete-icon">⌫</span>
                         </button>
@@ -277,7 +277,7 @@
         font-size: 16px;
     }
 
-    @media (max-width: 480px) {
+    @@media (max-width: 480px) {
         .passcode-container {
             padding: 10px;
         }

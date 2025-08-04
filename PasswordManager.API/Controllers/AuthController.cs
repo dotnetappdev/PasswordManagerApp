@@ -43,7 +43,7 @@ public class AuthController : ControllerBase
         SignInManager<ApplicationUser> signInManager,
         IOptions<SmsConfiguration> smsConfig,
         ILogger<AuthController> logger)
-    
+    {
         _passwordCryptoService = passwordCryptoService;
         _vaultSessionService = vaultSessionService;
         _qrLoginService = qrLoginService;
