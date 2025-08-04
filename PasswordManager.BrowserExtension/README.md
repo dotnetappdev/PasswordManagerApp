@@ -9,7 +9,7 @@ A secure browser extension that integrates with the Password Manager App to prov
 - **🎯 Smart Detection**: Recognizes username, email, and password fields across websites
 - **🔒 API Integration**: Communicates securely with your Password Manager API
 - **🎨 1Password-style UI**: Familiar icon-based interface for easy credential access
-- **🌐 Cross-browser Support**: Works with Chrome, Firefox, and other Chromium-based browsers
+- **🌐 Cross-browser Support**: Works with Chrome, Firefox, and Microsoft Edge (Chromium-based)
 
 ## Installation
 
@@ -20,11 +20,20 @@ A secure browser extension that integrates with the Password Manager App to prov
 3. Click "Load unpacked" and select the `PasswordManager.BrowserExtension` folder
 4. The extension will appear in your browser toolbar
 
+### For Microsoft Edge
+
+1. Open Microsoft Edge and navigate to `edge://extensions/`
+2. Enable "Developer mode" in the left sidebar
+3. Click "Load unpacked" and select the `PasswordManager.BrowserExtension` folder
+4. The extension will appear in your browser toolbar
+
 ### For Firefox
 
 1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
 2. Click "Load Temporary Add-on"
 3. Select the `manifest.json` file from the extension folder
+
+**Note**: Firefox temporary add-ons are removed when Firefox closes. For permanent installation, you'll need to package the extension.
 
 ## Setup
 
@@ -149,9 +158,15 @@ This extension is part of the larger Password Manager App project. To contribute
 ## Browser Compatibility
 
 - **Chrome**: 88+ (Manifest V3 support)
+- **Microsoft Edge**: 88+ (Chromium-based, recommended)
+  - Fully compatible with all extension features
+  - Same installation process as Chrome
+  - Supports all autofill and password generation functionality
 - **Firefox**: 109+ (Manifest V3 support)
-- **Edge**: 88+ (Chromium-based)
 - **Safari**: Not supported (different extension system)
+- **Legacy Edge**: Not supported (requires Chromium-based Edge)
+
+**Note**: This extension uses Manifest V3 and modern web APIs, ensuring compatibility with all Chromium-based browsers including the new Microsoft Edge.
 
 ## License
 

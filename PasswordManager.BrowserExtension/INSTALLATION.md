@@ -15,12 +15,14 @@ Before installing the extension, ensure you have:
 
 3. **Supported Browser**: 
    - Chrome 88+ (recommended)
+   - Microsoft Edge 88+ (Chromium-based, recommended)
    - Firefox 109+
-   - Edge 88+ (Chromium-based)
+
+   **Note**: The extension requires modern browsers with Manifest V3 support. Older versions of Edge (Legacy/EdgeHTML) are not supported.
 
 ## Installation Steps
 
-### For Chrome/Edge
+### For Chrome
 
 1. **Download the Extension**
    - Navigate to the `PasswordManager.BrowserExtension` folder in the repository
@@ -39,6 +41,31 @@ Before installing the extension, ensure you have:
    - Click the puzzle piece icon in the Chrome toolbar
    - Find "Password Manager Extension" and click the pin icon
    - The extension icon will now appear in your toolbar
+
+### For Microsoft Edge
+
+1. **Download the Extension**
+   - Navigate to the `PasswordManager.BrowserExtension` folder in the repository
+   - This is your extension folder
+
+2. **Enable Developer Mode**
+   - Open Microsoft Edge and go to `edge://extensions/`
+   - Toggle "Developer mode" on in the left sidebar
+
+3. **Load the Extension**
+   - Click "Load unpacked"
+   - Select the `PasswordManager.BrowserExtension` folder
+   - The extension should appear in your extensions list
+
+4. **Pin the Extension** (Optional but Recommended)
+   - Click the puzzle piece icon in the Edge toolbar
+   - Find "Password Manager Extension" and click the pin icon
+   - The extension icon will now appear in your toolbar
+
+5. **Edge-Specific Settings** (If Needed)
+   - If you encounter any issues, go to `edge://settings/privacy`
+   - Ensure "Block potentially unwanted apps" is disabled for development
+   - Check that the extension has proper permissions in `edge://extensions/`
 
 ### For Firefox
 
@@ -116,6 +143,12 @@ Before installing the extension, ensure you have:
 - **Solution**: Make sure you selected the correct folder containing `manifest.json`
 - **Check**: Verify all required files are present in the extension folder
 
+**Issue**: Extension doesn't appear in Microsoft Edge extensions list
+- **Solution**: Make sure you went to `edge://extensions/` (not the old Edge)
+- **Check**: Ensure you're using Chromium-based Edge (Edge 88+, not Legacy Edge)
+- **Verify**: Developer mode is enabled in the left sidebar
+- **Alternative**: Try restarting Edge and loading the extension again
+
 ### No Icons Appearing
 
 **Issue**: Icons don't show up on login forms
@@ -130,6 +163,12 @@ Before installing the extension, ensure you have:
 - **Solution 2**: Check if Password Manager API is running (`http://localhost:5000`)
 - **Solution 3**: Check browser console for CORS or network errors
 - **Solution 4**: Ensure the API accepts requests from `chrome-extension://` origins
+
+**Edge-Specific Connection Issues**:
+- **Solution 1**: Check Edge security settings - go to `edge://settings/privacy` and ensure strict tracking prevention isn't blocking API calls
+- **Solution 2**: Verify that Enhanced Security mode isn't interfering with local connections
+- **Solution 3**: Try adding `extension-scheme://` to API CORS settings if needed
+- **Solution 4**: Ensure Windows Defender SmartScreen isn't blocking the extension
 
 ### Authentication Problems
 
@@ -216,7 +255,40 @@ To update the extension:
 
 1. **Download New Version**: Get the updated extension files
 2. **Replace Files**: Replace files in your extension folder
-3. **Reload Extension**: Go to `chrome://extensions/`, find the extension, and click the reload icon
+3. **Reload Extension**: 
+   - **Chrome**: Go to `chrome://extensions/`, find the extension, and click the reload icon
+   - **Microsoft Edge**: Go to `edge://extensions/`, find the extension, and click the reload icon
+   - **Firefox**: Remove and re-add the temporary add-on
 4. **Test**: Verify the extension works correctly after update
 
 The extension will automatically preserve your settings and login status across updates.
+
+## Microsoft Edge Specific Notes
+
+### Edge Store Deployment (Future)
+
+When ready for production deployment to the Microsoft Edge Add-ons store:
+
+1. **Package Extension**: Create a ZIP file of the extension folder
+2. **Developer Account**: Register for a Microsoft Edge Developer account
+3. **Submission**: Upload to https://partner.microsoft.com/en-us/dashboard/microsoftedge
+4. **Review Process**: Microsoft will review the extension (typically 7-14 days)
+5. **Publication**: Once approved, users can install from the Edge Add-ons store
+
+### Edge-Specific Features
+
+The extension takes advantage of Edge-specific features when available:
+
+- **Enhanced Security**: Works with Edge's enhanced security features
+- **Privacy Controls**: Respects Edge's tracking prevention settings
+- **Performance**: Optimized for Edge's Chromium engine
+- **Integration**: Follows Edge's UI patterns and user experience guidelines
+
+### Edge Enterprise Deployment
+
+For enterprise environments using Microsoft Edge:
+
+1. **Group Policy**: Can be deployed via Group Policy for managed devices
+2. **Microsoft Intune**: Compatible with Intune application deployment
+3. **Registry Keys**: Supports Edge extension registry configuration
+4. **Silent Installation**: Can be installed without user interaction in managed environments

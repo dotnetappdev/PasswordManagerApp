@@ -107,7 +107,13 @@
         <div class="test-info">
             <strong>Testing Instructions:</strong>
             <ol>
-                <li>Install the Password Manager browser extension</li>
+                <li>Install the Password Manager browser extension in your browser:
+                    <ul>
+                        <li><strong>Chrome:</strong> Go to chrome://extensions/, enable Developer mode, click "Load unpacked"</li>
+                        <li><strong>Microsoft Edge:</strong> Go to edge://extensions/, enable Developer mode in left sidebar, click "Load unpacked"</li>
+                        <li><strong>Firefox:</strong> Go to about:debugging#/runtime/this-firefox, click "Load Temporary Add-on"</li>
+                    </ul>
+                </li>
                 <li>Set up the API URL in extension settings (default: http://localhost:5000)</li>
                 <li>Login to your Password Manager account through the extension</li>
                 <li>Look for blue icons (👤 and 🔑) next to input fields below</li>
@@ -118,6 +124,17 @@
         <div class="note">
             <strong>Expected Behavior:</strong> Blue icons should appear next to username/email and password fields. 
             Clicking them will show options to fill credentials or generate passwords.
+        </div>
+        
+        <div class="note">
+            <strong>Browser Compatibility:</strong>
+            <ul>
+                <li>✅ <strong>Chrome 88+</strong> - Full support with Manifest V3</li>
+                <li>✅ <strong>Microsoft Edge 88+</strong> - Full support (Chromium-based only)</li>
+                <li>✅ <strong>Firefox 109+</strong> - Full support with Manifest V3</li>
+                <li>❌ <strong>Legacy Edge</strong> - Not supported (requires Chromium-based Edge)</li>
+                <li>❌ <strong>Safari</strong> - Not supported (different extension system)</li>
+            </ul>
         </div>
     </div>
 
