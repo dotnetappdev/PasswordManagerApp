@@ -1,15 +1,26 @@
 @using PasswordManager.Services.Interfaces
 @using PasswordManager.Components.Shared.Components.Database
+@using Microsoft.Extensions.Logging
 @inject IDatabaseConfigurationService DatabaseConfigService
 @inject NavigationManager Navigation
+@inject ILogger<DatabaseStartupWrapper> Logger
 
 @if (ShowDatabaseSelection)
 {
     <DatabaseSelectionDialog IsVisible="true" OnConfigurationSaved="OnDatabaseConfigured" />
 }
-else
+else if (IsInitialized)
 {
     @ChildContent
+}
+else
+{
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+        <div style="text-align: center;">
+            <h3>Loading...</h3>
+            <p>Initializing database configuration...</p>
+        </div>
+    </div>
 }
 
 @code {
@@ -21,32 +32,58 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        Logger.LogInformation("DatabaseStartupWrapper initializing...");
+        
         try
         {
+            Logger.LogDebug("Checking if database selection should be shown");
+            
             // Check if we should show database selection dialog
             var shouldShow = DatabaseConfigService.ShouldShowDatabaseSelection();
+            Logger.LogDebug("Should show database selection: {ShouldShow}", shouldShow);
+            
             var isFirstRun = await DatabaseConfigService.IsFirstRunAsync();
+            Logger.LogDebug("Is first run: {IsFirstRun}", isFirstRun);
 
             ShowDatabaseSelection = shouldShow && isFirstRun;
             IsInitialized = true;
             
+            Logger.LogInformation("DatabaseStartupWrapper initialized. ShowDatabaseSelection: {ShowSelection}", ShowDatabaseSelection);
+            
             if (!ShowDatabaseSelection)
             {
                 // If not showing dialog, notify that configuration is complete
+                Logger.LogDebug("Database configuration is complete, notifying parent component");
                 await OnConfigurationComplete.InvokeAsync();
+            }
+            else
+            {
+                Logger.LogInformation("Database selection dialog will be shown");
             }
         }
         catch (Exception ex)
         {
-            // Log error and continue without showing dialog
-            Console.WriteLine($"Error checking database configuration: {ex.Message}");
+            Logger.LogError(ex, "Error during DatabaseStartupWrapper initialization");
+            
+            // In case of error, default to not showing the dialog and continue
+            // This ensures the app doesn't get stuck on startup
+            ShowDatabaseSelection = false;
             IsInitialized = true;
+            
+            Logger.LogWarning("Continuing app startup without database selection due to initialization error");
             await OnConfigurationComplete.InvokeAsync();
+        }
+        finally
+        {
+            // Ensure UI is updated
+            StateHasChanged();
+            Logger.LogDebug("DatabaseStartupWrapper state updated");
         }
     }
 
     private async Task OnDatabaseConfigured()
     {
+        Logger.LogInformation("Database configuration completed by user");
         ShowDatabaseSelection = false;
         await OnConfigurationComplete.InvokeAsync();
         StateHasChanged();

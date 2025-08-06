@@ -18,7 +18,8 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
     private readonly IPlatformService _platformService;
     private readonly ILogger<DatabaseConfigurationService> _logger;
     private readonly string _configFilePath;
-    private readonly byte[] _encryptionKey;
+    private byte[]? _encryptionKey;
+    private readonly SemaphoreSlim _keyInitLock = new(1, 1);
 
     public DatabaseConfigurationService(
         IConfiguration configuration,
@@ -36,8 +37,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
             _platformService.GetAppDataDirectory(), 
             "appsettings.json");
 
-        // Generate or load encryption key for database passwords
-        _encryptionKey = GetOrCreateEncryptionKey();
+        // Note: Encryption key initialization is now lazy and async to prevent blocking the constructor
     }
 
     public async Task<DatabaseConfiguration> GetConfigurationAsync()
@@ -60,7 +60,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error reading database configuration");
+            _logger.LogError(ex, "Error reading database configuration, returning default configuration");
             return GetDefaultConfiguration();
         }
     }
@@ -159,7 +159,8 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
 
         try
         {
-            var encryptedData = _cryptographyService.EncryptAes256Gcm(password, _encryptionKey);
+            var encryptionKey = await GetOrCreateEncryptionKeyAsync();
+            var encryptedData = _cryptographyService.EncryptAes256Gcm(password, encryptionKey);
             
             // Convert to base64 for storage
             var combined = new byte[encryptedData.Nonce.Length + encryptedData.AuthenticationTag.Length + encryptedData.Ciphertext.Length];
@@ -183,6 +184,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
 
         try
         {
+            var encryptionKey = await GetOrCreateEncryptionKeyAsync();
             var combined = Convert.FromBase64String(encryptedPassword);
             
             // Extract components (nonce: 12 bytes, auth tag: 16 bytes, rest: ciphertext)
@@ -201,7 +203,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
                 Ciphertext = ciphertext
             };
             
-            return _cryptographyService.DecryptAes256Gcm(encryptedData, _encryptionKey);
+            return _cryptographyService.DecryptAes256Gcm(encryptedData, encryptionKey);
         }
         catch (Exception ex)
         {
@@ -230,8 +232,62 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
         return _platformService.ShouldShowDatabaseSelection();
     }
 
+    private async Task<byte[]> GetOrCreateEncryptionKeyAsync()
+    {
+        if (_encryptionKey != null)
+            return _encryptionKey;
+
+        await _keyInitLock.WaitAsync();
+        try
+        {
+            if (_encryptionKey != null)
+                return _encryptionKey;
+
+            var keyPath = Path.Combine(_platformService.GetAppDataDirectory(), ".dbkey");
+            
+            try
+            {
+                if (File.Exists(keyPath))
+                {
+                    _encryptionKey = await File.ReadAllBytesAsync(keyPath);
+                    return _encryptionKey;
+                }
+                
+                // Generate new key
+                var key = _cryptographyService.GenerateSalt(32); // 256-bit key
+                
+                // Ensure directory exists
+                var directory = Path.GetDirectoryName(keyPath);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+                
+                await File.WriteAllBytesAsync(keyPath, key);
+                _encryptionKey = key;
+                return _encryptionKey;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not create/read encryption key file, using fallback key");
+                // Fallback: derive key from device/app info (less secure but functional)
+                var fallbackSeed = $"{_platformService.GetDeviceIdentifier()}-PasswordManager";
+                _encryptionKey = _cryptographyService.DeriveKey(fallbackSeed, 
+                    System.Text.Encoding.UTF8.GetBytes("PasswordManagerDbKey"), 
+                    100000, 32);
+                return _encryptionKey;
+            }
+        }
+        finally
+        {
+            _keyInitLock.Release();
+        }
+    }
+
     private byte[] GetOrCreateEncryptionKey()
     {
+        // This synchronous version is kept for backwards compatibility but deprecated
+        // New code should use GetOrCreateEncryptionKeyAsync()
         var keyPath = Path.Combine(_platformService.GetAppDataDirectory(), ".dbkey");
         
         try
