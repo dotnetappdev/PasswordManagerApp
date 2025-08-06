@@ -13,18 +13,18 @@ public class AppStartupService : IAppStartupService
 {
     private readonly IAppSyncService? _syncService;
     private readonly IDatabaseConfigurationService _databaseConfigService;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<AppStartupService> _logger;
 
     public AppStartupService(
         IAppSyncService? syncService,
         IDatabaseConfigurationService databaseConfigService,
-        IServiceProvider serviceProvider,
+        IServiceScopeFactory scopeFactory,
         ILogger<AppStartupService> logger)
     {
         _syncService = syncService;
         _databaseConfigService = databaseConfigService;
-        _serviceProvider = serviceProvider;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -63,23 +63,29 @@ public class AppStartupService : IAppStartupService
                 return;
             }
 
-            // Get database context and apply migrations
-            using var scope = _serviceProvider.CreateScope();
-            var dbContext = scope.ServiceProvider.GetService<PasswordManagerDbContext>();
-            
-            if (dbContext != null)
+            // Use a scope for all dbContext operations
+            using (var scope = _scopeFactory.CreateScope())
             {
-                // Check for pending migrations
-                var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
-                if (pendingMigrations.Any())
+                try
                 {
-                    _logger.LogInformation("Applying database migrations");
-                    await dbContext.Database.MigrateAsync();
-                    _logger.LogInformation("Database migrations applied successfully");
+                    var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+                    // Check for pending migrations
+                    var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
+                    if (pendingMigrations.Any())
+                    {
+                        _logger.LogInformation("Applying database migrations");
+                        await dbContext.Database.MigrateAsync();
+                        _logger.LogInformation("Database migrations applied successfully");
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Database is up to date");
+                    }
                 }
-                else
+                catch (ObjectDisposedException ex)
                 {
-                    _logger.LogInformation("Database is up to date");
+                    _logger.LogError(ex, "ServiceProvider was disposed when trying to initialize database. This usually means you are calling this after the app has shut down or from a disposed scope.");
+                    throw;
                 }
             }
         }
