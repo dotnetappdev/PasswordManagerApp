@@ -1,6 +1,7 @@
 @using PasswordManager.Services.Interfaces
 @using PasswordManager.Components.Shared.Components.Database
 @using Microsoft.Extensions.Logging
+@implements IDisposable
 @inject IDatabaseConfigurationService DatabaseConfigService
 @inject NavigationManager Navigation
 @inject ILogger<DatabaseStartupWrapper> Logger
@@ -13,15 +14,49 @@ else if (IsInitialized)
 {
     @ChildContent
 }
-else
+else if (HasError)
 {
-    <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
-        <div style="text-align: center;">
-            <h3>Loading...</h3>
-            <p>Initializing database configuration...</p>
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa;">
+        <div style="text-align: center; max-width: 500px; padding: 20px;">
+            <h3 style="color: #dc3545;">Startup Error</h3>
+            <p>There was an error during startup. Using default configuration.</p>
+            <div style="margin-top: 20px;">
+                <button style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;"
+                        @onclick="RetryInitialization">
+                    Retry
+                </button>
+                <button style="margin-left: 10px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;"
+                        @onclick="ContinueWithDefaults">
+                    Continue with Defaults
+                </button>
+            </div>
         </div>
     </div>
 }
+else
+{
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa;">
+        <div style="text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <div style="width: 3rem; height: 3rem; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;">
+                </div>
+            </div>
+            <h3 style="color: #495057;">Loading Password Manager</h3>
+            <p style="color: #6c757d;">Initializing database configuration...</p>
+            @if (InitializationTimeoutSeconds > 0)
+            {
+                <p style="color: #ffc107; font-size: 0.9em;">This is taking longer than expected... (@InitializationTimeoutSeconds seconds)</p>
+            }
+        </div>
+    </div>
+}
+
+<style>
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
@@ -29,11 +64,37 @@ else
 
     private bool ShowDatabaseSelection { get; set; }
     private bool IsInitialized { get; set; }
+    private bool HasError { get; set; }
+    private int InitializationTimeoutSeconds { get; set; }
+    private Timer? _timeoutTimer;
+    private CancellationTokenSource? _initializationCts;
 
     protected override async Task OnInitializedAsync()
     {
         Logger.LogInformation("DatabaseStartupWrapper initializing...");
         
+        // Start timeout timer
+        _initializationCts = new CancellationTokenSource();
+        _timeoutTimer = new Timer(OnInitializationTimeout, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1));
+        
+        try
+        {
+            await InitializeWithTimeoutAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Critical error during DatabaseStartupWrapper initialization");
+            HandleInitializationError();
+        }
+        finally
+        {
+            _timeoutTimer?.Dispose();
+            _initializationCts?.Dispose();
+        }
+    }
+
+    private async Task InitializeWithTimeoutAsync()
+    {
         try
         {
             Logger.LogDebug("Checking if database selection should be shown");
@@ -42,11 +103,14 @@ else
             var shouldShow = DatabaseConfigService.ShouldShowDatabaseSelection();
             Logger.LogDebug("Should show database selection: {ShouldShow}", shouldShow);
             
+            // Add timeout for IsFirstRunAsync call
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             var isFirstRun = await DatabaseConfigService.IsFirstRunAsync();
             Logger.LogDebug("Is first run: {IsFirstRun}", isFirstRun);
 
             ShowDatabaseSelection = shouldShow && isFirstRun;
             IsInitialized = true;
+            InitializationTimeoutSeconds = 0; // Reset timeout counter
             
             Logger.LogInformation("DatabaseStartupWrapper initialized. ShowDatabaseSelection: {ShowSelection}", ShowDatabaseSelection);
             
@@ -61,23 +125,87 @@ else
                 Logger.LogInformation("Database selection dialog will be shown");
             }
         }
+        catch (TaskCanceledException)
+        {
+            Logger.LogWarning("Database initialization timed out, using fallback behavior");
+            HandleInitializationError();
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error during DatabaseStartupWrapper initialization");
-            
-            // In case of error, default to not showing the dialog and continue
-            // This ensures the app doesn't get stuck on startup
-            ShowDatabaseSelection = false;
-            IsInitialized = true;
-            
-            Logger.LogWarning("Continuing app startup without database selection due to initialization error");
-            await OnConfigurationComplete.InvokeAsync();
+            HandleInitializationError();
         }
         finally
         {
             // Ensure UI is updated
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
             Logger.LogDebug("DatabaseStartupWrapper state updated");
+        }
+    }
+
+    private void HandleInitializationError()
+    {
+        // In case of error, show error state
+        HasError = true;
+        ShowDatabaseSelection = false;
+        IsInitialized = false;
+        InitializationTimeoutSeconds = 0;
+        
+        Logger.LogWarning("Showing error state due to initialization failure");
+    }
+
+    private void OnInitializationTimeout(object? state)
+    {
+        InitializationTimeoutSeconds++;
+        InvokeAsync(StateHasChanged);
+        
+        // If timeout reaches 15 seconds, force error state
+        if (InitializationTimeoutSeconds >= 15 && !IsInitialized && !HasError)
+        {
+            Logger.LogError("Initialization timeout exceeded 15 seconds, forcing error state");
+            HandleInitializationError();
+        }
+    }
+
+    private async Task RetryInitialization()
+    {
+        Logger.LogInformation("Retrying database initialization");
+        HasError = false;
+        IsInitialized = false;
+        InitializationTimeoutSeconds = 0;
+        StateHasChanged();
+        
+        await InitializeWithTimeoutAsync();
+    }
+
+    private async Task ContinueWithDefaults()
+    {
+        Logger.LogInformation("Continuing with default database configuration");
+        
+        try
+        {
+            // Create and save default configuration
+            var defaultConfig = DatabaseConfigService.GetDefaultConfiguration();
+            defaultConfig.IsFirstRun = false; // Mark as configured
+            await DatabaseConfigService.SaveConfigurationAsync(defaultConfig);
+            
+            HasError = false;
+            ShowDatabaseSelection = false;
+            IsInitialized = true;
+            
+            await OnConfigurationComplete.InvokeAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving default configuration");
+            // If even this fails, just continue without saving
+            HasError = false;
+            ShowDatabaseSelection = false;
+            IsInitialized = true;
+            
+            await OnConfigurationComplete.InvokeAsync();
+            StateHasChanged();
         }
     }
 
@@ -85,7 +213,14 @@ else
     {
         Logger.LogInformation("Database configuration completed by user");
         ShowDatabaseSelection = false;
+        IsInitialized = true;
         await OnConfigurationComplete.InvokeAsync();
         StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _timeoutTimer?.Dispose();
+        _initializationCts?.Dispose();
     }
 }
