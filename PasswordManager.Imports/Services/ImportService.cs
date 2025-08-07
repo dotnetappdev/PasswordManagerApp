@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration;
 using PasswordManager.Imports.Interfaces;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
+using System.Reflection;
 
 namespace PasswordManager.Imports.Services;
 
@@ -63,6 +63,10 @@ public class ImportService : IImportService
     {
         try
         {
+            // First, discover and load built-in providers from loaded assemblies
+            LoadBuiltInProviders();
+            
+            // Then, discover and load external plugins from plugin directories
             var plugins = await _pluginDiscovery.DiscoverPluginsAsync();
             foreach (var plugin in plugins)
             {
@@ -73,6 +77,56 @@ public class ImportService : IImportService
         {
             // Log error but don't fail the service
             Console.WriteLine($"Error loading plugins: {ex.Message}");
+        }
+    }
+
+    private void LoadBuiltInProviders()
+    {
+        try
+        {
+            // Get all loaded assemblies that might contain import providers
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(assembly => !assembly.IsDynamic && 
+                                   (assembly.FullName?.Contains("PasswordManager") == true ||
+                                    assembly.FullName?.Contains("Import") == true))
+                .ToList();
+
+            foreach (var assembly in assemblies)
+            {
+                try
+                {
+                    var providerTypes = assembly.GetTypes()
+                        .Where(type => typeof(IPasswordImportProvider).IsAssignableFrom(type) &&
+                                       !type.IsInterface && !type.IsAbstract)
+                        .ToList();
+
+                    foreach (var providerType in providerTypes)
+                    {
+                        try
+                        {
+                            var provider = Activator.CreateInstance(providerType) as IPasswordImportProvider;
+                            if (provider != null && !_importProviders.ContainsKey(provider.ProviderName))
+                            {
+                                RegisterProvider(provider);
+                                Console.WriteLine($"Auto-discovered built-in provider: {provider.ProviderName}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Failed to instantiate provider {providerType.Name}: {ex.Message}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Skip assemblies that can't be reflected over
+                    Console.WriteLine($"Skipped assembly {assembly.FullName}: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading built-in providers: {ex.Message}");
         }
     }
 

@@ -5,7 +5,6 @@ using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
 using PasswordManager.Imports.Interfaces;
 using PasswordManager.Imports.Services;
-using PasswordManagerImports.OnePassword.Providers;
 using Microsoft.Extensions.Configuration;
 using PasswordManager.Crypto.Extensions;
 using PasswordManager.App.Services;
@@ -119,9 +118,6 @@ public static class MauiProgram
 		builder.Services.AddSingleton<PluginDiscoveryService>();
 		builder.Services.AddScoped<IImportService, ImportService>();
 
-		// Register import providers
-		builder.Services.AddScoped<IPasswordImportProvider, OnePasswordImportProvider>();
-
 		// Add QuickGrid
 
 #if DEBUG
@@ -141,10 +137,8 @@ public static class MauiProgram
 				// Don't await this to prevent blocking app startup
 				_ = startupService.InitializeAsync();
 
-				// Initialize import service with providers
-				var importService = scope.ServiceProvider.GetRequiredService<IImportService>();
-				var onePasswordProvider = scope.ServiceProvider.GetRequiredService<IPasswordImportProvider>();
-				importService.RegisterProvider(onePasswordProvider);
+				// Import service will automatically discover and load all available providers
+				// No manual registration needed - providers are auto-discovered from assemblies and plugins
 			}
 			catch (Exception ex)
 			{
