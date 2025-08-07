@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration;
 using PasswordManager.Imports.Interfaces;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
+using System.Reflection;
 
 namespace PasswordManager.Imports.Services;
 
@@ -63,6 +63,10 @@ public class ImportService : IImportService
     {
         try
         {
+            // First, discover and load built-in providers from loaded assemblies
+            LoadBuiltInProviders();
+            
+            // Then, discover and load external plugins from plugin directories
             var plugins = await _pluginDiscovery.DiscoverPluginsAsync();
             foreach (var plugin in plugins)
             {
@@ -72,7 +76,53 @@ public class ImportService : IImportService
         catch (Exception ex)
         {
             // Log error but don't fail the service
-            Console.WriteLine($"Error loading plugins: {ex.Message}");
+            // In production, use proper logging instead of Console.WriteLine
+        }
+    }
+
+    private void LoadBuiltInProviders()
+    {
+        try
+        {
+            // Get all loaded assemblies
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(assembly => !assembly.IsDynamic)
+                .ToList();
+
+            foreach (var assembly in assemblies)
+            {
+                try
+                {
+                    var providerTypes = assembly.GetTypes()
+                        .Where(type => typeof(IPasswordImportProvider).IsAssignableFrom(type) &&
+                                       !type.IsInterface && !type.IsAbstract)
+                        .ToList();
+
+                    foreach (var providerType in providerTypes)
+                    {
+                        try
+                        {
+                            var provider = Activator.CreateInstance(providerType) as IPasswordImportProvider;
+                            if (provider != null && !_importProviders.ContainsKey(provider.ProviderName))
+                            {
+                                RegisterProvider(provider);
+                            }
+                        }
+                        catch
+                        {
+                            // Failed to instantiate provider, continue with others
+                        }
+                    }
+                }
+                catch
+                {
+                    // Skip assemblies that can't be reflected over (system assemblies, etc.)
+                }
+            }
+        }
+        catch
+        {
+            // Error loading built-in providers, continue without them
         }
     }
 
