@@ -76,7 +76,7 @@ public class ImportService : IImportService
         catch (Exception ex)
         {
             // Log error but don't fail the service
-            Console.WriteLine($"Error loading plugins: {ex.Message}");
+            // In production, use proper logging instead of Console.WriteLine
         }
     }
 
@@ -84,11 +84,9 @@ public class ImportService : IImportService
     {
         try
         {
-            // Get all loaded assemblies that might contain import providers
+            // Get all loaded assemblies
             var assemblies = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(assembly => !assembly.IsDynamic && 
-                                   (assembly.FullName?.Contains("PasswordManager") == true ||
-                                    assembly.FullName?.Contains("Import") == true))
+                .Where(assembly => !assembly.IsDynamic)
                 .ToList();
 
             foreach (var assembly in assemblies)
@@ -108,25 +106,23 @@ public class ImportService : IImportService
                             if (provider != null && !_importProviders.ContainsKey(provider.ProviderName))
                             {
                                 RegisterProvider(provider);
-                                Console.WriteLine($"Auto-discovered built-in provider: {provider.ProviderName}");
                             }
                         }
-                        catch (Exception ex)
+                        catch
                         {
-                            Console.WriteLine($"Failed to instantiate provider {providerType.Name}: {ex.Message}");
+                            // Failed to instantiate provider, continue with others
                         }
                     }
                 }
-                catch (Exception ex)
+                catch
                 {
-                    // Skip assemblies that can't be reflected over
-                    Console.WriteLine($"Skipped assembly {assembly.FullName}: {ex.Message}");
+                    // Skip assemblies that can't be reflected over (system assemblies, etc.)
                 }
             }
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Error loading built-in providers: {ex.Message}");
+            // Error loading built-in providers, continue without them
         }
     }
 
