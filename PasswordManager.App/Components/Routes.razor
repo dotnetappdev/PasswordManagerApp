@@ -10,7 +10,7 @@
         <NotFound>
             <PageTitle>Not Found</PageTitle>
             @{
-                NavigationManager.NavigateTo("/login");
+                NavigationManager.NavigateTo("/login", replace: true);
             }
         </NotFound>
     </Router>
@@ -33,36 +33,15 @@
         {
             isDatabaseConfigured = true;
             
-            // Get current URI to check where we are
-            var currentUri = NavigationManager.Uri;
-            var baseUri = NavigationManager.BaseUri;
-            
-            // Check if we're at the root or have no specific page
-            if (currentUri == baseUri || currentUri.EndsWith("/") || 
-                currentUri.Contains("app://") || // MAUI app scheme
-                !currentUri.Contains("/login") && !currentUri.Contains("/home"))
-            {
-                // Navigate to login page with replace to avoid navigation loops
-                NavigationManager.NavigateTo("/login", replace: true);
-            }
-            
+            // Navigate to login page as the default route
+            NavigationManager.NavigateTo("/login", replace: true);
             StateHasChanged();
         }
         catch (Exception ex)
         {
             // Log error but don't let it break the app
             System.Diagnostics.Debug.WriteLine($"Error during navigation after database configuration: {ex.Message}");
-            
-            // Try a simple navigation as fallback
-            try
-            {
-                NavigationManager.NavigateTo("/login");
-            }
-            catch
-            {
-                // If all fails, just update state
-                StateHasChanged();
-            }
+            StateHasChanged();
         }
     }
 }
