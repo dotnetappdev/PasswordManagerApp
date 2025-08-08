@@ -28,6 +28,11 @@ public interface IDatabaseConfigurationService
     string BuildConnectionString(DatabaseConfiguration configuration);
 
     /// <summary>
+    /// Builds a connection string for the specified database configuration (async version for providers requiring decryption)
+    /// </summary>
+    Task<string> BuildConnectionStringAsync(DatabaseConfiguration configuration);
+
+    /// <summary>
     /// Tests the database connection with the given configuration
     /// </summary>
     Task<(bool Success, string ErrorMessage)> TestConnectionAsync(DatabaseConfiguration configuration);
