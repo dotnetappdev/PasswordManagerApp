@@ -18,34 +18,46 @@ else if (HasError)
 {
     <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa;">
         <div style="text-align: center; max-width: 500px; padding: 20px;">
-            <h3 style="color: #dc3545;">Startup Error</h3>
-            <p>There was an error during startup. Using default configuration.</p>
+            <h3 style="color: #dc3545;">Startup Issue</h3>
+            <p>The app is taking longer than expected to start. This usually resolves itself.</p>
             <div style="margin-top: 20px;">
                 <button style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;"
                         @onclick="RetryInitialization">
-                    Retry
+                    Try Again
                 </button>
                 <button style="margin-left: 10px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;"
                         @onclick="ContinueWithDefaults">
-                    Continue with Defaults
+                    Continue Anyway
                 </button>
             </div>
+            <p style="color: #6c757d; font-size: 0.9em; margin-top: 15px;">
+                You can continue to use the app with default settings, or try again if you're having connectivity issues.
+            </p>
         </div>
     </div>
 }
 else
 {
-    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f8f9fa;">
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
         <div style="text-align: center;">
             <div style="margin-bottom: 20px;">
-                <div style="width: 3rem; height: 3rem; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;">
+                <div style="width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid #fff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;">
                 </div>
             </div>
-            <h3 style="color: #495057;">Loading Password Manager</h3>
-            <p style="color: #6c757d;">Initializing database configuration...</p>
+            <h3 style="margin: 0 0 10px 0; font-weight: 300;">Password Manager</h3>
+            <p style="margin: 0; opacity: 0.8;">Starting up...</p>
             @if (InitializationTimeoutSeconds > 0)
             {
-                <p style="color: #ffc107; font-size: 0.9em;">This is taking longer than expected... (@InitializationTimeoutSeconds seconds)</p>
+                <p style="color: #ffc107; font-size: 0.9em; margin-top: 10px;">
+                    @if (InitializationTimeoutSeconds < 3)
+                    {
+                        <span>Loading configuration...</span>
+                    }
+                    else
+                    {
+                        <span>This is taking a bit longer than usual... (@InitializationTimeoutSeconds seconds)</span>
+                    }
+                </p>
             }
         </div>
     </div>
@@ -73,9 +85,9 @@ else
     {
         Logger.LogInformation("DatabaseStartupWrapper initializing...");
         
-        // Start timeout timer
+        // Start timeout timer with even shorter initial timeout for better UX
         _initializationCts = new CancellationTokenSource();
-        _timeoutTimer = new Timer(OnInitializationTimeout, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1));
+        _timeoutTimer = new Timer(OnInitializationTimeout, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         
         try
         {
@@ -99,14 +111,55 @@ else
         {
             Logger.LogDebug("Checking if database selection should be shown");
             
-            // Check if we should show database selection dialog
-            var shouldShow = DatabaseConfigService.ShouldShowDatabaseSelection();
-            Logger.LogDebug("Should show database selection: {ShouldShow}", shouldShow);
+            // Create a shorter timeout task to ensure we don't hang
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, _initializationCts?.Token ?? CancellationToken.None);
             
-            // Add timeout for IsFirstRunAsync call
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            var isFirstRun = await DatabaseConfigService.IsFirstRunAsync();
-            Logger.LogDebug("Is first run: {IsFirstRun}", isFirstRun);
+            // Use task wrapping to avoid blocking on potentially slow operations
+            bool shouldShow = false;
+            bool isFirstRun = true;
+            
+            try
+            {
+                // Run these operations with timeout - make all operations truly async
+                var shouldShowTask = Task.Run(() => 
+                {
+                    try 
+                    { 
+                        return DatabaseConfigService.ShouldShowDatabaseSelection(); 
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarning(ex, "Error in ShouldShowDatabaseSelection, defaulting to false");
+                        return false;
+                    }
+                }, combinedCts.Token);
+                
+                var isFirstRunTask = DatabaseConfigService.IsFirstRunAsync();
+                
+                // Wait for both tasks with timeout protection
+                var tasksToWait = new Task[] { shouldShowTask, isFirstRunTask };
+                await Task.WhenAll(tasksToWait).WaitAsync(TimeSpan.FromSeconds(3));
+                
+                shouldShow = await shouldShowTask;
+                isFirstRun = await isFirstRunTask;
+                
+                Logger.LogDebug("Should show database selection: {ShouldShow}, Is first run: {IsFirstRun}", shouldShow, isFirstRun);
+            }
+            catch (TimeoutException)
+            {
+                Logger.LogWarning("Database configuration checks timed out after 3 seconds, using safe defaults");
+                // Use safe defaults - don't show database selection, assume not first run
+                shouldShow = false;
+                isFirstRun = false;
+            }
+            catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
+            {
+                Logger.LogWarning("Database configuration checks timed out, using safe defaults");
+                // Use safe defaults - don't show database selection, assume not first run
+                shouldShow = false;
+                isFirstRun = false;
+            }
 
             ShowDatabaseSelection = shouldShow && isFirstRun;
             IsInitialized = true;
@@ -125,12 +178,7 @@ else
                 Logger.LogInformation("Database selection dialog will be shown");
             }
         }
-        catch (TaskCanceledException)
-        {
-            Logger.LogWarning("Database initialization timed out, using fallback behavior");
-            HandleInitializationError();
-        }
-        catch (Exception ex)
+        catch (Exception ex) when (!(ex is OperationCanceledException))
         {
             Logger.LogError(ex, "Error during DatabaseStartupWrapper initialization");
             HandleInitializationError();
@@ -159,10 +207,10 @@ else
         InitializationTimeoutSeconds++;
         InvokeAsync(StateHasChanged);
         
-        // If timeout reaches 15 seconds, force error state
-        if (InitializationTimeoutSeconds >= 15 && !IsInitialized && !HasError)
+        // If timeout reaches 5 seconds, force error state with option to continue
+        if (InitializationTimeoutSeconds >= 5 && !IsInitialized && !HasError)
         {
-            Logger.LogError("Initialization timeout exceeded 15 seconds, forcing error state");
+            Logger.LogError("Initialization timeout exceeded 5 seconds, forcing error state with recovery options");
             HandleInitializationError();
         }
     }

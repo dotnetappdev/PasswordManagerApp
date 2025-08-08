@@ -44,19 +44,32 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
     {
         try
         {
-            if (!File.Exists(_configFilePath))
+            // Add timeout for file operations to prevent hanging
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            
+            var configTask = Task.Run(async () =>
             {
-                _logger.LogInformation("No database configuration file found, returning default configuration");
-                return GetDefaultConfiguration();
-            }
+                if (!File.Exists(_configFilePath))
+                {
+                    _logger.LogInformation("No database configuration file found, returning default configuration");
+                    return GetDefaultConfiguration();
+                }
 
-            var jsonContent = await File.ReadAllTextAsync(_configFilePath);
-            var config = JsonSerializer.Deserialize<DatabaseConfiguration>(jsonContent, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+                var jsonContent = await File.ReadAllTextAsync(_configFilePath, cts.Token);
+                var config = JsonSerializer.Deserialize<DatabaseConfiguration>(jsonContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
 
-            return config ?? GetDefaultConfiguration();
+                return config ?? GetDefaultConfiguration();
+            }, cts.Token);
+
+            return await configTask;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("GetConfigurationAsync timed out, returning default configuration");
+            return GetDefaultConfiguration();
         }
         catch (Exception ex)
         {
@@ -100,25 +113,56 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
     {
         try
         {
-            var config = await GetConfigurationAsync();
-            return config.IsFirstRun;
+            // Add a timeout to prevent hanging on file system operations
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            
+            var checkTask = Task.Run(async () =>
+            {
+                if (!File.Exists(_configFilePath))
+                {
+                    _logger.LogDebug("Configuration file does not exist, treating as first run");
+                    return true;
+                }
+
+                var config = await GetConfigurationAsync();
+                return config.IsFirstRun;
+            }, cts.Token);
+
+            return await checkTask;
         }
-        catch
+        catch (OperationCanceledException)
         {
+            _logger.LogWarning("IsFirstRunAsync timed out, assuming first run");
+            return true; // If we can't check quickly, assume first run
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error checking if first run, assuming first run");
             return true; // If we can't read config, assume first run
         }
     }
 
-    public string BuildConnectionString(DatabaseConfiguration configuration)
+    public async Task<string> BuildConnectionStringAsync(DatabaseConfiguration configuration)
     {
         return configuration.Provider switch
         {
             DatabaseProvider.Sqlite => BuildSqliteConnectionString(configuration.Sqlite!),
-            DatabaseProvider.SqlServer => BuildSqlServerConnectionString(configuration.SqlServer!),
-            DatabaseProvider.MySql => BuildMySqlConnectionString(configuration.MySql!),
-            DatabaseProvider.PostgreSql => BuildPostgreSqlConnectionString(configuration.PostgreSql!),
+            DatabaseProvider.SqlServer => await BuildSqlServerConnectionStringAsync(configuration.SqlServer!),
+            DatabaseProvider.MySql => await BuildMySqlConnectionStringAsync(configuration.MySql!),
+            DatabaseProvider.PostgreSql => await BuildPostgreSqlConnectionStringAsync(configuration.PostgreSql!),
             DatabaseProvider.Supabase => BuildSupabaseConnectionString(configuration.Supabase!),
             _ => throw new NotSupportedException($"Database provider {configuration.Provider} is not supported")
+        };
+    }
+
+    public string BuildConnectionString(DatabaseConfiguration configuration)
+    {
+        // Keep the synchronous version for backwards compatibility, but limit it to providers that don't need async
+        return configuration.Provider switch
+        {
+            DatabaseProvider.Sqlite => BuildSqliteConnectionString(configuration.Sqlite!),
+            DatabaseProvider.Supabase => BuildSupabaseConnectionString(configuration.Supabase!),
+            _ => throw new InvalidOperationException($"Provider {configuration.Provider} requires async operation. Use BuildConnectionStringAsync instead.")
         };
     }
 
@@ -126,7 +170,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
     {
         try
         {
-            var connectionString = BuildConnectionString(configuration);
+            var connectionString = await BuildConnectionStringAsync(configuration);
             
             // Test connection based on provider
             switch (configuration.Provider)
@@ -229,7 +273,20 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
 
     public bool ShouldShowDatabaseSelection()
     {
-        return _platformService.ShouldShowDatabaseSelection();
+        try
+        {
+            // Add timeout protection to prevent hanging
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            var checkTask = Task.Run(() => _platformService.ShouldShowDatabaseSelection(), cts.Token);
+            
+            // Wait with timeout - if it takes too long, default to false
+            return checkTask.Wait(2000) ? checkTask.Result : false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error checking if database selection should be shown, defaulting to false");
+            return false; // Default to not showing database selection if there's an error
+        }
     }
 
     private async Task<byte[]> GetOrCreateEncryptionKeyAsync()
@@ -326,7 +383,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
         return $"Data Source={config.DatabasePath}";
     }
 
-    private string BuildSqlServerConnectionString(SqlServerConfig config)
+    private async Task<string> BuildSqlServerConnectionStringAsync(SqlServerConfig config)
     {
         var builder = new System.Text.StringBuilder();
         builder.Append($"Server={config.Host}");
@@ -345,7 +402,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
             builder.Append($";User Id={config.Username}");
             if (!string.IsNullOrEmpty(config.EncryptedPassword))
             {
-                var password = DecryptPasswordAsync(config.EncryptedPassword).Result;
+                var password = await DecryptPasswordAsync(config.EncryptedPassword);
                 builder.Append($";Password={password}");
             }
         }
@@ -358,7 +415,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
         return builder.ToString();
     }
 
-    private string BuildMySqlConnectionString(MySqlConfig config)
+    private async Task<string> BuildMySqlConnectionStringAsync(MySqlConfig config)
     {
         var builder = new System.Text.StringBuilder();
         builder.Append($"Server={config.Host}");
@@ -368,7 +425,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
         
         if (!string.IsNullOrEmpty(config.EncryptedPassword))
         {
-            var password = DecryptPasswordAsync(config.EncryptedPassword).Result;
+            var password = await DecryptPasswordAsync(config.EncryptedPassword);
             builder.Append($";Pwd={password}");
         }
         
@@ -382,7 +439,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
         return builder.ToString();
     }
 
-    private string BuildPostgreSqlConnectionString(PostgreSqlConfig config)
+    private async Task<string> BuildPostgreSqlConnectionStringAsync(PostgreSqlConfig config)
     {
         var builder = new System.Text.StringBuilder();
         builder.Append($"Host={config.Host}");
@@ -392,7 +449,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
         
         if (!string.IsNullOrEmpty(config.EncryptedPassword))
         {
-            var password = DecryptPasswordAsync(config.EncryptedPassword).Result;
+            var password = await DecryptPasswordAsync(config.EncryptedPassword);
             builder.Append($";Password={password}");
         }
         
