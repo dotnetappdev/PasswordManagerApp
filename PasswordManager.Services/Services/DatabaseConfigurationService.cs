@@ -44,19 +44,32 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
     {
         try
         {
-            if (!File.Exists(_configFilePath))
+            // Add timeout for file operations to prevent hanging
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            
+            var configTask = Task.Run(async () =>
             {
-                _logger.LogInformation("No database configuration file found, returning default configuration");
-                return GetDefaultConfiguration();
-            }
+                if (!File.Exists(_configFilePath))
+                {
+                    _logger.LogInformation("No database configuration file found, returning default configuration");
+                    return GetDefaultConfiguration();
+                }
 
-            var jsonContent = await File.ReadAllTextAsync(_configFilePath);
-            var config = JsonSerializer.Deserialize<DatabaseConfiguration>(jsonContent, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+                var jsonContent = await File.ReadAllTextAsync(_configFilePath, cts.Token);
+                var config = JsonSerializer.Deserialize<DatabaseConfiguration>(jsonContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
 
-            return config ?? GetDefaultConfiguration();
+                return config ?? GetDefaultConfiguration();
+            }, cts.Token);
+
+            return await configTask;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("GetConfigurationAsync timed out, returning default configuration");
+            return GetDefaultConfiguration();
         }
         catch (Exception ex)
         {
@@ -100,11 +113,31 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
     {
         try
         {
-            var config = await GetConfigurationAsync();
-            return config.IsFirstRun;
+            // Add a timeout to prevent hanging on file system operations
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            
+            var checkTask = Task.Run(async () =>
+            {
+                if (!File.Exists(_configFilePath))
+                {
+                    _logger.LogDebug("Configuration file does not exist, treating as first run");
+                    return true;
+                }
+
+                var config = await GetConfigurationAsync();
+                return config.IsFirstRun;
+            }, cts.Token);
+
+            return await checkTask;
         }
-        catch
+        catch (OperationCanceledException)
         {
+            _logger.LogWarning("IsFirstRunAsync timed out, assuming first run");
+            return true; // If we can't check quickly, assume first run
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error checking if first run, assuming first run");
             return true; // If we can't read config, assume first run
         }
     }
@@ -229,7 +262,15 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
 
     public bool ShouldShowDatabaseSelection()
     {
-        return _platformService.ShouldShowDatabaseSelection();
+        try
+        {
+            return _platformService.ShouldShowDatabaseSelection();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error checking if database selection should be shown, defaulting to false");
+            return false; // Default to not showing database selection if there's an error
+        }
     }
 
     private async Task<byte[]> GetOrCreateEncryptionKeyAsync()

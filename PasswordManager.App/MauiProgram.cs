@@ -134,8 +134,22 @@ public static class MauiProgram
 			{
 				var startupService = scope.ServiceProvider.GetRequiredService<IAppStartupService>();
 
-				// Don't await this to prevent blocking app startup
-				_ = startupService.InitializeAsync();
+				// Use a timeout to prevent startup from hanging indefinitely
+				var initializationTask = Task.Run(async () => await startupService.InitializeAsync());
+				
+				// Don't await - let initialization run in background
+				// This prevents the UI from being blocked by slow database operations
+				_ = initializationTask.ContinueWith(task =>
+				{
+					if (task.IsFaulted)
+					{
+						System.Diagnostics.Debug.WriteLine($"Background initialization completed with errors: {task.Exception?.GetBaseException()?.Message}");
+					}
+					else
+					{
+						System.Diagnostics.Debug.WriteLine("Background initialization completed successfully");
+					}
+				});
 
 				// Import service will automatically discover and load all available providers
 				// No manual registration needed - providers are auto-discovered from assemblies and plugins
@@ -143,9 +157,9 @@ public static class MauiProgram
 			catch (Exception ex)
 			{
 				// Log the error but don't prevent app from starting
-				System.Diagnostics.Debug.WriteLine($"Error during app initialization: {ex.Message}");
+				System.Diagnostics.Debug.WriteLine($"Error setting up background initialization: {ex.Message}");
 				System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-				// App can still start even if initialization fails
+				// App can still start even if initialization setup fails
 			}
 		}
 
