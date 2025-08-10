@@ -132,6 +132,12 @@ public static class MauiProgram
 		{
 			try
 			{
+				// First, ensure a basic SQLite database exists so the app can always start
+				var databaseConfigService = scope.ServiceProvider.GetRequiredService<IDatabaseConfigurationService>();
+				
+				// This creates a minimal SQLite database without migrations to ensure app can start
+				await databaseConfigService.EnsureBasicSqliteDatabaseAsync();
+
 				var startupService = scope.ServiceProvider.GetRequiredService<IAppStartupService>();
 
 				// Use a timeout to prevent startup from hanging indefinitely

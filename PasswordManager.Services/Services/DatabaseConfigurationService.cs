@@ -285,6 +285,47 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
         }
     }
 
+    /// <summary>
+    /// Ensures a basic SQLite database exists for the application to start, regardless of configuration status.
+    /// This method creates a minimal database structure without running migrations.
+    /// </summary>
+    public async Task EnsureBasicSqliteDatabaseAsync()
+    {
+        try
+        {
+            var defaultConfig = GetDefaultConfiguration();
+            var dbPath = defaultConfig.Sqlite!.DatabasePath;
+            
+            // Ensure directory exists
+            var directory = Path.GetDirectoryName(dbPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+                _logger.LogInformation("Created database directory: {Directory}", directory);
+            }
+
+            // Check if database file exists
+            if (!File.Exists(dbPath))
+            {
+                _logger.LogInformation("Creating basic SQLite database at: {DbPath}", dbPath);
+                
+                // Create an empty database file
+                using var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbPath}");
+                await connection.OpenAsync();
+                _logger.LogInformation("Basic SQLite database created successfully");
+            }
+            else
+            {
+                _logger.LogDebug("SQLite database already exists at: {DbPath}", dbPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error ensuring basic SQLite database exists");
+            // Don't throw - allow app to continue
+        }
+    }
+
     private async Task<byte[]> GetOrCreateEncryptionKeyAsync()
     {
         if (_encryptionKey != null)
