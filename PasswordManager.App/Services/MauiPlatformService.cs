@@ -14,9 +14,17 @@ public class MauiPlatformService : IPlatformService
 
     public bool ShouldShowDatabaseSelection()
     {
-        // Show database selection only on Windows and macOS
-        return DeviceInfo.Platform == DevicePlatform.WinUI || 
-               DeviceInfo.Platform == DevicePlatform.MacCatalyst;
+        try
+        {
+            // Show database selection only on Windows and macOS
+            return DeviceInfo.Platform == DevicePlatform.WinUI || 
+                   DeviceInfo.Platform == DevicePlatform.MacCatalyst;
+        }
+        catch (Exception)
+        {
+            // If DeviceInfo is not available during startup, default to false
+            return false;
+        }
     }
 
     public string GetAppDataDirectory()

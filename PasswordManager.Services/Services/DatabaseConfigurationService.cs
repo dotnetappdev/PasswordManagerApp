@@ -275,12 +275,8 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
     {
         try
         {
-            // Add timeout protection to prevent hanging
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-            var checkTask = Task.Run(() => _platformService.ShouldShowDatabaseSelection(), cts.Token);
-            
-            // Wait with timeout - if it takes too long, default to false
-            return checkTask.Wait(2000) ? checkTask.Result : false;
+            // Call platform service directly - it should be fast
+            return _platformService.ShouldShowDatabaseSelection();
         }
         catch (Exception ex)
         {
