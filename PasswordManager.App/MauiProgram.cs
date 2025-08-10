@@ -107,6 +107,7 @@ public static class MauiProgram
 		builder.Services.AddScoped<IPasswordRevealService, PasswordRevealService>();
 		builder.Services.AddScoped<IAppSyncService, AppSyncService>();
 		builder.Services.AddScoped<IAppStartupService, AppStartupService>();
+		builder.Services.AddScoped<IDatabaseMigrationService, DatabaseMigrationService>();
 		builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 		builder.Services.AddScoped<IVaultSessionService, VaultSessionService>();
 		builder.Services.AddScoped<IPasscodeService, PasscodeService>();
