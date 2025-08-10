@@ -60,5 +60,5 @@ public interface IDatabaseConfigurationService
     /// <summary>
     /// Ensures a basic SQLite database exists for the application to start, regardless of configuration status
     /// </summary>
-    Task EnsureBasicSqliteDatabaseAsync();
+    Task EnsureBasicSqliteDatabaseAsync(IServiceProvider serviceProvider);
 }
