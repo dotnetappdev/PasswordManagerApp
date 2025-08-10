@@ -56,4 +56,9 @@ public interface IDatabaseConfigurationService
     /// Determines if the current platform should show the database selection dialog
     /// </summary>
     bool ShouldShowDatabaseSelection();
+
+    /// <summary>
+    /// Ensures a basic SQLite database exists for the application to start, regardless of configuration status
+    /// </summary>
+    Task EnsureBasicSqliteDatabaseAsync();
 }

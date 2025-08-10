@@ -55,26 +55,55 @@ public class AppStartupService : IAppStartupService
         {
             _logger.LogInformation("Initializing database");
 
-            // Check if database is configured
-            var isConfigured = await IsDatabaseConfiguredAsync();
-            if (!isConfigured)
-            {
-                _logger.LogWarning("Database not configured, skipping database initialization");
-                return;
-            }
-
             // Use a scope for all dbContext operations
             using (var scope = _scopeFactory.CreateScope())
             {
                 try
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
-                    // Check for pending migrations
-                    var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
-                    if (pendingMigrations.Any())
+                    var dbContextApp = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
+                    
+                    // First, ensure the database exists (this creates it if it doesn't exist)
+                    // Use EnsureCreatedAsync for initial database creation to avoid migration conflicts on first run
+                    var canConnect = await dbContext.Database.CanConnectAsync();
+                    if (!canConnect)
                     {
-                        _logger.LogInformation("Applying database migrations");
-                        await dbContext.Database.MigrateAsync();
+                        _logger.LogInformation("Database not found, creating initial database structure");
+                        await dbContext.Database.EnsureCreatedAsync();
+                        await dbContextApp.Database.EnsureCreatedAsync();
+                        _logger.LogInformation("Initial database structure created successfully");
+                        return; // Skip migrations on fresh database creation
+                    }
+
+                    // If database exists, check if database is properly configured before applying migrations
+                    var isConfigured = await IsDatabaseConfiguredAsync();
+                    if (!isConfigured)
+                    {
+                        _logger.LogInformation("Database exists but not fully configured, ensuring basic structure is available");
+                        // Ensure basic database structure without migrations for unconfigured databases
+                        await dbContext.Database.EnsureCreatedAsync();
+                        await dbContextApp.Database.EnsureCreatedAsync();
+                        return;
+                    }
+
+                    // Only apply migrations for properly configured databases
+                    var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
+                    var pendingMigrationsApp = await dbContextApp.Database.GetPendingMigrationsAsync();
+                    
+                    if (pendingMigrations.Any() || pendingMigrationsApp.Any())
+                    {
+                        _logger.LogInformation("Applying database migrations (API: {ApiMigrations}, App: {AppMigrations})", 
+                            pendingMigrations.Count(), pendingMigrationsApp.Count());
+                        
+                        if (pendingMigrations.Any())
+                        {
+                            await dbContext.Database.MigrateAsync();
+                        }
+                        if (pendingMigrationsApp.Any())
+                        {
+                            await dbContextApp.Database.MigrateAsync();
+                        }
+                        
                         _logger.LogInformation("Database migrations applied successfully");
                     }
                     else
@@ -91,8 +120,9 @@ public class AppStartupService : IAppStartupService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error initializing database");
-            throw;
+            _logger.LogError(ex, "Error initializing database, but allowing app to continue startup");
+            // Don't re-throw - allow app to continue starting even if database initialization fails
+            // Users can then use the setup menu to configure the database properly
         }
     }
 
