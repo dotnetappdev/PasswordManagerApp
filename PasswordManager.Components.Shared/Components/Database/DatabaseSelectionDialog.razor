@@ -1,6 +1,8 @@
 @using PasswordManager.Models.Configuration
 @using PasswordManager.Services.Interfaces
+@using PasswordManager.Services.DTOs
 @inject IDatabaseConfigurationService DatabaseConfigService
+@inject IDatabaseMigrationService MigrationService
 @inject IJSRuntime JSRuntime
 
 <div class="database-selection-overlay @(IsVisible ? "visible" : "")">
@@ -258,6 +260,37 @@
                     }
                 </div>
 
+                <!-- Migration Status -->
+                @if (MigrationStatus != null && MigrationStatus.HasPendingMigrations)
+                {
+                    <div class="migration-status warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div class="migration-info">
+                            <strong>Pending Migrations Detected</strong>
+                            <p>There are @MigrationStatus.PendingMigrations.Count() pending database migrations that need to be applied before you can use the app.</p>
+                            @if (ShowMigrationDetails)
+                            {
+                                <ul class="migration-list">
+                                    @foreach (var migration in MigrationStatus.PendingMigrations)
+                                    {
+                                        <li>@migration</li>
+                                    }
+                                </ul>
+                            }
+                            <button type="button" class="btn btn-link btn-sm" @onclick="ToggleMigrationDetails">
+                                @if (ShowMigrationDetails)
+                                {
+                                    <span><i class="fas fa-chevron-up"></i> Hide Details</span>
+                                }
+                                else
+                                {
+                                    <span><i class="fas fa-chevron-down"></i> Show Details</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                }
+
                 <!-- Connection Status -->
                 @if (!string.IsNullOrEmpty(ConnectionStatus))
                 {
@@ -284,6 +317,24 @@
                         Test Connection
                     </button>
                     
+                    @if (MigrationStatus != null && MigrationStatus.HasPendingMigrations && IsConnectionSuccessful)
+                    {
+                        <button type="button" 
+                                class="btn btn-warning" 
+                                @onclick="ApplyMigrations" 
+                                disabled="@IsProcessing">
+                            @if (IsProcessing)
+                            {
+                                <i class="fas fa-spinner fa-spin"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-database"></i>
+                            }
+                            Apply Migrations
+                        </button>
+                    }
+                    
                     <button type="submit" 
                             class="btn btn-primary" 
                             disabled="@IsProcessing">
@@ -291,11 +342,22 @@
                         {
                             <i class="fas fa-spinner fa-spin"></i>
                         }
+                        else if (MigrationStatus != null && MigrationStatus.HasPendingMigrations)
+                        {
+                            <i class="fas fa-plus"></i>
+                        }
                         else
                         {
                             <i class="fas fa-save"></i>
                         }
-                        Save & Continue
+                        @if (MigrationStatus != null && MigrationStatus.HasPendingMigrations)
+                        {
+                            <span>Create Database</span>
+                        }
+                        else
+                        {
+                            <span>Save & Continue</span>
+                        }
                     </button>
                 </div>
             </EditForm>
@@ -308,7 +370,9 @@
     [Parameter] public EventCallback OnConfigurationSaved { get; set; }
 
     private DatabaseConfiguration Configuration { get; set; } = new();
+    private MigrationStatusDto? MigrationStatus { get; set; }
     private bool IsProcessing { get; set; }
+    private bool ShowMigrationDetails { get; set; }
     private string ConnectionStatus { get; set; } = string.Empty;
     private bool IsConnectionSuccessful { get; set; }
 
@@ -321,6 +385,7 @@
     {
         Configuration = DatabaseConfigService.GetDefaultConfiguration();
         EnsureProviderConfig();
+        await CheckMigrationStatus();
     }
 
     private void SelectProvider(DatabaseProvider provider)
@@ -328,6 +393,12 @@
         Configuration.Provider = provider;
         EnsureProviderConfig();
         ConnectionStatus = string.Empty;
+        MigrationStatus = null; // Reset migration status when changing provider
+    }
+
+    private void ToggleMigrationDetails()
+    {
+        ShowMigrationDetails = !ShowMigrationDetails;
     }
 
     private void EnsureProviderConfig()
@@ -365,11 +436,73 @@
             ConnectionStatus = result.Success 
                 ? "Connection successful!" 
                 : $"Connection failed: {result.ErrorMessage}";
+
+            // Check migration status if connection successful
+            if (result.Success)
+            {
+                await CheckMigrationStatus();
+            }
         }
         catch (Exception ex)
         {
             IsConnectionSuccessful = false;
             ConnectionStatus = $"Error testing connection: {ex.Message}";
+            MigrationStatus = null;
+        }
+        finally
+        {
+            IsProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CheckMigrationStatus()
+    {
+        try
+        {
+            MigrationStatus = await MigrationService.GetMigrationStatusAsync();
+        }
+        catch (Exception ex)
+        {
+            // Migration status check failed - this is not critical
+            MigrationStatus = null;
+            System.Diagnostics.Debug.WriteLine($"Migration status check failed: {ex.Message}");
+        }
+    }
+
+    private async Task ApplyMigrations()
+    {
+        if (MigrationStatus?.HasPendingMigrations != true) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"Are you sure you want to apply {MigrationStatus.PendingMigrations.Count()} pending migrations? This operation cannot be undone.");
+        
+        if (!confirmed) return;
+
+        IsProcessing = true;
+        ConnectionStatus = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var result = await MigrationService.ApplyPendingMigrationsAsync();
+            
+            if (result.Success)
+            {
+                ConnectionStatus = $"✅ {result.Message}";
+                IsConnectionSuccessful = true;
+                await CheckMigrationStatus(); // Refresh migration status
+            }
+            else
+            {
+                ConnectionStatus = $"❌ Migration failed: {result.Message}";
+                IsConnectionSuccessful = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            IsConnectionSuccessful = false;
+            ConnectionStatus = $"Error applying migrations: {ex.Message}";
         }
         finally
         {

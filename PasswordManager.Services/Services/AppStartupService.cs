@@ -86,25 +86,14 @@ public class AppStartupService : IAppStartupService
                         return;
                     }
 
-                    // Only apply migrations for properly configured databases
+                    // Check for pending migrations but do not apply them automatically
                     var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
                     var pendingMigrationsApp = await dbContextApp.Database.GetPendingMigrationsAsync();
                     
                     if (pendingMigrations.Any() || pendingMigrationsApp.Any())
                     {
-                        _logger.LogInformation("Applying database migrations (API: {ApiMigrations}, App: {AppMigrations})", 
+                        _logger.LogInformation("Database has pending migrations (API: {ApiMigrations}, App: {AppMigrations}). User will need to apply them manually.", 
                             pendingMigrations.Count(), pendingMigrationsApp.Count());
-                        
-                        if (pendingMigrations.Any())
-                        {
-                            await dbContext.Database.MigrateAsync();
-                        }
-                        if (pendingMigrationsApp.Any())
-                        {
-                            await dbContextApp.Database.MigrateAsync();
-                        }
-                        
-                        _logger.LogInformation("Database migrations applied successfully");
                     }
                     else
                     {

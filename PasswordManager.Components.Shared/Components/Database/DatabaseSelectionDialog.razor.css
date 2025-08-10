@@ -262,6 +262,83 @@
     border: 1px solid #f5c6cb;
 }
 
+/* Migration Status */
+.migration-status {
+    margin: 20px 0;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.migration-status.warning {
+    background: #fff3cd;
+    color: #856404;
+    border-color: #ffeaa7;
+}
+
+.migration-status i {
+    font-size: 18px;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.migration-info {
+    flex: 1;
+}
+
+.migration-info strong {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 15px;
+}
+
+.migration-info p {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.migration-list {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 8px 0;
+    font-size: 12px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.migration-list li {
+    margin-bottom: 3px;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    padding: 4px 0;
+    color: #007acc;
+    font-size: 12px;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.btn-link:hover {
+    color: #005c99;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover:not(:disabled) {
+    background: #e0a800;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+}
+
 /* Dialog Actions */
 .dialog-actions {
     display: flex;
@@ -379,5 +456,15 @@
     
     .provider-card.selected {
         background: #3c4d63;
+    }
+    
+    .migration-status.warning {
+        background: #451a03;
+        color: #fed7aa;
+        border-color: #9a3412;
+    }
+    
+    .migration-list {
+        background: rgba(255, 255, 255, 0.1);
     }
 }
