@@ -49,7 +49,7 @@ else
             @if (InitializationTimeoutSeconds > 0)
             {
                 <p style="color: #ffc107; font-size: 0.9em; margin-top: 10px;">
-                    @if (InitializationTimeoutSeconds < 3)
+                    @if (InitializationTimeoutSeconds < 2)
                     {
                         <span>Loading configuration...</span>
                     }
@@ -111,54 +111,51 @@ else
         {
             Logger.LogDebug("Checking if database selection should be shown");
             
-            // Create a shorter timeout task to ensure we don't hang
-            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-            using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, _initializationCts?.Token ?? CancellationToken.None);
+            // Create a timeout task to ensure we don't hang - reduced timeout for faster startup
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
             
-            // Use task wrapping to avoid blocking on potentially slow operations
+            // Use safe defaults in case of any issues
             bool shouldShow = false;
             bool isFirstRun = true;
             
             try
             {
-                // Run these operations with timeout - make all operations truly async
-                var shouldShowTask = Task.Run(() => 
+                // Try to get these values quickly with timeout protection
+                var configurationTask = Task.Run(async () =>
                 {
-                    try 
-                    { 
-                        return DatabaseConfigService.ShouldShowDatabaseSelection(); 
+                    try
+                    {
+                        // Get both values in sequence with individual error handling
+                        var shouldShowResult = DatabaseConfigService.ShouldShowDatabaseSelection();
+                        var isFirstRunResult = await DatabaseConfigService.IsFirstRunAsync();
+                        
+                        return new { ShouldShow = shouldShowResult, IsFirstRun = isFirstRunResult };
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogWarning(ex, "Error in ShouldShowDatabaseSelection, defaulting to false");
-                        return false;
+                        Logger.LogWarning(ex, "Error getting database configuration, using safe defaults");
+                        return new { ShouldShow = false, IsFirstRun = false };
                     }
-                }, combinedCts.Token);
+                }, timeoutCts.Token);
                 
-                var isFirstRunTask = DatabaseConfigService.IsFirstRunAsync();
-                
-                // Wait for both tasks with timeout protection
-                var tasksToWait = new Task[] { shouldShowTask, isFirstRunTask };
-                await Task.WhenAll(tasksToWait).WaitAsync(TimeSpan.FromSeconds(3));
-                
-                shouldShow = await shouldShowTask;
-                isFirstRun = await isFirstRunTask;
+                // Wait with timeout
+                var result = await configurationTask.WaitAsync(TimeSpan.FromSeconds(2));
+                shouldShow = result.ShouldShow;
+                isFirstRun = result.IsFirstRun;
                 
                 Logger.LogDebug("Should show database selection: {ShouldShow}, Is first run: {IsFirstRun}", shouldShow, isFirstRun);
             }
             catch (TimeoutException)
             {
-                Logger.LogWarning("Database configuration checks timed out after 3 seconds, using safe defaults");
-                // Use safe defaults - don't show database selection, assume not first run
-                shouldShow = false;
-                isFirstRun = false;
+                Logger.LogWarning("Database configuration checks timed out after 2 seconds, using safe defaults");
             }
             catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
             {
-                Logger.LogWarning("Database configuration checks timed out, using safe defaults");
-                // Use safe defaults - don't show database selection, assume not first run
-                shouldShow = false;
-                isFirstRun = false;
+                Logger.LogWarning("Database configuration checks were cancelled, using safe defaults");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Unexpected error during database configuration check, using safe defaults");
             }
 
             ShowDatabaseSelection = shouldShow && isFirstRun;
@@ -207,10 +204,10 @@ else
         InitializationTimeoutSeconds++;
         InvokeAsync(StateHasChanged);
         
-        // If timeout reaches 5 seconds, force error state with option to continue
-        if (InitializationTimeoutSeconds >= 5 && !IsInitialized && !HasError)
+        // If timeout reaches 3 seconds, force error state with option to continue
+        if (InitializationTimeoutSeconds >= 3 && !IsInitialized && !HasError)
         {
-            Logger.LogError("Initialization timeout exceeded 5 seconds, forcing error state with recovery options");
+            Logger.LogError("Initialization timeout exceeded 3 seconds, forcing error state with recovery options");
             HandleInitializationError();
         }
     }
