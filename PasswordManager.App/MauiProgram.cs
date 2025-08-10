@@ -136,7 +136,7 @@ public static class MauiProgram
 				var databaseConfigService = scope.ServiceProvider.GetRequiredService<IDatabaseConfigurationService>();
 				
 				// This creates a minimal SQLite database without migrations to ensure app can start
-				await databaseConfigService.EnsureBasicSqliteDatabaseAsync();
+				databaseConfigService.EnsureBasicSqliteDatabaseAsync(scope.ServiceProvider).GetAwaiter().GetResult();
 
 				var startupService = scope.ServiceProvider.GetRequiredService<IAppStartupService>();
 

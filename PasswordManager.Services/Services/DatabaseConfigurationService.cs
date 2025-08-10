@@ -289,7 +289,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
     /// Ensures a basic SQLite database exists for the application to start, regardless of configuration status.
     /// This method creates a minimal database structure without running migrations.
     /// </summary>
-    public async Task EnsureBasicSqliteDatabaseAsync()
+    public async Task EnsureBasicSqliteDatabaseAsync(IServiceProvider serviceProvider)
     {
         try
         {
@@ -304,15 +304,41 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
                 _logger.LogInformation("Created database directory: {Directory}", directory);
             }
 
-            // Check if database file exists
+            // Check if database file exists and has proper schema
             if (!File.Exists(dbPath))
             {
-                _logger.LogInformation("Creating basic SQLite database at: {DbPath}", dbPath);
+                _logger.LogInformation("Creating basic SQLite database with schema at: {DbPath}", dbPath);
                 
-                // Create an empty database file
-                using var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbPath}");
-                await connection.OpenAsync();
-                _logger.LogInformation("Basic SQLite database created successfully");
+                // Create database with proper schema using Entity Framework
+                using var scope = serviceProvider.CreateScope();
+                try
+                {
+                    // Get the DbContext services and create the database schema
+                    var dbContext = scope.ServiceProvider.GetService<PasswordManager.DAL.PasswordManagerDbContext>();
+                    var dbContextApp = scope.ServiceProvider.GetService<PasswordManager.DAL.PasswordManagerDbContextApp>();
+                    
+                    if (dbContext != null)
+                    {
+                        await dbContext.Database.EnsureCreatedAsync();
+                        _logger.LogInformation("Created PasswordManagerDbContext database schema");
+                    }
+                    
+                    if (dbContextApp != null)
+                    {
+                        await dbContextApp.Database.EnsureCreatedAsync();
+                        _logger.LogInformation("Created PasswordManagerDbContextApp database schema");
+                    }
+                    
+                    _logger.LogInformation("Basic SQLite database with schema created successfully");
+                }
+                catch (Exception contextEx)
+                {
+                    _logger.LogWarning(contextEx, "Could not create database schema using Entity Framework, creating empty database file");
+                    // Fall back to creating an empty database file
+                    using var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbPath}");
+                    await connection.OpenAsync();
+                    _logger.LogInformation("Empty SQLite database created as fallback");
+                }
             }
             else
             {
