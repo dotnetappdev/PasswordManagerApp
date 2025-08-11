@@ -90,6 +90,7 @@ public class ImportViewModel : BaseViewModel
 
     public bool HasResults => ImportResults.Count > 0;
     public bool HasImportCompleted => ImportedItemsCount > 0 || SkippedItemsCount > 0 || ErrorItemsCount > 0;
+    public bool HasNoImport => !IsLoading && !HasImportCompleted && ImportResults.Count == 0;
 
     private void UpdateCanImport()
     {
@@ -187,6 +188,7 @@ public class ImportViewModel : BaseViewModel
         
         OnPropertyChanged(nameof(HasResults));
         OnPropertyChanged(nameof(HasImportCompleted));
+        OnPropertyChanged(nameof(HasNoImport));
     }
 }
 
