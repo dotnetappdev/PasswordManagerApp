@@ -1,0 +1,73 @@
+<Page x:Class="PasswordManager.WinUi.Views.LoginPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <StackPanel HorizontalAlignment="Center" 
+                    VerticalAlignment="Center" 
+                    Width="400" 
+                    Spacing="20">
+            
+            <!-- App Title -->
+            <TextBlock Text="Password Manager" 
+                      FontSize="32" 
+                      FontWeight="Bold" 
+                      HorizontalAlignment="Center" 
+                      Margin="0,0,0,20"/>
+            
+            <!-- Login Form -->
+            <StackPanel Spacing="15" 
+                       Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                       Padding="30" 
+                       CornerRadius="8">
+                
+                <TextBlock Text="Sign In" 
+                          FontSize="24" 
+                          FontWeight="SemiBold" 
+                          HorizontalAlignment="Center"/>
+                
+                <!-- Email Input -->
+                <TextBox x:Name="EmailTextBox"
+                        Header="Email"
+                        PlaceholderText="Enter your email"
+                        InputScope="EmailSmtpAddress"/>
+                
+                <!-- Password Input -->
+                <PasswordBox x:Name="PasswordBox"
+                            Header="Password"
+                            PlaceholderText="Enter your password"/>
+                
+                <!-- Error Message -->
+                <TextBlock x:Name="ErrorText"
+                          Foreground="Red"
+                          Visibility="Collapsed"
+                          TextWrapping="Wrap"/>
+                
+                <!-- Login Button -->
+                <Button x:Name="LoginButton"
+                       Content="Sign In"
+                       HorizontalAlignment="Stretch"
+                       Style="{StaticResource AccentButtonStyle}"
+                       Click="LoginButton_Click"/>
+                
+                <!-- Progress Ring -->
+                <ProgressRing x:Name="LoginProgressRing"
+                             IsActive="False"
+                             HorizontalAlignment="Center"
+                             Width="30"
+                             Height="30"/>
+                
+            </StackPanel>
+            
+            <!-- Additional Options -->
+            <StackPanel Orientation="Horizontal" 
+                       HorizontalAlignment="Center" 
+                       Spacing="10">
+                <HyperlinkButton Content="Create Account"/>
+                <TextBlock Text="|" VerticalAlignment="Center"/>
+                <HyperlinkButton Content="Forgot Password?"/>
+            </StackPanel>
+            
+        </StackPanel>
+    </Grid>
+</Page>

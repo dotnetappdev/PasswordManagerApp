@@ -1,0 +1,34 @@
+<Page x:Class="PasswordManager.WinUi.Views.CategoriesPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Padding="20">
+        <StackPanel>
+            <TextBlock Text="Categories" 
+                      FontSize="24" 
+                      FontWeight="Bold" 
+                      Margin="0,0,0,20"/>
+            
+            <GridView>
+                <GridViewItem>
+                    <StackPanel Width="150" Height="100" Background="LightBlue" Padding="10">
+                        <TextBlock Text="Work" FontWeight="Bold"/>
+                        <TextBlock Text="5 passwords"/>
+                    </StackPanel>
+                </GridViewItem>
+                <GridViewItem>
+                    <StackPanel Width="150" Height="100" Background="LightGreen" Padding="10">
+                        <TextBlock Text="Personal" FontWeight="Bold"/>
+                        <TextBlock Text="8 passwords"/>
+                    </StackPanel>
+                </GridViewItem>
+                <GridViewItem>
+                    <StackPanel Width="150" Height="100" Background="LightCoral" Padding="10">
+                        <TextBlock Text="Finance" FontWeight="Bold"/>
+                        <TextBlock Text="3 passwords"/>
+                    </StackPanel>
+                </GridViewItem>
+            </GridView>
+        </StackPanel>
+    </Grid>
+</Page>
