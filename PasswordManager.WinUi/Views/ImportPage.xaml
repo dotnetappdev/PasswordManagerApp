@@ -1,0 +1,88 @@
+<Page x:Class="PasswordManager.WinUi.Views.ImportPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Padding="20">
+        <StackPanel Spacing="20">
+            <TextBlock Text="Import Passwords" 
+                      FontSize="24" 
+                      FontWeight="Bold"/>
+            
+            <TextBlock Text="Choose the password manager you want to import from:" 
+                      FontSize="14"/>
+            
+            <!-- Import Options -->
+            <GridView>
+                <GridViewItem Padding="10">
+                    <StackPanel Width="200" Height="120" 
+                               Background="LightBlue" 
+                               Padding="20" 
+                               HorizontalAlignment="Center">
+                        <TextBlock Text="🔐" 
+                                  FontSize="32" 
+                                  HorizontalAlignment="Center"/>
+                        <TextBlock Text="1Password" 
+                                  FontSize="16" 
+                                  FontWeight="Bold" 
+                                  HorizontalAlignment="Center"/>
+                        <TextBlock Text="Import from 1Password vault" 
+                                  FontSize="12" 
+                                  HorizontalAlignment="Center" 
+                                  TextWrapping="Wrap"/>
+                    </StackPanel>
+                </GridViewItem>
+                
+                <GridViewItem Padding="10">
+                    <StackPanel Width="200" Height="120" 
+                               Background="LightGreen" 
+                               Padding="20" 
+                               HorizontalAlignment="Center">
+                        <TextBlock Text="🛡️" 
+                                  FontSize="32" 
+                                  HorizontalAlignment="Center"/>
+                        <TextBlock Text="Bitwarden" 
+                                  FontSize="16" 
+                                  FontWeight="Bold" 
+                                  HorizontalAlignment="Center"/>
+                        <TextBlock Text="Import from Bitwarden vault" 
+                                  FontSize="12" 
+                                  HorizontalAlignment="Center" 
+                                  TextWrapping="Wrap"/>
+                    </StackPanel>
+                </GridViewItem>
+                
+                <GridViewItem Padding="10">
+                    <StackPanel Width="200" Height="120" 
+                               Background="LightCoral" 
+                               Padding="20" 
+                               HorizontalAlignment="Center">
+                        <TextBlock Text="📁" 
+                                  FontSize="32" 
+                                  HorizontalAlignment="Center"/>
+                        <TextBlock Text="CSV File" 
+                                  FontSize="16" 
+                                  FontWeight="Bold" 
+                                  HorizontalAlignment="Center"/>
+                        <TextBlock Text="Import from CSV file" 
+                                  FontSize="12" 
+                                  HorizontalAlignment="Center" 
+                                  TextWrapping="Wrap"/>
+                    </StackPanel>
+                </GridViewItem>
+            </GridView>
+            
+            <!-- Import Status -->
+            <StackPanel Spacing="10" 
+                       Visibility="Collapsed" 
+                       x:Name="ImportStatusPanel">
+                <TextBlock Text="Import Progress" 
+                          FontSize="16" 
+                          FontWeight="SemiBold"/>
+                <ProgressBar IsIndeterminate="True"/>
+                <TextBlock Text="Importing passwords..." 
+                          FontSize="12"/>
+            </StackPanel>
+            
+        </StackPanel>
+    </Grid>
+</Page>
