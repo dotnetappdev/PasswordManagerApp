@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using System;
@@ -38,7 +39,12 @@ public sealed partial class MainWindow : Window
         if (args.SelectedItem is NavigationViewItem selectedItem)
         {
             string tag = selectedItem.Tag?.ToString() ?? "";
-            NavigateToPage(tag);
+            
+            // Only navigate if the item has a tag (leaf items, not parent categories)
+            if (!string.IsNullOrEmpty(tag))
+            {
+                NavigateToPage(tag);
+            }
         }
     }
 
@@ -51,6 +57,7 @@ public sealed partial class MainWindow : Window
             "Categories" => typeof(Views.CategoriesPage),
             "Import" => typeof(Views.ImportPage),
             "Settings" => typeof(Views.SettingsPage),
+            "About" => typeof(Views.DashboardPage), // Could create an About page later
             _ => typeof(Views.DashboardPage)
         };
 
@@ -75,12 +82,39 @@ public sealed partial class MainWindow : Window
         if (!string.IsNullOrEmpty(searchQuery))
         {
             // Navigate to passwords page with search query
-            // You would typically pass the search query as a parameter
             NavigateToPage("Passwords");
             
-            // TODO: Implement search functionality in the target page
-            // This could involve passing the search query to the page or using a search service
+            // Pass search query to the passwords page if it's currently loaded
+            if (ContentFrame.Content is Views.PasswordItemsPage passwordsPage)
+            {
+                // Find the search textbox in the passwords page and set the search text
+                var searchTextBox = FindChildControl<TextBox>(passwordsPage, "SearchTextBox");
+                if (searchTextBox != null)
+                {
+                    searchTextBox.Text = searchQuery;
+                }
+            }
         }
+    }
+
+    // Helper method to find child controls
+    private T? FindChildControl<T>(DependencyObject parent, string controlName) where T : FrameworkElement
+    {
+        if (parent == null) return null;
+
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            
+            if (child is T element && element.Name == controlName)
+                return element;
+            
+            var result = FindChildControl<T>(child, controlName);
+            if (result != null)
+                return result;
+        }
+        
+        return null;
     }
 
     // Public method to allow programmatic navigation (e.g., after login)
