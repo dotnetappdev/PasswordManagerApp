@@ -85,6 +85,40 @@ public class WinUiSecureStorageService : ISecureStorageService
         }
     }
 
+    public bool Remove(string key)
+    {
+        try
+        {
+            var filePath = GetSecureFilePath(key);
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+                return true;
+            }
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public void RemoveAll()
+    {
+        try
+        {
+            var directory = GetSecureStorageDirectory();
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+        catch
+        {
+            // Log error but don't throw
+        }
+    }
+
     private string GetSecureFilePath(string key)
     {
         var directory = GetSecureStorageDirectory();

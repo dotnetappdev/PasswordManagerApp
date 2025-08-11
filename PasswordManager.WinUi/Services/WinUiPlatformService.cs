@@ -50,9 +50,25 @@ public class WinUiPlatformService : IPlatformService
         return false;
     }
 
+    public bool IsMobilePlatform()
+    {
+        return false;
+    }
+
     public bool IsWeb()
     {
         return false;
+    }
+
+    public bool ShouldShowDatabaseSelection()
+    {
+        // WinUI is a desktop platform, so show database selection
+        return true;
+    }
+
+    public string GetDeviceIdentifier()
+    {
+        return $"{Environment.MachineName}-{Environment.OSVersion.Platform}-WinUI";
     }
 
     public async Task<bool> OpenUrlAsync(string url)
