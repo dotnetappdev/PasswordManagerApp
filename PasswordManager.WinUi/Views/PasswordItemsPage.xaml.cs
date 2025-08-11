@@ -8,7 +8,8 @@ namespace PasswordManager.WinUi.Views;
 
 public sealed partial class PasswordItemsPage : Page
 {
-    private readonly PasswordItemsViewModel _viewModel;
+    private PasswordItemsViewModel? _viewModel;
+    private IServiceProvider? _serviceProvider;
 
     public PasswordItemsPage()
     {
@@ -21,6 +22,7 @@ public sealed partial class PasswordItemsPage : Page
         
         if (e.Parameter is IServiceProvider serviceProvider)
         {
+            _serviceProvider = serviceProvider;
             _viewModel = new PasswordItemsViewModel(serviceProvider);
             this.DataContext = _viewModel;
         }
@@ -51,16 +53,29 @@ public sealed partial class PasswordItemsPage : Page
 
     private async void ShowAddPasswordDialog()
     {
-        var dialog = new ContentDialog
+        try
         {
-            Title = "Add Password Item",
-            Content = "Add password functionality would be implemented here",
-            CloseButtonText = "Cancel",
-            PrimaryButtonText = "Add",
-            XamlRoot = this.XamlRoot
-        };
-
-        await dialog.ShowAsync();
+            var dialog = new Dialogs.AddPasswordDialog(_serviceProvider);
+            dialog.XamlRoot = this.XamlRoot;
+            
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && dialog.Result != null)
+            {
+                // Refresh the list to show the new item
+                await _viewModel.RefreshAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = "Error",
+                Content = $"Error adding password: {ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await errorDialog.ShowAsync();
+        }
     }
 
     private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
@@ -92,16 +107,29 @@ public sealed partial class PasswordItemsPage : Page
         if (sender is MenuFlyoutItem menuItem && 
             menuItem.DataContext is PasswordItem item)
         {
-            var dialog = new ContentDialog
+            try
             {
-                Title = "Edit Password Item",
-                Content = $"Edit functionality for '{item.Title}' would be implemented here",
-                CloseButtonText = "Cancel",
-                PrimaryButtonText = "Save",
-                XamlRoot = this.XamlRoot
-            };
-
-            await dialog.ShowAsync();
+                var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, item);
+                dialog.XamlRoot = this.XamlRoot;
+                
+                var result = await dialog.ShowAsync();
+                if (result == ContentDialogResult.Primary && dialog.Result != null)
+                {
+                    // Refresh the list to show the updated item
+                    await _viewModel.RefreshAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = $"Error editing password: {ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+            }
         }
     }
 
