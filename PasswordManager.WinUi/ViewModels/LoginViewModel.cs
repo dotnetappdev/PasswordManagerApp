@@ -53,13 +53,13 @@ public class LoginViewModel : BaseViewModel
             // Attempt login
             var loginResult = await _authService.LoginAsync(Email, Password);
             
-            if (loginResult.IsSuccess)
+            if (loginResult)
             {
                 return true;
             }
             else
             {
-                ErrorMessage = loginResult.Message ?? "Login failed. Please try again.";
+                ErrorMessage = "Login failed. Please check your credentials and try again.";
                 return false;
             }
         }
@@ -91,13 +91,13 @@ public class LoginViewModel : BaseViewModel
             // Attempt registration
             var registerResult = await _authService.RegisterAsync(Email, Password);
             
-            if (registerResult.IsSuccess)
+            if (registerResult)
             {
                 return true;
             }
             else
             {
-                ErrorMessage = registerResult.Message ?? "Registration failed. Please try again.";
+                ErrorMessage = "Registration failed. Please try again.";
                 return false;
             }
         }

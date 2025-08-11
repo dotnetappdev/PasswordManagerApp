@@ -21,6 +21,11 @@ public interface IPlatformService
     string GetAppDataDirectory();
 
     /// <summary>
+    /// Gets the documents directory path
+    /// </summary>
+    string GetDocumentsDirectory();
+
+    /// <summary>
     /// Gets platform-specific device information for encryption key generation
     /// </summary>
     string GetDeviceIdentifier();

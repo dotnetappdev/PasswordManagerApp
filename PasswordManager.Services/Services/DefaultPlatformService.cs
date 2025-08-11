@@ -25,6 +25,11 @@ public class DefaultPlatformService : IPlatformService
             "PasswordManager");
     }
 
+    public string GetDocumentsDirectory()
+    {
+        return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+    }
+
     public string GetDeviceIdentifier()
     {
         return $"{Environment.MachineName}-{Environment.OSVersion}";

@@ -287,6 +287,65 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
+    /// Registers a new user with credentials
+    /// </summary>
+    public async Task<bool> RegisterAsync(string email, string password)
+    {
+        try
+        {
+            // Check if user already exists
+            var existingUser = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (existingUser != null)
+            {
+                _logger.LogWarning("Registration attempt with existing email: {Email}", email);
+                return false;
+            }
+
+            // Generate user GUID
+            var userId = Guid.NewGuid().ToString();
+            
+            // Generate user salt
+            var userSalt = _passwordCryptoService.GenerateUserSalt();
+            
+            // Create master password hash for authentication
+            var masterPasswordHash = _passwordCryptoService.CreateMasterPasswordHash(password, userSalt);
+            
+            // Create user record
+            var user = new ApplicationUser
+            {
+                Id = userId,
+                Email = email,
+                UserName = email,
+                UserSalt = Convert.ToBase64String(userSalt),
+                MasterPasswordHash = masterPasswordHash,
+                MasterPasswordHint = "",
+                CreatedAt = DateTime.UtcNow,
+                LastModified = DateTime.UtcNow,
+                IsActive = true
+            };
+
+            // Save to database
+            _dbContext.Users.Add(user);
+            await _dbContext.SaveChangesAsync();
+
+            // Store user salt securely in platform-specific storage
+            await StoreUserSaltSecurelyAsync(user.Id, userSalt);
+
+            // Auto-login after successful registration
+            _isAuthenticated = true;
+            _currentUser = user;
+
+            _logger.LogInformation("User registration completed for email: {Email}", email);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during registration for email: {Email}", email);
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Stores user salt securely in Windows Credential Manager or platform-specific secure storage
     /// </summary>
     private async Task StoreUserSaltSecurelyAsync(string userId, byte[] userSalt)

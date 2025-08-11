@@ -163,7 +163,7 @@ public class SettingsViewModel : BaseViewModel
             // This would integrate with the user profile service
             var result = await _userProfileService.ChangePasswordAsync(currentPassword, newPassword);
             
-            return result.IsSuccess;
+            return result.Success;
         }
         catch (Exception ex)
         {
