@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
+using PasswordManager.WinUi.ViewModels;
 
 namespace PasswordManager.WinUi.Views;
 
@@ -11,8 +12,7 @@ namespace PasswordManager.WinUi.Views;
 public sealed partial class LoginPage : Page
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly IAuthService _authService;
-    private readonly IVaultSessionService _vaultSessionService;
+    private LoginViewModel? _viewModel;
 
     public LoginPage()
     {
@@ -26,39 +26,84 @@ public sealed partial class LoginPage : Page
         if (e.Parameter is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
-            // _authService = serviceProvider.GetRequiredService<IAuthService>();
-            // _vaultSessionService = serviceProvider.GetRequiredService<IVaultSessionService>();
+            _viewModel = new LoginViewModel(serviceProvider);
+            this.DataContext = _viewModel;
         }
     }
 
     private async void LoginButton_Click(object sender, RoutedEventArgs e)
     {
+        if (_viewModel == null) return;
+
         try
         {
             LoginButton.IsEnabled = false;
             LoginProgressRing.IsActive = true;
             ErrorText.Visibility = Visibility.Collapsed;
 
-            var email = EmailTextBox.Text;
-            var password = PasswordBox.Password;
+            // Update ViewModel with current values
+            _viewModel.Email = EmailTextBox.Text;
+            _viewModel.Password = PasswordBox.Password;
 
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            // Attempt login
+            var success = await _viewModel.LoginAsync();
+
+            if (success)
             {
-                ErrorText.Text = "Please enter both email and password.";
-                ErrorText.Visibility = Visibility.Visible;
-                return;
+                // Navigate to main dashboard
+                Frame.Navigate(typeof(DashboardPage), _serviceProvider);
             }
-
-            // TODO: Implement authentication logic
-            // For now, simulate login
-            await Task.Delay(1000);
-
-            // Navigate to main dashboard
-            Frame.Navigate(typeof(DashboardPage), _serviceProvider);
+            else
+            {
+                // Show error message from ViewModel
+                ErrorText.Text = _viewModel.ErrorMessage;
+                ErrorText.Visibility = Visibility.Visible;
+            }
         }
         catch (Exception ex)
         {
             ErrorText.Text = $"Login failed: {ex.Message}";
+            ErrorText.Visibility = Visibility.Visible;
+        }
+        finally
+        {
+            LoginButton.IsEnabled = true;
+            LoginProgressRing.IsActive = false;
+        }
+    }
+
+    private async void CreateAccountButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null) return;
+
+        try
+        {
+            LoginButton.IsEnabled = false;
+            LoginProgressRing.IsActive = true;
+            ErrorText.Visibility = Visibility.Collapsed;
+
+            // Update ViewModel with current values
+            _viewModel.Email = EmailTextBox.Text;
+            _viewModel.Password = PasswordBox.Password;
+
+            // Attempt registration
+            var success = await _viewModel.RegisterAsync();
+
+            if (success)
+            {
+                // Navigate to main dashboard
+                Frame.Navigate(typeof(DashboardPage), _serviceProvider);
+            }
+            else
+            {
+                // Show error message from ViewModel
+                ErrorText.Text = _viewModel.ErrorMessage;
+                ErrorText.Visibility = Visibility.Visible;
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorText.Text = $"Registration failed: {ex.Message}";
             ErrorText.Visibility = Visibility.Visible;
         }
         finally

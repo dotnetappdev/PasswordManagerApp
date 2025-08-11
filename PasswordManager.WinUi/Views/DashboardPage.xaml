@@ -19,8 +19,7 @@
                             <TextBlock Text="Password Manager" 
                                       FontSize="18" 
                                       FontWeight="SemiBold"/>
-                            <TextBlock x:Name="WelcomeText" 
-                                      Text="Welcome!" 
+                            <TextBlock Text="{Binding WelcomeText}" 
                                       FontSize="12" 
                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                         </StackPanel>
@@ -61,6 +60,12 @@
                                    Style="{StaticResource AccentButtonStyle}"
                                    HorizontalAlignment="Stretch"
                                    Click="AddPasswordButton_Click"/>
+                            
+                            <Button x:Name="RefreshButton"
+                                   Content="🔄 Refresh"
+                                   HorizontalAlignment="Stretch"
+                                   HorizontalContentAlignment="Left"
+                                   Click="RefreshButton_Click"/>
                             
                             <Button x:Name="LogoutButton"
                                    Content="🚪 Logout"
@@ -121,8 +126,7 @@
                     <Border Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}" 
                            Height="24" 
                            VerticalAlignment="Bottom">
-                        <TextBlock x:Name="StatusText" 
-                                  Text="Ready" 
+                        <TextBlock Text="{Binding StatusText}" 
                                   FontSize="12" 
                                   Margin="16,4" 
                                   VerticalAlignment="Center"/>

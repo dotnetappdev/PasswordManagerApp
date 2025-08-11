@@ -1,17 +1,14 @@
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace PasswordManager.WinUi.ViewModels;
 
-public class PasswordItemsViewModel : INotifyPropertyChanged
+public class PasswordItemsViewModel : BaseViewModel
 {
     private readonly IPasswordItemService _passwordItemService;
     private string _searchText = string.Empty;
-    private bool _isLoading = false;
 
     public PasswordItemsViewModel(IServiceProvider serviceProvider)
     {
@@ -27,19 +24,18 @@ public class PasswordItemsViewModel : INotifyPropertyChanged
         get => _searchText;
         set
         {
-            _searchText = value;
-            OnPropertyChanged();
+            SetProperty(ref _searchText, value);
             _ = Task.Run(async () => await SearchPasswordItemsAsync());
         }
     }
 
     public bool IsLoading
     {
-        get => _isLoading;
+        get => base.IsLoading;
         set
         {
-            _isLoading = value;
-            OnPropertyChanged();
+            base.IsLoading = value;
+            OnPropertyChanged(nameof(HasNoItems));
         }
     }
 
@@ -117,12 +113,5 @@ public class PasswordItemsViewModel : INotifyPropertyChanged
         {
             System.Diagnostics.Debug.WriteLine($"Error deleting password item: {ex.Message}");
         }
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

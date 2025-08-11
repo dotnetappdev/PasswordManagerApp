@@ -63,7 +63,9 @@
             <StackPanel Orientation="Horizontal" 
                        HorizontalAlignment="Center" 
                        Spacing="10">
-                <HyperlinkButton Content="Create Account"/>
+                <HyperlinkButton x:Name="CreateAccountButton" 
+                                Content="Create Account"
+                                Click="CreateAccountButton_Click"/>
                 <TextBlock Text="|" VerticalAlignment="Center"/>
                 <HyperlinkButton Content="Forgot Password?"/>
             </StackPanel>

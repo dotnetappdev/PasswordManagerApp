@@ -3,32 +3,138 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Grid Padding="20">
-        <StackPanel>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="20" Margin="0,0,0,20">
             <TextBlock Text="Categories" 
                       FontSize="24" 
                       FontWeight="Bold" 
-                      Margin="0,0,0,20"/>
+                      VerticalAlignment="Center"/>
             
-            <GridView>
-                <GridViewItem>
-                    <StackPanel Width="150" Height="100" Background="LightBlue" Padding="10">
-                        <TextBlock Text="Work" FontWeight="Bold"/>
-                        <TextBlock Text="5 passwords"/>
-                    </StackPanel>
-                </GridViewItem>
-                <GridViewItem>
-                    <StackPanel Width="150" Height="100" Background="LightGreen" Padding="10">
-                        <TextBlock Text="Personal" FontWeight="Bold"/>
-                        <TextBlock Text="8 passwords"/>
-                    </StackPanel>
-                </GridViewItem>
-                <GridViewItem>
-                    <StackPanel Width="150" Height="100" Background="LightCoral" Padding="10">
-                        <TextBlock Text="Finance" FontWeight="Bold"/>
-                        <TextBlock Text="3 passwords"/>
-                    </StackPanel>
-                </GridViewItem>
-            </GridView>
+            <Button x:Name="AddCategoryButton"
+                   Content="➕ Add Category"
+                   Style="{StaticResource AccentButtonStyle}"
+                   Click="AddCategoryButton_Click"/>
+            
+            <Button x:Name="RefreshButton"
+                   Content="🔄 Refresh"
+                   Click="RefreshButton_Click"/>
         </StackPanel>
+        
+        <!-- Search -->
+        <TextBox x:Name="SearchTextBox"
+                Grid.Row="1"
+                PlaceholderText="🔍 Search categories..."
+                Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                Width="300"
+                HorizontalAlignment="Left"
+                Margin="0,0,0,20"/>
+        
+        <!-- Categories Grid -->
+        <Grid Grid.Row="2">
+            
+            <!-- Loading Indicator -->
+            <StackPanel HorizontalAlignment="Center" 
+                       VerticalAlignment="Center"
+                       Spacing="10"
+                       Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+                <ProgressRing IsActive="True" Width="40" Height="40"/>
+                <TextBlock Text="Loading categories..." FontSize="14"/>
+            </StackPanel>
+            
+            <!-- Categories GridView -->
+            <GridView x:Name="CategoriesGridView"
+                     ItemsSource="{Binding Categories}"
+                     Visibility="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                     SelectionMode="Single"
+                     SelectionChanged="CategoriesGridView_SelectionChanged">
+                
+                <GridView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                               CornerRadius="8" 
+                               Padding="16"
+                               Width="200"
+                               Height="120">
+                            
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                
+                                <!-- Category Name -->
+                                <TextBlock Grid.Row="0"
+                                          Text="{Binding Name}" 
+                                          FontWeight="Bold" 
+                                          FontSize="16"
+                                          TextTrimming="CharacterEllipsis"/>
+                                
+                                <!-- Description -->
+                                <TextBlock Grid.Row="1"
+                                          Text="{Binding Description}" 
+                                          FontSize="12" 
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                          TextWrapping="Wrap"
+                                          VerticalAlignment="Center"
+                                          Visibility="{Binding Description, Converter={StaticResource StringToVisibilityConverter}}"/>
+                                
+                                <!-- Actions -->
+                                <StackPanel Grid.Row="2" 
+                                           Orientation="Horizontal" 
+                                           HorizontalAlignment="Right"
+                                           Spacing="8">
+                                    <Button Content="✏️" 
+                                           Background="Transparent"
+                                           BorderThickness="0"
+                                           FontSize="14"
+                                           Click="EditCategoryButton_Click"/>
+                                    <Button Content="🗑️" 
+                                           Background="Transparent"
+                                           BorderThickness="0"
+                                           FontSize="14"
+                                           Click="DeleteCategoryButton_Click"/>
+                                </StackPanel>
+                            </Grid>
+                            
+                        </Border>
+                    </DataTemplate>
+                </GridView.ItemTemplate>
+                
+                <GridView.ItemContainerStyle>
+                    <Style TargetType="GridViewItem">
+                        <Setter Property="Margin" Value="8"/>
+                    </Style>
+                </GridView.ItemContainerStyle>
+                
+            </GridView>
+            
+            <!-- Empty State -->
+            <StackPanel HorizontalAlignment="Center" 
+                       VerticalAlignment="Center"
+                       Spacing="12"
+                       Visibility="{Binding HasNoCategories, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="📁" FontSize="48" HorizontalAlignment="Center"/>
+                <TextBlock Text="No categories found" 
+                          FontSize="18" 
+                          FontWeight="SemiBold"
+                          HorizontalAlignment="Center"/>
+                <TextBlock Text="Click 'Add Category' to create your first category" 
+                          FontSize="14" 
+                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                          HorizontalAlignment="Center"/>
+                <Button Content="➕ Add Your First Category" 
+                       Style="{StaticResource AccentButtonStyle}"
+                       Click="AddCategoryButton_Click"
+                       Margin="0,10,0,0"/>
+            </StackPanel>
+            
+        </Grid>
     </Grid>
 </Page>
