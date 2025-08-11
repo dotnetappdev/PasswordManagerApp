@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.WinUi.ViewModels;
+using System;
 
 namespace PasswordManager.WinUi.Views;
 
@@ -50,8 +51,16 @@ public sealed partial class LoginPage : Page
 
             if (success)
             {
-                // Navigate to main dashboard
-                Frame.Navigate(typeof(DashboardPage), _serviceProvider);
+                // Navigate to main dashboard via MainWindow
+                if (GetMainWindow() is MainWindow mainWindow)
+                {
+                    mainWindow.NavigateToHome();
+                }
+                else
+                {
+                    // Fallback navigation
+                    Frame.Navigate(typeof(DashboardPage), _serviceProvider);
+                }
             }
             else
             {
@@ -91,8 +100,16 @@ public sealed partial class LoginPage : Page
 
             if (success)
             {
-                // Navigate to main dashboard
-                Frame.Navigate(typeof(DashboardPage), _serviceProvider);
+                // Navigate to main dashboard via MainWindow
+                if (GetMainWindow() is MainWindow mainWindow)
+                {
+                    mainWindow.NavigateToHome();
+                }
+                else
+                {
+                    // Fallback navigation
+                    Frame.Navigate(typeof(DashboardPage), _serviceProvider);
+                }
             }
             else
             {
@@ -111,5 +128,24 @@ public sealed partial class LoginPage : Page
             LoginButton.IsEnabled = true;
             LoginProgressRing.IsActive = false;
         }
+    }
+
+    private Window? GetMainWindow()
+    {
+        // Walk up the visual tree to find the main window
+        var current = this.XamlRoot?.Content;
+        while (current != null)
+        {
+            if (current is MainWindow mainWindow)
+                return mainWindow;
+            
+            if (current is FrameworkElement element)
+                current = element.Parent;
+            else
+                break;
+        }
+
+        // Fallback: try to get from App
+        return App.Current?.MainWindow;
     }
 }

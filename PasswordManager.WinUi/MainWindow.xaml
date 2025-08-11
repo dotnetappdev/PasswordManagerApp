@@ -3,6 +3,110 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Grid>
-        <Frame x:Name="MainFrame" />
+        <NavigationView x:Name="MainNavigationView"
+                       IsBackButtonVisible="Collapsed"
+                       IsSettingsVisible="False"
+                       IsPaneToggleButtonVisible="True"
+                       OpenPaneLength="320"
+                       CompactModeThresholdWidth="640"
+                       ExpandedModeThresholdWidth="1028"
+                       SelectionChanged="MainNavigationView_SelectionChanged">
+            
+            <!-- Search Box -->
+            <NavigationView.AutoSuggestBox>
+                <AutoSuggestBox x:Name="SearchBox"
+                              QueryIcon="Find"
+                              PlaceholderText="Search passwords..."
+                              TextChanged="SearchBox_TextChanged"
+                              QuerySubmitted="SearchBox_QuerySubmitted"
+                              MinWidth="200"/>
+            </NavigationView.AutoSuggestBox>
+
+            <!-- Header Content -->
+            <NavigationView.Header>
+                <Grid Height="48" Margin="12,0">
+                    <TextBlock Text="Password Manager"
+                              FontSize="20"
+                              FontWeight="SemiBold"
+                              VerticalAlignment="Center"/>
+                </Grid>
+            </NavigationView.Header>
+            
+            <!-- Navigation Menu Items -->
+            <NavigationView.MenuItems>
+                <!-- Home -->
+                <NavigationViewItem x:Name="HomeNavItem" 
+                                  Content="Home" 
+                                  Icon="Home" 
+                                  Tag="Home"/>
+                
+                <NavigationViewItemSeparator/>
+                
+                <!-- Password Management Section -->
+                <NavigationViewItem Content="Password Management" IsExpanded="True">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE774;"/>
+                    </NavigationViewItem.Icon>
+                    <NavigationViewItem.MenuItems>
+                        <NavigationViewItem x:Name="PasswordsNavItem" 
+                                          Content="All Passwords" 
+                                          Tag="Passwords">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE192;"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        
+                        <NavigationViewItem x:Name="CategoriesNavItem" 
+                                          Content="Categories" 
+                                          Tag="Categories">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE8FD;"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                    </NavigationViewItem.MenuItems>
+                </NavigationViewItem>
+                
+                <NavigationViewItemSeparator/>
+                
+                <!-- Tools and Settings -->
+                <NavigationViewItem Content="Tools" IsExpanded="True">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE90F;"/>
+                    </NavigationViewItem.Icon>
+                    <NavigationViewItem.MenuItems>
+                        <NavigationViewItem x:Name="ImportNavItem" 
+                                          Content="Import Data" 
+                                          Tag="Import">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE8B5;"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        
+                        <NavigationViewItem x:Name="SettingsNavItem" 
+                                          Content="Settings" 
+                                          Tag="Settings">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE713;"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                    </NavigationViewItem.MenuItems>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+            
+            <!-- Footer Menu Items -->
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem x:Name="AboutNavItem" 
+                                  Content="About" 
+                                  Tag="About">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE946;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.FooterMenuItems>
+            
+            <!-- Content Frame -->
+            <Frame x:Name="ContentFrame" Margin="0"/>
+            
+        </NavigationView>
     </Grid>
 </Window>

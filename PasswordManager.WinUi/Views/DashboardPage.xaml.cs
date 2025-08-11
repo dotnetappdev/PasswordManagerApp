@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.WinUi.ViewModels;
+using System;
 
 namespace PasswordManager.WinUi.Views;
 
@@ -33,27 +34,28 @@ public sealed partial class DashboardPage : Page
 
     private void AddPasswordButton_Click(object sender, RoutedEventArgs e)
     {
-        ContentFrame.Navigate(typeof(PasswordItemsPage), _serviceProvider);
+        // Request navigation from the main window
+        RequestNavigation("Passwords");
     }
 
     private void ViewPasswordsButton_Click(object sender, RoutedEventArgs e)
     {
-        ContentFrame.Navigate(typeof(PasswordItemsPage), _serviceProvider);
+        RequestNavigation("Passwords");
     }
 
     private void CategoriesButton_Click(object sender, RoutedEventArgs e)
     {
-        ContentFrame.Navigate(typeof(CategoriesPage), _serviceProvider);
+        RequestNavigation("Categories");
     }
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
-        ContentFrame.Navigate(typeof(SettingsPage), _serviceProvider);
+        RequestNavigation("Settings");
     }
 
     private void ImportButton_Click(object sender, RoutedEventArgs e)
     {
-        ContentFrame.Navigate(typeof(ImportPage), _serviceProvider);
+        RequestNavigation("Import");
     }
 
     private async void LogoutButton_Click(object sender, RoutedEventArgs e)
@@ -63,15 +65,52 @@ public sealed partial class DashboardPage : Page
             await _viewModel.LogoutAsync();
         }
         
-        // Navigate back to login
-        Frame.Navigate(typeof(LoginPage), _serviceProvider);
+        // Request logout from main window
+        if (GetMainWindow() is MainWindow mainWindow)
+        {
+            mainWindow.HandleLogout();
+        }
     }
 
-    private async void RefreshButton_Click(object sender, RoutedEventArgs e)
+    private void RequestNavigation(string pageTag)
     {
-        if (_viewModel != null)
+        // Find the main window and request navigation
+        if (GetMainWindow() is MainWindow mainWindow)
         {
-            await _viewModel.RefreshAsync();
+            // Get the NavigationView from the main window and set the selected item
+            var navView = mainWindow.FindName("MainNavigationView") as Microsoft.UI.Xaml.Controls.NavigationView;
+            if (navView != null)
+            {
+                // Find the navigation item with the matching tag
+                foreach (var item in navView.MenuItems)
+                {
+                    if (item is Microsoft.UI.Xaml.Controls.NavigationViewItem navItem && 
+                        navItem.Tag?.ToString() == pageTag)
+                    {
+                        navView.SelectedItem = navItem;
+                        break;
+                    }
+                }
+            }
         }
+    }
+
+    private Window? GetMainWindow()
+    {
+        // Walk up the visual tree to find the main window
+        var current = this.XamlRoot?.Content;
+        while (current != null)
+        {
+            if (current is MainWindow mainWindow)
+                return mainWindow;
+            
+            if (current is FrameworkElement element)
+                current = element.Parent;
+            else
+                break;
+        }
+
+        // Fallback: try to get from App
+        return App.Current?.MainWindow;
     }
 }
