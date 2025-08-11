@@ -3,73 +3,132 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <ScrollViewer>
-        <StackPanel Padding="20" Spacing="20">
+        <StackPanel Padding="20" Spacing="24">
             <TextBlock Text="Settings" 
                       FontSize="24" 
                       FontWeight="Bold"/>
             
             <!-- Security Settings -->
-            <StackPanel Spacing="10">
-                <TextBlock Text="Security" 
+            <StackPanel Spacing="12">
+                <TextBlock Text="🔐 Security" 
                           FontSize="18" 
                           FontWeight="SemiBold"/>
                 
-                <ToggleSwitch Header="Enable Two-Factor Authentication" 
-                             IsOn="False"/>
+                <ToggleSwitch x:Name="TwoFactorToggle"
+                             Header="Enable Two-Factor Authentication" 
+                             IsOn="{Binding EnableTwoFactor, Mode=TwoWay}"
+                             Toggled="TwoFactorToggle_Toggled"/>
                 
-                <Button Content="Change Master Password" 
-                       HorizontalAlignment="Left"/>
+                <ToggleSwitch x:Name="PasscodeToggle"
+                             Header="Require Passcode on Startup" 
+                             IsOn="{Binding RequirePasscode, Mode=TwoWay}"
+                             Toggled="PasscodeToggle_Toggled"/>
                 
-                <Button Content="Setup Passcode" 
-                       HorizontalAlignment="Left"/>
+                <Button x:Name="ChangePasswordButton"
+                       Content="🔑 Change Master Password" 
+                       HorizontalAlignment="Left"
+                       Click="ChangePasswordButton_Click"/>
+                
+                <ComboBox x:Name="SessionTimeoutComboBox"
+                         Header="Session Timeout (minutes)"
+                         ItemsSource="{Binding TimeoutOptions}"
+                         SelectedItem="{Binding SessionTimeoutMinutes, Mode=TwoWay}"
+                         SelectionChanged="SessionTimeoutComboBox_SelectionChanged"
+                         MinWidth="150"/>
             </StackPanel>
             
             <!-- Database Settings -->
-            <StackPanel Spacing="10">
-                <TextBlock Text="Database" 
+            <StackPanel Spacing="12">
+                <TextBlock Text="🗄️ Database" 
                           FontSize="18" 
                           FontWeight="SemiBold"/>
                 
                 <ComboBox Header="Database Provider" 
-                         PlaceholderText="Select provider">
-                    <ComboBoxItem Content="SQLite"/>
+                         PlaceholderText="Select provider"
+                         MinWidth="200">
+                    <ComboBoxItem Content="SQLite" IsSelected="True"/>
                     <ComboBoxItem Content="SQL Server"/>
                     <ComboBoxItem Content="MySQL"/>
                     <ComboBoxItem Content="PostgreSQL"/>
                 </ComboBox>
                 
-                <Button Content="Configure Database Connection" 
-                       HorizontalAlignment="Left"/>
+                <Button Content="📊 Configure Database Connection" 
+                       HorizontalAlignment="Left"
+                       Click="ConfigureDatabaseButton_Click"/>
+                
+                <ToggleSwitch x:Name="SyncToggle"
+                             Header="Enable Cloud Sync" 
+                             IsOn="{Binding EnableSync, Mode=TwoWay}"
+                             Toggled="SyncToggle_Toggled"/>
             </StackPanel>
             
             <!-- Import/Export Settings -->
-            <StackPanel Spacing="10">
-                <TextBlock Text="Import/Export" 
+            <StackPanel Spacing="12">
+                <TextBlock Text="💾 Import/Export" 
                           FontSize="18" 
                           FontWeight="SemiBold"/>
                 
-                <Button Content="Export Passwords" 
-                       HorizontalAlignment="Left"/>
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Export Path:" Style="{StaticResource CaptionTextBlockStyle}"/>
+                    <TextBox Text="{Binding ExportPath, Mode=TwoWay}" 
+                            IsReadOnly="True" 
+                            MinWidth="300"/>
+                    <Button Content="📂 Choose Export Folder" 
+                           HorizontalAlignment="Left"
+                           Click="ChooseExportFolderButton_Click"/>
+                </StackPanel>
                 
-                <Button Content="Import from 1Password" 
-                       HorizontalAlignment="Left"/>
+                <Button x:Name="ExportButton"
+                       Content="📤 Export All Passwords" 
+                       HorizontalAlignment="Left"
+                       Click="ExportButton_Click"
+                       IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
                 
-                <Button Content="Import from Bitwarden" 
-                       HorizontalAlignment="Left"/>
+                <Button Content="📥 Go to Import Page" 
+                       HorizontalAlignment="Left"
+                       Click="ImportButton_Click"/>
             </StackPanel>
             
             <!-- Appearance Settings -->
-            <StackPanel Spacing="10">
-                <TextBlock Text="Appearance" 
+            <StackPanel Spacing="12">
+                <TextBlock Text="🎨 Appearance" 
                           FontSize="18" 
                           FontWeight="SemiBold"/>
                 
-                <ComboBox Header="Theme" 
-                         PlaceholderText="Select theme">
-                    <ComboBoxItem Content="Light"/>
-                    <ComboBoxItem Content="Dark"/>
-                    <ComboBoxItem Content="System Default"/>
-                </ComboBox>
+                <ComboBox x:Name="ThemeComboBox"
+                         Header="Theme" 
+                         ItemsSource="{Binding AvailableThemes}"
+                         SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
+                         SelectionChanged="ThemeComboBox_SelectionChanged"
+                         MinWidth="150"/>
+            </StackPanel>
+            
+            <!-- Data Management -->
+            <StackPanel Spacing="12">
+                <TextBlock Text="🗑️ Data Management" 
+                          FontSize="18" 
+                          FontWeight="SemiBold"/>
+                
+                <Button x:Name="ClearDataButton"
+                       Content="⚠️ Clear All Data" 
+                       Background="Red"
+                       Foreground="White"
+                       HorizontalAlignment="Left"
+                       Click="ClearDataButton_Click"/>
+                
+                <TextBlock Text="This will permanently delete all your stored passwords and settings." 
+                          FontSize="12" 
+                          Foreground="Red"
+                          TextWrapping="Wrap"
+                          MaxWidth="400"/>
+            </StackPanel>
+            
+            <!-- Loading Indicator -->
+            <StackPanel HorizontalAlignment="Center" 
+                       Spacing="10"
+                       Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+                <ProgressRing IsActive="True" Width="30" Height="30"/>
+                <TextBlock Text="Saving settings..." FontSize="14"/>
             </StackPanel>
             
         </StackPanel>

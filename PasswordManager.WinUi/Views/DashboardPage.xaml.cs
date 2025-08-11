@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
+using PasswordManager.WinUi.ViewModels;
 
 namespace PasswordManager.WinUi.Views;
 
@@ -11,7 +12,7 @@ namespace PasswordManager.WinUi.Views;
 public sealed partial class DashboardPage : Page
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly IPasswordItemService _passwordItemService;
+    private DashboardViewModel? _viewModel;
 
     public DashboardPage()
     {
@@ -25,22 +26,8 @@ public sealed partial class DashboardPage : Page
         if (e.Parameter is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
-            // _passwordItemService = serviceProvider.GetRequiredService<IPasswordItemService>();
-            LoadDashboard();
-        }
-    }
-
-    private async void LoadDashboard()
-    {
-        try
-        {
-            // TODO: Load password items and populate UI
-            WelcomeText.Text = "Welcome to Password Manager!";
-            StatusText.Text = "Ready";
-        }
-        catch (Exception ex)
-        {
-            StatusText.Text = $"Error: {ex.Message}";
+            _viewModel = new DashboardViewModel(serviceProvider);
+            this.DataContext = _viewModel;
         }
     }
 
@@ -69,9 +56,22 @@ public sealed partial class DashboardPage : Page
         ContentFrame.Navigate(typeof(ImportPage), _serviceProvider);
     }
 
-    private void LogoutButton_Click(object sender, RoutedEventArgs e)
+    private async void LogoutButton_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement logout logic
+        if (_viewModel != null)
+        {
+            await _viewModel.LogoutAsync();
+        }
+        
+        // Navigate back to login
         Frame.Navigate(typeof(LoginPage), _serviceProvider);
+    }
+
+    private async void RefreshButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
+        {
+            await _viewModel.RefreshAsync();
+        }
     }
 }

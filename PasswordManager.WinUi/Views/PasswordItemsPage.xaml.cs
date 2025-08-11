@@ -144,14 +144,22 @@ public sealed partial class PasswordItemsPage : Page
 
     private async void ShowPasswordDetails(PasswordItem item)
     {
-        var dialog = new ContentDialog
+        try
         {
-            Title = item.Title,
-            Content = $"Details for '{item.Title}' would be shown here.\n\nType: {item.Type}\nCreated: {item.CreatedAt:g}\nModified: {item.LastModified:g}",
-            CloseButtonText = "Close",
-            XamlRoot = this.XamlRoot
-        };
-
-        await dialog.ShowAsync();
+            var dialog = new Dialogs.PasswordDetailsDialog(_serviceProvider, item);
+            dialog.XamlRoot = this.XamlRoot;
+            await dialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = "Error",
+                Content = $"Error showing password details: {ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await errorDialog.ShowAsync();
+        }
     }
 }

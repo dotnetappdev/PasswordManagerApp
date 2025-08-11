@@ -3,86 +3,234 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Grid Padding="20">
-        <StackPanel Spacing="20">
-            <TextBlock Text="Import Passwords" 
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Spacing="12" Margin="0,0,0,20">
+            <TextBlock Text="📥 Import Passwords" 
                       FontSize="24" 
                       FontWeight="Bold"/>
             
-            <TextBlock Text="Choose the password manager you want to import from:" 
-                      FontSize="14"/>
+            <TextBlock Text="Choose the source and file to import passwords from:" 
+                      FontSize="14"
+                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+        </StackPanel>
+        
+        <!-- Import Configuration -->
+        <StackPanel Grid.Row="1" Spacing="16" Margin="0,0,0,20">
             
-            <!-- Import Options -->
-            <GridView>
-                <GridViewItem Padding="10">
-                    <StackPanel Width="200" Height="120" 
-                               Background="LightBlue" 
-                               Padding="20" 
-                               HorizontalAlignment="Center">
-                        <TextBlock Text="🔐" 
-                                  FontSize="32" 
-                                  HorizontalAlignment="Center"/>
-                        <TextBlock Text="1Password" 
-                                  FontSize="16" 
-                                  FontWeight="Bold" 
-                                  HorizontalAlignment="Center"/>
-                        <TextBlock Text="Import from 1Password vault" 
-                                  FontSize="12" 
-                                  HorizontalAlignment="Center" 
-                                  TextWrapping="Wrap"/>
-                    </StackPanel>
-                </GridViewItem>
-                
-                <GridViewItem Padding="10">
-                    <StackPanel Width="200" Height="120" 
-                               Background="LightGreen" 
-                               Padding="20" 
-                               HorizontalAlignment="Center">
-                        <TextBlock Text="🛡️" 
-                                  FontSize="32" 
-                                  HorizontalAlignment="Center"/>
-                        <TextBlock Text="Bitwarden" 
-                                  FontSize="16" 
-                                  FontWeight="Bold" 
-                                  HorizontalAlignment="Center"/>
-                        <TextBlock Text="Import from Bitwarden vault" 
-                                  FontSize="12" 
-                                  HorizontalAlignment="Center" 
-                                  TextWrapping="Wrap"/>
-                    </StackPanel>
-                </GridViewItem>
-                
-                <GridViewItem Padding="10">
-                    <StackPanel Width="200" Height="120" 
-                               Background="LightCoral" 
-                               Padding="20" 
-                               HorizontalAlignment="Center">
-                        <TextBlock Text="📁" 
-                                  FontSize="32" 
-                                  HorizontalAlignment="Center"/>
-                        <TextBlock Text="CSV File" 
-                                  FontSize="16" 
-                                  FontWeight="Bold" 
-                                  HorizontalAlignment="Center"/>
-                        <TextBlock Text="Import from CSV file" 
-                                  FontSize="12" 
-                                  HorizontalAlignment="Center" 
-                                  TextWrapping="Wrap"/>
-                    </StackPanel>
-                </GridViewItem>
-            </GridView>
+            <!-- Import Type Selection -->
+            <ComboBox x:Name="ImportTypeComboBox"
+                     Header="Import Source"
+                     ItemsSource="{Binding AvailableImportTypes}"
+                     SelectedItem="{Binding SelectedImportType, Mode=TwoWay}"
+                     MinWidth="200"
+                     SelectionChanged="ImportTypeComboBox_SelectionChanged"/>
             
-            <!-- Import Status -->
-            <StackPanel Spacing="10" 
-                       Visibility="Collapsed" 
-                       x:Name="ImportStatusPanel">
-                <TextBlock Text="Import Progress" 
-                          FontSize="16" 
-                          FontWeight="SemiBold"/>
-                <ProgressBar IsIndeterminate="True"/>
-                <TextBlock Text="Importing passwords..." 
-                          FontSize="12"/>
+            <!-- File Selection -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Select File:" Style="{StaticResource CaptionTextBlockStyle}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBox Grid.Column="0"
+                            Text="{Binding SelectedFilePath, Mode=TwoWay}"
+                            PlaceholderText="Choose a file to import..."
+                            IsReadOnly="True"
+                            Margin="0,0,8,0"/>
+                    
+                    <Button Grid.Column="1"
+                           x:Name="BrowseFileButton"
+                           Content="📂 Browse"
+                           Click="BrowseFileButton_Click"/>
+                </Grid>
             </StackPanel>
             
+            <!-- Import Button -->
+            <Button x:Name="ImportButton"
+                   Content="🚀 Start Import"
+                   Style="{StaticResource AccentButtonStyle}"
+                   IsEnabled="{Binding CanImport}"
+                   Click="ImportButton_Click"/>
+            
         </StackPanel>
+        
+        <!-- Import Results -->
+        <Grid Grid.Row="2">
+            
+            <!-- Loading State -->
+            <StackPanel HorizontalAlignment="Center" 
+                       VerticalAlignment="Center"
+                       Spacing="12"
+                       Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+                <ProgressRing IsActive="True" Width="40" Height="40"/>
+                <TextBlock Text="{Binding ImportStatus}" 
+                          FontSize="14"
+                          HorizontalAlignment="Center"/>
+            </StackPanel>
+            
+            <!-- Import Results Panel -->
+            <StackPanel Visibility="{Binding HasImportCompleted, Converter={StaticResource BoolToVisibilityConverter}}"
+                       Spacing="16">
+                
+                <!-- Summary -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="📊 Import Summary" 
+                              FontSize="18" 
+                              FontWeight="SemiBold"/>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <Border Grid.Column="0" 
+                               Background="Green" 
+                               CornerRadius="4" 
+                               Padding="12,8" 
+                               Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="✅" FontSize="16"/>
+                                <TextBlock Text="{Binding ImportedItemsCount}" 
+                                          Foreground="White" 
+                                          FontWeight="Bold"/>
+                                <TextBlock Text="Imported" 
+                                          Foreground="White"/>
+                            </StackPanel>
+                        </Border>
+                        
+                        <Border Grid.Column="1" 
+                               Background="Orange" 
+                               CornerRadius="4" 
+                               Padding="12,8" 
+                               Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="⚠️" FontSize="16"/>
+                                <TextBlock Text="{Binding SkippedItemsCount}" 
+                                          Foreground="White" 
+                                          FontWeight="Bold"/>
+                                <TextBlock Text="Skipped" 
+                                          Foreground="White"/>
+                            </StackPanel>
+                        </Border>
+                        
+                        <Border Grid.Column="2" 
+                               Background="Red" 
+                               CornerRadius="4" 
+                               Padding="12,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="❌" FontSize="16"/>
+                                <TextBlock Text="{Binding ErrorItemsCount}" 
+                                          Foreground="White" 
+                                          FontWeight="Bold"/>
+                                <TextBlock Text="Errors" 
+                                          Foreground="White"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+                
+                <!-- Detailed Results -->
+                <StackPanel Spacing="8" 
+                           Visibility="{Binding HasResults, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="📋 Import Details" 
+                                  FontSize="16" 
+                                  FontWeight="SemiBold"/>
+                        <Button x:Name="ClearResultsButton"
+                               Content="🗑️ Clear Results"
+                               Background="Transparent"
+                               BorderThickness="0"
+                               Click="ClearResultsButton_Click"/>
+                    </StackPanel>
+                    
+                    <ListView ItemsSource="{Binding ImportResults}"
+                             MaxHeight="300"
+                             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                             CornerRadius="8">
+                        
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="12,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- Status Icon -->
+                                    <TextBlock Grid.Column="0"
+                                              Text="{Binding Status, Converter={StaticResource StatusToIconConverter}}"
+                                              FontSize="16"
+                                              VerticalAlignment="Center"
+                                              Margin="0,0,12,0"/>
+                                    
+                                    <!-- Item Info -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Title}" 
+                                                  FontWeight="SemiBold"
+                                                  TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Message}" 
+                                                  FontSize="12" 
+                                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                  TextTrimming="CharacterEllipsis"
+                                                  Visibility="{Binding Message, Converter={StaticResource StringToVisibilityConverter}}"/>
+                                    </StackPanel>
+                                    
+                                    <!-- Item Type -->
+                                    <TextBlock Grid.Column="2"
+                                              Text="{Binding ItemType}" 
+                                              FontSize="12"
+                                              Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                              VerticalAlignment="Center"
+                                              Margin="8,0"/>
+                                    
+                                    <!-- Status -->
+                                    <Border Grid.Column="3"
+                                           Background="{Binding Status, Converter={StaticResource StatusToColorConverter}}"
+                                           CornerRadius="12"
+                                           Padding="8,4">
+                                        <TextBlock Text="{Binding Status}" 
+                                                  FontSize="10"
+                                                  Foreground="White"
+                                                  FontWeight="Bold"/>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                        
+                    </ListView>
+                </StackPanel>
+                
+            </StackPanel>
+            
+            <!-- Empty State -->
+            <StackPanel HorizontalAlignment="Center" 
+                       VerticalAlignment="Center"
+                       Spacing="12"
+                       Visibility="{Binding HasNoImport, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="📥" FontSize="48" HorizontalAlignment="Center"/>
+                <TextBlock Text="Ready to import" 
+                          FontSize="18" 
+                          FontWeight="SemiBold"
+                          HorizontalAlignment="Center"/>
+                <TextBlock Text="Select an import source and file to get started" 
+                          FontSize="14" 
+                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                          HorizontalAlignment="Center"/>
+            </StackPanel>
+            
+        </Grid>
+        
     </Grid>
 </Page>
