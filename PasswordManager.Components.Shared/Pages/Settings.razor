@@ -216,6 +216,59 @@
                     </MudItem>
                 </MudGrid>
             }
+
+            <!-- Database Configuration Actions -->
+            <MudGrid Style="margin-top: 16px;">
+                <MudItem xs="12" md="6">
+                    <MudButton Variant="Variant.Outlined" 
+                              Color="Color.Primary" 
+                              OnClick="OpenDatabaseConfiguration"
+                              FullWidth="true">
+                        <MudText>Configure Database Connection</MudText>
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudButton Variant="Variant.Outlined" 
+                              Color="Color.Secondary" 
+                              OnClick="OpenMigrationManagement"
+                              FullWidth="true">
+                        <MudText>Manage Migrations</MudText>
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <!-- Sync API Settings -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Sync API Settings</MudText>
+            <MudText Typo="Typo.body2" Style="color: #cccccc; margin-bottom: 16px;">
+                Configure connection to Password Manager API for synchronization across devices
+            </MudText>
+            
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudTextField T="string" @bind-value="syncApiUrl" 
+                                 Label="API URL" 
+                                 Variant="Variant.Outlined"
+                                 Style="background-color: #2a2a2a;"
+                                 HelperText="Base URL of the Password Manager API" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField T="string" @bind-value="syncUsername" 
+                                 Label="Username" 
+                                 Variant="Variant.Outlined"
+                                 Style="background-color: #2a2a2a;"
+                                 HelperText="Username for API authentication" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField T="string" @bind-value="syncPassword" 
+                                 Label="Password" 
+                                 Variant="Variant.Outlined"
+                                 InputType="InputType.Password"
+                                 Style="background-color: #2a2a2a;"
+                                 HelperText="Password for API authentication" />
+                </MudItem>
+            </MudGrid>
         </MudPaper>
 
         <!-- Save Button -->
@@ -251,6 +304,9 @@
     private string supabaseApiKey = "";
     private string apiUrl = "";
     private string apiKey = "";
+    private string syncApiUrl = "";
+    private string syncUsername = "";
+    private string syncPassword = "";
     private bool isGenerating = false;
     private bool isSaving = false;
 
@@ -298,12 +354,35 @@
             apiUrl = dbConfig.ApiUrl ?? "";
             apiKey = dbConfig.ApiKey ?? "";
             
+            // Load sync API settings from the main config
+            syncApiUrl = dbConfig.ApiUrl ?? "";
+            // Don't load password/key for security reasons - user needs to re-enter
+            
             // Load provider-specific settings
             switch (dbConfig.Provider)
             {
                 case DatabaseProvider.Supabase when dbConfig.Supabase != null:
                     supabaseUrl = dbConfig.Supabase.Url;
                     supabaseApiKey = dbConfig.Supabase.ServiceKey;
+                    // Override sync settings with provider-specific if available
+                    if (!string.IsNullOrEmpty(dbConfig.Supabase.ApiUrl))
+                        syncApiUrl = dbConfig.Supabase.ApiUrl;
+                    break;
+                case DatabaseProvider.SqlServer when dbConfig.SqlServer != null:
+                    if (!string.IsNullOrEmpty(dbConfig.SqlServer.ApiUrl))
+                        syncApiUrl = dbConfig.SqlServer.ApiUrl;
+                    break;
+                case DatabaseProvider.MySql when dbConfig.MySql != null:
+                    if (!string.IsNullOrEmpty(dbConfig.MySql.ApiUrl))
+                        syncApiUrl = dbConfig.MySql.ApiUrl;
+                    break;
+                case DatabaseProvider.PostgreSql when dbConfig.PostgreSql != null:
+                    if (!string.IsNullOrEmpty(dbConfig.PostgreSql.ApiUrl))
+                        syncApiUrl = dbConfig.PostgreSql.ApiUrl;
+                    break;
+                case DatabaseProvider.Sqlite when dbConfig.Sqlite != null:
+                    if (!string.IsNullOrEmpty(dbConfig.Sqlite.ApiUrl))
+                        syncApiUrl = dbConfig.Sqlite.ApiUrl;
                     break;
             }
         }
@@ -420,9 +499,9 @@
             // Save database and API configuration
             var dbConfig = await DatabaseConfigurationService.GetConfigurationAsync();
             
-            // Update API configuration
-            dbConfig.ApiUrl = apiUrl;
-            dbConfig.ApiKey = apiKey;
+            // Update main API configuration (for global sync settings)
+            dbConfig.ApiUrl = !string.IsNullOrEmpty(syncApiUrl) ? syncApiUrl : apiUrl;
+            dbConfig.ApiKey = !string.IsNullOrEmpty(syncPassword) ? syncPassword : apiKey;
             
             // Update database provider if changed
             if (Enum.TryParse<DatabaseProvider>(databaseProvider, out var provider))
@@ -438,8 +517,36 @@
                         dbConfig.Supabase = new SupabaseConfig();
                     dbConfig.Supabase.Url = supabaseUrl;
                     dbConfig.Supabase.ServiceKey = supabaseApiKey;
-                    dbConfig.Supabase.ApiUrl = apiUrl;
-                    dbConfig.Supabase.ApiKey = apiKey;
+                    dbConfig.Supabase.ApiUrl = !string.IsNullOrEmpty(syncApiUrl) ? syncApiUrl : apiUrl;
+                    dbConfig.Supabase.ApiKey = !string.IsNullOrEmpty(syncPassword) ? syncPassword : apiKey;
+                    break;
+                case DatabaseProvider.SqlServer:
+                    if (dbConfig.SqlServer != null)
+                    {
+                        dbConfig.SqlServer.ApiUrl = !string.IsNullOrEmpty(syncApiUrl) ? syncApiUrl : apiUrl;
+                        dbConfig.SqlServer.ApiKey = !string.IsNullOrEmpty(syncPassword) ? syncPassword : apiKey;
+                    }
+                    break;
+                case DatabaseProvider.MySql:
+                    if (dbConfig.MySql != null)
+                    {
+                        dbConfig.MySql.ApiUrl = !string.IsNullOrEmpty(syncApiUrl) ? syncApiUrl : apiUrl;
+                        dbConfig.MySql.ApiKey = !string.IsNullOrEmpty(syncPassword) ? syncPassword : apiKey;
+                    }
+                    break;
+                case DatabaseProvider.PostgreSql:
+                    if (dbConfig.PostgreSql != null)
+                    {
+                        dbConfig.PostgreSql.ApiUrl = !string.IsNullOrEmpty(syncApiUrl) ? syncApiUrl : apiUrl;
+                        dbConfig.PostgreSql.ApiKey = !string.IsNullOrEmpty(syncPassword) ? syncPassword : apiKey;
+                    }
+                    break;
+                case DatabaseProvider.Sqlite:
+                    if (dbConfig.Sqlite != null)
+                    {
+                        dbConfig.Sqlite.ApiUrl = !string.IsNullOrEmpty(syncApiUrl) ? syncApiUrl : apiUrl;
+                        dbConfig.Sqlite.ApiKey = !string.IsNullOrEmpty(syncPassword) ? syncPassword : apiKey;
+                    }
                     break;
             }
             
@@ -455,5 +562,17 @@
         {
             isSaving = false;
         }
+    }
+
+    private void OpenDatabaseConfiguration()
+    {
+        // Navigate to migration management page which includes database configuration
+        Navigation.NavigateTo("/admin/migrations");
+    }
+
+    private void OpenMigrationManagement()
+    {
+        // Navigate to migration management page
+        Navigation.NavigateTo("/admin/migrations");
     }
 }

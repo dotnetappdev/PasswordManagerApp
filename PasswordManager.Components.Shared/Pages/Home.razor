@@ -1402,6 +1402,13 @@ private void OnLengthChanged(ChangeEventArgs e)
 
     protected override async Task OnInitializedAsync()
     {
+        // Check if user is authenticated, if not redirect to login
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            Navigation.NavigateTo("/login", replace: true);
+            return;
+        }
+
         await LoadData();
         await LoadCategories();
         await LoadCollections();

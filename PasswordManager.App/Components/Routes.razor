@@ -1,49 +1,15 @@
-﻿@using PasswordManager.Components.Shared.Components.Database
-
-<DatabaseStartupWrapper OnConfigurationComplete="OnDatabaseConfigured">
-    <Router AppAssembly="@typeof(MauiProgram).Assembly" 
-            AdditionalAssemblies="new[] { typeof(PasswordManager.Components.Shared._Imports).Assembly }">
-        <Found Context="routeData">
-            <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
-            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-        </Found>
-        <NotFound>
-            <PageTitle>Not Found</PageTitle>
-            @{
-                NavigationManager.NavigateTo("/login", replace: true);
-            }
-        </NotFound>
-    </Router>
-</DatabaseStartupWrapper>
-
-@code {
-    [Inject] 
-    private NavigationManager NavigationManager { get; set; } = default!;
-    
-    private bool isDatabaseConfigured = false;
-    
-    protected override void OnInitialized()
-    {
-        // Initial navigation will be handled after database configuration
-    }
-    
-    private void OnDatabaseConfigured()
-    {
-        try
-        {
-            isDatabaseConfigured = true;
-            
-            // Navigate to login page as the default route
-            NavigationManager.NavigateTo("/login", replace: true);
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            // Log error but don't let it break the app
-            System.Diagnostics.Debug.WriteLine($"Error during navigation after database configuration: {ex.Message}");
-            StateHasChanged();
-        }
-    }
-}
+﻿<Router AppAssembly="@typeof(MauiProgram).Assembly" 
+        AdditionalAssemblies="new[] { typeof(PasswordManager.Components.Shared._Imports).Assembly }">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not Found</PageTitle>
+        <LayoutView Layout="@typeof(Layout.MainLayout)">
+            <p role="alert">Sorry, there's nothing at this address.</p>
+        </LayoutView>
+    </NotFound>
+</Router>
 
 
