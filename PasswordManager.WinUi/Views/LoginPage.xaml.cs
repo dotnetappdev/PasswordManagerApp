@@ -42,7 +42,7 @@ public sealed partial class LoginPage : Page
             ErrorText.Visibility = Visibility.Collapsed;
 
             // Update ViewModel with current values
-            _viewModel.Email = EmailTextBox.Text;
+            _viewModel.Username = UsernameTextBox.Text;
             _viewModel.Password = PasswordBox.Password;
 
             // Attempt login
@@ -91,7 +91,7 @@ public sealed partial class LoginPage : Page
             ErrorText.Visibility = Visibility.Collapsed;
 
             // Update ViewModel with current values
-            _viewModel.Email = EmailTextBox.Text;
+            _viewModel.Username = UsernameTextBox.Text;
             _viewModel.Password = PasswordBox.Password;
 
             // Attempt registration

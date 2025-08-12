@@ -7,7 +7,7 @@ public class LoginViewModel : BaseViewModel
 {
     private readonly IAuthService _authService;
     private readonly IVaultSessionService _vaultSessionService;
-    private string _email = string.Empty;
+    private string _username = string.Empty;
     private string _password = string.Empty;
     private string _errorMessage = string.Empty;
 
@@ -17,10 +17,10 @@ public class LoginViewModel : BaseViewModel
         _vaultSessionService = serviceProvider.GetRequiredService<IVaultSessionService>();
     }
 
-    public string Email
+    public string Username
     {
-        get => _email;
-        set => SetProperty(ref _email, value);
+        get => _username;
+        set => SetProperty(ref _username, value);
     }
 
     public string Password
@@ -44,14 +44,14 @@ public class LoginViewModel : BaseViewModel
             IsLoading = true;
             ErrorMessage = string.Empty;
 
-            if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
+            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
             {
-                ErrorMessage = "Please enter both email and password.";
+                ErrorMessage = "Please enter both username and password.";
                 return false;
             }
 
             // Attempt login
-            var loginResult = await _authService.LoginAsync(Email, Password);
+            var loginResult = await _authService.LoginAsync(Username, Password);
             
             if (loginResult)
             {
@@ -82,14 +82,14 @@ public class LoginViewModel : BaseViewModel
             IsLoading = true;
             ErrorMessage = string.Empty;
 
-            if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
+            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
             {
-                ErrorMessage = "Please enter both email and password.";
+                ErrorMessage = "Please enter both username and password.";
                 return false;
             }
 
             // Attempt registration
-            var registerResult = await _authService.RegisterAsync(Email, Password);
+            var registerResult = await _authService.RegisterAsync(Username, Password);
             
             if (registerResult)
             {
