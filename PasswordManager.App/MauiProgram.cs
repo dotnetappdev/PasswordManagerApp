@@ -3,6 +3,7 @@ using PasswordManager.DAL;
 using PasswordManager.Services;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
+using PasswordManager.Services.Extensions;
 using PasswordManager.Imports.Interfaces;
 using PasswordManager.Imports.Services;
 using Microsoft.Extensions.Configuration;
@@ -103,7 +104,8 @@ public static class MauiProgram
 		builder.Services.AddScoped<ITagService, TagService>();
 		builder.Services.AddScoped<ICategoryInterface, CategoryService>();
 		builder.Services.AddScoped<ICollectionService, CollectionService>();
-		builder.Services.AddScoped<IAuthService, IdentityAuthService>();
+		// Use explicit Blazor auth service for MAUI (which supports Blazor WebView)
+		builder.Services.AddBlazorAuthService();
 		builder.Services.AddScoped<IPasswordRevealService, PasswordRevealService>();
 		builder.Services.AddScoped<IAppSyncService, AppSyncService>();
 		builder.Services.AddScoped<IAppStartupService, AppStartupService>();

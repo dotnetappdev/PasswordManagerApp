@@ -6,6 +6,7 @@ using PasswordManager.DAL;
 using PasswordManager.Services;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
+using PasswordManager.Services.Extensions;
 using PasswordManager.Imports.Interfaces;
 using PasswordManager.Imports.Services;
 using Microsoft.Extensions.Configuration;
@@ -115,7 +116,8 @@ public partial class App : Application
                 services.AddScoped<ITagService, TagService>();
                 services.AddScoped<ICategoryInterface, CategoryService>();
                 services.AddScoped<ICollectionService, CollectionService>();
-                services.AddScoped<IAuthService, IdentityAuthService>();
+                // Use explicit Blazor auth service for WinUI (which supports Blazor WebView)
+                services.AddBlazorAuthService();
                 services.AddScoped<IPasswordRevealService, PasswordRevealService>();
                 services.AddScoped<IAppSyncService, AppSyncService>();
                 services.AddScoped<IAppStartupService, AppStartupService>();

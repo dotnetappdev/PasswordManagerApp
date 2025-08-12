@@ -7,6 +7,7 @@ using PasswordManager.DAL.SupaBase;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
 using PasswordManager.Services; // Add this line for the service classes
+using PasswordManager.Services.Extensions;
 using PasswordManager.Crypto.Extensions;
 using MudBlazor.Services;
 using Microsoft.AspNetCore.Identity;
@@ -93,7 +94,8 @@ builder.Services.AddScoped<IPasswordItemService, PasswordManager.Services.Passwo
 builder.Services.AddScoped<ITagService, PasswordManager.Services.TagService>();
 builder.Services.AddScoped<ICategoryInterface, PasswordManager.Services.Services.CategoryService>();
 builder.Services.AddScoped<ICollectionService, PasswordManager.Services.Services.CollectionService>();
-builder.Services.AddScoped<IAuthService, PasswordManager.Services.Services.AuthService>();
+// Use contextual auth service for Web (Blazor Server context)
+builder.Services.AddContextualAuthService();
 builder.Services.AddScoped<IUserProfileService, PasswordManager.Services.Services.UserProfileService>();
 builder.Services.AddScoped<IApiKeyService, PasswordManager.Services.Services.ApiKeyService>();
 builder.Services.AddScoped<IVaultSessionService, PasswordManager.Services.Services.VaultSessionService>();

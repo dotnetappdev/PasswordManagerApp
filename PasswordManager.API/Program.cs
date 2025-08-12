@@ -3,6 +3,7 @@ using PasswordManager.DAL;
 using PasswordManager.Crypto.Extensions;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
+using PasswordManager.Services.Extensions;
 using PasswordManager.API.Extensions;
 using PasswordManager.API.Middleware;
 using PasswordManager.DAL.Interfaces;
@@ -142,6 +143,9 @@ builder.Services.AddScoped<ISmsService, PasswordManager.Services.Services.Twilio
 builder.Services.AddScoped<IOtpService, PasswordManager.Services.Services.OtpService>();
 builder.Services.AddScoped<IPlatformDetectionService, PasswordManager.Services.Services.PlatformDetectionService>();
 builder.Services.AddScoped<ISmsSettingsService, PasswordManager.Services.Services.SmsSettingsService>();
+
+// Register authentication service (contextual - will use ServerAuthService for API context)
+builder.Services.AddContextualAuthService();
 
 // Register Fido2 service for passkeys
 builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
