@@ -26,21 +26,24 @@
                           FontWeight="SemiBold" 
                           HorizontalAlignment="Center"/>
                 
-                <!-- Email Input -->
-                <TextBox x:Name="EmailTextBox"
-                        Header="Email"
-                        PlaceholderText="Enter your email"
-                        InputScope="EmailSmtpAddress"/>
+                <!-- Username/Email Input -->
+                <TextBox x:Name="UsernameTextBox"
+                        Header="{Binding UsernameLabel}"
+                        PlaceholderText="{Binding UsernamePlaceholder}"
+                        Text="{Binding Username, Mode=TwoWay}"
+                        InputScope="{Binding IsApiMode, Converter={StaticResource ApiModeToInputScopeConverter}}"/>
                 
                 <!-- Password Input -->
                 <PasswordBox x:Name="PasswordBox"
                             Header="Password"
-                            PlaceholderText="Enter your password"/>
+                            PlaceholderText="Enter your password"
+                            Password="{Binding Password, Mode=TwoWay}"/>
                 
                 <!-- Error Message -->
                 <TextBlock x:Name="ErrorText"
+                          Text="{Binding ErrorMessage}"
                           Foreground="Red"
-                          Visibility="Collapsed"
+                          Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
                           TextWrapping="Wrap"/>
                 
                 <!-- Login Button -->

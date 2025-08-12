@@ -7,20 +7,27 @@ public class LoginViewModel : BaseViewModel
 {
     private readonly IAuthService _authService;
     private readonly IVaultSessionService _vaultSessionService;
-    private string _email = string.Empty;
+    private readonly ISecureStorageService _secureStorageService;
+    private string _username = string.Empty;
     private string _password = string.Empty;
     private string _errorMessage = string.Empty;
+    private string _authenticationMode = "Local Database";
+    private string _usernameLabel = "Username";
+    private string _usernamePlaceholder = "Enter your username";
 
     public LoginViewModel(IServiceProvider serviceProvider)
     {
         _authService = serviceProvider.GetRequiredService<IAuthService>();
         _vaultSessionService = serviceProvider.GetRequiredService<IVaultSessionService>();
+        _secureStorageService = serviceProvider.GetRequiredService<ISecureStorageService>();
+        
+        _ = LoadAuthenticationModeAsync();
     }
 
-    public string Email
+    public string Username
     {
-        get => _email;
-        set => SetProperty(ref _email, value);
+        get => _username;
+        set => SetProperty(ref _username, value);
     }
 
     public string Password
@@ -35,7 +42,51 @@ public class LoginViewModel : BaseViewModel
         set => SetProperty(ref _errorMessage, value);
     }
 
+    public string AuthenticationMode
+    {
+        get => _authenticationMode;
+        set => SetProperty(ref _authenticationMode, value);
+    }
+
+    public string UsernameLabel
+    {
+        get => _usernameLabel;
+        set => SetProperty(ref _usernameLabel, value);
+    }
+
+    public string UsernamePlaceholder
+    {
+        get => _usernamePlaceholder;
+        set => SetProperty(ref _usernamePlaceholder, value);
+    }
+
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
+
+    public bool IsApiMode => AuthenticationMode == "API Server";
+
+    private async Task LoadAuthenticationModeAsync()
+    {
+        try
+        {
+            var mode = await _secureStorageService.GetAsync("AuthenticationMode");
+            AuthenticationMode = mode ?? "Local Database";
+            
+            if (IsApiMode)
+            {
+                UsernameLabel = "Email";
+                UsernamePlaceholder = "Enter your email address";
+            }
+            else
+            {
+                UsernameLabel = "Username";
+                UsernamePlaceholder = "Enter your username";
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading auth mode: {ex.Message}");
+        }
+    }
 
     public async Task<bool> LoginAsync()
     {
@@ -44,14 +95,15 @@ public class LoginViewModel : BaseViewModel
             IsLoading = true;
             ErrorMessage = string.Empty;
 
-            if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
+            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
             {
-                ErrorMessage = "Please enter both email and password.";
+                var fieldName = IsApiMode ? "email and password" : "username and password";
+                ErrorMessage = $"Please enter both {fieldName}.";
                 return false;
             }
 
             // Attempt login
-            var loginResult = await _authService.LoginAsync(Email, Password);
+            var loginResult = await _authService.LoginAsync(Username, Password);
             
             if (loginResult)
             {
@@ -59,7 +111,8 @@ public class LoginViewModel : BaseViewModel
             }
             else
             {
-                ErrorMessage = "Login failed. Please check your credentials and try again.";
+                var modeText = IsApiMode ? "API server" : "local database";
+                ErrorMessage = $"Invalid credentials. Please check your {(IsApiMode ? "email" : "username")} and password and try again. Authentication mode: {modeText}.";
                 return false;
             }
         }
@@ -82,14 +135,15 @@ public class LoginViewModel : BaseViewModel
             IsLoading = true;
             ErrorMessage = string.Empty;
 
-            if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
+            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
             {
-                ErrorMessage = "Please enter both email and password.";
+                var fieldName = IsApiMode ? "email and password" : "username and password";
+                ErrorMessage = $"Please enter both {fieldName}.";
                 return false;
             }
 
             // Attempt registration
-            var registerResult = await _authService.RegisterAsync(Email, Password);
+            var registerResult = await _authService.RegisterAsync(Username, Password);
             
             if (registerResult)
             {
@@ -97,7 +151,8 @@ public class LoginViewModel : BaseViewModel
             }
             else
             {
-                ErrorMessage = "Registration failed. Please try again.";
+                var modeText = IsApiMode ? "API server" : "local database";
+                ErrorMessage = $"Registration failed on {modeText}. Please try again.";
                 return false;
             }
         }

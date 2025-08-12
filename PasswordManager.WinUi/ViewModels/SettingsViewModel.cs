@@ -16,6 +16,8 @@ public class SettingsViewModel : BaseViewModel
     private string _exportPath = string.Empty;
     private string _selectedTheme = "System";
     private int _sessionTimeoutMinutes = 30;
+    private string _authenticationMode = "Local Database";
+    private string _apiBaseUrl = "https://localhost:7001/api";
 
     public SettingsViewModel(IServiceProvider serviceProvider)
     {
@@ -63,7 +65,21 @@ public class SettingsViewModel : BaseViewModel
         set => SetProperty(ref _sessionTimeoutMinutes, value);
     }
 
+    public string AuthenticationMode
+    {
+        get => _authenticationMode;
+        set => SetProperty(ref _authenticationMode, value);
+    }
+
+    public string ApiBaseUrl
+    {
+        get => _apiBaseUrl;
+        set => SetProperty(ref _apiBaseUrl, value);
+    }
+
     public List<string> AvailableThemes => new List<string> { "Light", "Dark", "System" };
+
+    public List<string> AuthenticationModes => new List<string> { "Local Database", "API Server" };
 
     public List<int> TimeoutOptions => new List<int> { 5, 10, 15, 30, 60, 120 };
 
@@ -92,6 +108,12 @@ public class SettingsViewModel : BaseViewModel
                 SessionTimeoutMinutes = timeoutValue;
             }
 
+            var authMode = await _secureStorageService.GetAsync("AuthenticationMode");
+            AuthenticationMode = authMode ?? "Local Database";
+
+            var apiUrl = await _secureStorageService.GetAsync("ApiBaseUrl");
+            ApiBaseUrl = apiUrl ?? "https://localhost:7001/api";
+
             // Set default export path
             ExportPath = Path.Combine(_platformService.GetDocumentsDirectory(), "PasswordManagerExport");
         }
@@ -117,6 +139,8 @@ public class SettingsViewModel : BaseViewModel
             await _secureStorageService.SetAsync("RequirePasscode", RequirePasscode.ToString().ToLower());
             await _secureStorageService.SetAsync("SelectedTheme", SelectedTheme);
             await _secureStorageService.SetAsync("SessionTimeoutMinutes", SessionTimeoutMinutes.ToString());
+            await _secureStorageService.SetAsync("AuthenticationMode", AuthenticationMode);
+            await _secureStorageService.SetAsync("ApiBaseUrl", ApiBaseUrl);
             
             return true;
         }

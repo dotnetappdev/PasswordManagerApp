@@ -67,6 +67,14 @@ public sealed partial class SettingsPage : Page
         }
     }
 
+    private async void AuthModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_viewModel != null && AuthModeComboBox.SelectedItem != null)
+        {
+            await _viewModel.SaveSettingsAsync();
+        }
+    }
+
     private async void ChangePasswordButton_Click(object sender, RoutedEventArgs e)
     {
         await ShowChangePasswordDialog();

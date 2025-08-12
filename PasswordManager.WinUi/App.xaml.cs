@@ -10,8 +10,6 @@ using PasswordManager.Imports.Interfaces;
 using PasswordManager.Imports.Services;
 using Microsoft.Extensions.Configuration;
 using PasswordManager.Crypto.Extensions;
-using Microsoft.AspNetCore.Identity;
-using PasswordManager.Models;
 using Microsoft.Extensions.Logging;
 using PasswordManager.WinUi.Services;
 
@@ -98,24 +96,13 @@ public partial class App : Application
                 services.AddDbContext<PasswordManagerDbContext>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
 
-                // Add Identity services
-                services.AddIdentityCore<ApplicationUser>(options =>
-                {
-                    options.SignIn.RequireConfirmedAccount = false;
-                    options.Password.RequireDigit = true;
-                    options.Password.RequiredLength = 8;
-                    options.Password.RequireNonAlphanumeric = false;
-                    options.Password.RequireUppercase = true;
-                    options.Password.RequireLowercase = true;
-                })
-                .AddEntityFrameworkStores<PasswordManagerDbContextApp>();
-
                 // Register business services
                 services.AddScoped<IPasswordItemService, PasswordItemService>();
                 services.AddScoped<ITagService, TagService>();
                 services.AddScoped<ICategoryInterface, CategoryService>();
                 services.AddScoped<ICollectionService, CollectionService>();
-                services.AddScoped<IAuthService, IdentityAuthService>();
+                services.AddScoped<WinUiAuthService>(); // Register the local auth service
+                services.AddScoped<IAuthService, ConfigurableAuthService>(); // Use configurable auth service
                 services.AddScoped<IPasswordRevealService, PasswordRevealService>();
                 services.AddScoped<IAppSyncService, AppSyncService>();
                 services.AddScoped<IAppStartupService, AppStartupService>();

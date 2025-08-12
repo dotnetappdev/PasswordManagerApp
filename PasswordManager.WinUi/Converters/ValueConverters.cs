@@ -123,3 +123,54 @@ public class StatusToColorConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
+public class ApiModeToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is string authMode)
+        {
+            return authMode == "API Server" ? Visibility.Visible : Visibility.Collapsed;
+        }
+        return Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class LocalModeToEnabledConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is string authMode)
+        {
+            return authMode == "Local Database";
+        }
+        return true;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class ApiModeToInputScopeConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is bool isApiMode && isApiMode)
+        {
+            return Microsoft.UI.Xaml.Input.InputScopeNameValue.EmailSmtpAddress;
+        }
+        return Microsoft.UI.Xaml.Input.InputScopeNameValue.Default;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
