@@ -3,16 +3,17 @@ using Microsoft.JSInterop;
 using PasswordManager.Services.Extensions;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
-using Xunit;
+using NUnit.Framework;
 
 namespace PasswordManager.BackEnd.Tests.Services;
 
 /// <summary>
 /// Tests for the authentication service contextual registration
 /// </summary>
+[TestFixture]
 public class AuthServiceRegistrationTests
 {
-    [Fact]
+    [Test]
     public void AddContextualAuthService_WithoutJSRuntime_ReturnsServerAuthService()
     {
         // Arrange
@@ -25,11 +26,11 @@ public class AuthServiceRegistrationTests
         
         // Assert
         var authService = serviceProvider.GetService<IAuthService>();
-        Assert.NotNull(authService);
-        Assert.IsType<ServerAuthService>(authService);
+        Assert.That(authService, Is.Not.Null);
+        Assert.That(authService, Is.TypeOf<ServerAuthService>());
     }
 
-    [Fact] 
+    [Test] 
     public void AddContextualAuthService_WithJSRuntime_ReturnsIdentityAuthService()
     {
         // Arrange
@@ -38,16 +39,19 @@ public class AuthServiceRegistrationTests
         // Add a mock IJSRuntime to simulate Blazor context
         services.AddSingleton<IJSRuntime>(provider => new MockJSRuntime());
         
+        // Also add dependencies that IdentityAuthService needs
+        services.AddLogging();
+        
         // Act
         services.AddContextualAuthService();
         
         // Assert - Should select IdentityAuthService when IJSRuntime is available
         var descriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IAuthService));
-        Assert.NotNull(descriptor);
-        Assert.Equal(typeof(IdentityAuthService), descriptor.ImplementationType);
+        Assert.That(descriptor, Is.Not.Null);
+        Assert.That(descriptor!.ImplementationType, Is.EqualTo(typeof(IdentityAuthService)));
     }
 
-    [Fact]
+    [Test]
     public void AddBlazorAuthService_Always_ReturnsIdentityAuthService()
     {
         // Arrange
@@ -58,11 +62,11 @@ public class AuthServiceRegistrationTests
         
         // Assert
         var descriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IAuthService));
-        Assert.NotNull(descriptor);
-        Assert.Equal(typeof(IdentityAuthService), descriptor.ImplementationType);
+        Assert.That(descriptor, Is.Not.Null);
+        Assert.That(descriptor!.ImplementationType, Is.EqualTo(typeof(IdentityAuthService)));
     }
 
-    [Fact]
+    [Test]
     public void AddServerAuthService_Always_ReturnsServerAuthService()
     {
         // Arrange
@@ -73,8 +77,8 @@ public class AuthServiceRegistrationTests
         
         // Assert
         var descriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IAuthService));
-        Assert.NotNull(descriptor);
-        Assert.Equal(typeof(ServerAuthService), descriptor.ImplementationType);
+        Assert.That(descriptor, Is.Not.Null);
+        Assert.That(descriptor!.ImplementationType, Is.EqualTo(typeof(ServerAuthService)));
     }
 
     /// <summary>
