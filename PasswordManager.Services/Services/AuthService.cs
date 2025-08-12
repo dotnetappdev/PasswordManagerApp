@@ -7,6 +7,7 @@ using PasswordManager.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PasswordManager.Services.Interfaces;
+using PasswordManager.Models.Configuration;
 
 namespace PasswordManager.Services.Services;
 
@@ -19,7 +20,9 @@ public class AuthService : IAuthService
     private readonly IPasswordCryptoService _passwordCryptoService;
     private readonly IVaultSessionService _vaultSessionService;
     private readonly PasswordManagerDbContext _dbContext;
+    private readonly IDatabaseConfigurationService _databaseConfigurationService;
     private readonly ILogger<AuthService> _logger;
+    private readonly HttpClient _httpClient;
     private bool _isAuthenticated = false;
     private ApplicationUser? _currentUser;
 
@@ -28,12 +31,16 @@ public class AuthService : IAuthService
         IPasswordCryptoService passwordCryptoService,
         IVaultSessionService vaultSessionService,
         PasswordManagerDbContext dbContext,
+        IDatabaseConfigurationService databaseConfigurationService,
+        HttpClient httpClient,
         ILogger<AuthService> logger)
     {
         _jsRuntime = jsRuntime;
         _passwordCryptoService = passwordCryptoService;
         _vaultSessionService = vaultSessionService;
         _dbContext = dbContext;
+        _databaseConfigurationService = databaseConfigurationService;
+        _httpClient = httpClient;
         _logger = logger;
     }
 
@@ -82,9 +89,35 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
-    /// Authenticates user with master password
+    /// Authenticates user with master password using the configured authentication mode
     /// </summary>
     public async Task<bool> AuthenticateAsync(string masterPassword)
+    {
+        try
+        {
+            // Get database configuration to determine authentication mode
+            var dbConfig = await _databaseConfigurationService.GetConfigurationAsync();
+            
+            if (dbConfig.AuthenticationMode == AuthenticationMode.ApiEndpoint)
+            {
+                return await AuthenticateViaApiAsync(masterPassword, dbConfig);
+            }
+            else
+            {
+                return await AuthenticateViaLocalDatabaseAsync(masterPassword);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Authentication error");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Authenticates user with master password using local database
+    /// </summary>
+    private async Task<bool> AuthenticateViaLocalDatabaseAsync(string masterPassword)
     {
         try
         {
@@ -126,18 +159,90 @@ public class AuthService : IAuthService
                 _currentUser = user;
                 await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "isAuthenticated", "true");
                 
-                _logger.LogInformation("User {UserId} authenticated successfully", user.Id);
+                _logger.LogInformation("User {UserId} authenticated successfully via local database", user.Id);
                 return true;
             }
 
-            _logger.LogWarning("Authentication failed for user {UserId}", user.Id);
+            _logger.LogWarning("Authentication failed for user {UserId} via local database", user.Id);
             return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Authentication error");
+            _logger.LogError(ex, "Local database authentication error");
             return false;
         }
+    }
+
+    /// <summary>
+    /// Authenticates user with master password using API endpoint
+    /// </summary>
+    private async Task<bool> AuthenticateViaApiAsync(string masterPassword, DatabaseConfiguration dbConfig)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(dbConfig.ApiUrl))
+            {
+                _logger.LogError("API URL is not configured for API authentication");
+                return false;
+            }
+
+            // Get user email (for single-user setup, use default email)
+            var user = await _dbContext.Users.FirstOrDefaultAsync();
+            var email = user?.Email ?? "user@passwordmanager.local";
+
+            // Create login request for .NET 9 Identity API endpoints
+            var loginRequest = new
+            {
+                email = email,
+                password = masterPassword
+            };
+
+            var content = new StringContent(
+                System.Text.Json.JsonSerializer.Serialize(loginRequest),
+                System.Text.Encoding.UTF8,
+                "application/json"
+            );
+
+            // Call the .NET 9 Identity API login endpoint
+            var response = await _httpClient.PostAsync($"{dbConfig.ApiUrl.TrimEnd('/')}/login", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var loginResponse = System.Text.Json.JsonSerializer.Deserialize<ApiLoginResponse>(responseContent);
+
+                if (loginResponse?.AccessToken != null)
+                {
+                    // Store the access token for API calls
+                    await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "apiToken", loginResponse.AccessToken);
+                    await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "sessionId", loginResponse.AccessToken);
+                    
+                    _isAuthenticated = true;
+                    _currentUser = user;
+                    await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "isAuthenticated", "true");
+                    await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "authMode", "api");
+                    
+                    _logger.LogInformation("User authenticated successfully via API endpoint");
+                    return true;
+                }
+            }
+            
+            _logger.LogWarning("API authentication failed. Status: {StatusCode}", response.StatusCode);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "API authentication error");
+            return false;
+        }
+    }
+
+    // Helper class for API response
+    private class ApiLoginResponse
+    {
+        public string? AccessToken { get; set; }
+        public string? RefreshToken { get; set; }
+        public DateTime ExpiresAt { get; set; }
     }
 
     /// <summary>
@@ -243,9 +348,35 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
-    /// Logs in a user with credentials
+    /// Logs in a user with credentials using the configured authentication mode
     /// </summary>
     public async Task<bool> LoginAsync(string email, string password)
+    {
+        try
+        {
+            // Get database configuration to determine authentication mode
+            var dbConfig = await _databaseConfigurationService.GetConfigurationAsync();
+            
+            if (dbConfig.AuthenticationMode == AuthenticationMode.ApiEndpoint)
+            {
+                return await LoginViaApiAsync(email, password, dbConfig);
+            }
+            else
+            {
+                return await LoginViaLocalDatabaseAsync(email, password);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Login error");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Logs in a user with credentials using local database
+    /// </summary>
+    private async Task<bool> LoginViaLocalDatabaseAsync(string email, string password)
     {
         try
         {
@@ -272,6 +403,9 @@ public class AuthService : IAuthService
                     user.LastLoginAt = DateTime.UtcNow;
                     await _dbContext.SaveChangesAsync();
                     
+                    await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "isAuthenticated", "true");
+                    await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "authMode", "local");
+                    
                     return true;
                 }
             }
@@ -281,7 +415,65 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during login for email: {Email}", email);
+            _logger.LogError(ex, "Error during local database login for email: {Email}", email);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Logs in a user with credentials using API endpoint
+    /// </summary>
+    private async Task<bool> LoginViaApiAsync(string email, string password, DatabaseConfiguration dbConfig)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(dbConfig.ApiUrl))
+            {
+                _logger.LogError("API URL is not configured for API login");
+                return false;
+            }
+
+            // Create login request for .NET 9 Identity API endpoints
+            var loginRequest = new
+            {
+                email = email,
+                password = password
+            };
+
+            var content = new StringContent(
+                System.Text.Json.JsonSerializer.Serialize(loginRequest),
+                System.Text.Encoding.UTF8,
+                "application/json"
+            );
+
+            // Call the .NET 9 Identity API login endpoint
+            var response = await _httpClient.PostAsync($"{dbConfig.ApiUrl.TrimEnd('/')}/login", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var loginResponse = System.Text.Json.JsonSerializer.Deserialize<ApiLoginResponse>(responseContent);
+
+                if (loginResponse?.AccessToken != null)
+                {
+                    // Store the access token for API calls
+                    await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "apiToken", loginResponse.AccessToken);
+                    
+                    _isAuthenticated = true;
+                    await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "isAuthenticated", "true");
+                    await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "authMode", "api");
+                    
+                    _logger.LogInformation("User {Email} logged in successfully via API endpoint", email);
+                    return true;
+                }
+            }
+            
+            _logger.LogWarning("API login failed for {Email}. Status: {StatusCode}", email, response.StatusCode);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during API login for email: {Email}", email);
             return false;
         }
     }

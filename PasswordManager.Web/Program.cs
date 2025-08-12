@@ -99,6 +99,8 @@ builder.Services.AddScoped<IApiKeyService, PasswordManager.Services.Services.Api
 builder.Services.AddScoped<IVaultSessionService, PasswordManager.Services.Services.VaultSessionService>();
 builder.Services.AddScoped<IQrLoginService, PasswordManager.Services.Services.QrLoginService>();
 builder.Services.AddScoped<IDatabaseContextFactory, PasswordManager.Services.Services.DatabaseContextFactory>();
+builder.Services.AddScoped<IDatabaseConfigurationService, PasswordManager.Services.Services.DatabaseConfigurationService>();
+builder.Services.AddScoped<IPlatformService, PasswordManager.Services.Services.DefaultPlatformService>();
 builder.Services.AddScoped<IPasswordEncryptionService, PasswordManager.Services.Services.PasswordEncryptionService>();
 builder.Services.AddScoped<IDatabaseMigrationService, PasswordManager.Services.Services.DatabaseMigrationService>();
 

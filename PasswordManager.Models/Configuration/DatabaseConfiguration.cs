@@ -15,6 +15,15 @@ public enum DatabaseProvider
 }
 
 /// <summary>
+/// Authentication mode types
+/// </summary>
+public enum AuthenticationMode
+{
+    LocalDatabase,
+    ApiEndpoint
+}
+
+/// <summary>
 /// Database configuration settings
 /// </summary>
 public class DatabaseConfiguration
@@ -23,6 +32,11 @@ public class DatabaseConfiguration
     /// The selected database provider
     /// </summary>
     public DatabaseProvider Provider { get; set; } = DatabaseProvider.Sqlite;
+
+    /// <summary>
+    /// The selected authentication mode (local database vs API)
+    /// </summary>
+    public AuthenticationMode AuthenticationMode { get; set; } = AuthenticationMode.LocalDatabase;
 
     /// <summary>
     /// Whether this is the first run and configuration is needed
