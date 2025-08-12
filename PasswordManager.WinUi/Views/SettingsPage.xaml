@@ -1,158 +1,334 @@
 <Page x:Class="PasswordManager.WinUi.Views.SettingsPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{StaticResource ModernBackgroundBrush}">
 
     <ScrollViewer>
-        <StackPanel Padding="20" Spacing="24">
-            <TextBlock Text="Settings" 
-                      FontSize="24" 
-                      FontWeight="Bold"/>
+        <StackPanel Spacing="24" Margin="0,0,0,24">
+            
+            <!-- Page Header -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Background="{StaticResource ModernTextSecondaryBrush}"
+                               CornerRadius="12"
+                               Width="32"
+                               Height="32">
+                            <FontIcon Glyph="&#xE713;" 
+                                     FontSize="16"
+                                     Foreground="White"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Settings" 
+                                  Style="{StaticResource ModernHeading3Style}"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="Configure your password manager preferences and security"
+                              Style="{StaticResource ModernCaptionStyle}"/>
+                </StackPanel>
+            </Border>
             
             <!-- Security Settings -->
-            <StackPanel Spacing="12">
-                <TextBlock Text="🔐 Security" 
-                          FontSize="18" 
-                          FontWeight="SemiBold"/>
-                
-                <ToggleSwitch x:Name="TwoFactorToggle"
-                             Header="Enable Two-Factor Authentication" 
-                             IsOn="{Binding EnableTwoFactor, Mode=TwoWay}"
-                             Toggled="TwoFactorToggle_Toggled"/>
-                
-                <ToggleSwitch x:Name="PasscodeToggle"
-                             Header="Require Passcode on Startup" 
-                             IsOn="{Binding RequirePasscode, Mode=TwoWay}"
-                             Toggled="PasscodeToggle_Toggled"/>
-                
-                <Button x:Name="ChangePasswordButton"
-                       Content="🔑 Change Master Password" 
-                       HorizontalAlignment="Left"
-                       Click="ChangePasswordButton_Click"/>
-                
-                <ComboBox x:Name="SessionTimeoutComboBox"
-                         Header="Session Timeout (minutes)"
-                         ItemsSource="{Binding TimeoutOptions}"
-                         SelectedItem="{Binding SessionTimeoutMinutes, Mode=TwoWay}"
-                         SelectionChanged="SessionTimeoutComboBox_SelectionChanged"
-                         MinWidth="150"/>
-            </StackPanel>
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Spacing="20">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Background="{StaticResource ModernErrorBrush}"
+                               CornerRadius="10"
+                               Width="24"
+                               Height="24">
+                            <FontIcon Glyph="&#xE1A3;" 
+                                     FontSize="12"
+                                     Foreground="White"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Security" 
+                                  Style="{StaticResource ModernHeading3Style}"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                    
+                    <StackPanel Spacing="16">
+                        <ToggleSwitch x:Name="TwoFactorToggle"
+                                     Header="Enable Two-Factor Authentication" 
+                                     IsOn="{Binding EnableTwoFactor, Mode=TwoWay}"
+                                     Toggled="TwoFactorToggle_Toggled"/>
+                        
+                        <ToggleSwitch x:Name="PasscodeToggle"
+                                     Header="Require Passcode on Startup" 
+                                     IsOn="{Binding RequirePasscode, Mode=TwoWay}"
+                                     Toggled="PasscodeToggle_Toggled"/>
+                        
+                        <Button x:Name="ChangePasswordButton"
+                               Style="{StaticResource ModernSecondaryButtonStyle}"
+                               HorizontalAlignment="Left"
+                               Click="ChangePasswordButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE192;" FontSize="14"/>
+                                <TextBlock Text="Change Master Password"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Session Timeout" 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            <ComboBox x:Name="SessionTimeoutComboBox"
+                                     ItemsSource="{Binding TimeoutOptions}"
+                                     SelectedItem="{Binding SessionTimeoutMinutes, Mode=TwoWay}"
+                                     SelectionChanged="SessionTimeoutComboBox_SelectionChanged"
+                                     Style="{StaticResource ModernTextBoxStyle}"
+                                     MinWidth="200"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
             
             <!-- Database Settings -->
-            <StackPanel Spacing="12">
-                <TextBlock Text="🗄️ Authentication & Storage" 
-                          FontSize="18" 
-                          FontWeight="SemiBold"/>
-                
-                <ComboBox x:Name="AuthModeComboBox"
-                         Header="Authentication Mode"
-                         ItemsSource="{Binding AuthenticationModes}"
-                         SelectedItem="{Binding AuthenticationMode, Mode=TwoWay}"
-                         SelectionChanged="AuthModeComboBox_SelectionChanged"
-                         MinWidth="200"/>
-                
-                <StackPanel x:Name="ApiSettingsPanel" 
-                           Spacing="8"
-                           Visibility="{Binding AuthenticationMode, Converter={StaticResource ApiModeToVisibilityConverter}}">
-                    <TextBlock Text="API Settings" FontWeight="SemiBold"/>
-                    <TextBox x:Name="ApiUrlTextBox"
-                            Header="API Base URL"
-                            Text="{Binding ApiBaseUrl, Mode=TwoWay}"
-                            PlaceholderText="https://localhost:7001/api"
-                            MinWidth="300"/>
-                    <TextBlock Text="Configure the base URL for the Password Manager API server." 
-                              Style="{StaticResource CaptionTextBlockStyle}" 
-                              TextWrapping="Wrap"/>
-                </StackPanel>
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Spacing="20">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Background="{StaticResource ModernWarningBrush}"
+                               CornerRadius="10"
+                               Width="24"
+                               Height="24">
+                            <FontIcon Glyph="&#xE8F7;" 
+                                     FontSize="12"
+                                     Foreground="White"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Authentication & Storage" 
+                                  Style="{StaticResource ModernHeading3Style}"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                    
+                    <StackPanel Spacing="16">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Authentication Mode" 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            <ComboBox x:Name="AuthModeComboBox"
+                                     ItemsSource="{Binding AuthenticationModes}"
+                                     SelectedItem="{Binding AuthenticationMode, Mode=TwoWay}"
+                                     SelectionChanged="AuthModeComboBox_SelectionChanged"
+                                     Style="{StaticResource ModernTextBoxStyle}"
+                                     MinWidth="240"/>
+                        </StackPanel>
+                        
+                        <Border x:Name="ApiSettingsPanel"
+                               Style="{StaticResource ModernCardStyle}"
+                               BorderBrush="{StaticResource ModernPrimaryBrush}"
+                               Visibility="{Binding AuthenticationMode, Converter={StaticResource ApiModeToVisibilityConverter}}">
+                            <StackPanel Spacing="16">
+                                <TextBlock Text="API Configuration" 
+                                          Style="{StaticResource ModernBodyStyle}"
+                                          FontWeight="SemiBold"/>
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="API Base URL" 
+                                              Style="{StaticResource ModernCaptionStyle}"
+                                              FontWeight="SemiBold"/>
+                                    <TextBox x:Name="ApiUrlTextBox"
+                                            Text="{Binding ApiBaseUrl, Mode=TwoWay}"
+                                            PlaceholderText="https://localhost:7001/api"
+                                            Style="{StaticResource ModernTextBoxStyle}"
+                                            MinWidth="360"/>
+                                    <TextBlock Text="Configure the base URL for the Password Manager API server." 
+                                              Style="{StaticResource ModernCaptionStyle}"
+                                              TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
 
-                <ComboBox Header="Database Provider (Local Mode Only)" 
-                         PlaceholderText="Select provider"
-                         IsEnabled="{Binding AuthenticationMode, Converter={StaticResource LocalModeToEnabledConverter}}"
-                         MinWidth="200">
-                    <ComboBoxItem Content="SQLite" IsSelected="True"/>
-                    <ComboBoxItem Content="SQL Server"/>
-                    <ComboBoxItem Content="MySQL"/>
-                    <ComboBoxItem Content="PostgreSQL"/>
-                </ComboBox>
-                
-                <Button Content="📊 Configure Database Connection" 
-                       HorizontalAlignment="Left"
-                       IsEnabled="{Binding AuthenticationMode, Converter={StaticResource LocalModeToEnabledConverter}}"
-                       Click="ConfigureDatabaseButton_Click"/>
-                
-                <ToggleSwitch x:Name="SyncToggle"
-                             Header="Enable Cloud Sync" 
-                             IsOn="{Binding EnableSync, Mode=TwoWay}"
-                             Toggled="SyncToggle_Toggled"/>
-            </StackPanel>
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Database Provider (Local Mode Only)" 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            <ComboBox IsEnabled="{Binding AuthenticationMode, Converter={StaticResource LocalModeToEnabledConverter}}"
+                                     Style="{StaticResource ModernTextBoxStyle}"
+                                     MinWidth="240">
+                                <ComboBoxItem Content="SQLite" IsSelected="True"/>
+                                <ComboBoxItem Content="SQL Server"/>
+                                <ComboBoxItem Content="MySQL"/>
+                                <ComboBoxItem Content="PostgreSQL"/>
+                            </ComboBox>
+                        </StackPanel>
+                        
+                        <Button Style="{StaticResource ModernSecondaryButtonStyle}"
+                               HorizontalAlignment="Left"
+                               IsEnabled="{Binding AuthenticationMode, Converter={StaticResource LocalModeToEnabledConverter}}"
+                               Click="ConfigureDatabaseButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8F7;" FontSize="14"/>
+                                <TextBlock Text="Configure Database Connection"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <ToggleSwitch x:Name="SyncToggle"
+                                     Header="Enable Cloud Sync" 
+                                     IsOn="{Binding EnableSync, Mode=TwoWay}"
+                                     Toggled="SyncToggle_Toggled"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
             
             <!-- Import/Export Settings -->
-            <StackPanel Spacing="12">
-                <TextBlock Text="💾 Import/Export" 
-                          FontSize="18" 
-                          FontWeight="SemiBold"/>
-                
-                <StackPanel Spacing="8">
-                    <TextBlock Text="Export Path:" Style="{StaticResource CaptionTextBlockStyle}"/>
-                    <TextBox Text="{Binding ExportPath, Mode=TwoWay}" 
-                            IsReadOnly="True" 
-                            MinWidth="300"/>
-                    <Button Content="📂 Choose Export Folder" 
-                           HorizontalAlignment="Left"
-                           Click="ChooseExportFolderButton_Click"/>
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Spacing="20">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Background="{StaticResource ModernSuccessBrush}"
+                               CornerRadius="10"
+                               Width="24"
+                               Height="24">
+                            <FontIcon Glyph="&#xE8B5;" 
+                                     FontSize="12"
+                                     Foreground="White"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Import/Export" 
+                                  Style="{StaticResource ModernHeading3Style}"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                    
+                    <StackPanel Spacing="16">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Export Path" 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" 
+                                        Text="{Binding ExportPath, Mode=TwoWay}" 
+                                        IsReadOnly="True" 
+                                        Style="{StaticResource ModernTextBoxStyle}"
+                                        Margin="0,0,8,0"/>
+                                <Button Grid.Column="1" 
+                                       Style="{StaticResource ModernSecondaryButtonStyle}"
+                                       Click="ChooseExportFolderButton_Click">
+                                    <FontIcon Glyph="&#xE8DA;" FontSize="14"/>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+                        
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button x:Name="ExportButton"
+                                   Style="{StaticResource ModernSecondaryButtonStyle}"
+                                   Click="ExportButton_Click"
+                                   IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE8C5;" FontSize="14"/>
+                                    <TextBlock Text="Export All Passwords"/>
+                                </StackPanel>
+                            </Button>
+                            
+                            <Button Style="{StaticResource ModernSecondaryButtonStyle}"
+                                   Click="ImportButton_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE8B5;" FontSize="14"/>
+                                    <TextBlock Text="Go to Import Page"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
                 </StackPanel>
-                
-                <Button x:Name="ExportButton"
-                       Content="📤 Export All Passwords" 
-                       HorizontalAlignment="Left"
-                       Click="ExportButton_Click"
-                       IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                
-                <Button Content="📥 Go to Import Page" 
-                       HorizontalAlignment="Left"
-                       Click="ImportButton_Click"/>
-            </StackPanel>
+            </Border>
             
             <!-- Appearance Settings -->
-            <StackPanel Spacing="12">
-                <TextBlock Text="🎨 Appearance" 
-                          FontSize="18" 
-                          FontWeight="SemiBold"/>
-                
-                <ComboBox x:Name="ThemeComboBox"
-                         Header="Theme" 
-                         ItemsSource="{Binding AvailableThemes}"
-                         SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
-                         SelectionChanged="ThemeComboBox_SelectionChanged"
-                         MinWidth="150"/>
-            </StackPanel>
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Spacing="20">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Background="{StaticResource ModernPrimaryBrush}"
+                               CornerRadius="10"
+                               Width="24"
+                               Height="24">
+                            <FontIcon Glyph="&#xE790;" 
+                                     FontSize="12"
+                                     Foreground="White"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Appearance" 
+                                  Style="{StaticResource ModernHeading3Style}"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                    
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Theme" 
+                                  Style="{StaticResource ModernCaptionStyle}"
+                                  FontWeight="SemiBold"/>
+                        <ComboBox x:Name="ThemeComboBox"
+                                 ItemsSource="{Binding AvailableThemes}"
+                                 SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
+                                 SelectionChanged="ThemeComboBox_SelectionChanged"
+                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 MinWidth="200"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
             
             <!-- Data Management -->
-            <StackPanel Spacing="12">
-                <TextBlock Text="🗑️ Data Management" 
-                          FontSize="18" 
-                          FontWeight="SemiBold"/>
-                
-                <Button x:Name="ClearDataButton"
-                       Content="⚠️ Clear All Data" 
-                       Background="Red"
-                       Foreground="White"
-                       HorizontalAlignment="Left"
-                       Click="ClearDataButton_Click"/>
-                
-                <TextBlock Text="This will permanently delete all your stored passwords and settings." 
-                          FontSize="12" 
-                          Foreground="Red"
-                          TextWrapping="Wrap"
-                          MaxWidth="400"/>
-            </StackPanel>
+            <Border Style="{StaticResource ModernCardStyle}" 
+                   BorderBrush="{StaticResource ModernErrorBrush}">
+                <StackPanel Spacing="20">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Background="{StaticResource ModernErrorBrush}"
+                               CornerRadius="10"
+                               Width="24"
+                               Height="24">
+                            <FontIcon Glyph="&#xE74D;" 
+                                     FontSize="12"
+                                     Foreground="White"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Data Management" 
+                                  Style="{StaticResource ModernHeading3Style}"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                    
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="⚠️ Danger Zone" 
+                                  Foreground="{StaticResource ModernErrorBrush}"
+                                  FontWeight="SemiBold"
+                                  FontSize="16"/>
+                        <TextBlock Text="This will permanently delete all your stored passwords and settings. This action cannot be undone." 
+                                  Style="{StaticResource ModernCaptionStyle}"
+                                  Foreground="{StaticResource ModernErrorBrush}"
+                                  TextWrapping="Wrap"/>
+                        
+                        <Button x:Name="ClearDataButton"
+                               Background="{StaticResource ModernErrorBrush}"
+                               Foreground="White"
+                               BorderThickness="0"
+                               CornerRadius="8"
+                               Padding="16,12"
+                               HorizontalAlignment="Left"
+                               Click="ClearDataButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE74D;" FontSize="14"/>
+                                <TextBlock Text="Clear All Data"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
             
             <!-- Loading Indicator -->
-            <StackPanel HorizontalAlignment="Center" 
-                       Spacing="10"
-                       Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
-                <ProgressRing IsActive="True" Width="30" Height="30"/>
-                <TextBlock Text="Saving settings..." FontSize="14"/>
-            </StackPanel>
+            <Border Style="{StaticResource ModernCardStyle}"
+                   HorizontalAlignment="Center" 
+                   Padding="32"
+                   Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Spacing="16" HorizontalAlignment="Center">
+                    <ProgressRing IsActive="True" Width="32" Height="32"/>
+                    <TextBlock Text="Saving settings..." 
+                              Style="{StaticResource ModernBodyStyle}"
+                              HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
             
         </StackPanel>
     </ScrollViewer>
