@@ -39,12 +39,34 @@
             
             <!-- Database Settings -->
             <StackPanel Spacing="12">
-                <TextBlock Text="🗄️ Database" 
+                <TextBlock Text="🗄️ Authentication & Storage" 
                           FontSize="18" 
                           FontWeight="SemiBold"/>
                 
-                <ComboBox Header="Database Provider" 
+                <ComboBox x:Name="AuthModeComboBox"
+                         Header="Authentication Mode"
+                         ItemsSource="{Binding AuthenticationModes}"
+                         SelectedItem="{Binding AuthenticationMode, Mode=TwoWay}"
+                         SelectionChanged="AuthModeComboBox_SelectionChanged"
+                         MinWidth="200"/>
+                
+                <StackPanel x:Name="ApiSettingsPanel" 
+                           Spacing="8"
+                           Visibility="{Binding AuthenticationMode, Converter={StaticResource ApiModeToVisibilityConverter}}">
+                    <TextBlock Text="API Settings" FontWeight="SemiBold"/>
+                    <TextBox x:Name="ApiUrlTextBox"
+                            Header="API Base URL"
+                            Text="{Binding ApiBaseUrl, Mode=TwoWay}"
+                            PlaceholderText="https://localhost:7001/api"
+                            MinWidth="300"/>
+                    <TextBlock Text="Configure the base URL for the Password Manager API server." 
+                              Style="{StaticResource CaptionTextBlockStyle}" 
+                              TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <ComboBox Header="Database Provider (Local Mode Only)" 
                          PlaceholderText="Select provider"
+                         IsEnabled="{Binding AuthenticationMode, Converter={StaticResource LocalModeToEnabledConverter}}"
                          MinWidth="200">
                     <ComboBoxItem Content="SQLite" IsSelected="True"/>
                     <ComboBoxItem Content="SQL Server"/>
@@ -54,6 +76,7 @@
                 
                 <Button Content="📊 Configure Database Connection" 
                        HorizontalAlignment="Left"
+                       IsEnabled="{Binding AuthenticationMode, Converter={StaticResource LocalModeToEnabledConverter}}"
                        Click="ConfigureDatabaseButton_Click"/>
                 
                 <ToggleSwitch x:Name="SyncToggle"

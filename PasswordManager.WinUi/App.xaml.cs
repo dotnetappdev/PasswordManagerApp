@@ -101,7 +101,8 @@ public partial class App : Application
                 services.AddScoped<ITagService, TagService>();
                 services.AddScoped<ICategoryInterface, CategoryService>();
                 services.AddScoped<ICollectionService, CollectionService>();
-                services.AddScoped<IAuthService, WinUiAuthService>();
+                services.AddScoped<WinUiAuthService>(); // Register the local auth service
+                services.AddScoped<IAuthService, ConfigurableAuthService>(); // Use configurable auth service
                 services.AddScoped<IPasswordRevealService, PasswordRevealService>();
                 services.AddScoped<IAppSyncService, AppSyncService>();
                 services.AddScoped<IAppStartupService, AppStartupService>();
