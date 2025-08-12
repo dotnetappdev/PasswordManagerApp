@@ -1,0 +1,7 @@
+{
+    "profiles": {
+        "PasswordManager.WinUi (Package)": {
+            "commandName": "MsixPackage"
+        }
+    }
+}

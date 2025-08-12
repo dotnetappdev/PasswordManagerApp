@@ -12,7 +12,7 @@ namespace PasswordManager.WinUi.Views;
 /// </summary>
 public sealed partial class LoginPage : Page
 {
-    private readonly IServiceProvider _serviceProvider;
+    private IServiceProvider? _serviceProvider;
     private LoginViewModel? _viewModel;
 
     public LoginPage()
@@ -23,7 +23,6 @@ public sealed partial class LoginPage : Page
     protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
-        
         if (e.Parameter is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
@@ -130,22 +129,9 @@ public sealed partial class LoginPage : Page
         }
     }
 
-    private Window? GetMainWindow()
+    private MainWindow? GetMainWindow()
     {
-        // Walk up the visual tree to find the main window
-        var current = this.XamlRoot?.Content;
-        while (current != null)
-        {
-            if (current is MainWindow mainWindow)
-                return mainWindow;
-            
-            if (current is FrameworkElement element)
-                current = element.Parent;
-            else
-                break;
-        }
-
-        // Fallback: try to get from App
-        return App.Current?.MainWindow;
+        // Use the MainWindow property exposed in App
+        return (App.Current as App)?.MainWindow;
     }
 }

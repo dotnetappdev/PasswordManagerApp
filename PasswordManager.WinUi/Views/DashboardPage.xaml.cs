@@ -12,7 +12,7 @@ namespace PasswordManager.WinUi.Views;
 /// </summary>
 public sealed partial class DashboardPage : Page
 {
-    private readonly IServiceProvider _serviceProvider;
+    private IServiceProvider? _serviceProvider;
     private DashboardViewModel? _viewModel;
 
     public DashboardPage()
@@ -23,7 +23,7 @@ public sealed partial class DashboardPage : Page
     protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
-        
+
         if (e.Parameter is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
@@ -64,7 +64,7 @@ public sealed partial class DashboardPage : Page
         {
             await _viewModel.LogoutAsync();
         }
-        
+
         // Request logout from main window
         if (GetMainWindow() is MainWindow mainWindow)
         {
@@ -82,26 +82,9 @@ public sealed partial class DashboardPage : Page
         }
     }
 
-    private Window? GetMainWindow()
+    private MainWindow? GetMainWindow()
     {
-        // Walk up the visual tree to find the main window
-        var current = this.XamlRoot?.Content as FrameworkElement;
-        while (current != null)
-        {
-            if (current is MainWindow mainWindow)
-                return mainWindow;
-            
-            current = current.Parent as FrameworkElement;
-        }
-
-        // Fallback: try to get the application's main window
-        // Since Application doesn't have MainWindow property in WinUI, we'll try to get it from App
-        if (Application.Current is App app && app != null)
-        {
-            // For now, return null - this would need to be implemented in the App class
-            return null;
-        }
-
-        return null;
+        // Use the MainWindow property exposed in App
+        return (App.Current as App)?.MainWindow;
     }
 }
