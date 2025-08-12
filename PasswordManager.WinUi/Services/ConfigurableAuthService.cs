@@ -306,4 +306,132 @@ public class ConfigurableAuthService : IAuthService
     {
         return await IsAuthenticatedAsync();
     }
+
+    public async Task<bool> SetupMasterPasswordAsync(string masterPassword, string hint = "")
+    {
+        var mode = await GetAuthenticationModeAsync();
+        
+        if (mode == "Local Database")
+        {
+            return await _localAuthService.SetupMasterPasswordAsync(masterPassword, hint);
+        }
+        else
+        {
+            // For API mode, this might not be applicable as the API handles user creation
+            // But we can implement it for consistency
+            try
+            {
+                var apiUrl = await GetApiBaseUrlAsync();
+                var setupRequest = new 
+                {
+                    MasterPassword = masterPassword,
+                    Hint = hint
+                };
+
+                var response = await _httpClient.PostAsJsonAsync($"{apiUrl}/auth/setup-master-password", setupRequest);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during API master password setup");
+                return false;
+            }
+        }
+    }
+
+    public async Task<bool> AuthenticateAsync(string masterPassword)
+    {
+        var mode = await GetAuthenticationModeAsync();
+        
+        if (mode == "Local Database")
+        {
+            var result = await _localAuthService.AuthenticateAsync(masterPassword);
+            _isAuthenticated = result;
+            _currentUser = _localAuthService.CurrentUser;
+            return result;
+        }
+        else
+        {
+            // For API mode, master password authentication might not be directly applicable
+            // But we can implement it for consistency
+            try
+            {
+                var apiUrl = await GetApiBaseUrlAsync();
+                var authRequest = new 
+                {
+                    MasterPassword = masterPassword
+                };
+
+                var response = await _httpClient.PostAsJsonAsync($"{apiUrl}/auth/authenticate", authRequest);
+                if (response.IsSuccessStatusCode)
+                {
+                    var authResponse = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+                    if (authResponse != null)
+                    {
+                        await _secureStorageService.SetAsync("apiSessionToken", authResponse.Token);
+                        await _secureStorageService.SetAsync("apiTokenExpiry", authResponse.ExpiresAt.ToString());
+                        
+                        _currentUser = new ApplicationUser
+                        {
+                            Id = authResponse.User.Id,
+                            Email = authResponse.User.Email,
+                            UserName = authResponse.User.Email,
+                            FirstName = authResponse.User.FirstName,
+                            LastName = authResponse.User.LastName,
+                            CreatedAt = authResponse.User.CreatedAt,
+                            LastLoginAt = authResponse.User.LastLoginAt,
+                            IsActive = authResponse.User.IsActive
+                        };
+                        
+                        _isAuthenticated = true;
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during API master password authentication");
+            }
+            
+            return false;
+        }
+    }
+
+    public async Task<string> GetMasterPasswordHintAsync()
+    {
+        var mode = await GetAuthenticationModeAsync();
+        
+        if (mode == "Local Database")
+        {
+            return await _localAuthService.GetMasterPasswordHintAsync();
+        }
+        else
+        {
+            // For API mode, get hint from API
+            try
+            {
+                var apiUrl = await GetApiBaseUrlAsync();
+                var token = await _secureStorageService.GetAsync("apiSessionToken");
+                
+                if (!string.IsNullOrEmpty(token))
+                {
+                    _httpClient.DefaultRequestHeaders.Authorization = 
+                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                }
+                
+                var response = await _httpClient.GetAsync($"{apiUrl}/auth/password-hint");
+                if (response.IsSuccessStatusCode)
+                {
+                    var hint = await response.Content.ReadAsStringAsync();
+                    return hint?.Trim('"') ?? ""; // Remove JSON quotes if present
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting password hint from API");
+            }
+            
+            return "";
+        }
+    }
 }
