@@ -82,7 +82,7 @@ switch (databaseProvider.ToLower())
         break;
 }
 
-// Add Identity services
+// Add Identity services with API endpoints (new .NET 9 approach)
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
@@ -93,7 +93,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.Password.RequireLowercase = true;
 })
 .AddEntityFrameworkStores<PasswordManagerDbContextApp>()
-.AddDefaultTokenProviders();
+.AddDefaultTokenProviders()
+.AddApiEndpoints(); // Enable .NET 9 Identity API endpoints
 
 // Register application services
 builder.Services.AddScoped<IPasswordManagerDbContext>(provider =>
@@ -196,6 +197,9 @@ app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Map .NET 9 Identity API endpoints
+app.MapIdentityApi<ApplicationUser>();
 
 app.MapHealthChecks("/health");
 

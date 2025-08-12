@@ -184,6 +184,22 @@
             </MudGrid>
         </MudPaper>
 
+        <!-- Authentication Mode Selection -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Authentication Mode</MudText>
+            
+            <MudRadioGroup T="string" @bind-value="authenticationMode" Row="false">
+                <MudRadio T="string" Value="@("LocalDatabase")" Style="color: white;">
+                    <MudText Style="color: white;">Local Database</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #cccccc;">Authenticate using the local database only</MudText>
+                </MudRadio>
+                <MudRadio T="string" Value="@("ApiEndpoint")" Style="color: white; margin-top: 8px;">
+                    <MudText Style="color: white;">API Endpoint</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #cccccc;">Authenticate using the API server with .NET Identity endpoints</MudText>
+                </MudRadio>
+            </MudRadioGroup>
+        </MudPaper>
+
         <!-- Database Settings -->
         <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
             <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Database Settings</MudText>
@@ -247,6 +263,7 @@
     private string generatedApiKey = "";
     private string generatedApiUrl = "";
     private string databaseProvider = "SqlServer";
+    private string authenticationMode = "LocalDatabase";
     private string supabaseUrl = "";
     private string supabaseApiKey = "";
     private string apiUrl = "";
@@ -295,6 +312,7 @@
         {
             var dbConfig = await DatabaseConfigurationService.GetConfigurationAsync();
             databaseProvider = dbConfig.Provider.ToString();
+            authenticationMode = dbConfig.AuthenticationMode.ToString();
             apiUrl = dbConfig.ApiUrl ?? "";
             apiKey = dbConfig.ApiKey ?? "";
             
@@ -428,6 +446,12 @@
             if (Enum.TryParse<DatabaseProvider>(databaseProvider, out var provider))
             {
                 dbConfig.Provider = provider;
+            }
+
+            // Update authentication mode if changed
+            if (Enum.TryParse<AuthenticationMode>(authenticationMode, out var authMode))
+            {
+                dbConfig.AuthenticationMode = authMode;
             }
             
             // Update provider-specific settings
