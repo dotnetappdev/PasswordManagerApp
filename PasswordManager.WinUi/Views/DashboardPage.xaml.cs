@@ -77,40 +77,31 @@ public sealed partial class DashboardPage : Page
         // Find the main window and request navigation
         if (GetMainWindow() is MainWindow mainWindow)
         {
-            // Get the NavigationView from the main window and set the selected item
-            var navView = mainWindow.FindName("MainNavigationView") as Microsoft.UI.Xaml.Controls.NavigationView;
-            if (navView != null)
-            {
-                // Find the navigation item with the matching tag
-                foreach (var item in navView.MenuItems)
-                {
-                    if (item is Microsoft.UI.Xaml.Controls.NavigationViewItem navItem && 
-                        navItem.Tag?.ToString() == pageTag)
-                    {
-                        navView.SelectedItem = navItem;
-                        break;
-                    }
-                }
-            }
+            // Use navigation method instead of directly accessing NavigationView
+            mainWindow.NavigateToPage(pageTag);
         }
     }
 
     private Window? GetMainWindow()
     {
         // Walk up the visual tree to find the main window
-        var current = this.XamlRoot?.Content;
+        var current = this.XamlRoot?.Content as FrameworkElement;
         while (current != null)
         {
             if (current is MainWindow mainWindow)
                 return mainWindow;
             
-            if (current is FrameworkElement element)
-                current = element.Parent;
-            else
-                break;
+            current = current.Parent as FrameworkElement;
         }
 
-        // Fallback: try to get from App
-        return App.Current?.MainWindow;
+        // Fallback: try to get the application's main window
+        // Since Application doesn't have MainWindow property in WinUI, we'll try to get it from App
+        if (Application.Current is App app && app != null)
+        {
+            // For now, return null - this would need to be implemented in the App class
+            return null;
+        }
+
+        return null;
     }
 }

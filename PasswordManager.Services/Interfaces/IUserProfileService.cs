@@ -51,6 +51,13 @@ public interface IUserProfileService
         string? newPasswordHint);
     
     /// <summary>
+    /// Changes a user's password (simplified method for current user)
+    /// </summary>
+    Task<(bool Success, string? ErrorMessage)> ChangePasswordAsync(
+        string currentPassword, 
+        string newPassword);
+    
+    /// <summary>
     /// Deactivates a user account (soft delete)
     /// </summary>
     Task<bool> DeactivateUserAsync(string userId);

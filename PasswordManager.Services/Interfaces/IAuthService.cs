@@ -53,6 +53,14 @@ public interface IAuthService
     Task<bool> LoginAsync(string email, string password);
 
     /// <summary>
+    /// Registers a new user with credentials
+    /// </summary>
+    /// <param name="email">User email</param>
+    /// <param name="password">User password</param>
+    /// <returns>True if registration was successful</returns>
+    Task<bool> RegisterAsync(string email, string password);
+
+    /// <summary>
     /// Logs out the user and locks the vault
     /// </summary>
     Task LogoutAsync();

@@ -130,32 +130,40 @@ public class ImportViewModel : BaseViewModel
             ImportStatus = $"Importing from {SelectedImportType}...";
 
             // Perform import
-            var results = await _importService.ImportPasswordsAsync(SelectedFilePath, providerName);
+            using var fileStream = new FileStream(SelectedFilePath, FileMode.Open, FileAccess.Read);
+            var fileName = Path.GetFileName(SelectedFilePath);
+            var result = await _importService.ImportPasswordsAsync(providerName, fileStream, fileName);
 
             // Process results
-            foreach (var result in results)
+            if (result.Success)
+            {
+                foreach (var item in result.ImportedItems)
+                {
+                    var resultItem = new ImportResultItem
+                    {
+                        Title = item.Title ?? "Unknown",
+                        Status = "Success",
+                        Message = "Imported successfully",
+                        ItemType = item.Type.ToString()
+                    };
+                    ImportResults.Add(resultItem);
+                }
+                
+                ImportedItemsCount = result.SuccessfulImports;
+                ErrorItemsCount = result.FailedImports;
+                SkippedItemsCount = result.TotalItemsProcessed - result.SuccessfulImports - result.FailedImports;
+            }
+            else
             {
                 var resultItem = new ImportResultItem
                 {
-                    Title = result.Title ?? "Unknown",
-                    Status = result.IsSuccess ? "Success" : "Error",
-                    Message = result.Message ?? string.Empty,
-                    ItemType = result.ItemType?.ToString() ?? "Unknown"
+                    Title = "Import Failed",
+                    Status = "Error",
+                    Message = result.ErrorMessage ?? "Unknown error occurred",
+                    ItemType = "N/A"
                 };
-
                 ImportResults.Add(resultItem);
-
-                if (result.IsSuccess)
-                {
-                    if (result.WasSkipped)
-                        SkippedItemsCount++;
-                    else
-                        ImportedItemsCount++;
-                }
-                else
-                {
-                    ErrorItemsCount++;
-                }
+                ErrorItemsCount = 1;
             }
 
             ImportStatus = $"Import completed. {ImportedItemsCount} imported, {SkippedItemsCount} skipped, {ErrorItemsCount} errors.";

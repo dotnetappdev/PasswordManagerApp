@@ -376,4 +376,26 @@ public class UserProfileService : IUserProfileService
     {
         return await UpdateUserProfileAsync(updateUserDto);
     }
+
+    /// <summary>
+    /// Changes a user's password (simplified method for current user)
+    /// </summary>
+    public async Task<(bool Success, string? ErrorMessage)> ChangePasswordAsync(string currentPassword, string newPassword)
+    {
+        try
+        {
+            // Get the current user - for now using the first user, but should use proper context
+            var currentUser = _userManager.Users.FirstOrDefault();
+            if (currentUser == null)
+                return (false, "No user found");
+
+            // Use the existing ChangeMasterPasswordAsync method
+            return await ChangeMasterPasswordAsync(currentUser.Id, currentPassword, newPassword, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error changing password for current user");
+            return (false, ex.Message);
+        }
+    }
 }

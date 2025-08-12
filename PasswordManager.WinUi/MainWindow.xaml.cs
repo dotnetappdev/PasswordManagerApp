@@ -48,7 +48,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void NavigateToPage(string pageTag)
+    public void NavigateToPage(string pageTag)
     {
         Type pageType = pageTag switch
         {

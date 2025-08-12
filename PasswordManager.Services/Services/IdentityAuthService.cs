@@ -338,6 +338,82 @@ public class IdentityAuthService : IAuthService
     }
 
     /// <summary>
+    /// Registers a new user with credentials
+    /// </summary>
+    public async Task<bool> RegisterAsync(string email, string password)
+    {
+        try
+        {
+            // Check if user already exists
+            var existingUser = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (existingUser != null)
+            {
+                _logger.LogWarning("Registration attempt with existing email: {Email}", email);
+                return false;
+            }
+
+            // Generate user GUID
+            var userId = Guid.NewGuid().ToString();
+            
+            // Generate user salt
+            var userSalt = _passwordCryptoService.GenerateUserSalt();
+            
+            // Create master password hash for authentication
+            var masterPasswordHash = _passwordCryptoService.CreateMasterPasswordHash(password, userSalt);
+            
+            // Generate backup codes for recovery
+            var backupCodes = GenerateBackupCodes(10);
+            var encryptedBackupCodes = await EncryptBackupCodesAsync(backupCodes, password, userSalt);
+            
+            // Create user record using Identity
+            var user = new ApplicationUser
+            {
+                Id = userId,
+                Email = email,
+                UserName = email,
+                UserSalt = Convert.ToBase64String(userSalt),
+                MasterPasswordHash = masterPasswordHash,
+                MasterPasswordHint = "",
+                BackupCodes = encryptedBackupCodes,
+                BackupCodesUsed = 0,
+                TwoFactorBackupCodesRemaining = backupCodes.Count,
+                CreatedAt = DateTime.UtcNow,
+                LastModified = DateTime.UtcNow,
+                IsActive = true
+            };
+
+            // Use Identity to create the user
+            var result = await _userManager.CreateAsync(user);
+            
+            if (result.Succeeded)
+            {
+                // Store user salt securely in platform-specific storage
+                await StoreUserSaltSecurelyAsync(user.Id, userSalt);
+
+                // Auto-login after successful registration
+                _isAuthenticated = true;
+                _currentUser = user;
+                
+                await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "isAuthenticated", "true");
+                await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "currentUserId", user.Id);
+
+                _logger.LogInformation("User registration completed for email: {Email}", email);
+                return true;
+            }
+            else
+            {
+                _logger.LogWarning("Failed to register user {Email}: {Errors}", email, string.Join(", ", result.Errors.Select(e => e.Description)));
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during registration for email: {Email}", email);
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Generates backup codes for account recovery
     /// </summary>
     private List<string> GenerateBackupCodes(int count = 10)

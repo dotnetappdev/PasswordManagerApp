@@ -82,7 +82,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
         {
             UsernameTextBox.Text = _editingItem.LoginItem.Username;
             PasswordTextBox.Password = _editingItem.LoginItem.Password;
-            UrlTextBox.Text = _editingItem.LoginItem.Url ?? string.Empty;
+            UrlTextBox.Text = _editingItem.LoginItem.WebsiteUrl ?? string.Empty;
         }
 
         // Select category
@@ -208,7 +208,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 
                 item.LoginItem.Username = UsernameTextBox.Text?.Trim() ?? string.Empty;
                 item.LoginItem.Password = PasswordTextBox.Password;
-                item.LoginItem.Url = UrlTextBox.Text?.Trim();
+                item.LoginItem.WebsiteUrl = UrlTextBox.Text?.Trim();
             }
 
             // Save item
