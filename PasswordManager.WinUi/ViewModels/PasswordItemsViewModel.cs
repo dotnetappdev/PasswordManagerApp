@@ -29,7 +29,7 @@ public class PasswordItemsViewModel : BaseViewModel
         }
     }
 
-    public bool IsLoading
+    public new bool IsLoading
     {
         get => base.IsLoading;
         set
