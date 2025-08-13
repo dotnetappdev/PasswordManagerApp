@@ -439,6 +439,92 @@
         </div>
     </div>
 
+    <!-- Items List View -->
+    <div class="items-list-view">
+        <div class="items-list-header">
+            <h3 class="items-list-title">Items</h3>
+            <div class="items-list-category-filter">
+                <select class="items-list-category-dropdown" @bind="selectedCategory" @bind:after="() => FilterItems()">
+                    <option value="all">All Categories</option>
+                    <option value="logins">Logins</option>
+                    <option value="cards">Credit Cards</option>
+                    <option value="notes">Secure Notes</option>
+                    <option value="wifi">WiFi</option>
+                    @foreach (var category in categories.OrderBy(c => c.Name))
+                    {
+                        <option value="@category.Name">@category.Name</option>
+                    }
+                </select>
+                <button class="add-category-quick-btn" @onclick="ShowAddCategoryModal" title="Add Category">+</button>
+            </div>
+        </div>
+        <div class="items-list-content">
+            @if (filteredItems.Any())
+            {
+                @foreach (var item in filteredItems.Take(50)) // Limit for performance
+                {
+                    <div class="items-list-item @(selectedItem?.Id == item.Id ? "selected" : "")" 
+                         @onclick="() => SelectItem(item)">
+                        <div class="item-type-icon @(item.Type.ToString().ToLower())">
+                            @if (item.Type == ItemType.Login && item.LoginItem != null)
+                            {
+                                var brandSlug = GetBrandSlug(item.LoginItem.Website, item.Title);
+                                if (!string.IsNullOrEmpty(brandSlug))
+                                {
+                                    <img height="18" width="18" style="border-radius:3px;" src=$"https://unpkg.com/simple-icons@v15/icons/{brandSlug}.svg" alt="brand icon" />
+                                }
+                                else
+                                {
+                                    <span>🔑</span>
+                                }
+                            }
+                            else if (item.Type == ItemType.CreditCard)
+                            {
+                                <span>💳</span>
+                            }
+                            else if (item.Type == ItemType.SecureNote)
+                            {
+                                <span>📝</span>
+                            }
+                            else if (item.Type == ItemType.WiFi)
+                            {
+                                <span>📶</span>
+                            }
+                        </div>
+                        <div class="items-list-item-info">
+                            <div class="items-list-item-title">@item.Title</div>
+                            <div class="items-list-item-subtitle">
+                                @if (item.Type == ItemType.Login && item.LoginItem != null)
+                                {
+                                    <span>@item.LoginItem.Username</span>
+                                }
+                                else if (item.Type == ItemType.CreditCard && item.CreditCardItem != null)
+                                {
+                                    <span>**** **** **** @item.CreditCardItem.CardNumber?.Substring(Math.Max(0, item.CreditCardItem.CardNumber.Length - 4))</span>
+                                }
+                                else if (item.Type == ItemType.WiFi && item.WiFiItem != null)
+                                {
+                                    <span>@item.WiFiItem.NetworkName</span>
+                                }
+                                else if (item.Type == ItemType.SecureNote)
+                                {
+                                    <span>Secure note</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div style="padding: 40px 20px; text-align: center; color: #6c757d;">
+                    <div style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;">🔍</div>
+                    <div>No items found</div>
+                </div>
+            }
+        </div>
+    </div>
+
     <!-- Main Content -->
     <div class="main-content">
         <!-- Header -->
@@ -500,24 +586,6 @@
         return Task.CompletedTask;
     }
 }
-
-        <!-- Category Filter Section -->
-        <div class="category-filter-section">
-            <div class="category-dropdown-container">
-                <label class="category-label">Filter by category:</label>
-                <select class="category-dropdown" @bind="selectedCategory" @bind:after="() => FilterItems()">
-                    <option value="all">All Categories</option>
-                    <option value="logins">Logins</option>
-                    <option value="cards">Credit Cards</option>
-                    <option value="notes">Secure Notes</option>
-                    <option value="wifi">WiFi</option>
-                    @foreach (var category in categories.OrderBy(c => c.Name))
-                    {
-                        <option value="@category.Name">@category.Name</option>
-                    }
-                </select>
-            </div>
-        </div>
 
         <!-- Items List -->
         <div class="items-container">
