@@ -9,17 +9,7 @@
           Background="{StaticResource ModernBackgroundBrush}">
         
         <!-- Background Gradient -->
-        <Grid.Background>
-            <LinearGradientBrush StartPoint="0,0"
-                    EndPoint="1,1">
-                <GradientStop Color="#6366F1"
-                        Offset="0"/>
-                <GradientStop Color="#8B5FFF"
-                        Offset="0.5"/>
-                <GradientStop Color="#EC4899"
-                        Offset="1"/>
-            </LinearGradientBrush>
-        </Grid.Background>
+        
 
         <!-- Content Container -->
         <Grid HorizontalAlignment="Center"
