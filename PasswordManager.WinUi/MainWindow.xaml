@@ -21,7 +21,7 @@
                               TextChanged="SearchBox_TextChanged"
                               QuerySubmitted="SearchBox_QuerySubmitted"
                               MinWidth="200"
-                              Style="{StaticResource ModernTextBoxStyle}"
+                              Style="{StaticResource ModernAutoSuggestBoxStyle}"
                               CornerRadius="20"/>
             </NavigationView.AutoSuggestBox>
 
