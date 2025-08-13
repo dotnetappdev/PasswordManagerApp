@@ -199,6 +199,24 @@
                 Value="14"/>
     </Style>
 
+    <Style x:Key="ModernComboBoxStyle"
+            TargetType="ComboBox">
+        <Setter Property="Background"
+                Value="{StaticResource ModernSurfaceBrush}"/>
+        <Setter Property="Foreground"
+                Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush"
+                Value="#CBD5E1"/>
+        <Setter Property="BorderThickness"
+                Value="1"/>
+        <Setter Property="CornerRadius"
+                Value="12"/>
+        <Setter Property="Padding"
+                Value="16,12"/>
+        <Setter Property="FontSize"
+                Value="14"/>
+    </Style>
+
     <Style x:Key="ModernPasswordBoxStyle"
             TargetType="PasswordBox">
         <Setter Property="Background"
