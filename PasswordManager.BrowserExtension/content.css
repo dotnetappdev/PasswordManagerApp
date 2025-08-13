@@ -32,7 +32,8 @@
 }
 
 .pm-credential-popup,
-.pm-password-popup {
+.pm-password-popup,
+.pm-creditcard-popup {
   position: absolute !important;
   background-color: white !important;
   border: 1px solid #ccc !important;
@@ -51,6 +52,12 @@
 
 .pm-password-popup {
   min-width: 200px !important;
+}
+
+.pm-creditcard-popup {
+  min-width: 280px !important;
+  max-height: 300px !important;
+  overflow-y: auto !important;
 }
 
 .pm-credential-item {
@@ -103,6 +110,7 @@
 .pm-field-icon,
 .pm-credential-popup,
 .pm-password-popup,
+.pm-creditcard-popup,
 .pm-notification {
   all: initial !important;
 }
@@ -127,4 +135,12 @@
   border: none !important;
   outline: none !important;
   color: white !important;
+}
+
+.pm-creditcard-icon {
+  background-color: #28a745 !important; /* Green color for credit card icons */
+}
+
+.pm-creditcard-icon:hover {
+  background-color: #1e7e34 !important;
 }

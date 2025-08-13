@@ -140,6 +140,7 @@ public class Program
             {
                 "login" => await HandleLogin(message),
                 "getCredentials" => await HandleGetCredentials(message),
+                "getCreditCards" => await HandleGetCreditCards(message),
                 "generatePassword" => HandleGeneratePassword(message),
                 "testConnection" => await HandleTestConnection(),
                 _ => new { success = false, error = "Unknown action" }
@@ -281,6 +282,124 @@ public class Program
         catch (Exception ex)
         {
             return new { success = false, error = $"Failed to get credentials: {ex.Message}" };
+        }
+    }
+
+    private static async Task<object> HandleGetCreditCards(Dictionary<string, object> message)
+    {
+        if (!message.TryGetValue("token", out var tokenObj) || tokenObj is not JsonElement tokenElement)
+        {
+            return new { success = false, error = "Authentication token required" };
+        }
+
+        var token = tokenElement.GetString();
+        if (string.IsNullOrEmpty(token) || !_sessions.TryGetValue(token, out var session))
+        {
+            return new { success = false, error = "Invalid or expired session" };
+        }
+
+        var domain = "";
+        if (message.TryGetValue("domain", out var domainObj) && domainObj is JsonElement domainElement)
+        {
+            domain = domainElement.GetString() ?? "";
+        }
+
+        try
+        {
+            var query = _dbContext!.PasswordItems
+                .Include(p => p.CreditCardItem)
+                .Where(p => p.UserId == session.userId && p.Type == ItemType.CreditCard && !p.IsDeleted);
+
+            var passwordItems = await query.ToListAsync();
+
+            var creditCards = new List<object>();
+
+            foreach (var item in passwordItems)
+            {
+                if (item.CreditCardItem == null) continue;
+
+                // Decrypt credit card data if available
+                string decryptedCardNumber = "";
+                string decryptedCvv = "";
+
+                // Decrypt card number
+                if (!string.IsNullOrEmpty(item.CreditCardItem.EncryptedCardNumber) &&
+                    !string.IsNullOrEmpty(item.CreditCardItem.CardNumberNonce) &&
+                    !string.IsNullOrEmpty(item.CreditCardItem.CardNumberAuthTag))
+                {
+                    try
+                    {
+                        var encryptedData = new EncryptedPasswordData
+                        {
+                            EncryptedPassword = item.CreditCardItem.EncryptedCardNumber,
+                            Nonce = item.CreditCardItem.CardNumberNonce,
+                            AuthenticationTag = item.CreditCardItem.CardNumberAuthTag
+                        };
+                        decryptedCardNumber = DecryptPasswordWithKey(encryptedData, session.masterKey);
+                    }
+                    catch
+                    {
+                        // If decryption fails, use unencrypted version if available
+                        decryptedCardNumber = item.CreditCardItem.CardNumber ?? "";
+                    }
+                }
+                else
+                {
+                    decryptedCardNumber = item.CreditCardItem.CardNumber ?? "";
+                }
+
+                // Decrypt CVV
+                if (!string.IsNullOrEmpty(item.CreditCardItem.EncryptedCvv) &&
+                    !string.IsNullOrEmpty(item.CreditCardItem.CvvNonce) &&
+                    !string.IsNullOrEmpty(item.CreditCardItem.CvvAuthTag))
+                {
+                    try
+                    {
+                        var encryptedData = new EncryptedPasswordData
+                        {
+                            EncryptedPassword = item.CreditCardItem.EncryptedCvv,
+                            Nonce = item.CreditCardItem.CvvNonce,
+                            AuthenticationTag = item.CreditCardItem.CvvAuthTag
+                        };
+                        decryptedCvv = DecryptPasswordWithKey(encryptedData, session.masterKey);
+                    }
+                    catch
+                    {
+                        // If decryption fails, use unencrypted version if available
+                        decryptedCvv = item.CreditCardItem.CVV ?? "";
+                    }
+                }
+                else
+                {
+                    decryptedCvv = item.CreditCardItem.CVV ?? "";
+                }
+
+                creditCards.Add(new
+                {
+                    id = item.Id,
+                    title = item.Title,
+                    cardholderName = item.CreditCardItem.CardholderName ?? "",
+                    cardNumber = decryptedCardNumber,
+                    expiryDate = item.CreditCardItem.ExpiryDate ?? "",
+                    cvv = decryptedCvv,
+                    cardType = item.CreditCardItem.CardType.ToString(),
+                    billingAddressLine1 = item.CreditCardItem.BillingAddressLine1 ?? "",
+                    billingAddressLine2 = item.CreditCardItem.BillingAddressLine2 ?? "",
+                    billingCity = item.CreditCardItem.BillingCity ?? "",
+                    billingState = item.CreditCardItem.BillingState ?? "",
+                    billingZipCode = item.CreditCardItem.BillingZipCode ?? "",
+                    billingCountry = item.CreditCardItem.BillingCountry ?? ""
+                });
+            }
+
+            return new { 
+                success = true, 
+                creditCards = creditCards 
+            };
+        }
+        catch (Exception ex)
+        {
+            return new { success = false, error = $"Failed to get credit cards: {ex.Message}" };
         }
     }
 
@@ -454,6 +573,17 @@ public class Program
 }
 
 // Models and DTOs needed for the application
+public enum CardType
+{
+    Visa,
+    MasterCard,
+    AmericanExpress,
+    Discover,
+    DinersClub,
+    JCB,
+    Other
+}
+
 public enum ItemType
 {
     Login = 0,
@@ -471,6 +601,7 @@ public class ApplicationUser : IdentityUser
     public int MasterPasswordIterations { get; set; } = 600000;
     public List<PasswordItem> PasswordItems { get; set; } = new();
     public List<LoginItem> LoginItems { get; set; } = new();
+    public List<CreditCardItem> CreditCardItems { get; set; } = new();
 }
 
 public class PasswordItem
@@ -505,6 +636,7 @@ public class PasswordItem
 
     // Navigation properties
     public LoginItem? LoginItem { get; set; }
+    public CreditCardItem? CreditCardItem { get; set; }
 }
 
 public class LoginItem
@@ -546,6 +678,71 @@ public class LoginItem
     public PasswordItem PasswordItem { get; set; } = null!;
 }
 
+public class CreditCardItem
+{
+    public int Id { get; set; }
+    public int PasswordItemId { get; set; }
+
+    // Audit fields
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime LastModified { get; set; } = DateTime.UtcNow;
+
+    // User relationship
+    public string? UserId { get; set; }
+    public ApplicationUser? User { get; set; }
+    
+    // Card Details
+    [MaxLength(100)]
+    public string? CardholderName { get; set; }
+    
+    [MaxLength(19)] // Maximum for credit card numbers with spaces
+    public string? CardNumber { get; set; }
+    
+    [MaxLength(7)] // MM/YYYY format
+    public string? ExpiryDate { get; set; }
+    
+    [MaxLength(4)]
+    public string? CVV { get; set; }
+    
+    public CardType CardType { get; set; }
+    
+    // Billing Address
+    [MaxLength(200)]
+    public string? BillingAddressLine1 { get; set; }
+    
+    [MaxLength(200)]
+    public string? BillingAddressLine2 { get; set; }
+    
+    [MaxLength(100)]
+    public string? BillingCity { get; set; }
+    
+    [MaxLength(50)]
+    public string? BillingState { get; set; }
+    
+    [MaxLength(20)]
+    public string? BillingZipCode { get; set; }
+    
+    [MaxLength(50)]
+    public string? BillingCountry { get; set; }
+    
+    // Encrypted card data (Base64 encoded ciphertext)
+    [MaxLength(1000)]
+    public string? EncryptedCardNumber { get; set; }
+    [MaxLength(200)]
+    public string? CardNumberNonce { get; set; }
+    [MaxLength(200)]
+    public string? CardNumberAuthTag { get; set; }
+    [MaxLength(1000)]
+    public string? EncryptedCvv { get; set; }
+    [MaxLength(200)]
+    public string? CvvNonce { get; set; }
+    [MaxLength(200)]
+    public string? CvvAuthTag { get; set; }
+
+    // Navigation property
+    public PasswordItem PasswordItem { get; set; } = null!;
+}
+
 public class PasswordManagerDbContext : IdentityDbContext<ApplicationUser>
 {
     public PasswordManagerDbContext(DbContextOptions<PasswordManagerDbContext> options) : base(options)
@@ -554,6 +751,7 @@ public class PasswordManagerDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<PasswordItem> PasswordItems { get; set; } = null!;
     public DbSet<LoginItem> LoginItems { get; set; } = null!;
+    public DbSet<CreditCardItem> CreditCardItems { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -601,6 +799,44 @@ public class PasswordManagerDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.PasswordItem)
                   .WithOne(p => p.LoginItem)
                   .HasForeignKey<LoginItem>(e => e.PasswordItemId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure CreditCardItem
+        modelBuilder.Entity<CreditCardItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CardholderName).HasMaxLength(100);
+            entity.Property(e => e.CardNumber).HasMaxLength(19);
+            entity.Property(e => e.ExpiryDate).HasMaxLength(7);
+            entity.Property(e => e.CVV).HasMaxLength(4);
+            entity.Property(e => e.CardType).HasConversion<int>();
+            entity.Property(e => e.BillingAddressLine1).HasMaxLength(200);
+            entity.Property(e => e.BillingAddressLine2).HasMaxLength(200);
+            entity.Property(e => e.BillingCity).HasMaxLength(100);
+            entity.Property(e => e.BillingState).HasMaxLength(50);
+            entity.Property(e => e.BillingZipCode).HasMaxLength(20);
+            entity.Property(e => e.BillingCountry).HasMaxLength(50);
+            entity.Property(e => e.EncryptedCardNumber).HasMaxLength(1000);
+            entity.Property(e => e.CardNumberNonce).HasMaxLength(200);
+            entity.Property(e => e.CardNumberAuthTag).HasMaxLength(200);
+            entity.Property(e => e.EncryptedCvv).HasMaxLength(1000);
+            entity.Property(e => e.CvvNonce).HasMaxLength(200);
+            entity.Property(e => e.CvvAuthTag).HasMaxLength(200);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.LastModified).IsRequired();
+
+            // Configure User relationship
+            entity.Property(e => e.UserId).IsRequired();
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.CreditCardItems)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure PasswordItem relationship
+            entity.HasOne(e => e.PasswordItem)
+                  .WithOne(p => p.CreditCardItem)
+                  .HasForeignKey<CreditCardItem>(e => e.PasswordItemId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -34,13 +34,18 @@ class PasswordManagerContentScript {
     const usernameFields = this.findUsernameFields();
     const passwordFields = this.findPasswordFields();
     
+    // Look for credit card fields
+    const creditCardFields = this.findCreditCardFields();
+    
     usernameFields.forEach(field => this.addFieldIcon(field, 'username'));
     passwordFields.forEach(field => this.addFieldIcon(field, 'password'));
+    creditCardFields.forEach(field => this.addFieldIcon(field, 'creditcard'));
   }
 
   processForm(form) {
     const usernameField = this.findUsernameFieldInForm(form);
     const passwordField = this.findPasswordFieldInForm(form);
+    const creditCardFields = this.findCreditCardFieldsInForm(form);
     
     if (usernameField) {
       this.addFieldIcon(usernameField, 'username');
@@ -49,6 +54,8 @@ class PasswordManagerContentScript {
     if (passwordField) {
       this.addFieldIcon(passwordField, 'password');
     }
+
+    creditCardFields.forEach(field => this.addFieldIcon(field, 'creditcard'));
   }
 
   findUsernameFields() {
@@ -71,6 +78,96 @@ class PasswordManagerContentScript {
 
   findPasswordFields() {
     return document.querySelectorAll('input[type="password"]');
+  }
+
+  findCreditCardFields() {
+    const selectors = [
+      // Card number fields
+      'input[name*="card"][name*="number" i]',
+      'input[name*="cardnumber" i]',
+      'input[name*="cc-number" i]',
+      'input[id*="card"][id*="number" i]',
+      'input[id*="cardnumber" i]',
+      'input[id*="cc-number" i]',
+      'input[autocomplete="cc-number"]',
+      'input[placeholder*="card number" i]',
+      'input[placeholder*="card-number" i]',
+      // CVV fields
+      'input[name*="cvv" i]',
+      'input[name*="cvc" i]',
+      'input[name*="security" i]',
+      'input[id*="cvv" i]',
+      'input[id*="cvc" i]',
+      'input[id*="security" i]',
+      'input[autocomplete="cc-csc"]',
+      'input[placeholder*="cvv" i]',
+      'input[placeholder*="cvc" i]',
+      // Expiry fields
+      'input[name*="exp" i]',
+      'input[name*="expiry" i]',
+      'input[id*="exp" i]',
+      'input[id*="expiry" i]',
+      'input[autocomplete="cc-exp"]',
+      'input[autocomplete="cc-exp-month"]',
+      'input[autocomplete="cc-exp-year"]',
+      'input[placeholder*="expiry" i]',
+      'input[placeholder*="exp" i]',
+      // Cardholder name
+      'input[name*="cardholder" i]',
+      'input[name*="card-holder" i]',
+      'input[id*="cardholder" i]',
+      'input[id*="card-holder" i]',
+      'input[autocomplete="cc-name"]',
+      'input[placeholder*="cardholder" i]',
+      'input[placeholder*="name on card" i]'
+    ];
+    
+    return document.querySelectorAll(selectors.join(','));
+  }
+
+  findCreditCardFieldsInForm(form) {
+    const selectors = [
+      // Card number fields
+      'input[name*="card"][name*="number" i]',
+      'input[name*="cardnumber" i]',
+      'input[name*="cc-number" i]',
+      'input[id*="card"][id*="number" i]',
+      'input[id*="cardnumber" i]',
+      'input[id*="cc-number" i]',
+      'input[autocomplete="cc-number"]',
+      'input[placeholder*="card number" i]',
+      'input[placeholder*="card-number" i]',
+      // CVV fields
+      'input[name*="cvv" i]',
+      'input[name*="cvc" i]',
+      'input[name*="security" i]',
+      'input[id*="cvv" i]',
+      'input[id*="cvc" i]',
+      'input[id*="security" i]',
+      'input[autocomplete="cc-csc"]',
+      'input[placeholder*="cvv" i]',
+      'input[placeholder*="cvc" i]',
+      // Expiry fields
+      'input[name*="exp" i]',
+      'input[name*="expiry" i]',
+      'input[id*="exp" i]',
+      'input[id*="expiry" i]',
+      'input[autocomplete="cc-exp"]',
+      'input[autocomplete="cc-exp-month"]',
+      'input[autocomplete="cc-exp-year"]',
+      'input[placeholder*="expiry" i]',
+      'input[placeholder*="exp" i]',
+      // Cardholder name
+      'input[name*="cardholder" i]',
+      'input[name*="card-holder" i]',
+      'input[id*="cardholder" i]',
+      'input[id*="card-holder" i]',
+      'input[autocomplete="cc-name"]',
+      'input[placeholder*="cardholder" i]',
+      'input[placeholder*="name on card" i]'
+    ];
+    
+    return form.querySelectorAll(selectors.join(','));
   }
 
   findUsernameFieldInForm(form) {
@@ -137,8 +234,18 @@ class PasswordManagerContentScript {
   createIcon(type, field) {
     const icon = document.createElement('div');
     icon.className = `pm-field-icon pm-${type}-icon`;
-    icon.innerHTML = type === 'username' ? '👤' : '🔑';
-    icon.title = `Fill ${type} with Password Manager`;
+    
+    // Set icon and title based on type
+    if (type === 'username') {
+      icon.innerHTML = '👤';
+      icon.title = 'Fill username with Password Manager';
+    } else if (type === 'password') {
+      icon.innerHTML = '🔑';
+      icon.title = 'Fill password with Password Manager';
+    } else if (type === 'creditcard') {
+      icon.innerHTML = '💳';
+      icon.title = 'Fill credit card with Password Manager';
+    }
     
     // Style the icon
     Object.assign(icon.style, {
@@ -208,6 +315,8 @@ class PasswordManagerContentScript {
         await this.showCredentialSelector(field);
       } else if (type === 'password') {
         await this.showPasswordOptions(field);
+      } else if (type === 'creditcard') {
+        await this.showCreditCardSelector(field);
       }
     } catch (error) {
       console.error('Password Manager: Error handling icon click:', error);
@@ -415,6 +524,223 @@ class PasswordManagerContentScript {
     }, 0);
   }
 
+  async showCreditCardSelector(field) {
+    // Send message to background script to get credit cards
+    const response = await chrome.runtime.sendMessage({
+      action: 'getCreditCards',
+      domain: window.location.hostname
+    });
+    
+    if (response.success && response.creditCards.length > 0) {
+      this.showCreditCardPopup(field, response.creditCards);
+    } else {
+      this.showNotification('No credit cards found.');
+    }
+  }
+
+  showCreditCardPopup(field, creditCards) {
+    // Remove existing popup
+    const existingPopup = document.querySelector('.pm-creditcard-popup');
+    if (existingPopup) {
+      existingPopup.remove();
+    }
+    
+    const popup = document.createElement('div');
+    popup.className = 'pm-creditcard-popup';
+    
+    Object.assign(popup.style, {
+      position: 'absolute',
+      backgroundColor: 'white',
+      border: '1px solid #ccc',
+      borderRadius: '4px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      zIndex: '10001',
+      maxWidth: '300px',
+      maxHeight: '300px',
+      overflowY: 'auto'
+    });
+    
+    const header = document.createElement('div');
+    header.style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; background: #f8f9fa;';
+    header.textContent = 'Select Credit Card';
+    popup.appendChild(header);
+    
+    creditCards.forEach(card => {
+      const item = document.createElement('div');
+      item.style.cssText = 'padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;';
+      
+      // Mask card number for display (show only last 4 digits)
+      const maskedNumber = card.cardNumber ? `****-****-****-${card.cardNumber.slice(-4)}` : '****-****-****-****';
+      
+      item.innerHTML = `
+        <div style="font-weight: 500; color: #333;">${this.escapeHtml(card.title)}</div>
+        <div style="font-size: 12px; color: #666; margin-top: 2px;">${this.escapeHtml(card.cardholderName || 'No cardholder name')}</div>
+        <div style="font-size: 12px; color: #666;">${maskedNumber}</div>
+        <div style="font-size: 12px; color: #666;">Expires: ${this.escapeHtml(card.expiryDate || 'N/A')}</div>
+      `;
+      
+      item.addEventListener('click', () => {
+        this.fillCreditCard(field, card);
+        popup.remove();
+      });
+      
+      item.addEventListener('mouseenter', () => {
+        item.style.backgroundColor = '#f0f0f0';
+      });
+      
+      item.addEventListener('mouseleave', () => {
+        item.style.backgroundColor = 'white';
+      });
+      
+      popup.appendChild(item);
+    });
+    
+    document.body.appendChild(popup);
+    this.positionPopup(popup, field);
+    
+    // Close on outside click
+    setTimeout(() => {
+      document.addEventListener('click', (e) => {
+        if (!popup.contains(e.target)) {
+          popup.remove();
+        }
+      }, { once: true });
+    }, 100);
+  }
+
+  fillCreditCard(clickedField, card) {
+    try {
+      // Determine what type of field was clicked and fill accordingly
+      const fieldType = this.determineCreditCardFieldType(clickedField);
+      
+      if (fieldType === 'cardNumber' && card.cardNumber) {
+        clickedField.value = card.cardNumber;
+        clickedField.dispatchEvent(new Event('input', { bubbles: true }));
+        clickedField.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if (fieldType === 'cvv' && card.cvv) {
+        clickedField.value = card.cvv;
+        clickedField.dispatchEvent(new Event('input', { bubbles: true }));
+        clickedField.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if (fieldType === 'expiry' && card.expiryDate) {
+        clickedField.value = card.expiryDate;
+        clickedField.dispatchEvent(new Event('input', { bubbles: true }));
+        clickedField.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if (fieldType === 'cardholderName' && card.cardholderName) {
+        clickedField.value = card.cardholderName;
+        clickedField.dispatchEvent(new Event('input', { bubbles: true }));
+        clickedField.dispatchEvent(new Event('change', { bubbles: true }));
+      } else {
+        // Try to auto-fill entire form if it's a general credit card field
+        this.autoFillCreditCardForm(clickedField, card);
+      }
+      
+      this.showNotification('Credit card information filled successfully.');
+    } catch (error) {
+      console.error('Password Manager: Error filling credit card:', error);
+      this.showNotification('Error filling credit card information.');
+    }
+  }
+
+  determineCreditCardFieldType(field) {
+    const name = (field.name || '').toLowerCase();
+    const id = (field.id || '').toLowerCase();
+    const placeholder = (field.placeholder || '').toLowerCase();
+    const autocomplete = (field.autocomplete || '').toLowerCase();
+    
+    // Card number detection
+    if (name.includes('number') || id.includes('number') || 
+        placeholder.includes('number') || autocomplete === 'cc-number') {
+      return 'cardNumber';
+    }
+    
+    // CVV detection
+    if (name.includes('cvv') || name.includes('cvc') || name.includes('security') ||
+        id.includes('cvv') || id.includes('cvc') || id.includes('security') ||
+        placeholder.includes('cvv') || placeholder.includes('cvc') || autocomplete === 'cc-csc') {
+      return 'cvv';
+    }
+    
+    // Expiry detection
+    if (name.includes('exp') || id.includes('exp') || placeholder.includes('exp') ||
+        autocomplete.includes('cc-exp')) {
+      return 'expiry';
+    }
+    
+    // Cardholder name detection
+    if (name.includes('cardholder') || name.includes('name') ||
+        id.includes('cardholder') || id.includes('name') ||
+        placeholder.includes('cardholder') || placeholder.includes('name') ||
+        autocomplete === 'cc-name') {
+      return 'cardholderName';
+    }
+    
+    return 'unknown';
+  }
+
+  autoFillCreditCardForm(startField, card) {
+    // Find the form containing this field
+    const form = startField.closest('form') || document;
+    
+    // Fill card number
+    if (card.cardNumber) {
+      const cardNumberField = form.querySelector('input[autocomplete="cc-number"], input[name*="number" i], input[id*="number" i]');
+      if (cardNumberField) {
+        cardNumberField.value = card.cardNumber;
+        cardNumberField.dispatchEvent(new Event('input', { bubbles: true }));
+        cardNumberField.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+    
+    // Fill cardholder name
+    if (card.cardholderName) {
+      const nameField = form.querySelector('input[autocomplete="cc-name"], input[name*="cardholder" i], input[id*="cardholder" i]');
+      if (nameField) {
+        nameField.value = card.cardholderName;
+        nameField.dispatchEvent(new Event('input', { bubbles: true }));
+        nameField.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+    
+    // Fill expiry date
+    if (card.expiryDate) {
+      const expiryField = form.querySelector('input[autocomplete="cc-exp"], input[name*="exp" i], input[id*="exp" i]');
+      if (expiryField) {
+        expiryField.value = card.expiryDate;
+        expiryField.dispatchEvent(new Event('input', { bubbles: true }));
+        expiryField.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      
+      // Handle separate month/year fields
+      const [month, year] = (card.expiryDate || '').split('/');
+      if (month && year) {
+        const monthField = form.querySelector('input[autocomplete="cc-exp-month"], select[autocomplete="cc-exp-month"]');
+        const yearField = form.querySelector('input[autocomplete="cc-exp-year"], select[autocomplete="cc-exp-year"]');
+        
+        if (monthField) {
+          monthField.value = month.trim();
+          monthField.dispatchEvent(new Event('input', { bubbles: true }));
+          monthField.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        
+        if (yearField) {
+          yearField.value = year.trim();
+          yearField.dispatchEvent(new Event('input', { bubbles: true }));
+          yearField.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+    }
+    
+    // Fill CVV
+    if (card.cvv) {
+      const cvvField = form.querySelector('input[autocomplete="cc-csc"], input[name*="cvv" i], input[id*="cvv" i], input[name*="cvc" i], input[id*="cvc" i]');
+      if (cvvField) {
+        cvvField.value = card.cvv;
+        cvvField.dispatchEvent(new Event('input', { bubbles: true }));
+        cvvField.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+  }
+
   setupDOMObserver() {
     this.observer = new MutationObserver((mutations) => {
       let shouldScan = false;
@@ -426,7 +752,10 @@ class PasswordManagerContentScript {
               if (node.tagName === 'FORM' || 
                   node.querySelector('form') || 
                   node.querySelector('input[type="password"]') ||
-                  node.querySelector('input[type="text"]')) {
+                  node.querySelector('input[type="text"]') ||
+                  node.querySelector('input[autocomplete*="cc-"]') ||
+                  node.querySelector('input[name*="card" i]') ||
+                  node.querySelector('input[name*="cvv" i]')) {
                 shouldScan = true;
               }
             }
