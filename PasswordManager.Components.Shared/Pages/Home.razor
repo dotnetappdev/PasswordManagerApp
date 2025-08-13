@@ -501,6 +501,24 @@
     }
 }
 
+        <!-- Category Filter Section -->
+        <div class="category-filter-section">
+            <div class="category-dropdown-container">
+                <label class="category-label">Filter by category:</label>
+                <select class="category-dropdown" @bind="selectedCategory" @bind:after="() => FilterItems()">
+                    <option value="all">All Categories</option>
+                    <option value="logins">Logins</option>
+                    <option value="cards">Credit Cards</option>
+                    <option value="notes">Secure Notes</option>
+                    <option value="wifi">WiFi</option>
+                    @foreach (var category in categories.OrderBy(c => c.Name))
+                    {
+                        <option value="@category.Name">@category.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+
         <!-- Items List -->
         <div class="items-container">
             @if (filteredItems.Any())
