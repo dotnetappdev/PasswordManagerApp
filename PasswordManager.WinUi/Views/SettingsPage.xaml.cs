@@ -255,10 +255,18 @@ public sealed partial class SettingsPage : Page
             }
 
             // Use the auth service to change the master password with hint
-            var success = await _authService?.ChangeMasterPasswordAsync(
-                currentPasswordBox.Password, 
-                newPasswordBox.Password, 
-                passwordHintBox.Text) ?? false;
+            bool success;
+            if (_authService != null)
+            {
+                success = await _authService.ChangeMasterPasswordAsync(
+                    currentPasswordBox.Password,
+                    newPasswordBox.Password,
+                    passwordHintBox.Text);
+            }
+            else
+            {
+                success = false;
+            }
             
             var message = success ? 
                 "Master password changed successfully! Your new password will be required on next app startup." : 

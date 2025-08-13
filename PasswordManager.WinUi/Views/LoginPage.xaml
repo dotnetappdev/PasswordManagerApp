@@ -1,7 +1,8 @@
 <Page x:Class="PasswordManager.WinUi.Views.LoginPage"
-      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Background="{StaticResource ModernBackgroundBrush}">
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="{StaticResource ModernBackgroundBrush}"
+    Loaded="Page_Loaded">
 
     <!-- Full window overlay that prevents interaction with background -->
     <Grid HorizontalAlignment="Stretch" 

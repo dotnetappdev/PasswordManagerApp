@@ -39,17 +39,23 @@ public sealed partial class MainWindow : Window
     
     private void SetNavigationVisibility(bool isVisible)
     {
+        // Keep the NavigationView enabled so the content frame remains interactive.
+        // Only hide the navigation pane and disable search until authenticated.
         if (isVisible)
         {
             MainNavigationView.IsEnabled = true;
             MainNavigationView.IsPaneVisible = true;
+            MainNavigationView.IsPaneToggleButtonVisible = true;
             MainNavigationView.Opacity = 1.0;
+            try { if (SearchBox != null) SearchBox.IsEnabled = true; } catch { }
         }
         else
         {
-            MainNavigationView.IsEnabled = false;
+            MainNavigationView.IsEnabled = true; // Do not disable the parent or it greys out the content
             MainNavigationView.IsPaneVisible = false;
-            MainNavigationView.Opacity = 0.5;
+            MainNavigationView.IsPaneToggleButtonVisible = false;
+            MainNavigationView.Opacity = 1.0;
+            try { if (SearchBox != null) SearchBox.IsEnabled = false; } catch { }
         }
     }
 
