@@ -40,6 +40,13 @@ public partial class App : Application
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         m_window = new MainWindow(_host.Services);
+        
+        // Initialize theme system
+        ThemeHelper.Initialize(m_window, this);
+        
+        // Load saved theme setting
+        _ = LoadSavedTheme();
+        
         m_window.Activate();
         
         // Initialize services
@@ -59,6 +66,33 @@ public partial class App : Application
                 System.Diagnostics.Debug.WriteLine($"Service initialization error: {ex}");
             }
         });
+    }
+    
+    private async Task LoadSavedTheme()
+    {
+        try
+        {
+            using var scope = _host.Services.CreateScope();
+            var secureStorage = scope.ServiceProvider.GetRequiredService<ISecureStorageService>();
+            var savedTheme = await secureStorage.GetAsync("SelectedTheme");
+            
+            if (!string.IsNullOrEmpty(savedTheme))
+            {
+                var theme = savedTheme switch
+                {
+                    "Light" => Services.AppTheme.Light,
+                    "Dark" => Services.AppTheme.Dark,
+                    "System" => Services.AppTheme.System,
+                    _ => Services.AppTheme.System
+                };
+                
+                Services.ThemeHelper.SetTheme(theme);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading saved theme: {ex.Message}");
+        }
     }
 
     private static IHostBuilder CreateHostBuilder()

@@ -303,4 +303,12 @@
                 Value="1028"/>
     </Style>
 
+    <!-- NavigationViewItem Text Style -->
+    <Style x:Key="ModernNavigationViewItemStyle"
+           TargetType="NavigationViewItem">
+        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="FontSize" Value="14"/>
+    </Style>
+
 </ResourceDictionary>

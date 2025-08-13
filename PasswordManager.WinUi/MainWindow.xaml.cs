@@ -13,6 +13,7 @@ namespace PasswordManager.WinUi;
 public sealed partial class MainWindow : Window
 {
     private readonly IServiceProvider _serviceProvider;
+    private bool _isAuthenticated = false;
 
     public MainWindow(IServiceProvider serviceProvider)
     {
@@ -29,13 +30,34 @@ public sealed partial class MainWindow : Window
 
     private void InitializeNavigation()
     {
-        // For now, we'll start with Login page. In a real app, you'd check authentication state
-        // and navigate to Home if already authenticated
+        // Hide navigation menu initially until authenticated
+        SetNavigationVisibility(false);
+        
+        // Start with Login page
         ContentFrame.Navigate(typeof(Views.LoginPage), _serviceProvider);
+    }
+    
+    private void SetNavigationVisibility(bool isVisible)
+    {
+        if (isVisible)
+        {
+            MainNavigationView.IsEnabled = true;
+            MainNavigationView.IsPaneVisible = true;
+            MainNavigationView.Opacity = 1.0;
+        }
+        else
+        {
+            MainNavigationView.IsEnabled = false;
+            MainNavigationView.IsPaneVisible = false;
+            MainNavigationView.Opacity = 0.5;
+        }
     }
 
     private void MainNavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
+        // Only allow navigation if authenticated
+        if (!_isAuthenticated) return;
+        
         if (args.SelectedItem is NavigationViewItem selectedItem)
         {
             string tag = selectedItem.Tag?.ToString() ?? "";
@@ -50,6 +72,9 @@ public sealed partial class MainWindow : Window
 
     public void NavigateToPage(string pageTag)
     {
+        // Only allow navigation if authenticated, except for login
+        if (!_isAuthenticated && pageTag != "Login") return;
+        
         Type pageType = pageTag switch
         {
             "Home" => typeof(Views.DashboardPage),
@@ -58,6 +83,7 @@ public sealed partial class MainWindow : Window
             "Import" => typeof(Views.ImportPage),
             "Settings" => typeof(Views.SettingsPage),
             "About" => typeof(Views.DashboardPage), // Could create an About page later
+            "Login" => typeof(Views.LoginPage),
             _ => typeof(Views.DashboardPage)
         };
 
@@ -120,6 +146,8 @@ public sealed partial class MainWindow : Window
     // Public method to allow programmatic navigation (e.g., after login)
     public void NavigateToHome()
     {
+        _isAuthenticated = true;
+        SetNavigationVisibility(true);
         MainNavigationView.SelectedItem = HomeNavItem;
         NavigateToPage("Home");
     }
@@ -127,6 +155,11 @@ public sealed partial class MainWindow : Window
     // Public method to handle logout
     public void HandleLogout()
     {
+        _isAuthenticated = false;
+        
+        // Hide navigation menu
+        SetNavigationVisibility(false);
+        
         // Clear navigation selection
         MainNavigationView.SelectedItem = null;
         
