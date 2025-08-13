@@ -34,6 +34,9 @@ class PasswordManagerBackground {
         case 'getCredentials':
           await this.getCredentials(request, sendResponse);
           break;
+        case 'getCreditCards':
+          await this.getCreditCards(request, sendResponse);
+          break;
         case 'generatePassword':
           await this.generatePassword(request, sendResponse);
           break;
@@ -96,6 +99,39 @@ class PasswordManagerBackground {
       }
     } catch (error) {
       console.error('Password Manager: Error fetching credentials:', error);
+      sendResponse({ 
+        success: false, 
+        error: 'Failed to communicate with native host. Please ensure the native host is installed.' 
+      });
+    }
+  }
+
+  async getCreditCards(request, sendResponse) {
+    if (!this.authToken) {
+      sendResponse({ success: false, error: 'Not authenticated' });
+      return;
+    }
+
+    try {
+      const response = await this.sendNativeMessage({
+        action: 'getCreditCards',
+        token: this.authToken,
+        domain: request.domain || ''
+      });
+
+      if (response.success) {
+        sendResponse({ 
+          success: true, 
+          creditCards: response.creditCards 
+        });
+      } else {
+        sendResponse({ 
+          success: false, 
+          error: response.error || 'Failed to get credit cards' 
+        });
+      }
+    } catch (error) {
+      console.error('Password Manager: Error fetching credit cards:', error);
       sendResponse({ 
         success: false, 
         error: 'Failed to communicate with native host. Please ensure the native host is installed.' 
