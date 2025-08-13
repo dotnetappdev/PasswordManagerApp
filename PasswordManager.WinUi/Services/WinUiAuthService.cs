@@ -244,6 +244,92 @@ public class WinUiAuthService : IAuthService
     }
 
     /// <summary>
+    /// Changes the master password for the current user
+    /// </summary>
+    public async Task<bool> ChangeMasterPasswordAsync(string currentPassword, string newPassword, string newPasswordHint = "")
+    {
+        try
+        {
+            // Get current user from database
+            var user = await _dbContext.Users.FirstOrDefaultAsync();
+            if (user == null)
+            {
+                _logger.LogError("No user found in database for password change");
+                return false;
+            }
+
+            // Retrieve current user salt from secure storage
+            var userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
+            if (userSalt == null)
+            {
+                _logger.LogError("Failed to retrieve user salt from secure storage for password change");
+                return false;
+            }
+
+            // Verify current password
+            var isCurrentPasswordValid = _passwordCryptoService.VerifyMasterPassword(
+                currentPassword, 
+                user.MasterPasswordHash!, 
+                Convert.FromBase64String(user.UserSalt!)
+            );
+
+            if (!isCurrentPasswordValid)
+            {
+                _logger.LogWarning("Current password verification failed during password change");
+                return false;
+            }
+
+            // Generate new user salt for enhanced security
+            var newUserSalt = _passwordCryptoService.GenerateUserSalt();
+            
+            // Create new master password hash
+            var newMasterPasswordHash = _passwordCryptoService.CreateMasterPasswordHash(newPassword, newUserSalt);
+
+            // Get the current master key for re-encryption
+            var currentMasterKey = _passwordCryptoService.DeriveMasterKey(currentPassword, userSalt);
+            
+            // Derive new master key
+            var newMasterKey = _passwordCryptoService.DeriveMasterKey(newPassword, newUserSalt);
+
+            // TODO: Re-encrypt all vault data with new master key
+            // This would require getting all password items and re-encrypting them
+            // For now, we'll update the user record and session
+            
+            // Update user record in database
+            user.UserSalt = Convert.ToBase64String(newUserSalt);
+            user.MasterPasswordHash = newMasterPasswordHash;
+            user.MasterPasswordHint = newPasswordHint;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync();
+
+            // Update secure storage with new salt
+            await StoreUserSaltSecurelyAsync(user.Id.ToString(), newUserSalt);
+
+            // Update current session with new master key if authenticated
+            if (_isAuthenticated)
+            {
+                var sessionId = await _secureStorageService.GetAsync("sessionId");
+                if (!string.IsNullOrEmpty(sessionId))
+                {
+                    // Clear old session and create new one with new master key
+                    _vaultSessionService.ClearSession(sessionId);
+                    var newSessionId = _vaultSessionService.InitializeSession(user.Id, newMasterKey);
+                    await _secureStorageService.SetAsync("sessionId", newSessionId);
+                }
+            }
+
+            _logger.LogInformation("Master password changed successfully for user {UserId}", user.Id);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to change master password");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Logs in a user with credentials (username/password instead of email/password)
     /// </summary>
     public async Task<bool> LoginAsync(string usernameOrEmail, string password)

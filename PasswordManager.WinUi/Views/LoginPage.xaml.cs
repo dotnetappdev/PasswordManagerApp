@@ -8,7 +8,7 @@ using System;
 namespace PasswordManager.WinUi.Views;
 
 /// <summary>
-/// Login page for the Password Manager application
+/// Login page for the Password Manager application with master password authentication
 /// </summary>
 public sealed partial class LoginPage : Page
 {
@@ -28,35 +28,62 @@ public sealed partial class LoginPage : Page
             _serviceProvider = serviceProvider;
             _viewModel = new LoginViewModel(serviceProvider);
             this.DataContext = _viewModel;
+
+            // Check if already authenticated after a brief delay for initialization
+            _ = CheckAuthenticationStatusAsync();
         }
     }
 
-    private async void LoginButton_Click(object sender, RoutedEventArgs e)
+    private async Task CheckAuthenticationStatusAsync()
+    {
+        try
+        {
+            // Give the ViewModel time to initialize and check authentication
+            await Task.Delay(100);
+            
+            // If already authenticated, navigate to home
+            if (_viewModel?.IsAuthenticated == true)
+            {
+                if (GetMainWindow() is MainWindow mainWindow)
+                {
+                    mainWindow.NavigateToHome();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error checking authentication status: {ex.Message}");
+        }
+    }
+
+    private async void PrimaryActionButton_Click(object sender, RoutedEventArgs e)
     {
         if (_viewModel == null) return;
 
         // Resolve UI elements once for this handler
-        var loginButton = this.FindName("LoginButton") as Button;
-        var loginProgressRing = this.FindName("LoginProgressRing") as ProgressRing;
-        var errorText = this.FindName("ErrorText") as TextBlock;
-        var emailTextBox = this.FindName("EmailTextBox") as TextBox;
-        var passwordBox = this.FindName("PasswordBox") as PasswordBox;
+        var primaryActionButton = this.FindName("PrimaryActionButton") as Button;
+        var authProgressRing = this.FindName("AuthProgressRing") as ProgressRing;
+        var masterPasswordBox = this.FindName("MasterPasswordBox") as PasswordBox;
+        var confirmPasswordBox = this.FindName("ConfirmPasswordBox") as PasswordBox;
 
         try
         {
-            if (loginButton != null) loginButton.IsEnabled = false;
-            if (loginProgressRing != null) loginProgressRing.IsActive = true;
-            if (errorText != null) errorText.Visibility = Visibility.Collapsed;
+            if (primaryActionButton != null) primaryActionButton.IsEnabled = false;
+            if (authProgressRing != null) authProgressRing.IsActive = true;
 
             // Update ViewModel with current values
-            _viewModel.Username = emailTextBox?.Text ?? string.Empty;
-            _viewModel.Password = passwordBox?.Password ?? string.Empty;
+            _viewModel.MasterPassword = masterPasswordBox?.Password ?? string.Empty;
+            _viewModel.ConfirmMasterPassword = confirmPasswordBox?.Password ?? string.Empty;
 
-            // Attempt login
-            var success = await _viewModel.LoginAsync();
+            // Attempt authentication (handles both setup and login)
+            var success = await _viewModel.AuthenticateAsync();
 
             if (success)
             {
+                // Clear password fields for security
+                if (masterPasswordBox != null) masterPasswordBox.Password = string.Empty;
+                if (confirmPasswordBox != null) confirmPasswordBox.Password = string.Empty;
+
                 // Navigate to main dashboard via MainWindow
                 if (GetMainWindow() is MainWindow mainWindow)
                 {
@@ -68,90 +95,16 @@ public sealed partial class LoginPage : Page
                     this.Frame?.Navigate(typeof(DashboardPage), _serviceProvider);
                 }
             }
-            else
-            {
-                // Show error message from ViewModel
-                if (errorText != null)
-                {
-                    errorText.Text = _viewModel.ErrorMessage;
-                    errorText.Visibility = Visibility.Visible;
-                }
-            }
         }
         catch (Exception ex)
         {
-            if (errorText != null)
-            {
-                errorText.Text = $"Login failed: {ex.Message}";
-                errorText.Visibility = Visibility.Visible;
-            }
+            // Error handling is done in ViewModel
+            System.Diagnostics.Debug.WriteLine($"Authentication error in UI: {ex.Message}");
         }
         finally
         {
-            if (loginButton != null) loginButton.IsEnabled = true;
-            if (loginProgressRing != null) loginProgressRing.IsActive = false;
-        }
-    }
-
-    private async void CreateAccountButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_viewModel == null) return;
-
-        // Resolve UI elements once for this handler
-        var loginButton = this.FindName("LoginButton") as Button;
-        var loginProgressRing = this.FindName("LoginProgressRing") as ProgressRing;
-        var errorText = this.FindName("ErrorText") as TextBlock;
-        var emailTextBox = this.FindName("EmailTextBox") as TextBox;
-        var passwordBox = this.FindName("PasswordBox") as PasswordBox;
-
-        try
-        {
-            if (loginButton != null) loginButton.IsEnabled = false;
-            if (loginProgressRing != null) loginProgressRing.IsActive = true;
-            if (errorText != null) errorText.Visibility = Visibility.Collapsed;
-
-            // Update ViewModel with current values
-            _viewModel.Username = emailTextBox?.Text ?? string.Empty;
-            _viewModel.Password = passwordBox?.Password ?? string.Empty;
-
-            // Attempt registration
-            var success = await _viewModel.RegisterAsync();
-
-            if (success)
-            {
-                // Navigate to main dashboard via MainWindow
-                if (GetMainWindow() is MainWindow mainWindow)
-                {
-                    mainWindow.NavigateToHome();
-                }
-                else
-                {
-                    // Fallback navigation
-                    this.Frame?.Navigate(typeof(DashboardPage), _serviceProvider);
-                }
-            }
-            else
-            {
-                // Show error message from ViewModel
-                if (errorText != null)
-                {
-                    errorText.Text = _viewModel.ErrorMessage;
-                    errorText.Visibility = Visibility.Visible;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            if (errorText != null)
-            {
-                errorText.Text = $"Registration failed: {ex.Message}";
-                errorText.Visibility = Visibility.Visible;
-            }
-        }
-        finally
-        {
-            if (loginButton != null) loginButton.IsEnabled = true;
-            if (loginProgressRing != null) loginProgressRing.IsActive = false;
+            if (primaryActionButton != null) primaryActionButton.IsEnabled = true;
+            if (authProgressRing != null) authProgressRing.IsActive = false;
         }
     }
 
@@ -160,4 +113,19 @@ public sealed partial class LoginPage : Page
         // Use the MainWindow property exposed in App
         return (App.Current as App)?.MainWindow;
     }
+
+    #region Legacy Methods for Backward Compatibility
+
+    // Keep these methods for any existing references, but redirect to the new flow
+    private async void LoginButton_Click(object sender, RoutedEventArgs e)
+    {
+        await PrimaryActionButton_Click(sender, e);
+    }
+
+    private async void CreateAccountButton_Click(object sender, RoutedEventArgs e)
+    {
+        await PrimaryActionButton_Click(sender, e);
+    }
+
+    #endregion
 }

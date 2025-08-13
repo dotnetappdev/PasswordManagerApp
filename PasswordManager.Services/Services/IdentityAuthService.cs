@@ -512,4 +512,16 @@ public class IdentityAuthService : IAuthService
             return null;
         }
     }
+
+    /// <summary>
+    /// Changes the master password for the current user (not implemented for Identity-based auth service)
+    /// </summary>
+    public async Task<bool> ChangeMasterPasswordAsync(string currentPassword, string newPassword, string newPasswordHint = "")
+    {
+        // This method would need to be implemented for Identity-based authentication
+        // For now, return false to indicate it's not implemented
+        _logger.LogWarning("ChangeMasterPasswordAsync not implemented for Identity-based IdentityAuthService");
+        await Task.CompletedTask;
+        return false;
+    }
 }

@@ -10,6 +10,7 @@ public class SettingsViewModel : BaseViewModel
     private readonly IDatabaseConfigurationService _databaseConfigurationService;
     private readonly IPlatformService _platformService;
     private readonly ISecureStorageService _secureStorageService;
+    private readonly IAuthService _authService;
     
     private bool _enableSync = false;
     private bool _enableTwoFactor = false;
@@ -26,6 +27,7 @@ public class SettingsViewModel : BaseViewModel
         _databaseConfigurationService = serviceProvider.GetRequiredService<IDatabaseConfigurationService>();
         _platformService = serviceProvider.GetRequiredService<IPlatformService>();
         _secureStorageService = serviceProvider.GetRequiredService<ISecureStorageService>();
+        _authService = serviceProvider.GetRequiredService<IAuthService>();
         
         LoadSettingsAsync();
     }
@@ -204,10 +206,10 @@ public class SettingsViewModel : BaseViewModel
         {
             IsLoading = true;
             
-            // This would integrate with the user profile service
-            var result = await _userProfileService.ChangePasswordAsync(currentPassword, newPassword);
+            // Use the auth service for master password changes in WinUI
+            var result = await _authService.ChangeMasterPasswordAsync(currentPassword, newPassword);
             
-            return result.Success;
+            return result;
         }
         catch (Exception ex)
         {

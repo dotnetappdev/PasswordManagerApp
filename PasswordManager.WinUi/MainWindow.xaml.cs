@@ -33,7 +33,7 @@ public sealed partial class MainWindow : Window
         // Hide navigation menu initially until authenticated
         SetNavigationVisibility(false);
         
-        // Start with Login page
+        // Start with Login page (LoginViewModel will check for existing authentication)
         ContentFrame.Navigate(typeof(Views.LoginPage), _serviceProvider);
     }
     
