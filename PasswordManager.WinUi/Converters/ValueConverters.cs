@@ -68,6 +68,42 @@ public class InverseBoolToVisibilityConverter : IValueConverter
     }
 }
 
+public class BoolToInvertedVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is bool boolValue)
+        {
+            return boolValue ? Visibility.Collapsed : Visibility.Visible;
+        }
+        return Visibility.Visible;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class FirstTimeSetupToSubtitleConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is bool isFirstTimeSetup)
+        {
+            return isFirstTimeSetup 
+                ? "Create your master password to get started" 
+                : "Enter your master password to continue";
+        }
+        return "Enter your master password to continue";
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
 public class StringToVisibilityConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)

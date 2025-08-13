@@ -8,12 +8,15 @@ public class LoginViewModel : BaseViewModel
     private readonly IAuthService _authService;
     private readonly IVaultSessionService _vaultSessionService;
     private readonly ISecureStorageService _secureStorageService;
-    private string _username = string.Empty;
-    private string _password = string.Empty;
+    private string _masterPassword = string.Empty;
+    private string _confirmMasterPassword = string.Empty;
+    private string _passwordHint = string.Empty;
     private string _errorMessage = string.Empty;
-    private string _authenticationMode = "Local Database";
-    private string _usernameLabel = "Username";
-    private string _usernamePlaceholder = "Enter your username";
+    private bool _isFirstTimeSetup = false;
+    private string _pageTitle = "Sign In";
+    private string _primaryButtonText = "Unlock";
+    private string _passwordLabel = "Master Password";
+    private string _passwordPlaceholder = "Enter your master password";
 
     public LoginViewModel(IServiceProvider serviceProvider)
     {
@@ -21,19 +24,67 @@ public class LoginViewModel : BaseViewModel
         _vaultSessionService = serviceProvider.GetRequiredService<IVaultSessionService>();
         _secureStorageService = serviceProvider.GetRequiredService<ISecureStorageService>();
         
-        _ = LoadAuthenticationModeAsync();
+        _ = InitializeAsync();
     }
 
-    public string Username
+    private async Task InitializeAsync()
     {
-        get => _username;
-        set => SetProperty(ref _username, value);
+        try
+        {
+            _isFirstTimeSetup = await _authService.IsFirstTimeSetupAsync();
+            UpdateUIForSetupMode();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error during initialization: {ex.Message}");
+            // Default to first-time setup on error
+            _isFirstTimeSetup = true;
+            UpdateUIForSetupMode();
+        }
     }
 
-    public string Password
+    private void UpdateUIForSetupMode()
     {
-        get => _password;
-        set => SetProperty(ref _password, value);
+        if (_isFirstTimeSetup)
+        {
+            PageTitle = "Set up Password Manager";
+            PrimaryButtonText = "Create Master Password";
+            PasswordLabel = "Create Master Password";
+            PasswordPlaceholder = "Choose a strong master password";
+        }
+        else
+        {
+            PageTitle = "Welcome back";
+            PrimaryButtonText = "Unlock";
+            PasswordLabel = "Master Password";
+            PasswordPlaceholder = "Enter your master password";
+        }
+        
+        OnPropertyChanged(nameof(PageTitle));
+        OnPropertyChanged(nameof(PrimaryButtonText));
+        OnPropertyChanged(nameof(PasswordLabel));
+        OnPropertyChanged(nameof(PasswordPlaceholder));
+        OnPropertyChanged(nameof(IsFirstTimeSetup));
+        OnPropertyChanged(nameof(ShowConfirmPassword));
+        OnPropertyChanged(nameof(ShowPasswordHint));
+    }
+
+    public string MasterPassword
+    {
+        get => _masterPassword;
+        set => SetProperty(ref _masterPassword, value);
+    }
+
+    public string ConfirmMasterPassword
+    {
+        get => _confirmMasterPassword;
+        set => SetProperty(ref _confirmMasterPassword, value);
+    }
+
+    public string PasswordHint
+    {
+        get => _passwordHint;
+        set => SetProperty(ref _passwordHint, value);
     }
 
     public string ErrorMessage
@@ -42,83 +93,74 @@ public class LoginViewModel : BaseViewModel
         set => SetProperty(ref _errorMessage, value);
     }
 
-    public string AuthenticationMode
+    public bool IsFirstTimeSetup
     {
-        get => _authenticationMode;
-        set => SetProperty(ref _authenticationMode, value);
+        get => _isFirstTimeSetup;
+        set => SetProperty(ref _isFirstTimeSetup, value);
     }
 
-    public string UsernameLabel
+    public string PageTitle
     {
-        get => _usernameLabel;
-        set => SetProperty(ref _usernameLabel, value);
+        get => _pageTitle;
+        set => SetProperty(ref _pageTitle, value);
     }
 
-    public string UsernamePlaceholder
+    public string PrimaryButtonText
     {
-        get => _usernamePlaceholder;
-        set => SetProperty(ref _usernamePlaceholder, value);
+        get => _primaryButtonText;
+        set => SetProperty(ref _primaryButtonText, value);
+    }
+
+    public string PasswordLabel
+    {
+        get => _passwordLabel;
+        set => SetProperty(ref _passwordLabel, value);
+    }
+
+    public string PasswordPlaceholder
+    {
+        get => _passwordPlaceholder;
+        set => SetProperty(ref _passwordPlaceholder, value);
     }
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
-    public bool IsApiMode => AuthenticationMode == "API Server";
+    public bool ShowConfirmPassword => IsFirstTimeSetup;
 
-    private async Task LoadAuthenticationModeAsync()
-    {
-        try
-        {
-            var mode = await _secureStorageService.GetAsync("AuthenticationMode");
-            AuthenticationMode = mode ?? "Local Database";
-            
-            if (IsApiMode)
-            {
-                UsernameLabel = "Email";
-                UsernamePlaceholder = "Enter your email address";
-            }
-            else
-            {
-                UsernameLabel = "Username";
-                UsernamePlaceholder = "Enter your username";
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading auth mode: {ex.Message}");
-        }
-    }
+    public bool ShowPasswordHint => IsFirstTimeSetup;
 
-    public async Task<bool> LoginAsync()
+    // Legacy properties for backward compatibility (not used in new flow)
+    public string Username { get; set; } = string.Empty;
+    public string UsernameLabel { get; set; } = "Username";
+    public string UsernamePlaceholder { get; set; } = "Enter username";
+    public string AuthenticationMode { get; set; } = "Local Database";
+    public bool IsApiMode => false;
+
+    public async Task<bool> AuthenticateAsync()
     {
         try
         {
             IsLoading = true;
             ErrorMessage = string.Empty;
 
-            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+            if (string.IsNullOrWhiteSpace(MasterPassword))
             {
-                var fieldName = IsApiMode ? "email and password" : "username and password";
-                ErrorMessage = $"Please enter both {fieldName}.";
+                ErrorMessage = "Please enter your master password.";
                 return false;
             }
 
-            // Attempt login
-            var loginResult = await _authService.LoginAsync(Username, Password);
-            
-            if (loginResult)
+            if (IsFirstTimeSetup)
             {
-                return true;
+                return await SetupMasterPasswordAsync();
             }
             else
             {
-                var modeText = IsApiMode ? "API server" : "local database";
-                ErrorMessage = $"Invalid credentials. Please check your {(IsApiMode ? "email" : "username")} and password and try again. Authentication mode: {modeText}.";
-                return false;
+                return await LoginWithMasterPasswordAsync();
             }
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Login failed: {ex.Message}";
+            ErrorMessage = $"Authentication failed: {ex.Message}";
             return false;
         }
         finally
@@ -126,45 +168,62 @@ public class LoginViewModel : BaseViewModel
             IsLoading = false;
             OnPropertyChanged(nameof(HasError));
         }
+    }
+
+    private async Task<bool> SetupMasterPasswordAsync()
+    {
+        // Validate password confirmation
+        if (MasterPassword != ConfirmMasterPassword)
+        {
+            ErrorMessage = "Passwords do not match. Please try again.";
+            return false;
+        }
+
+        // Validate password strength
+        if (MasterPassword.Length < 8)
+        {
+            ErrorMessage = "Master password must be at least 8 characters long.";
+            return false;
+        }
+
+        // Setup master password
+        var setupResult = await _authService.SetupMasterPasswordAsync(MasterPassword, PasswordHint);
+        
+        if (setupResult)
+        {
+            // Auto-authenticate after setup
+            return await LoginWithMasterPasswordAsync();
+        }
+        else
+        {
+            ErrorMessage = "Failed to set up master password. Please try again.";
+            return false;
+        }
+    }
+
+    private async Task<bool> LoginWithMasterPasswordAsync()
+    {
+        var loginResult = await _authService.AuthenticateAsync(MasterPassword);
+        
+        if (loginResult)
+        {
+            return true;
+        }
+        else
+        {
+            ErrorMessage = "Incorrect master password. Please try again.";
+            return false;
+        }
+    }
+
+    // Legacy methods for backward compatibility
+    public async Task<bool> LoginAsync()
+    {
+        return await AuthenticateAsync();
     }
 
     public async Task<bool> RegisterAsync()
     {
-        try
-        {
-            IsLoading = true;
-            ErrorMessage = string.Empty;
-
-            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
-            {
-                var fieldName = IsApiMode ? "email and password" : "username and password";
-                ErrorMessage = $"Please enter both {fieldName}.";
-                return false;
-            }
-
-            // Attempt registration
-            var registerResult = await _authService.RegisterAsync(Username, Password);
-            
-            if (registerResult)
-            {
-                return true;
-            }
-            else
-            {
-                var modeText = IsApiMode ? "API server" : "local database";
-                ErrorMessage = $"Registration failed on {modeText}. Please try again.";
-                return false;
-            }
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"Registration failed: {ex.Message}";
-            return false;
-        }
-        finally
-        {
-            IsLoading = false;
-            OnPropertyChanged(nameof(HasError));
-        }
+        return await AuthenticateAsync();
     }
 }

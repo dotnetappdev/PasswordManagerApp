@@ -15,6 +15,8 @@
             <converters:TypeToIconConverter x:Key="TypeToIconConverter"/>
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+            <converters:BoolToInvertedVisibilityConverter x:Key="BoolToInvertedVisibilityConverter"/>
+            <converters:FirstTimeSetupToSubtitleConverter x:Key="FirstTimeSetupToSubtitleConverter"/>
             <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
             <converters:StatusToIconConverter x:Key="StatusToIconConverter"/>
             <converters:StatusToColorConverter x:Key="StatusToColorConverter"/>

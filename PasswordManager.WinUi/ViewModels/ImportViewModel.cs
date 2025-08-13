@@ -23,7 +23,7 @@ public class ImportViewModel : BaseViewModel
         ImportResults = new ObservableCollection<ImportResultItem>();
         AvailableImportTypes = new List<string> 
         { 
-            "1Password CSV", 
+            "OnePassword CSV", 
             "Bitwarden CSV", 
             "Chrome CSV",
             "Firefox CSV",
@@ -117,7 +117,7 @@ public class ImportViewModel : BaseViewModel
             // Determine import provider based on selected type
             string providerName = SelectedImportType switch
             {
-                "1Password CSV" => "1Password",
+                "OnePassword CSV" => "OnePassword",
                 "Bitwarden CSV" => "Bitwarden", 
                 "Chrome CSV" => "Chrome",
                 "Firefox CSV" => "Firefox",
