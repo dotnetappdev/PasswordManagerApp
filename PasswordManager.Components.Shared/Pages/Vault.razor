@@ -8,113 +8,200 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
-<MudContainer MaxWidth="MaxWidth.Large" Style="padding: 20px;">
-    <MudStack Spacing="4">
-        <!-- Header -->
-        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
-            <MudGrid AlignItems="Center">
-                <MudItem xs="6">
-                    <MudText Typo="Typo.h4" Style="color: white;">
-                        <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Large" Style="vertical-align: middle; margin-right: 8px;" />
-                        Password Vault
-                    </MudText>
-                </MudItem>
-                <MudItem xs="6" Class="d-flex justify-end">
-                    <MudButton Variant="Variant.Filled" 
-                              Color="Color.Success" 
-                              StartIcon="@Icons.Material.Filled.Add"
-                              OnClick="AddNewPassword">
-                        Add Password
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-0 ma-0" Style="min-height: 100vh;">
+    <MudGrid Spacing="0" Style="height: 100vh;">
+        <!-- Categories Sidebar -->
+        <MudItem xs="3" Class="d-flex flex-column" Style="border-right: 1px solid var(--mud-palette-divider);">
+            <MudPaper Elevation="0" Class="pa-4" Style="border-bottom: 1px solid var(--mud-palette-divider);">
+                <MudText Typo="Typo.h6">Categories</MudText>
+            </MudPaper>
+            <MudPaper Elevation="0" Class="flex-grow-1 overflow-y-auto pa-2">
+                <MudStack>
+                    <MudButton Variant="@(string.IsNullOrEmpty(selectedCategory) ? Variant.Filled : Variant.Text)"
+                              Color="Color.Primary"
+                              StartIcon="@Icons.Material.Filled.ViewList"
+                              FullWidth="true"
+                              OnClick="@(() => SelectCategory(""))">
+                        All Items
                     </MudButton>
-                </MudItem>
-            </MudGrid>
-        </MudPaper>
-
-        <!-- Search and Filter -->
-        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
-            <MudGrid>
-                <MudItem xs="12" md="8">
-                    <MudTextField T="string" @bind-value="searchQuery" 
-                                 Label="Search passwords" 
-                                 Variant="Variant.Outlined"
-                                 Style="background-color: #2a2a2a;"
-                                 Adornment="Adornment.Start"
-                                 AdornmentIcon="@Icons.Material.Filled.Search"
-                                 @onkeyup="OnSearchChanged" />
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudSelect T="string" @bind-value="selectedCategory" 
-                              Label="Category" 
-                              Variant="Variant.Outlined"
-                              Style="background-color: #2a2a2a;">
-                        <MudSelectItem Value="@("")">All Categories</MudSelectItem>
-                        @foreach (var category in categories)
-                        {
-                            <MudSelectItem Value="@category">@category</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-            </MudGrid>
-        </MudPaper>
-
-        <!-- Password List -->
-        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
-            @if (isLoading)
-            {
-                <MudProgressCircular Indeterminate="true" />
-                <MudText Class="ml-2">Loading passwords...</MudText>
-            }
-            else if (filteredPasswords.Any())
-            {
-                <MudGrid>
-                    @foreach (var password in filteredPasswords)
+                    @foreach (var category in categories)
                     {
-                        <MudItem xs="12" md="6" lg="4">
-                            <MudCard Style="background-color: #2a2a2a; color: white; margin-bottom: 16px;">
-                                <MudCardContent>
-                                    <MudStack>
-                                        <MudText Typo="Typo.h6" Style="color: white;">
-                                            <MudIcon Icon="@GetPasswordIcon(password)" Size="Size.Small" Style="margin-right: 8px;" />
-                                            @password.Title
-                                        </MudText>
-                                        <MudText Typo="Typo.body2" Style="color: #cccccc;">
-                                            @password.Username
-                                        </MudText>
-                                        <MudText Typo="Typo.body2" Style="color: #999999;">
-                                            @password.WebsiteUrl
-                                        </MudText>
-                                    </MudStack>
-                                </MudCardContent>
-                                <MudCardActions>
-                                    <MudButton Size="Size.Small" 
-                                              Color="Color.Primary" 
-                                              OnClick="() => ViewPassword(password)">
-                                        View
-                                    </MudButton>
-                                    <MudButton Size="Size.Small" 
-                                              Color="Color.Secondary" 
-                                              OnClick="() => CopyPassword(password)">
-                                        Copy
-                                    </MudButton>
-                                    <MudButton Size="Size.Small" 
-                                              Color="Color.Warning" 
-                                              OnClick="() => EditPassword(password)">
-                                        Edit
-                                    </MudButton>
-                                </MudCardActions>
-                            </MudCard>
-                        </MudItem>
+                        <MudButton Variant="@(selectedCategory == category ? Variant.Filled : Variant.Text)"
+                                  Color="Color.Primary"
+                                  StartIcon="@Icons.Material.Filled.Category"
+                                  FullWidth="true"
+                                  OnClick="@(() => SelectCategory(category))">
+                            @category
+                        </MudButton>
                     }
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Main Content -->
+        <MudItem xs="9" Class="d-flex flex-column">
+            <!-- Header -->
+            <MudPaper Elevation="0" Class="pa-4" Style="border-bottom: 1px solid var(--mud-palette-divider);">
+                <MudGrid AlignItems="Center">
+                    <MudItem xs="6">
+                        <MudText Typo="Typo.h4">
+                            <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Large" Class="mr-3" />
+                            Password Vault
+                        </MudText>
+                    </MudItem>
+                    <MudItem xs="6" Class="d-flex justify-end">
+                        <MudButtonGroup>
+                            <MudToggleIconButton @bind-Toggled="isCardView"
+                                               Icon="@Icons.Material.Filled.ViewModule" 
+                                               ToggledIcon="@Icons.Material.Filled.ViewList"
+                                               Title="@(isCardView ? "Switch to List View" : "Switch to Card View")"
+                                               Color="Color.Primary" />
+                            <MudButton Variant="Variant.Filled" 
+                                      Color="Color.Success" 
+                                      StartIcon="@Icons.Material.Filled.Add"
+                                      OnClick="AddNewPassword">
+                                Add Password
+                            </MudButton>
+                        </MudButtonGroup>
+                    </MudItem>
                 </MudGrid>
-            }
-            else
-            {
-                <MudText Typo="Typo.h6" Align="MudBlazor.Align.Center" Style="color: #cccccc; margin: 40px 0;">
-                    No passwords found. Click "Add Password" to create your first entry.
-                </MudText>
-            }
-        </MudPaper>
-    </MudStack>
+            </MudPaper>
+
+            <!-- Search Bar -->
+            <MudPaper Elevation="0" Class="pa-4" Style="border-bottom: 1px solid var(--mud-palette-divider);">
+                <MudTextField T="string" @bind-value="searchQuery" 
+                             Label="Search passwords" 
+                             Variant="Variant.Outlined"
+                             Adornment="Adornment.Start"
+                             AdornmentIcon="@Icons.Material.Filled.Search"
+                             @onkeyup="OnSearchChanged" />
+            </MudPaper>
+
+            <!-- Content Area -->
+            <MudPaper Elevation="0" Class="flex-grow-1 overflow-y-auto pa-4">
+                @if (isLoading)
+                {
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height: 200px;">
+                        <MudProgressCircular Indeterminate="true" />
+                        <MudText>Loading passwords...</MudText>
+                    </MudStack>
+                }
+                else if (filteredPasswords.Any())
+                {
+                    @if (isCardView)
+                    {
+                        <!-- Card View -->
+                        <MudGrid>
+                            @foreach (var password in filteredPasswords)
+                            {
+                                <MudItem xs="12" md="6" lg="4">
+                                    <MudCard Elevation="1" Class="mb-4" Style="height: 180px;">
+                                        <MudCardContent>
+                                            <MudStack Spacing="2">
+                                                <MudText Typo="Typo.h6">
+                                                    <MudIcon Icon="@GetPasswordIcon(password)" Size="Size.Small" Class="mr-2" />
+                                                    @password.Title
+                                                </MudText>
+                                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                                    @password.Username
+                                                </MudText>
+                                                <MudText Typo="Typo.body2" Color="Color.Tertiary">
+                                                    @password.WebsiteUrl
+                                                </MudText>
+                                                @if (password.Category != null)
+                                                {
+                                                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">
+                                                        @password.Category.Name
+                                                    </MudChip>
+                                                }
+                                            </MudStack>
+                                        </MudCardContent>
+                                        <MudCardActions>
+                                            <MudButton Size="Size.Small" 
+                                                      Color="Color.Primary" 
+                                                      OnClick="() => ViewPassword(password)">
+                                                View
+                                            </MudButton>
+                                            <MudButton Size="Size.Small" 
+                                                      Color="Color.Secondary" 
+                                                      OnClick="() => CopyPassword(password)">
+                                                Copy
+                                            </MudButton>
+                                            <MudButton Size="Size.Small" 
+                                                      Color="Color.Tertiary" 
+                                                      OnClick="() => EditPassword(password)">
+                                                Edit
+                                            </MudButton>
+                                        </MudCardActions>
+                                    </MudCard>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    }
+                    else
+                    {
+                        <!-- List View -->
+                        <MudTable Items="filteredPasswords" Hover="true" Striped="true" Dense="true">
+                            <HeaderContent>
+                                <MudTh>Title</MudTh>
+                                <MudTh>Username</MudTh>
+                                <MudTh>Website</MudTh>
+                                <MudTh>Category</MudTh>
+                                <MudTh>Actions</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Title">
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudIcon Icon="@GetPasswordIcon(context)" Size="Size.Small" />
+                                        <MudText>@context.Title</MudText>
+                                    </MudStack>
+                                </MudTd>
+                                <MudTd DataLabel="Username">@context.Username</MudTd>
+                                <MudTd DataLabel="Website">
+                                    @if (!string.IsNullOrEmpty(context.WebsiteUrl))
+                                    {
+                                        <MudLink Href="@context.WebsiteUrl" Target="_blank">@context.WebsiteUrl</MudLink>
+                                    }
+                                </MudTd>
+                                <MudTd DataLabel="Category">
+                                    @if (context.Category != null)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">
+                                            @context.Category.Name
+                                        </MudChip>
+                                    }
+                                </MudTd>
+                                <MudTd DataLabel="Actions">
+                                    <MudButtonGroup Size="Size.Small">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                                                      Size="Size.Small" 
+                                                      Color="Color.Primary"
+                                                      OnClick="() => ViewPassword(context)" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" 
+                                                      Size="Size.Small" 
+                                                      Color="Color.Secondary"
+                                                      OnClick="() => CopyPassword(context)" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                                      Size="Size.Small" 
+                                                      Color="Color.Tertiary"
+                                                      OnClick="() => EditPassword(context)" />
+                                    </MudButtonGroup>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                }
+                else
+                {
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height: 200px;">
+                        <MudIcon Icon="@Icons.Material.Filled.SecurityUpdate" Size="Size.Large" Color="Color.Secondary" />
+                        <MudText Typo="Typo.h6" Color="Color.Secondary">No passwords found</MudText>
+                        <MudText Color="Color.Tertiary">Click "Add Password" to create your first entry.</MudText>
+                    </MudStack>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 </MudContainer>
 
 @code {
@@ -124,6 +211,7 @@
     private string searchQuery = "";
     private string selectedCategory = "";
     private bool isLoading = true;
+    private bool isCardView = true; // Default to card view
 
     protected override async Task OnInitializedAsync()
     {
@@ -145,7 +233,7 @@
             isLoading = true;
             passwords = (await PasswordItemService.GetAllAsync()).ToList();
             filteredPasswords = passwords;
-            categories = passwords.Select(p => p.Category?.Name ?? "Uncategorized").Distinct().ToList();
+            categories = passwords.Select(p => p.Category?.Name ?? "Uncategorized").Distinct().Where(c => !string.IsNullOrEmpty(c)).ToList();
         }
         catch (Exception ex)
         {
@@ -162,13 +250,19 @@
         FilterPasswords();
     }
 
+    private void SelectCategory(string category)
+    {
+        selectedCategory = category;
+        FilterPasswords();
+    }
+
     private void FilterPasswords()
     {
         filteredPasswords = passwords.Where(p => 
             (string.IsNullOrEmpty(searchQuery) || 
              p.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
-             p.Username.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
-             p.WebsiteUrl.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) &&
+             (p.Username?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+             (p.WebsiteUrl?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)) &&
             (string.IsNullOrEmpty(selectedCategory) || 
              (p.Category?.Name ?? "Uncategorized") == selectedCategory)
         ).ToList();
@@ -176,13 +270,20 @@
 
     private string GetPasswordIcon(PasswordItem password)
     {
-        return password.WebsiteUrl switch
+        if (string.IsNullOrEmpty(password.WebsiteUrl))
+            return Icons.Material.Filled.Password;
+
+        return password.WebsiteUrl.ToLower() switch
         {
             var url when url.Contains("google") => Icons.Material.Filled.Language,
             var url when url.Contains("facebook") => Icons.Material.Filled.Language,
             var url when url.Contains("twitter") => Icons.Material.Filled.Language,
             var url when url.Contains("github") => Icons.Material.Filled.Code,
-            _ => Icons.Material.Filled.Password
+            var url when url.Contains("microsoft") => Icons.Material.Filled.Business,
+            var url when url.Contains("amazon") => Icons.Material.Filled.ShoppingCart,
+            var url when url.Contains("bank") => Icons.Material.Filled.AccountBalance,
+            var url when url.Contains("paypal") => Icons.Material.Filled.Payment,
+            _ => Icons.Material.Filled.Language
         };
     }
 
@@ -195,8 +296,11 @@
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", password.Password);
-            // Show success notification
+            if (!string.IsNullOrEmpty(password.Password))
+            {
+                await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", password.Password);
+                // Show success notification - could add snackbar here
+            }
         }
         catch (Exception ex)
         {

@@ -11,6 +11,7 @@ using PasswordManager.App.Services;
 using Microsoft.AspNetCore.Identity;
 using PasswordManager.Models;
 using Microsoft.Extensions.Logging;
+using MudBlazor.Services;
 
 namespace PasswordManager.App;
 
@@ -53,6 +54,9 @@ public static class MauiProgram
 			});
 
 		builder.Services.AddMauiBlazorWebView();
+
+		// Add MudBlazor services
+		builder.Services.AddMudServices();
 
 		// Add configuration
 		builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
