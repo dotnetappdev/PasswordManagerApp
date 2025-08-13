@@ -23,6 +23,7 @@
             <converters:ApiModeToInputScopeConverter x:Key="ApiModeToInputScopeConverter"/>
             <converters:ApiModeToVisibilityConverter x:Key="ApiModeToVisibilityConverter"/>
             <converters:LocalModeToEnabledConverter x:Key="LocalModeToEnabledConverter"/>
+            <converters:DateTimeFormatConverter x:Key="DateTimeFormatConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

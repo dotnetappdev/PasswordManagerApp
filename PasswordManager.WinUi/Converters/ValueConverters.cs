@@ -210,3 +210,21 @@ public class ApiModeToInputScopeConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
+public class DateTimeFormatConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is DateTime dateTime)
+        {
+            var format = parameter?.ToString() ?? "MMM dd";
+            return $"Modified {dateTime.ToString(format)}";
+        }
+        return string.Empty;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
