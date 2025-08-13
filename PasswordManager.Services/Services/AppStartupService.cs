@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.DAL;
 using Microsoft.EntityFrameworkCore;
+using PasswordManager.DAL.Seed;
 
 namespace PasswordManager.Services.Services;
 
@@ -98,6 +99,9 @@ public class AppStartupService : IAppStartupService
                     else
                     {
                         _logger.LogInformation("Database is up to date");
+                        
+                        // Seed test data if database is empty
+                        await SeedTestDataIfNeeded(dbContext);
                     }
                 }
                 catch (ObjectDisposedException ex)
@@ -174,6 +178,28 @@ public class AppStartupService : IAppStartupService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during background startup sync");
+        }
+    }
+
+    private async Task SeedTestDataIfNeeded(PasswordManagerDbContext dbContext)
+    {
+        try
+        {
+            // Check if we already have data
+            if (await dbContext.PasswordItems.AnyAsync())
+            {
+                _logger.LogDebug("Database already contains password items, skipping test data seeding");
+                return;
+            }
+
+            _logger.LogInformation("Seeding test data to populate empty database");
+            TestDataSeeder.SeedTestData(dbContext);
+            _logger.LogInformation("Test data seeding completed successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error seeding test data");
+            // Don't throw - seeding failure shouldn't prevent app startup
         }
     }
 }
