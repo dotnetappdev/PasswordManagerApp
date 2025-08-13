@@ -28,6 +28,31 @@ public sealed partial class LoginPage : Page
             _serviceProvider = serviceProvider;
             _viewModel = new LoginViewModel(serviceProvider);
             this.DataContext = _viewModel;
+
+            // Check if already authenticated after a brief delay for initialization
+            _ = CheckAuthenticationStatusAsync();
+        }
+    }
+
+    private async Task CheckAuthenticationStatusAsync()
+    {
+        try
+        {
+            // Give the ViewModel time to initialize and check authentication
+            await Task.Delay(100);
+            
+            // If already authenticated, navigate to home
+            if (_viewModel?.IsAuthenticated == true)
+            {
+                if (GetMainWindow() is MainWindow mainWindow)
+                {
+                    mainWindow.NavigateToHome();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error checking authentication status: {ex.Message}");
         }
     }
 

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
+using System.Linq;
 
 namespace PasswordManager.WinUi.ViewModels;
 
@@ -17,6 +18,7 @@ public class LoginViewModel : BaseViewModel
     private string _primaryButtonText = "Unlock";
     private string _passwordLabel = "Master Password";
     private string _passwordPlaceholder = "Enter your master password";
+    private bool _isAuthenticated = false;
 
     public LoginViewModel(IServiceProvider serviceProvider)
     {
@@ -31,6 +33,16 @@ public class LoginViewModel : BaseViewModel
     {
         try
         {
+            // First check if user is already authenticated
+            var isAlreadyAuthenticated = await _authService.IsAuthenticatedAsync();
+            if (isAlreadyAuthenticated)
+            {
+                // User is already authenticated, we'll let the UI handle this
+                // The navigation will be handled by the LoginPage code-behind
+                _isAuthenticated = true;
+                return;
+            }
+
             _isFirstTimeSetup = await _authService.IsFirstTimeSetupAsync();
             UpdateUIForSetupMode();
         }
@@ -129,6 +141,12 @@ public class LoginViewModel : BaseViewModel
 
     public bool ShowPasswordHint => IsFirstTimeSetup;
 
+    public bool IsAuthenticated
+    {
+        get => _isAuthenticated;
+        set => SetProperty(ref _isAuthenticated, value);
+    }
+
     // Legacy properties for backward compatibility (not used in new flow)
     public string Username { get; set; } = string.Empty;
     public string UsernameLabel { get; set; } = "Username";
@@ -186,6 +204,13 @@ public class LoginViewModel : BaseViewModel
             return false;
         }
 
+        // Additional password strength checks
+        if (!HasUpperCase(MasterPassword) || !HasLowerCase(MasterPassword) || !HasDigit(MasterPassword))
+        {
+            ErrorMessage = "Master password must contain at least one uppercase letter, one lowercase letter, and one number.";
+            return false;
+        }
+
         // Setup master password
         var setupResult = await _authService.SetupMasterPasswordAsync(MasterPassword, PasswordHint);
         
@@ -201,6 +226,10 @@ public class LoginViewModel : BaseViewModel
         }
     }
 
+    private static bool HasUpperCase(string password) => password.Any(char.IsUpper);
+    private static bool HasLowerCase(string password) => password.Any(char.IsLower);
+    private static bool HasDigit(string password) => password.Any(char.IsDigit);
+
     private async Task<bool> LoginWithMasterPasswordAsync()
     {
         var loginResult = await _authService.AuthenticateAsync(MasterPassword);
@@ -211,7 +240,16 @@ public class LoginViewModel : BaseViewModel
         }
         else
         {
-            ErrorMessage = "Incorrect master password. Please try again.";
+            // Check if there's a password hint available
+            var hint = await _authService.GetMasterPasswordHintAsync();
+            if (!string.IsNullOrEmpty(hint))
+            {
+                ErrorMessage = $"Incorrect master password. Hint: {hint}";
+            }
+            else
+            {
+                ErrorMessage = "Incorrect master password. Please try again.";
+            }
             return false;
         }
     }
