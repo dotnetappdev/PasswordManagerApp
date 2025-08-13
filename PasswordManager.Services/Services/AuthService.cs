@@ -23,6 +23,7 @@ public class AuthService : IAuthService
     private readonly IDatabaseConfigurationService _databaseConfigurationService;
     private readonly ILogger<AuthService> _logger;
     private readonly HttpClient _httpClient;
+    private readonly ISecureStorageService? _secureStorageService;
     private bool _isAuthenticated = false;
     private ApplicationUser? _currentUser;
 
@@ -33,7 +34,8 @@ public class AuthService : IAuthService
         PasswordManagerDbContext dbContext,
         IDatabaseConfigurationService databaseConfigurationService,
         HttpClient httpClient,
-        ILogger<AuthService> logger)
+        ILogger<AuthService> logger,
+        ISecureStorageService? secureStorageService = null)
     {
         _jsRuntime = jsRuntime;
         _passwordCryptoService = passwordCryptoService;
@@ -42,6 +44,7 @@ public class AuthService : IAuthService
         _databaseConfigurationService = databaseConfigurationService;
         _httpClient = httpClient;
         _logger = logger;
+        _secureStorageService = secureStorageService;
     }
 
     public bool IsAuthenticated => _isAuthenticated;
@@ -75,7 +78,7 @@ public class AuthService : IAuthService
             _dbContext.Users.Add(user);
             await _dbContext.SaveChangesAsync();
 
-            // Store user salt securely in Windows Credential Manager (for desktop) or secure storage
+            // Store user salt securely in platform-specific secure storage (Windows DPAPI, etc.)
             await StoreUserSaltSecurelyAsync(user.Id.ToString(), userSalt);
 
             _logger.LogInformation("Master password setup completed for user {UserId}", user.Id);
@@ -538,7 +541,7 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
-    /// Stores user salt securely in Windows Credential Manager or platform-specific secure storage
+    /// Stores user salt securely using platform-specific secure storage (Windows DPAPI, Keychain, etc.)
     /// </summary>
     private async Task StoreUserSaltSecurelyAsync(string userId, byte[] userSalt)
     {
@@ -546,19 +549,24 @@ public class AuthService : IAuthService
         {
             // Convert salt to base64 for storage
             var saltBase64 = Convert.ToBase64String(userSalt);
+            var saltKey = $"userSalt_{userId}";
             
-            // For now, store in localStorage (should be replaced with proper credential storage)
-            // In production, this should use:
-            // - Windows Credential Manager on Windows
-            // - Keychain on macOS
-            // - libsecret on Linux
-            // - Android Keystore on Android
-            // - iOS Keychain on iOS
-            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", $"userSalt_{userId}", saltBase64);
+            // Use platform-specific secure storage if available
+            if (_secureStorageService != null)
+            {
+                await _secureStorageService.SetAsync(saltKey, saltBase64);
+                _logger.LogInformation("User salt stored securely using platform secure storage for user {UserId}", userId);
+            }
+            else
+            {
+                // Fallback to localStorage with warning (for non-desktop platforms)
+                await _jsRuntime.InvokeVoidAsync("localStorage.setItem", saltKey, saltBase64);
+                _logger.LogWarning("User salt stored in localStorage as fallback - consider implementing secure storage for this platform");
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to store user salt securely");
+            _logger.LogError(ex, "Failed to store user salt securely for user {UserId}", userId);
             throw;
         }
     }
@@ -570,11 +578,32 @@ public class AuthService : IAuthService
     {
         try
         {
-            // For now, retrieve from localStorage (should be replaced with proper credential storage)
-            var saltBase64 = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", $"userSalt_{userId}");
+            var saltKey = $"userSalt_{userId}";
+            string? saltBase64 = null;
+            
+            // Try platform-specific secure storage first
+            if (_secureStorageService != null)
+            {
+                saltBase64 = await _secureStorageService.GetAsync(saltKey);
+                if (!string.IsNullOrEmpty(saltBase64))
+                {
+                    _logger.LogDebug("User salt retrieved from platform secure storage for user {UserId}", userId);
+                }
+            }
+            
+            // Fallback to localStorage if secure storage unavailable or empty
+            if (string.IsNullOrEmpty(saltBase64))
+            {
+                saltBase64 = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", saltKey);
+                if (!string.IsNullOrEmpty(saltBase64))
+                {
+                    _logger.LogWarning("User salt retrieved from localStorage fallback for user {UserId}", userId);
+                }
+            }
             
             if (string.IsNullOrEmpty(saltBase64))
             {
+                _logger.LogWarning("User salt not found in secure storage for user {UserId}", userId);
                 return null;
             }
 
@@ -582,7 +611,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to retrieve user salt from secure storage");
+            _logger.LogError(ex, "Failed to retrieve user salt from secure storage for user {UserId}", userId);
             return null;
         }
     }

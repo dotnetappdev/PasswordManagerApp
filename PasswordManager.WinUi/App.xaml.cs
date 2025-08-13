@@ -109,7 +109,11 @@ public partial class App : Application
 
                 // Register platform service
                 services.AddSingleton<IPlatformService, WinUiPlatformService>();
-                services.AddSingleton<ISecureStorageService, WinUiSecureStorageService>();
+                
+                // Register secure storage services with enhanced security
+                services.AddSingleton<WinUiSecureStorageService>(); // DPAPI storage
+                services.AddSingleton<WindowsCredentialManagerService>(); // Credential Manager storage
+                services.AddSingleton<ISecureStorageService, EnhancedWinUiSecureStorageService>(); // Enhanced hybrid storage
 
                 // Register database configuration service
                 services.AddScoped<IDatabaseConfigurationService, DatabaseConfigurationService>();
