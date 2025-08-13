@@ -2,6 +2,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.WinUi.ViewModels;
+using PasswordManager.Services.Interfaces;
+using System.Linq;
 
 namespace PasswordManager.WinUi.Views;
 
@@ -9,6 +11,7 @@ public sealed partial class SettingsPage : Page
 {
     private SettingsViewModel? _viewModel;
     private IServiceProvider? _serviceProvider;
+    private IAuthService? _authService;
 
     public SettingsPage()
     {
@@ -22,6 +25,7 @@ public sealed partial class SettingsPage : Page
         if (e.Parameter is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+            _authService = serviceProvider.GetRequiredService<IAuthService>();
             _viewModel = new SettingsViewModel(serviceProvider);
             this.DataContext = _viewModel;
         }
@@ -175,26 +179,41 @@ public sealed partial class SettingsPage : Page
     {
         var currentPasswordBox = new PasswordBox
         {
-            Header = "Current Password",
-            PlaceholderText = "Enter current password"
+            Header = "Current Master Password",
+            PlaceholderText = "Enter current master password"
         };
 
         var newPasswordBox = new PasswordBox
         {
-            Header = "New Password",
-            PlaceholderText = "Enter new password"
+            Header = "New Master Password",
+            PlaceholderText = "Enter new master password (min 8 chars, with uppercase, lowercase, and numbers)"
         };
 
         var confirmPasswordBox = new PasswordBox
         {
-            Header = "Confirm New Password",
-            PlaceholderText = "Confirm new password"
+            Header = "Confirm New Master Password",
+            PlaceholderText = "Confirm new master password"
+        };
+
+        var passwordHintBox = new TextBox
+        {
+            Header = "Password Hint (Optional)",
+            PlaceholderText = "Enter a hint to help you remember your password"
+        };
+
+        var errorTextBlock = new TextBlock
+        {
+            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Visibility = Microsoft.UI.Xaml.Visibility.Collapsed
         };
 
         var stackPanel = new StackPanel { Spacing = 16 };
+        stackPanel.Children.Add(errorTextBlock);
         stackPanel.Children.Add(currentPasswordBox);
         stackPanel.Children.Add(newPasswordBox);
         stackPanel.Children.Add(confirmPasswordBox);
+        stackPanel.Children.Add(passwordHintBox);
 
         var dialog = new ContentDialog
         {
@@ -208,27 +227,46 @@ public sealed partial class SettingsPage : Page
         var result = await dialog.ShowAsync();
         if (result == ContentDialogResult.Primary && _viewModel != null)
         {
-            if (string.IsNullOrEmpty(currentPasswordBox.Password) || 
-                string.IsNullOrEmpty(newPasswordBox.Password) ||
-                newPasswordBox.Password != confirmPasswordBox.Password)
+            // Validate inputs
+            if (string.IsNullOrEmpty(currentPasswordBox.Password))
             {
-                var errorDialog = new ContentDialog
-                {
-                    Title = "Error",
-                    Content = "Please fill in all fields and ensure new passwords match.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
-                };
-                await errorDialog.ShowAsync();
+                await ShowErrorDialog("Please enter your current master password.");
                 return;
             }
 
-            var success = await _viewModel.ChangePasswordAsync(currentPasswordBox.Password, newPasswordBox.Password);
+            if (string.IsNullOrEmpty(newPasswordBox.Password))
+            {
+                await ShowErrorDialog("Please enter a new master password.");
+                return;
+            }
+
+            if (newPasswordBox.Password != confirmPasswordBox.Password)
+            {
+                await ShowErrorDialog("New passwords do not match. Please try again.");
+                return;
+            }
+
+            // Validate password strength
+            var validationResult = ValidatePasswordStrength(newPasswordBox.Password);
+            if (!validationResult.IsValid)
+            {
+                await ShowErrorDialog(validationResult.ErrorMessage);
+                return;
+            }
+
+            // Use the auth service to change the master password with hint
+            var success = await _authService?.ChangeMasterPasswordAsync(
+                currentPasswordBox.Password, 
+                newPasswordBox.Password, 
+                passwordHintBox.Text) ?? false;
             
-            var message = success ? "Password changed successfully!" : "Failed to change password. Please check your current password.";
+            var message = success ? 
+                "Master password changed successfully! Your new password will be required on next app startup." : 
+                "Failed to change master password. Please check your current password and try again.";
+            
             var resultDialog = new ContentDialog
             {
-                Title = "Change Password Result",
+                Title = success ? "Success" : "Error",
                 Content = message,
                 CloseButtonText = "OK",
                 XamlRoot = this.XamlRoot
@@ -236,5 +274,42 @@ public sealed partial class SettingsPage : Page
             
             await resultDialog.ShowAsync();
         }
+    }
+
+    private (bool IsValid, string ErrorMessage) ValidatePasswordStrength(string password)
+    {
+        if (password.Length < 8)
+        {
+            return (false, "Master password must be at least 8 characters long.");
+        }
+
+        if (!password.Any(char.IsUpper))
+        {
+            return (false, "Master password must contain at least one uppercase letter.");
+        }
+
+        if (!password.Any(char.IsLower))
+        {
+            return (false, "Master password must contain at least one lowercase letter.");
+        }
+
+        if (!password.Any(char.IsDigit))
+        {
+            return (false, "Master password must contain at least one number.");
+        }
+
+        return (true, string.Empty);
+    }
+
+    private async Task ShowErrorDialog(string message)
+    {
+        var errorDialog = new ContentDialog
+        {
+            Title = "Error",
+            Content = message,
+            CloseButtonText = "OK",
+            XamlRoot = this.XamlRoot
+        };
+        await errorDialog.ShowAsync();
     }
 }
