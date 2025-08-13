@@ -35,15 +35,22 @@ public sealed partial class LoginPage : Page
     {
         if (_viewModel == null) return;
 
+        // Resolve UI elements once for this handler
+        var loginButton = this.FindName("LoginButton") as Button;
+        var loginProgressRing = this.FindName("LoginProgressRing") as ProgressRing;
+        var errorText = this.FindName("ErrorText") as TextBlock;
+        var emailTextBox = this.FindName("EmailTextBox") as TextBox;
+        var passwordBox = this.FindName("PasswordBox") as PasswordBox;
+
         try
         {
-            LoginButton.IsEnabled = false;
-            LoginProgressRing.IsActive = true;
-            ErrorText.Visibility = Visibility.Collapsed;
+            if (loginButton != null) loginButton.IsEnabled = false;
+            if (loginProgressRing != null) loginProgressRing.IsActive = true;
+            if (errorText != null) errorText.Visibility = Visibility.Collapsed;
 
             // Update ViewModel with current values
-            _viewModel.Username = UsernameTextBox.Text;
-            _viewModel.Password = PasswordBox.Password;
+            _viewModel.Username = emailTextBox?.Text ?? string.Empty;
+            _viewModel.Password = passwordBox?.Password ?? string.Empty;
 
             // Attempt login
             var success = await _viewModel.LoginAsync();
@@ -58,25 +65,31 @@ public sealed partial class LoginPage : Page
                 else
                 {
                     // Fallback navigation
-                    Frame.Navigate(typeof(DashboardPage), _serviceProvider);
+                    this.Frame?.Navigate(typeof(DashboardPage), _serviceProvider);
                 }
             }
             else
             {
                 // Show error message from ViewModel
-                ErrorText.Text = _viewModel.ErrorMessage;
-                ErrorText.Visibility = Visibility.Visible;
+                if (errorText != null)
+                {
+                    errorText.Text = _viewModel.ErrorMessage;
+                    errorText.Visibility = Visibility.Visible;
+                }
             }
         }
         catch (Exception ex)
         {
-            ErrorText.Text = $"Login failed: {ex.Message}";
-            ErrorText.Visibility = Visibility.Visible;
+            if (errorText != null)
+            {
+                errorText.Text = $"Login failed: {ex.Message}";
+                errorText.Visibility = Visibility.Visible;
+            }
         }
         finally
         {
-            LoginButton.IsEnabled = true;
-            LoginProgressRing.IsActive = false;
+            if (loginButton != null) loginButton.IsEnabled = true;
+            if (loginProgressRing != null) loginProgressRing.IsActive = false;
         }
     }
 
@@ -84,15 +97,22 @@ public sealed partial class LoginPage : Page
     {
         if (_viewModel == null) return;
 
+        // Resolve UI elements once for this handler
+        var loginButton = this.FindName("LoginButton") as Button;
+        var loginProgressRing = this.FindName("LoginProgressRing") as ProgressRing;
+        var errorText = this.FindName("ErrorText") as TextBlock;
+        var emailTextBox = this.FindName("EmailTextBox") as TextBox;
+        var passwordBox = this.FindName("PasswordBox") as PasswordBox;
+
         try
         {
-            LoginButton.IsEnabled = false;
-            LoginProgressRing.IsActive = true;
-            ErrorText.Visibility = Visibility.Collapsed;
+            if (loginButton != null) loginButton.IsEnabled = false;
+            if (loginProgressRing != null) loginProgressRing.IsActive = true;
+            if (errorText != null) errorText.Visibility = Visibility.Collapsed;
 
             // Update ViewModel with current values
-            _viewModel.Username = UsernameTextBox.Text;
-            _viewModel.Password = PasswordBox.Password;
+            _viewModel.Username = emailTextBox?.Text ?? string.Empty;
+            _viewModel.Password = passwordBox?.Password ?? string.Empty;
 
             // Attempt registration
             var success = await _viewModel.RegisterAsync();
@@ -107,25 +127,31 @@ public sealed partial class LoginPage : Page
                 else
                 {
                     // Fallback navigation
-                    Frame.Navigate(typeof(DashboardPage), _serviceProvider);
+                    this.Frame?.Navigate(typeof(DashboardPage), _serviceProvider);
                 }
             }
             else
             {
                 // Show error message from ViewModel
-                ErrorText.Text = _viewModel.ErrorMessage;
-                ErrorText.Visibility = Visibility.Visible;
+                if (errorText != null)
+                {
+                    errorText.Text = _viewModel.ErrorMessage;
+                    errorText.Visibility = Visibility.Visible;
+                }
             }
         }
         catch (Exception ex)
         {
-            ErrorText.Text = $"Registration failed: {ex.Message}";
-            ErrorText.Visibility = Visibility.Visible;
+            if (errorText != null)
+            {
+                errorText.Text = $"Registration failed: {ex.Message}";
+                errorText.Visibility = Visibility.Visible;
+            }
         }
         finally
         {
-            LoginButton.IsEnabled = true;
-            LoginProgressRing.IsActive = false;
+            if (loginButton != null) loginButton.IsEnabled = true;
+            if (loginProgressRing != null) loginProgressRing.IsActive = false;
         }
     }
 

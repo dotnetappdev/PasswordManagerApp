@@ -6,145 +6,157 @@
     <Grid>
         <!-- Background Gradient -->
         <Grid.Background>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#6366F1" Offset="0"/>
-                <GradientStop Color="#8B5FFF" Offset="0.5"/>
-                <GradientStop Color="#EC4899" Offset="1"/>
+            <LinearGradientBrush StartPoint="0,0"
+                    EndPoint="1,1">
+                <GradientStop Color="#6366F1"
+                        Offset="0"/>
+                <GradientStop Color="#8B5FFF"
+                        Offset="0.5"/>
+                <GradientStop Color="#EC4899"
+                        Offset="1"/>
             </LinearGradientBrush>
         </Grid.Background>
-        
+
         <!-- Content Container -->
-        <Grid HorizontalAlignment="Center" 
-              VerticalAlignment="Center" 
+        <Grid HorizontalAlignment="Center"
+              VerticalAlignment="Center"
               MaxWidth="480">
-            
+
             <Border Style="{StaticResource ModernElevatedCardStyle}"
-                   Background="{StaticResource ModernSurfaceBrush}">
-                
+                    Background="{StaticResource ModernSurfaceBrush}">
+
                 <StackPanel Spacing="32">
-                    
+
                     <!-- Header Section -->
-                    <StackPanel Spacing="16" HorizontalAlignment="Center">
+                    <StackPanel Spacing="16"
+                            HorizontalAlignment="Center">
                         <!-- App Logo -->
                         <Border Background="{StaticResource ModernPrimaryGradientBrush}"
-                               CornerRadius="20"
-                               Width="64"
-                               Height="64"
-                               HorizontalAlignment="Center">
-                            <FontIcon Glyph="&#xE192;" 
-                                     FontSize="32"
-                                     Foreground="White"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center"/>
+                                CornerRadius="20"
+                                Width="64"
+                                Height="64"
+                                HorizontalAlignment="Center">
+                            <FontIcon Glyph="&#xE192;"
+                                      FontSize="32"
+                                      Foreground="White"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
                         </Border>
-                        
+
                         <!-- App Title -->
-                        <StackPanel HorizontalAlignment="Center" Spacing="8">
-                            <TextBlock Text="Password Manager" 
-                                      Style="{StaticResource ModernHeading2Style}"
-                                      HorizontalAlignment="Center"/>
-                            <TextBlock Text="Secure your digital life" 
-                                      Style="{StaticResource ModernCaptionStyle}"
-                                      HorizontalAlignment="Center"/>
+                        <StackPanel HorizontalAlignment="Center"
+                                Spacing="8">
+                            <TextBlock Text="Password Manager"
+                                       Style="{StaticResource ModernHeading2Style}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="Secure your digital life"
+                                       Style="{StaticResource ModernCaptionStyle}"
+                                       HorizontalAlignment="Center"/>
                         </StackPanel>
                     </StackPanel>
-                    
+
                     <!-- Login Form -->
                     <StackPanel Spacing="24">
-                        
-                        <TextBlock Text="Sign In" 
-                                  Style="{StaticResource ModernHeading3Style}"
-                                  HorizontalAlignment="Center"/>
-                        
+
+                        <TextBlock Text="Sign In"
+                                   Style="{StaticResource ModernHeading3Style}"
+                                   HorizontalAlignment="Center"/>
+
                         <!-- Form Fields -->
                         <StackPanel Spacing="20">
                             <!-- Username/Email Input -->
                             <StackPanel Spacing="8">
-                                <TextBlock Text="{Binding UsernameLabel}" 
-                                          Style="{StaticResource ModernCaptionStyle}"
-                                          FontWeight="SemiBold"/>
-                                <TextBox x:Name="UsernameTextBox"
-                                        PlaceholderText="{Binding UsernamePlaceholder}"
-                                        Text="{Binding Username, Mode=TwoWay}"
-                                        Style="{StaticResource ModernTextBoxStyle}"
-                                        InputScope="{Binding IsApiMode, Converter={StaticResource ApiModeToInputScopeConverter}}"/>
+                                <TextBlock Text="{Binding UsernameLabel}"
+                                           Style="{StaticResource ModernCaptionStyle}"
+                                           FontWeight="SemiBold"/>
+                                <TextBox x:Name="EmailTextBox"
+                                        x:FieldModifier="private"
+                                         PlaceholderText="{Binding UsernamePlaceholder}"
+                                         Text="{Binding Username, Mode=TwoWay}"
+                                         Style="{StaticResource ModernTextBoxStyle}"
+                                         InputScope="{Binding IsApiMode, Converter={StaticResource ApiModeToInputScopeConverter}}"/>
                             </StackPanel>
-                            
+
                             <!-- Password Input -->
                             <StackPanel Spacing="8">
-                                <TextBlock Text="Password" 
-                                          Style="{StaticResource ModernCaptionStyle}"
-                                          FontWeight="SemiBold"/>
+                                <TextBlock Text="Password"
+                                           Style="{StaticResource ModernCaptionStyle}"
+                                           FontWeight="SemiBold"/>
                                 <PasswordBox x:Name="PasswordBox"
-                                            PlaceholderText="Enter your password"
-                                            Password="{Binding Password, Mode=TwoWay}"
-                                            Style="{StaticResource ModernPasswordBoxStyle}"/>
+                                        x:FieldModifier="private"
+                                             PlaceholderText="Enter your password"
+                                             Style="{StaticResource ModernPasswordBoxStyle}"/>
                             </StackPanel>
-                            
+
                             <!-- Error Message -->
                             <Border Background="#FEF2F2"
-                                   BorderBrush="{StaticResource ModernErrorBrush}"
-                                   BorderThickness="1"
-                                   CornerRadius="8"
-                                   Padding="16,12"
-                                   Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon Glyph="&#xE783;" 
-                                             FontSize="16" 
-                                             Foreground="{StaticResource ModernErrorBrush}"/>
-                                    <TextBlock Text="{Binding ErrorMessage}"
-                                              Foreground="{StaticResource ModernErrorBrush}"
-                                              TextWrapping="Wrap"
-                                              VerticalAlignment="Center"/>
+                                    BorderBrush="{StaticResource ModernErrorBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="16,12"
+                                    Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <StackPanel Orientation="Horizontal"
+                                        Spacing="8">
+                                    <FontIcon Glyph="&#xE783;"
+                                              FontSize="16"
+                                              Foreground="{StaticResource ModernErrorBrush}"/>
+                                    <TextBlock x:Name="ErrorText"
+                                            x:FieldModifier="private"
+                                               Foreground="{StaticResource ModernErrorBrush}"
+                                               TextWrapping="Wrap"
+                                               VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                        
+
                         <!-- Action Buttons -->
                         <StackPanel Spacing="16">
                             <!-- Login Button -->
                             <Button x:Name="LoginButton"
-                                   Content="Sign In"
-                                   Style="{StaticResource ModernPrimaryButtonStyle}"
-                                   HorizontalAlignment="Stretch"
-                                   MinHeight="48"
-                                   Click="LoginButton_Click"/>
-                            
+                                    x:FieldModifier="private"
+                                    Content="Sign In"
+                                    Style="{StaticResource ModernPrimaryButtonStyle}"
+                                    HorizontalAlignment="Stretch"
+                                    MinHeight="48"
+                                    Click="LoginButton_Click"/>
+
                             <!-- Progress Ring -->
                             <ProgressRing x:Name="LoginProgressRing"
-                                         IsActive="False"
-                                         HorizontalAlignment="Center"
-                                         Width="32"
-                                         Height="32"/>
+                                    x:FieldModifier="private"
+                                          IsActive="False"
+                                          HorizontalAlignment="Center"
+                                          Width="32"
+                                          Height="32"/>
                         </StackPanel>
-                        
+
                     </StackPanel>
-                    
+
                     <!-- Additional Options -->
-                    <StackPanel Spacing="16" HorizontalAlignment="Center">
-                        <Rectangle Height="1" 
-                                  Fill="{StaticResource ModernTextTertiaryBrush}" 
-                                  Margin="0,8"/>
-                        
-                        <StackPanel Orientation="Horizontal" 
-                                   HorizontalAlignment="Center" 
-                                   Spacing="16">
-                            <HyperlinkButton x:Name="CreateAccountButton" 
-                                            Content="Create Account"
-                                            Foreground="{StaticResource ModernPrimaryBrush}"
-                                            FontWeight="SemiBold"
-                                            Click="CreateAccountButton_Click"/>
-                            
-                            <Rectangle Width="1" 
-                                      Height="16" 
-                                      Fill="{StaticResource ModernTextTertiaryBrush}" 
-                                      VerticalAlignment="Center"/>
-                            
+                    <StackPanel Spacing="16"
+                            HorizontalAlignment="Center">
+                        <Rectangle Height="1"
+                                   Fill="{StaticResource ModernTextTertiaryBrush}"
+                                   Margin="0,8"/>
+
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    Spacing="16">
+                            <HyperlinkButton x:Name="CreateAccountButton"
+                                             Content="Create Account"
+                                             Foreground="{StaticResource ModernPrimaryBrush}"
+                                             FontWeight="SemiBold"
+                                             Click="CreateAccountButton_Click"/>
+
+                            <Rectangle Width="1"
+                                       Height="16"
+                                       Fill="{StaticResource ModernTextTertiaryBrush}"
+                                       VerticalAlignment="Center"/>
+
                             <HyperlinkButton Content="Forgot Password?"
-                                            Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                             Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                         </StackPanel>
                     </StackPanel>
-                    
+
                 </StackPanel>
             </Border>
         </Grid>

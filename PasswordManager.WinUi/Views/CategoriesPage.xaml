@@ -197,10 +197,9 @@
                                       Style="{StaticResource ModernCaptionStyle}"
                                       HorizontalAlignment="Center"/>
                         </StackPanel>
-                        
-                        <Button Content="Add Your First Category" 
-                               Style="{StaticResource ModernPrimaryButtonStyle}"
-                               Click="AddCategoryButton_Click">
+
+                        <Button Style="{StaticResource ModernPrimaryButtonStyle}"
+        Click="AddCategoryButton_Click">
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xE109;" FontSize="16"/>

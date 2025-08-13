@@ -92,7 +92,7 @@
                 <NavigationViewItemSeparator/>
                 
                 <!-- Tools and Settings -->
-                <NavigationViewItem Content="Tools & Security" IsExpanded="True">
+                <NavigationViewItem Content="Tools &amp; Security" IsExpanded="True">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE90F;" FontSize="18"/>
                     </NavigationViewItem.Icon>

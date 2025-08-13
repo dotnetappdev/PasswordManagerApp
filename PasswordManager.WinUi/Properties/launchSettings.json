@@ -2,6 +2,9 @@
     "profiles": {
         "PasswordManager.WinUi (Package)": {
             "commandName": "MsixPackage"
+        },
+        "PasswordManager.WinUi (Unpackaged)": {
+            "commandName": "Project"
         }
     }
 }

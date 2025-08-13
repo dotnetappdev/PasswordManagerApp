@@ -98,7 +98,7 @@
                                      HorizontalAlignment="Center"
                                      VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="Authentication & Storage" 
+                        <TextBlock Text="Authentication and Storage" 
                                   Style="{StaticResource ModernHeading3Style}"
                                   VerticalAlignment="Center"/>
                     </StackPanel>

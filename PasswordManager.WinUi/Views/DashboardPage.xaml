@@ -268,8 +268,8 @@
                                           Style="{StaticResource ModernCaptionStyle}"
                                           TextWrapping="Wrap"/>
                             </StackPanel>
-                            
-                            <Button Content="Secure & Logout" 
+
+                            <Button Content="Secure &amp; Logout" 
                                    Style="{StaticResource ModernSecondaryButtonStyle}"
                                    HorizontalAlignment="Stretch"
                                    Click="LogoutButton_Click"/>
