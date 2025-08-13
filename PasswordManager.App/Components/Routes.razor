@@ -10,7 +10,7 @@
         <NotFound>
             <PageTitle>Not Found</PageTitle>
             @{
-                NavigationManager.NavigateTo("/login", replace: true);
+                NavigationManager.NavigateTo("/masterpassword", replace: true);
             }
         </NotFound>
     </Router>
@@ -33,8 +33,8 @@
         {
             isDatabaseConfigured = true;
             
-            // Navigate to login page as the default route
-            NavigationManager.NavigateTo("/login", replace: true);
+            // Navigate to master password page as the default route
+            NavigationManager.NavigateTo("/masterpassword", replace: true);
             StateHasChanged();
         }
         catch (Exception ex)
