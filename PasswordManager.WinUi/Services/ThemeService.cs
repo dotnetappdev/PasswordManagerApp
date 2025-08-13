@@ -18,6 +18,7 @@ namespace PasswordManager.WinUi.Services
         private static AppTheme _currentTheme = AppTheme.System;
         private static Window? _window;
         private static Application? _application;
+        private static Windows.UI.ViewManagement.UISettings? _uiSettings;
 
         public static event EventHandler<AppTheme>? ThemeChanged;
 
@@ -27,7 +28,25 @@ namespace PasswordManager.WinUi.Services
         {
             _window = window;
             _application = application;
+            
+            // Set up system theme change listener
+            _uiSettings = new Windows.UI.ViewManagement.UISettings();
+            _uiSettings.ColorValuesChanged += OnSystemThemeChanged;
+            
             ApplyTheme(_currentTheme);
+        }
+        
+        private static async void OnSystemThemeChanged(Windows.UI.ViewManagement.UISettings sender, object args)
+        {
+            // Only respond if we're in System theme mode
+            if (_currentTheme == AppTheme.System)
+            {
+                // Dispatch to UI thread
+                if (_window?.DispatcherQueue != null)
+                {
+                    _window.DispatcherQueue.TryEnqueue(() => ApplyTheme(_currentTheme));
+                }
+            }
         }
 
         public static void SetTheme(AppTheme theme)
