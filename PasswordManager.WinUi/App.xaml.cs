@@ -40,6 +40,10 @@ public partial class App : Application
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         m_window = new MainWindow(_host.Services);
+        
+        // Initialize theme system
+        ThemeHelper.Initialize(m_window, this);
+        
         m_window.Activate();
         
         // Initialize services

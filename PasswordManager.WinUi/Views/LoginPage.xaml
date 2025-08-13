@@ -3,7 +3,11 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       Background="{StaticResource ModernBackgroundBrush}">
 
-    <Grid>
+    <!-- Full window overlay that prevents interaction with background -->
+    <Grid HorizontalAlignment="Stretch" 
+          VerticalAlignment="Stretch"
+          Background="{StaticResource ModernBackgroundBrush}">
+        
         <!-- Background Gradient -->
         <Grid.Background>
             <LinearGradientBrush StartPoint="0,0"

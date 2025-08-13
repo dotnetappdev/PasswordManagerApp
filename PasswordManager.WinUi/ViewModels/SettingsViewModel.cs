@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
+using PasswordManager.WinUi.Services;
 
 namespace PasswordManager.WinUi.ViewModels;
 
@@ -116,6 +117,9 @@ public class SettingsViewModel : BaseViewModel
 
             // Set default export path
             ExportPath = Path.Combine(_platformService.GetDocumentsDirectory(), "PasswordManagerExport");
+            
+            // Apply the loaded theme
+            ApplyTheme();
         }
         catch (Exception ex)
         {
@@ -142,6 +146,9 @@ public class SettingsViewModel : BaseViewModel
             await _secureStorageService.SetAsync("AuthenticationMode", AuthenticationMode);
             await _secureStorageService.SetAsync("ApiBaseUrl", ApiBaseUrl);
             
+            // Apply theme change
+            ApplyTheme();
+            
             return true;
         }
         catch (Exception ex)
@@ -153,6 +160,19 @@ public class SettingsViewModel : BaseViewModel
         {
             IsLoading = false;
         }
+    }
+    
+    private void ApplyTheme()
+    {
+        var theme = SelectedTheme switch
+        {
+            "Light" => AppTheme.Light,
+            "Dark" => AppTheme.Dark,
+            "System" => AppTheme.System,
+            _ => AppTheme.System
+        };
+        
+        ThemeHelper.SetTheme(theme);
     }
 
     public async Task<bool> ExportDataAsync()
