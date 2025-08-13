@@ -77,7 +77,7 @@
                                      ItemsSource="{Binding TimeoutOptions}"
                                      SelectedItem="{Binding SessionTimeoutMinutes, Mode=TwoWay}"
                                      SelectionChanged="SessionTimeoutComboBox_SelectionChanged"
-                                     Style="{StaticResource ModernTextBoxStyle}"
+                                     Style="{StaticResource ModernComboBoxStyle}"
                                      MinWidth="200"/>
                         </StackPanel>
                     </StackPanel>
@@ -112,7 +112,7 @@
                                      ItemsSource="{Binding AuthenticationModes}"
                                      SelectedItem="{Binding AuthenticationMode, Mode=TwoWay}"
                                      SelectionChanged="AuthModeComboBox_SelectionChanged"
-                                     Style="{StaticResource ModernTextBoxStyle}"
+                                     Style="{StaticResource ModernComboBoxStyle}"
                                      MinWidth="240"/>
                         </StackPanel>
                         
@@ -145,7 +145,7 @@
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>
                             <ComboBox IsEnabled="{Binding AuthenticationMode, Converter={StaticResource LocalModeToEnabledConverter}}"
-                                     Style="{StaticResource ModernTextBoxStyle}"
+                                     Style="{StaticResource ModernComboBoxStyle}"
                                      MinWidth="240">
                                 <ComboBoxItem Content="SQLite" IsSelected="True"/>
                                 <ComboBoxItem Content="SQL Server"/>
@@ -264,7 +264,7 @@
                                  ItemsSource="{Binding AvailableThemes}"
                                  SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
                                  SelectionChanged="ThemeComboBox_SelectionChanged"
-                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 Style="{StaticResource ModernComboBoxStyle}"
                                  MinWidth="200"/>
                     </StackPanel>
                 </StackPanel>

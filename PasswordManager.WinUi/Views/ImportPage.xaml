@@ -43,7 +43,7 @@
                         <ComboBox x:Name="ImportTypeComboBox"
                                  ItemsSource="{Binding AvailableImportTypes}"
                                  SelectedItem="{Binding SelectedImportType, Mode=TwoWay}"
-                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 Style="{StaticResource ModernComboBoxStyle}"
                                  MinWidth="240"
                                  SelectionChanged="ImportTypeComboBox_SelectionChanged"/>
                     </StackPanel>
