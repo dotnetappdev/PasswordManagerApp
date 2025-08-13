@@ -20,16 +20,6 @@ public sealed partial class LoginPage : Page
         this.InitializeComponent();
     }
 
-    private void Page_Loaded(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var masterPasswordBox = this.FindName("MasterPasswordBox") as PasswordBox;
-            masterPasswordBox?.Focus(FocusState.Programmatic);
-        }
-        catch { }
-    }
-
     protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
@@ -66,7 +56,7 @@ public sealed partial class LoginPage : Page
         }
     }
 
-    private async Task DoPrimaryActionAsync()
+    private async Task PrimaryActionButton_Click(object sender, RoutedEventArgs e)
     {
         if (_viewModel == null) return;
 
@@ -118,12 +108,6 @@ public sealed partial class LoginPage : Page
         }
     }
 
-    // Event handler remains async void for XAML Click binding
-    private async void PrimaryActionButton_Click(object sender, RoutedEventArgs e)
-    {
-        await DoPrimaryActionAsync();
-    }
-
     private MainWindow? GetMainWindow()
     {
         // Use the MainWindow property exposed in App
@@ -135,12 +119,12 @@ public sealed partial class LoginPage : Page
     // Keep these methods for any existing references, but redirect to the new flow
     private async void LoginButton_Click(object sender, RoutedEventArgs e)
     {
-        await DoPrimaryActionAsync();
+        await PrimaryActionButton_Click(sender, e);
     }
 
     private async void CreateAccountButton_Click(object sender, RoutedEventArgs e)
     {
-        await DoPrimaryActionAsync();
+        await PrimaryActionButton_Click(sender, e);
     }
 
     #endregion

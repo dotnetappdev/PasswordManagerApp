@@ -1,8 +1,7 @@
 <Page x:Class="PasswordManager.WinUi.Views.LoginPage"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Background="{StaticResource ModernBackgroundBrush}"
-    Loaded="Page_Loaded">
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{StaticResource ModernBackgroundBrush}">
 
     <!-- Full window overlay that prevents interaction with background -->
     <Grid HorizontalAlignment="Stretch" 
@@ -10,7 +9,7 @@
           Background="{StaticResource ModernBackgroundBrush}">
         
         <!-- Background Gradient -->
-        
+       
 
         <!-- Content Container -->
         <Grid HorizontalAlignment="Center"
@@ -38,57 +37,49 @@
                                       VerticalAlignment="Center"/>
                         </Border>
 
-                        <!-- Dynamic Title based on setup mode -->
+                        <!-- App Title -->
                         <StackPanel HorizontalAlignment="Center"
                                 Spacing="8">
-                            <TextBlock Text="{Binding PageTitle}"
+                            <TextBlock Text="Password Manager"
                                        Style="{StaticResource ModernHeading2Style}"
                                        HorizontalAlignment="Center"/>
-                            <TextBlock Text="{Binding IsFirstTimeSetup, Converter={StaticResource FirstTimeSetupToSubtitleConverter}}"
+                            <TextBlock Text="Secure your digital life"
                                        Style="{StaticResource ModernCaptionStyle}"
                                        HorizontalAlignment="Center"/>
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- Master Password Form -->
+                    <!-- Login Form -->
                     <StackPanel Spacing="24">
+
+                        <TextBlock Text="Sign In"
+                                   Style="{StaticResource ModernHeading3Style}"
+                                   HorizontalAlignment="Center"/>
 
                         <!-- Form Fields -->
                         <StackPanel Spacing="20">
-                            <!-- Master Password Input -->
+                            <!-- Username/Email Input -->
                             <StackPanel Spacing="8">
-                                <TextBlock Text="{Binding PasswordLabel}"
+                                <TextBlock Text="{Binding UsernameLabel}"
                                            Style="{StaticResource ModernCaptionStyle}"
                                            FontWeight="SemiBold"/>
-                                <PasswordBox x:Name="MasterPasswordBox"
+                                <TextBox x:Name="EmailTextBox"
                                         x:FieldModifier="private"
-                                             PlaceholderText="{Binding PasswordPlaceholder}"
-                                             Style="{StaticResource ModernPasswordBoxStyle}"/>
+                                         PlaceholderText="{Binding UsernamePlaceholder}"
+                                         Text="{Binding Username, Mode=TwoWay}"
+                                         Style="{StaticResource ModernTextBoxStyle}"
+                                         InputScope="{Binding IsApiMode, Converter={StaticResource ApiModeToInputScopeConverter}}"/>
                             </StackPanel>
 
-                            <!-- Confirm Password Input (only visible during first-time setup) -->
-                            <StackPanel Spacing="8"
-                                       Visibility="{Binding ShowConfirmPassword, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <TextBlock Text="Confirm Master Password"
+                            <!-- Password Input -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Password"
                                            Style="{StaticResource ModernCaptionStyle}"
                                            FontWeight="SemiBold"/>
-                                <PasswordBox x:Name="ConfirmPasswordBox"
+                                <PasswordBox x:Name="PasswordBox"
                                         x:FieldModifier="private"
-                                             PlaceholderText="Re-enter your master password"
+                                             PlaceholderText="Enter your password"
                                              Style="{StaticResource ModernPasswordBoxStyle}"/>
-                            </StackPanel>
-
-                            <!-- Password Hint Input (only visible during first-time setup) -->
-                            <StackPanel Spacing="8"
-                                       Visibility="{Binding ShowPasswordHint, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <TextBlock Text="Password Hint (Optional)"
-                                           Style="{StaticResource ModernCaptionStyle}"
-                                           FontWeight="SemiBold"/>
-                                <TextBox x:Name="PasswordHintBox"
-                                        x:FieldModifier="private"
-                                         PlaceholderText="Enter a hint to help you remember"
-                                         Text="{Binding PasswordHint, Mode=TwoWay}"
-                                         Style="{StaticResource ModernTextBoxStyle}"/>
                             </StackPanel>
 
                             <!-- Error Message -->
@@ -105,7 +96,6 @@
                                               Foreground="{StaticResource ModernErrorBrush}"/>
                                     <TextBlock x:Name="ErrorText"
                                             x:FieldModifier="private"
-                                               Text="{Binding ErrorMessage}"
                                                Foreground="{StaticResource ModernErrorBrush}"
                                                TextWrapping="Wrap"
                                                VerticalAlignment="Center"/>
@@ -115,17 +105,17 @@
 
                         <!-- Action Buttons -->
                         <StackPanel Spacing="16">
-                            <!-- Primary Button -->
-                            <Button x:Name="PrimaryActionButton"
+                            <!-- Login Button -->
+                            <Button x:Name="LoginButton"
                                     x:FieldModifier="private"
-                                    Content="{Binding PrimaryButtonText}"
+                                    Content="Sign In"
                                     Style="{StaticResource ModernPrimaryButtonStyle}"
                                     HorizontalAlignment="Stretch"
                                     MinHeight="48"
-                                    Click="PrimaryActionButton_Click"/>
+                                    Click="LoginButton_Click"/>
 
                             <!-- Progress Ring -->
-                            <ProgressRing x:Name="AuthProgressRing"
+                            <ProgressRing x:Name="LoginProgressRing"
                                     x:FieldModifier="private"
                                           IsActive="False"
                                           HorizontalAlignment="Center"
@@ -135,25 +125,30 @@
 
                     </StackPanel>
 
-                    <!-- Additional Information -->
+                    <!-- Additional Options -->
                     <StackPanel Spacing="16"
-                            HorizontalAlignment="Center"
-                            Visibility="{Binding IsFirstTimeSetup, Converter={StaticResource BoolToInvertedVisibilityConverter}}">
+                            HorizontalAlignment="Center">
                         <Rectangle Height="1"
                                    Fill="{StaticResource ModernTextTertiaryBrush}"
                                    Margin="0,8"/>
 
-                        <TextBlock Text="Forgot your master password?"
-                                   HorizontalAlignment="Center"
-                                   Style="{StaticResource ModernCaptionStyle}"
-                                   Foreground="{StaticResource ModernTextSecondaryBrush}"/>
-                        
-                        <TextBlock Text="You'll need to reset the application to create a new master password."
-                                   HorizontalAlignment="Center"
-                                   Style="{StaticResource ModernCaptionStyle}"
-                                   Foreground="{StaticResource ModernTextTertiaryBrush}"
-                                   TextWrapping="Wrap"
-                                   TextAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    Spacing="16">
+                            <HyperlinkButton x:Name="CreateAccountButton"
+                                             Content="Create Account"
+                                             Foreground="{StaticResource ModernPrimaryBrush}"
+                                             FontWeight="SemiBold"
+                                             Click="CreateAccountButton_Click"/>
+
+                            <Rectangle Width="1"
+                                       Height="16"
+                                       Fill="{StaticResource ModernTextTertiaryBrush}"
+                                       VerticalAlignment="Center"/>
+
+                            <HyperlinkButton Content="Forgot Password?"
+                                             Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                        </StackPanel>
                     </StackPanel>
 
                 </StackPanel>

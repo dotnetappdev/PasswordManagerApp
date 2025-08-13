@@ -35,10 +35,13 @@ public class PasswordItem
     // Collection relationship
     public int? CollectionId { get; set; } // Foreign key to Collection - required
 
+    public string? Website { get; set; }
     // Navigation properties
     public LoginItem? LoginItem { get; set; }
     public CreditCardItem? CreditCardItem { get; set; }
     public SecureNoteItem? SecureNoteItem { get; set; }
+
+    public DateTime? LastAccessedAt { get; set; }
     public WiFiItem? WiFiItem { get; set; }
     public Category Category { get; set; } = null!; // Required navigation property
     public Collection Collection { get; set; } = null!; // Required navigation property

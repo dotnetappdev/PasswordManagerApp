@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace PasswordManager.WinUi.ViewModels;
 
@@ -120,7 +121,7 @@ public class PasswordItemsViewModel : BaseViewModel
                         break;
                     default:
                         filteredItems = filteredItems.Where(item => 
-                            string.Equals(item.Type, FilterType, StringComparison.OrdinalIgnoreCase));
+                            string.Equals(item.Type.ToString(), FilterType, StringComparison.OrdinalIgnoreCase));
                         break;
                 }
             }
@@ -129,7 +130,7 @@ public class PasswordItemsViewModel : BaseViewModel
             if (SelectedCategory != "All Categories")
             {
                 filteredItems = filteredItems.Where(item =>
-                    string.Equals(item.Category, SelectedCategory, StringComparison.OrdinalIgnoreCase));
+                    string.Equals(item.Category.Name.ToString(), SelectedCategory, StringComparison.OrdinalIgnoreCase));
             }
 
             // Update UI on main thread

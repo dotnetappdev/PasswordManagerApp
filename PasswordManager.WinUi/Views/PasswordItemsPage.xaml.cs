@@ -155,7 +155,7 @@ public sealed partial class PasswordItemsPage : Page
         DetailWebsite.Text = item.Website ?? "";
         
         // Update icon based on type
-        DetailIcon.Text = GetTypeIcon(item.Type);
+        DetailIcon.Text = GetTypeIcon(item.Type.ToString());
     }
 
     private string GetTypeIcon(string type)
@@ -267,9 +267,9 @@ public sealed partial class PasswordItemsPage : Page
         }
     }
 
-    private void PasswordItemsList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+    private void ItemsList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
     {
-        if (PasswordItemsList.SelectedItem is PasswordItem item)
+        if (ItemsList.SelectedItem is PasswordItem item)
         {
             // Open password details view
             ShowPasswordDetails(item);
