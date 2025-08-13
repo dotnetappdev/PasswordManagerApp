@@ -27,7 +27,19 @@ public interface ISecureStorageService
     bool Remove(string key);
 
     /// <summary>
+    /// Removes a value from secure storage asynchronously
+    /// </summary>
+    /// <param name="key">The key to remove</param>
+    /// <returns>True if the key was removed, false if it didn't exist</returns>
+    Task<bool> RemoveAsync(string key);
+
+    /// <summary>
     /// Removes all values from secure storage
     /// </summary>
     void RemoveAll();
+
+    /// <summary>
+    /// Removes all values from secure storage asynchronously
+    /// </summary>
+    Task RemoveAllAsync();
 }
