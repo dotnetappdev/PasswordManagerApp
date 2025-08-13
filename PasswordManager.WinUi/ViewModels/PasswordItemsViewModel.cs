@@ -9,6 +9,9 @@ public class PasswordItemsViewModel : BaseViewModel
 {
     private readonly IPasswordItemService _passwordItemService;
     private string _searchText = string.Empty;
+    private string _filterType = "All";
+    private string _selectedCategory = "All Categories";
+    private ObservableCollection<PasswordItem> _allItems = new();
 
     public PasswordItemsViewModel(IServiceProvider serviceProvider)
     {
@@ -25,7 +28,27 @@ public class PasswordItemsViewModel : BaseViewModel
         set
         {
             SetProperty(ref _searchText, value);
-            _ = Task.Run(async () => await SearchPasswordItemsAsync());
+            _ = Task.Run(async () => await ApplyFiltersAsync());
+        }
+    }
+
+    public string FilterType
+    {
+        get => _filterType;
+        set
+        {
+            SetProperty(ref _filterType, value);
+            _ = Task.Run(async () => await ApplyFiltersAsync());
+        }
+    }
+
+    public string SelectedCategory
+    {
+        get => _selectedCategory;
+        set
+        {
+            SetProperty(ref _selectedCategory, value);
+            _ = Task.Run(async () => await ApplyFiltersAsync());
         }
     }
 
@@ -48,11 +71,13 @@ public class PasswordItemsViewModel : BaseViewModel
             IsLoading = true;
             var items = await _passwordItemService.GetAllAsync();
             
-            PasswordItems.Clear();
+            _allItems.Clear();
             foreach (var item in items.Where(i => !i.IsDeleted && !i.IsArchived))
             {
-                PasswordItems.Add(item);
+                _allItems.Add(item);
             }
+            
+            await ApplyFiltersAsync();
         }
         catch (Exception ex)
         {
@@ -66,34 +91,63 @@ public class PasswordItemsViewModel : BaseViewModel
         }
     }
 
+    private async Task ApplyFiltersAsync()
+    {
+        await Task.Run(() =>
+        {
+            var filteredItems = _allItems.AsEnumerable();
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                filteredItems = filteredItems.Where(item =>
+                    item.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) == true ||
+                    item.Username?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) == true ||
+                    item.Description?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) == true);
+            }
+
+            // Apply type filter
+            if (FilterType != "All")
+            {
+                switch (FilterType)
+                {
+                    case "Favorites":
+                        filteredItems = filteredItems.Where(item => item.IsFavorite);
+                        break;
+                    case "Recent":
+                        filteredItems = filteredItems.OrderByDescending(item => item.LastAccessedAt)
+                            .Take(20);
+                        break;
+                    default:
+                        filteredItems = filteredItems.Where(item => 
+                            string.Equals(item.Type, FilterType, StringComparison.OrdinalIgnoreCase));
+                        break;
+                }
+            }
+
+            // Apply category filter
+            if (SelectedCategory != "All Categories")
+            {
+                filteredItems = filteredItems.Where(item =>
+                    string.Equals(item.Category, SelectedCategory, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Update UI on main thread
+            Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+            {
+                PasswordItems.Clear();
+                foreach (var item in filteredItems)
+                {
+                    PasswordItems.Add(item);
+                }
+                OnPropertyChanged(nameof(HasNoItems));
+            });
+        });
+    }
+
     private async Task SearchPasswordItemsAsync()
     {
-        if (string.IsNullOrWhiteSpace(SearchText))
-        {
-            await LoadPasswordItemsAsync();
-            return;
-        }
-
-        try
-        {
-            IsLoading = true;
-            var items = await _passwordItemService.SearchAsync(SearchText);
-            
-            PasswordItems.Clear();
-            foreach (var item in items.Where(i => !i.IsDeleted && !i.IsArchived))
-            {
-                PasswordItems.Add(item);
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error searching password items: {ex.Message}");
-        }
-        finally
-        {
-            IsLoading = false;
-            OnPropertyChanged(nameof(HasNoItems));
-        }
+        await ApplyFiltersAsync();
     }
 
     public async Task RefreshAsync()
