@@ -434,4 +434,56 @@ public class ConfigurableAuthService : IAuthService
             return "";
         }
     }
+
+    public async Task<bool> ChangeMasterPasswordAsync(string currentPassword, string newPassword, string newPasswordHint = "")
+    {
+        var mode = await GetAuthenticationModeAsync();
+        
+        if (mode == "Local Database")
+        {
+            return await _localAuthService.ChangeMasterPasswordAsync(currentPassword, newPassword, newPasswordHint);
+        }
+        else
+        {
+            // For API mode, change password via API
+            try
+            {
+                var apiUrl = await GetApiBaseUrlAsync();
+                var token = await _secureStorageService.GetAsync("apiSessionToken");
+                
+                if (string.IsNullOrEmpty(token))
+                {
+                    _logger.LogWarning("No API session token found for password change");
+                    return false;
+                }
+                
+                _httpClient.DefaultRequestHeaders.Authorization = 
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                
+                var changePasswordRequest = new 
+                {
+                    CurrentPassword = currentPassword,
+                    NewPassword = newPassword,
+                    NewPasswordHint = newPasswordHint
+                };
+
+                var response = await _httpClient.PostAsJsonAsync($"{apiUrl}/auth/change-master-password", changePasswordRequest);
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("API master password change successful");
+                    return true;
+                }
+                else
+                {
+                    _logger.LogWarning("API master password change failed: {StatusCode}", response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during API master password change");
+            }
+            
+            return false;
+        }
+    }
 }
