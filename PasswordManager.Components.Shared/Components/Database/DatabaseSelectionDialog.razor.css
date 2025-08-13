@@ -109,6 +109,29 @@
     box-shadow: 0 4px 12px rgba(0, 122, 204, 0.2);
 }
 
+.provider-card.local-provider {
+    border-width: 3px;
+}
+
+.provider-card.local-provider:hover {
+    border-color: #28a745;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);
+}
+
+.provider-card.local-provider.selected {
+    border-color: #28a745;
+    background: #f8fff9;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+}
+
+.provider-card.local-provider .provider-icon {
+    color: #28a745;
+}
+
+.provider-card.local-provider.selected .provider-icon {
+    color: #1e7e34;
+}
+
 .provider-icon {
     font-size: 32px;
     color: #007acc;
@@ -388,6 +411,17 @@
     background: #545b62;
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: #1e7e34;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
 }
 
 /* Validation Messages */

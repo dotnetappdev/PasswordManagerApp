@@ -114,6 +114,44 @@ namespace PasswordManager.Services.Services
             }
         }
 
+        public async Task<MigrationResultDto> CreateDatabaseAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Creating database schema");
+
+                // Create database schema for both contexts
+                var appDbCreated = await _contextApp.Database.EnsureCreatedAsync();
+                var apiDbCreated = await _context.Database.EnsureCreatedAsync();
+
+                var message = "Database schema created successfully";
+                if (!appDbCreated && !apiDbCreated)
+                {
+                    message = "Database already exists";
+                }
+
+                _logger.LogInformation("Database creation completed: {Message}", message);
+
+                return new MigrationResultDto
+                {
+                    Success = true,
+                    Message = message,
+                    AppliedMigrations = new List<string>()
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating database");
+                return new MigrationResultDto
+                {
+                    Success = false,
+                    Message = $"Error creating database: {ex.Message}",
+                    AppliedMigrations = new List<string>(),
+                    Exception = ex
+                };
+            }
+        }
+
         public async Task<IEnumerable<string>> GetAppliedMigrationsAsync()
         {
             try
