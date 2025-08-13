@@ -18,6 +18,11 @@ namespace PasswordManager.Services.Interfaces
         Task<MigrationResultDto> ApplyPendingMigrationsAsync();
 
         /// <summary>
+        /// Create the database if it doesn't exist
+        /// </summary>
+        Task<MigrationResultDto> CreateDatabaseAsync();
+
+        /// <summary>
         /// Get a list of applied migrations
         /// </summary>
         Task<IEnumerable<string>> GetAppliedMigrationsAsync();
