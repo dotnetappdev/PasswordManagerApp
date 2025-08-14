@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Manager Context Detection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .form-section {
+            margin: 40px 0;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        
+        .form-section h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: 100%;
+            max-width: 300px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-description {
+            background: #e8f4fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Password Manager Context Detection Test</h1>
+    <p>This page tests the enhanced context detection functionality that prioritizes different item types based on form context.</p>
+
+    <!-- Login Form -->
+    <div class="form-section">
+        <h2>🔐 Login Form</h2>
+        <div class="form-description">
+            This should be detected as a "login" context. Clicking on fields should prioritize showing saved passwords/credentials.
+        </div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="loginEmail">Email:</label>
+                <input type="email" id="loginEmail" name="email" placeholder="Enter your email" autocomplete="email">
+            </div>
+            
+            <div class="form-group">
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" name="password" placeholder="Enter your password" autocomplete="current-password">
+            </div>
+        </form>
+    </div>
+
+    <!-- Payment Form -->
+    <div class="form-section">
+        <h2>💳 Payment Form</h2>
+        <div class="form-description">
+            This should be detected as a "payment" context. Clicking on fields should prioritize showing credit cards.
+        </div>
+        <form id="paymentForm" class="checkout-form">
+            <div class="form-group">
+                <label for="cardNumber">Card Number:</label>
+                <input type="text" id="cardNumber" name="cardnumber" placeholder="1234 5678 9012 3456" autocomplete="cc-number">
+            </div>
+            
+            <div class="form-group">
+                <label for="cardholderName">Cardholder Name:</label>
+                <input type="text" id="cardholderName" name="cardholder" placeholder="John Doe" autocomplete="cc-name">
+            </div>
+            
+            <div class="form-group">
+                <label for="expiry">Expiry Date:</label>
+                <input type="text" id="expiry" name="expiry" placeholder="MM/YY" autocomplete="cc-exp">
+            </div>
+            
+            <div class="form-group">
+                <label for="cvv">CVV:</label>
+                <input type="text" id="cvv" name="cvv" placeholder="123" autocomplete="cc-csc">
+            </div>
+            
+            <div class="form-group">
+                <label for="billingAddress">Billing Address:</label>
+                <input type="text" id="billingAddress" name="billing_address" placeholder="123 Main St">
+            </div>
+        </form>
+    </div>
+
+    <!-- Mixed Form (Account + Payment) -->
+    <div class="form-section">
+        <h2>🔐💳 Mixed Form (Account Setup + Payment)</h2>
+        <div class="form-description">
+            This should be detected as a "mixed" context. It has both login and payment fields, so both types should be available based on which field is clicked.
+        </div>
+        <form id="mixedForm" class="account-setup checkout">
+            <h3>Account Information</h3>
+            <div class="form-group">
+                <label for="signupEmail">Email:</label>
+                <input type="email" id="signupEmail" name="email" placeholder="Enter your email" autocomplete="email">
+            </div>
+            
+            <div class="form-group">
+                <label for="signupPassword">Password:</label>
+                <input type="password" id="signupPassword" name="password" placeholder="Create a password" autocomplete="new-password">
+            </div>
+            
+            <h3>Payment Information</h3>
+            <div class="form-group">
+                <label for="mixedCardNumber">Card Number:</label>
+                <input type="text" id="mixedCardNumber" name="cc-number" placeholder="1234 5678 9012 3456" autocomplete="cc-number">
+            </div>
+            
+            <div class="form-group">
+                <label for="mixedExpiry">Expiry:</label>
+                <input type="text" id="mixedExpiry" name="cc-exp" placeholder="MM/YY" autocomplete="cc-exp">
+            </div>
+        </form>
+    </div>
+
+    <!-- Simple Text Field (Unknown Context) -->
+    <div class="form-section">
+        <h2>❓ Unknown Context Form</h2>
+        <div class="form-description">
+            This should be detected as "unknown" context since it doesn't have clear payment or login indicators.
+        </div>
+        <form id="unknownForm">
+            <div class="form-group">
+                <label for="generalField">General Field:</label>
+                <input type="text" id="generalField" name="general" placeholder="Some text field">
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Add some visual indicators for debugging
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Test page loaded - Password Manager extension should detect contexts');
+            
+            // Log form contexts after a short delay to let the extension process them
+            setTimeout(() => {
+                const forms = document.querySelectorAll('form');
+                forms.forEach(form => {
+                    const context = form.dataset.pmFormContext;
+                    console.log(`Form ${form.id} context:`, context || 'not detected');
+                });
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

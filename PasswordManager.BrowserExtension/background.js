@@ -73,6 +73,52 @@ class PasswordManagerBackground {
     });
   }
 
+  async sendWebApiMessage(endpoint, data) {
+    // Fallback to web API if native host is not available
+    try {
+      const apiUrl = await this.getApiUrl();
+      const response = await fetch(`${apiUrl}/api/browserextension/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.authToken}`
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw new Error(`Web API error: ${error.message}`);
+    }
+  }
+
+  async getApiUrl() {
+    // Get API URL from storage or use default
+    const result = await chrome.storage.sync.get(['apiUrl']);
+    return result.apiUrl || 'http://localhost:5000';
+  }
+
+  async sendMessageWithFallback(action, data) {
+    // Try native host first, then fallback to web API
+    try {
+      return await this.sendNativeMessage({
+        action: action,
+        ...data
+      });
+    } catch (nativeError) {
+      console.log('Password Manager: Native host failed, trying web API...');
+      try {
+        return await this.sendWebApiMessage(action, data);
+      } catch (apiError) {
+        throw new Error(`Both native host and web API failed. Native: ${nativeError.message}, API: ${apiError.message}`);
+      }
+    }
+  }
+
   async getCredentials(request, sendResponse) {
     if (!this.authToken) {
       sendResponse({ success: false, error: 'Not authenticated' });
@@ -80,8 +126,7 @@ class PasswordManagerBackground {
     }
 
     try {
-      const response = await this.sendNativeMessage({
-        action: 'getCredentials',
+      const response = await this.sendMessageWithFallback('getCredentials', {
         token: this.authToken,
         domain: request.domain || ''
       });
@@ -101,7 +146,7 @@ class PasswordManagerBackground {
       console.error('Password Manager: Error fetching credentials:', error);
       sendResponse({ 
         success: false, 
-        error: 'Failed to communicate with native host. Please ensure the native host is installed.' 
+        error: `Failed to communicate with password manager: ${error.message}` 
       });
     }
   }
@@ -113,8 +158,7 @@ class PasswordManagerBackground {
     }
 
     try {
-      const response = await this.sendNativeMessage({
-        action: 'getCreditCards',
+      const response = await this.sendMessageWithFallback('getCreditCards', {
         token: this.authToken,
         domain: request.domain || ''
       });
@@ -134,7 +178,7 @@ class PasswordManagerBackground {
       console.error('Password Manager: Error fetching credit cards:', error);
       sendResponse({ 
         success: false, 
-        error: 'Failed to communicate with native host. Please ensure the native host is installed.' 
+        error: `Failed to communicate with password manager: ${error.message}` 
       });
     }
   }

@@ -11,6 +11,7 @@ class PasswordManagerContentScript {
     this.loadSettings();
     this.scanForForms();
     this.setupDOMObserver();
+    this.setupKeyboardShortcuts();
   }
 
   async loadSettings() {
@@ -40,9 +41,151 @@ class PasswordManagerContentScript {
     usernameFields.forEach(field => this.addFieldIcon(field, 'username'));
     passwordFields.forEach(field => this.addFieldIcon(field, 'password'));
     creditCardFields.forEach(field => this.addFieldIcon(field, 'creditcard'));
+    
+    // Add focus detection for real-time context switching
+    this.setupFieldFocusDetection();
+  }
+
+  setupFieldFocusDetection() {
+    // Add focus listeners to all relevant input fields
+    const relevantFields = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]');
+    
+    relevantFields.forEach(field => {
+      field.addEventListener('focus', () => {
+        this.handleFieldFocus(field);
+      });
+      
+      field.addEventListener('click', () => {
+        this.handleFieldFocus(field);
+      });
+    });
+  }
+
+  handleFieldFocus(field) {
+    // Determine field type and context for 1Password-like behavior
+    const form = field.closest('form');
+    const formContext = form ? form.dataset.pmFormContext || 'unknown' : 'unknown';
+    
+    // Store the focused field context for quick access
+    this.lastFocusedField = field;
+    this.lastFocusedContext = formContext;
+    
+    // Add visual indicator that field is ready for autofill
+    this.addFocusIndicator(field);
+    
+    // Log for debugging
+    console.log('Password Manager: Field focused', {
+      fieldType: this.getFieldType(field),
+      formContext: formContext,
+      fieldName: field.name,
+      fieldId: field.id
+    });
+  }
+
+  getFieldType(field) {
+    const type = field.type;
+    const name = (field.name || '').toLowerCase();
+    const id = (field.id || '').toLowerCase();
+    const autocomplete = (field.autocomplete || '').toLowerCase();
+    
+    if (type === 'password') return 'password';
+    if (type === 'email' || autocomplete === 'email') return 'username';
+    if (this.determineCreditCardFieldType(field) !== 'unknown') return 'creditcard';
+    if (name.includes('user') || name.includes('login') || id.includes('user') || id.includes('login')) return 'username';
+    
+    return 'text';
+  }
+
+  addFocusIndicator(field) {
+    // Remove existing indicators
+    const existingIndicators = document.querySelectorAll('.pm-focus-indicator');
+    existingIndicators.forEach(indicator => indicator.remove());
+    
+    // Add subtle focus indicator
+    const indicator = document.createElement('div');
+    indicator.className = 'pm-focus-indicator';
+    indicator.innerHTML = '🔑';
+    
+    Object.assign(indicator.style, {
+      position: 'absolute',
+      right: '30px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      fontSize: '12px',
+      opacity: '0.6',
+      pointerEvents: 'none',
+      zIndex: '9999'
+    });
+    
+    // Position relative to the field
+    const wrapper = field.parentElement;
+    if (wrapper.style.position !== 'relative') {
+      wrapper.style.position = 'relative';
+    }
+    
+    wrapper.appendChild(indicator);
+    
+    // Remove after a few seconds
+    setTimeout(() => {
+      indicator.remove();
+    }, 3000);
+  }
+
+  setupKeyboardShortcuts() {
+    // Add 1Password-like keyboard shortcuts (Cmd+\ or Ctrl+\)
+    document.addEventListener('keydown', (e) => {
+      // Check for Cmd+\ (Mac) or Ctrl+\ (PC/Linux)
+      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+        e.preventDefault();
+        this.handleQuickAccess();
+      }
+    });
+  }
+
+  async handleQuickAccess() {
+    // Get the currently focused field or the last focused field
+    const activeField = document.activeElement;
+    const targetField = this.isRelevantField(activeField) ? activeField : this.lastFocusedField;
+    
+    if (!targetField || !this.isRelevantField(targetField)) {
+      this.showNotification('Please focus on a login or payment field first.');
+      return;
+    }
+    
+    // Determine the field type and show appropriate options
+    const fieldType = this.getFieldType(targetField);
+    const form = targetField.closest('form');
+    const formContext = form ? form.dataset.pmFormContext || 'unknown' : 'unknown';
+    
+    try {
+      if (fieldType === 'password') {
+        await this.showPasswordOptions(targetField, formContext);
+      } else if (fieldType === 'creditcard') {
+        await this.showCreditCardSelector(targetField, formContext);
+      } else {
+        await this.showCredentialSelector(targetField, formContext);
+      }
+    } catch (error) {
+      console.error('Password Manager: Quick access error:', error);
+      this.showNotification('Error accessing Password Manager.');
+    }
+  }
+
+  isRelevantField(field) {
+    if (!field || field.tagName !== 'INPUT') return false;
+    
+    const type = field.type;
+    const fieldType = this.getFieldType(field);
+    
+    return type === 'text' || type === 'email' || type === 'password' || 
+           fieldType === 'creditcard' || fieldType === 'username';
   }
 
   processForm(form) {
+    // Analyze form context to determine if it's payment, login, or mixed
+    const formContext = this.analyzeFormContext(form);
+    form.dataset.pmFormContext = formContext;
+    
     const usernameField = this.findUsernameFieldInForm(form);
     const passwordField = this.findPasswordFieldInForm(form);
     const creditCardFields = this.findCreditCardFieldsInForm(form);
@@ -56,6 +199,40 @@ class PasswordManagerContentScript {
     }
 
     creditCardFields.forEach(field => this.addFieldIcon(field, 'creditcard'));
+  }
+
+  analyzeFormContext(form) {
+    const creditCardFields = this.findCreditCardFieldsInForm(form);
+    const loginFields = form.querySelectorAll('input[type="password"], input[type="email"], input[name*="user" i], input[name*="login" i]');
+    
+    // Check for payment-related indicators
+    const paymentIndicators = [
+      'payment', 'checkout', 'billing', 'order', 'purchase', 'buy', 'cart',
+      'price', 'total', 'amount', 'pay', 'credit', 'card', 'cvv', 'expiry'
+    ];
+    
+    const formText = (form.textContent || '').toLowerCase();
+    const formClasses = (form.className || '').toLowerCase();
+    const formId = (form.id || '').toLowerCase();
+    const formAction = (form.action || '').toLowerCase();
+    
+    const hasPaymentIndicators = paymentIndicators.some(indicator => 
+      formText.includes(indicator) || formClasses.includes(indicator) || 
+      formId.includes(indicator) || formAction.includes(indicator)
+    );
+    
+    // Determine context based on field types and indicators
+    if (creditCardFields.length > 0 && hasPaymentIndicators) {
+      return 'payment';
+    } else if (creditCardFields.length > 0 && loginFields.length > 0) {
+      return 'mixed';
+    } else if (loginFields.length > 0) {
+      return 'login';
+    } else if (creditCardFields.length > 0) {
+      return 'payment';
+    }
+    
+    return 'unknown';
   }
 
   findUsernameFields() {
@@ -311,12 +488,16 @@ class PasswordManagerContentScript {
         return;
       }
 
+      // Get form context to determine what items to prioritize
+      const form = field.closest('form');
+      const formContext = form ? form.dataset.pmFormContext || 'unknown' : 'unknown';
+      
       if (type === 'username') {
-        await this.showCredentialSelector(field);
+        await this.showCredentialSelector(field, formContext);
       } else if (type === 'password') {
-        await this.showPasswordOptions(field);
+        await this.showPasswordOptions(field, formContext);
       } else if (type === 'creditcard') {
-        await this.showCreditCardSelector(field);
+        await this.showCreditCardSelector(field, formContext);
       }
     } catch (error) {
       console.error('Password Manager: Error handling icon click:', error);
@@ -324,20 +505,65 @@ class PasswordManagerContentScript {
     }
   }
 
-  async showCredentialSelector(field) {
+  async showCredentialSelector(field, formContext = 'unknown') {
     // Get current domain for filtering
     const domain = window.location.hostname;
     
-    // Send message to background script to get credentials
-    const response = await chrome.runtime.sendMessage({
-      action: 'getCredentials',
-      domain: domain
-    });
+    // For payment forms, also try to get credit cards and show them first
+    const promises = [
+      chrome.runtime.sendMessage({
+        action: 'getCredentials',
+        domain: domain
+      })
+    ];
     
-    if (response.success && response.credentials.length > 0) {
-      this.showCredentialPopup(field, response.credentials);
+    // If it's a payment or mixed form, also get credit cards
+    if (formContext === 'payment' || formContext === 'mixed') {
+      promises.push(
+        chrome.runtime.sendMessage({
+          action: 'getCreditCards',
+          domain: domain
+        })
+      );
+    }
+    
+    const responses = await Promise.all(promises);
+    const credentialResponse = responses[0];
+    const creditCardResponse = responses[1];
+    
+    const items = [];
+    
+    // For payment forms, show credit cards first
+    if (formContext === 'payment' && creditCardResponse?.success && creditCardResponse.creditCards.length > 0) {
+      items.push({
+        type: 'creditCards',
+        data: creditCardResponse.creditCards,
+        label: 'Credit Cards'
+      });
+    }
+    
+    // Add credentials
+    if (credentialResponse.success && credentialResponse.credentials.length > 0) {
+      items.push({
+        type: 'credentials',
+        data: credentialResponse.credentials,
+        label: 'Login Credentials'
+      });
+    }
+    
+    // For mixed forms, show credit cards after credentials
+    if (formContext === 'mixed' && creditCardResponse?.success && creditCardResponse.creditCards.length > 0) {
+      items.push({
+        type: 'creditCards',
+        data: creditCardResponse.creditCards,
+        label: 'Credit Cards'
+      });
+    }
+    
+    if (items.length > 0) {
+      this.showContextualPopup(field, items, formContext);
     } else {
-      this.showNotification('No credentials found for this website.');
+      this.showNotification('No items found for this website.');
     }
   }
 
@@ -405,7 +631,7 @@ class PasswordManagerContentScript {
     }, 100);
   }
 
-  async showPasswordOptions(field) {
+  async showPasswordOptions(field, formContext = 'unknown') {
     // Show options: Fill existing password or generate new one
     const popup = document.createElement('div');
     popup.className = 'pm-password-popup';
@@ -443,7 +669,7 @@ class PasswordManagerContentScript {
       option.addEventListener('click', async () => {
         const action = option.dataset.action;
         if (action === 'fill') {
-          await this.showCredentialSelector(field);
+          await this.showCredentialSelector(field, formContext);
         } else if (action === 'generate') {
           await this.generatePassword(field);
         }
@@ -524,18 +750,146 @@ class PasswordManagerContentScript {
     }, 0);
   }
 
-  async showCreditCardSelector(field) {
-    // Send message to background script to get credit cards
-    const response = await chrome.runtime.sendMessage({
-      action: 'getCreditCards',
-      domain: window.location.hostname
+  async showCreditCardSelector(field, formContext = 'unknown') {
+    // Get current domain for filtering
+    const domain = window.location.hostname;
+    
+    // Send message to background script to get credit cards and possibly credentials
+    const promises = [
+      chrome.runtime.sendMessage({
+        action: 'getCreditCards',
+        domain: domain
+      })
+    ];
+    
+    // For mixed forms, also get login credentials
+    if (formContext === 'mixed') {
+      promises.push(
+        chrome.runtime.sendMessage({
+          action: 'getCredentials',
+          domain: domain
+        })
+      );
+    }
+    
+    const responses = await Promise.all(promises);
+    const creditCardResponse = responses[0];
+    const credentialResponse = responses[1];
+    
+    const items = [];
+    
+    // Always show credit cards first when user clicked on a credit card field
+    if (creditCardResponse.success && creditCardResponse.creditCards.length > 0) {
+      items.push({
+        type: 'creditCards',
+        data: creditCardResponse.creditCards,
+        label: 'Credit Cards'
+      });
+    }
+    
+    // Add credentials for mixed forms
+    if (formContext === 'mixed' && credentialResponse?.success && credentialResponse.credentials.length > 0) {
+      items.push({
+        type: 'credentials',
+        data: credentialResponse.credentials,
+        label: 'Login Credentials'
+      });
+    }
+    
+    if (items.length > 0) {
+      this.showContextualPopup(field, items, formContext);
+    } else {
+      this.showNotification('No items found.');
+    }
+  }
+
+  showContextualPopup(field, items, formContext) {
+    // Remove existing popup
+    const existingPopup = document.querySelector('.pm-contextual-popup');
+    if (existingPopup) {
+      existingPopup.remove();
+    }
+    
+    const popup = document.createElement('div');
+    popup.className = 'pm-contextual-popup';
+    
+    Object.assign(popup.style, {
+      position: 'absolute',
+      backgroundColor: 'white',
+      border: '1px solid #ccc',
+      borderRadius: '4px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      zIndex: '10001',
+      maxWidth: '350px',
+      maxHeight: '400px',
+      overflowY: 'auto'
     });
     
-    if (response.success && response.creditCards.length > 0) {
-      this.showCreditCardPopup(field, response.creditCards);
-    } else {
-      this.showNotification('No credit cards found.');
-    }
+    items.forEach((itemGroup, groupIndex) => {
+      // Add section header
+      if (items.length > 1) {
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 8px 12px; background: #f8f9fa; font-weight: bold; font-size: 12px; color: #666; border-bottom: 1px solid #eee;';
+        header.textContent = itemGroup.label;
+        popup.appendChild(header);
+      }
+      
+      // Add items
+      itemGroup.data.forEach(item => {
+        const itemElement = document.createElement('div');
+        itemElement.style.cssText = 'padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background-color 0.2s;';
+        
+        if (itemGroup.type === 'creditCards') {
+          // Credit card display
+          const maskedNumber = item.cardNumber ? `****-****-****-${item.cardNumber.slice(-4)}` : '****-****-****-****';
+          itemElement.innerHTML = `
+            <div style="font-weight: 500; color: #333;">💳 ${this.escapeHtml(item.title)}</div>
+            <div style="font-size: 12px; color: #666; margin-top: 2px;">${this.escapeHtml(item.cardholderName || 'No cardholder name')}</div>
+            <div style="font-size: 12px; color: #666;">${maskedNumber}</div>
+            <div style="font-size: 12px; color: #666;">Expires: ${this.escapeHtml(item.expiryDate || 'N/A')}</div>
+          `;
+          
+          itemElement.addEventListener('click', () => {
+            this.fillCreditCard(field, item);
+            popup.remove();
+          });
+        } else if (itemGroup.type === 'credentials') {
+          // Credential display
+          itemElement.innerHTML = `
+            <div style="font-weight: 500; color: #333;">🔑 ${this.escapeHtml(item.title)}</div>
+            <div style="font-size: 12px; color: #666; margin-top: 2px;">${this.escapeHtml(item.username)}</div>
+            <div style="font-size: 12px; color: #666;">${this.escapeHtml(item.website || window.location.hostname)}</div>
+          `;
+          
+          itemElement.addEventListener('click', () => {
+            this.fillCredentials(field, item);
+            popup.remove();
+          });
+        }
+        
+        itemElement.addEventListener('mouseenter', () => {
+          itemElement.style.backgroundColor = '#f0f0f0';
+        });
+        
+        itemElement.addEventListener('mouseleave', () => {
+          itemElement.style.backgroundColor = 'white';
+        });
+        
+        popup.appendChild(itemElement);
+      });
+    });
+    
+    this.positionPopup(popup, field);
+    document.body.appendChild(popup);
+    
+    // Close on outside click
+    setTimeout(() => {
+      document.addEventListener('click', (e) => {
+        if (!popup.contains(e.target)) {
+          popup.remove();
+        }
+      }, { once: true });
+    }, 100);
   }
 
   showCreditCardPopup(field, creditCards) {
