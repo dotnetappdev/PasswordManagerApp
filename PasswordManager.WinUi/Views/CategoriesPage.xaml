@@ -64,7 +64,7 @@
                               FontWeight="SemiBold"/>
                     <TextBox x:Name="SearchTextBox"
                             PlaceholderText="🔍 Search categories..."
-                            Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            Text="{Binding SearchText, Mode=TwoWay}"
                             Style="{StaticResource ModernTextBoxStyle}"/>
                 </StackPanel>
             </Border>

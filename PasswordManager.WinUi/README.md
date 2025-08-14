@@ -109,6 +109,26 @@ The WinUI app seamlessly integrates with existing shared libraries:
 - ✅ Platform-specific service implementations
 - ✅ Value converters for UI transformation
 
+## 🔧 WinUI 3 Compatibility
+
+This project is fully compatible with WinUI 3 and does **NOT** use any WPF-style triggers that are unsupported in WinUI 3.
+
+### ✅ What We Use (WinUI 3 Compatible)
+- **Value Converters**: `BoolToVisibilityConverter`, `StringToVisibilityConverter`, etc.
+- **Property Binding**: `IsEnabled="{Binding IsButtonEnabled}"`  
+- **MVVM Pattern**: INotifyPropertyChanged for reactive UI
+- **VisualStateManager**: For complex UI state management (see Examples/)
+
+### ❌ What We DON'T Use (WPF-only)
+- **Style.Triggers**: `<DataTrigger>`, `<EventTrigger>`, `<MultiTrigger>`
+- **UpdateSourceTrigger**: Removed from bindings (not needed in WinUI)
+- **WPF-specific syntax**: All patterns converted to WinUI equivalents
+
+### 📚 Additional Resources
+- See `WinUI-Compatibility-Guide.md` for detailed migration information
+- See `Examples/VisualStateManagerExample.xaml` for VisualStateManager usage
+- See `Tests/WinUiCompatibilityTests.cs` for compatibility validation
+
 ## 🚀 Next Steps for Production
 
 To complete for production use:
