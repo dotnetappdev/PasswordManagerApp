@@ -1,0 +1,182 @@
+<!-- Example: VisualStateManager Alternative to WPF Triggers -->
+<!-- This is an example demonstrating how to use VisualStateManager in WinUI 3 -->
+<!-- instead of WPF-style triggers for complex UI state management -->
+
+<Page x:Class="PasswordManager.WinUi.Examples.VisualStateExample"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid>
+        <!-- Visual State Groups - WinUI 3 alternative to WPF triggers -->
+        <VisualStateManager.VisualStateGroups>
+            
+            <!-- Authentication State Group -->
+            <VisualStateGroup x:Name="AuthenticationStates">
+                <VisualState x:Name="Loading">
+                    <VisualState.Setters>
+                        <Setter Target="LoadingRing.IsActive" Value="True"/>
+                        <Setter Target="LoadingRing.Visibility" Value="Visible"/>
+                        <Setter Target="LoginButton.IsEnabled" Value="False"/>
+                        <Setter Target="LoginForm.Opacity" Value="0.5"/>
+                    </VisualState.Setters>
+                </VisualState>
+                
+                <VisualState x:Name="Ready">
+                    <VisualState.Setters>
+                        <Setter Target="LoadingRing.IsActive" Value="False"/>
+                        <Setter Target="LoadingRing.Visibility" Value="Collapsed"/>
+                        <Setter Target="LoginButton.IsEnabled" Value="True"/>
+                        <Setter Target="LoginForm.Opacity" Value="1.0"/>
+                    </VisualState.Setters>
+                </VisualState>
+                
+                <VisualState x:Name="Error">
+                    <VisualState.Setters>
+                        <Setter Target="ErrorMessage.Visibility" Value="Visible"/>
+                        <Setter Target="LoadingRing.IsActive" Value="False"/>
+                        <Setter Target="LoadingRing.Visibility" Value="Collapsed"/>
+                        <Setter Target="LoginButton.IsEnabled" Value="True"/>
+                        <Setter Target="LoginForm.Opacity" Value="1.0"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+            
+            <!-- UI Mode State Group -->
+            <VisualStateGroup x:Name="UiModeStates">
+                <VisualState x:Name="FirstTimeSetup">
+                    <VisualState.Setters>
+                        <Setter Target="ConfirmPasswordBox.Visibility" Value="Visible"/>
+                        <Setter Target="PasswordHintBox.Visibility" Value="Visible"/>
+                        <Setter Target="PageTitle.Text" Value="Setup Master Password"/>
+                        <Setter Target="LoginButton.Content" Value="Create Account"/>
+                    </VisualState.Setters>
+                </VisualState>
+                
+                <VisualState x:Name="Login">
+                    <VisualState.Setters>
+                        <Setter Target="ConfirmPasswordBox.Visibility" Value="Collapsed"/>
+                        <Setter Target="PasswordHintBox.Visibility" Value="Collapsed"/>
+                        <Setter Target="PageTitle.Text" Value="Enter Master Password"/>
+                        <Setter Target="LoginButton.Content" Value="Sign In"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+            
+        </VisualStateManager.VisualStateGroups>
+
+        <StackPanel x:Name="LoginForm" Spacing="16" MaxWidth="400" 
+                   HorizontalAlignment="Center" VerticalAlignment="Center">
+            
+            <!-- Page Title -->
+            <TextBlock x:Name="PageTitle" 
+                      Text="Enter Master Password"
+                      Style="{StaticResource ModernHeading2Style}"
+                      HorizontalAlignment="Center"/>
+            
+            <!-- Password Input -->
+            <PasswordBox x:Name="MasterPasswordBox"
+                        Header="Master Password"
+                        PlaceholderText="Enter your master password"/>
+            
+            <!-- Confirm Password (hidden by default) -->
+            <PasswordBox x:Name="ConfirmPasswordBox"
+                        Header="Confirm Password"
+                        PlaceholderText="Confirm your master password"
+                        Visibility="Collapsed"/>
+            
+            <!-- Password Hint (hidden by default) -->
+            <TextBox x:Name="PasswordHintBox"
+                    Header="Password Hint (Optional)"
+                    PlaceholderText="Enter a hint for your password"
+                    Visibility="Collapsed"/>
+            
+            <!-- Error Message (hidden by default) -->
+            <TextBlock x:Name="ErrorMessage"
+                      Text="Authentication failed. Please try again."
+                      Foreground="Red"
+                      Visibility="Collapsed"
+                      HorizontalAlignment="Center"/>
+            
+            <!-- Login Button -->
+            <Button x:Name="LoginButton"
+                   Content="Sign In"
+                   Style="{StaticResource ModernPrimaryButtonStyle}"
+                   HorizontalAlignment="Stretch"
+                   Click="LoginButton_Click"/>
+            
+            <!-- Loading Indicator -->
+            <ProgressRing x:Name="LoadingRing"
+                         IsActive="False"
+                         Visibility="Collapsed"
+                         HorizontalAlignment="Center"/>
+            
+        </StackPanel>
+    </Grid>
+</Page>
+
+<!-- Code-behind example:
+
+public sealed partial class VisualStateExample : Page
+{
+    public VisualStateExample()
+    {
+        this.InitializeComponent();
+    }
+
+    private void SetAuthenticationState(string stateName)
+    {
+        VisualStateManager.GoToState(this, stateName, true);
+    }
+
+    private void SetUiMode(bool isFirstTimeSetup)
+    {
+        string stateName = isFirstTimeSetup ? "FirstTimeSetup" : "Login";
+        VisualStateManager.GoToState(this, stateName, true);
+    }
+
+    private async void LoginButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Show loading state
+        SetAuthenticationState("Loading");
+        
+        try
+        {
+            // Simulate authentication
+            await Task.Delay(2000);
+            
+            // Show ready state on success
+            SetAuthenticationState("Ready");
+        }
+        catch
+        {
+            // Show error state on failure
+            SetAuthenticationState("Error");
+        }
+    }
+}
+
+-->
+
+<!-- 
+WPF vs WinUI 3 Comparison:
+
+❌ WPF Style (NOT supported in WinUI):
+<Style TargetType="Button">
+    <Style.Triggers>
+        <DataTrigger Binding="{Binding IsLoading}" Value="True">
+            <Setter Property="IsEnabled" Value="False"/>
+            <Setter Property="Content" Value="Loading..."/>
+        </DataTrigger>
+        <DataTrigger Binding="{Binding HasError}" Value="True">
+            <Setter Property="Background" Value="Red"/>
+        </DataTrigger>
+    </Style.Triggers>
+</Style>
+
+✅ WinUI 3 Alternative (Supported):
+1. Value Converters: {Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}
+2. VisualStateManager: GoToState(this, "LoadingState", true)
+3. Property Binding: IsEnabled="{Binding IsButtonEnabled}"
+4. Computed Properties in ViewModels
+
+-->
