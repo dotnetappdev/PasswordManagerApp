@@ -65,7 +65,8 @@
                                 <PasswordBox x:Name="MasterPasswordBox"
                                             x:FieldModifier="private"
                                             PlaceholderText="{Binding PasswordPlaceholder}"
-                                            Style="{StaticResource ModernPasswordBoxStyle}"/>
+                                            Style="{StaticResource ModernPasswordBoxStyle}"
+                                            KeyDown="MasterPasswordBox_KeyDown"/>
                             </StackPanel>
 
                             <!-- Confirm Password Input (First-time setup only) -->
@@ -118,10 +119,11 @@
                             <!-- Primary Action Button (Dynamic Text) -->
                             <Button x:Name="PrimaryActionButton"
                                     x:FieldModifier="private"
-                                    Content="{Binding PrimaryButtonText}"
+                                    Content="{Binding PrimaryButtonText, FallbackValue='Loading...'}"
                                     Style="{StaticResource ModernPrimaryButtonStyle}"
                                     HorizontalAlignment="Stretch"
                                     MinHeight="48"
+                                    IsEnabled="{Binding IsButtonEnabled}"
                                     Click="PrimaryActionButton_Click"/>
 
                             <!-- Progress Ring -->

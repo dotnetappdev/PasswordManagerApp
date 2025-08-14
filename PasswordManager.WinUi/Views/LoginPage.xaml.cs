@@ -30,6 +30,15 @@ public sealed partial class LoginPage : Page
         }
     }
 
+    private async void MasterPasswordBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Enter)
+        {
+            System.Diagnostics.Debug.WriteLine("MasterPasswordBox_KeyDown - Enter key pressed");
+            await DoPrimaryActionAsync();
+        }
+    }
+
     protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
@@ -39,8 +48,15 @@ public sealed partial class LoginPage : Page
             _viewModel = new LoginViewModel(serviceProvider);
             this.DataContext = _viewModel;
 
+            System.Diagnostics.Debug.WriteLine($"LoginPage DataContext set - ViewModel created");
+            System.Diagnostics.Debug.WriteLine($"Initial ViewModel state - PageTitle: {_viewModel.PageTitle}, PrimaryButtonText: {_viewModel.PrimaryButtonText}");
+
             // Check if already authenticated after a brief delay for initialization
             _ = CheckAuthenticationStatusAsync();
+        }
+        else
+        {
+            System.Diagnostics.Debug.WriteLine("LoginPage OnNavigatedTo - No service provider passed as parameter");
         }
     }
 
@@ -68,7 +84,13 @@ public sealed partial class LoginPage : Page
 
     private async Task DoPrimaryActionAsync()
     {
-        if (_viewModel == null) return;
+        if (_viewModel == null)
+        {
+            System.Diagnostics.Debug.WriteLine("DoPrimaryActionAsync - ViewModel is null");
+            return;
+        }
+
+        System.Diagnostics.Debug.WriteLine("DoPrimaryActionAsync - Starting authentication");
 
         // Resolve UI elements once for this handler
         var primaryActionButton = this.FindName("PrimaryActionButton") as Button;
@@ -87,8 +109,13 @@ public sealed partial class LoginPage : Page
             _viewModel.ConfirmMasterPassword = confirmPasswordBox?.Password ?? string.Empty;
             _viewModel.PasswordHint = passwordHintBox?.Text ?? string.Empty;
 
+            System.Diagnostics.Debug.WriteLine($"DoPrimaryActionAsync - Password length: {_viewModel.MasterPassword.Length}");
+            System.Diagnostics.Debug.WriteLine($"DoPrimaryActionAsync - IsFirstTimeSetup: {_viewModel.IsFirstTimeSetup}");
+
             // Attempt authentication (handles both setup and login)
             var success = await _viewModel.AuthenticateAsync();
+
+            System.Diagnostics.Debug.WriteLine($"DoPrimaryActionAsync - Authentication result: {success}");
 
             if (success)
             {
@@ -100,11 +127,13 @@ public sealed partial class LoginPage : Page
                 // Navigate to main dashboard via MainWindow
                 if (GetMainWindow() is MainWindow mainWindow)
                 {
+                    System.Diagnostics.Debug.WriteLine("DoPrimaryActionAsync - Navigating to home via MainWindow");
                     mainWindow.NavigateToHome();
                 }
                 else
                 {
                     // Fallback navigation
+                    System.Diagnostics.Debug.WriteLine("DoPrimaryActionAsync - Using fallback navigation");
                     this.Frame?.Navigate(typeof(DashboardPage), _serviceProvider);
                 }
             }
@@ -124,6 +153,7 @@ public sealed partial class LoginPage : Page
     // Event handler remains async void for XAML Click binding
     private async void PrimaryActionButton_Click(object sender, RoutedEventArgs e)
     {
+        System.Diagnostics.Debug.WriteLine("PrimaryActionButton_Click - Button clicked");
         await DoPrimaryActionAsync();
     }
 

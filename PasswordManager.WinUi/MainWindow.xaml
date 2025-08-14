@@ -3,6 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Grid Background="{StaticResource ModernBackgroundBrush}">
+        <!-- Login Frame (shown during authentication) -->
+        <Frame x:Name="LoginFrame"
+               x:FieldModifier="private"
+               Background="{StaticResource ModernBackgroundBrush}"
+               Visibility="Visible"/>
+               
+        <!-- Main Navigation View (shown after authentication) -->
         <NavigationView x:Name="MainNavigationView"
                        Style="{StaticResource ModernNavigationViewStyle}"
                        IsBackButtonVisible="Collapsed"
@@ -11,7 +18,8 @@
                        OpenPaneLength="320"
                        CompactModeThresholdWidth="640"
                        ExpandedModeThresholdWidth="1028"
-                       SelectionChanged="MainNavigationView_SelectionChanged">
+                       SelectionChanged="MainNavigationView_SelectionChanged"
+                       Visibility="Collapsed">
             
             <!-- Search Box -->
             <NavigationView.AutoSuggestBox>

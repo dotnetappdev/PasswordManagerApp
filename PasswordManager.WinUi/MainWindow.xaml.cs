@@ -30,26 +30,26 @@ public sealed partial class MainWindow : Window
 
     private void InitializeNavigation()
     {
-        // Hide navigation menu initially until authenticated
-        SetNavigationVisibility(false);
+        // Show login frame initially
+        SetAuthenticationState(false);
         
-        // Start with Login page (LoginViewModel will check for existing authentication)
-        ContentFrame.Navigate(typeof(Views.LoginPage), _serviceProvider);
+        // Start with Login page in the dedicated login frame
+        LoginFrame.Navigate(typeof(Views.LoginPage), _serviceProvider);
     }
     
-    private void SetNavigationVisibility(bool isVisible)
+    private void SetAuthenticationState(bool isAuthenticated)
     {
-        if (isVisible)
+        if (isAuthenticated)
         {
-            MainNavigationView.IsEnabled = true;
-            MainNavigationView.IsPaneVisible = true;
-            MainNavigationView.Opacity = 1.0;
+            // Hide login frame and show main navigation
+            LoginFrame.Visibility = Visibility.Collapsed;
+            MainNavigationView.Visibility = Visibility.Visible;
         }
         else
         {
-            MainNavigationView.IsEnabled = false;
-            MainNavigationView.IsPaneVisible = false;
-            MainNavigationView.Opacity = 0.5;
+            // Show login frame and hide main navigation
+            LoginFrame.Visibility = Visibility.Visible;
+            MainNavigationView.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -147,7 +147,7 @@ public sealed partial class MainWindow : Window
     public void NavigateToHome()
     {
         _isAuthenticated = true;
-        SetNavigationVisibility(true);
+        SetAuthenticationState(true);
         MainNavigationView.SelectedItem = HomeNavItem;
         NavigateToPage("Home");
     }
@@ -157,13 +157,13 @@ public sealed partial class MainWindow : Window
     {
         _isAuthenticated = false;
         
-        // Hide navigation menu
-        SetNavigationVisibility(false);
+        // Show login frame and hide main navigation
+        SetAuthenticationState(false);
         
         // Clear navigation selection
         MainNavigationView.SelectedItem = null;
         
         // Navigate back to login
-        ContentFrame.Navigate(typeof(Views.LoginPage), _serviceProvider);
+        LoginFrame.Navigate(typeof(Views.LoginPage), _serviceProvider);
     }
 }
