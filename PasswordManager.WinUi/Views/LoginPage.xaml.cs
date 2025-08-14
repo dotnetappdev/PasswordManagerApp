@@ -30,6 +30,15 @@ public sealed partial class LoginPage : Page
         }
     }
 
+    private async void MasterPasswordBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Enter)
+        {
+            System.Diagnostics.Debug.WriteLine("MasterPasswordBox_KeyDown - Enter key pressed");
+            await DoPrimaryActionAsync();
+        }
+    }
+
     protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
