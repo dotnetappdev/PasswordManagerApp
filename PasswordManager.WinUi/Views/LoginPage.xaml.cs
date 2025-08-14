@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.WinUi.ViewModels;
 using System;
+using System.Threading.Tasks;
 
 namespace PasswordManager.WinUi.Views;
 
@@ -18,6 +19,15 @@ public sealed partial class LoginPage : Page
     public LoginPage()
     {
         this.InitializeComponent();
+    }
+
+    private void Page_Loaded(object sender, RoutedEventArgs e)
+    {
+        // Focus the master password field when the page loads
+        if (this.FindName("MasterPasswordBox") is PasswordBox masterPasswordBox)
+        {
+            masterPasswordBox.Focus(FocusState.Programmatic);
+        }
     }
 
     protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
@@ -56,7 +66,7 @@ public sealed partial class LoginPage : Page
         }
     }
 
-    private async Task PrimaryActionButton_Click(object sender, RoutedEventArgs e)
+    private async Task DoPrimaryActionAsync()
     {
         if (_viewModel == null) return;
 
@@ -65,6 +75,7 @@ public sealed partial class LoginPage : Page
         var authProgressRing = this.FindName("AuthProgressRing") as ProgressRing;
         var masterPasswordBox = this.FindName("MasterPasswordBox") as PasswordBox;
         var confirmPasswordBox = this.FindName("ConfirmPasswordBox") as PasswordBox;
+        var passwordHintBox = this.FindName("PasswordHintBox") as TextBox;
 
         try
         {
@@ -74,6 +85,7 @@ public sealed partial class LoginPage : Page
             // Update ViewModel with current values
             _viewModel.MasterPassword = masterPasswordBox?.Password ?? string.Empty;
             _viewModel.ConfirmMasterPassword = confirmPasswordBox?.Password ?? string.Empty;
+            _viewModel.PasswordHint = passwordHintBox?.Text ?? string.Empty;
 
             // Attempt authentication (handles both setup and login)
             var success = await _viewModel.AuthenticateAsync();
@@ -83,6 +95,7 @@ public sealed partial class LoginPage : Page
                 // Clear password fields for security
                 if (masterPasswordBox != null) masterPasswordBox.Password = string.Empty;
                 if (confirmPasswordBox != null) confirmPasswordBox.Password = string.Empty;
+                if (passwordHintBox != null) passwordHintBox.Text = string.Empty;
 
                 // Navigate to main dashboard via MainWindow
                 if (GetMainWindow() is MainWindow mainWindow)
@@ -108,6 +121,12 @@ public sealed partial class LoginPage : Page
         }
     }
 
+    // Event handler remains async void for XAML Click binding
+    private async void PrimaryActionButton_Click(object sender, RoutedEventArgs e)
+    {
+        await DoPrimaryActionAsync();
+    }
+
     private MainWindow? GetMainWindow()
     {
         // Use the MainWindow property exposed in App
@@ -119,12 +138,12 @@ public sealed partial class LoginPage : Page
     // Keep these methods for any existing references, but redirect to the new flow
     private async void LoginButton_Click(object sender, RoutedEventArgs e)
     {
-        await PrimaryActionButton_Click(sender, e);
+        await DoPrimaryActionAsync();
     }
 
     private async void CreateAccountButton_Click(object sender, RoutedEventArgs e)
     {
-        await PrimaryActionButton_Click(sender, e);
+        await DoPrimaryActionAsync();
     }
 
     #endregion
