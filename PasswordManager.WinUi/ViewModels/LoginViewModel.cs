@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
+using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PasswordManager.WinUi.ViewModels;
 
@@ -19,6 +21,7 @@ public class LoginViewModel : BaseViewModel
     private string _passwordLabel = "Master Password";
     private string _passwordPlaceholder = "Enter your master password";
     private bool _isAuthenticated = false;
+    private bool _isButtonEnabled = true;
 
     public LoginViewModel(IServiceProvider serviceProvider)
     {
@@ -26,6 +29,8 @@ public class LoginViewModel : BaseViewModel
         _vaultSessionService = serviceProvider.GetRequiredService<IVaultSessionService>();
         _secureStorageService = serviceProvider.GetRequiredService<ISecureStorageService>();
         
+        // Initialize with default state and then asynchronously update
+        UpdateUIForSetupMode(); // Set initial UI state
         _ = InitializeAsync();
     }
 
@@ -33,6 +38,8 @@ public class LoginViewModel : BaseViewModel
     {
         try
         {
+            IsLoading = true;
+            
             // First check if user is already authenticated
             var isAlreadyAuthenticated = await _authService.IsAuthenticatedAsync();
             if (isAlreadyAuthenticated)
@@ -40,6 +47,7 @@ public class LoginViewModel : BaseViewModel
                 // User is already authenticated, we'll let the UI handle this
                 // The navigation will be handled by the LoginPage code-behind
                 _isAuthenticated = true;
+                OnPropertyChanged(nameof(IsAuthenticated));
                 return;
             }
 
@@ -53,10 +61,16 @@ public class LoginViewModel : BaseViewModel
             _isFirstTimeSetup = true;
             UpdateUIForSetupMode();
         }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private void UpdateUIForSetupMode()
     {
+        System.Diagnostics.Debug.WriteLine($"UpdateUIForSetupMode called - IsFirstTimeSetup: {_isFirstTimeSetup}");
+        
         if (_isFirstTimeSetup)
         {
             PageTitle = "Set up Password Manager";
@@ -79,6 +93,8 @@ public class LoginViewModel : BaseViewModel
         OnPropertyChanged(nameof(IsFirstTimeSetup));
         OnPropertyChanged(nameof(ShowConfirmPassword));
         OnPropertyChanged(nameof(ShowPasswordHint));
+        
+        System.Diagnostics.Debug.WriteLine($"UpdateUIForSetupMode completed - PageTitle: {PageTitle}, PrimaryButtonText: {PrimaryButtonText}");
     }
 
     public string MasterPassword
@@ -147,6 +163,12 @@ public class LoginViewModel : BaseViewModel
         set => SetProperty(ref _isAuthenticated, value);
     }
 
+    public bool IsButtonEnabled
+    {
+        get => _isButtonEnabled && !IsLoading;
+        set => SetProperty(ref _isButtonEnabled, value);
+    }
+
     // Legacy properties for backward compatibility (not used in new flow)
     public string Username { get; set; } = string.Empty;
     public string UsernameLabel { get; set; } = "Username";
@@ -161,30 +183,37 @@ public class LoginViewModel : BaseViewModel
             IsLoading = true;
             ErrorMessage = string.Empty;
 
+            System.Diagnostics.Debug.WriteLine($"AuthenticateAsync called - IsFirstTimeSetup: {IsFirstTimeSetup}, MasterPassword length: {MasterPassword?.Length}");
+
             if (string.IsNullOrWhiteSpace(MasterPassword))
             {
                 ErrorMessage = "Please enter your master password.";
+                System.Diagnostics.Debug.WriteLine("AuthenticateAsync failed - empty password");
                 return false;
             }
 
             if (IsFirstTimeSetup)
             {
+                System.Diagnostics.Debug.WriteLine("Calling SetupMasterPasswordAsync");
                 return await SetupMasterPasswordAsync();
             }
             else
             {
+                System.Diagnostics.Debug.WriteLine("Calling LoginWithMasterPasswordAsync");
                 return await LoginWithMasterPasswordAsync();
             }
         }
         catch (Exception ex)
         {
             ErrorMessage = $"Authentication failed: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"AuthenticateAsync error: {ex}");
             return false;
         }
         finally
         {
             IsLoading = false;
             OnPropertyChanged(nameof(HasError));
+            System.Diagnostics.Debug.WriteLine($"AuthenticateAsync completed - IsLoading: {IsLoading}, ErrorMessage: {ErrorMessage}");
         }
     }
 

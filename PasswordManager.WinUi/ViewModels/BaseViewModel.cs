@@ -14,6 +14,7 @@ public class BaseViewModel : INotifyPropertyChanged
         {
             _isLoading = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(IsButtonEnabled)); // Notify button state change
         }
     }
 

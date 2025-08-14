@@ -115,13 +115,21 @@
 
                         <!-- Action Buttons -->
                         <StackPanel Spacing="16">
+                            <!-- Debug information (remove in production) -->
+                            <TextBlock Text="{Binding PageTitle, FallbackValue='Loading...'}"
+                                     Style="{StaticResource ModernCaptionStyle}"
+                                     HorizontalAlignment="Center"
+                                     Foreground="Red"
+                                     FontWeight="Bold"/>
+                            
                             <!-- Primary Action Button (Dynamic Text) -->
                             <Button x:Name="PrimaryActionButton"
                                     x:FieldModifier="private"
-                                    Content="{Binding PrimaryButtonText}"
+                                    Content="{Binding PrimaryButtonText, FallbackValue='Loading...'}"
                                     Style="{StaticResource ModernPrimaryButtonStyle}"
                                     HorizontalAlignment="Stretch"
                                     MinHeight="48"
+                                    IsEnabled="{Binding IsButtonEnabled}"
                                     Click="PrimaryActionButton_Click"/>
 
                             <!-- Progress Ring -->
