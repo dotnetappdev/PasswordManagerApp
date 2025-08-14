@@ -18,6 +18,8 @@ public class BaseViewModel : INotifyPropertyChanged
         }
     }
 
+    public virtual bool IsButtonEnabled => !IsLoading;
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
