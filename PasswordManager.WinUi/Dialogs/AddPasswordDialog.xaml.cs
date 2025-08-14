@@ -11,6 +11,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
     private readonly IPasswordItemService _passwordItemService;
     private readonly ICategoryInterface _categoryService;
     private readonly ICollectionService _collectionService;
+    private readonly IPasskeyService _passkeyService;
     private PasswordItem? _editingItem;
 
     public PasswordItem? Result { get; private set; }
@@ -22,6 +23,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
         _passwordItemService = serviceProvider.GetRequiredService<IPasswordItemService>();
         _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
         _collectionService = serviceProvider.GetRequiredService<ICollectionService>();
+        _passkeyService = serviceProvider.GetRequiredService<IPasskeyService>();
         _editingItem = editingItem;
 
         Title = editingItem == null ? "Add Password Item" : "Edit Password Item";
@@ -85,6 +87,19 @@ public sealed partial class AddPasswordDialog : ContentDialog
             UrlTextBox.Text = _editingItem.LoginItem.WebsiteUrl ?? string.Empty;
         }
 
+        // Set passkey-specific fields if applicable
+        if (_editingItem.PasskeyItem != null)
+        {
+            PasskeyWebsiteTextBox.Text = _editingItem.PasskeyItem.Website ?? string.Empty;
+            PasskeyUrlTextBox.Text = _editingItem.PasskeyItem.WebsiteUrl ?? string.Empty;
+            PasskeyUsernameTextBox.Text = _editingItem.PasskeyItem.Username ?? string.Empty;
+            PasskeyDisplayNameTextBox.Text = _editingItem.PasskeyItem.DisplayName ?? string.Empty;
+            PasskeyDeviceTypeTextBox.Text = _editingItem.PasskeyItem.DeviceType ?? string.Empty;
+            PasskeyRequiresVerificationCheckBox.IsChecked = _editingItem.PasskeyItem.RequiresUserVerification;
+            PasskeyIsBackedUpCheckBox.IsChecked = _editingItem.PasskeyItem.IsBackedUp;
+            PasskeyNotesTextBox.Text = _editingItem.PasskeyItem.Notes ?? string.Empty;
+        }
+
         // Select category
         if (_editingItem.CategoryId.HasValue)
         {
@@ -127,6 +142,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
             CreditCardFieldsPanel.Visibility = selectedType == ItemType.CreditCard ? Visibility.Visible : Visibility.Collapsed;
             SecureNoteFieldsPanel.Visibility = selectedType == ItemType.SecureNote ? Visibility.Visible : Visibility.Collapsed;
             WiFiFieldsPanel.Visibility = selectedType == ItemType.WiFi ? Visibility.Visible : Visibility.Collapsed;
+            PasskeyFieldsPanel.Visibility = selectedType == ItemType.Passkey ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 
@@ -211,6 +227,25 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 item.LoginItem.WebsiteUrl = UrlTextBox.Text?.Trim();
             }
 
+            // Handle passkey-specific fields
+            if (selectedType == ItemType.Passkey)
+            {
+                if (item.PasskeyItem == null)
+                    item.PasskeyItem = new PasskeyItem();
+                
+                item.PasskeyItem.Website = PasskeyWebsiteTextBox.Text?.Trim();
+                item.PasskeyItem.WebsiteUrl = PasskeyUrlTextBox.Text?.Trim();
+                item.PasskeyItem.Username = PasskeyUsernameTextBox.Text?.Trim();
+                item.PasskeyItem.DisplayName = PasskeyDisplayNameTextBox.Text?.Trim();
+                item.PasskeyItem.DeviceType = PasskeyDeviceTypeTextBox.Text?.Trim();
+                item.PasskeyItem.RequiresUserVerification = PasskeyRequiresVerificationCheckBox.IsChecked ?? true;
+                item.PasskeyItem.IsBackedUp = PasskeyIsBackedUpCheckBox.IsChecked ?? false;
+                item.PasskeyItem.Notes = PasskeyNotesTextBox.Text?.Trim();
+                
+                // For now, use a placeholder credential ID (in real implementation, this would come from WebAuthn)
+                item.PasskeyItem.CredentialId = "placeholder_credential_id_" + DateTime.Now.Ticks;
+            }
+
             // Save item
             if (_editingItem == null)
             {
@@ -226,6 +261,41 @@ public sealed partial class AddPasswordDialog : ContentDialog
         catch (Exception ex)
         {
             await ShowErrorDialog($"Error saving password: {ex.Message}");
+        }
+    }
+
+    private async void RegisterPasskeyButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(PasskeyWebsiteTextBox.Text))
+            {
+                await ShowErrorDialog("Website is required for passkey registration");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(PasskeyUsernameTextBox.Text))
+            {
+                await ShowErrorDialog("Username is required for passkey registration");
+                return;
+            }
+
+            // Set device type automatically
+            PasskeyDeviceTypeTextBox.Text = "Windows PC";
+
+            // Show success message for now (actual WebAuthn integration would happen here)
+            var successDialog = new ContentDialog
+            {
+                Title = "Passkey Registration",
+                Content = "Passkey registration initiated. In a full implementation, this would use WebAuthn to register the passkey with the browser/OS.",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await successDialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog($"Error registering passkey: {ex.Message}");
         }
     }
 

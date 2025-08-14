@@ -40,9 +40,10 @@ public class PasswordItem
     public LoginItem? LoginItem { get; set; }
     public CreditCardItem? CreditCardItem { get; set; }
     public SecureNoteItem? SecureNoteItem { get; set; }
+    public WiFiItem? WiFiItem { get; set; }
+    public PasskeyItem? PasskeyItem { get; set; }
 
     public DateTime? LastAccessedAt { get; set; }
-    public WiFiItem? WiFiItem { get; set; }
     public Category Category { get; set; } = null!; // Required navigation property
     public Collection Collection { get; set; } = null!; // Required navigation property
     public List<Tag> Tags { get; set; } = new();
