@@ -3,297 +3,509 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       Background="{StaticResource ModernBackgroundBrush}">
 
-    <ScrollViewer>
-        <StackPanel Spacing="32" Margin="0,0,0,32">
-            <!-- Welcome Header -->
-            <Border Style="{StaticResource ModernElevatedCardStyle}" Margin="0,16,0,0">
-                <StackPanel Spacing="16">
-                    <!-- Hero Section -->
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <StackPanel Grid.Column="0">
-                            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,0,0,12">
-                                <Border Background="{StaticResource ModernPrimaryGradientBrush}"
-                                       CornerRadius="16"
-                                       Width="48"
-                                       Height="48">
-                                    <FontIcon Glyph="&#xE1A3;" 
-                                             FontSize="24"
-                                             Foreground="White"
-                                             HorizontalAlignment="Center"
-                                             VerticalAlignment="Center"/>
+    <!-- Top Toolbar -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar Row -->
+        <Border Grid.Row="0" 
+                Background="{StaticResource ModernCardBackgroundBrush}" 
+                BorderThickness="0,0,0,1" 
+                BorderBrush="{StaticResource ModernBorderBrush}">
+            <Grid Margin="16,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Search Box -->
+                <AutoSuggestBox Grid.Column="0"
+                               x:Name="SearchBox"
+                               QueryIcon="Find"
+                               PlaceholderText="Search passwords..."
+                               MinWidth="300"
+                               MaxWidth="400"
+                               HorizontalAlignment="Left"
+                               VerticalAlignment="Center"
+                               Style="{StaticResource ModernAutoSuggestBoxStyle}"
+                               TextChanged="SearchBox_TextChanged"
+                               QuerySubmitted="SearchBox_QuerySubmitted"
+                               CornerRadius="20"/>
+                
+                <!-- Action Buttons -->
+                <StackPanel Grid.Column="1" 
+                           Orientation="Horizontal" 
+                           Spacing="12"
+                           VerticalAlignment="Center"
+                           Margin="16,0">
+                    
+                    <Button x:Name="NewItemButton"
+                           Content="New Item"
+                           Style="{StaticResource ModernPrimaryButtonStyle}"
+                           Click="AddPasswordButton_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Border"
+                                       Background="{StaticResource ModernPrimaryBrush}"
+                                       CornerRadius="6"
+                                       Padding="16,8">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE109;" FontSize="14" Foreground="White"/>
+                                        <TextBlock Text="{TemplateBinding Content}" 
+                                                  FontWeight="SemiBold" 
+                                                  FontSize="14"
+                                                  Foreground="White"/>
+                                    </StackPanel>
                                 </Border>
-                                <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="Welcome back!" 
-                                              Style="{StaticResource ModernHeading2Style}"/>
-                                    <TextBlock Text="Your digital vault is secure and ready"
-                                              Style="{StaticResource ModernCaptionStyle}"/>
-                                </StackPanel>
-                            </StackPanel>
-                            
-                            <TextBlock Text="{Binding WelcomeText}" 
-                                      Style="{StaticResource ModernBodyStyle}"
-                                      TextWrapping="Wrap"
-                                      Margin="0,8,0,0"/>
-                        </StackPanel>
-                        
-                        <!-- Quick Stats -->
-                        <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
-                            <Border Background="{StaticResource ModernSuccessBrush}"
-                                   CornerRadius="12"
-                                   Padding="12,6">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon Glyph="&#xE1A3;" FontSize="14" Foreground="White"/>
-                                    <TextBlock Text="Secured" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </Grid>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    
+                    <Button x:Name="EditButton"
+                           Content="Edit"
+                           Style="{StaticResource ModernSecondaryButtonStyle}"
+                           Click="EditButton_Click"
+                           IsEnabled="{Binding SelectedPasswordItem, Converter={x:Null}}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Border"
+                                       Background="{StaticResource ModernSecondaryBrush}"
+                                       CornerRadius="6"
+                                       Padding="16,8">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE70F;" FontSize="14" Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                        <TextBlock Text="Edit" 
+                                                  FontWeight="SemiBold" 
+                                                  FontSize="14"
+                                                  Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                    </StackPanel>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main 3-Column Layout -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="240" MinWidth="200"/>
+                <ColumnDefinition Width="340" MinWidth="280"/>
+                <ColumnDefinition Width="*" MinWidth="400"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Column 1: Navigation Sidebar -->
+            <Border Grid.Column="0" 
+                    Background="White"
+                    BorderThickness="0,0,1,0"
+                    BorderBrush="#d1d5db">
+                
+                <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                             HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="8" Spacing="4">
+                        
+                        <!-- All Items -->
+                        <Button x:Name="AllItemsNavButton"
+                               Content="All Items" 
+                               Tag="AllItems"
+                               Click="NavigationButton_Click"
+                               HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Left"
+                               Background="Transparent"
+                               BorderThickness="0"
+                               Padding="12,10"
+                               CornerRadius="6">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE8F1;" FontSize="16"/>
+                                    <TextBlock Text="All Items" FontSize="14"/>
+                                </StackPanel>
+                            </Button.Content>
+                        </Button>
+                        
+                        <!-- Favorites -->
+                        <Button x:Name="FavoritesNavButton"
+                               Content="Favorites"
+                               Tag="Favorites"
+                               Click="NavigationButton_Click"
+                               HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Left"
+                               Background="Transparent"
+                               BorderThickness="0"
+                               Padding="12,10"
+                               CornerRadius="6">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE734;" FontSize="16"/>
+                                    <TextBlock Text="Favorites" FontSize="14"/>
+                                </StackPanel>
+                            </Button.Content>
+                        </Button>
+                        
+                        <!-- Categories -->
+                        <Button x:Name="CategoriesNavButton"
+                               Content="Categories"
+                               Tag="Categories" 
+                               Click="NavigationButton_Click"
+                               HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Left"
+                               Background="Transparent"
+                               BorderThickness="0"
+                               Padding="12,10"
+                               CornerRadius="6">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE8FD;" FontSize="16"/>
+                                    <TextBlock Text="Categories" FontSize="14"/>
+                                </StackPanel>
+                            </Button.Content>
+                        </Button>
+
+                        <!-- Separator -->
+                        <Rectangle Height="1" 
+                                  Fill="#d1d5db" 
+                                  Margin="12,16"/>
+
+                        <!-- Settings -->
+                        <Button x:Name="SettingsNavButton"
+                               Content="Settings"
+                               Click="SettingsButton_Click"
+                               HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Left"
+                               Background="Transparent"
+                               BorderThickness="0"
+                               Padding="12,10"
+                               CornerRadius="6">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE713;" FontSize="16"/>
+                                    <TextBlock Text="Settings" FontSize="14"/>
+                                </StackPanel>
+                            </Button.Content>
+                        </Button>
+
+                        <!-- Import -->
+                        <Button x:Name="ImportNavButton"
+                               Content="Import Data"
+                               Click="ImportButton_Click"
+                               HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Left"
+                               Background="Transparent"
+                               BorderThickness="0"
+                               Padding="12,10"
+                               CornerRadius="6">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE8B5;" FontSize="16"/>
+                                    <TextBlock Text="Import Data" FontSize="14"/>
+                                </StackPanel>
+                            </Button.Content>
+                        </Button>
+                    </StackPanel>
+                </ScrollViewer>
             </Border>
 
-            <!-- Quick Actions Section -->
-            <StackPanel Spacing="24">
-                <TextBlock Text="Quick Actions" 
-                          Style="{StaticResource ModernHeading3Style}"/>
+            <!-- Column 2: Password Items List -->
+            <Border Grid.Column="1" 
+                    Background="White"
+                    BorderThickness="0,0,1,0"
+                    BorderBrush="#d1d5db">
                 
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-
-                    <!-- Add Password Card -->
-                    <Border Grid.Column="0" Grid.Row="0" 
-                           Style="{StaticResource ModernCardStyle}"
-                           Margin="0,0,12,12">
-                        <StackPanel Spacing="16">
-                            <Border Background="{StaticResource ModernPrimaryGradientBrush}"
-                                   CornerRadius="12"
-                                   Width="40"
-                                   Height="40"
-                                   HorizontalAlignment="Left">
-                                <FontIcon Glyph="&#xE109;" 
-                                         FontSize="20" 
-                                         Foreground="White"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center"/>
-                            </Border>
-                            
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Add Password" 
-                                          FontWeight="SemiBold" 
-                                          FontSize="16"
-                                          Foreground="{StaticResource ModernTextPrimaryBrush}"/>
-                                <TextBlock Text="Store a new password securely with advanced encryption" 
-                                          Style="{StaticResource ModernCaptionStyle}"
-                                          TextWrapping="Wrap"/>
-                            </StackPanel>
-                            
-                            <Button Content="Add New" 
-                                   Style="{StaticResource ModernPrimaryButtonStyle}"
-                                   HorizontalAlignment="Stretch"
-                                   Click="AddPasswordButton_Click"/>
-                        </StackPanel>
+                    
+                    <!-- List Header -->
+                    <Border Grid.Row="0" 
+                           Padding="16,12" 
+                           BorderThickness="0,0,0,1"
+                           BorderBrush="#d1d5db">
+                        <TextBlock Text="All Items" 
+                                  FontWeight="SemiBold" 
+                                  FontSize="14"
+                                  Foreground="#374151"/>
                     </Border>
-
-                    <!-- View Passwords Card -->
-                    <Border Grid.Column="1" Grid.Row="0" 
-                           Style="{StaticResource ModernCardStyle}"
-                           Margin="6,0,6,12">
-                        <StackPanel Spacing="16">
-                            <Border Background="{StaticResource ModernAccentGradientBrush}"
-                                   CornerRadius="12"
-                                   Width="40"
-                                   Height="40"
-                                   HorizontalAlignment="Left">
-                                <FontIcon Glyph="&#xE8F1;" 
-                                         FontSize="20" 
-                                         Foreground="White"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center"/>
-                            </Border>
-                            
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="View Passwords" 
-                                          FontWeight="SemiBold" 
-                                          FontSize="16"
-                                          Foreground="{StaticResource ModernTextPrimaryBrush}"/>
-                                <TextBlock Text="Browse and manage your stored passwords with ease" 
-                                          Style="{StaticResource ModernCaptionStyle}"
-                                          TextWrapping="Wrap"/>
-                            </StackPanel>
-                            
-                            <Button Content="View All" 
-                                   Style="{StaticResource ModernSecondaryButtonStyle}"
-                                   HorizontalAlignment="Stretch"
-                                   Click="ViewPasswordsButton_Click"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Import Data Card -->
-                    <Border Grid.Column="2" Grid.Row="0" 
-                           Style="{StaticResource ModernCardStyle}"
-                           Margin="12,0,0,12">
-                        <StackPanel Spacing="16">
-                            <Border Background="{StaticResource ModernWarningBrush}"
-                                   CornerRadius="12"
-                                   Width="40"
-                                   Height="40"
-                                   HorizontalAlignment="Left">
-                                <FontIcon Glyph="&#xE8B5;" 
-                                         FontSize="20" 
-                                         Foreground="White"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center"/>
-                            </Border>
-                            
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Import Data" 
-                                          FontWeight="SemiBold" 
-                                          FontSize="16"
-                                          Foreground="{StaticResource ModernTextPrimaryBrush}"/>
-                                <TextBlock Text="Import passwords from other password managers" 
-                                          Style="{StaticResource ModernCaptionStyle}"
-                                          TextWrapping="Wrap"/>
-                            </StackPanel>
-                            
-                            <Button Content="Import" 
-                                   Style="{StaticResource ModernSecondaryButtonStyle}"
-                                   HorizontalAlignment="Stretch"
-                                   Click="ImportButton_Click"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Categories Card -->
-                    <Border Grid.Column="0" Grid.Row="1" 
-                           Style="{StaticResource ModernCardStyle}"
-                           Margin="0,0,12,0">
-                        <StackPanel Spacing="16">
-                            <Border Background="{StaticResource ModernSuccessBrush}"
-                                   CornerRadius="12"
-                                   Width="40"
-                                   Height="40"
-                                   HorizontalAlignment="Left">
-                                <FontIcon Glyph="&#xE8FD;" 
-                                         FontSize="20" 
-                                         Foreground="White"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center"/>
-                            </Border>
-                            
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Categories" 
-                                          FontWeight="SemiBold" 
-                                          FontSize="16"
-                                          Foreground="{StaticResource ModernTextPrimaryBrush}"/>
-                                <TextBlock Text="Organize passwords by custom categories" 
-                                          Style="{StaticResource ModernCaptionStyle}"
-                                          TextWrapping="Wrap"/>
-                            </StackPanel>
-                            
-                            <Button Content="Organize" 
-                                   Style="{StaticResource ModernSecondaryButtonStyle}"
-                                   HorizontalAlignment="Stretch"
-                                   Click="CategoriesButton_Click"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Settings Card -->
-                    <Border Grid.Column="1" Grid.Row="1" 
-                           Style="{StaticResource ModernCardStyle}"
-                           Margin="6,0,6,0">
-                        <StackPanel Spacing="16">
-                            <Border Background="{StaticResource ModernTextSecondaryBrush}"
-                                   CornerRadius="12"
-                                   Width="40"
-                                   Height="40"
-                                   HorizontalAlignment="Left">
-                                <FontIcon Glyph="&#xE713;" 
-                                         FontSize="20" 
-                                         Foreground="White"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center"/>
-                            </Border>
-                            
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Settings" 
-                                          FontWeight="SemiBold" 
-                                          FontSize="16"
-                                          Foreground="{StaticResource ModernTextPrimaryBrush}"/>
-                                <TextBlock Text="Configure app preferences and security settings" 
-                                          Style="{StaticResource ModernCaptionStyle}"
-                                          TextWrapping="Wrap"/>
-                            </StackPanel>
-                            
-                            <Button Content="Configure" 
-                                   Style="{StaticResource ModernSecondaryButtonStyle}"
-                                   HorizontalAlignment="Stretch"
-                                   Click="SettingsButton_Click"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Security Card -->
-                    <Border Grid.Column="2" Grid.Row="1" 
-                           Style="{StaticResource ModernCardStyle}"
-                           Margin="12,0,0,0">
-                        <StackPanel Spacing="16">
-                            <Border Background="{StaticResource ModernErrorBrush}"
-                                   CornerRadius="12"
-                                   Width="40"
-                                   Height="40"
-                                   HorizontalAlignment="Left">
-                                <FontIcon Glyph="&#xE1A3;" 
-                                         FontSize="20" 
-                                         Foreground="White"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center"/>
-                            </Border>
-                            
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Security" 
-                                          FontWeight="SemiBold" 
-                                          FontSize="16"
-                                          Foreground="{StaticResource ModernTextPrimaryBrush}"/>
-                                <TextBlock Text="Logout and secure your sensitive data" 
-                                          Style="{StaticResource ModernCaptionStyle}"
-                                          TextWrapping="Wrap"/>
-                            </StackPanel>
-
-                            <Button Content="Secure &amp; Logout" 
-                                   Style="{StaticResource ModernSecondaryButtonStyle}"
-                                   HorizontalAlignment="Stretch"
-                                   Click="LogoutButton_Click"/>
-                        </StackPanel>
-                    </Border>
+                    
+                    <!-- Items List -->
+                    <ListView Grid.Row="1" 
+                             x:Name="PasswordItemsList"
+                             ItemsSource="{Binding AllPasswordItems}"
+                             SelectedItem="{Binding SelectedPasswordItem, Mode=TwoWay}"
+                             SelectionMode="Single"
+                             SelectionChanged="PasswordItemsList_SelectionChanged"
+                             Background="Transparent"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="16,12" 
+                                       Background="Transparent"
+                                       BorderThickness="0,0,0,1"
+                                       BorderBrush="#d1d5db">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="40"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <!-- Website Favicon/Icon -->
+                                        <Border Grid.Column="0" 
+                                               Width="32" 
+                                               Height="32"
+                                               CornerRadius="6"
+                                               Background="#ec4899"
+                                               VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Title}" 
+                                                      FontWeight="Bold" 
+                                                      FontSize="12"
+                                                      Foreground="White"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"/>
+                                        </Border>
+                                        
+                                        <!-- Title and Username -->
+                                        <StackPanel Grid.Column="1" 
+                                                   Margin="12,0,8,0" 
+                                                   VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Title}" 
+                                                      FontWeight="SemiBold" 
+                                                      FontSize="14"
+                                                      Foreground="#374151"
+                                                      TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Username, FallbackValue='No username'}" 
+                                                      FontSize="12"
+                                                      Foreground="#6b7280"
+                                                      TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        
+                                        <!-- Favorite Icon -->
+                                        <FontIcon Grid.Column="2" 
+                                                 Glyph="&#xE734;" 
+                                                 FontSize="14"
+                                                 Foreground="#f59e0b"
+                                                 VerticalAlignment="Center"/>
+                                                 <!-- TODO: Add visibility binding for IsFavorite -->
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                        
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="0"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                    </ListView>
                 </Grid>
-            </StackPanel>
+            </Border>
 
-            <!-- Status and Info -->
-            <Border Style="{StaticResource ModernCardStyle}">
-                <StackPanel Spacing="12">
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <FontIcon Glyph="&#xE946;" 
-                                 FontSize="20" 
-                                 Foreground="{StaticResource ModernPrimaryBrush}"/>
-                        <TextBlock Text="System Status" 
-                                  Style="{StaticResource ModernHeading3Style}"/>
+            <!-- Column 3: Password Detail Form -->
+            <Border Grid.Column="2" 
+                    Background="{StaticResource ModernBackgroundBrush}">
+                
+                <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                             HorizontalScrollBarVisibility="Disabled"
+                             Padding="24">
+                    
+                    <StackPanel Spacing="24">
+                        
+                        <!-- Header with Icon and Title -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Large Icon -->
+                            <Border Grid.Column="0" 
+                                   Width="64" 
+                                   Height="64"
+                                   CornerRadius="12"
+                                   Background="{StaticResource ModernAccentBrush}"
+                                   Margin="0,0,16,0">
+                                <TextBlock Text="{Binding SelectedPasswordItem.Title, FallbackValue='?'}" 
+                                          FontWeight="Bold" 
+                                          FontSize="20"
+                                          Foreground="White"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                            </Border>
+                            
+                            <!-- Title and Description -->
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding SelectedPasswordItem.Title}" 
+                                          FontWeight="Bold" 
+                                          FontSize="18"
+                                          Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                <TextBlock Text="{Binding SelectedPasswordItem.Website, FallbackValue='No website'}" 
+                                          FontSize="14"
+                                          Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                            </StackPanel>
+                            
+                            <!-- Favorite Toggle -->
+                            <CheckBox Grid.Column="2" 
+                                     IsChecked="{Binding SelectedPasswordItem.IsFavorite, Mode=TwoWay}"
+                                     Content="★"
+                                     FontSize="20"
+                                     VerticalAlignment="Center"/>
+                        </Grid>
+                        
+                        <!-- Form Fields -->
+                        <StackPanel Spacing="16">
+                            
+                            <!-- Username -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <TextBlock Grid.Column="0" 
+                                          Text="username" 
+                                          FontSize="12"
+                                          Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                          VerticalAlignment="Center"/>
+                                
+                                <TextBox Grid.Column="1" 
+                                        Text="{Binding SelectedPasswordItem.Username, Mode=TwoWay}"
+                                        Style="{StaticResource ModernTextBoxStyle}"
+                                        Margin="0,0,8,0"/>
+                                
+                                <Button Grid.Column="2" 
+                                       Content="📋"
+                                       Click="CopyUsernameButton_Click"
+                                       ToolTip.Tip="Copy username"/>
+                            </Grid>
+                            
+                            <!-- Password -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <TextBlock Grid.Column="0" 
+                                          Text="password" 
+                                          FontSize="12"
+                                          Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                          VerticalAlignment="Center"/>
+                                
+                                <PasswordBox Grid.Column="1" 
+                                            x:Name="PasswordField"
+                                            Password="{Binding SelectedPasswordItem.Password, Mode=TwoWay}"
+                                            Style="{StaticResource ModernPasswordBoxStyle}"
+                                            Margin="0,0,8,0"/>
+                                
+                                <Button Grid.Column="2" 
+                                       Content="👁"
+                                       Click="TogglePasswordVisibilityButton_Click"
+                                       ToolTip.Tip="Show/Hide password"
+                                       Margin="0,0,4,0"/>
+                                
+                                <Button Grid.Column="3" 
+                                       Content="📋"
+                                       Click="CopyPasswordButton_Click"
+                                       ToolTip.Tip="Copy password"/>
+                            </Grid>
+                            
+                            <!-- Website -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <TextBlock Grid.Column="0" 
+                                          Text="website" 
+                                          FontSize="12"
+                                          Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                          VerticalAlignment="Center"/>
+                                
+                                <TextBox Grid.Column="1" 
+                                        Text="{Binding SelectedPasswordItem.Website, Mode=TwoWay}"
+                                        Style="{StaticResource ModernTextBoxStyle}"
+                                        Margin="0,0,8,0"/>
+                                
+                                <Button Grid.Column="2" 
+                                       Content="🌐"
+                                       Click="OpenWebsiteButton_Click"
+                                       ToolTip.Tip="Open website"/>
+                            </Grid>
+                            
+                        </StackPanel>
+                        
+                        <!-- Metadata -->
+                        <StackPanel Spacing="8">
+                            <Rectangle Height="1" 
+                                      Fill="{StaticResource ModernBorderBrush}"/>
+                            
+                            <TextBlock Text="ITEM INFORMATION" 
+                                      FontSize="12" 
+                                      FontWeight="SemiBold"
+                                      Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                            
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <StackPanel Grid.Column="0" Spacing="4">
+                                    <TextBlock Text="Created" 
+                                              FontSize="12" 
+                                              Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                    <TextBlock Text="{Binding SelectedPasswordItem.CreatedAt, StringFormat='{}{0:MMM dd, yyyy}'}" 
+                                              FontSize="12"
+                                              Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                </StackPanel>
+                                
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Modified" 
+                                              FontSize="12" 
+                                              Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                    <TextBlock Text="{Binding SelectedPasswordItem.LastModified, StringFormat='{}{0:MMM dd, yyyy}'}" 
+                                              FontSize="12"
+                                              Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                        
                     </StackPanel>
                     
-                    <TextBlock Text="{Binding StatusText}" 
-                              Style="{StaticResource ModernBodyStyle}"
-                              TextWrapping="Wrap"/>
-                </StackPanel>
+                    <!-- Empty State -->
+                    <StackPanel Spacing="16" 
+                               HorizontalAlignment="Center" 
+                               VerticalAlignment="Center">
+                        <FontIcon Glyph="&#xE8F1;" 
+                                 FontSize="48" 
+                                 Foreground="{StaticResource ModernTextTertiaryBrush}"/>
+                        <TextBlock Text="Select an item to view details" 
+                                  FontSize="16"
+                                  Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                  HorizontalAlignment="Center"/>
+                    </StackPanel>
+                    
+                </ScrollViewer>
             </Border>
-        </StackPanel>
-    </ScrollViewer>
+            
+        </Grid>
+    </Grid>
 </Page>

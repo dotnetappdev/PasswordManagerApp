@@ -15,6 +15,9 @@ public class DashboardViewModel : BaseViewModel
     private int _totalPasswordsCount;
     private int _favoritesCount;
     private int _categoriesCount;
+    private PasswordItem? _selectedPasswordItem;
+    private bool _isEditing;
+    private string _selectedNavItem = "AllItems";
 
     public DashboardViewModel(IServiceProvider serviceProvider)
     {
@@ -24,6 +27,7 @@ public class DashboardViewModel : BaseViewModel
         
         RecentPasswordItems = new ObservableCollection<PasswordItem>();
         FavoritePasswordItems = new ObservableCollection<PasswordItem>();
+        AllPasswordItems = new ObservableCollection<PasswordItem>();
         
         LoadDashboardDataAsync();
     }
@@ -60,6 +64,31 @@ public class DashboardViewModel : BaseViewModel
 
     public ObservableCollection<PasswordItem> RecentPasswordItems { get; }
     public ObservableCollection<PasswordItem> FavoritePasswordItems { get; }
+    public ObservableCollection<PasswordItem> AllPasswordItems { get; }
+
+    public PasswordItem? SelectedPasswordItem
+    {
+        get => _selectedPasswordItem;
+        set => SetProperty(ref _selectedPasswordItem, value);
+    }
+
+    public bool IsEditing
+    {
+        get => _isEditing;
+        set => SetProperty(ref _isEditing, value);
+    }
+
+    public string SelectedNavItem
+    {
+        get => _selectedNavItem;
+        set
+        {
+            if (SetProperty(ref _selectedNavItem, value))
+            {
+                OnNavigationChanged();
+            }
+        }
+    }
 
     private async Task LoadDashboardDataAsync()
     {
@@ -101,6 +130,19 @@ public class DashboardViewModel : BaseViewModel
                 FavoritePasswordItems.Add(item);
             }
 
+            // Load all items
+            AllPasswordItems.Clear();
+            foreach (var item in activeItems.OrderBy(i => i.Title))
+            {
+                AllPasswordItems.Add(item);
+            }
+
+            // Set default selection to first item if available
+            if (AllPasswordItems.Any() && SelectedPasswordItem == null)
+            {
+                SelectedPasswordItem = AllPasswordItems.First();
+            }
+
             // Set welcome message
             WelcomeText = $"Welcome! You have {TotalPasswordsCount} passwords secured.";
             StatusText = "Ready";
@@ -132,5 +174,28 @@ public class DashboardViewModel : BaseViewModel
         {
             StatusText = $"Logout error: {ex.Message}";
         }
+    }
+
+    private void OnNavigationChanged()
+    {
+        // Clear selection when navigation changes
+        SelectedPasswordItem = null;
+        IsEditing = false;
+    }
+
+    public void SelectPasswordItem(PasswordItem item)
+    {
+        SelectedPasswordItem = item;
+        IsEditing = false;
+    }
+
+    public void StartEditing()
+    {
+        IsEditing = true;
+    }
+
+    public void StopEditing()
+    {
+        IsEditing = false;
     }
 }
