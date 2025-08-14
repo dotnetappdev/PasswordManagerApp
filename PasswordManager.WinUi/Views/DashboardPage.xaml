@@ -101,9 +101,9 @@
 
             <!-- Column 1: Navigation Sidebar -->
             <Border Grid.Column="0" 
-                    Background="{StaticResource ModernCardBackgroundBrush}"
+                    Background="White"
                     BorderThickness="0,0,1,0"
-                    BorderBrush="{StaticResource ModernBorderBrush}">
+                    BorderBrush="#d1d5db">
                 
                 <ScrollViewer VerticalScrollBarVisibility="Auto" 
                              HorizontalScrollBarVisibility="Disabled">
@@ -114,25 +114,18 @@
                                Content="All Items" 
                                Tag="AllItems"
                                Click="NavigationButton_Click"
-                               Style="{StaticResource ModernNavigationButtonStyle}">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Border"
-                                           Background="Transparent"
-                                           CornerRadius="6"
-                                           Padding="12,10">
-                                        <StackPanel Orientation="Horizontal" Spacing="12">
-                                            <FontIcon Glyph="&#xE8F1;" FontSize="16" x:Name="Icon"/>
-                                            <TextBlock Text="{TemplateBinding Content}" FontSize="14" x:Name="Text"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ModernHoverBrush}"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
+                               HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Left"
+                               Background="Transparent"
+                               BorderThickness="0"
+                               Padding="12,10"
+                               CornerRadius="6">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE8F1;" FontSize="16"/>
+                                    <TextBlock Text="All Items" FontSize="14"/>
+                                </StackPanel>
+                            </Button.Content>
                         </Button>
                         
                         <!-- Favorites -->
@@ -140,25 +133,18 @@
                                Content="Favorites"
                                Tag="Favorites"
                                Click="NavigationButton_Click"
-                               Style="{StaticResource ModernNavigationButtonStyle}">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Border"
-                                           Background="Transparent"
-                                           CornerRadius="6"
-                                           Padding="12,10">
-                                        <StackPanel Orientation="Horizontal" Spacing="12">
-                                            <FontIcon Glyph="&#xE734;" FontSize="16" x:Name="Icon"/>
-                                            <TextBlock Text="{TemplateBinding Content}" FontSize="14" x:Name="Text"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ModernHoverBrush}"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
+                               HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Left"
+                               Background="Transparent"
+                               BorderThickness="0"
+                               Padding="12,10"
+                               CornerRadius="6">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE734;" FontSize="16"/>
+                                    <TextBlock Text="Favorites" FontSize="14"/>
+                                </StackPanel>
+                            </Button.Content>
                         </Button>
                         
                         <!-- Categories -->
@@ -166,80 +152,59 @@
                                Content="Categories"
                                Tag="Categories" 
                                Click="NavigationButton_Click"
-                               Style="{StaticResource ModernNavigationButtonStyle}">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Border"
-                                           Background="Transparent"
-                                           CornerRadius="6"
-                                           Padding="12,10">
-                                        <StackPanel Orientation="Horizontal" Spacing="12">
-                                            <FontIcon Glyph="&#xE8FD;" FontSize="16" x:Name="Icon"/>
-                                            <TextBlock Text="{TemplateBinding Content}" FontSize="14" x:Name="Text"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ModernHoverBrush}"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
+                               HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Left"
+                               Background="Transparent"
+                               BorderThickness="0"
+                               Padding="12,10"
+                               CornerRadius="6">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE8FD;" FontSize="16"/>
+                                    <TextBlock Text="Categories" FontSize="14"/>
+                                </StackPanel>
+                            </Button.Content>
                         </Button>
 
                         <!-- Separator -->
                         <Rectangle Height="1" 
-                                  Fill="{StaticResource ModernBorderBrush}" 
+                                  Fill="#d1d5db" 
                                   Margin="12,16"/>
 
                         <!-- Settings -->
                         <Button x:Name="SettingsNavButton"
                                Content="Settings"
                                Click="SettingsButton_Click"
-                               Style="{StaticResource ModernNavigationButtonStyle}">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Border"
-                                           Background="Transparent"
-                                           CornerRadius="6"
-                                           Padding="12,10">
-                                        <StackPanel Orientation="Horizontal" Spacing="12">
-                                            <FontIcon Glyph="&#xE713;" FontSize="16" x:Name="Icon"/>
-                                            <TextBlock Text="{TemplateBinding Content}" FontSize="14" x:Name="Text"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ModernHoverBrush}"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
+                               HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Left"
+                               Background="Transparent"
+                               BorderThickness="0"
+                               Padding="12,10"
+                               CornerRadius="6">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE713;" FontSize="16"/>
+                                    <TextBlock Text="Settings" FontSize="14"/>
+                                </StackPanel>
+                            </Button.Content>
                         </Button>
 
                         <!-- Import -->
                         <Button x:Name="ImportNavButton"
                                Content="Import Data"
                                Click="ImportButton_Click"
-                               Style="{StaticResource ModernNavigationButtonStyle}">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Border"
-                                           Background="Transparent"
-                                           CornerRadius="6"
-                                           Padding="12,10">
-                                        <StackPanel Orientation="Horizontal" Spacing="12">
-                                            <FontIcon Glyph="&#xE8B5;" FontSize="16" x:Name="Icon"/>
-                                            <TextBlock Text="{TemplateBinding Content}" FontSize="14" x:Name="Text"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Border" Property="Background" Value="{StaticResource ModernHoverBrush}"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
+                               HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Left"
+                               Background="Transparent"
+                               BorderThickness="0"
+                               Padding="12,10"
+                               CornerRadius="6">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE8B5;" FontSize="16"/>
+                                    <TextBlock Text="Import Data" FontSize="14"/>
+                                </StackPanel>
+                            </Button.Content>
                         </Button>
                     </StackPanel>
                 </ScrollViewer>
@@ -247,9 +212,9 @@
 
             <!-- Column 2: Password Items List -->
             <Border Grid.Column="1" 
-                    Background="{StaticResource ModernCardBackgroundBrush}"
+                    Background="White"
                     BorderThickness="0,0,1,0"
-                    BorderBrush="{StaticResource ModernBorderBrush}">
+                    BorderBrush="#d1d5db">
                 
                 <Grid>
                     <Grid.RowDefinitions>
@@ -261,11 +226,11 @@
                     <Border Grid.Row="0" 
                            Padding="16,12" 
                            BorderThickness="0,0,0,1"
-                           BorderBrush="{StaticResource ModernBorderBrush}">
+                           BorderBrush="#d1d5db">
                         <TextBlock Text="All Items" 
                                   FontWeight="SemiBold" 
                                   FontSize="14"
-                                  Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                  Foreground="#374151"/>
                     </Border>
                     
                     <!-- Items List -->
@@ -275,6 +240,7 @@
                              SelectedItem="{Binding SelectedPasswordItem, Mode=TwoWay}"
                              SelectionMode="Single"
                              SelectionChanged="PasswordItemsList_SelectionChanged"
+                             Background="Transparent"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                              ScrollViewer.VerticalScrollBarVisibility="Auto">
                         
@@ -283,7 +249,7 @@
                                 <Border Padding="16,12" 
                                        Background="Transparent"
                                        BorderThickness="0,0,0,1"
-                                       BorderBrush="{StaticResource ModernBorderBrush}">
+                                       BorderBrush="#d1d5db">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="40"/>
@@ -296,9 +262,9 @@
                                                Width="32" 
                                                Height="32"
                                                CornerRadius="6"
-                                               Background="{StaticResource ModernAccentBrush}"
+                                               Background="#ec4899"
                                                VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Title, FallbackValue='?'}" 
+                                            <TextBlock Text="{Binding Title}" 
                                                       FontWeight="Bold" 
                                                       FontSize="12"
                                                       Foreground="White"
@@ -313,11 +279,11 @@
                                             <TextBlock Text="{Binding Title}" 
                                                       FontWeight="SemiBold" 
                                                       FontSize="14"
-                                                      Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                                      Foreground="#374151"
                                                       TextTrimming="CharacterEllipsis"/>
                                             <TextBlock Text="{Binding Username, FallbackValue='No username'}" 
                                                       FontSize="12"
-                                                      Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                                      Foreground="#6b7280"
                                                       TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
                                         
@@ -325,9 +291,9 @@
                                         <FontIcon Grid.Column="2" 
                                                  Glyph="&#xE734;" 
                                                  FontSize="14"
-                                                 Foreground="{StaticResource ModernWarningBrush}"
-                                                 Visibility="{Binding IsFavorite, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                 Foreground="#f59e0b"
                                                  VerticalAlignment="Center"/>
+                                                 <!-- TODO: Add visibility binding for IsFavorite -->
                                     </Grid>
                                 </Border>
                             </DataTemplate>
@@ -340,14 +306,6 @@
                                 <Setter Property="Margin" Value="0"/>
                                 <Setter Property="Background" Value="Transparent"/>
                                 <Setter Property="BorderThickness" Value="0"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsSelected" Value="True">
-                                        <Setter Property="Background" Value="{StaticResource ModernSelectionBrush}"/>
-                                    </Trigger>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="{StaticResource ModernHoverBrush}"/>
-                                    </Trigger>
-                                </Style.Triggers>
                             </Style>
                         </ListView.ItemContainerStyle>
                     </ListView>
