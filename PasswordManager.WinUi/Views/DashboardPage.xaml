@@ -66,7 +66,6 @@
                     </Button>
                     
                     <Button x:Name="EditButton"
-                           Content="Edit"
                            Style="{StaticResource ModernSecondaryButtonStyle}"
                            Click="EditButton_Click"
                            IsEnabled="{Binding SelectedPasswordItem, Converter={x:Null}}">
@@ -111,7 +110,6 @@
                         
                         <!-- All Items -->
                         <Button x:Name="AllItemsNavButton"
-                               Content="All Items" 
                                Tag="AllItems"
                                Click="NavigationButton_Click"
                                HorizontalAlignment="Stretch"
@@ -130,7 +128,6 @@
                         
                         <!-- Favorites -->
                         <Button x:Name="FavoritesNavButton"
-                               Content="Favorites"
                                Tag="Favorites"
                                Click="NavigationButton_Click"
                                HorizontalAlignment="Stretch"
@@ -149,7 +146,6 @@
                         
                         <!-- Categories -->
                         <Button x:Name="CategoriesNavButton"
-                               Content="Categories"
                                Tag="Categories" 
                                Click="NavigationButton_Click"
                                HorizontalAlignment="Stretch"
@@ -173,7 +169,6 @@
 
                         <!-- Settings -->
                         <Button x:Name="SettingsNavButton"
-                               Content="Settings"
                                Click="SettingsButton_Click"
                                HorizontalAlignment="Stretch"
                                HorizontalContentAlignment="Left"
@@ -191,7 +186,6 @@
 
                         <!-- Import -->
                         <Button x:Name="ImportNavButton"
-                               Content="Import Data"
                                Click="ImportButton_Click"
                                HorizontalAlignment="Stretch"
                                HorizontalContentAlignment="Left"
@@ -389,7 +383,7 @@
                                 <Button Grid.Column="2" 
                                        Content="📋"
                                        Click="CopyUsernameButton_Click"
-                                       ToolTip.Tip="Copy username"/>
+                                       ToolTipService.ToolTip="Copy username"/>
                             </Grid>
                             
                             <!-- Password -->
@@ -416,13 +410,13 @@
                                 <Button Grid.Column="2" 
                                        Content="👁"
                                        Click="TogglePasswordVisibilityButton_Click"
-                                       ToolTip.Tip="Show/Hide password"
+                                       ToolTipService.ToolTip="Show/Hide password"
                                        Margin="0,0,4,0"/>
                                 
                                 <Button Grid.Column="3" 
                                        Content="📋"
                                        Click="CopyPasswordButton_Click"
-                                       ToolTip.Tip="Copy password"/>
+                                       ToolTipService.ToolTip="Copy password"/>
                             </Grid>
                             
                             <!-- Website -->
@@ -447,7 +441,7 @@
                                 <Button Grid.Column="2" 
                                        Content="🌐"
                                        Click="OpenWebsiteButton_Click"
-                                       ToolTip.Tip="Open website"/>
+                                       ToolTipService.ToolTip="Open website"/>
                             </Grid>
                             
                         </StackPanel>
@@ -472,7 +466,7 @@
                                     <TextBlock Text="Created" 
                                               FontSize="12" 
                                               Foreground="{StaticResource ModernTextSecondaryBrush}"/>
-                                    <TextBlock Text="{Binding SelectedPasswordItem.CreatedAt, StringFormat='{}{0:MMM dd, yyyy}'}" 
+                                    <TextBlock Text="{Binding SelectedPasswordItem.CreatedAt, Converter={StaticResource DateFormatConverter}}" 
                                               FontSize="12"
                                               Foreground="{StaticResource ModernTextPrimaryBrush}"/>
                                 </StackPanel>
@@ -481,7 +475,7 @@
                                     <TextBlock Text="Modified" 
                                               FontSize="12" 
                                               Foreground="{StaticResource ModernTextSecondaryBrush}"/>
-                                    <TextBlock Text="{Binding SelectedPasswordItem.LastModified, StringFormat='{}{0:MMM dd, yyyy}'}" 
+                                    <TextBlock Text="{Binding SelectedPasswordItem.LastModified, Converter={StaticResource DateFormatConverter}}" 
                                               FontSize="12"
                                               Foreground="{StaticResource ModernTextPrimaryBrush}"/>
                                 </StackPanel>

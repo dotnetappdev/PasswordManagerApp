@@ -194,15 +194,15 @@ public class LocalModeToEnabledConverter : IValueConverter
     }
 }
 
-public class ApiModeToInputScopeConverter : IValueConverter
+public class DateFormatConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
     {
-        if (value is bool isApiMode && isApiMode)
+        if (value is DateTime dateTime)
         {
-            return Microsoft.UI.Xaml.Input.InputScopeNameValue.EmailSmtpAddress;
+            return dateTime.ToString("MMM dd, yyyy");
         }
-        return Microsoft.UI.Xaml.Input.InputScopeNameValue.Default;
+        return string.Empty;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language)
