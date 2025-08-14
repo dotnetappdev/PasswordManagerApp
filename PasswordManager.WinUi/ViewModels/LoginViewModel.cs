@@ -163,10 +163,18 @@ public class LoginViewModel : BaseViewModel
         set => SetProperty(ref _isAuthenticated, value);
     }
 
-    public bool IsButtonEnabled
+    public override bool IsButtonEnabled => _isButtonEnabled && !IsLoading;
+    
+    public bool ButtonEnabled
     {
-        get => _isButtonEnabled && !IsLoading;
-        set => SetProperty(ref _isButtonEnabled, value);
+        get => _isButtonEnabled;
+        set 
+        {
+            if (SetProperty(ref _isButtonEnabled, value))
+            {
+                OnPropertyChanged(nameof(IsButtonEnabled));
+            }
+        }
     }
 
     // Legacy properties for backward compatibility (not used in new flow)
