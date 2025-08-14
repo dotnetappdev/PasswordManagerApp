@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog x:Class="PasswordManager.WinUi.Dialogs.ItemTypeSelectionDialog"
+               xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               Title="Add New Item"
+               PrimaryButtonText="Select"
+               CloseButtonText="Cancel"
+               PrimaryButtonClick="ContentDialog_PrimaryButtonClick">
+
+    <ScrollViewer MaxHeight="500" MaxWidth="400">
+        <StackPanel Spacing="8" Padding="16">
+            
+            <TextBlock Text="Choose the type of item you want to add:" 
+                      FontSize="16" 
+                      FontWeight="SemiBold"
+                      Margin="0,0,0,16"/>
+            
+            <RadioButton x:Name="LoginRadioButton"
+                        Content="🔐 Login"
+                        GroupName="ItemType"
+                        IsChecked="True">
+                <RadioButton.ContentTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="🔐" FontSize="20" VerticalAlignment="Center"/>
+                            <StackPanel>
+                                <TextBlock Text="Login" FontWeight="SemiBold"/>
+                                <TextBlock Text="Username and password for websites and apps" 
+                                          FontSize="12" 
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </RadioButton.ContentTemplate>
+            </RadioButton>
+
+            <RadioButton x:Name="PasskeyRadioButton"
+                        Content="🔑 Passkey"
+                        GroupName="ItemType">
+                <RadioButton.ContentTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="🔑" FontSize="20" VerticalAlignment="Center"/>
+                            <StackPanel>
+                                <TextBlock Text="Passkey" FontWeight="SemiBold"/>
+                                <TextBlock Text="Passwordless authentication using WebAuthn" 
+                                          FontSize="12" 
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </RadioButton.ContentTemplate>
+            </RadioButton>
+
+            <RadioButton x:Name="CreditCardRadioButton"
+                        Content="💳 Credit Card"
+                        GroupName="ItemType">
+                <RadioButton.ContentTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="💳" FontSize="20" VerticalAlignment="Center"/>
+                            <StackPanel>
+                                <TextBlock Text="Credit Card" FontWeight="SemiBold"/>
+                                <TextBlock Text="Credit card numbers, expiry, and CVV" 
+                                          FontSize="12" 
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </RadioButton.ContentTemplate>
+            </RadioButton>
+
+            <RadioButton x:Name="SecureNoteRadioButton"
+                        Content="📝 Secure Note"
+                        GroupName="ItemType">
+                <RadioButton.ContentTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="📝" FontSize="20" VerticalAlignment="Center"/>
+                            <StackPanel>
+                                <TextBlock Text="Secure Note" FontWeight="SemiBold"/>
+                                <TextBlock Text="Encrypted text notes and documents" 
+                                          FontSize="12" 
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </RadioButton.ContentTemplate>
+            </RadioButton>
+
+            <RadioButton x:Name="WiFiRadioButton"
+                        Content="📶 WiFi"
+                        GroupName="ItemType">
+                <RadioButton.ContentTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="📶" FontSize="20" VerticalAlignment="Center"/>
+                            <StackPanel>
+                                <TextBlock Text="WiFi Network" FontWeight="SemiBold"/>
+                                <TextBlock Text="WiFi network credentials and settings" 
+                                          FontSize="12" 
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </RadioButton.ContentTemplate>
+            </RadioButton>
+
+            <RadioButton x:Name="PasswordRadioButton"
+                        Content="🔐 Password"
+                        GroupName="ItemType">
+                <RadioButton.ContentTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="🔐" FontSize="20" VerticalAlignment="Center"/>
+                            <StackPanel>
+                                <TextBlock Text="Password" FontWeight="SemiBold"/>
+                                <TextBlock Text="Standalone password without login details" 
+                                          FontSize="12" 
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </RadioButton.ContentTemplate>
+            </RadioButton>
+            
+        </StackPanel>
+    </ScrollViewer>
+</ContentDialog>

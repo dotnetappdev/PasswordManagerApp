@@ -6,7 +6,8 @@ public enum ItemType
     CreditCard = 2,
     SecureNote = 3,
     WiFi = 4,
-    Password = 5
+    Password = 5,
+    Passkey = 6
 }
 
 public enum SecurityType
