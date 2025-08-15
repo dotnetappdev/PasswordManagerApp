@@ -24,7 +24,7 @@ public class WebsiteToIconConverter : IValueConverter
         throw new NotImplementedException();
     }
 
-    private string GetDomainFromUrl(string url)
+    public string GetDomainFromUrl(string url)
     {
         try
         {
@@ -49,7 +49,7 @@ public class WebsiteToIconConverter : IValueConverter
         }
     }
 
-    private (string Glyph, string Color, string Letter) GetIconForDomain(string domain)
+    public (string Glyph, string Color, string Letter) GetIconForDomain(string domain)
     {
         return domain switch
         {
@@ -78,7 +78,7 @@ public class WebsiteToIconConverter : IValueConverter
         };
     }
 
-    private (string Glyph, string Color, string Letter) GetDefaultIcon()
+    public (string Glyph, string Color, string Letter) GetDefaultIcon()
     {
         return ("\uE774", "#6b7280", "?");
     }
@@ -90,11 +90,22 @@ public class WebsiteToColorConverter : IValueConverter
 
     public object Convert(object value, Type targetType, object parameter, string language)
     {
-        var (_, color, _) = (ValueTuple<string, string, string>)_iconConverter.Convert(value, targetType, parameter, language);
+        if (value is string website && !string.IsNullOrEmpty(website))
+        {
+            var domain = _iconConverter.GetDomainFromUrl(website).ToLowerInvariant();
+            var (_, color, _) = _iconConverter.GetIconForDomain(domain);
+            
+            return new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255,
+                System.Convert.ToByte(color.Substring(1, 2), 16),
+                System.Convert.ToByte(color.Substring(3, 2), 16),
+                System.Convert.ToByte(color.Substring(5, 2), 16)));
+        }
+        
+        var defaultIcon = _iconConverter.GetDefaultIcon();
         return new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255,
-            System.Convert.ToByte(color.Substring(1, 2), 16),
-            System.Convert.ToByte(color.Substring(3, 2), 16),
-            System.Convert.ToByte(color.Substring(5, 2), 16)));
+            System.Convert.ToByte(defaultIcon.Color.Substring(1, 2), 16),
+            System.Convert.ToByte(defaultIcon.Color.Substring(3, 2), 16),
+            System.Convert.ToByte(defaultIcon.Color.Substring(5, 2), 16)));
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language)
@@ -109,8 +120,14 @@ public class WebsiteToLetterConverter : IValueConverter
 
     public object Convert(object value, Type targetType, object parameter, string language)
     {
-        var (_, _, letter) = (ValueTuple<string, string, string>)_iconConverter.Convert(value, targetType, parameter, language);
-        return letter;
+        if (value is string website && !string.IsNullOrEmpty(website))
+        {
+            var domain = _iconConverter.GetDomainFromUrl(website).ToLowerInvariant();
+            var (_, _, letter) = _iconConverter.GetIconForDomain(domain);
+            return letter;
+        }
+        
+        return _iconConverter.GetDefaultIcon().Letter;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language)

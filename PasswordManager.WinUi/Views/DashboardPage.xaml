@@ -108,7 +108,7 @@
             <Border Grid.Column="0" 
                     Background="White"
                     BorderThickness="0,0,1,0"
-                    BorderBrush="#d1d5db">
+                    BorderBrush="#e1e5e9">
                 
                 <ScrollViewer VerticalScrollBarVisibility="Auto" 
                              HorizontalScrollBarVisibility="Disabled">
@@ -155,7 +155,7 @@
 
                         <!-- Separator -->
                         <Rectangle Height="1" 
-                                  Fill="#d1d5db" 
+                                  Fill="#e1e5e9" 
                                   Margin="12,16"/>
 
                         <!-- Settings -->
@@ -189,7 +189,7 @@
             <Border Grid.Column="1" 
                     Background="White"
                     BorderThickness="0,0,1,0"
-                    BorderBrush="#d1d5db">
+                    BorderBrush="#e1e5e9">
                 
                 <Grid>
                     <Grid.RowDefinitions>
@@ -201,7 +201,7 @@
                     <Border Grid.Row="0" 
                            Padding="16,12" 
                            BorderThickness="0,0,0,1"
-                           BorderBrush="#d1d5db">
+                           BorderBrush="#e1e5e9">
                         <TextBlock Text="All Items" 
                                   FontWeight="SemiBold" 
                                   FontSize="14"
@@ -224,7 +224,7 @@
                                 <Border Padding="16,12" 
                                        Background="Transparent"
                                        BorderThickness="0,0,0,1"
-                                       BorderBrush="#d1d5db">
+                                       BorderBrush="#e1e5e9">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="40"/>
