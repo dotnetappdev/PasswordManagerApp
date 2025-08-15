@@ -1,28 +1,155 @@
 ﻿@inherits LayoutComponentBase
+@using MudBlazor
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
 
-<MudThemeProvider />
-<MudPopoverProvider />
+<MudThemeProvider Theme="@_theme" IsDarkMode="false" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<div class="page">
-    <div class="sidebar">
-        <PasswordManager.Web.Components.Layout.NavMenu />
-    </div>
+<MudLayout>
+    <MudAppBar Color="Color.Surface" Fixed="true" Dense="false" Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h6" Style="color: #1a1a1a; font-weight: 600;">
+            <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Small" Style="margin-right: 8px;" />
+            Password Manager
+        </MudText>
+        <MudSpacer />
+        <MudMenu>
+            <ActivatorContent>
+                <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem OnClick="NavigateToProfile">
+                    <MudIcon Icon="@Icons.Material.Filled.Person" />
+                    Profile
+                </MudMenuItem>
+                <MudMenuItem OnClick="NavigateToSettings">
+                    <MudIcon Icon="@Icons.Material.Filled.Settings" />
+                    Settings
+                </MudMenuItem>
+                <MudDivider />
+                <MudMenuItem OnClick="Logout">
+                    <MudIcon Icon="@Icons.Material.Filled.Logout" />
+                    Logout
+                </MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+    </MudAppBar>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+    <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Color="Color.Surface" Style="background-color: #ffffff; border-right: 1px solid #e1e5e9;">
+        <MudDrawerHeader Style="background-color: #ffffff; border-bottom: 1px solid #e1e5e9;">
+            <MudText Typo="Typo.h6" Style="color: #1a1a1a; font-weight: 600;">
+                <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Small" Style="margin-right: 8px;" />
+                Password Manager
+            </MudText>
+        </MudDrawerHeader>
+        <MudNavMenu>
+            <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home" IconColor="Color.Primary">
+                Home
+            </MudNavLink>
+            <MudNavLink Href="/vault" Icon="@Icons.Material.Filled.Security" IconColor="Color.Primary">
+                Vault
+            </MudNavLink>
+            <MudNavLink Href="/passwords" Icon="@Icons.Material.Filled.Password" IconColor="Color.Primary">
+                Passwords
+            </MudNavLink>
+            <MudNavLink Href="/credit-cards" Icon="@Icons.Material.Filled.CreditCard" IconColor="Color.Primary">
+                Credit Cards
+            </MudNavLink>
+            <MudNavLink Href="/secure-notes" Icon="@Icons.Material.Filled.Note" IconColor="Color.Primary">
+                Secure Notes
+            </MudNavLink>
+            <MudNavLink Href="/wifi" Icon="@Icons.Material.Filled.Wifi" IconColor="Color.Primary">
+                Wi-Fi
+            </MudNavLink>
+            <MudDivider />
+            <MudNavLink Href="/categories" Icon="@Icons.Material.Filled.Category" IconColor="Color.Secondary">
+                Categories
+            </MudNavLink>
+            <MudNavLink Href="/collections" Icon="@Icons.Material.Filled.Folder" IconColor="Color.Secondary">
+                Collections
+            </MudNavLink>
+            <MudNavLink Href="/tags" Icon="@Icons.Material.Filled.Tag" IconColor="Color.Secondary">
+                Tags
+            </MudNavLink>
+            <MudDivider />
+            <MudNavLink Href="/import" Icon="@Icons.Material.Filled.Upload" IconColor="Color.Info">
+                Import
+            </MudNavLink>
+            <MudNavLink Href="/export" Icon="@Icons.Material.Filled.Download" IconColor="Color.Info">
+                Export
+            </MudNavLink>
+            <MudSpacer />
+            <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings" IconColor="Color.Warning">
+                Settings
+            </MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
 
-        <article class="content px-4">
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.False" Style="background-color: #f8f9fa; min-height: 100vh; padding-top: 64px;">
             @Body
-        </article>
-    </main>
-</div>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
 
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
-</div>
+@code {
+    private bool _drawerOpen = true;
+    private MudTheme _theme = new()
+    {
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#bb86fc",
+            Secondary = "#03dac6",
+            AppbarBackground = "#1e1e1e",
+            AppbarText = "rgba(255,255,255, 0.87)",
+            Background = "#121212",
+            Surface = "#1e1e1e",
+            DrawerBackground = "#1e1e1e",
+            DrawerText = "rgba(255,255,255, 0.87)",
+            TextPrimary = "rgba(255,255,255, 0.87)",
+            TextSecondary = "rgba(255,255,255, 0.60)",
+            ActionDefault = "#adadb1",
+            Divider = "rgba(255,255,255, 0.12)",
+            DividerLight = "rgba(255,255,255, 0.06)"
+        },
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#0066cc",
+            Secondary = "#10b981",
+            AppbarBackground = "#ffffff",
+            AppbarText = "#1a1a1a",
+            Background = "#f8f9fa",
+            Surface = "#ffffff",
+            DrawerBackground = "#ffffff",
+            DrawerText = "#1a1a1a",
+            TextPrimary = "#1a1a1a",
+            TextSecondary = "#6c757d",
+            ActionDefault = "#6c757d",
+            Divider = "#e1e5e9",
+            DividerLight = "#f1f3f4"
+        }
+    };
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void NavigateToProfile()
+    {
+        Navigation.NavigateTo("/profile");
+    }
+
+    private void NavigateToSettings()
+    {
+        Navigation.NavigateTo("/settings");
+    }
+
+    private void Logout()
+    {
+        // Implement logout logic
+        Navigation.NavigateTo("/");
+    }
+}
