@@ -231,13 +231,32 @@
         try
         {
             isLoading = true;
+            
+            // Load passwords and categories
             passwords = (await PasswordItemService.GetAllAsync()).ToList();
             filteredPasswords = passwords;
-            categories = passwords.Select(p => p.Category?.Name ?? "Uncategorized").Distinct().Where(c => !string.IsNullOrEmpty(c)).ToList();
+            
+            // Get categories with counts - including items without categories
+            var categoryGroups = passwords
+                .GroupBy(p => p.Category?.Name ?? "Uncategorized")
+                .Select(g => new { Name = g.Key, Count = g.Count() })
+                .OrderByDescending(c => c.Count)
+                .ThenBy(c => c.Name)
+                .ToList();
+                
+            categories = categoryGroups.Select(c => c.Name).ToList();
+            
+            // Sort to put "Uncategorized" last if it exists
+            if (categories.Contains("Uncategorized"))
+            {
+                categories.Remove("Uncategorized");
+                categories.Add("Uncategorized");
+            }
         }
         catch (Exception ex)
         {
-            // Handle error
+            // Handle error - could add user notification here
+            Console.WriteLine($"Error loading passwords: {ex.Message}");
         }
         finally
         {
@@ -259,13 +278,46 @@
     private void FilterPasswords()
     {
         filteredPasswords = passwords.Where(p => 
-            (string.IsNullOrEmpty(searchQuery) || 
-             p.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
-             (p.Username?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
-             (p.WebsiteUrl?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)) &&
-            (string.IsNullOrEmpty(selectedCategory) || 
-             (p.Category?.Name ?? "Uncategorized") == selectedCategory)
-        ).ToList();
+        {
+            // If no search query and no category filter, show all
+            if (string.IsNullOrEmpty(searchQuery) && string.IsNullOrEmpty(selectedCategory))
+                return true;
+                
+            // Category filter
+            bool categoryMatch = string.IsNullOrEmpty(selectedCategory) || 
+                                (p.Category?.Name ?? "Uncategorized") == selectedCategory;
+            
+            // Search filter - if no search query, only apply category filter
+            if (string.IsNullOrEmpty(searchQuery))
+                return categoryMatch;
+                
+            // Enhanced search - search across multiple fields
+            var query = searchQuery.ToLower();
+            bool searchMatch = 
+                (p.Title?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (p.Username?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (p.WebsiteUrl?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (p.Description?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (p.Category?.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (p.Tags?.Any(t => t.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false) ?? false);
+                
+            // Also search in domain name for easier website finding
+            if (!searchMatch && !string.IsNullOrEmpty(p.WebsiteUrl))
+            {
+                try
+                {
+                    var uri = new Uri(p.WebsiteUrl.StartsWith("http") ? p.WebsiteUrl : "https://" + p.WebsiteUrl);
+                    var domain = uri.Host.Replace("www.", "");
+                    searchMatch = domain.Contains(query, StringComparison.OrdinalIgnoreCase);
+                }
+                catch
+                {
+                    // If URL parsing fails, ignore and continue with other matches
+                }
+            }
+                
+            return categoryMatch && searchMatch;
+        }).ToList();
     }
 
     private string GetPasswordIcon(PasswordItem password)
@@ -273,18 +325,133 @@
         if (string.IsNullOrEmpty(password.WebsiteUrl))
             return Icons.Material.Filled.Password;
 
-        return password.WebsiteUrl.ToLower() switch
-        {
-            var url when url.Contains("google") => Icons.Material.Filled.Language,
-            var url when url.Contains("facebook") => Icons.Material.Filled.Language,
-            var url when url.Contains("twitter") => Icons.Material.Filled.Language,
-            var url when url.Contains("github") => Icons.Material.Filled.Code,
-            var url when url.Contains("microsoft") => Icons.Material.Filled.Business,
-            var url when url.Contains("amazon") => Icons.Material.Filled.ShoppingCart,
-            var url when url.Contains("bank") => Icons.Material.Filled.AccountBalance,
-            var url when url.Contains("paypal") => Icons.Material.Filled.Payment,
-            _ => Icons.Material.Filled.Language
-        };
+        var url = password.WebsiteUrl.ToLower();
+        
+        // Social Media
+        if (url.Contains("facebook") || url.Contains("fb.com"))
+            return Icons.Material.Filled.Group;
+        if (url.Contains("twitter") || url.Contains("x.com"))
+            return Icons.Material.Filled.Forum;
+        if (url.Contains("instagram") || url.Contains("instagr.am"))
+            return Icons.Material.Filled.CameraAlt;
+        if (url.Contains("linkedin"))
+            return Icons.Material.Filled.Work;
+        if (url.Contains("youtube") || url.Contains("youtu.be"))
+            return Icons.Material.Filled.PlayArrow;
+        if (url.Contains("tiktok"))
+            return Icons.Material.Filled.MusicNote;
+            
+        // Tech Companies
+        if (url.Contains("google") || url.Contains("gmail"))
+            return Icons.Material.Filled.Search;
+        if (url.Contains("microsoft") || url.Contains("outlook") || url.Contains("live.com") || url.Contains("hotmail"))
+            return Icons.Material.Filled.Business;
+        if (url.Contains("apple") || url.Contains("icloud"))
+            return Icons.Material.Filled.Smartphone;
+        if (url.Contains("github"))
+            return Icons.Material.Filled.Code;
+        if (url.Contains("gitlab"))
+            return Icons.Material.Filled.Code;
+        if (url.Contains("stackoverflow"))
+            return Icons.Material.Filled.QuestionAnswer;
+        if (url.Contains("reddit"))
+            return Icons.Material.Filled.Forum;
+        if (url.Contains("discord"))
+            return Icons.Material.Filled.Chat;
+        if (url.Contains("slack"))
+            return Icons.Material.Filled.Work;
+            
+        // E-commerce
+        if (url.Contains("amazon"))
+            return Icons.Material.Filled.ShoppingCart;
+        if (url.Contains("ebay"))
+            return Icons.Material.Filled.ShoppingBag;
+        if (url.Contains("etsy"))
+            return Icons.Material.Filled.Store;
+        if (url.Contains("shopify"))
+            return Icons.Material.Filled.Storefront;
+        if (url.Contains("paypal"))
+            return Icons.Material.Filled.Payment;
+        if (url.Contains("stripe"))
+            return Icons.Material.Filled.CreditCard;
+            
+        // Entertainment
+        if (url.Contains("netflix"))
+            return Icons.Material.Filled.Movie;
+        if (url.Contains("spotify"))
+            return Icons.Material.Filled.MusicNote;
+        if (url.Contains("twitch"))
+            return Icons.Material.Filled.Videocam;
+        if (url.Contains("steam"))
+            return Icons.Material.Filled.Games;
+        if (url.Contains("epic") && url.Contains("games"))
+            return Icons.Material.Filled.Games;
+        if (url.Contains("hulu") || url.Contains("disney") || url.Contains("hbo"))
+            return Icons.Material.Filled.Tv;
+            
+        // Productivity
+        if (url.Contains("dropbox"))
+            return Icons.Material.Filled.Cloud;
+        if (url.Contains("onedrive") || url.Contains("sharepoint"))
+            return Icons.Material.Filled.CloudUpload;
+        if (url.Contains("googledrive") || url.Contains("drive.google"))
+            return Icons.Material.Filled.CloudUpload;
+        if (url.Contains("notion"))
+            return Icons.Material.Filled.Note;
+        if (url.Contains("evernote"))
+            return Icons.Material.Filled.NoteAdd;
+        if (url.Contains("trello"))
+            return Icons.Material.Filled.Dashboard;
+        if (url.Contains("asana"))
+            return Icons.Material.Filled.Assignment;
+        if (url.Contains("jira") || url.Contains("atlassian"))
+            return Icons.Material.Filled.BugReport;
+            
+        // Financial
+        if (url.Contains("bank") || url.Contains("chase") || url.Contains("wells") || 
+            url.Contains("bofa") || url.Contains("citi") || url.Contains("usbank"))
+            return Icons.Material.Filled.AccountBalance;
+        if (url.Contains("credit") && url.Contains("card"))
+            return Icons.Material.Filled.CreditCard;
+        if (url.Contains("mint") || url.Contains("ynab") || url.Contains("quicken"))
+            return Icons.Material.Filled.AccountBalanceWallet;
+        if (url.Contains("robinhood") || url.Contains("etrade") || url.Contains("schwab"))
+            return Icons.Material.Filled.TrendingUp;
+            
+        // Cloud Services & DevOps
+        if (url.Contains("aws") || url.Contains("amazon") && url.Contains("web"))
+            return Icons.Material.Filled.Cloud;
+        if (url.Contains("azure"))
+            return Icons.Material.Filled.CloudCircle;
+        if (url.Contains("gcp") || url.Contains("cloud.google"))
+            return Icons.Material.Filled.CloudQueue;
+        if (url.Contains("heroku"))
+            return Icons.Material.Filled.CloudUpload;
+        if (url.Contains("vercel") || url.Contains("netlify"))
+            return Icons.Material.Filled.Language;
+        if (url.Contains("docker"))
+            return Icons.Material.Filled.Inventory;
+            
+        // Communication
+        if (url.Contains("zoom"))
+            return Icons.Material.Filled.VideoCall;
+        if (url.Contains("teams") || url.Contains("skype"))
+            return Icons.Material.Filled.Videocam;
+        if (url.Contains("whatsapp"))
+            return Icons.Material.Filled.Message;
+        if (url.Contains("telegram"))
+            return Icons.Material.Filled.Send;
+        if (url.Contains("signal"))
+            return Icons.Material.Filled.Security;
+            
+        // Email Providers
+        if (url.Contains("yahoo"))
+            return Icons.Material.Filled.Mail;
+        if (url.Contains("protonmail"))
+            return Icons.Material.Filled.Security;
+            
+        // General website icon
+        return Icons.Material.Filled.Language;
     }
 
     private async Task ViewPassword(PasswordItem password)
