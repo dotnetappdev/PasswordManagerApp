@@ -2,6 +2,9 @@ using System.Collections.ObjectModel;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace PasswordManager.WinUi.ViewModels;
 
@@ -176,11 +179,50 @@ public class DashboardViewModel : BaseViewModel
         }
     }
 
-    private void OnNavigationChanged()
+    private async void OnNavigationChanged()
     {
         // Clear selection when navigation changes
         SelectedPasswordItem = null;
         IsEditing = false;
+        
+        // Apply filter based on selected navigation
+        await ApplyNavigationFilterAsync();
+    }
+
+    private async Task ApplyNavigationFilterAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            
+            var allPasswordItems = await _passwordItemService.GetAllAsync();
+            var activeItems = allPasswordItems.Where(i => !i.IsDeleted && !i.IsArchived);
+
+            IEnumerable<PasswordItem> filteredItems = _selectedNavItem switch
+            {
+                "Favorites" => activeItems.Where(i => i.IsFavorite),
+                "Categories" => activeItems.Where(i => !string.IsNullOrEmpty(i.Category)),
+                "AllItems" or _ => activeItems
+            };
+
+            // Update the collection
+            AllPasswordItems.Clear();
+            foreach (var item in filteredItems.ToList())
+            {
+                AllPasswordItems.Add(item);
+            }
+
+            StatusText = $"Showing {AllPasswordItems.Count} items";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Filter error: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"Navigation filter error: {ex}");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     public void SelectPasswordItem(PasswordItem item)
@@ -197,5 +239,50 @@ public class DashboardViewModel : BaseViewModel
     public void StopEditing()
     {
         IsEditing = false;
+    }
+
+    public async Task FilterPasswordItemsAsync(string searchText)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                // If search is empty, reload all items
+                await LoadDashboardDataAsync();
+                return;
+            }
+
+            // Get all password items and filter them
+            var allPasswordItems = await _passwordItemService.GetAllAsync();
+            var activeItems = allPasswordItems.Where(i => !i.IsDeleted && !i.IsArchived);
+            
+            // Filter items based on search text (case-insensitive)
+            var filteredItems = activeItems.Where(item =>
+                (item.Title?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (item.Username?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (item.Website?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (item.Notes?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+            ).ToList();
+
+            // Update the collection
+            AllPasswordItems.Clear();
+            foreach (var item in filteredItems)
+            {
+                AllPasswordItems.Add(item);
+            }
+
+            // Clear selection if current item is not in filtered results
+            if (SelectedPasswordItem != null && !filteredItems.Contains(SelectedPasswordItem))
+            {
+                SelectedPasswordItem = null;
+            }
+
+            StatusText = $"Found {filteredItems.Count} matches";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Search error: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"Search error: {ex}");
+        }
     }
 }

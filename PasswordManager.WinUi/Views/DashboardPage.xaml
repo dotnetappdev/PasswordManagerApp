@@ -1,7 +1,13 @@
 <Page x:Class="PasswordManager.WinUi.Views.DashboardPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:converters="using:PasswordManager.WinUi.Converters"
       Background="{StaticResource ModernBackgroundBrush}">
+
+    <Page.Resources>
+        <converters:WebsiteToColorConverter x:Key="WebsiteToColorConverter"/>
+        <converters:WebsiteToLetterConverter x:Key="WebsiteToLetterConverter"/>
+    </Page.Resources>
 
     <!-- Top Toolbar -->
     <Grid>
@@ -102,7 +108,7 @@
             <Border Grid.Column="0" 
                     Background="White"
                     BorderThickness="0,0,1,0"
-                    BorderBrush="#d1d5db">
+                    BorderBrush="#e1e5e9">
                 
                 <ScrollViewer VerticalScrollBarVisibility="Auto" 
                              HorizontalScrollBarVisibility="Disabled">
@@ -112,12 +118,7 @@
                         <Button x:Name="AllItemsNavButton"
                                Tag="AllItems"
                                Click="NavigationButton_Click"
-                               HorizontalAlignment="Stretch"
-                               HorizontalContentAlignment="Left"
-                               Background="Transparent"
-                               BorderThickness="0"
-                               Padding="12,10"
-                               CornerRadius="6">
+                               Style="{StaticResource ModernNavigationButtonStyle}">
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <FontIcon Glyph="&#xE8F1;" FontSize="16"/>
@@ -130,12 +131,7 @@
                         <Button x:Name="FavoritesNavButton"
                                Tag="Favorites"
                                Click="NavigationButton_Click"
-                               HorizontalAlignment="Stretch"
-                               HorizontalContentAlignment="Left"
-                               Background="Transparent"
-                               BorderThickness="0"
-                               Padding="12,10"
-                               CornerRadius="6">
+                               Style="{StaticResource ModernNavigationButtonStyle}">
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <FontIcon Glyph="&#xE734;" FontSize="16"/>
@@ -148,12 +144,7 @@
                         <Button x:Name="CategoriesNavButton"
                                Tag="Categories" 
                                Click="NavigationButton_Click"
-                               HorizontalAlignment="Stretch"
-                               HorizontalContentAlignment="Left"
-                               Background="Transparent"
-                               BorderThickness="0"
-                               Padding="12,10"
-                               CornerRadius="6">
+                               Style="{StaticResource ModernNavigationButtonStyle}">
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <FontIcon Glyph="&#xE8FD;" FontSize="16"/>
@@ -164,18 +155,13 @@
 
                         <!-- Separator -->
                         <Rectangle Height="1" 
-                                  Fill="#d1d5db" 
+                                  Fill="#e1e5e9" 
                                   Margin="12,16"/>
 
                         <!-- Settings -->
                         <Button x:Name="SettingsNavButton"
                                Click="SettingsButton_Click"
-                               HorizontalAlignment="Stretch"
-                               HorizontalContentAlignment="Left"
-                               Background="Transparent"
-                               BorderThickness="0"
-                               Padding="12,10"
-                               CornerRadius="6">
+                               Style="{StaticResource ModernNavigationButtonStyle}">
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <FontIcon Glyph="&#xE713;" FontSize="16"/>
@@ -187,12 +173,7 @@
                         <!-- Import -->
                         <Button x:Name="ImportNavButton"
                                Click="ImportButton_Click"
-                               HorizontalAlignment="Stretch"
-                               HorizontalContentAlignment="Left"
-                               Background="Transparent"
-                               BorderThickness="0"
-                               Padding="12,10"
-                               CornerRadius="6">
+                               Style="{StaticResource ModernNavigationButtonStyle}">
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <FontIcon Glyph="&#xE8B5;" FontSize="16"/>
@@ -208,7 +189,7 @@
             <Border Grid.Column="1" 
                     Background="White"
                     BorderThickness="0,0,1,0"
-                    BorderBrush="#d1d5db">
+                    BorderBrush="#e1e5e9">
                 
                 <Grid>
                     <Grid.RowDefinitions>
@@ -220,7 +201,7 @@
                     <Border Grid.Row="0" 
                            Padding="16,12" 
                            BorderThickness="0,0,0,1"
-                           BorderBrush="#d1d5db">
+                           BorderBrush="#e1e5e9">
                         <TextBlock Text="All Items" 
                                   FontWeight="SemiBold" 
                                   FontSize="14"
@@ -243,7 +224,7 @@
                                 <Border Padding="16,12" 
                                        Background="Transparent"
                                        BorderThickness="0,0,0,1"
-                                       BorderBrush="#d1d5db">
+                                       BorderBrush="#e1e5e9">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="40"/>
@@ -256,11 +237,11 @@
                                                Width="32" 
                                                Height="32"
                                                CornerRadius="6"
-                                               Background="#ec4899"
+                                               Background="{Binding Website, Converter={StaticResource WebsiteToColorConverter}}"
                                                VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Title}" 
+                                            <TextBlock Text="{Binding Website, Converter={StaticResource WebsiteToLetterConverter}}" 
                                                       FontWeight="Bold" 
-                                                      FontSize="12"
+                                                      FontSize="14"
                                                       Foreground="White"
                                                       HorizontalAlignment="Center"
                                                       VerticalAlignment="Center"/>
@@ -286,8 +267,8 @@
                                                  Glyph="&#xE734;" 
                                                  FontSize="14"
                                                  Foreground="#f59e0b"
-                                                 VerticalAlignment="Center"/>
-                                                 <!-- TODO: Add visibility binding for IsFavorite -->
+                                                 VerticalAlignment="Center"
+                                                 Visibility="{Binding IsFavorite, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

@@ -3,9 +3,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- Enhanced Modern Color Palette - 1Password Style -->
-    <Color x:Key="ModernPrimaryColor">#3b82f6</Color>
-    <Color x:Key="ModernPrimaryLightColor">#60a5fa</Color>
-    <Color x:Key="ModernPrimaryDarkColor">#2563eb</Color>
+    <Color x:Key="ModernPrimaryColor">#0066cc</Color>
+    <Color x:Key="ModernPrimaryLightColor">#3b82f6</Color>
+    <Color x:Key="ModernPrimaryDarkColor">#0047ab</Color>
     <Color x:Key="ModernAccentColor">#ec4899</Color>
     <Color x:Key="ModernAccentLightColor">#f472b6</Color>
     <Color x:Key="ModernSuccessColor">#10b981</Color>
@@ -13,11 +13,11 @@
     <Color x:Key="ModernErrorColor">#ef4444</Color>
 
     <!-- Enhanced Background Colors - 1Password Style -->
-    <Color x:Key="ModernBackgroundColor">#f5f5f5</Color>
+    <Color x:Key="ModernBackgroundColor">#f8fafc</Color>
     <Color x:Key="ModernSurfaceColor">#ffffff</Color>
     <Color x:Key="ModernCardColor">#ffffff</Color>
     <Color x:Key="ModernElevatedSurfaceColor">#ffffff</Color>
-    <Color x:Key="ModernBorderColor">#d1d5db</Color>
+    <Color x:Key="ModernBorderColor">#e1e5e9</Color>
 
     <!-- Dark theme variants -->
     <Color x:Key="ModernDarkBackgroundColor">#0F172A</Color>
@@ -312,6 +312,52 @@
         <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
         <Setter Property="FontWeight" Value="Normal"/>
         <Setter Property="FontSize" Value="14"/>
+    </Style>
+
+    <!-- Modern Navigation Button Style for Sidebar -->
+    <Style x:Key="ModernNavigationButtonStyle" TargetType="Button">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="RootBorder"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter x:Name="ContentPresenter"
+                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal"/>
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="RootBorder.Background" Value="#f8fcff"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="RootBorder.Background" Value="#e3f2fd"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="ContentPresenter.Foreground" Value="{StaticResource ModernTextTertiaryBrush}"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
 </ResourceDictionary>
