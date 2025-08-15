@@ -160,4 +160,5 @@ public partial class App : Application
     private Window? m_window;
 
     public MainWindow? MainWindow => m_window as MainWindow;
+    public IServiceProvider Services => _host.Services;
 }

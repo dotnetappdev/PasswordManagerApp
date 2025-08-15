@@ -198,4 +198,49 @@ public class DashboardViewModel : BaseViewModel
     {
         IsEditing = false;
     }
+
+    public async Task FilterPasswordItemsAsync(string searchText)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                // If search is empty, reload all items
+                await LoadDashboardDataAsync();
+                return;
+            }
+
+            // Get all password items and filter them
+            var allPasswordItems = await _passwordItemService.GetAllAsync();
+            var activeItems = allPasswordItems.Where(i => !i.IsDeleted && !i.IsArchived);
+            
+            // Filter items based on search text (case-insensitive)
+            var filteredItems = activeItems.Where(item =>
+                (item.Title?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (item.Username?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (item.Website?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (item.Notes?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+            ).ToList();
+
+            // Update the collection
+            AllPasswordItems.Clear();
+            foreach (var item in filteredItems)
+            {
+                AllPasswordItems.Add(item);
+            }
+
+            // Clear selection if current item is not in filtered results
+            if (SelectedPasswordItem != null && !filteredItems.Contains(SelectedPasswordItem))
+            {
+                SelectedPasswordItem = null;
+            }
+
+            StatusText = $"Found {filteredItems.Count} matches";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Search error: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"Search error: {ex}");
+        }
+    }
 }
