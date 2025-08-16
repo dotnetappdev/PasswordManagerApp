@@ -15,7 +15,7 @@ public sealed partial class SettingsPage : Page
 
     public SettingsPage()
     {
-        this.InitializeComponent();
+        InitializeComponent();
     }
 
     protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
@@ -27,7 +27,7 @@ public sealed partial class SettingsPage : Page
             _serviceProvider = serviceProvider;
             _authService = serviceProvider.GetRequiredService<IAuthService>();
             _viewModel = new SettingsViewModel(serviceProvider);
-            this.DataContext = _viewModel;
+            DataContext = _viewModel;
         }
     }
 
@@ -96,7 +96,7 @@ public sealed partial class SettingsPage : Page
                 Title = "Export Result",
                 Content = message,
                 CloseButtonText = "OK",
-                XamlRoot = this.XamlRoot
+                XamlRoot = XamlRoot
             };
             
             await dialog.ShowAsync();
@@ -120,7 +120,7 @@ public sealed partial class SettingsPage : Page
             Title = "Choose Export Folder",
             Content = "This feature would open a folder picker to choose the export location.",
             CloseButtonText = "OK",
-            XamlRoot = this.XamlRoot
+            XamlRoot = XamlRoot
         };
         
         await dialog.ShowAsync();
@@ -133,7 +133,7 @@ public sealed partial class SettingsPage : Page
             Title = "Database Configuration",
             Content = "Database configuration UI would be implemented here.",
             CloseButtonText = "OK",
-            XamlRoot = this.XamlRoot
+            XamlRoot = XamlRoot
         };
         
         await dialog.ShowAsync();
@@ -148,7 +148,7 @@ public sealed partial class SettingsPage : Page
             PrimaryButtonText = "Yes, Delete Everything",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,
-            XamlRoot = this.XamlRoot
+            XamlRoot = XamlRoot
         };
 
         var result = await confirmDialog.ShowAsync();
@@ -162,7 +162,7 @@ public sealed partial class SettingsPage : Page
                 Title = "Clear Data Result",
                 Content = message,
                 CloseButtonText = "OK",
-                XamlRoot = this.XamlRoot
+                XamlRoot = XamlRoot
             };
             
             await resultDialog.ShowAsync();
@@ -221,7 +221,7 @@ public sealed partial class SettingsPage : Page
             Content = stackPanel,
             PrimaryButtonText = "Change Password",
             CloseButtonText = "Cancel",
-            XamlRoot = this.XamlRoot
+            XamlRoot = XamlRoot
         };
 
         var result = await dialog.ShowAsync();
@@ -277,7 +277,7 @@ public sealed partial class SettingsPage : Page
                 Title = success ? "Success" : "Error",
                 Content = message,
                 CloseButtonText = "OK",
-                XamlRoot = this.XamlRoot
+                XamlRoot = XamlRoot
             };
             
             await resultDialog.ShowAsync();
@@ -316,7 +316,7 @@ public sealed partial class SettingsPage : Page
             Title = "Error",
             Content = message,
             CloseButtonText = "OK",
-            XamlRoot = this.XamlRoot
+            XamlRoot = XamlRoot
         };
         await errorDialog.ShowAsync();
     }
