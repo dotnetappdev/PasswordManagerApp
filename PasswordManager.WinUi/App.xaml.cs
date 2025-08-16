@@ -80,13 +80,13 @@ public partial class App : Application
             {
                 var theme = savedTheme switch
                 {
-                    "Light" => Services.AppTheme.Light,
-                    "Dark" => Services.AppTheme.Dark,
-                    "System" => Services.AppTheme.System,
-                    _ => Services.AppTheme.System
+                    "Light" => PasswordManager.WinUi.Services.AppTheme.Light,
+                    "Dark" => PasswordManager.WinUi.Services.AppTheme.Dark,
+                    "System" => PasswordManager.WinUi.Services.AppTheme.System,
+                    _ => PasswordManager.WinUi.Services.AppTheme.System
                 };
                 
-                Services.ThemeHelper.SetTheme(theme);
+                PasswordManager.WinUi.Services.ThemeHelper.SetTheme(theme);
             }
         }
         catch (Exception ex)

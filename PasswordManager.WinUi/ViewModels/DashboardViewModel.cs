@@ -201,7 +201,7 @@ public class DashboardViewModel : BaseViewModel
             IEnumerable<PasswordItem> filteredItems = _selectedNavItem switch
             {
                 "Favorites" => activeItems.Where(i => i.IsFavorite),
-                "Categories" => activeItems.Where(i => !string.IsNullOrEmpty(i.Category)),
+                "Categories" => activeItems.Where(i => i.Category != null),
                 "AllItems" or _ => activeItems
             };
 
@@ -261,7 +261,8 @@ public class DashboardViewModel : BaseViewModel
                 (item.Title?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                 (item.Username?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                 (item.Website?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (item.Notes?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+                (item.PasskeyItem?.Notes?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (item.SecureNoteItem?.Content?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)
             ).ToList();
 
             // Update the collection

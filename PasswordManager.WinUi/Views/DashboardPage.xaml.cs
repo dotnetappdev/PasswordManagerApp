@@ -41,7 +41,7 @@ public sealed partial class DashboardPage : Page
         {
             // Create service provider from main window
             var mainWindow = GetMainWindow();
-            if (mainWindow?.XamlRoot?.Content is FrameworkElement element)
+            if (mainWindow?.Content is FrameworkElement element)
             {
                 var serviceProvider = (element.DataContext as IServiceProvider) ?? 
                     ((App.Current as App)?.Services);
@@ -132,7 +132,7 @@ public sealed partial class DashboardPage : Page
             await Task.Delay(300);
             
             // Check if the search text is still the same (user might have continued typing)
-            if (sender.Text == args.QueryText || args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
                 await _viewModel.FilterPasswordItemsAsync(sender.Text);
             }
@@ -155,7 +155,7 @@ public sealed partial class DashboardPage : Page
             {
                 // Create service provider from main window
                 var mainWindow = GetMainWindow();
-                if (mainWindow?.XamlRoot?.Content is FrameworkElement element)
+                if (mainWindow?.Content is FrameworkElement element)
                 {
                     var serviceProvider = (element.DataContext as IServiceProvider) ?? 
                         ((App.Current as App)?.Services);
