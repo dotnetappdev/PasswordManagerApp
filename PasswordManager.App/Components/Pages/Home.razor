@@ -456,24 +456,41 @@
         </div>
 
         <div class="sidebar-navigation">
-            <!-- Collections Section -->
+            <!-- Main Navigation Items -->
+            <div class="nav-section nav-main">
+                <div class="nav-item @(selectedCategory == "all" ? "active" : "")" @onclick="@(async () => await SelectCategory("all"))">>
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">All Items</span>
+                    <span class="item-count">@totalItems</span>
+                </div>
+                <div class="nav-item @(selectedCategory == "favorites" ? "active" : "")" @onclick="@(async () => await SelectCategory("favorites"))">>
+                    <span class="nav-icon">⭐</span>
+                    <span class="nav-text">Favorites</span>
+                </div>
+                <div class="nav-item @(selectedCategory == "watchtower" ? "active" : "")" @onclick="@(async () => await SelectCategory("watchtower"))">>
+                    <span class="nav-icon">🛡️</span>
+                    <span class="nav-text">Watchtower</span>
+                </div>
+            </div>
+
+            <!-- Vaults Section -->
             <div class="nav-section">
-                <h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                    <div style="display:flex;align-items:center;">
-                        <span class="section-toggle" @onclick="ToggleCollectionsExpanded" style="cursor:pointer;margin-right:5px;">
-                            @(isCollectionsExpanded ? "▼" : "►")
-                        </span>
-                        <span>Collections</span>
-                    </div>
-                    <button class="add-collection-btn" style="margin-left:4px;background:none;border:none;font-size:1rem;cursor:pointer;" @onclick="ShowAddCollectionModal">＋</button>
+                <h3 class="nav-section-header">
+                    <span class="section-toggle" @onclick="ToggleCollectionsExpanded">
+                        @(isCollectionsExpanded ? "▼" : "►")
+                    </span>
+                    <span class="section-title">VAULTS</span>
+                    <button class="add-btn" @onclick="ShowAddCollectionModal" title="Add Vault">+</button>
                 </h3>
                 @if (isCollectionsExpanded)
                 {
                     <div class="nav-items">
                         @foreach (var rootCollection in GetRootCollections())
                         {
-                            <div style="margin-bottom: 10px;">
-                                @RenderCollectionTree(rootCollection)
+                            <div class="nav-item collection-item @(selectedCategory == rootCollection.Name ? "active" : "")" 
+                                 @onclick="@(async () => await SelectCategory(rootCollection.Name))">>
+                                <span class="nav-icon">🏢</span>
+                                <span class="nav-text">@rootCollection.Name</span>
                             </div>
                         }
                     </div>
@@ -482,14 +499,12 @@
 
             <!-- Tags Section -->
             <div class="nav-section">
-                <h3 style="display:flex;align-items:center;justify-content:space-between;">
-                    <div style="display:flex;align-items:center;">
-                        <span class="section-toggle" @onclick="ToggleTagsExpanded" style="cursor:pointer;margin-right:5px;">
-                            @(isTagsExpanded ? "▼" : "►")
-                        </span>
-                        <span>Tags</span>
-                    </div>
-                    <button class="add-tag-btn" style="margin-left:4px;background:none;border:none;font-size:1rem;cursor:pointer;" @onclick="ShowAddTagModal">＋</button>
+                <h3 class="nav-section-header">
+                    <span class="section-toggle" @onclick="ToggleTagsExpanded">
+                        @(isTagsExpanded ? "▼" : "►")
+                    </span>
+                    <span class="section-title">TAGS</span>
+                    <button class="add-btn" @onclick="ShowAddTagModal" title="Add Tag">+</button>
                 </h3>
                 @if (isTagsExpanded)
                 {
@@ -497,19 +512,25 @@
                         @foreach (var tag in tags)
                         {
                             <div class="nav-item tag-item @(selectedTag == tag.Name ? "active" : "")" 
-                                 @onclick="() => SelectTag(tag.Name)"
-                                 @oncontextmenu:preventDefault="true"
-                                 @oncontextmenu="() => ShowEditTagModal(tag)">
+                                 @onclick="() => SelectTag(tag.Name)">
                                 <span class="tag-color" style="background-color: @tag.Color"></span>
                                 <span class="nav-text">@tag.Name</span>
-                                <div class="tag-actions">
-                                    <button class="tag-edit-btn" style="border:none;" @onclick:stopPropagation="true" @onclick="() => ShowEditTagModal(tag)">✏️</button>
-                                    <button class="tag-delete-btn" style="border:none;" @onclick:stopPropagation="true" @onclick="() => DeleteTag(tag)">🗑️</button>
-                                </div>
                             </div>
                         }
                     </div>
                 }
+            </div>
+
+            <!-- Bottom Navigation -->
+            <div class="nav-section nav-bottom">
+                <div class="nav-item @(selectedCategory == "archive" ? "active" : "")" @onclick="@(async () => await SelectCategory("archive"))">>
+                    <span class="nav-icon">📁</span>
+                    <span class="nav-text">Archive</span>
+                </div>
+                <div class="nav-item @(selectedCategory == "recently-deleted" ? "active" : "")" @onclick="@(async () => await SelectCategory("recently-deleted"))">>
+                    <span class="nav-icon">🗑️</span>
+                    <span class="nav-text">Recently Deleted</span>
+                </div>
             </div>
         </div>
     </div>
@@ -1758,6 +1779,20 @@ private void OnLengthChanged(ChangeEventArgs e)
                     case "wifi":
                         query = query.Where(i => i.Type == ItemType.WiFi);
                         break;
+                    case "favorites":
+                        query = query.Where(i => i.IsFavorite == true);
+                        break;
+                    case "watchtower":
+                        // For Watchtower, show items that might need security attention
+                        // This is a placeholder - you can implement actual security checks
+                        query = query.Where(i => i.Type == ItemType.Login && i.LoginItem != null);
+                        break;
+                    case "archive":
+                        query = query.Where(i => i.IsArchived == true);
+                        break;
+                    case "recently-deleted":
+                        query = query.Where(i => i.IsDeleted == true);
+                        break;
                 }
             }
         }
@@ -1797,6 +1832,10 @@ private void OnLengthChanged(ChangeEventArgs e)
             "cards" => "Credit Cards", 
             "notes" => "Secure Notes",
             "wifi" => "WiFi",
+            "favorites" => "Favorites",
+            "watchtower" => "Watchtower",
+            "archive" => "Archive",
+            "recently-deleted" => "Recently Deleted",
             _ when !string.IsNullOrEmpty(selectedTag) => $"Tagged: {selectedTag}",
             _ => selectedCategory ?? "All Items"
         };
