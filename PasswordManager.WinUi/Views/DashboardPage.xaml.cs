@@ -20,7 +20,7 @@ public sealed partial class DashboardPage : Page
 
     public DashboardPage()
     {
-        this.InitializeComponent();
+        InitializeComponent();
     }
 
     protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
@@ -31,7 +31,7 @@ public sealed partial class DashboardPage : Page
         {
             _serviceProvider = serviceProvider;
             _viewModel = new DashboardViewModel(serviceProvider);
-            this.DataContext = _viewModel;
+            DataContext = _viewModel;
         }
     }
 
