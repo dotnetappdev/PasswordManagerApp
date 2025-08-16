@@ -6,8 +6,8 @@
       Background="{StaticResource ModernBackgroundBrush}">
 
     <Page.Resources>
-    <converters:WebsiteUrlToColorConverter x:Key="WebsiteToColorConverter"/>
-    <converters:WebsiteUrlToLetterConverter x:Key="WebsiteToLetterConverter"/>
+    <converters:WebsiteToColorConverter x:Key="WebsiteToColorConverter"/>
+    <converters:WebsiteToLetterConverter x:Key="WebsiteToLetterConverter"/>
     </Page.Resources>
 
     <!-- Top Toolbar -->
