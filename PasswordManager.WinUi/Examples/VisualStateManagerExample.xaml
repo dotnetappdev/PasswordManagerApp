@@ -158,25 +158,15 @@ public sealed partial class VisualStateExample : Page
 -->
 
 <!-- 
-WPF vs WinUI 3 Comparison:
+WinUI 3 Supported Patterns:
 
-❌ WPF Style (NOT supported in WinUI):
-<Style TargetType="Button">
-    <Style.Triggers>
-        <DataTrigger Binding="{Binding IsLoading}" Value="True">
-            <Setter Property="IsEnabled" Value="False"/>
-            <Setter Property="Content" Value="Loading..."/>
-        </DataTrigger>
-        <DataTrigger Binding="{Binding HasError}" Value="True">
-            <Setter Property="Background" Value="Red"/>
-        </DataTrigger>
-    </Style.Triggers>
-</Style>
-
-✅ WinUI 3 Alternative (Supported):
+✅ WinUI 3 Recommended Approaches:
 1. Value Converters: {Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}
 2. VisualStateManager: GoToState(this, "LoadingState", true)
 3. Property Binding: IsEnabled="{Binding IsButtonEnabled}"
 4. Computed Properties in ViewModels
+
+Note: WPF-style triggers (Style.Triggers, DataTrigger, EventTrigger) are not supported in WinUI 3.
+Use the above patterns instead for dynamic UI behavior.
 
 -->
