@@ -77,18 +77,66 @@ public sealed partial class MainWindow : Window
         
         Type pageType = pageTag switch
         {
-            "Home" => typeof(Views.DashboardPage),
-            "Passwords" => typeof(Views.PasswordItemsPage),
+            "AllItems" => typeof(Views.PasswordItemsPage),
+            "Favorites" => typeof(Views.PasswordItemsPage), // Filter for favorites
+            "LoginCategory" => typeof(Views.PasswordItemsPage), // Filter for login items
+            "CreditCardCategory" => typeof(Views.PasswordItemsPage), // Filter for credit cards
+            "SecureNotesCategory" => typeof(Views.PasswordItemsPage), // Filter for secure notes
+            "WiFiCategory" => typeof(Views.PasswordItemsPage), // Filter for WiFi items
+            "PasskeysCategory" => typeof(Views.PasswordItemsPage), // Filter for passkeys
             "Categories" => typeof(Views.CategoriesPage),
+            "SecurityDashboard" => typeof(Views.DashboardPage), // Could create security dashboard
+            "Archive" => typeof(Views.PasswordItemsPage), // Filter for archived items
+            "RecentlyDeleted" => typeof(Views.PasswordItemsPage), // Filter for deleted items
             "Import" => typeof(Views.ImportPage),
             "Settings" => typeof(Views.SettingsPage),
-            "About" => typeof(Views.DashboardPage), // Could create an About page later
+            "Home" => typeof(Views.DashboardPage),
+            "Passwords" => typeof(Views.PasswordItemsPage),
             "Login" => typeof(Views.LoginPage),
             _ => typeof(Views.DashboardPage)
         };
 
         ContentFrame.Navigate(pageType, _serviceProvider);
+        
+        // Pass filter parameters for category-specific views
+        PassFilterToPage(pageTag);
     }
+    
+    private void PassFilterToPage(string pageTag)
+    {
+        // If we're navigating to PasswordItemsPage with a filter, apply the filter
+        if (ContentFrame.Content is Views.PasswordItemsPage passwordsPage)
+        {
+            // This would need to be implemented in the PasswordItemsPage to accept filter parameters
+            // For now, we'll handle this through a public method in the page or its ViewModel
+            switch (pageTag)
+            {
+                case "Favorites":
+                    // Apply favorites filter
+                    break;
+                case "LoginCategory":
+                    // Apply login items filter
+                    break;
+                case "CreditCardCategory":
+                    // Apply credit card filter
+                    break;
+                case "SecureNotesCategory":
+                    // Apply secure notes filter
+                    break;
+                case "WiFiCategory":
+                    // Apply WiFi items filter
+                    break;
+                case "PasskeysCategory":
+                    // Apply passkeys filter
+                    break;
+                case "Archive":
+                    // Apply archived items filter
+                    break;
+                case "RecentlyDeleted":
+                    // Apply recently deleted filter
+                    break;
+            }
+        }
 
     private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
     {
@@ -148,8 +196,8 @@ public sealed partial class MainWindow : Window
     {
         _isAuthenticated = true;
         SetAuthenticationState(true);
-        MainNavigationView.SelectedItem = HomeNavItem;
-        NavigateToPage("Home");
+        MainNavigationView.SelectedItem = AllItemsNavItem;
+        NavigateToPage("AllItems");
     }
 
     // Public method to handle logout

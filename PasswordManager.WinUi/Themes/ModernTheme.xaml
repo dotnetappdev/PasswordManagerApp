@@ -299,19 +299,106 @@
         <Setter Property="IsBackButtonVisible"
                 Value="Collapsed"/>
         <Setter Property="OpenPaneLength"
-                Value="280"/>
+                Value="320"/>
         <Setter Property="CompactModeThresholdWidth"
                 Value="640"/>
         <Setter Property="ExpandedModeThresholdWidth"
                 Value="1028"/>
+        <Setter Property="PaneDisplayMode"
+                Value="LeftMinimal"/>
     </Style>
 
-    <!-- NavigationViewItem Text Style -->
+    <!-- Enhanced NavigationViewItem Style -->
     <Style x:Key="ModernNavigationViewItemStyle"
            TargetType="NavigationViewItem">
         <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
         <Setter Property="FontWeight" Value="Normal"/>
         <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Margin" Value="4,2"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="NavigationViewItem">
+                    <Border x:Name="LayoutRoot"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Margin="{TemplateBinding Margin}">
+                        <Grid>
+                            <Border x:Name="SelectionIndicator"
+                                    Width="3"
+                                    HorizontalAlignment="Left"
+                                    Background="{StaticResource ModernPrimaryBrush}"
+                                    CornerRadius="0,2,2,0"
+                                    Opacity="0"/>
+                            
+                            <Grid x:Name="ContentGrid"
+                                  Margin="16,8,16,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Icon -->
+                                <ContentPresenter x:Name="Icon"
+                                                Grid.Column="0"
+                                                Content="{TemplateBinding Icon}"
+                                                Margin="0,0,12,0"
+                                                VerticalAlignment="Center"/>
+                                
+                                <!-- Content -->
+                                <ContentPresenter x:Name="ContentPresenter"
+                                                Grid.Column="1"
+                                                Content="{TemplateBinding Content}"
+                                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                VerticalAlignment="Center"
+                                                HorizontalAlignment="Left"/>
+                                
+                                <!-- Expand/Collapse Chevron -->
+                                <FontIcon x:Name="ExpandCollapseChevron"
+                                        Grid.Column="2"
+                                        FontSize="12"
+                                        Glyph="&#xE76C;"
+                                        Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                        Visibility="Collapsed"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"/>
+                            </Grid>
+                        </Grid>
+                        
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal"/>
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="LayoutRoot.Background" Value="#f8fcff"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="LayoutRoot.Background" Value="#e3f2fd"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Selected">
+                                    <VisualState.Setters>
+                                        <Setter Target="LayoutRoot.Background" Value="#e0f2fe"/>
+                                        <Setter Target="SelectionIndicator.Opacity" Value="1"/>
+                                        <Setter Target="ContentPresenter.Foreground" Value="{StaticResource ModernPrimaryBrush}"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="PointerOverSelected">
+                                    <VisualState.Setters>
+                                        <Setter Target="LayoutRoot.Background" Value="#d0ebfc"/>
+                                        <Setter Target="SelectionIndicator.Opacity" Value="1"/>
+                                        <Setter Target="ContentPresenter.Foreground" Value="{StaticResource ModernPrimaryBrush}"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- Modern Navigation Button Style for Sidebar -->
