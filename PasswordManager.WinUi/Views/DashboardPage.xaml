@@ -8,6 +8,7 @@
     <Page.Resources>
         <converters:WebsiteToColorConverter x:Key="WebsiteToColorConverter"/>
         <converters:WebsiteToLetterConverter x:Key="WebsiteToLetterConverter"/>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
     </Page.Resources>
 
     <!-- Top Toolbar -->
