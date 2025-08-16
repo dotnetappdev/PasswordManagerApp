@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 
 namespace PasswordManager.WinUi.Dialogs;
 
@@ -309,5 +310,110 @@ public sealed partial class AddPasswordDialog : ContentDialog
             XamlRoot = this.XamlRoot
         };
         await errorDialog.ShowAsync();
+    }
+
+    // New methods for the updated UI
+    private void ItemTypeButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is string itemType)
+        {
+            // Hide the selection panel and show the detail panel
+            ItemSelectionPanel.Visibility = Visibility.Collapsed;
+            LoginDetailPanel.Visibility = Visibility.Visible;
+            
+            // Update the dialog title
+            if (XamlRoot?.Content is FrameworkElement root)
+            {
+                // Update title in the template if possible
+                // For now, we'll just show the form
+            }
+        }
+    }
+
+    private void ShowMoreButton_Click(object sender, RoutedEventArgs e)
+    {
+        // In a full implementation, this would show additional item types
+        // For now, just a placeholder
+    }
+
+    private void ImportDataButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Navigate to import functionality
+        // For now, just a placeholder
+    }
+
+    private void ShowUsernameHistory_Click(object sender, RoutedEventArgs e)
+    {
+        // Show dropdown with previous usernames
+        // For now, just a placeholder
+    }
+
+    private void PasswordTextBox_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
+    {
+        // Show password generator on right-click
+        PasswordGeneratorPopup.Visibility = Visibility.Visible;
+        GenerateNewPassword();
+    }
+
+    private void RefreshPassword_Click(object sender, RoutedEventArgs e)
+    {
+        GenerateNewPassword();
+    }
+
+    private void ClosePasswordGenerator_Click(object sender, RoutedEventArgs e)
+    {
+        PasswordGeneratorPopup.Visibility = Visibility.Collapsed;
+    }
+
+    private void CancelPasswordGenerator_Click(object sender, RoutedEventArgs e)
+    {
+        PasswordGeneratorPopup.Visibility = Visibility.Collapsed;
+    }
+
+    private void UseGeneratedPassword_Click(object sender, RoutedEventArgs e)
+    {
+        if (GeneratedPasswordText?.Text is string password)
+        {
+            PasswordTextBox.Password = password;
+        }
+        PasswordGeneratorPopup.Visibility = Visibility.Collapsed;
+    }
+
+    private void SaveItem_Click(object sender, RoutedEventArgs e)
+    {
+        // Trigger the same logic as the primary button
+        var args = new ContentDialogButtonClickEventArgs();
+        ContentDialog_PrimaryButtonClick(this, args);
+    }
+
+    private void GenerateNewPassword()
+    {
+        // Get password settings from the UI
+        int length = (int)(PasswordLengthSlider?.Value ?? 13);
+        bool includeNumbers = NumbersToggle?.IsOn ?? true;
+        bool includeSymbols = SymbolsToggle?.IsOn ?? false;
+
+        string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        
+        if (includeNumbers)
+            chars += "0123456789";
+            
+        if (includeSymbols)
+            chars += "!@#$%^&*()-_=+[]{}|;:,.<>?";
+
+        var random = new Random();
+        var password = new string(Enumerable.Repeat(chars, length)
+            .Select(s => s[random.Next(s.Length)]).ToArray());
+
+        if (GeneratedPasswordText != null)
+        {
+            GeneratedPasswordText.Text = password;
+        }
+
+        // Update the length display
+        if (PasswordLengthText != null)
+        {
+            PasswordLengthText.Text = length.ToString();
+        }
     }
 }
