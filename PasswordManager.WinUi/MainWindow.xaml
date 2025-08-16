@@ -62,85 +62,145 @@
             
             <!-- Navigation Menu Items -->
             <NavigationView.MenuItems>
-                <!-- Home -->
-                <NavigationViewItem x:Name="HomeNavItem" 
-                                  Content="Dashboard" 
-                                  Tag="Home"
+                <!-- All Items -->
+                <NavigationViewItem x:Name="AllItemsNavItem" 
+                                  Content="All Items" 
+                                  Tag="AllItems"
                                   Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE80F;" FontSize="18"/>
+                        <FontIcon Glyph="&#xE8A5;" FontSize="18" Foreground="{StaticResource ModernPrimaryBrush}"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 
-                <NavigationViewItemSeparator/>
+                <!-- Favorites -->
+                <NavigationViewItem x:Name="FavoritesNavItem" 
+                                  Content="Favorites" 
+                                  Tag="Favorites"
+                                  Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE734;" FontSize="18" Foreground="{StaticResource ModernWarningBrush}"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 
-                <!-- Password Management Section -->
-                <NavigationViewItem Content="Password Management" 
+                <NavigationViewItemSeparator Margin="12,8"/>
+                
+                <!-- Categories Section -->
+                <NavigationViewItem Content="Categories" 
                                   IsExpanded="True"
                                   Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8D7;" FontSize="18"/>
+                        <FontIcon Glyph="&#xE8FD;" FontSize="18" Foreground="{StaticResource ModernAccentBrush}"/>
                     </NavigationViewItem.Icon>
                     <NavigationViewItem.MenuItems>
-                        <NavigationViewItem x:Name="PasswordsNavItem" 
-                                          Content="All Passwords" 
-                                          Tag="Passwords"
+                        <NavigationViewItem x:Name="LoginCategoryNavItem" 
+                                          Content="Logins" 
+                                          Tag="LoginCategory"
                                           Style="{StaticResource ModernNavigationViewItemStyle}">
                             <NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE192;" FontSize="16"/>
+                                <FontIcon Glyph="&#xE192;" FontSize="16" Foreground="#3b82f6"/>
                             </NavigationViewItem.Icon>
                         </NavigationViewItem>
                         
-                        <NavigationViewItem x:Name="CategoriesNavItem" 
-                                          Content="Categories" 
+                        <NavigationViewItem x:Name="CreditCardCategoryNavItem" 
+                                          Content="Credit Cards" 
+                                          Tag="CreditCardCategory"
+                                          Style="{StaticResource ModernNavigationViewItemStyle}">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE8C7;" FontSize="16" Foreground="#10b981"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        
+                        <NavigationViewItem x:Name="SecureNotesCategoryNavItem" 
+                                          Content="Secure Notes" 
+                                          Tag="SecureNotesCategory"
+                                          Style="{StaticResource ModernNavigationViewItemStyle}">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE70F;" FontSize="16" Foreground="#f59e0b"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        
+                        <NavigationViewItem x:Name="WiFiCategoryNavItem" 
+                                          Content="WiFi Passwords" 
+                                          Tag="WiFiCategory"
+                                          Style="{StaticResource ModernNavigationViewItemStyle}">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE701;" FontSize="16" Foreground="#8b5cf6"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        
+                        <NavigationViewItem x:Name="PasskeysCategoryNavItem" 
+                                          Content="Passkeys" 
+                                          Tag="PasskeysCategory"
+                                          Style="{StaticResource ModernNavigationViewItemStyle}">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE8D7;" FontSize="16" Foreground="#ec4899"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        
+                        <NavigationViewItemSeparator Margin="8,4"/>
+                        
+                        <NavigationViewItem x:Name="ManageCategoriesNavItem" 
+                                          Content="Manage Categories" 
                                           Tag="Categories"
                                           Style="{StaticResource ModernNavigationViewItemStyle}">
                             <NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE8FD;" FontSize="16"/>
+                                <FontIcon Glyph="&#xE8B8;" FontSize="16" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                             </NavigationViewItem.Icon>
                         </NavigationViewItem>
                     </NavigationViewItem.MenuItems>
                 </NavigationViewItem>
                 
-                <NavigationViewItemSeparator/>
+                <NavigationViewItemSeparator Margin="12,8"/>
                 
-                <!-- Tools and Settings -->
-                <NavigationViewItem Content="Tools &amp; Security" 
-                                  IsExpanded="True"
+                <!-- Tools & Security -->
+                <NavigationViewItem x:Name="SecurityAuditNavItem" 
+                                  Content="Security Dashboard" 
+                                  Tag="SecurityDashboard"
                                   Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE90F;" FontSize="18"/>
+                        <FontIcon Glyph="&#xE72E;" FontSize="18" Foreground="{StaticResource ModernErrorBrush}"/>
                     </NavigationViewItem.Icon>
-                    <NavigationViewItem.MenuItems>
-                        <NavigationViewItem x:Name="ImportNavItem" 
-                                          Content="Import Data" 
-                                          Tag="Import"
-                                          Style="{StaticResource ModernNavigationViewItemStyle}">
-                            <NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE8B5;" FontSize="16"/>
-                            </NavigationViewItem.Icon>
-                        </NavigationViewItem>
-                        
-                        <NavigationViewItem x:Name="SettingsNavItem" 
-                                          Content="Settings" 
-                                          Tag="Settings"
-                                          Style="{StaticResource ModernNavigationViewItemStyle}">
-                            <NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE713;" FontSize="16"/>
-                            </NavigationViewItem.Icon>
-                        </NavigationViewItem>
-                    </NavigationViewItem.MenuItems>
+                </NavigationViewItem>
+                
+                <!-- Import -->
+                <NavigationViewItem x:Name="ImportNavItem" 
+                                  Content="Import Data" 
+                                  Tag="Import"
+                                  Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8B5;" FontSize="18" Foreground="{StaticResource ModernSuccessBrush}"/>
+                    </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
             
             <!-- Footer Menu Items -->
             <NavigationView.FooterMenuItems>
-                <NavigationViewItem x:Name="AboutNavItem" 
-                                  Content="About" 
-                                  Tag="About"
+                <NavigationViewItem x:Name="ArchiveNavItem" 
+                                  Content="Archive" 
+                                  Tag="Archive"
                                   Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE946;" FontSize="16"/>
+                        <FontIcon Glyph="&#xE7B8;" FontSize="16" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                
+                <NavigationViewItem x:Name="RecentlyDeletedNavItem" 
+                                  Content="Recently Deleted" 
+                                  Tag="RecentlyDeleted"
+                                  Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE74D;" FontSize="16" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                
+                <NavigationViewItemSeparator Margin="8,4"/>
+                
+                <NavigationViewItem x:Name="SettingsNavItem" 
+                                  Content="Settings" 
+                                  Tag="Settings"
+                                  Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE713;" FontSize="16" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.FooterMenuItems>

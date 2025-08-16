@@ -10,6 +10,8 @@
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
                 <!-- Modern Theme Resources -->
                 <ResourceDictionary Source="Themes/ModernTheme.xaml"/>
+                <!-- Dark Theme Resources (merged conditionally by ThemeService) -->
+                <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <!-- Value Converters -->
