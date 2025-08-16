@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using PasswordManager.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,47 +10,106 @@ public static class TestDataSeeder
 {
     public static void SeedTestData(PasswordManagerDbContext db)
     {
+        // First, create a test user if none exists
+        const string testUserId = "test-user-id-12345";
+        if (!db.Users.Any(u => u.Id == testUserId))
+        {
+            db.Users.Add(new ApplicationUser
+            {
+                Id = testUserId,
+                UserName = "testuser@example.com",
+                Email = "testuser@example.com",
+                EmailConfirmed = true,
+                IsActive = true
+            });
+            db.SaveChanges();
+        }
+
+        SeedCollections(db, testUserId);
+        SeedCategories(db, testUserId);
+        SeedTags(db, testUserId);
+        SeedPasswordItems(db, testUserId);
+    }
+
+    private static void SeedCollections(PasswordManagerDbContext db, string testUserId)
+    {
         if (!db.Collections.Any())
         {
             db.Collections.AddRange(
-                new Collection { Name = "Banking", Icon = "🏦", Color = "#1f2937", IsDefault = true },
-                new Collection { Name = "Insurance", Icon = "🛡️", Color = "#059669", IsDefault = false },
-                new Collection { Name = "Utilities", Icon = "⚡", Color = "#dc2626", IsDefault = false },
-                new Collection { Name = "Work", Icon = "💼", Color = "#7c3aed", IsDefault = false },
-                new Collection { Name = "Personal", Icon = "👤", Color = "#3b82f6", IsDefault = false }
+                new Collection { Name = "Banking", Icon = "🏦", Color = "#1f2937", IsDefault = true, UserId = testUserId },
+                new Collection { Name = "Insurance", Icon = "🛡️", Color = "#059669", IsDefault = false, UserId = testUserId },
+                new Collection { Name = "Utilities", Icon = "⚡", Color = "#dc2626", IsDefault = false, UserId = testUserId },
+                new Collection { Name = "Work", Icon = "💼", Color = "#7c3aed", IsDefault = false, UserId = testUserId },
+                new Collection { Name = "Personal", Icon = "👤", Color = "#3b82f6", IsDefault = false, UserId = testUserId }
             );
             db.SaveChanges();
         }
+    }
 
+    private static void SeedCategories(PasswordManagerDbContext db, string testUserId)
+    {
         if (!db.Categories.Any())
         {
             db.Categories.AddRange(
-                new Category { Name = "Checking Account", Icon = "💳", Color = "#3b82f6", CollectionId = 1 },
-                new Category { Name = "Credit Cards", Icon = "💰", Color = "#f59e0b", CollectionId = 1 },
-                new Category { Name = "Investment", Icon = "📈", Color = "#10b981", CollectionId = 1 },
-                new Category { Name = "Health Insurance", Icon = "🏥", Color = "#ef4444", CollectionId = 2 },
-                new Category { Name = "Auto Insurance", Icon = "🚗", Color = "#8b5cf6", CollectionId = 2 },
-                new Category { Name = "Home Insurance", Icon = "🏠", Color = "#06b6d4", CollectionId = 2 },
-                new Category { Name = "Electric", Icon = "⚡", Color = "#fbbf24", CollectionId = 3 },
-                new Category { Name = "Gas", Icon = "🔥", Color = "#f97316", CollectionId = 3 },
-                new Category { Name = "Internet", Icon = "🌐", Color = "#6366f1", CollectionId = 3 },
-                new Category { Name = "Business", Icon = "🏢", Color = "#7c3aed", CollectionId = 4 },
-                new Category { Name = "Email", Icon = "📧", Color = "#10b981", CollectionId = 5 }
+                new Category { Name = "Checking Account", Icon = "💳", Color = "#3b82f6", CollectionId = 1, UserId = testUserId },
+                new Category { Name = "Credit Cards", Icon = "💰", Color = "#f59e0b", CollectionId = 1, UserId = testUserId },
+                new Category { Name = "Investment", Icon = "📈", Color = "#10b981", CollectionId = 1, UserId = testUserId },
+                new Category { Name = "Health Insurance", Icon = "🏥", Color = "#ef4444", CollectionId = 2, UserId = testUserId },
+                new Category { Name = "Auto Insurance", Icon = "🚗", Color = "#8b5cf6", CollectionId = 2, UserId = testUserId },
+                new Category { Name = "Home Insurance", Icon = "🏠", Color = "#06b6d4", CollectionId = 2, UserId = testUserId },
+                new Category { Name = "Electric", Icon = "⚡", Color = "#fbbf24", CollectionId = 3, UserId = testUserId },
+                new Category { Name = "Gas", Icon = "🔥", Color = "#f97316", CollectionId = 3, UserId = testUserId },
+                new Category { Name = "Internet", Icon = "🌐", Color = "#6366f1", CollectionId = 3, UserId = testUserId },
+                new Category { Name = "Business", Icon = "🏢", Color = "#7c3aed", CollectionId = 4, UserId = testUserId },
+                new Category { Name = "Email", Icon = "📧", Color = "#10b981", CollectionId = 5, UserId = testUserId },
+                new Category { Name = "WiFi Networks", Icon = "📶", Color = "#06b6d4", CollectionId = 5, UserId = testUserId },
+                new Category { Name = "Secure Notes", Icon = "📝", Color = "#84cc16", CollectionId = 5, UserId = testUserId },
+                new Category { Name = "Passkeys", Icon = "🔐", Color = "#ec4899", CollectionId = 5, UserId = testUserId }
             );
             db.SaveChanges();
         }
+    }
 
+    private static void SeedTags(PasswordManagerDbContext db, string testUserId)
+    {
         if (!db.Tags.Any())
         {
             db.Tags.AddRange(
-                new Tag { Name = "Important", Color = "#ef4444" },
-                new Tag { Name = "2FA", Color = "#8b5cf6" },
-                new Tag { Name = "Monthly Bills", Color = "#10b981" },
-                new Tag { Name = "High Security", Color = "#7c3aed" }
+                // Security Level Tags
+                new Tag { Name = "Important", Color = "#ef4444", UserId = testUserId },
+                new Tag { Name = "2FA", Color = "#8b5cf6", UserId = testUserId },
+                new Tag { Name = "High Security", Color = "#7c3aed", UserId = testUserId },
+                new Tag { Name = "Biometric", Color = "#ec4899", UserId = testUserId },
+                
+                // Usage Frequency Tags
+                new Tag { Name = "Daily Use", Color = "#10b981", UserId = testUserId },
+                new Tag { Name = "Weekly", Color = "#3b82f6", UserId = testUserId },
+                new Tag { Name = "Monthly Bills", Color = "#f59e0b", UserId = testUserId },
+                new Tag { Name = "Rarely Used", Color = "#6b7280", UserId = testUserId },
+                
+                // Category Tags
+                new Tag { Name = "Work", Color = "#7c3aed", UserId = testUserId },
+                new Tag { Name = "Personal", Color = "#06b6d4", UserId = testUserId },
+                new Tag { Name = "Family", Color = "#84cc16", UserId = testUserId },
+                new Tag { Name = "Shared", Color = "#f97316", UserId = testUserId },
+                
+                // Device/Platform Tags
+                new Tag { Name = "Mobile App", Color = "#8b5cf6", UserId = testUserId },
+                new Tag { Name = "Web Only", Color = "#3b82f6", UserId = testUserId },
+                new Tag { Name = "Desktop", Color = "#6b7280", UserId = testUserId },
+                
+                // Status Tags
+                new Tag { Name = "Active", Color = "#10b981", UserId = testUserId },
+                new Tag { Name = "Expired", Color = "#ef4444", UserId = testUserId },
+                new Tag { Name = "Temporary", Color = "#f59e0b", UserId = testUserId },
+                new Tag { Name = "Backup Account", Color = "#8b5cf6", UserId = testUserId }
             );
             db.SaveChanges();
         }
+    }
 
+    private static void SeedPasswordItems(PasswordManagerDbContext db, string testUserId)
+    {
         if (!db.PasswordItems.Any())
         {
             var categories = db.Categories.ToList();
@@ -70,132 +132,255 @@ public static class TestDataSeeder
             var internetCategoryId = categories.FirstOrDefault(c => c.Name == "Internet")?.Id ?? 9;
             var businessCategoryId = categories.FirstOrDefault(c => c.Name == "Business")?.Id ?? 10;
             var emailCategoryId = categories.FirstOrDefault(c => c.Name == "Email")?.Id ?? 11;
-            
-            // NOTE: All passwords are now encrypted. These are sample items without actual passwords.
-            // Real passwords will be added through the API with proper encryption using the user's master password.
-            db.PasswordItems.AddRange(
-                new PasswordItem
-                {
-                    Title = "Chase Bank",
-                    Type = ItemType.Login,
-                    CategoryId = checkingCategoryId,
-                    CollectionId = bankingCollectionId,
-                    LoginItem = new LoginItem
-                    {
-                        Website = "https://chase.com",
-                        Username = "john.doe@email.com",
-                        // Password will be encrypted when added through the API
-                        Email = "john.doe@email.com"
-                    },
-                    Tags = tags.Where(t => t.Name == "Important" || t.Name == "High Security").ToList()
-                },
-                new PasswordItem
-                {
-                    Title = "Capital One Credit Card",
-                    Type = ItemType.Login,
-                    CategoryId = creditCardCategoryId,
-                    CollectionId = bankingCollectionId,
-                    LoginItem = new LoginItem
-                    {
-                        Website = "https://capitalone.com",
-                        Username = "john.doe",
-                        // Password will be encrypted when added through the API
-                        Email = "john.doe@email.com"
-                    },
-                    Tags = tags.Where(t => t.Name == "Important" || t.Name == "2FA").ToList()
-                },
-                new PasswordItem
-                {
-                    Title = "Blue Cross Blue Shield",
-                    Type = ItemType.Login,
-                    CategoryId = healthInsuranceCategoryId,
-                    CollectionId = insuranceCollectionId,
-                    LoginItem = new LoginItem
-                    {
-                        Website = "https://bcbs.com",
-                        Username = "johndoe123",
-                        // Password will be encrypted when added through the API
-                        Email = "john.doe@email.com"
-                    },
-                    Tags = tags.Where(t => t.Name == "Important").ToList()
-                },
-                new PasswordItem
-                {
-                    Title = "State Farm Auto",
-                    Type = ItemType.Login,
-                    CategoryId = autoInsuranceCategoryId,
-                    CollectionId = insuranceCollectionId,
-                    LoginItem = new LoginItem
-                    {
-                        Website = "https://statefarm.com",
-                        Username = "john.doe.sf",
-                        // Password will be encrypted when added through the API
-                        Email = "john.doe@email.com"
-                    },
-                    Tags = tags.Where(t => t.Name == "Important").ToList()
-                },
-                new PasswordItem
-                {
-                    Title = "Pacific Gas & Electric",
-                    Type = ItemType.Login,
-                    CategoryId = electricCategoryId,
-                    CollectionId = utilitiesCollectionId,
-                    LoginItem = new LoginItem
-                    {
-                        Website = "https://pge.com",
-                        Username = "john.doe.pge",
-                        // Password will be encrypted when added through the API
-                        Email = "john.doe@email.com"
-                    },
-                    Tags = tags.Where(t => t.Name == "Monthly Bills").ToList()
-                },
-                new PasswordItem
-                {
-                    Title = "Comcast Xfinity",
-                    Type = ItemType.Login,
-                    CategoryId = internetCategoryId,
-                    CollectionId = utilitiesCollectionId,
-                    LoginItem = new LoginItem
-                    {
-                        Website = "https://xfinity.com",
-                        Username = "johndoe_xfinity",
-                        // Password will be encrypted when added through the API
-                        Email = "john.doe@email.com"
-                    },
-                    Tags = tags.Where(t => t.Name == "Monthly Bills").ToList()
-                },
-                new PasswordItem
-                {
-                    Title = "Company Portal",
-                    Type = ItemType.Login,
-                    CategoryId = businessCategoryId,
-                    CollectionId = workCollectionId,
-                    LoginItem = new LoginItem
-                    {
-                        Website = "https://portal.company.com",
-                        Username = "john.doe",
-                        // Password will be encrypted when added through the API
-                        Email = "john.doe@company.com"
-                    },
-                    Tags = tags.Where(t => t.Name == "2FA" || t.Name == "High Security").ToList()
-                },
-                new PasswordItem
-                {
-                    Title = "Personal Gmail",
-                    Type = ItemType.Login,
-                    CategoryId = emailCategoryId,
-                    CollectionId = personalCollectionId,
-                    LoginItem = new LoginItem
-                    {
-                        Website = "https://gmail.com",
-                        Username = "john.doe@gmail.com",
-                        // Password will be encrypted when added through the API
-                        Email = "john.doe@gmail.com"
-                    },
-                    Tags = tags.Where(t => t.Name == "Important" || t.Name == "2FA").ToList()
-                }
-            );
+            var wifiCategoryId = categories.FirstOrDefault(c => c.Name == "WiFi Networks")?.Id ?? 12;
+            var secureNotesCategoryId = categories.FirstOrDefault(c => c.Name == "Secure Notes")?.Id ?? 13;
+            var passkeysCategoryId = categories.FirstOrDefault(c => c.Name == "Passkeys")?.Id ?? 14;
+
+            var passwordItems = new List<PasswordItem>();
+
+            // Login Items
+            passwordItems.AddRange(CreateLoginItems(testUserId, checkingCategoryId, creditCardCategoryId, healthInsuranceCategoryId, 
+                autoInsuranceCategoryId, electricCategoryId, internetCategoryId, businessCategoryId, emailCategoryId,
+                bankingCollectionId, insuranceCollectionId, utilitiesCollectionId, workCollectionId, personalCollectionId, tags));
+
+            // Credit Card Items
+            passwordItems.AddRange(CreateCreditCardItems(testUserId, creditCardCategoryId, bankingCollectionId, tags));
+
+            // WiFi Items
+            passwordItems.AddRange(CreateWiFiItems(testUserId, wifiCategoryId, personalCollectionId, workCollectionId, tags));
+
+            // Secure Note Items
+            passwordItems.AddRange(CreateSecureNoteItems(testUserId, secureNotesCategoryId, personalCollectionId, workCollectionId, tags));
+
+            // Passkey Items
+            passwordItems.AddRange(CreatePasskeyItems(testUserId, passkeysCategoryId, personalCollectionId, workCollectionId, tags));
+
+            db.PasswordItems.AddRange(passwordItems);
             db.SaveChanges();
         }
+    }
+
+    private static List<PasswordItem> CreateLoginItems(string testUserId, int checkingCategoryId, int creditCardCategoryId, 
+        int healthInsuranceCategoryId, int autoInsuranceCategoryId, int electricCategoryId, int internetCategoryId, 
+        int businessCategoryId, int emailCategoryId, int bankingCollectionId, int insuranceCollectionId, 
+        int utilitiesCollectionId, int workCollectionId, int personalCollectionId, List<Tag> tags)
+    {
+        return new List<PasswordItem>
+        {
+            new PasswordItem
+            {
+                Title = "Chase Bank",
+                Type = ItemType.Login,
+                CategoryId = checkingCategoryId,
+                CollectionId = bankingCollectionId,
+                UserId = testUserId,
+                LoginItem = new LoginItem
+                {
+                    Website = "https://chase.com",
+                    Username = "john.doe@email.com",
+                    Email = "john.doe@email.com",
+                    UserId = testUserId
+                },
+                Tags = tags.Where(t => t.Name == "Important" || t.Name == "High Security").ToList()
+            },
+            new PasswordItem
+            {
+                Title = "Personal Gmail",
+                Type = ItemType.Login,
+                CategoryId = emailCategoryId,
+                CollectionId = personalCollectionId,
+                UserId = testUserId,
+                LoginItem = new LoginItem
+                {
+                    Website = "https://gmail.com",
+                    Username = "john.doe@gmail.com",
+                    Email = "john.doe@gmail.com",
+                    UserId = testUserId
+                },
+                Tags = tags.Where(t => t.Name == "Important" || t.Name == "2FA").ToList()
+            },
+            new PasswordItem
+            {
+                Title = "Netflix",
+                Type = ItemType.Login,
+                CategoryId = emailCategoryId,
+                CollectionId = personalCollectionId,
+                UserId = testUserId,
+                LoginItem = new LoginItem
+                {
+                    Website = "https://netflix.com",
+                    Username = "john.doe@gmail.com",
+                    Email = "john.doe@gmail.com",
+                    UserId = testUserId
+                },
+                Tags = tags.Where(t => t.Name == "Personal" || t.Name == "Monthly Bills").ToList()
+            },
+            new PasswordItem
+            {
+                Title = "Amazon",
+                Type = ItemType.Login,
+                CategoryId = emailCategoryId,
+                CollectionId = personalCollectionId,
+                UserId = testUserId,
+                LoginItem = new LoginItem
+                {
+                    Website = "https://amazon.com",
+                    Username = "john.doe@gmail.com",
+                    Email = "john.doe@gmail.com",
+                    UserId = testUserId
+                },
+                Tags = tags.Where(t => t.Name == "Personal" || t.Name == "Daily Use").ToList()
+            }
+        };
+    }
+
+    private static List<PasswordItem> CreateCreditCardItems(string testUserId, int creditCardCategoryId, int bankingCollectionId, List<Tag> tags)
+    {
+        return new List<PasswordItem>
+        {
+            new PasswordItem
+            {
+                Title = "Chase Sapphire Preferred",
+                Type = ItemType.CreditCard,
+                CategoryId = creditCardCategoryId,
+                CollectionId = bankingCollectionId,
+                UserId = testUserId,
+                CreditCardItem = new CreditCardItem
+                {
+                    CardholderName = "John Doe",
+                    CardNumber = "4532 1234 5678 9012",
+                    ExpiryDate = "12/2027",
+                    CVV = "123",
+                    CardType = CardType.Visa,
+                    IssuingBank = "Chase Bank",
+                    CreditLimit = "$25,000",
+                    InterestRate = "18.99%",
+                    BankWebsite = "https://chase.com",
+                    CustomerServicePhone = "1-800-432-3117",
+                    RewardsProgram = "Ultimate Rewards",
+                    BenefitsDescription = "2x points on travel and dining, 1x on everything else",
+                    BillingAddressLine1 = "123 Main Street",
+                    BillingCity = "San Francisco",
+                    BillingState = "CA",
+                    BillingZipCode = "94102",
+                    BillingCountry = "USA",
+                    Notes = "Primary travel rewards card",
+                    UserId = testUserId
+                },
+                Tags = tags.Where(t => t.Name == "Important" || t.Name == "Daily Use").ToList()
+            }
+        };
+    }
+
+    private static List<PasswordItem> CreateWiFiItems(string testUserId, int wifiCategoryId, int personalCollectionId, int workCollectionId, List<Tag> tags)
+    {
+        return new List<PasswordItem>
+        {
+            new PasswordItem
+            {
+                Title = "Home WiFi Network",
+                Type = ItemType.WiFi,
+                CategoryId = wifiCategoryId,
+                CollectionId = personalCollectionId,
+                UserId = testUserId,
+                WiFiItem = new WiFiItem
+                {
+                    NetworkName = "DoeFamily_5G",
+                    Password = "MySecureHome2024!",
+                    SecurityType = SecurityType.WPA3,
+                    Frequency = FrequencyType.FiveGHz,
+                    Channel = "36",
+                    Bandwidth = "80MHz",
+                    WirelessStandard = "802.11ax (WiFi 6)",
+                    RouterBrand = "ASUS",
+                    RouterModel = "AX6000",
+                    RouterIP = "192.168.1.1",
+                    RouterUsername = "admin",
+                    RouterPassword = "RouterAdmin123!",
+                    RouterAdminUrl = "https://192.168.1.1",
+                    ISPName = "Comcast Xfinity",
+                    PlanType = "Gigabit Pro",
+                    DownloadSpeed = "1000 Mbps",
+                    UploadSpeed = "35 Mbps",
+                    Location = "Home - Living Room",
+                    GuestNetworkName = "DoeFamily_Guest",
+                    GuestNetworkPassword = "GuestAccess2024",
+                    HasGuestNetwork = true,
+                    Notes = "Main home network, password changed quarterly",
+                    UserId = testUserId
+                },
+                Tags = tags.Where(t => t.Name == "Important" || t.Name == "Family").ToList()
+            }
+        };
+    }
+
+    private static List<PasswordItem> CreateSecureNoteItems(string testUserId, int secureNotesCategoryId, int personalCollectionId, int workCollectionId, List<Tag> tags)
+    {
+        return new List<PasswordItem>
+        {
+            new PasswordItem
+            {
+                Title = "Emergency Contact Information",
+                Type = ItemType.SecureNote,
+                CategoryId = secureNotesCategoryId,
+                CollectionId = personalCollectionId,
+                UserId = testUserId,
+                SecureNoteItem = new SecureNoteItem
+                {
+                    Title = "Emergency Contact Information",
+                    Content = @"EMERGENCY CONTACTS:
+
+Primary Emergency Contact:
+- Name: Jane Doe (Spouse)
+- Phone: (555) 123-4567
+- Relationship: Spouse
+
+Medical Emergency:
+- Doctor: Dr. Smith
+- Phone: (555) 234-5678
+- Hospital: UCSF Medical Center
+- Insurance: Blue Cross Blue Shield
+- Policy #: ABC123456789
+
+Important: Blood Type O+, Allergic to Penicillin",
+                    Category = "Emergency",
+                    TemplateType = "Emergency",
+                    IsHighSecurity = true,
+                    UserId = testUserId
+                },
+                Tags = tags.Where(t => t.Name == "Important" || t.Name == "Family").ToList()
+            }
+        };
+    }
+
+    private static List<PasswordItem> CreatePasskeyItems(string testUserId, int passkeysCategoryId, int personalCollectionId, int workCollectionId, List<Tag> tags)
+    {
+        return new List<PasswordItem>
+        {
+            new PasswordItem
+            {
+                Title = "Google Account Passkey",
+                Type = ItemType.Passkey,
+                CategoryId = passkeysCategoryId,
+                CollectionId = personalCollectionId,
+                UserId = testUserId,
+                PasskeyItem = new PasskeyItem
+                {
+                    Website = "https://accounts.google.com",
+                    WebsiteUrl = "https://accounts.google.com",
+                    Username = "john.doe@gmail.com",
+                    DisplayName = "John Doe",
+                    DeviceType = "iPhone 15 Pro",
+                    PlatformName = "iOS",
+                    IsBackedUp = true,
+                    RequiresUserVerification = true,
+                    LastUsedAt = DateTime.UtcNow.AddDays(-2),
+                    UsageCount = 15,
+                    Notes = "Primary Google account passkey, synced across devices",
+                    UserId = testUserId
+                },
+                Tags = tags.Where(t => t.Name == "Important" || t.Name == "Biometric" || t.Name == "Daily Use").ToList()
+            }
+        };
     }
 }
