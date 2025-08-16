@@ -23,6 +23,7 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 | Component | Description | Documentation |
 |-----------|-------------|---------------|
 | **Blazor Web App** | Web application with dark theme | [PasswordManager.Web](PasswordManager.Web/README.md) |
+| **WinUI Desktop App** | Native Windows application | [PasswordManager.WinUi](PasswordManager.WinUi/README.md) |
 | **Browser Extension** | Chrome/Edge/Firefox extension with native messaging | [PasswordManager.BrowserExtension](PasswordManager.BrowserExtension/README.md) |
 | **Shared Components** | Cross-platform UI components | [PasswordManager.Components.Shared](PasswordManager.Components.Shared/README.md) |
 | **Cryptography** | Security and encryption details | [PasswordManager.Crypto](PasswordManager.Crypto/README.md) |
@@ -38,6 +39,7 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 ### 📋 Additional Documentation
 | Document | Description |
 |----------|-------------|
+| **WinUI Screenshots** | Visual interface documentation for Windows app | [screenshots.md](screenshots.md) |
 | **Complete Setup Guide** | Full setup and configuration guide | [SETUP.md](SETUP.md) |
 | **Browser Extension Setup** | Browser extension installation guide | [INSTALLATION.md](INSTALLATION.md) |
 | **Database Setup** | Database configuration guide | [ReadMe.DatabaseProviders.md](ReadMe.DatabaseProviders.md) |
@@ -163,6 +165,14 @@ PasswordManagerApp/
 - **Responsive design** works on all devices
 - **API key management** built-in
 - **Real-time search** and filtering
+
+### WinUI Desktop Application
+- **Native Windows performance** with WinUI 3
+- **Windows 11 Fluent Design** integration
+- **XAML-powered interface** with smooth animations
+- **DPAPI secure storage** for Windows
+- **Professional desktop experience**
+- **📸 [View Screenshots](screenshots.md)** of the interface
 
 ### Mobile Application
 - **Cross-platform** iOS, Android, Windows, macOS

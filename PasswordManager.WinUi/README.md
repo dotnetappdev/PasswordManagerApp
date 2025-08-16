@@ -2,6 +2,8 @@
 
 This is a comprehensive WinUI 3 desktop application that provides the same functionality as the existing Blazor MAUI app using a native Windows interface.
 
+📸 **[View Interface Screenshots](../screenshots.md)** - See the WinUI application in action with detailed interface screenshots.
+
 ## 🚀 Features Implemented
 
 ### ✅ Core Architecture
@@ -162,3 +164,14 @@ dotnet run
 ```
 
 The application provides a complete password management experience with all the features of the original Blazor app, optimized for Windows desktop users with native performance and Windows 11 design language.
+
+## 📸 Interface Screenshots
+
+For a visual tour of the WinUI application interface, including screenshots of all major screens and features, see the **[WinUI Screenshots Documentation](../screenshots.md)**.
+
+The screenshots showcase:
+- Modern Windows 11 interface design
+- Native desktop application performance
+- Professional password management features
+- Comprehensive user interface elements
+- Windows platform integration features
