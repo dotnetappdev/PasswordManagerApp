@@ -165,13 +165,23 @@ public sealed partial class AddPasswordDialog : ContentDialog
             PasswordTextBox.Visibility = Visibility.Collapsed;
             PasswordDisplayTextBox.Visibility = Visibility.Visible;
             PasswordDisplayTextBox.Text = PasswordTextBox.Password;
-            TogglePasswordVisibilityButton.Content = "🙈";
+            
+            // Update button icon to hide password
+            if (TogglePasswordVisibilityButton.Content is FontIcon icon)
+            {
+                icon.Glyph = "&#xE7B2;"; // Eye with slash icon
+            }
         }
         else
         {
             PasswordTextBox.Visibility = Visibility.Visible;
             PasswordDisplayTextBox.Visibility = Visibility.Collapsed;
-            TogglePasswordVisibilityButton.Content = "👁️";
+            
+            // Update button icon to show password
+            if (TogglePasswordVisibilityButton.Content is FontIcon icon)
+            {
+                icon.Glyph = "&#xE7B3;"; // Eye icon
+            }
         }
     }
 
@@ -321,11 +331,42 @@ public sealed partial class AddPasswordDialog : ContentDialog
             ItemSelectionPanel.Visibility = Visibility.Collapsed;
             LoginDetailPanel.Visibility = Visibility.Visible;
             
-            // Update the dialog title
-            if (XamlRoot?.Content is FrameworkElement root)
+            // Set the type combobox selection based on the item type
+            if (TypeComboBox != null)
             {
-                // Update title in the template if possible
-                // For now, we'll just show the form
+                switch (itemType)
+                {
+                    case "Login":
+                        TypeComboBox.SelectedIndex = 0;
+                        break;
+                    case "SecureNote":
+                        TypeComboBox.SelectedIndex = 1;
+                        break;
+                    case "CreditCard":
+                        TypeComboBox.SelectedIndex = 2;
+                        break;
+                    case "Identity":
+                        TypeComboBox.SelectedIndex = 3;
+                        break;
+                    case "Password":
+                        TypeComboBox.SelectedIndex = 4;
+                        break;
+                    case "Document":
+                        TypeComboBox.SelectedIndex = 5;
+                        break;
+                }
+            }
+            
+            // Update the dialog title
+            if (DialogTitle != null)
+            {
+                DialogTitle.Text = $"Add {itemType}";
+            }
+            
+            // Show the back button
+            if (BackButton != null)
+            {
+                BackButton.Visibility = Visibility.Visible;
             }
         }
     }
@@ -414,6 +455,25 @@ public sealed partial class AddPasswordDialog : ContentDialog
         if (PasswordLengthText != null)
         {
             PasswordLengthText.Text = length.ToString();
+        }
+    }
+    
+    private void BackButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Go back to item type selection
+        LoginDetailPanel.Visibility = Visibility.Collapsed;
+        ItemSelectionPanel.Visibility = Visibility.Visible;
+        
+        // Update the dialog title
+        if (DialogTitle != null)
+        {
+            DialogTitle.Text = "What would you like to add?";
+        }
+        
+        // Hide the back button
+        if (BackButton != null)
+        {
+            BackButton.Visibility = Visibility.Collapsed;
         }
     }
 }
