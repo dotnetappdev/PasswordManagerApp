@@ -30,6 +30,71 @@ public class TypeToIconConverter : IValueConverter
     }
 }
 
+public class WebsiteToColorConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is string website && !string.IsNullOrEmpty(website))
+        {
+            // Generate a color based on the website string hash
+            var hash = website.GetHashCode();
+            var colors = new[]
+            {
+                "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FECA57",
+                "#FF9FF3", "#54A0FF", "#5F27CD", "#00D2D3", "#FF9F43"
+            };
+            var index = Math.Abs(hash) % colors.Length;
+            return new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(
+                255,
+                (byte)System.Convert.ToInt32(colors[index].Substring(1, 2), 16),
+                (byte)System.Convert.ToInt32(colors[index].Substring(3, 2), 16),
+                (byte)System.Convert.ToInt32(colors[index].Substring(5, 2), 16)
+            ));
+        }
+        return new SolidColorBrush(Microsoft.UI.Colors.Gray);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class WebsiteToLetterConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is string website && !string.IsNullOrEmpty(website))
+        {
+            // Extract the first letter from the domain name
+            var domain = website.Replace("https://", "").Replace("http://", "").Replace("www.", "");
+            if (domain.Length > 0)
+            {
+                return domain[0].ToString().ToUpper();
+            }
+        }
+        return "?";
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class NotNullToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        return value != null ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
 public class BoolToVisibilityConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
