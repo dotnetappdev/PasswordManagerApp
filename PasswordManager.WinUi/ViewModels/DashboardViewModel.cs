@@ -20,6 +20,8 @@ public class DashboardViewModel : BaseViewModel
     private int _categoriesCount;
     private PasswordItem? _selectedPasswordItem;
     private bool _isEditing;
+    private bool _isCreating;
+    private PasswordItem? _editItem;
     private string _selectedNavItem = "AllItems";
 
     public DashboardViewModel(IServiceProvider serviceProvider)
@@ -78,7 +80,33 @@ public class DashboardViewModel : BaseViewModel
     public bool IsEditing
     {
         get => _isEditing;
-        set => SetProperty(ref _isEditing, value);
+        set
+        {
+            if (SetProperty(ref _isEditing, value))
+            {
+                OnPropertyChanged(nameof(IsInEditMode));
+            }
+        }
+    }
+
+    public bool IsCreating
+    {
+        get => _isCreating;
+        set
+        {
+            if (SetProperty(ref _isCreating, value))
+            {
+                OnPropertyChanged(nameof(IsInEditMode));
+            }
+        }
+    }
+
+    public bool IsInEditMode => IsEditing || IsCreating;
+
+    public PasswordItem? EditItem
+    {
+        get => _editItem;
+        set => SetProperty(ref _editItem, value);
     }
 
     public string SelectedNavItem
@@ -233,12 +261,20 @@ public class DashboardViewModel : BaseViewModel
 
     public void StartEditing()
     {
-        IsEditing = true;
+        if (SelectedPasswordItem != null)
+        {
+            // Create a working copy for editing
+            EditItem = CloneItem(SelectedPasswordItem);
+            IsCreating = false;
+            IsEditing = true;
+        }
     }
 
     public void StopEditing()
     {
         IsEditing = false;
+        IsCreating = false;
+        EditItem = null;
     }
 
     public async Task FilterPasswordItemsAsync(string searchText)
@@ -285,5 +321,104 @@ public class DashboardViewModel : BaseViewModel
             StatusText = $"Search error: {ex.Message}";
             System.Diagnostics.Debug.WriteLine($"Search error: {ex}");
         }
+    }
+
+    public void BeginCreate()
+    {
+        var newItem = new PasswordItem
+        {
+            Title = string.Empty,
+            Type = ItemType.Login,
+            IsFavorite = false,
+            LastModified = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
+            LoginItem = new LoginItem()
+        };
+        EditItem = newItem;
+        IsCreating = true;
+        IsEditing = false;
+        SelectedPasswordItem = null;
+    }
+
+    public void BeginEdit()
+    {
+        if (SelectedPasswordItem == null) return;
+        EditItem = CloneItem(SelectedPasswordItem);
+        IsEditing = true;
+        IsCreating = false;
+    }
+
+    public async Task SaveAsync()
+    {
+        if (EditItem == null) return;
+
+        try
+        {
+            PasswordItem saved;
+            if (IsCreating)
+            {
+                saved = await _passwordItemService.CreateAsync(EditItem);
+            }
+            else if (IsEditing)
+            {
+                saved = await _passwordItemService.UpdateAsync(EditItem);
+            }
+            else
+            {
+                return;
+            }
+
+            await RefreshAsync();
+            // Select the saved item
+            var match = AllPasswordItems.FirstOrDefault(i => i.Id == saved.Id);
+            if (match != null)
+            {
+                SelectedPasswordItem = match;
+            }
+
+            StopEditing();
+            StatusText = IsCreating ? "Item created" : "Item saved";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Save error: {ex.Message}";
+        }
+    }
+
+    public void CancelEdit()
+    {
+        StopEditing();
+        StatusText = "Edit canceled";
+    }
+
+    private static PasswordItem CloneItem(PasswordItem source)
+    {
+        var clone = new PasswordItem
+        {
+            Id = source.Id,
+            Title = source.Title,
+            Description = source.Description,
+            Type = source.Type,
+            IsFavorite = source.IsFavorite,
+            CreatedAt = source.CreatedAt,
+            LastModified = source.LastModified,
+            CategoryId = source.CategoryId,
+            CollectionId = source.CollectionId,
+            Website = source.Website,
+        };
+
+        if (source.LoginItem != null)
+        {
+            clone.LoginItem = new LoginItem
+            {
+                Username = source.LoginItem.Username,
+                Password = source.LoginItem.Password,
+                WebsiteUrl = source.LoginItem.WebsiteUrl
+            };
+        }
+
+        // Other nested types can be cloned as needed in future
+
+        return clone;
     }
 }

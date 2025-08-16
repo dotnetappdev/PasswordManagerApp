@@ -37,60 +37,10 @@ public sealed partial class DashboardPage : Page
 
     private async void AddPasswordButton_Click(object sender, RoutedEventArgs e)
     {
-        try
-        {
-            // Create service provider from main window
-            var mainWindow = GetMainWindow();
-            if (mainWindow?.Content is FrameworkElement element)
-            {
-                var serviceProvider = (element.DataContext as IServiceProvider) ?? 
-                    ((App.Current as App)?.Services);
-                
-                if (serviceProvider != null)
-                {
-                    var dialog = new Dialogs.AddPasswordDialog(serviceProvider);
-                    dialog.XamlRoot = this.XamlRoot;
-                    
-                    var result = await dialog.ShowAsync();
-                    
-                    if (result == ContentDialogResult.Primary && dialog.Result != null)
-                    {
-                        // Refresh the dashboard to show the new item
-                        await _viewModel?.RefreshAsync();
-                        
-                        // Select the new item if it was added
-                        _viewModel?.SelectPasswordItem(dialog.Result);
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error opening add password dialog: {ex.Message}");
-            // Fallback to navigation
-            RequestNavigation("Passwords");
-        }
+    // Switch to inline create mode
+    _viewModel?.BeginCreate();
     }
 
-    private void ViewPasswordsButton_Click(object sender, RoutedEventArgs e)
-    {
-        RequestNavigation("Passwords");
-    }
-
-    private void CategoriesButton_Click(object sender, RoutedEventArgs e)
-    {
-        RequestNavigation("Categories");
-    }
-
-    private void SettingsButton_Click(object sender, RoutedEventArgs e)
-    {
-        RequestNavigation("Settings");
-    }
-
-    private void ImportButton_Click(object sender, RoutedEventArgs e)
-    {
-        RequestNavigation("Import");
-    }
 
     private async void LogoutButton_Click(object sender, RoutedEventArgs e)
     {
@@ -106,15 +56,6 @@ public sealed partial class DashboardPage : Page
         }
     }
 
-    private void RequestNavigation(string pageTag)
-    {
-        // Find the main window and request navigation
-        if (GetMainWindow() is MainWindow mainWindow)
-        {
-            // Use navigation method instead of directly accessing NavigationView
-            mainWindow.NavigateToPage(pageTag);
-        }
-    }
 
     private MainWindow? GetMainWindow()
     {
@@ -149,77 +90,23 @@ public sealed partial class DashboardPage : Page
     
     private async void EditButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_viewModel?.SelectedPasswordItem != null)
+        if (_viewModel == null) return;
+        if (_viewModel.SelectedPasswordItem is not null)
         {
-            try
-            {
-                // Create service provider from main window
-                var mainWindow = GetMainWindow();
-                if (mainWindow?.Content is FrameworkElement element)
-                {
-                    var serviceProvider = (element.DataContext as IServiceProvider) ?? 
-                        ((App.Current as App)?.Services);
-                    
-                    if (serviceProvider != null)
-                    {
-                        var dialog = new Dialogs.AddPasswordDialog(serviceProvider, _viewModel.SelectedPasswordItem);
-                        dialog.XamlRoot = this.XamlRoot;
-                        
-                        var result = await dialog.ShowAsync();
-                        
-                        if (result == ContentDialogResult.Primary)
-                        {
-                            // Refresh the dashboard to show the updated item
-                            await _viewModel.RefreshAsync();
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error opening edit password dialog: {ex.Message}");
-                
-                // Fallback to inline editing
-                if (_viewModel.IsEditing)
-                {
-                    _viewModel.StopEditing();
-                }
-                else
-                {
-                    _viewModel.StartEditing();
-                }
-            }
-        }
-        else if (_viewModel != null)
-        {
-            // Toggle inline editing mode if no item selected
-            if (_viewModel.IsEditing)
-            {
-                _viewModel.StopEditing();
-            }
-            else
-            {
-                _viewModel.StartEditing();
-            }
+            _viewModel.BeginEdit();
         }
     }
     
-    private void NavigationButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button button && button.Tag is string navItem)
-        {
-            if (_viewModel != null)
-            {
-                _viewModel.SelectedNavItem = navItem;
-            }
-        }
-    }
     
     private void PasswordItemsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is ListView listView && listView.SelectedItem is PasswordItem selectedItem)
+        if (sender is ListView listView)
         {
-            _viewModel?.SelectPasswordItem(selectedItem);
+            var selectedItem = listView.SelectedItem as PasswordItem;
+            if (selectedItem is not null)
+            {
+                _viewModel?.SelectPasswordItem(selectedItem);
+            }
         }
     }
     
@@ -245,11 +132,11 @@ public sealed partial class DashboardPage : Page
     {
         // Find the PasswordBox in the detail form
         var passwordField = FindName("PasswordField") as PasswordBox;
-        if (passwordField != null && _viewModel?.SelectedPasswordItem != null)
+        if (passwordField is not null && _viewModel?.SelectedPasswordItem is not null)
         {
             // Create a TextBox to replace PasswordBox for visibility
             var parentGrid = passwordField.Parent as Grid;
-            if (parentGrid != null)
+            if (parentGrid is not null)
             {
                 var button = sender as Button;
                 if (button != null)
@@ -261,14 +148,12 @@ public sealed partial class DashboardPage : Page
                     {
                         // Hide password - switch back to PasswordBox
                         button.Content = "👁";
-                        button.ToolTipService.SetToolTip(button, "Show password");
-                    }
+                     }
                     else
                     {
                         // Show password
                         button.Content = "🙈";
-                        button.ToolTipService.SetToolTip(button, "Hide password");
-                    }
+                     }
                 }
             }
         }
@@ -311,5 +196,26 @@ public sealed partial class DashboardPage : Page
         {
             // Handle clipboard error
         }
+    }
+
+    private void InlinePasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel?.EditItem is PasswordItem item && sender is PasswordBox pb)
+        {
+            item.Password = pb.Password;
+        }
+    }
+
+    private async void SaveInlineButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
+        {
+            await _viewModel.SaveAsync();
+        }
+    }
+
+    private void CancelInlineButton_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel?.CancelEdit();
     }
 }

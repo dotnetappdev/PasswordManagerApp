@@ -215,10 +215,10 @@
                         </StackPanel>
                         
                         <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Button x:Name="ExportButton"
-                                   Style="{StaticResource ModernSecondaryButtonStyle}"
-                                   Click="ExportButton_Click"
-                                   IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                <Button x:Name="ExportButton"
+                    Style="{StaticResource ModernSecondaryButtonStyle}"
+                    Click="ExportButton_Click"
+                    IsEnabled="{Binding IsLoading, Converter={StaticResource BoolNegationConverter}}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon Glyph="&#xE8C5;" FontSize="14"/>
                                     <TextBlock Text="Export All Passwords"/>

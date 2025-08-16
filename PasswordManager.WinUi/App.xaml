@@ -20,10 +20,14 @@
             <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
             <converters:StatusToIconConverter x:Key="StatusToIconConverter"/>
             <converters:StatusToColorConverter x:Key="StatusToColorConverter"/>
-            <converters:ApiModeToInputScopeConverter x:Key="ApiModeToInputScopeConverter"/>
+            <!--<converters:ApiModeToInputScopeConverter x:Key="ApiModeToInputScopeConverter"/>-->
             <converters:ApiModeToVisibilityConverter x:Key="ApiModeToVisibilityConverter"/>
             <converters:LocalModeToEnabledConverter x:Key="LocalModeToEnabledConverter"/>
             <converters:DateFormatConverter x:Key="DateFormatConverter"/>
+            <converters:NotNullToBoolConverter x:Key="NotNullToBoolConverter"/>
+            <converters:DateToModifiedStringConverter x:Key="DateToModifiedStringConverter"/>
+            <converters:NotNullToInvertedVisibilityConverter x:Key="NotNullToInvertedVisibilityConverter"/>
+            <converters:BoolNegationConverter x:Key="BoolNegationConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

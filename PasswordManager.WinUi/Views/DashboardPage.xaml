@@ -2,6 +2,7 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:converters="using:PasswordManager.WinUi.Converters"
+    xmlns:models="using:PasswordManager.Models"
       Background="{StaticResource ModernBackgroundBrush}">
 
     <Page.Resources>
@@ -17,8 +18,8 @@
         </Grid.RowDefinitions>
 
         <!-- Toolbar Row -->
-        <Border Grid.Row="0" 
-                Background="{StaticResource ModernCardBackgroundBrush}" 
+    <Border Grid.Row="0" 
+        Background="{StaticResource ModernCardBrush}" 
                 BorderThickness="0,0,0,1" 
                 BorderBrush="{StaticResource ModernBorderBrush}">
             <Grid Margin="16,0">
@@ -49,10 +50,10 @@
                            VerticalAlignment="Center"
                            Margin="16,0">
                     
-                    <Button x:Name="NewItemButton"
+              <Button x:Name="NewItemButton"
                            Content="New Item"
                            Style="{StaticResource ModernPrimaryButtonStyle}"
-                           Click="AddPasswordButton_Click">
+                  Click="AddPasswordButton_Click">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="Border"
@@ -71,14 +72,14 @@
                         </Button.Template>
                     </Button>
                     
-                    <Button x:Name="EditButton"
-                           Style="{StaticResource ModernSecondaryButtonStyle}"
-                           Click="EditButton_Click"
-                           IsEnabled="{Binding SelectedPasswordItem, Converter={x:Null}}">
+              <Button x:Name="EditButton"
+                  Style="{StaticResource ModernSecondaryButtonStyle}"
+                  Click="EditButton_Click"
+                  IsEnabled="{Binding SelectedPasswordItem, Converter={StaticResource NotNullToBoolConverter}}">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="Border"
-                                       Background="{StaticResource ModernSecondaryBrush}"
+                        Background="Transparent"
                                        CornerRadius="6"
                                        Padding="16,8">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -99,94 +100,12 @@
         <!-- Main 3-Column Layout -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="240" MinWidth="200"/>
                 <ColumnDefinition Width="340" MinWidth="280"/>
                 <ColumnDefinition Width="*" MinWidth="400"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Column 1: Navigation Sidebar -->
+            <!-- Column 1: Password Items List -->
             <Border Grid.Column="0" 
-                    Background="White"
-                    BorderThickness="0,0,1,0"
-                    BorderBrush="#e1e5e9">
-                
-                <ScrollViewer VerticalScrollBarVisibility="Auto" 
-                             HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Margin="8" Spacing="4">
-                        
-                        <!-- All Items -->
-                        <Button x:Name="AllItemsNavButton"
-                               Tag="AllItems"
-                               Click="NavigationButton_Click"
-                               Style="{StaticResource ModernNavigationButtonStyle}">
-                            <Button.Content>
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <FontIcon Glyph="&#xE8F1;" FontSize="16"/>
-                                    <TextBlock Text="All Items" FontSize="14"/>
-                                </StackPanel>
-                            </Button.Content>
-                        </Button>
-                        
-                        <!-- Favorites -->
-                        <Button x:Name="FavoritesNavButton"
-                               Tag="Favorites"
-                               Click="NavigationButton_Click"
-                               Style="{StaticResource ModernNavigationButtonStyle}">
-                            <Button.Content>
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <FontIcon Glyph="&#xE734;" FontSize="16"/>
-                                    <TextBlock Text="Favorites" FontSize="14"/>
-                                </StackPanel>
-                            </Button.Content>
-                        </Button>
-                        
-                        <!-- Categories -->
-                        <Button x:Name="CategoriesNavButton"
-                               Tag="Categories" 
-                               Click="NavigationButton_Click"
-                               Style="{StaticResource ModernNavigationButtonStyle}">
-                            <Button.Content>
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <FontIcon Glyph="&#xE8FD;" FontSize="16"/>
-                                    <TextBlock Text="Categories" FontSize="14"/>
-                                </StackPanel>
-                            </Button.Content>
-                        </Button>
-
-                        <!-- Separator -->
-                        <Rectangle Height="1" 
-                                  Fill="#e1e5e9" 
-                                  Margin="12,16"/>
-
-                        <!-- Settings -->
-                        <Button x:Name="SettingsNavButton"
-                               Click="SettingsButton_Click"
-                               Style="{StaticResource ModernNavigationButtonStyle}">
-                            <Button.Content>
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <FontIcon Glyph="&#xE713;" FontSize="16"/>
-                                    <TextBlock Text="Settings" FontSize="14"/>
-                                </StackPanel>
-                            </Button.Content>
-                        </Button>
-
-                        <!-- Import -->
-                        <Button x:Name="ImportNavButton"
-                               Click="ImportButton_Click"
-                               Style="{StaticResource ModernNavigationButtonStyle}">
-                            <Button.Content>
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <FontIcon Glyph="&#xE8B5;" FontSize="16"/>
-                                    <TextBlock Text="Import Data" FontSize="14"/>
-                                </StackPanel>
-                            </Button.Content>
-                        </Button>
-                    </StackPanel>
-                </ScrollViewer>
-            </Border>
-
-            <!-- Column 2: Password Items List -->
-            <Border Grid.Column="1" 
                     Background="White"
                     BorderThickness="0,0,1,0"
                     BorderBrush="#e1e5e9">
@@ -287,15 +206,82 @@
                 </Grid>
             </Border>
 
-            <!-- Column 3: Password Detail Form -->
-            <Border Grid.Column="2" 
+            <!-- Column 2: Password Detail / Edit Form -->
+            <Border Grid.Column="1" 
                     Background="{StaticResource ModernBackgroundBrush}">
                 
                 <ScrollViewer VerticalScrollBarVisibility="Auto" 
                              HorizontalScrollBarVisibility="Disabled"
                              Padding="24">
-                    
-                    <StackPanel Spacing="24">
+                    <!-- ScrollViewer can only have a single Content element in WinUI; wrap multiple sections in a Grid -->
+                    <Grid>
+                        <!-- Inline Edit/Create Panel -->
+                        <StackPanel x:Name="EditPanel" Spacing="16" Visibility="{Binding IsInEditMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Edit Item" FontSize="18" FontWeight="SemiBold"/>
+
+                            <!-- Title -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Title" FontSize="12" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                <TextBox Text="{Binding EditItem.Title, Mode=TwoWay}" Style="{StaticResource ModernTextBoxStyle}"/>
+                            </StackPanel>
+
+                            <!-- Type and Favorite -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="8">
+                                    <TextBlock Text="Type" FontSize="12" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                    <ComboBox SelectedValue="{Binding EditItem.Type, Mode=TwoWay}" SelectedValuePath="Tag" Style="{StaticResource ModernComboBoxStyle}">
+                                        <ComboBoxItem Content="Login" Tag="{x:Bind models:ItemType.Login, Mode=OneTime}"/>
+                                        <ComboBoxItem Content="Credit Card" Tag="{x:Bind models:ItemType.CreditCard, Mode=OneTime}"/>
+                                        <ComboBoxItem Content="Secure Note" Tag="{x:Bind models:ItemType.SecureNote, Mode=OneTime}"/>
+                                        <ComboBoxItem Content="WiFi" Tag="{x:Bind models:ItemType.WiFi, Mode=OneTime}"/>
+                                        <ComboBoxItem Content="Passkey" Tag="{x:Bind models:ItemType.Passkey, Mode=OneTime}"/>
+                                        <ComboBoxItem Content="Password" Tag="{x:Bind models:ItemType.Password, Mode=OneTime}"/>
+                                    </ComboBox>
+                                </StackPanel>
+                                <CheckBox Grid.Column="1" Content="★ Favorite" IsChecked="{Binding EditItem.IsFavorite, Mode=TwoWay}" VerticalAlignment="Bottom"/>
+                            </Grid>
+
+                            <!-- Username -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Username" FontSize="12" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                <TextBox Text="{Binding EditItem.Username, Mode=TwoWay}" Style="{StaticResource ModernTextBoxStyle}"/>
+                            </StackPanel>
+
+                            <!-- Password -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Password" FontSize="12" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                <PasswordBox x:Name="InlinePasswordBox" PasswordChanged="InlinePasswordBox_PasswordChanged" Style="{StaticResource ModernPasswordBoxStyle}"/>
+                            </StackPanel>
+
+                            <!-- Website -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Website" FontSize="12" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                <TextBox Text="{Binding EditItem.Website, Mode=TwoWay}" Style="{StaticResource ModernTextBoxStyle}"/>
+                            </StackPanel>
+
+                            <!-- Actions -->
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <Button x:Name="SaveInlineButton" Style="{StaticResource ModernPrimaryButtonStyle}" Click="SaveInlineButton_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE74E;" FontSize="14"/>
+                                        <TextBlock Text="Save"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="CancelInlineButton" Style="{StaticResource ModernSecondaryButtonStyle}" Click="CancelInlineButton_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE711;" FontSize="14"/>
+                                        <TextBlock Text="Cancel"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Read-only Details Panel -->
+                        <StackPanel Spacing="24" Visibility="{Binding IsInEditMode, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                         
                         <!-- Header with Icon and Title -->
                         <Grid>
@@ -361,10 +347,10 @@
                                         Style="{StaticResource ModernTextBoxStyle}"
                                         Margin="0,0,8,0"/>
                                 
-                                <Button Grid.Column="2" 
-                                       Content="📋"
-                                       Click="CopyUsernameButton_Click"
-                                       ToolTip="Copy username"/>
+                    <Button Grid.Column="2" 
+                        Content="📋"
+                        Click="CopyUsernameButton_Click"
+                        ToolTipService.ToolTip="Copy username"/>
                             </Grid>
                             
                             <!-- Password -->
@@ -388,16 +374,16 @@
                                             Style="{StaticResource ModernPasswordBoxStyle}"
                                             Margin="0,0,8,0"/>
                                 
-                                <Button Grid.Column="2" 
-                                       Content="👁"
-                                       Click="TogglePasswordVisibilityButton_Click"
-                                       ToolTip="Show/Hide password"
-                                       Margin="0,0,4,0"/>
+                    <Button Grid.Column="2" 
+                        Content="👁"
+                        Click="TogglePasswordVisibilityButton_Click"
+                        ToolTipService.ToolTip="Show/Hide password"
+                        Margin="0,0,4,0"/>
                                 
-                                <Button Grid.Column="3" 
-                                       Content="📋"
-                                       Click="CopyPasswordButton_Click"
-                                       ToolTip="Copy password"/>
+                    <Button Grid.Column="3" 
+                        Content="📋"
+                        Click="CopyPasswordButton_Click"
+                        ToolTipService.ToolTip="Copy password"/>
                             </Grid>
                             
                             <!-- Website -->
@@ -419,10 +405,10 @@
                                         Style="{StaticResource ModernTextBoxStyle}"
                                         Margin="0,0,8,0"/>
                                 
-                                <Button Grid.Column="2" 
-                                       Content="🌐"
-                                       Click="OpenWebsiteButton_Click"
-                                       ToolTip="Open website"/>
+                    <Button Grid.Column="2" 
+                        Content="🌐"
+                        Click="OpenWebsiteButton_Click"
+                        ToolTipService.ToolTip="Open website"/>
                             </Grid>
                             
                         </StackPanel>
@@ -463,12 +449,13 @@
                             </Grid>
                         </StackPanel>
                         
-                    </StackPanel>
+                        </StackPanel>
                     
                     <!-- Empty State -->
                     <StackPanel Spacing="16" 
                                HorizontalAlignment="Center" 
-                               VerticalAlignment="Center">
+                               VerticalAlignment="Center"
+                               Visibility="{Binding SelectedPasswordItem, Converter={StaticResource NotNullToInvertedVisibilityConverter}}">
                         <FontIcon Glyph="&#xE8F1;" 
                                  FontSize="48" 
                                  Foreground="{StaticResource ModernTextTertiaryBrush}"/>
@@ -478,6 +465,7 @@
                                   HorizontalAlignment="Center"/>
                     </StackPanel>
                     
+                    </Grid>
                 </ScrollViewer>
             </Border>
             

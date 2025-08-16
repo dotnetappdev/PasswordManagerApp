@@ -210,3 +210,65 @@ public class DateFormatConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
+public class NotNullToBoolConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        return value != null;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotSupportedException();
+    }
+}
+
+public class DateToModifiedStringConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is DateTime dt)
+        {
+            var days = (DateTime.Now - dt).TotalDays;
+            if (days < 1) return "Modified today";
+            if (days < 2) return "Modified yesterday";
+            return $"Modified {dt:MMM dd, yyyy}";
+        }
+        return string.Empty;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class NotNullToInvertedVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        // Visible when null, collapsed when not null
+        return value is null ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class BoolNegationConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is bool b) return !b;
+        return true; // default to enabled when value is not a bool
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        if (value is bool b) return !b;
+        return false;
+    }
+}
