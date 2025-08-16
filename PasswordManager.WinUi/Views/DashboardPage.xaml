@@ -364,7 +364,7 @@
                                 <Button Grid.Column="2" 
                                        Content="📋"
                                        Click="CopyUsernameButton_Click"
-                                       ToolTipService.ToolTip="Copy username"/>
+                                       ToolTip="Copy username"/>
                             </Grid>
                             
                             <!-- Password -->
@@ -391,13 +391,13 @@
                                 <Button Grid.Column="2" 
                                        Content="👁"
                                        Click="TogglePasswordVisibilityButton_Click"
-                                       ToolTipService.ToolTip="Show/Hide password"
+                                       ToolTip="Show/Hide password"
                                        Margin="0,0,4,0"/>
                                 
                                 <Button Grid.Column="3" 
                                        Content="📋"
                                        Click="CopyPasswordButton_Click"
-                                       ToolTipService.ToolTip="Copy password"/>
+                                       ToolTip="Copy password"/>
                             </Grid>
                             
                             <!-- Website -->
@@ -422,7 +422,7 @@
                                 <Button Grid.Column="2" 
                                        Content="🌐"
                                        Click="OpenWebsiteButton_Click"
-                                       ToolTipService.ToolTip="Open website"/>
+                                       ToolTip="Open website"/>
                             </Grid>
                             
                         </StackPanel>

@@ -130,7 +130,7 @@ public class PasswordItemsViewModel : BaseViewModel
             if (SelectedCategory != "All Categories")
             {
                 filteredItems = filteredItems.Where(item =>
-                    string.Equals(item.Category.Name.ToString(), SelectedCategory, StringComparison.OrdinalIgnoreCase));
+                    string.Equals(item.Category.Name, SelectedCategory, StringComparison.OrdinalIgnoreCase));
             }
 
             // Update UI on main thread
