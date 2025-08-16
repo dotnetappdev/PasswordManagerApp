@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:PasswordManager.WinUi.Converters">
+
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -10,7 +11,7 @@
                 <!-- Modern Theme Resources -->
                 <ResourceDictionary Source="Themes/ModernTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            
+
             <!-- Value Converters -->
             <converters:TypeToIconConverter x:Key="TypeToIconConverter"/>
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
@@ -28,6 +29,8 @@
             <converters:DateToModifiedStringConverter x:Key="DateToModifiedStringConverter"/>
             <converters:NotNullToInvertedVisibilityConverter x:Key="NotNullToInvertedVisibilityConverter"/>
             <converters:BoolNegationConverter x:Key="BoolNegationConverter"/>
+
+            <!-- Removed WebsiteToColorConverter (likely already in ModernTheme.xaml) -->
         </ResourceDictionary>
     </Application.Resources>
 </Application>
