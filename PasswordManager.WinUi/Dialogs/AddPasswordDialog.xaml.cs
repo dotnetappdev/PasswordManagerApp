@@ -379,13 +379,6 @@ public sealed partial class AddPasswordDialog : ContentDialog
         PasswordGeneratorPopup.Visibility = Visibility.Collapsed;
     }
 
-    private void SaveItem_Click(object sender, RoutedEventArgs e)
-    {
-        // Trigger the same logic as the primary button
-        var args = new ContentDialogButtonClickEventArgs();
-        ContentDialog_PrimaryButtonClick(this, args);
-    }
-
     private void GenerateNewPassword()
     {
         // Get password settings from the UI
@@ -414,6 +407,14 @@ public sealed partial class AddPasswordDialog : ContentDialog
         if (PasswordLengthText != null)
         {
             PasswordLengthText.Text = length.ToString();
+        }
+    }
+
+    private void PasswordLengthSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        if (PasswordLengthText != null)
+        {
+            PasswordLengthText.Text = ((int)e.NewValue).ToString();
         }
     }
 }
