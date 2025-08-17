@@ -101,7 +101,7 @@ public sealed partial class MainWindow : Window
         // Pass filter parameters for category-specific views
         PassFilterToPage(pageTag);
     }
-    
+
     private void PassFilterToPage(string pageTag)
     {
         // If we're navigating to PasswordItemsPage with a filter, apply the filter
@@ -137,6 +137,7 @@ public sealed partial class MainWindow : Window
                     break;
             }
         }
+    }
 
     private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
     {
