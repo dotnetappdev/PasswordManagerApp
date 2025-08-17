@@ -301,6 +301,34 @@ public sealed partial class PasswordItemsPage : Page
         }
     }
 
+    private void AddCategoryButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Navigate to Categories page via main window
+        try
+        {
+            var mainWindow = GetMainWindow();
+            if (mainWindow != null)
+            {
+                mainWindow.NavigateToPage("Categories");
+            }
+            else
+            {
+                // Fallback navigation
+                Frame?.Navigate(typeof(CategoriesPage), _serviceProvider);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error navigating to Categories page: {ex.Message}");
+        }
+    }
+
+    private MainWindow? GetMainWindow()
+    {
+        // Use the MainWindow property exposed in App
+        return (App.Current as App)?.MainWindow;
+    }
+
     private void ItemsList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
     {
         if (ItemsList.SelectedItem is PasswordItem item)
