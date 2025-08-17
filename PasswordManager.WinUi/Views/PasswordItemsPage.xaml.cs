@@ -189,6 +189,20 @@ public sealed partial class PasswordItemsPage : Page
     {
         try
         {
+            // Check if service provider is available
+            if (_serviceProvider == null)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = "Service provider not initialized. Please navigate to this page properly.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+                return;
+            }
+
             var dialog = new Dialogs.AddPasswordDialog(_serviceProvider);
             dialog.XamlRoot = this.XamlRoot;
             
@@ -196,7 +210,10 @@ public sealed partial class PasswordItemsPage : Page
             if (result == ContentDialogResult.Primary && dialog.Result != null)
             {
                 // Refresh the list to show the new item
-                await _viewModel.RefreshAsync();
+                if (_viewModel != null)
+                {
+                    await _viewModel.RefreshAsync();
+                }
             }
         }
         catch (Exception ex)
@@ -243,6 +260,20 @@ public sealed partial class PasswordItemsPage : Page
         {
             try
             {
+                // Check if service provider is available
+                if (_serviceProvider == null)
+                {
+                    var errorDialog = new ContentDialog
+                    {
+                        Title = "Error",
+                        Content = "Service provider not initialized. Please navigate to this page properly.",
+                        CloseButtonText = "OK",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await errorDialog.ShowAsync();
+                    return;
+                }
+
                 var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, item);
                 dialog.XamlRoot = this.XamlRoot;
                 
@@ -250,7 +281,10 @@ public sealed partial class PasswordItemsPage : Page
                 if (result == ContentDialogResult.Primary && dialog.Result != null)
                 {
                     // Refresh the list to show the updated item
-                    await _viewModel.RefreshAsync();
+                    if (_viewModel != null)
+                    {
+                        await _viewModel.RefreshAsync();
+                    }
                 }
             }
             catch (Exception ex)

@@ -19,7 +19,9 @@
                        CompactModeThresholdWidth="640"
                        ExpandedModeThresholdWidth="1028"
                        SelectionChanged="MainNavigationView_SelectionChanged"
-                       Visibility="Collapsed">
+                       Visibility="Collapsed"
+                       Margin="0"
+                       Padding="0">
             
             <!-- Search Box -->
             <NavigationView.AutoSuggestBox>
@@ -210,7 +212,6 @@
                          VerticalScrollBarVisibility="Auto"
                          HorizontalScrollBarVisibility="Disabled">
                 <Frame x:Name="ContentFrame" 
-                       Margin="24,16,24,24"
                        Background="Transparent"/>
             </ScrollViewer>
             

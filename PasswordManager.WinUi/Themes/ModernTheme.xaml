@@ -66,9 +66,15 @@
             Color="{StaticResource ModernTextTertiaryColor}"/>
 
         <!-- NavigationView Pane Background Brushes (WinUI 3 theme resource overrides) -->
-        <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="{StaticResource ModernBackgroundColor}"/>
-        <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="{StaticResource ModernBackgroundColor}"/>
-        <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="{StaticResource ModernBackgroundColor}"/>
+        <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="{StaticResource ModernSurfaceColor}"/>
+        <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="{StaticResource ModernSurfaceColor}"/>
+        <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="{StaticResource ModernSurfaceColor}"/>
+        <SolidColorBrush x:Key="NavigationViewContentBackground" Color="{StaticResource ModernBackgroundColor}"/>
+        <SolidColorBrush x:Key="NavigationViewContentGridBackground" Color="{StaticResource ModernBackgroundColor}"/>
+        
+        <!-- Remove any margins or padding from NavigationView content -->
+        <Thickness x:Key="NavigationViewContentMargin">0</Thickness>
+        <Thickness x:Key="NavigationViewMinimalContentGridMargin">0</Thickness>
 
     <!-- Modern Gradient Brushes -->
     <LinearGradientBrush x:Key="ModernPrimaryGradientBrush"
