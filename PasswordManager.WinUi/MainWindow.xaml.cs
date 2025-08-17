@@ -101,6 +101,7 @@ public sealed partial class MainWindow : Window
                 "WiFiCategory" => typeof(Views.PasswordItemsPage), // Filter for WiFi items
                 "PasskeysCategory" => typeof(Views.PasswordItemsPage), // Filter for passkeys
                 "Categories" => typeof(Views.CategoriesPage),
+                "ManageItems" => typeof(Views.ManageItemsPage),
                 "SecurityDashboard" => typeof(Views.DashboardPage), // Could create security dashboard
                 "Archive" => typeof(Views.PasswordItemsPage), // Filter for archived items
                 "RecentlyDeleted" => typeof(Views.PasswordItemsPage), // Filter for deleted items
@@ -186,17 +187,29 @@ public sealed partial class MainWindow : Window
         if (!string.IsNullOrEmpty(searchQuery))
         {
             // Navigate to passwords page with search query
-            NavigateToPage("Passwords");
+            NavigateToPage("AllItems");
             
-            // Pass search query to the passwords page if it's currently loaded
-            if (ContentFrame.Content is Views.PasswordItemsPage passwordsPage)
+            // Use a more reliable way to pass search query
+            Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
             {
-                // Find the search textbox in the passwords page and set the search text
-                var searchTextBox = FindChildControl<TextBox>(passwordsPage, "SearchTextBox");
-                if (searchTextBox != null)
-                {
-                    searchTextBox.Text = searchQuery;
-                }
+                PassSearchQueryToPage(searchQuery);
+            });
+        }
+    }
+
+    private void PassSearchQueryToPage(string searchQuery)
+    {
+        // Pass search query to the passwords page if it's currently loaded
+        if (ContentFrame.Content is Views.PasswordItemsPage passwordsPage)
+        {
+            // Try to find the search textbox and set the search text
+            var searchTextBox = FindChildControl<TextBox>(passwordsPage, "SearchTextBox");
+            if (searchTextBox != null)
+            {
+                searchTextBox.Text = searchQuery;
+                // Manually trigger the TextChanged event to ensure filtering happens
+                var args = new TextChangedEventArgs();
+                passwordsPage.SearchTextBox_TextChanged(searchTextBox, args);
             }
         }
     }

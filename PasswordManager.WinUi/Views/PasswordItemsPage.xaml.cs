@@ -30,7 +30,7 @@ public sealed partial class PasswordItemsPage : Page
         }
     }
 
-    private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    public void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (_viewModel != null && sender is TextBox textBox)
         {

@@ -28,8 +28,11 @@ public class PasswordItemsViewModel : BaseViewModel
         get => _searchText;
         set
         {
-            SetProperty(ref _searchText, value);
-            _ = Task.Run(async () => await ApplyFiltersAsync());
+            if (SetProperty(ref _searchText, value))
+            {
+                // Use async/await properly instead of fire-and-forget
+                _ = ApplyFiltersAsync();
+            }
         }
     }
 
@@ -38,8 +41,10 @@ public class PasswordItemsViewModel : BaseViewModel
         get => _filterType;
         set
         {
-            SetProperty(ref _filterType, value);
-            _ = Task.Run(async () => await ApplyFiltersAsync());
+            if (SetProperty(ref _filterType, value))
+            {
+                _ = ApplyFiltersAsync();
+            }
         }
     }
 
@@ -48,8 +53,10 @@ public class PasswordItemsViewModel : BaseViewModel
         get => _selectedCategory;
         set
         {
-            SetProperty(ref _selectedCategory, value);
-            _ = Task.Run(async () => await ApplyFiltersAsync());
+            if (SetProperty(ref _selectedCategory, value))
+            {
+                _ = ApplyFiltersAsync();
+            }
         }
     }
 
@@ -94,56 +101,64 @@ public class PasswordItemsViewModel : BaseViewModel
 
     private async Task ApplyFiltersAsync()
     {
-        await Task.Run(() =>
+        try
         {
-            var filteredItems = _allItems.AsEnumerable();
-
-            // Apply search filter
-            if (!string.IsNullOrWhiteSpace(SearchText))
+            var filteredItems = await Task.Run(() =>
             {
-                filteredItems = filteredItems.Where(item =>
-                    item.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) == true ||
-                    item.Username?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) == true ||
-                    item.Description?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) == true);
-            }
+                var items = _allItems.AsEnumerable();
 
-            // Apply type filter
-            if (FilterType != "All")
-            {
-                switch (FilterType)
+                // Apply search filter
+                if (!string.IsNullOrWhiteSpace(SearchText))
                 {
-                    case "Favorites":
-                        filteredItems = filteredItems.Where(item => item.IsFavorite);
-                        break;
-                    case "Recent":
-                        filteredItems = filteredItems.OrderByDescending(item => item.LastAccessedAt)
-                            .Take(20);
-                        break;
-                    default:
-                        filteredItems = filteredItems.Where(item => 
-                            string.Equals(item.Type.ToString(), FilterType, StringComparison.OrdinalIgnoreCase));
-                        break;
+                    items = items.Where(item =>
+                        item.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) == true ||
+                        item.Username?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) == true ||
+                        item.Description?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) == true ||
+                        item.Website?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) == true);
                 }
-            }
 
-            // Apply category filter
-            if (SelectedCategory != "All Categories")
-            {
-                filteredItems = filteredItems.Where(item =>
-                    string.Equals(item.Category.Name, SelectedCategory, StringComparison.OrdinalIgnoreCase));
-            }
+                // Apply type filter
+                if (FilterType != "All")
+                {
+                    switch (FilterType)
+                    {
+                        case "Favorites":
+                            items = items.Where(item => item.IsFavorite);
+                            break;
+                        case "Recent":
+                            items = items.OrderByDescending(item => item.LastAccessedAt)
+                                .Take(20);
+                            break;
+                        default:
+                            items = items.Where(item => 
+                                string.Equals(item.Type.ToString(), FilterType, StringComparison.OrdinalIgnoreCase));
+                            break;
+                    }
+                }
+
+                // Apply category filter
+                if (SelectedCategory != "All Categories" && !string.IsNullOrEmpty(SelectedCategory))
+                {
+                    items = items.Where(item =>
+                        item.Category != null && 
+                        string.Equals(item.Category.Name, SelectedCategory, StringComparison.OrdinalIgnoreCase));
+                }
+
+                return items.ToList();
+            });
 
             // Update UI on main thread
-            Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+            PasswordItems.Clear();
+            foreach (var item in filteredItems)
             {
-                PasswordItems.Clear();
-                foreach (var item in filteredItems)
-                {
-                    PasswordItems.Add(item);
-                }
-                OnPropertyChanged(nameof(HasNoItems));
-            });
-        });
+                PasswordItems.Add(item);
+            }
+            OnPropertyChanged(nameof(HasNoItems));
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error applying filters: {ex.Message}");
+        }
     }
 
     private async Task SearchPasswordItemsAsync()

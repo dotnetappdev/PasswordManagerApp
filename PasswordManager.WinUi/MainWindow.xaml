@@ -149,6 +149,15 @@
                                 <FontIcon Glyph="&#xE8B8;" FontSize="16" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                             </NavigationViewItem.Icon>
                         </NavigationViewItem>
+                        
+                        <NavigationViewItem x:Name="ManageAllItemsNavItem" 
+                                          Content="Manage Collections, Types &amp; Tags" 
+                                          Tag="ManageItems"
+                                          Style="{StaticResource ModernNavigationViewItemStyle}">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE8FD;" FontSize="16" Foreground="{StaticResource ModernAccentBrush}"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
                     </NavigationViewItem.MenuItems>
                 </NavigationViewItem>
                 
