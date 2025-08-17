@@ -3,6 +3,9 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.WinUi.ViewModels;
 using PasswordManager.Models;
+using PasswordManager.WinUi.Dialogs;
+using System;
+using System.Threading.Tasks;
 
 namespace PasswordManager.WinUi.Views;
 
@@ -30,7 +33,23 @@ public sealed partial class CategoriesPage : Page
 
     private async void AddCategoryButton_Click(object sender, RoutedEventArgs e)
     {
-        await ShowAddCategoryDialog();
+        if (_serviceProvider == null) return;
+
+        try
+        {
+            var dialog = new CategoryDialog(_serviceProvider);
+            dialog.XamlRoot = this.XamlRoot;
+            
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && dialog.Result != null && _viewModel != null)
+            {
+                await _viewModel.RefreshAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog($"Error adding category: {ex.Message}");
+        }
     }
 
     private async void RefreshButton_Click(object sender, RoutedEventArgs e)
@@ -51,9 +70,23 @@ public sealed partial class CategoriesPage : Page
 
     private async void EditCategoryButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button button && button.DataContext is Category category)
+        if (sender is Button button && button.DataContext is Category category && _serviceProvider != null)
         {
-            await ShowEditCategoryDialog(category);
+            try
+            {
+                var dialog = new CategoryDialog(_serviceProvider, category);
+                dialog.XamlRoot = this.XamlRoot;
+                
+                var result = await dialog.ShowAsync();
+                if (result == ContentDialogResult.Primary && dialog.Result != null && _viewModel != null)
+                {
+                    await _viewModel.RefreshAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorDialog($"Error editing category: {ex.Message}");
+            }
         }
     }
 
@@ -74,90 +107,27 @@ public sealed partial class CategoriesPage : Page
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary && _viewModel != null)
             {
-                await _viewModel.DeleteCategoryAsync(category);
+                try
+                {
+                    await _viewModel.DeleteCategoryAsync(category);
+                }
+                catch (Exception ex)
+                {
+                    await ShowErrorDialog($"Error deleting category: {ex.Message}");
+                }
             }
         }
     }
 
-    private async Task ShowAddCategoryDialog()
+    private async Task ShowErrorDialog(string message)
     {
-        var nameTextBox = new TextBox
+        var errorDialog = new ContentDialog
         {
-            Header = "Category Name",
-            PlaceholderText = "Enter category name"
-        };
-
-        var descriptionTextBox = new TextBox
-        {
-            Header = "Description (Optional)",
-            PlaceholderText = "Enter description",
-            AcceptsReturn = true,
-            MaxHeight = 80
-        };
-
-        var stackPanel = new StackPanel { Spacing = 16 };
-        stackPanel.Children.Add(nameTextBox);
-        stackPanel.Children.Add(descriptionTextBox);
-
-        var dialog = new ContentDialog
-        {
-            Title = "Add Category",
-            Content = stackPanel,
-            PrimaryButtonText = "Add",
-            CloseButtonText = "Cancel",
+            Title = "Error",
+            Content = message,
+            CloseButtonText = "OK",
             XamlRoot = this.XamlRoot
         };
-
-        var result = await dialog.ShowAsync();
-        if (result == ContentDialogResult.Primary && _viewModel != null)
-        {
-            if (!string.IsNullOrWhiteSpace(nameTextBox.Text))
-            {
-                await _viewModel.CreateCategoryAsync(nameTextBox.Text, descriptionTextBox.Text);
-            }
-        }
-    }
-
-    private async Task ShowEditCategoryDialog(Category category)
-    {
-        var nameTextBox = new TextBox
-        {
-            Header = "Category Name",
-            PlaceholderText = "Enter category name",
-            Text = category.Name
-        };
-
-        var descriptionTextBox = new TextBox
-        {
-            Header = "Description (Optional)",
-            PlaceholderText = "Enter description",
-            Text = category.Description ?? string.Empty,
-            AcceptsReturn = true,
-            MaxHeight = 80
-        };
-
-        var stackPanel = new StackPanel { Spacing = 16 };
-        stackPanel.Children.Add(nameTextBox);
-        stackPanel.Children.Add(descriptionTextBox);
-
-        var dialog = new ContentDialog
-        {
-            Title = "Edit Category",
-            Content = stackPanel,
-            PrimaryButtonText = "Save",
-            CloseButtonText = "Cancel",
-            XamlRoot = this.XamlRoot
-        };
-
-        var result = await dialog.ShowAsync();
-        if (result == ContentDialogResult.Primary && _viewModel != null)
-        {
-            if (!string.IsNullOrWhiteSpace(nameTextBox.Text))
-            {
-                category.Name = nameTextBox.Text;
-                category.Description = descriptionTextBox.Text;
-                await _viewModel.UpdateCategoryAsync(category);
-            }
-        }
+        await errorDialog.ShowAsync();
     }
 }

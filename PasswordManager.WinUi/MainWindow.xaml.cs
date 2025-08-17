@@ -56,7 +56,12 @@ public sealed partial class MainWindow : Window
     private void MainNavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
         // Only allow navigation if authenticated
-        if (!_isAuthenticated) return;
+        if (!_isAuthenticated) 
+        {
+            // Prevent selection if not authenticated
+            sender.SelectedItem = null;
+            return;
+        }
         
         if (args.SelectedItem is NavigationViewItem selectedItem)
         {
@@ -65,7 +70,16 @@ public sealed partial class MainWindow : Window
             // Only navigate if the item has a tag (leaf items, not parent categories)
             if (!string.IsNullOrEmpty(tag))
             {
-                NavigateToPage(tag);
+                try
+                {
+                    NavigateToPage(tag);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Navigation error: {ex.Message}");
+                    // Reset selection on error
+                    sender.SelectedItem = null;
+                }
             }
         }
     }
@@ -75,31 +89,47 @@ public sealed partial class MainWindow : Window
         // Only allow navigation if authenticated, except for login
         if (!_isAuthenticated && pageTag != "Login") return;
         
-        Type pageType = pageTag switch
+        try
         {
-            "AllItems" => typeof(Views.PasswordItemsPage),
-            "Favorites" => typeof(Views.PasswordItemsPage), // Filter for favorites
-            "LoginCategory" => typeof(Views.PasswordItemsPage), // Filter for login items
-            "CreditCardCategory" => typeof(Views.PasswordItemsPage), // Filter for credit cards
-            "SecureNotesCategory" => typeof(Views.PasswordItemsPage), // Filter for secure notes
-            "WiFiCategory" => typeof(Views.PasswordItemsPage), // Filter for WiFi items
-            "PasskeysCategory" => typeof(Views.PasswordItemsPage), // Filter for passkeys
-            "Categories" => typeof(Views.CategoriesPage),
-            "SecurityDashboard" => typeof(Views.DashboardPage), // Could create security dashboard
-            "Archive" => typeof(Views.PasswordItemsPage), // Filter for archived items
-            "RecentlyDeleted" => typeof(Views.PasswordItemsPage), // Filter for deleted items
-            "Import" => typeof(Views.ImportPage),
-            "Settings" => typeof(Views.SettingsPage),
-            "Home" => typeof(Views.DashboardPage),
-            "Passwords" => typeof(Views.PasswordItemsPage),
-            "Login" => typeof(Views.LoginPage),
-            _ => typeof(Views.DashboardPage)
-        };
+            Type pageType = pageTag switch
+            {
+                "AllItems" => typeof(Views.PasswordItemsPage),
+                "Favorites" => typeof(Views.PasswordItemsPage), // Filter for favorites
+                "LoginCategory" => typeof(Views.PasswordItemsPage), // Filter for login items
+                "CreditCardCategory" => typeof(Views.PasswordItemsPage), // Filter for credit cards
+                "SecureNotesCategory" => typeof(Views.PasswordItemsPage), // Filter for secure notes
+                "WiFiCategory" => typeof(Views.PasswordItemsPage), // Filter for WiFi items
+                "PasskeysCategory" => typeof(Views.PasswordItemsPage), // Filter for passkeys
+                "Categories" => typeof(Views.CategoriesPage),
+                "ManageItems" => typeof(Views.ManageItemsPage),
+                "SecurityDashboard" => typeof(Views.DashboardPage), // Could create security dashboard
+                "Archive" => typeof(Views.PasswordItemsPage), // Filter for archived items
+                "RecentlyDeleted" => typeof(Views.PasswordItemsPage), // Filter for deleted items
+                "Import" => typeof(Views.ImportPage),
+                "Settings" => typeof(Views.SettingsPage),
+                "Home" => typeof(Views.DashboardPage),
+                "Passwords" => typeof(Views.PasswordItemsPage),
+                "Login" => typeof(Views.LoginPage),
+                _ => typeof(Views.DashboardPage)
+            };
 
-        ContentFrame.Navigate(pageType, _serviceProvider);
-        
-        // Pass filter parameters for category-specific views
-        PassFilterToPage(pageTag);
+            // Ensure ContentFrame exists and navigate with service provider
+            if (ContentFrame != null && _serviceProvider != null)
+            {
+                ContentFrame.Navigate(pageType, _serviceProvider);
+                
+                // Pass filter parameters for category-specific views
+                PassFilterToPage(pageTag);
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"Navigation failed - ContentFrame: {ContentFrame != null}, ServiceProvider: {_serviceProvider != null}");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Navigation error for page '{pageTag}': {ex.Message}");
+        }
     }
 
     private void PassFilterToPage(string pageTag)
@@ -157,17 +187,29 @@ public sealed partial class MainWindow : Window
         if (!string.IsNullOrEmpty(searchQuery))
         {
             // Navigate to passwords page with search query
-            NavigateToPage("Passwords");
+            NavigateToPage("AllItems");
             
-            // Pass search query to the passwords page if it's currently loaded
-            if (ContentFrame.Content is Views.PasswordItemsPage passwordsPage)
+            // Use a more reliable way to pass search query
+            Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
             {
-                // Find the search textbox in the passwords page and set the search text
-                var searchTextBox = FindChildControl<TextBox>(passwordsPage, "SearchTextBox");
-                if (searchTextBox != null)
-                {
-                    searchTextBox.Text = searchQuery;
-                }
+                PassSearchQueryToPage(searchQuery);
+            });
+        }
+    }
+
+    private void PassSearchQueryToPage(string searchQuery)
+    {
+        // Pass search query to the passwords page if it's currently loaded
+        if (ContentFrame.Content is Views.PasswordItemsPage passwordsPage)
+        {
+            // Try to find the search textbox and set the search text
+            var searchTextBox = FindChildControl<TextBox>(passwordsPage, "SearchTextBox");
+            if (searchTextBox != null)
+            {
+                searchTextBox.Text = searchQuery;
+                // Manually trigger the TextChanged event to ensure filtering happens
+                var args = new TextChangedEventArgs();
+                passwordsPage.SearchTextBox_TextChanged(searchTextBox, args);
             }
         }
     }

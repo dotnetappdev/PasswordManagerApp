@@ -19,7 +19,9 @@
                        CompactModeThresholdWidth="640"
                        ExpandedModeThresholdWidth="1028"
                        SelectionChanged="MainNavigationView_SelectionChanged"
-                       Visibility="Collapsed">
+                       Visibility="Collapsed"
+                       Margin="0"
+                       Padding="0">
             
             <!-- Search Box -->
             <NavigationView.AutoSuggestBox>
@@ -147,6 +149,15 @@
                                 <FontIcon Glyph="&#xE8B8;" FontSize="16" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                             </NavigationViewItem.Icon>
                         </NavigationViewItem>
+                        
+                        <NavigationViewItem x:Name="ManageAllItemsNavItem" 
+                                          Content="Manage Collections, Types &amp; Tags" 
+                                          Tag="ManageItems"
+                                          Style="{StaticResource ModernNavigationViewItemStyle}">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE8FD;" FontSize="16" Foreground="{StaticResource ModernAccentBrush}"/>
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
                     </NavigationViewItem.MenuItems>
                 </NavigationViewItem>
                 
@@ -210,7 +221,6 @@
                          VerticalScrollBarVisibility="Auto"
                          HorizontalScrollBarVisibility="Disabled">
                 <Frame x:Name="ContentFrame" 
-                       Margin="24,16,24,24"
                        Background="Transparent"/>
             </ScrollViewer>
             
