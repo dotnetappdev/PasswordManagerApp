@@ -14,7 +14,7 @@ namespace PasswordManager.WinUi.Views;
 public sealed partial class ManageItemsPage : Page
 {
     private IServiceProvider? _serviceProvider;
-    private ICategoryService? _categoryService;
+    private ICategoryInterface? _categoryService;
     private ITagService? _tagService;
     
     private ObservableCollection<Category> _collections = new();
@@ -44,7 +44,7 @@ public sealed partial class ManageItemsPage : Page
             
             try
             {
-                _categoryService = serviceProvider.GetService<ICategoryService>();
+                _categoryService = serviceProvider.GetService<ICategoryInterface>();
                 _tagService = serviceProvider.GetService<ITagService>();
                 
                 await LoadAllData();
@@ -76,7 +76,7 @@ public sealed partial class ManageItemsPage : Page
 
     private async Task LoadCollections()
     {
-        if (_categoryService == null) return;
+    if (_categoryService is null) return;
 
         try
         {
@@ -163,7 +163,7 @@ public sealed partial class ManageItemsPage : Page
 
     private async void DeleteCollectionButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button button && button.DataContext is Category category && _categoryService != null)
+    if (sender is Button button && button.DataContext is Category category && _categoryService is not null)
         {
             var confirmDialog = new ContentDialog
             {

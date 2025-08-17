@@ -95,7 +95,7 @@ public sealed partial class TagDialog : ContentDialog
                 // Update existing tag
                 _tag.Name = name;
                 _tag.Description = TagDescriptionTextBox.Text?.Trim();
-                _tag.UpdatedAt = DateTime.UtcNow;
+                _tag.LastModified = DateTime.UtcNow;
                 
                 if (_tagService != null)
                 {
@@ -108,11 +108,10 @@ public sealed partial class TagDialog : ContentDialog
                 // Create new tag
                 var newTag = new Tag
                 {
-                    Id = Guid.NewGuid(),
                     Name = name,
                     Description = TagDescriptionTextBox.Text?.Trim(),
                     CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    LastModified = DateTime.UtcNow
                 };
 
                 if (_tagService != null)

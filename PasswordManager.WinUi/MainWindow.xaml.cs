@@ -206,10 +206,8 @@ public sealed partial class MainWindow : Window
             var searchTextBox = FindChildControl<TextBox>(passwordsPage, "SearchTextBox");
             if (searchTextBox != null)
             {
+                // Setting Text triggers TextChanged automatically; no need to manually raise the event
                 searchTextBox.Text = searchQuery;
-                // Manually trigger the TextChanged event to ensure filtering happens
-                var args = new TextChangedEventArgs();
-                passwordsPage.SearchTextBox_TextChanged(searchTextBox, args);
             }
         }
     }

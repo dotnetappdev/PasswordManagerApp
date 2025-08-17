@@ -11,7 +11,7 @@ namespace PasswordManager.WinUi.Dialogs;
 
 public sealed partial class CategoryDialog : ContentDialog
 {
-    private readonly ICategoryService _categoryService;
+    private readonly ICategoryInterface _categoryService;
     private Category? _category;
     private readonly bool _isEditMode;
 
@@ -19,8 +19,8 @@ public sealed partial class CategoryDialog : ContentDialog
 
     public CategoryDialog(IServiceProvider serviceProvider, Category? category = null)
     {
-        this.InitializeComponent();
-        _categoryService = serviceProvider.GetRequiredService<ICategoryService>();
+    this.InitializeComponent();
+    _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
         _category = category;
         _isEditMode = category != null;
 
@@ -45,10 +45,10 @@ public sealed partial class CategoryDialog : ContentDialog
 
         CategoryNameTextBox.Text = _category.Name;
         CategoryDescriptionTextBox.Text = _category.Description ?? string.Empty;
-        
+
         // Set color (simplified for now - you can enhance this)
         CategoryColorComboBox.SelectedIndex = 0; // Default to blue
-        
+
         // Set icon (simplified for now)
         CategoryIconComboBox.SelectedIndex = 0; // Default to folder
     }
@@ -80,7 +80,7 @@ public sealed partial class CategoryDialog : ContentDialog
 
         // Show loading
         this.IsPrimaryButtonEnabled = false;
-        
+
         try
         {
             if (_isEditMode && _category != null)
@@ -88,8 +88,8 @@ public sealed partial class CategoryDialog : ContentDialog
                 // Update existing category
                 _category.Name = name;
                 _category.Description = CategoryDescriptionTextBox.Text?.Trim();
-                _category.UpdatedAt = DateTime.UtcNow;
-                
+                _category.LastModified = DateTime.UtcNow;
+
                 await _categoryService.UpdateAsync(_category);
                 Result = _category;
             }
@@ -98,11 +98,10 @@ public sealed partial class CategoryDialog : ContentDialog
                 // Create new category
                 var newCategory = new Category
                 {
-                    Id = Guid.NewGuid(),
                     Name = name,
                     Description = CategoryDescriptionTextBox.Text?.Trim(),
                     CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    LastModified = DateTime.UtcNow
                 };
 
                 await _categoryService.CreateAsync(newCategory);
