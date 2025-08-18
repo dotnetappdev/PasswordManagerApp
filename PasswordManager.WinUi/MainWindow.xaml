@@ -35,30 +35,10 @@
                               CornerRadius="20"/>
             </NavigationView.AutoSuggestBox>
 
-            <!-- Header Content -->
+            <!-- Header Content - Simplified without title -->
             <NavigationView.Header>
-                <Grid Height="60" Margin="24,0">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <!-- App Icon -->
-                        <Border Background="{StaticResource ModernPrimaryGradientBrush}"
-                               CornerRadius="12"
-                               Width="40"
-                               Height="40"
-                               Margin="0,0,16,0">
-                            <FontIcon Glyph="&#xE192;" 
-                                     FontSize="20"
-                                     Foreground="White"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center"/>
-                        </Border>
-                        
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="Password Manager"
-                                      Style="{StaticResource ModernHeading3Style}"/>
-                            <TextBlock Text="Secure your digital life"
-                                      Style="{StaticResource ModernCaptionStyle}"/>
-                        </StackPanel>
-                    </StackPanel>
+                <Grid Height="40" Margin="24,0">
+                    <!-- Simplified header with just search or minimal content -->
                 </Grid>
             </NavigationView.Header>
             
@@ -68,20 +48,34 @@
                 <NavigationViewItem x:Name="AllItemsNavItem" 
                                   Content="All Items" 
                                   Tag="AllItems"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}">
+                                  Style="{StaticResource ModernNavigationViewItemStyle}"
+                                  RightTapped="NavigationItem_RightTapped">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8A5;" FontSize="18" Foreground="{StaticResource ModernPrimaryBrush}"/>
                     </NavigationViewItem.Icon>
+                    <NavigationViewItem.ContextFlyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem Text="Edit" Icon="Edit" Click="EditItem_Click" Tag="AllItems"/>
+                            <MenuFlyoutItem Text="Delete" Icon="Delete" Click="DeleteItem_Click" Tag="AllItems"/>
+                        </MenuFlyout>
+                    </NavigationViewItem.ContextFlyout>
                 </NavigationViewItem>
                 
                 <!-- Favorites -->
                 <NavigationViewItem x:Name="FavoritesNavItem" 
                                   Content="Favorites" 
                                   Tag="Favorites"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}">
+                                  Style="{StaticResource ModernNavigationViewItemStyle}"
+                                  RightTapped="NavigationItem_RightTapped">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE734;" FontSize="18" Foreground="{StaticResource ModernWarningBrush}"/>
                     </NavigationViewItem.Icon>
+                    <NavigationViewItem.ContextFlyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem Text="Edit" Icon="Edit" Click="EditItem_Click" Tag="Favorites"/>
+                            <MenuFlyoutItem Text="Delete" Icon="Delete" Click="DeleteItem_Click" Tag="Favorites"/>
+                        </MenuFlyout>
+                    </NavigationViewItem.ContextFlyout>
                 </NavigationViewItem>
                 
                 <NavigationViewItemSeparator Margin="12,8"/>
@@ -219,9 +213,11 @@
             <!-- Content Frame -->
             <ScrollViewer ZoomMode="Disabled" 
                          VerticalScrollBarVisibility="Auto"
-                         HorizontalScrollBarVisibility="Disabled">
+                         HorizontalScrollBarVisibility="Disabled"
+                         Margin="0">
                 <Frame x:Name="ContentFrame" 
-                       Background="Transparent"/>
+                       Background="Transparent"
+                       Margin="0"/>
             </ScrollViewer>
             
         </NavigationView>

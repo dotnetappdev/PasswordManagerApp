@@ -7,122 +7,136 @@
                CloseButtonText="Cancel"
                PrimaryButtonClick="ContentDialog_PrimaryButtonClick">
 
-    <ScrollViewer MaxHeight="500" MaxWidth="400">
-        <StackPanel Spacing="8" Padding="16">
+    <ScrollViewer MaxHeight="600" MaxWidth="600">
+        <StackPanel Spacing="16" Padding="16">
             
             <TextBlock Text="Choose the type of item you want to add:" 
                       FontSize="16" 
                       FontWeight="SemiBold"
+                      HorizontalAlignment="Center"
                       Margin="0,0,0,16"/>
             
-            <RadioButton x:Name="LoginRadioButton"
-                        Content="🔐 Login"
-                        GroupName="ItemType"
-                        IsChecked="True">
-                <RadioButton.ContentTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <TextBlock Text="🔐" FontSize="20" VerticalAlignment="Center"/>
+            <!-- Main Category Grid - 3 columns layout like 1Password -->
+            <Grid x:Name="MainCategoryGrid">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Top row - Main categories -->
+                <Button x:Name="LoginButton" Grid.Row="0" Grid.Column="0" Click="CategoryButton_Click" Tag="Login" 
+                        Style="{StaticResource CardButtonStyle}" Margin="4" MinHeight="80">
+                    <StackPanel>
+                        <TextBlock Text="🔐" FontSize="32" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Login" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                
+                <Button x:Name="SecureNoteButton" Grid.Row="0" Grid.Column="1" Click="CategoryButton_Click" Tag="Secure Note"
+                        Style="{StaticResource CardButtonStyle}" Margin="4" MinHeight="80">
+                    <StackPanel>
+                        <TextBlock Text="📝" FontSize="32" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Secure Note" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                
+                <Button x:Name="CreditCardButton" Grid.Row="0" Grid.Column="2" Click="CategoryButton_Click" Tag="Credit Card"
+                        Style="{StaticResource CardButtonStyle}" Margin="4" MinHeight="80">
+                    <StackPanel>
+                        <TextBlock Text="💳" FontSize="32" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Credit Card" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                
+                <!-- Second row -->
+                <Button x:Name="IdentityButton" Grid.Row="1" Grid.Column="0" Click="CategoryButton_Click" Tag="Identity"
+                        Style="{StaticResource CardButtonStyle}" Margin="4" MinHeight="80">
+                    <StackPanel>
+                        <TextBlock Text="👤" FontSize="32" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Identity" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                
+                <Button x:Name="PasswordButton" Grid.Row="1" Grid.Column="1" Click="CategoryButton_Click" Tag="Password"
+                        Style="{StaticResource CardButtonStyle}" Margin="4" MinHeight="80">
+                    <StackPanel>
+                        <TextBlock Text="🔑" FontSize="32" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Password" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                
+                <Button x:Name="DocumentButton" Grid.Row="1" Grid.Column="2" Click="CategoryButton_Click" Tag="Document"
+                        Style="{StaticResource CardButtonStyle}" Margin="4" MinHeight="80">
+                    <StackPanel>
+                        <TextBlock Text="📄" FontSize="32" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Document" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                
+                <!-- Show Less/More Button -->
+                <Button x:Name="ShowMoreButton" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" 
+                        Content="Show less" Click="ShowMoreButton_Click" 
+                        Background="Transparent" BorderThickness="0"
+                        HorizontalAlignment="Center" Margin="0,16,0,0"/>
+                
+                <!-- Extended categories (initially hidden) -->
+                <StackPanel x:Name="ExtendedCategoriesPanel" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" 
+                           Visibility="Collapsed">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Row 1 -->
+                        <Button x:Name="SSHKeyButton" Grid.Row="0" Grid.Column="0" Click="CategoryButton_Click" Tag="SSH Key"
+                                Style="{StaticResource CardButtonStyle}" Margin="4" MinHeight="80">
                             <StackPanel>
-                                <TextBlock Text="Login" FontWeight="SemiBold"/>
-                                <TextBlock Text="Username and password for websites and apps" 
-                                          FontSize="12" 
-                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Text="🔗" FontSize="32" HorizontalAlignment="Center"/>
+                                <TextBlock Text="SSH Key" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                             </StackPanel>
-                        </StackPanel>
-                    </DataTemplate>
-                </RadioButton.ContentTemplate>
-            </RadioButton>
-
-            <RadioButton x:Name="PasskeyRadioButton"
-                        Content="🔑 Passkey"
-                        GroupName="ItemType">
-                <RadioButton.ContentTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <TextBlock Text="🔑" FontSize="20" VerticalAlignment="Center"/>
+                        </Button>
+                        
+                        <Button x:Name="APICredentialsButton" Grid.Row="0" Grid.Column="1" Click="CategoryButton_Click" Tag="API Credentials"
+                                Style="{StaticResource CardButtonStyle}" Margin="4" MinHeight="80">
                             <StackPanel>
-                                <TextBlock Text="Passkey" FontWeight="SemiBold"/>
-                                <TextBlock Text="Passwordless authentication using WebAuthn" 
-                                          FontSize="12" 
-                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Text="&lt;/&gt;" FontSize="24" HorizontalAlignment="Center"/>
+                                <TextBlock Text="API Credentials" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                             </StackPanel>
-                        </StackPanel>
-                    </DataTemplate>
-                </RadioButton.ContentTemplate>
-            </RadioButton>
-
-            <RadioButton x:Name="CreditCardRadioButton"
-                        Content="💳 Credit Card"
-                        GroupName="ItemType">
-                <RadioButton.ContentTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <TextBlock Text="💳" FontSize="20" VerticalAlignment="Center"/>
+                        </Button>
+                        
+                        <Button x:Name="BankAccountButton" Grid.Row="0" Grid.Column="2" Click="CategoryButton_Click" Tag="Bank Account"
+                                Style="{StaticResource CardButtonStyle}" Margin="4" MinHeight="80">
                             <StackPanel>
-                                <TextBlock Text="Credit Card" FontWeight="SemiBold"/>
-                                <TextBlock Text="Credit card numbers, expiry, and CVV" 
-                                          FontSize="12" 
-                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Text="🏦" FontSize="32" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Bank Account" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                             </StackPanel>
-                        </StackPanel>
-                    </DataTemplate>
-                </RadioButton.ContentTemplate>
-            </RadioButton>
-
-            <RadioButton x:Name="SecureNoteRadioButton"
-                        Content="📝 Secure Note"
-                        GroupName="ItemType">
-                <RadioButton.ContentTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <TextBlock Text="📝" FontSize="20" VerticalAlignment="Center"/>
-                            <StackPanel>
-                                <TextBlock Text="Secure Note" FontWeight="SemiBold"/>
-                                <TextBlock Text="Encrypted text notes and documents" 
-                                          FontSize="12" 
-                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </DataTemplate>
-                </RadioButton.ContentTemplate>
-            </RadioButton>
-
-            <RadioButton x:Name="WiFiRadioButton"
-                        Content="📶 WiFi"
-                        GroupName="ItemType">
-                <RadioButton.ContentTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <TextBlock Text="📶" FontSize="20" VerticalAlignment="Center"/>
-                            <StackPanel>
-                                <TextBlock Text="WiFi Network" FontWeight="SemiBold"/>
-                                <TextBlock Text="WiFi network credentials and settings" 
-                                          FontSize="12" 
-                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </DataTemplate>
-                </RadioButton.ContentTemplate>
-            </RadioButton>
-
-            <RadioButton x:Name="PasswordRadioButton"
-                        Content="🔐 Password"
-                        GroupName="ItemType">
-                <RadioButton.ContentTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <TextBlock Text="🔐" FontSize="20" VerticalAlignment="Center"/>
-                            <StackPanel>
-                                <TextBlock Text="Password" FontWeight="SemiBold"/>
-                                <TextBlock Text="Standalone password without login details" 
-                                          FontSize="12" 
-                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </DataTemplate>
-                </RadioButton.ContentTemplate>
-            </RadioButton>
+                        </Button>
+                        
+                        <!-- Additional rows would continue here... -->
+                    </Grid>
+                </StackPanel>
+            </Grid>
             
         </StackPanel>
     </ScrollViewer>

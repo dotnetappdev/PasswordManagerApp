@@ -255,4 +255,49 @@ public sealed partial class MainWindow : Window
         // Navigate back to login
         LoginFrame.Navigate(typeof(Views.LoginPage), _serviceProvider);
     }
+
+    // Event handlers for navigation context menus
+    private void NavigationItem_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
+    {
+        // Right-click context menu is already handled by ContextFlyout
+    }
+
+    private async void EditItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem menuItem && menuItem.Tag is string itemTag)
+        {
+            // Handle edit action based on item type
+            var dialog = new ContentDialog
+            {
+                Title = $"Edit {itemTag}",
+                Content = $"Edit functionality for {itemTag} would be implemented here.",
+                CloseButtonText = "OK",
+                XamlRoot = this.Content.XamlRoot
+            };
+            await dialog.ShowAsync();
+        }
+    }
+
+    private async void DeleteItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem menuItem && menuItem.Tag is string itemTag)
+        {
+            // Show confirmation dialog
+            var dialog = new ContentDialog
+            {
+                Title = $"Delete {itemTag}",
+                Content = $"Are you sure you want to delete {itemTag}?",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.Content.XamlRoot
+            };
+            
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                // Handle delete action
+                // Implementation would go here
+            }
+        }
+    }
 }
