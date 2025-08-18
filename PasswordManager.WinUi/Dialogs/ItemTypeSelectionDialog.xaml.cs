@@ -28,7 +28,7 @@ public sealed partial class ItemTypeSelectionDialog : ContentDialog
                 "Login" => ItemType.Login,
                 "Credit Card" => ItemType.CreditCard,
                 "Secure Note" => ItemType.SecureNote,
-                "Identity" => ItemType.Identity,
+                "Identity" => ItemType.SecureNote, // Use SecureNote for identity items
                 "Password" => ItemType.Password,
                 "Document" => ItemType.SecureNote, // Use SecureNote for documents
                 _ => ItemType.Login // Default fallback
