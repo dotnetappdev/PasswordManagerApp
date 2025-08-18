@@ -203,11 +203,26 @@ public sealed partial class PasswordItemsPage : Page
                 return;
             }
 
-            var dialog = new Dialogs.AddPasswordDialog(_serviceProvider);
-            dialog.XamlRoot = this.XamlRoot;
+            // First show the item type selection dialog (1Password style)
+            var typeSelectionDialog = new Dialogs.ItemTypeSelectionDialog();
+            typeSelectionDialog.XamlRoot = this.XamlRoot;
             
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary && dialog.Result != null)
+            var typeResult = await typeSelectionDialog.ShowAsync();
+            if (typeResult == ContentDialogResult.Primary || typeSelectionDialog.SelectedItemType != null)
+            {
+                // Then show the main add dialog with the selected type pre-filled
+                var dialog = new Dialogs.AddPasswordDialog(_serviceProvider);
+                dialog.XamlRoot = this.XamlRoot;
+                
+                // Pre-select the item type if one was chosen
+                if (typeSelectionDialog.SelectedItemType.HasValue)
+                {
+                    // Pass the selected type to the dialog
+                    dialog.SetInitialItemType(typeSelectionDialog.SelectedItemType.Value, typeSelectionDialog.SelectedCategoryName);
+                }
+                
+                var result = await dialog.ShowAsync();
+                if (result == ContentDialogResult.Primary && dialog.Result != null)
             {
                 // Refresh the list to show the new item
                 if (_viewModel != null)
