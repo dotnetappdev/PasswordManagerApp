@@ -217,8 +217,8 @@ public sealed partial class PasswordItemsPage : Page
                 // Pre-select the item type if one was chosen
                 if (typeSelectionDialog.SelectedItemType.HasValue)
                 {
-                    // Pass the selected type to the dialog (this would need to be implemented in AddPasswordDialog)
-                    // dialog.SetInitialItemType(typeSelectionDialog.SelectedItemType.Value, typeSelectionDialog.SelectedCategoryName);
+                    // Pass the selected type to the dialog
+                    dialog.SetInitialItemType(typeSelectionDialog.SelectedItemType.Value, typeSelectionDialog.SelectedCategoryName);
                 }
                 
                 var result = await dialog.ShowAsync();

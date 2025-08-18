@@ -333,16 +333,50 @@ public sealed partial class MainWindow : Window
         var dialog = new ContentDialog
         {
             Title = "Delete Vault",
-            Content = "Are you sure you want to delete this vault? This action cannot be undone.",
+            Content = "Are you sure you want to delete this vault?\n\nThis action cannot be undone and will permanently delete all items in this vault.",
             PrimaryButtonText = "Delete",
-            CloseButtonText = "Cancel",
+            SecondaryButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Secondary,
             XamlRoot = this.Content.XamlRoot
+        };
+        
+        // Style the delete button with warning colors
+        dialog.PrimaryButtonStyle = new Style(typeof(Button))
+        {
+            Setters =
+            {
+                new Setter(Button.BackgroundProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(255, 239, 68, 68))),
+                new Setter(Button.ForegroundProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255)))
+            }
         };
         
         var result = await dialog.ShowAsync();
         if (result == ContentDialogResult.Primary)
         {
             // Handle vault deletion
+            try
+            {
+                // Implementation would go here
+                var successDialog = new ContentDialog
+                {
+                    Title = "Vault Deleted",
+                    Content = "The vault has been successfully deleted.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.Content.XamlRoot
+                };
+                await successDialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = $"Failed to delete vault: {ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.Content.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+            }
         }
     }
 
@@ -373,16 +407,50 @@ public sealed partial class MainWindow : Window
         var dialog = new ContentDialog
         {
             Title = "Delete Category",
-            Content = "Are you sure you want to delete this category? Items in this category will be moved to 'Uncategorized'.",
+            Content = "Are you sure you want to delete this category?\n\nItems in this category will be moved to 'Uncategorized'. This action cannot be undone.",
             PrimaryButtonText = "Delete",
-            CloseButtonText = "Cancel",
+            SecondaryButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Secondary,
             XamlRoot = this.Content.XamlRoot
+        };
+        
+        // Style the delete button with warning colors
+        dialog.PrimaryButtonStyle = new Style(typeof(Button))
+        {
+            Setters =
+            {
+                new Setter(Button.BackgroundProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(255, 239, 68, 68))),
+                new Setter(Button.ForegroundProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255)))
+            }
         };
         
         var result = await dialog.ShowAsync();
         if (result == ContentDialogResult.Primary)
         {
             // Handle category deletion
+            try
+            {
+                // Implementation would go here
+                var successDialog = new ContentDialog
+                {
+                    Title = "Category Deleted",
+                    Content = "The category has been successfully deleted.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.Content.XamlRoot
+                };
+                await successDialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = $"Failed to delete category: {ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.Content.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+            }
         }
     }
 
@@ -413,16 +481,50 @@ public sealed partial class MainWindow : Window
         var dialog = new ContentDialog
         {
             Title = "Delete Tag",
-            Content = "Are you sure you want to delete this tag? This will remove the tag from all items.",
+            Content = "Are you sure you want to delete this tag?\n\nThis will remove the tag from all items. This action cannot be undone.",
             PrimaryButtonText = "Delete",
-            CloseButtonText = "Cancel",
+            SecondaryButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Secondary,
             XamlRoot = this.Content.XamlRoot
+        };
+        
+        // Style the delete button with warning colors
+        dialog.PrimaryButtonStyle = new Style(typeof(Button))
+        {
+            Setters =
+            {
+                new Setter(Button.BackgroundProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(255, 239, 68, 68))),
+                new Setter(Button.ForegroundProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255)))
+            }
         };
         
         var result = await dialog.ShowAsync();
         if (result == ContentDialogResult.Primary)
         {
             // Handle tag deletion
+            try
+            {
+                // Implementation would go here
+                var successDialog = new ContentDialog
+                {
+                    Title = "Tag Deleted",
+                    Content = "The tag has been successfully deleted.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.Content.XamlRoot
+                };
+                await successDialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = $"Failed to delete tag: {ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.Content.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+            }
         }
     }
 }

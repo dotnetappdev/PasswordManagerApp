@@ -39,6 +39,22 @@ public sealed partial class AddPasswordDialog : ContentDialog
         }
     }
 
+    // Method to set initial item type from the selection dialog
+    public void SetInitialItemType(ItemType itemType, string? categoryName = null)
+    {
+        // Set the type combo box selection
+        TypeComboBox.SelectedIndex = (int)itemType - 1;
+        
+        // Update the title based on category name
+        if (!string.IsNullOrEmpty(categoryName))
+        {
+            Title = $"Add {categoryName}";
+        }
+        
+        // Show the appropriate fields panel
+        TypeComboBox_SelectionChanged(TypeComboBox, null);
+    }
+
     private async void LoadData()
     {
         try
