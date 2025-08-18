@@ -50,21 +50,37 @@ public static class TestDataSeeder
     {
         if (!db.Categories.Any())
         {
+            // Add 1Password-style default categories first (these are the main types shown in the image)
             db.Categories.AddRange(
-                new Category { Name = "Checking Account", Icon = "💳", Color = "#3b82f6", CollectionId = 1, UserId = testUserId },
-                new Category { Name = "Credit Cards", Icon = "💰", Color = "#f59e0b", CollectionId = 1, UserId = testUserId },
-                new Category { Name = "Investment", Icon = "📈", Color = "#10b981", CollectionId = 1, UserId = testUserId },
-                new Category { Name = "Health Insurance", Icon = "🏥", Color = "#ef4444", CollectionId = 2, UserId = testUserId },
-                new Category { Name = "Auto Insurance", Icon = "🚗", Color = "#8b5cf6", CollectionId = 2, UserId = testUserId },
-                new Category { Name = "Home Insurance", Icon = "🏠", Color = "#06b6d4", CollectionId = 2, UserId = testUserId },
-                new Category { Name = "Electric", Icon = "⚡", Color = "#fbbf24", CollectionId = 3, UserId = testUserId },
-                new Category { Name = "Gas", Icon = "🔥", Color = "#f97316", CollectionId = 3, UserId = testUserId },
-                new Category { Name = "Internet", Icon = "🌐", Color = "#6366f1", CollectionId = 3, UserId = testUserId },
-                new Category { Name = "Business", Icon = "🏢", Color = "#7c3aed", CollectionId = 4, UserId = testUserId },
-                new Category { Name = "Email", Icon = "📧", Color = "#10b981", CollectionId = 5, UserId = testUserId },
-                new Category { Name = "WiFi Networks", Icon = "📶", Color = "#06b6d4", CollectionId = 5, UserId = testUserId },
-                new Category { Name = "Secure Notes", Icon = "📝", Color = "#84cc16", CollectionId = 5, UserId = testUserId },
-                new Category { Name = "Passkeys", Icon = "🔐", Color = "#ec4899", CollectionId = 5, UserId = testUserId }
+                // Main categories from 1Password style
+                new Category { Name = "Login", Icon = "🔐", Color = "#3b82f6", UserId = testUserId },
+                new Category { Name = "Secure Note", Icon = "📝", Color = "#f59e0b", UserId = testUserId },
+                new Category { Name = "Credit Card", Icon = "💳", Color = "#10b981", UserId = testUserId },
+                new Category { Name = "Identity", Icon = "👤", Color = "#10b981", UserId = testUserId },
+                new Category { Name = "Password", Icon = "🔑", Color = "#06b6d4", UserId = testUserId },
+                new Category { Name = "Document", Icon = "📄", Color = "#3b82f6", UserId = testUserId },
+                
+                // Extended categories
+                new Category { Name = "SSH Key", Icon = "🔗", Color = "#f59e0b", UserId = testUserId },
+                new Category { Name = "API Credentials", Icon = "</> ", Color = "#06b6d4", UserId = testUserId },
+                new Category { Name = "Bank Account", Icon = "🏦", Color = "#f59e0b", UserId = testUserId },
+                new Category { Name = "Crypto Wallet", Icon = "₿", Color = "#8b5cf6", UserId = testUserId },
+                new Category { Name = "Database", Icon = "🗄️", Color = "#6b7280", UserId = testUserId },
+                new Category { Name = "Driver License", Icon = "🪪", Color = "#ec4899", UserId = testUserId },
+                new Category { Name = "Email", Icon = "📧", Color = "#ec4899", UserId = testUserId },
+                new Category { Name = "Medical Record", Icon = "❤️", Color = "#ef4444", UserId = testUserId },
+                new Category { Name = "Membership", Icon = "🎫", Color = "#8b5cf6", UserId = testUserId },
+                new Category { Name = "Outdoor License", Icon = "🏞️", Color = "#10b981", UserId = testUserId },
+                new Category { Name = "Passport", Icon = "🌐", Color = "#3b82f6", UserId = testUserId },
+                new Category { Name = "Rewards", Icon = "🎁", Color = "#ec4899", UserId = testUserId },
+                new Category { Name = "Server", Icon = "🖥️", Color = "#6b7280", UserId = testUserId },
+                new Category { Name = "Social Security Number", Icon = "🆔", Color = "#3b82f6", UserId = testUserId },
+                new Category { Name = "Software License", Icon = "💿", Color = "#3b82f6", UserId = testUserId },
+                new Category { Name = "Wireless Router", Icon = "📶", Color = "#06b6d4", UserId = testUserId },
+                
+                // Keep some existing specialized categories
+                new Category { Name = "WiFi Networks", Icon = "📶", Color = "#06b6d4", UserId = testUserId },
+                new Category { Name = "Passkeys", Icon = "🔐", Color = "#ec4899", UserId = testUserId }
             );
             db.SaveChanges();
         }

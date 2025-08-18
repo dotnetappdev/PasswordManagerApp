@@ -244,6 +244,58 @@
                 Value="14"/>
     </Style>
 
+    <!-- Card Button Style for Item Type Selection -->
+    <Style x:Key="CardButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource ModernSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Padding" Value="12"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal"/>
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="BorderElement.Background" Value="{StaticResource ModernElevatedSurfaceBrush}"/>
+                                        <Setter Target="BorderElement.BorderBrush" Value="{StaticResource ModernPrimaryBrush}"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="BorderElement.Background" Value="{StaticResource ModernPrimaryLightBrush}"/>
+                                        <Setter Target="BorderElement.BorderBrush" Value="{StaticResource ModernPrimaryBrush}"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <Border x:Name="BorderElement" 
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                CornerRadius="{TemplateBinding CornerRadius}">
+                            <ContentPresenter x:Name="ContentPresenter"
+                                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                            Content="{TemplateBinding Content}"/>
+                        </Border>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Modern Typography Styles -->
     <Style x:Key="ModernHeading1Style"
             TargetType="TextBlock">
@@ -451,6 +503,22 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- Content Dialog Styles -->
+    <Style TargetType="ContentDialog">
+        <Setter Property="Background" Value="{StaticResource ModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="12"/>
+    </Style>
+
+    <!-- Content Dialog Button Styles -->
+    <Style x:Key="ContentDialogButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernPrimaryButtonStyle}">
+        <Setter Property="Margin" Value="4"/>
+        <Setter Property="MinWidth" Value="120"/>
+        <Setter Property="FontSize" Value="14"/>
     </Style>
 
 </ResourceDictionary>

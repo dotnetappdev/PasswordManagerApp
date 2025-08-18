@@ -205,4 +205,25 @@
         </Setter>
     </Style>
 
+    <!-- Dark Theme Content Dialog Styles -->
+    <Style TargetType="ContentDialog">
+        <Setter Property="Background" Value="{StaticResource DarkModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource DarkModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="12"/>
+    </Style>
+
+    <!-- Dark Theme Content Dialog Button Styles -->
+    <Style x:Key="DarkContentDialogButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource DarkModernPrimaryBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Margin" Value="4"/>
+        <Setter Property="MinWidth" Value="120"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
 </ResourceDictionary>
