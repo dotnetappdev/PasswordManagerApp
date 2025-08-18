@@ -300,4 +300,129 @@ public sealed partial class MainWindow : Window
             }
         }
     }
+
+    // Profile button event handler
+    private async void ProfileButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "Profile Menu",
+            Content = "Profile menu functionality would be implemented here.",
+            CloseButtonText = "OK",
+            XamlRoot = this.Content.XamlRoot
+        };
+        await dialog.ShowAsync();
+    }
+
+    // Vault management event handlers
+    private async void AddVaultButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "Add New Vault",
+            Content = "Add vault functionality would be implemented here.",
+            PrimaryButtonText = "Add",
+            CloseButtonText = "Cancel",
+            XamlRoot = this.Content.XamlRoot
+        };
+        await dialog.ShowAsync();
+    }
+
+    private async void DeleteVaultButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "Delete Vault",
+            Content = "Are you sure you want to delete this vault? This action cannot be undone.",
+            PrimaryButtonText = "Delete",
+            CloseButtonText = "Cancel",
+            XamlRoot = this.Content.XamlRoot
+        };
+        
+        var result = await dialog.ShowAsync();
+        if (result == ContentDialogResult.Primary)
+        {
+            // Handle vault deletion
+        }
+    }
+
+    // Category management event handlers
+    private async void AddCategoryNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dialog = new Dialogs.CategoryDialog(_serviceProvider);
+            dialog.XamlRoot = this.Content.XamlRoot;
+            await dialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = "Error",
+                Content = $"Error adding category: {ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = this.Content.XamlRoot
+            };
+            await errorDialog.ShowAsync();
+        }
+    }
+
+    private async void DeleteCategoryNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "Delete Category",
+            Content = "Are you sure you want to delete this category? Items in this category will be moved to 'Uncategorized'.",
+            PrimaryButtonText = "Delete",
+            CloseButtonText = "Cancel",
+            XamlRoot = this.Content.XamlRoot
+        };
+        
+        var result = await dialog.ShowAsync();
+        if (result == ContentDialogResult.Primary)
+        {
+            // Handle category deletion
+        }
+    }
+
+    // Tag management event handlers
+    private async void AddTagNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dialog = new Dialogs.TagDialog(_serviceProvider);
+            dialog.XamlRoot = this.Content.XamlRoot;
+            await dialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = "Error",
+                Content = $"Error adding tag: {ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = this.Content.XamlRoot
+            };
+            await errorDialog.ShowAsync();
+        }
+    }
+
+    private async void DeleteTagNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "Delete Tag",
+            Content = "Are you sure you want to delete this tag? This will remove the tag from all items.",
+            PrimaryButtonText = "Delete",
+            CloseButtonText = "Cancel",
+            XamlRoot = this.Content.XamlRoot
+        };
+        
+        var result = await dialog.ShowAsync();
+        if (result == ContentDialogResult.Primary)
+        {
+            // Handle tag deletion
+        }
+    }
 }

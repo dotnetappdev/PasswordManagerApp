@@ -8,12 +8,10 @@ public sealed partial class ItemTypeSelectionDialog : ContentDialog
 {
     public ItemType? SelectedItemType { get; private set; }
     public string? SelectedCategoryName { get; private set; }
-    private bool _showExtendedCategories = false;
 
     public ItemTypeSelectionDialog()
     {
         this.InitializeComponent();
-        UpdateShowMoreButton();
     }
 
     private void CategoryButton_Click(object sender, RoutedEventArgs e)
@@ -31,23 +29,20 @@ public sealed partial class ItemTypeSelectionDialog : ContentDialog
                 "Identity" => ItemType.SecureNote, // Use SecureNote for identity items
                 "Password" => ItemType.Password,
                 "Document" => ItemType.SecureNote, // Use SecureNote for documents
+                "SSH Key" => ItemType.SecureNote,
+                "API Credentials" => ItemType.SecureNote,
+                "Bank Account" => ItemType.SecureNote,
+                "Crypto Wallet" => ItemType.SecureNote,
+                "Database" => ItemType.SecureNote,
+                "Driver License" => ItemType.SecureNote,
+                "Email" => ItemType.SecureNote,
+                "Medical Record" => ItemType.SecureNote,
+                "Membership" => ItemType.SecureNote,
                 _ => ItemType.Login // Default fallback
             };
             
             this.Hide();
         }
-    }
-
-    private void ShowMoreButton_Click(object sender, RoutedEventArgs e)
-    {
-        _showExtendedCategories = !_showExtendedCategories;
-        ExtendedCategoriesPanel.Visibility = _showExtendedCategories ? Visibility.Visible : Visibility.Collapsed;
-        UpdateShowMoreButton();
-    }
-
-    private void UpdateShowMoreButton()
-    {
-        ShowMoreButton.Content = _showExtendedCategories ? "Show less" : "Show more";
     }
 
     private void ContentDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)

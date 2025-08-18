@@ -135,6 +135,7 @@ public partial class App : Application
                 services.AddScoped<ITagService, TagService>();
                 services.AddScoped<ICategoryInterface, CategoryService>();
                 services.AddScoped<ICollectionService, CollectionService>();
+                services.AddScoped<IPasskeyService, PasskeyService>(); // Fix: Add missing PasskeyService registration
                 services.AddScoped<WinUiAuthService>(); // Register the local auth service
                 services.AddScoped<IAuthService, ConfigurableAuthService>(); // Use configurable auth service
                 services.AddScoped<IPasswordRevealService, PasswordRevealService>();
