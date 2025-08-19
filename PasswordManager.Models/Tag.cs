@@ -20,6 +20,7 @@ public class Tag
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow; // For mapping
+    public DateTime LastModified { get; set; } = DateTime.UtcNow;
     public bool IsSystemTag { get; set; } // For built-in tags like "favorite", "work", etc.
 
     // User relationship
