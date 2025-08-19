@@ -8,21 +8,21 @@
                x:FieldModifier="private"
                Background="{StaticResource ModernBackgroundBrush}"
                Visibility="Visible"/>
-               
+
         <!-- Main Navigation View (shown after authentication) -->
         <NavigationView x:Name="MainNavigationView"
-                       Style="{StaticResource ModernNavigationViewStyle}"
-                       IsBackButtonVisible="Collapsed"
-                       IsSettingsVisible="False"
-                       IsPaneToggleButtonVisible="True"
-                       OpenPaneLength="320"
-                       CompactModeThresholdWidth="640"
-                       ExpandedModeThresholdWidth="1028"
-                       SelectionChanged="MainNavigationView_SelectionChanged"
-                       Visibility="Collapsed"
-                       Margin="0"
-                       Padding="0">
-            
+                        Style="{StaticResource ModernNavigationViewStyle}"
+                        IsBackButtonVisible="Collapsed"
+                        IsSettingsVisible="False"
+                        IsPaneToggleButtonVisible="True"
+                        OpenPaneLength="320"
+                        CompactModeThresholdWidth="640"
+                        ExpandedModeThresholdWidth="1028"
+                        SelectionChanged="MainNavigationView_SelectionChanged"
+                        Visibility="Collapsed"
+                        Margin="0"
+                        Padding="0">
+
             <!-- Custom Pane Header with Profile -->
             <NavigationView.PaneHeader>
                 <Grid Margin="16,12">
@@ -30,119 +30,138 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    
+
                     <!-- Profile Section -->
-                    <Border Grid.Row="0" 
-                           Background="Transparent"
-                           CornerRadius="8"
-                           Padding="12,8"
-                           Margin="0,0,0,12">
+                    <Border Grid.Row="0"
+                            Background="Transparent"
+                            CornerRadius="8"
+                            Padding="12,8"
+                            Margin="0,0,0,12">
                         <Button x:Name="ProfileButton"
-                               Background="Transparent"
-                               BorderThickness="0"
-                               HorizontalAlignment="Stretch"
-                               HorizontalContentAlignment="Left"
-                               Click="ProfileButton_Click">
+                                Background="Transparent"
+                                BorderThickness="0"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Left"
+                                Click="ProfileButton_Click">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                
+
                                 <!-- Profile Picture -->
                                 <Border Grid.Column="0"
-                                       Width="32"
-                                       Height="32"
-                                       CornerRadius="16"
-                                       Background="{StaticResource ModernPrimaryGradientBrush}"
-                                       Margin="0,0,12,0">
-                                    <TextBlock Text="👤" 
-                                             FontSize="16"
-                                             Foreground="White"
-                                             HorizontalAlignment="Center"
-                                             VerticalAlignment="Center"/>
+                                        Width="32"
+                                        Height="32"
+                                        CornerRadius="16"
+                                        Background="{StaticResource ModernPrimaryGradientBrush}"
+                                        Margin="0,0,12,0">
+                                    <TextBlock Text="👤"
+                                               FontSize="16"
+                                               Foreground="White"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
                                 </Border>
-                                
+
                                 <!-- User Info -->
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock x:Name="UserNameText" 
-                                             Text="David Smith" 
-                                             FontSize="14" 
-                                             FontWeight="SemiBold"
-                                             Foreground="{StaticResource ModernTextPrimaryBrush}"/>
-                                    <TextBlock Text="Personal" 
-                                             FontSize="12"
-                                             Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                <StackPanel Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Spacing="2">
+                                    <TextBlock x:Name="UserNameText"
+                                               Text="David Smith"
+                                               FontSize="14"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                    <TextBlock Text="Personal"
+                                               FontSize="12"
+                                               Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                                 </StackPanel>
-                                
+
                                 <!-- Dropdown Arrow -->
                                 <FontIcon Grid.Column="2"
-                                         Glyph="&#xE019;"
-                                         FontSize="12"
-                                         Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                          Glyph="&#xE019;"
+                                          FontSize="12"
+                                          Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                             </Grid>
                         </Button>
                     </Border>
-                    
+
                     <!-- Search Box moved here -->
                     <AutoSuggestBox x:Name="SearchBox"
-                                  Grid.Row="1"
-                                  QueryIcon="Find"
-                                  PlaceholderText="Search passwords..."
-                                  TextChanged="SearchBox_TextChanged"
-                                  QuerySubmitted="SearchBox_QuerySubmitted"
-                                  Style="{StaticResource ModernAutoSuggestBoxStyle}"
-                                  CornerRadius="8"
-                                  Height="36"/>
+                                    Grid.Row="1"
+                                    QueryIcon="Find"
+                                    PlaceholderText="Search passwords..."
+                                    TextChanged="SearchBox_TextChanged"
+                                    QuerySubmitted="SearchBox_QuerySubmitted"
+                                    Style="{StaticResource ModernAutoSuggestBoxStyle}"
+                                    CornerRadius="8"
+                                    Height="36"/>
                 </Grid>
             </NavigationView.PaneHeader>
 
             <!-- Header Content - Empty now -->
             <NavigationView.Header>
-                <Grid Height="40" Margin="24,0">
+                <Grid Height="40"
+                        Margin="24,0">
                     <!-- Empty header as search and profile are now in pane header -->
                 </Grid>
             </NavigationView.Header>
-            
+
             <!-- Navigation Menu Items -->
             <NavigationView.MenuItems>
                 <!-- All Items -->
-                <NavigationViewItem x:Name="AllItemsNavItem" 
-                                  Content="All Items" 
-                                  Tag="AllItems"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}"
-                                  RightTapped="NavigationItem_RightTapped">
+                <NavigationViewItem x:Name="AllItemsNavItem"
+                                    Content="All Items"
+                                    Tag="AllItems"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    RightTapped="NavigationItem_RightTapped">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8A5;" FontSize="18" Foreground="{StaticResource ModernPrimaryBrush}"/>
+                        <FontIcon Glyph="&#xE8A5;"
+                                FontSize="18"
+                                Foreground="{StaticResource ModernPrimaryBrush}"/>
                     </NavigationViewItem.Icon>
                     <NavigationViewItem.ContextFlyout>
                         <MenuFlyout>
-                            <MenuFlyoutItem Text="Edit" Icon="Edit" Click="EditItem_Click" Tag="AllItems"/>
-                            <MenuFlyoutItem Text="Delete" Icon="Delete" Click="DeleteItem_Click" Tag="AllItems"/>
+                            <MenuFlyoutItem Text="Edit"
+                                    Icon="Edit"
+                                    Click="EditItem_Click"
+                                    Tag="AllItems"/>
+                            <MenuFlyoutItem Text="Delete"
+                                    Icon="Delete"
+                                    Click="DeleteItem_Click"
+                                    Tag="AllItems"/>
                         </MenuFlyout>
                     </NavigationViewItem.ContextFlyout>
                 </NavigationViewItem>
-                
+
                 <!-- Favorites -->
-                <NavigationViewItem x:Name="FavoritesNavItem" 
-                                  Content="Favorites" 
-                                  Tag="Favorites"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}"
-                                  RightTapped="NavigationItem_RightTapped">
+                <NavigationViewItem x:Name="FavoritesNavItem"
+                                    Content="Favorites"
+                                    Tag="Favorites"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    RightTapped="NavigationItem_RightTapped">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE734;" FontSize="18" Foreground="{StaticResource ModernWarningBrush}"/>
+                        <FontIcon Glyph="&#xE734;"
+                                FontSize="18"
+                                Foreground="{StaticResource ModernWarningBrush}"/>
                     </NavigationViewItem.Icon>
                     <NavigationViewItem.ContextFlyout>
                         <MenuFlyout>
-                            <MenuFlyoutItem Text="Edit" Icon="Edit" Click="EditItem_Click" Tag="Favorites"/>
-                            <MenuFlyoutItem Text="Delete" Icon="Delete" Click="DeleteItem_Click" Tag="Favorites"/>
+                            <MenuFlyoutItem Text="Edit"
+                                    Icon="Edit"
+                                    Click="EditItem_Click"
+                                    Tag="Favorites"/>
+                            <MenuFlyoutItem Text="Delete"
+                                    Icon="Delete"
+                                    Click="DeleteItem_Click"
+                                    Tag="Favorites"/>
                         </MenuFlyout>
                     </NavigationViewItem.ContextFlyout>
                 </NavigationViewItem>
-                
+
                 <NavigationViewItemSeparator Margin="12,8"/>
-                
+
                 <!-- Vaults Section with Plus Icon -->
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -150,51 +169,57 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    
-                    <TextBlock Grid.Column="0" 
-                             Text="VAULTS" 
-                             FontSize="12" 
-                             FontWeight="SemiBold"
-                             Foreground="{StaticResource ModernTextSecondaryBrush}"
-                             VerticalAlignment="Center"
-                             Margin="16,8"/>
-                    
+
+                    <TextBlock Grid.Column="0"
+                               Text="VAULTS"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource ModernTextSecondaryBrush}"
+                               VerticalAlignment="Center"
+                               Margin="16,8"/>
+
                     <Button Grid.Column="1"
-                           x:Name="AddVaultButton"
-                           Background="Transparent"
-                           BorderThickness="0"
-                           Width="24"
-                           Height="24"
-                           Click="AddVaultButton_Click"
-                           ToolTipService.ToolTip="Add Vault">
-                        <FontIcon Glyph="&#xE109;" FontSize="12" Foreground="{StaticResource ModernPrimaryBrush}"/>
+                            x:Name="AddVaultButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Width="24"
+                            Height="24"
+                            Click="AddVaultButton_Click"
+                            ToolTipService.ToolTip="Add Vault">
+                        <FontIcon Glyph="&#xE109;"
+                                FontSize="12"
+                                Foreground="{StaticResource ModernPrimaryBrush}"/>
                     </Button>
-                    
+
                     <Button Grid.Column="2"
-                           x:Name="DeleteVaultButton"
-                           Background="Transparent"
-                           BorderThickness="0"
-                           Width="24"
-                           Height="24"
-                           Click="DeleteVaultButton_Click"
-                           ToolTipService.ToolTip="Delete Vault"
-                           Margin="4,0">
-                        <FontIcon Glyph="&#xE74D;" FontSize="12" Foreground="{StaticResource ModernErrorBrush}"/>
+                            x:Name="DeleteVaultButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Width="24"
+                            Height="24"
+                            Click="DeleteVaultButton_Click"
+                            ToolTipService.ToolTip="Delete Vault"
+                            Margin="4,0">
+                        <FontIcon Glyph="&#xE74D;"
+                                FontSize="12"
+                                Foreground="{StaticResource ModernErrorBrush}"/>
                     </Button>
                 </Grid>
-                
+
                 <!-- Personal Vault -->
-                <NavigationViewItem Content="Personal" 
-                                  Tag="PersonalVault"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}"
-                                  Margin="16,0,0,0">
+                <NavigationViewItem Content="Personal"
+                                    Tag="PersonalVault"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    Margin="16,0,0,0">
                     <NavigationViewItem.Icon>
-                        <Border Background="#3b82f6" CornerRadius="4" Width="16" Height="16"/>
+                        <FontIcon Glyph="&#x25A0;"
+                                FontSize="16"
+                                Foreground="#3b82f6"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                
+
                 <NavigationViewItemSeparator Margin="12,8"/>
-                
+
                 <!-- Categories Section with Icons -->
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -202,91 +227,105 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    
-                    <TextBlock Grid.Column="0" 
-                             Text="CATEGORIES" 
-                             FontSize="12" 
-                             FontWeight="SemiBold"
-                             Foreground="{StaticResource ModernTextSecondaryBrush}"
-                             VerticalAlignment="Center"
-                             Margin="16,8"/>
-                    
+
+                    <TextBlock Grid.Column="0"
+                               Text="CATEGORIES"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource ModernTextSecondaryBrush}"
+                               VerticalAlignment="Center"
+                               Margin="16,8"/>
+
                     <Button Grid.Column="1"
-                           x:Name="AddCategoryNavButton"
-                           Background="Transparent"
-                           BorderThickness="0"
-                           Width="24"
-                           Height="24"
-                           Click="AddCategoryNavButton_Click"
-                           ToolTipService.ToolTip="Add Category">
-                        <FontIcon Glyph="&#xE109;" FontSize="12" Foreground="{StaticResource ModernPrimaryBrush}"/>
+                            x:Name="AddCategoryNavButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Width="24"
+                            Height="24"
+                            Click="AddCategoryNavButton_Click"
+                            ToolTipService.ToolTip="Add Category">
+                        <FontIcon Glyph="&#xE109;"
+                                FontSize="12"
+                                Foreground="{StaticResource ModernPrimaryBrush}"/>
                     </Button>
-                    
+
                     <Button Grid.Column="2"
-                           x:Name="DeleteCategoryNavButton"
-                           Background="Transparent"
-                           BorderThickness="0"
-                           Width="24"
-                           Height="24"
-                           Click="DeleteCategoryNavButton_Click"
-                           ToolTipService.ToolTip="Delete Category"
-                           Margin="4,0">
-                        <FontIcon Glyph="&#xE74D;" FontSize="12" Foreground="{StaticResource ModernErrorBrush}"/>
+                            x:Name="DeleteCategoryNavButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Width="24"
+                            Height="24"
+                            Click="DeleteCategoryNavButton_Click"
+                            ToolTipService.ToolTip="Delete Category"
+                            Margin="4,0">
+                        <FontIcon Glyph="&#xE74D;"
+                                FontSize="12"
+                                Foreground="{StaticResource ModernErrorBrush}"/>
                     </Button>
                 </Grid>
-                
-                <NavigationViewItem x:Name="LoginCategoryNavItem" 
-                                  Content="Logins" 
-                                  Tag="LoginCategory"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}"
-                                  Margin="16,0,0,0">
+
+                <NavigationViewItem x:Name="LoginCategoryNavItem"
+                                    Content="Logins"
+                                    Tag="LoginCategory"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    Margin="16,0,0,0">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE192;" FontSize="16" Foreground="#3b82f6"/>
+                        <FontIcon Glyph="&#xE192;"
+                                FontSize="16"
+                                Foreground="#3b82f6"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                
-                <NavigationViewItem x:Name="CreditCardCategoryNavItem" 
-                                  Content="Credit Cards" 
-                                  Tag="CreditCardCategory"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}"
-                                  Margin="16,0,0,0">
+
+                <NavigationViewItem x:Name="CreditCardCategoryNavItem"
+                                    Content="Credit Cards"
+                                    Tag="CreditCardCategory"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    Margin="16,0,0,0">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8C7;" FontSize="16" Foreground="#10b981"/>
+                        <FontIcon Glyph="&#xE8C7;"
+                                FontSize="16"
+                                Foreground="#10b981"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                
-                <NavigationViewItem x:Name="SecureNotesCategoryNavItem" 
-                                  Content="Secure Notes" 
-                                  Tag="SecureNotesCategory"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}"
-                                  Margin="16,0,0,0">
+
+                <NavigationViewItem x:Name="SecureNotesCategoryNavItem"
+                                    Content="Secure Notes"
+                                    Tag="SecureNotesCategory"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    Margin="16,0,0,0">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE70F;" FontSize="16" Foreground="#f59e0b"/>
+                        <FontIcon Glyph="&#xE70F;"
+                                FontSize="16"
+                                Foreground="#f59e0b"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                
-                <NavigationViewItem x:Name="IdentityCategoryNavItem" 
-                                  Content="Identity" 
-                                  Tag="IdentityCategory"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}"
-                                  Margin="16,0,0,0">
+
+                <NavigationViewItem x:Name="IdentityCategoryNavItem"
+                                    Content="Identity"
+                                    Tag="IdentityCategory"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    Margin="16,0,0,0">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE77B;" FontSize="16" Foreground="#8b5cf6"/>
+                        <FontIcon Glyph="&#xE77B;"
+                                FontSize="16"
+                                Foreground="#8b5cf6"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                
-                <NavigationViewItem x:Name="PasskeysCategoryNavItem" 
-                                  Content="Passkeys" 
-                                  Tag="PasskeysCategory"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}"
-                                  Margin="16,0,0,0">
+
+                <NavigationViewItem x:Name="PasskeysCategoryNavItem"
+                                    Content="Passkeys"
+                                    Tag="PasskeysCategory"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    Margin="16,0,0,0">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8D7;" FontSize="16" Foreground="#ec4899"/>
+                        <FontIcon Glyph="&#xE8D7;"
+                                FontSize="16"
+                                Foreground="#ec4899"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                
+
                 <NavigationViewItemSeparator Margin="12,8"/>
-                
+
                 <!-- Tags Section with Icons -->
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -294,126 +333,145 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    
-                    <TextBlock Grid.Column="0" 
-                             Text="TAGS" 
-                             FontSize="12" 
-                             FontWeight="SemiBold"
-                             Foreground="{StaticResource ModernTextSecondaryBrush}"
-                             VerticalAlignment="Center"
-                             Margin="16,8"/>
-                    
+
+                    <TextBlock Grid.Column="0"
+                               Text="TAGS"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource ModernTextSecondaryBrush}"
+                               VerticalAlignment="Center"
+                               Margin="16,8"/>
+
                     <Button Grid.Column="1"
-                           x:Name="AddTagNavButton"
-                           Background="Transparent"
-                           BorderThickness="0"
-                           Width="24"
-                           Height="24"
-                           Click="AddTagNavButton_Click"
-                           ToolTipService.ToolTip="Add Tag">
-                        <FontIcon Glyph="&#xE109;" FontSize="12" Foreground="{StaticResource ModernPrimaryBrush}"/>
+                            x:Name="AddTagNavButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Width="24"
+                            Height="24"
+                            Click="AddTagNavButton_Click"
+                            ToolTipService.ToolTip="Add Tag">
+                        <FontIcon Glyph="&#xE109;"
+                                FontSize="12"
+                                Foreground="{StaticResource ModernPrimaryBrush}"/>
                     </Button>
-                    
+
                     <Button Grid.Column="2"
-                           x:Name="DeleteTagNavButton"
-                           Background="Transparent"
-                           BorderThickness="0"
-                           Width="24"
-                           Height="24"
-                           Click="DeleteTagNavButton_Click"
-                           ToolTipService.ToolTip="Delete Tag"
-                           Margin="4,0">
-                        <FontIcon Glyph="&#xE74D;" FontSize="12" Foreground="{StaticResource ModernErrorBrush}"/>
+                            x:Name="DeleteTagNavButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Width="24"
+                            Height="24"
+                            Click="DeleteTagNavButton_Click"
+                            ToolTipService.ToolTip="Delete Tag"
+                            Margin="4,0">
+                        <FontIcon Glyph="&#xE74D;"
+                                FontSize="12"
+                                Foreground="{StaticResource ModernErrorBrush}"/>
                     </Button>
                 </Grid>
-                
+
                 <!-- Sample tags -->
-                <NavigationViewItem Content="Starter Kit" 
-                                  Tag="StarterKitTag"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}"
-                                  Margin="16,0,0,0">
+                <NavigationViewItem Content="Starter Kit"
+                                    Tag="StarterKitTag"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    Margin="16,0,0,0">
                     <NavigationViewItem.Icon>
-                        <Border Background="#10b981" CornerRadius="4" Width="12" Height="12"/>
+                        <Border Background="#10b981"
+                                CornerRadius="4"
+                                Width="12"
+                                Height="12"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                
+
                 <NavigationViewItemSeparator Margin="12,8"/>
-                
+
                 <!-- Tools & Security -->
-                <NavigationViewItem x:Name="SecurityAuditNavItem" 
-                                  Content="Security Dashboard" 
-                                  Tag="SecurityDashboard"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}">
+                <NavigationViewItem x:Name="SecurityAuditNavItem"
+                                    Content="Security Dashboard"
+                                    Tag="SecurityDashboard"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE72E;" FontSize="18" Foreground="{StaticResource ModernErrorBrush}"/>
+                        <FontIcon Glyph="&#xE72E;"
+                                FontSize="18"
+                                Foreground="{StaticResource ModernErrorBrush}"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                
+
                 <!-- Import -->
-                <NavigationViewItem x:Name="ImportNavItem" 
-                                  Content="Import Data" 
-                                  Tag="Import"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}">
+                <NavigationViewItem x:Name="ImportNavItem"
+                                    Content="Import Data"
+                                    Tag="Import"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8B5;" FontSize="18" Foreground="{StaticResource ModernSuccessBrush}"/>
+                        <FontIcon Glyph="&#xE8B5;"
+                                FontSize="18"
+                                Foreground="{StaticResource ModernSuccessBrush}"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
-            
+
             <!-- Footer Menu Items -->
             <NavigationView.FooterMenuItems>
                 <!-- Manage Items -->
-                <NavigationViewItem x:Name="ManageAllItemsNavItem" 
-                                  Content="Manage Collections, Types &amp; Tags" 
-                                  Tag="ManageItems"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}">
+                <NavigationViewItem x:Name="ManageAllItemsNavItem"
+                                    Content="Manage Collections, Types &amp; Tags"
+                                    Tag="ManageItems"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8FD;" FontSize="16" Foreground="{StaticResource ModernAccentBrush}"/>
+                        <FontIcon Glyph="&#xE8FD;"
+                                FontSize="16"
+                                Foreground="{StaticResource ModernAccentBrush}"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                
+
                 <NavigationViewItemSeparator Margin="8,4"/>
-                
-                <NavigationViewItem x:Name="ArchiveNavItem" 
-                                  Content="Archive" 
-                                  Tag="Archive"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}">
+
+                <NavigationViewItem x:Name="ArchiveNavItem"
+                                    Content="Archive"
+                                    Tag="Archive"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7B8;" FontSize="16" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                        <FontIcon Glyph="&#xE7B8;"
+                                FontSize="16"
+                                Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                
-                <NavigationViewItem x:Name="RecentlyDeletedNavItem" 
-                                  Content="Recently Deleted" 
-                                  Tag="RecentlyDeleted"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}">
+
+                <NavigationViewItem x:Name="RecentlyDeletedNavItem"
+                                    Content="Recently Deleted"
+                                    Tag="RecentlyDeleted"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE74D;" FontSize="16" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                        <FontIcon Glyph="&#xE74D;"
+                                FontSize="16"
+                                Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                
+
                 <NavigationViewItemSeparator Margin="8,4"/>
-                
-                <NavigationViewItem x:Name="SettingsNavItem" 
-                                  Content="Settings" 
-                                  Tag="Settings"
-                                  Style="{StaticResource ModernNavigationViewItemStyle}">
+
+                <NavigationViewItem x:Name="SettingsNavItem"
+                                    Content="Settings"
+                                    Tag="Settings"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE713;" FontSize="16" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                        <FontIcon Glyph="&#xE713;"
+                                FontSize="16"
+                                Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.FooterMenuItems>
-            
+
             <!-- Content Frame -->
-            <ScrollViewer ZoomMode="Disabled" 
-                         VerticalScrollBarVisibility="Auto"
-                         HorizontalScrollBarVisibility="Disabled"
-                         Margin="0">
-                <Frame x:Name="ContentFrame" 
+            <ScrollViewer ZoomMode="Disabled"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="0">
+                <Frame x:Name="ContentFrame"
                        Background="Transparent"
                        Margin="0"/>
             </ScrollViewer>
-            
+
         </NavigationView>
     </Grid>
 </Window>

@@ -16,7 +16,7 @@ public sealed partial class ManageItemsPage : Page
     private IServiceProvider? _serviceProvider;
     private ICategoryInterface? _categoryService;
     private ITagService? _tagService;
-    
+
     private ObservableCollection<Category> _collections = new();
     private ObservableCollection<string> _types = new();
     private ObservableCollection<Tag> _tags = new();
@@ -24,12 +24,12 @@ public sealed partial class ManageItemsPage : Page
     public ManageItemsPage()
     {
         this.InitializeComponent();
-        
+
         // Initialize collections
         CollectionsListView.ItemsSource = _collections;
         TypesListView.ItemsSource = _types;
         TagsListView.ItemsSource = _tags;
-        
+
         // Load initial data with predefined types
         LoadPredefinedTypes();
     }
@@ -37,16 +37,16 @@ public sealed partial class ManageItemsPage : Page
     protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
-        
+
         if (e.Parameter is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
-            
+
             try
             {
                 _categoryService = serviceProvider.GetService<ICategoryInterface>();
                 _tagService = serviceProvider.GetService<ITagService>();
-                
+
                 await LoadAllData();
             }
             catch (Exception ex)
@@ -76,7 +76,7 @@ public sealed partial class ManageItemsPage : Page
 
     private async Task LoadCollections()
     {
-    if (_categoryService is null) return;
+        if (_categoryService is null) return;
 
         try
         {
@@ -126,7 +126,7 @@ public sealed partial class ManageItemsPage : Page
         {
             var dialog = new CategoryDialog(_serviceProvider);
             dialog.XamlRoot = this.XamlRoot;
-            
+
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary && dialog.Result != null)
             {
@@ -147,7 +147,7 @@ public sealed partial class ManageItemsPage : Page
             {
                 var dialog = new CategoryDialog(_serviceProvider, category);
                 dialog.XamlRoot = this.XamlRoot;
-                
+
                 var result = await dialog.ShowAsync();
                 if (result == ContentDialogResult.Primary && dialog.Result != null)
                 {
@@ -163,7 +163,7 @@ public sealed partial class ManageItemsPage : Page
 
     private async void DeleteCollectionButton_Click(object sender, RoutedEventArgs e)
     {
-    if (sender is Button button && button.DataContext is Category category && _categoryService is not null)
+        if (sender is Button button && button.DataContext is Category category && _categoryService is not null)
         {
             var confirmDialog = new ContentDialog
             {
@@ -198,7 +198,7 @@ public sealed partial class ManageItemsPage : Page
         {
             var dialog = new TypeDialog();
             dialog.XamlRoot = this.XamlRoot;
-            
+
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary && !string.IsNullOrEmpty(dialog.Result))
             {
@@ -222,7 +222,7 @@ public sealed partial class ManageItemsPage : Page
             {
                 var dialog = new TypeDialog(typeName);
                 dialog.XamlRoot = this.XamlRoot;
-                
+
                 var result = await dialog.ShowAsync();
                 if (result == ContentDialogResult.Primary && !string.IsNullOrEmpty(dialog.Result))
                 {
@@ -271,7 +271,7 @@ public sealed partial class ManageItemsPage : Page
         {
             var dialog = new TagDialog(_serviceProvider);
             dialog.XamlRoot = this.XamlRoot;
-            
+
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary && dialog.Result != null)
             {
@@ -292,7 +292,7 @@ public sealed partial class ManageItemsPage : Page
             {
                 var dialog = new TagDialog(_serviceProvider, tag);
                 dialog.XamlRoot = this.XamlRoot;
-                
+
                 var result = await dialog.ShowAsync();
                 if (result == ContentDialogResult.Primary && dialog.Result != null)
                 {

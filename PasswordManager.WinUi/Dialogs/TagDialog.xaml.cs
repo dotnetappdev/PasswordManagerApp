@@ -20,7 +20,7 @@ public sealed partial class TagDialog : ContentDialog
     public TagDialog(IServiceProvider serviceProvider, Tag? tag = null)
     {
         this.InitializeComponent();
-        
+
         // Try to get tag service if available
         try
         {
@@ -55,7 +55,7 @@ public sealed partial class TagDialog : ContentDialog
 
         TagNameTextBox.Text = _tag.Name;
         TagDescriptionTextBox.Text = _tag.Description ?? string.Empty;
-        
+
         // Set default color
         TagColorComboBox.SelectedIndex = 0; // Default to blue
     }
@@ -87,7 +87,7 @@ public sealed partial class TagDialog : ContentDialog
 
         // Show loading
         this.IsPrimaryButtonEnabled = false;
-        
+
         try
         {
             if (_isEditMode && _tag != null)
@@ -96,7 +96,7 @@ public sealed partial class TagDialog : ContentDialog
                 _tag.Name = name;
                 _tag.Description = TagDescriptionTextBox.Text?.Trim();
                 _tag.LastModified = DateTime.UtcNow;
-                
+
                 if (_tagService != null)
                 {
                     await _tagService.UpdateAsync(_tag);

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 namespace PasswordManager.Models
 {
     public class Collection
@@ -9,12 +11,12 @@ namespace PasswordManager.Models
         public string? Color { get; set; } // Optional: for UI
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public bool IsDefault { get; set; } // Mark a collection as the default one
-        public DateTime LastModified { get; set; } = DateTime.UtcNow;
-        
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
         // User relationship
         public string? UserId { get; set; }
         public ApplicationUser? User { get; set; }
-        
+
         // Parent-child relationship
         public int? ParentCollectionId { get; set; }
         public Collection? ParentCollection { get; set; }

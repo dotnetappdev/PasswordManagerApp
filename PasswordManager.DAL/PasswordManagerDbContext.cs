@@ -49,7 +49,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
                   .WithMany(c => c.PasswordItems)
                   .HasForeignKey(e => e.CategoryId)
                   .OnDelete(DeleteBehavior.Restrict);
-                  
+
             // Configure Collection relationship
             entity.Property(e => e.CollectionId).IsRequired();
             entity.HasOne(e => e.Collection)
@@ -79,7 +79,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.WebsiteUrl).HasMaxLength(500);
             entity.Property(e => e.Notes).HasMaxLength(1000);
             entity.Property(e => e.CreatedAt).IsRequired();
-            entity.Property(e => e.LastModified).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
 
             // Configure User relationship
             entity.Property(e => e.UserId).IsRequired();
@@ -100,7 +100,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.BankWebsite).HasMaxLength(500);
             entity.Property(e => e.Notes).HasMaxLength(1000);
             entity.Property(e => e.CreatedAt).IsRequired();
-            entity.Property(e => e.LastModified).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
 
             // Configure User relationship
             entity.Property(e => e.UserId).IsRequired();
@@ -117,7 +117,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.Title).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Content).IsRequired().HasMaxLength(5000);
             entity.Property(e => e.CreatedAt).IsRequired();
-            entity.Property(e => e.LastModified).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
 
             // Configure User relationship
             entity.Property(e => e.UserId).IsRequired();
@@ -153,7 +153,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
             entity.Property(e => e.Color).IsRequired().HasMaxLength(7);
             entity.Property(e => e.CreatedAt).IsRequired();
-            entity.Property(e => e.LastModified).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
 
             // Configure User relationship
             entity.Property(e => e.UserId).IsRequired();
@@ -171,7 +171,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.Icon).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Color).IsRequired().HasMaxLength(7);
             entity.Property(e => e.CreatedAt).IsRequired();
-            entity.Property(e => e.LastModified).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
 
             // Configure User relationship
             entity.Property(e => e.UserId).IsRequired();
@@ -190,7 +190,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.Icon).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Color).IsRequired().HasMaxLength(7);
             entity.Property(e => e.CreatedAt).IsRequired();
-            entity.Property(e => e.LastModified).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
 
             // Configure User relationship
             entity.Property(e => e.UserId).IsRequired();

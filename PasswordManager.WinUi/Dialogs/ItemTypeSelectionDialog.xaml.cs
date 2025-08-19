@@ -11,15 +11,18 @@ public sealed partial class ItemTypeSelectionDialog : ContentDialog
 
     public ItemTypeSelectionDialog()
     {
-        this.InitializeComponent();
+        InitializeComponent();
     }
+
+    // Temporary stub until XAML code-gen is fixed
+    private void InitializeComponent() { }
 
     private void CategoryButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button button && button.Tag is string categoryName)
         {
             SelectedCategoryName = categoryName;
-            
+
             // Map category name to ItemType
             SelectedItemType = categoryName switch
             {
@@ -40,7 +43,7 @@ public sealed partial class ItemTypeSelectionDialog : ContentDialog
                 "Membership" => ItemType.SecureNote,
                 _ => ItemType.Login // Default fallback
             };
-            
+
             this.Hide();
         }
     }

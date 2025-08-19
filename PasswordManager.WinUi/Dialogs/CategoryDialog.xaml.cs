@@ -19,8 +19,8 @@ public sealed partial class CategoryDialog : ContentDialog
 
     public CategoryDialog(IServiceProvider serviceProvider, Category? category = null)
     {
-    this.InitializeComponent();
-    _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
+        this.InitializeComponent();
+        _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
         _category = category;
         _isEditMode = category != null;
 

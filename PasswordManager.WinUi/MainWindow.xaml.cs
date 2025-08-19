@@ -20,10 +20,10 @@ public sealed partial class MainWindow : Window
         _serviceProvider = serviceProvider;
         this.InitializeComponent();
         this.Title = "Password Manager - WinUI";
-        
+
         // Set window size
         this.AppWindow.Resize(new Windows.Graphics.SizeInt32(1200, 800));
-        
+
         // Initialize navigation - start with Login if not authenticated, otherwise Home
         InitializeNavigation();
     }
@@ -32,11 +32,11 @@ public sealed partial class MainWindow : Window
     {
         // Show login frame initially
         SetAuthenticationState(false);
-        
+
         // Start with Login page in the dedicated login frame
         LoginFrame.Navigate(typeof(Views.LoginPage), _serviceProvider);
     }
-    
+
     private void SetAuthenticationState(bool isAuthenticated)
     {
         if (isAuthenticated)
@@ -56,17 +56,17 @@ public sealed partial class MainWindow : Window
     private void MainNavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
         // Only allow navigation if authenticated
-        if (!_isAuthenticated) 
+        if (!_isAuthenticated)
         {
             // Prevent selection if not authenticated
             sender.SelectedItem = null;
             return;
         }
-        
+
         if (args.SelectedItem is NavigationViewItem selectedItem)
         {
             string tag = selectedItem.Tag?.ToString() ?? "";
-            
+
             // Only navigate if the item has a tag (leaf items, not parent categories)
             if (!string.IsNullOrEmpty(tag))
             {
@@ -88,7 +88,7 @@ public sealed partial class MainWindow : Window
     {
         // Only allow navigation if authenticated, except for login
         if (!_isAuthenticated && pageTag != "Login") return;
-        
+
         try
         {
             Type pageType = pageTag switch
@@ -117,7 +117,7 @@ public sealed partial class MainWindow : Window
             if (ContentFrame != null && _serviceProvider != null)
             {
                 ContentFrame.Navigate(pageType, _serviceProvider);
-                
+
                 // Pass filter parameters for category-specific views
                 PassFilterToPage(pageTag);
             }
@@ -183,12 +183,12 @@ public sealed partial class MainWindow : Window
     {
         // Handle search query submission
         string searchQuery = args.QueryText;
-        
+
         if (!string.IsNullOrEmpty(searchQuery))
         {
             // Navigate to passwords page with search query
             NavigateToPage("AllItems");
-            
+
             // Use a more reliable way to pass search query
             Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
             {
@@ -220,15 +220,15 @@ public sealed partial class MainWindow : Window
         for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
         {
             var child = VisualTreeHelper.GetChild(parent, i);
-            
+
             if (child is T element && element.Name == controlName)
                 return element;
-            
+
             var result = FindChildControl<T>(child, controlName);
             if (result != null)
                 return result;
         }
-        
+
         return null;
     }
 
@@ -245,286 +245,14 @@ public sealed partial class MainWindow : Window
     public void HandleLogout()
     {
         _isAuthenticated = false;
-        
+
         // Show login frame and hide main navigation
         SetAuthenticationState(false);
-        
+
         // Clear navigation selection
         MainNavigationView.SelectedItem = null;
-        
+
         // Navigate back to login
         LoginFrame.Navigate(typeof(Views.LoginPage), _serviceProvider);
-    }
-
-    // Event handlers for navigation context menus
-    private void NavigationItem_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
-    {
-        // Right-click context menu is already handled by ContextFlyout
-    }
-
-    private async void EditItem_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is MenuFlyoutItem menuItem && menuItem.Tag is string itemTag)
-        {
-            // Handle edit action based on item type
-            var dialog = new ContentDialog
-            {
-                Title = $"Edit {itemTag}",
-                Content = $"Edit functionality for {itemTag} would be implemented here.",
-                CloseButtonText = "OK",
-                XamlRoot = this.Content.XamlRoot
-            };
-            await dialog.ShowAsync();
-        }
-    }
-
-    private async void DeleteItem_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is MenuFlyoutItem menuItem && menuItem.Tag is string itemTag)
-        {
-            // Show confirmation dialog
-            var dialog = new ContentDialog
-            {
-                Title = $"Delete {itemTag}",
-                Content = $"Are you sure you want to delete {itemTag}?",
-                PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
-                XamlRoot = this.Content.XamlRoot
-            };
-            
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary)
-            {
-                // Handle delete action
-                // Implementation would go here
-            }
-        }
-    }
-
-    // Profile button event handler
-    private async void ProfileButton_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new ContentDialog
-        {
-            Title = "Profile Menu",
-            Content = "Profile menu functionality would be implemented here.",
-            CloseButtonText = "OK",
-            XamlRoot = this.Content.XamlRoot
-        };
-        await dialog.ShowAsync();
-    }
-
-    // Vault management event handlers
-    private async void AddVaultButton_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new ContentDialog
-        {
-            Title = "Add New Vault",
-            Content = "Add vault functionality would be implemented here.",
-            PrimaryButtonText = "Add",
-            CloseButtonText = "Cancel",
-            XamlRoot = this.Content.XamlRoot
-        };
-        await dialog.ShowAsync();
-    }
-
-    private async void DeleteVaultButton_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new ContentDialog
-        {
-            Title = "Delete Vault",
-            Content = "Are you sure you want to delete this vault?\n\nThis action cannot be undone and will permanently delete all items in this vault.",
-            PrimaryButtonText = "Delete",
-            SecondaryButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Secondary,
-            XamlRoot = this.Content.XamlRoot
-        };
-        
-        // Style the delete button with warning colors
-        dialog.PrimaryButtonStyle = new Style(typeof(Button))
-        {
-            Setters =
-            {
-                new Setter(Button.BackgroundProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(255, 239, 68, 68))),
-                new Setter(Button.ForegroundProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255)))
-            }
-        };
-        
-        var result = await dialog.ShowAsync();
-        if (result == ContentDialogResult.Primary)
-        {
-            // Handle vault deletion
-            try
-            {
-                // Implementation would go here
-                var successDialog = new ContentDialog
-                {
-                    Title = "Vault Deleted",
-                    Content = "The vault has been successfully deleted.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.Content.XamlRoot
-                };
-                await successDialog.ShowAsync();
-            }
-            catch (Exception ex)
-            {
-                var errorDialog = new ContentDialog
-                {
-                    Title = "Error",
-                    Content = $"Failed to delete vault: {ex.Message}",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.Content.XamlRoot
-                };
-                await errorDialog.ShowAsync();
-            }
-        }
-    }
-
-    // Category management event handlers
-    private async void AddCategoryNavButton_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var dialog = new Dialogs.CategoryDialog(_serviceProvider);
-            dialog.XamlRoot = this.Content.XamlRoot;
-            await dialog.ShowAsync();
-        }
-        catch (Exception ex)
-        {
-            var errorDialog = new ContentDialog
-            {
-                Title = "Error",
-                Content = $"Error adding category: {ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = this.Content.XamlRoot
-            };
-            await errorDialog.ShowAsync();
-        }
-    }
-
-    private async void DeleteCategoryNavButton_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new ContentDialog
-        {
-            Title = "Delete Category",
-            Content = "Are you sure you want to delete this category?\n\nItems in this category will be moved to 'Uncategorized'. This action cannot be undone.",
-            PrimaryButtonText = "Delete",
-            SecondaryButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Secondary,
-            XamlRoot = this.Content.XamlRoot
-        };
-        
-        // Style the delete button with warning colors
-        dialog.PrimaryButtonStyle = new Style(typeof(Button))
-        {
-            Setters =
-            {
-                new Setter(Button.BackgroundProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(255, 239, 68, 68))),
-                new Setter(Button.ForegroundProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255)))
-            }
-        };
-        
-        var result = await dialog.ShowAsync();
-        if (result == ContentDialogResult.Primary)
-        {
-            // Handle category deletion
-            try
-            {
-                // Implementation would go here
-                var successDialog = new ContentDialog
-                {
-                    Title = "Category Deleted",
-                    Content = "The category has been successfully deleted.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.Content.XamlRoot
-                };
-                await successDialog.ShowAsync();
-            }
-            catch (Exception ex)
-            {
-                var errorDialog = new ContentDialog
-                {
-                    Title = "Error",
-                    Content = $"Failed to delete category: {ex.Message}",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.Content.XamlRoot
-                };
-                await errorDialog.ShowAsync();
-            }
-        }
-    }
-
-    // Tag management event handlers
-    private async void AddTagNavButton_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var dialog = new Dialogs.TagDialog(_serviceProvider);
-            dialog.XamlRoot = this.Content.XamlRoot;
-            await dialog.ShowAsync();
-        }
-        catch (Exception ex)
-        {
-            var errorDialog = new ContentDialog
-            {
-                Title = "Error",
-                Content = $"Error adding tag: {ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = this.Content.XamlRoot
-            };
-            await errorDialog.ShowAsync();
-        }
-    }
-
-    private async void DeleteTagNavButton_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new ContentDialog
-        {
-            Title = "Delete Tag",
-            Content = "Are you sure you want to delete this tag?\n\nThis will remove the tag from all items. This action cannot be undone.",
-            PrimaryButtonText = "Delete",
-            SecondaryButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Secondary,
-            XamlRoot = this.Content.XamlRoot
-        };
-        
-        // Style the delete button with warning colors
-        dialog.PrimaryButtonStyle = new Style(typeof(Button))
-        {
-            Setters =
-            {
-                new Setter(Button.BackgroundProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(255, 239, 68, 68))),
-                new Setter(Button.ForegroundProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255)))
-            }
-        };
-        
-        var result = await dialog.ShowAsync();
-        if (result == ContentDialogResult.Primary)
-        {
-            // Handle tag deletion
-            try
-            {
-                // Implementation would go here
-                var successDialog = new ContentDialog
-                {
-                    Title = "Tag Deleted",
-                    Content = "The tag has been successfully deleted.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.Content.XamlRoot
-                };
-                await successDialog.ShowAsync();
-            }
-            catch (Exception ex)
-            {
-                var errorDialog = new ContentDialog
-                {
-                    Title = "Error",
-                    Content = $"Failed to delete tag: {ex.Message}",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.Content.XamlRoot
-                };
-                await errorDialog.ShowAsync();
-            }
-        }
     }
 }
