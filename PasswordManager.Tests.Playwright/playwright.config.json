@@ -1,0 +1,31 @@
+{
+  "projects": [
+    {
+      "name": "PasswordManager Desktop Tests",
+      "use": {
+        "headless": false,
+        "viewport": { "width": 1280, "height": 720 },
+        "ignoreHTTPSErrors": true,
+        "screenshot": "only-on-failure",
+        "video": "retain-on-failure",
+        "trace": "retain-on-failure"
+      }
+    }
+  ],
+  "testDir": "./",
+  "timeout": 30000,
+  "fullyParallel": false,
+  "forbidOnly": true,
+  "retries": 2,
+  "workers": 1,
+  "reporter": [
+    ["html", { "outputFolder": "playwright-report" }],
+    ["junit", { "outputFile": "test-results.xml" }]
+  ],
+  "outputDir": "test-results/",
+  "use": {
+    "actionTimeout": 5000,
+    "navigationTimeout": 30000,
+    "baseURL": null
+  }
+}
