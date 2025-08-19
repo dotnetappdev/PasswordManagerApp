@@ -1,0 +1,10 @@
+# Playwright Test Artifacts
+TestResults/
+Screenshots/
+test-results/
+playwright-report/
+test-results.xml
+*.webm
+*.zip
+bin/
+obj/
