@@ -12,6 +12,7 @@ namespace PasswordManager.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public bool IsDefault { get; set; } // Mark a collection as the default one
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime LastModified { get; set; } = DateTime.UtcNow;
 
         // User relationship
         public string? UserId { get; set; }

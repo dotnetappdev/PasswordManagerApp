@@ -10,6 +10,7 @@ public class SecureNoteItem
     // Audit fields
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime LastModified { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // User relationship
     public string? UserId { get; set; }
