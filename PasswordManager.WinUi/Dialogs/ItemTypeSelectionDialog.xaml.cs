@@ -14,9 +14,6 @@ public sealed partial class ItemTypeSelectionDialog : ContentDialog
         InitializeComponent();
     }
 
-    // Temporary stub until XAML code-gen is fixed
-    private void InitializeComponent() { }
-
     private void CategoryButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button button && button.Tag is string categoryName)

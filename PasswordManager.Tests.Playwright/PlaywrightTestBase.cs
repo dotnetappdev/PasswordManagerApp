@@ -15,13 +15,15 @@ public abstract class PlaywrightTestBase : PageTest
     /// Initialize Playwright and application setup
     /// </summary>
     [AssemblyInitialize]
-    public static async Task AssemblyInitialize(TestContext context)
+    public static Task AssemblyInitialize(TestContext context)
     {
         // Install playwright browsers if needed
         Microsoft.Playwright.Program.Main(new[] { "install" });
         
         // Set up application path - this would be the built WinUI app
         AppExecutablePath = GetApplicationPath();
+        
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -90,7 +92,7 @@ public abstract class PlaywrightTestBase : PageTest
     /// <summary>
     /// Start the WinUI application for testing
     /// </summary>
-    protected async Task<IPage> StartApplication()
+    protected Task<IPage> StartApplication()
     {
         if (!File.Exists(AppExecutablePath))
         {
@@ -106,7 +108,7 @@ public abstract class PlaywrightTestBase : PageTest
         // 3. Use specialized WinUI testing frameworks
         
         IsAppRunning = true;
-        return Page;
+        return Task.FromResult(Page);
     }
 
     /// <summary>
