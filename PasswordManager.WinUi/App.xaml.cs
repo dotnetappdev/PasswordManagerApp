@@ -130,6 +130,10 @@ public partial class App : Application
                 services.AddDbContext<PasswordManagerDbContext>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
 
+                // Register the interface mapping for dependency injection
+                services.AddScoped<DAL.Interfaces.IPasswordManagerDbContext>(provider => 
+                    provider.GetRequiredService<PasswordManagerDbContext>());
+
                 // Register business services
                 services.AddScoped<IPasswordItemService, PasswordItemService>();
                 services.AddScoped<ITagService, TagService>();
