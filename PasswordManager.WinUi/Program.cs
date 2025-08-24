@@ -14,6 +14,7 @@ using PasswordManager.Models;
 
 namespace PasswordManager.WinUi;
 
+#if CROSSPLATFORM
 /// <summary>
 /// Cross-platform console entry point for non-Windows environments.
 /// This provides a minimal console application that can initialize core services
@@ -21,7 +22,6 @@ namespace PasswordManager.WinUi;
 /// </summary>
 public class Program
 {
-#if !WINDOWS
     public static async Task Main(string[] args)
     {
         Console.WriteLine("PasswordManager WinUI - Cross-platform build");
@@ -51,7 +51,6 @@ public class Program
             await host.StopAsync();
         }
     }
-#endif
 
     private static IHostBuilder CreateHostBuilder(string[] args)
     {
@@ -120,6 +119,7 @@ public class Program
             });
     }
 }
+#endif
 
 /// <summary>
 /// Cross-platform implementation of IPlatformService for non-Windows environments.
