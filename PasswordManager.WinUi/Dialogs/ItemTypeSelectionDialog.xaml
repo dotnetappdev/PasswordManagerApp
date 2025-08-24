@@ -6,7 +6,11 @@
                PrimaryButtonText=""
                CloseButtonText="Cancel"
                PrimaryButtonClick="ContentDialog_PrimaryButtonClick"
-               Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+               Background="{StaticResource ModernSurfaceBrush}"
+               Foreground="{StaticResource ModernTextPrimaryBrush}"
+               BorderBrush="{StaticResource ModernBorderBrush}"
+               BorderThickness="1"
+               CornerRadius="12"
                MaxWidth="700"
                MaxHeight="650">
 
@@ -60,6 +64,7 @@
                         <TextBlock Text="Login"
                                 FontSize="16"
                                 FontWeight="SemiBold"
+                                Foreground="White"
                                 HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -86,6 +91,7 @@
                         <TextBlock Text="Secure Note"
                                 FontSize="16"
                                 FontWeight="SemiBold"
+                                Foreground="White"
                                 HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -112,6 +118,7 @@
                         <TextBlock Text="Credit Card"
                                 FontSize="16"
                                 FontWeight="SemiBold"
+                                Foreground="White"
                                 HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -139,6 +146,7 @@
                         <TextBlock Text="Identity"
                                 FontSize="16"
                                 FontWeight="SemiBold"
+                                Foreground="White"
                                 HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -165,6 +173,7 @@
                         <TextBlock Text="Password"
                                 FontSize="16"
                                 FontWeight="SemiBold"
+                                Foreground="White"
                                 HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -191,6 +200,7 @@
                         <TextBlock Text="Document"
                                 FontSize="16"
                                 FontWeight="SemiBold"
+                                Foreground="White"
                                 HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -235,6 +245,7 @@
                                 <TextBlock Text="SSH Key"
                                         FontSize="16"
                                         FontWeight="SemiBold"
+                                        Foreground="White"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -262,6 +273,7 @@
                                 <TextBlock Text="API Credentials"
                                         FontSize="16"
                                         FontWeight="SemiBold"
+                                        Foreground="White"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -288,6 +300,7 @@
                                 <TextBlock Text="Bank Account"
                                         FontSize="16"
                                         FontWeight="SemiBold"
+                                        Foreground="White"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -315,6 +328,7 @@
                                 <TextBlock Text="Crypto Wallet"
                                         FontSize="16"
                                         FontWeight="SemiBold"
+                                        Foreground="White"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -341,6 +355,7 @@
                                 <TextBlock Text="Database"
                                         FontSize="16"
                                         FontWeight="SemiBold"
+                                        Foreground="White"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -367,6 +382,7 @@
                                 <TextBlock Text="Driver License"
                                         FontSize="16"
                                         FontWeight="SemiBold"
+                                        Foreground="White"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -394,6 +410,7 @@
                                 <TextBlock Text="Email"
                                         FontSize="16"
                                         FontWeight="SemiBold"
+                                        Foreground="White"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -420,6 +437,7 @@
                                 <TextBlock Text="Medical Record"
                                         FontSize="16"
                                         FontWeight="SemiBold"
+                                        Foreground="White"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -446,6 +464,7 @@
                                 <TextBlock Text="Membership"
                                         FontSize="16"
                                         FontWeight="SemiBold"
+                                        Foreground="White"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
