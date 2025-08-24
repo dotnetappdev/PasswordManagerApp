@@ -255,4 +255,66 @@ public sealed partial class MainWindow : Window
         // Navigate back to login
         LoginFrame.Navigate(typeof(Views.LoginPage), _serviceProvider);
     }
+
+    // Missing event handlers for XAML bindings
+
+    private void ProfileButton_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement profile button functionality
+        System.Diagnostics.Debug.WriteLine("ProfileButton_Click - Not implemented yet");
+    }
+
+    private void NavigationItem_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
+    {
+        // TODO: Implement right-click context menu functionality
+        System.Diagnostics.Debug.WriteLine("NavigationItem_RightTapped - Not implemented yet");
+    }
+
+    private void AddTagNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement add tag functionality
+        System.Diagnostics.Debug.WriteLine("AddTagNavButton_Click - Not implemented yet");
+    }
+
+    private void DeleteTagNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement delete tag functionality
+        System.Diagnostics.Debug.WriteLine("DeleteTagNavButton_Click - Not implemented yet");
+    }
+
+    private void AddCategoryNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement add category functionality
+        System.Diagnostics.Debug.WriteLine("AddCategoryNavButton_Click - Not implemented yet");
+    }
+
+    private void DeleteCategoryNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement delete category functionality
+        System.Diagnostics.Debug.WriteLine("DeleteCategoryNavButton_Click - Not implemented yet");
+    }
+
+    private void AddVaultButton_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement add vault functionality
+        System.Diagnostics.Debug.WriteLine("AddVaultButton_Click - Not implemented yet");
+    }
+
+    private void DeleteVaultButton_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement delete vault functionality
+        System.Diagnostics.Debug.WriteLine("DeleteVaultButton_Click - Not implemented yet");
+    }
+
+    private void EditItem_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement edit item functionality
+        System.Diagnostics.Debug.WriteLine("EditItem_Click - Not implemented yet");
+    }
+
+    private void DeleteItem_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement delete item functionality
+        System.Diagnostics.Debug.WriteLine("DeleteItem_Click - Not implemented yet");
+    }
 }
