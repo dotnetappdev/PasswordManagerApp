@@ -6,7 +6,9 @@
                PrimaryButtonText="Save"
                CloseButtonText="Cancel"
                DefaultButton="Primary"
-               Style="{StaticResource DefaultContentDialogStyle}">
+               Style="{StaticResource Modern1PasswordDialogStyle}"
+               PrimaryButtonStyle="{StaticResource ContentDialogPrimaryButtonStyle}"
+               CloseButtonStyle="{StaticResource ContentDialogSecondaryButtonStyle}">
 
     <ScrollViewer MaxHeight="500" VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="20" Width="400">
