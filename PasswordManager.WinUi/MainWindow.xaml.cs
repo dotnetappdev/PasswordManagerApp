@@ -1,9 +1,10 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Text;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Services.Interfaces;
 using PasswordManager.Models;
+using PasswordManager.Services.Interfaces;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -326,7 +327,7 @@ public sealed partial class MainWindow : Window
             CloseButtonText = "Close",
             XamlRoot = this.Content.XamlRoot
         };
-        
+
         await dialog.ShowAsync();
     }
 
@@ -334,7 +335,7 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            var passwordService = _serviceProvider.GetService<IPasswordItemIterface>();
+            var passwordService = _serviceProvider.GetService<IPasswordItemService>();
             if (passwordService != null)
             {
                 var items = await passwordService.GetAllAsync();
@@ -398,13 +399,13 @@ public sealed partial class MainWindow : Window
             tagDialog.XamlRoot = this.Content.XamlRoot;
 
             var result = await tagDialog.ShowAsync();
-            if (result == ContentDialogResult.Primary && tagDialog.Result != null)
+            if (result == ContentDialogResult.Primary && tagDialog.Result is not null)
             {
                 System.Diagnostics.Debug.WriteLine($"Created new tag: {tagDialog.Result.Name}");
-                
+
                 // TODO: Refresh the navigation menu to show the new tag
                 // This would require dynamically updating the navigation menu items
-                
+
                 // Show success message
                 await ShowInfoMessage("Tag Created", $"Tag '{tagDialog.Result.Name}' has been created successfully.");
             }
@@ -476,7 +477,7 @@ public sealed partial class MainWindow : Window
             if (result == ContentDialogResult.Primary && comboBox.SelectedItem is ComboBoxItem selectedItem)
             {
                 var selectedTag = (Tag)selectedItem.Tag;
-                
+
                 // Confirm deletion
                 var confirmDialog = new ContentDialog
                 {
@@ -512,13 +513,13 @@ public sealed partial class MainWindow : Window
             categoryDialog.XamlRoot = this.Content.XamlRoot;
 
             var result = await categoryDialog.ShowAsync();
-            if (result == ContentDialogResult.Primary && categoryDialog.Result != null)
+            if (result == ContentDialogResult.Primary && categoryDialog.Result is not null)
             {
                 System.Diagnostics.Debug.WriteLine($"Created new category: {categoryDialog.Result.Name}");
-                
+
                 // TODO: Refresh the navigation menu to show the new category
                 // This would require dynamically updating the navigation menu items
-                
+
                 // Show success message
                 await ShowInfoMessage("Category Created", $"Category '{categoryDialog.Result.Name}' has been created successfully.");
             }
@@ -590,7 +591,7 @@ public sealed partial class MainWindow : Window
             if (result == ContentDialogResult.Primary && comboBox.SelectedItem is ComboBoxItem selectedItem)
             {
                 var selectedCategory = (Category)selectedItem.Tag;
-                
+
                 // Confirm deletion
                 var confirmDialog = new ContentDialog
                 {
@@ -683,7 +684,7 @@ public sealed partial class MainWindow : Window
 
                 await collectionService.CreateAsync(newCollection);
                 await ShowInfoMessage("Vault Created", $"Vault '{newCollection.Name}' has been created successfully.");
-                
+
                 System.Diagnostics.Debug.WriteLine($"Created new vault: {newCollection.Name}");
             }
         }
@@ -754,7 +755,7 @@ public sealed partial class MainWindow : Window
             if (result == ContentDialogResult.Primary && comboBox.SelectedItem is ComboBoxItem selectedItem)
             {
                 var selectedCollection = (Collection)selectedItem.Tag;
-                
+
                 // Confirm deletion
                 var confirmDialog = new ContentDialog
                 {
@@ -788,7 +789,7 @@ public sealed partial class MainWindow : Window
             // Get the tag from the menu item to identify which navigation item to edit
             var menuItem = sender as MenuFlyoutItem;
             var tag = menuItem?.Tag?.ToString();
-            
+
             if (string.IsNullOrEmpty(tag))
             {
                 await ShowErrorMessage("Error", "Unable to identify the item to edit.");
@@ -803,7 +804,7 @@ public sealed partial class MainWindow : Window
                     await ShowInfoMessage("Edit Item", $"Editing '{tag}' - This would open item management interface.");
                     NavigateToPage("ManageItems");
                     break;
-                    
+
                 case "LoginCategory":
                 case "CreditCardCategory":
                 case "SecureNotesCategory":
@@ -811,12 +812,12 @@ public sealed partial class MainWindow : Window
                     await ShowInfoMessage("Edit Category", $"This would open the category editor for '{tag}'.");
                     // Could open category dialog in edit mode here
                     break;
-                    
+
                 default:
                     await ShowInfoMessage("Edit Item", $"Editing functionality for '{tag}' would be implemented here.");
                     break;
             }
-            
+
             System.Diagnostics.Debug.WriteLine($"Edit item clicked for: {tag}");
         }
         catch (Exception ex)
@@ -833,7 +834,7 @@ public sealed partial class MainWindow : Window
             // Get the tag from the menu item to identify which navigation item to delete
             var menuItem = sender as MenuFlyoutItem;
             var tag = menuItem?.Tag?.ToString();
-            
+
             if (string.IsNullOrEmpty(tag))
             {
                 await ShowErrorMessage("Error", "Unable to identify the item to delete.");
@@ -861,7 +862,7 @@ public sealed partial class MainWindow : Window
                     case "Favorites":
                         await ShowInfoMessage("Delete Item", $"'{tag}' is a system item and cannot be deleted.");
                         break;
-                        
+
                     case "LoginCategory":
                     case "CreditCardCategory":
                     case "SecureNotesCategory":
@@ -869,12 +870,12 @@ public sealed partial class MainWindow : Window
                         await ShowInfoMessage("Delete Category", $"Category '{tag}' deletion would be handled here.");
                         // Could implement actual category deletion here
                         break;
-                        
+
                     default:
                         await ShowInfoMessage("Delete Item", $"'{tag}' has been marked for deletion.");
                         break;
                 }
-                
+
                 System.Diagnostics.Debug.WriteLine($"Delete item clicked for: {tag}");
             }
         }
