@@ -93,6 +93,52 @@
                 Offset="1"/>
     </LinearGradientBrush>
 
+    <!-- Default Dark Theme Styles for consistency -->
+    <Style TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource DarkModernPrimaryBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="16,12"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="MinWidth" Value="100"/>
+        <Setter Property="MinHeight" Value="36"/>
+    </Style>
+
+    <Style TargetType="TextBox">
+        <Setter Property="Background" Value="{StaticResource DarkModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource DarkModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="MinHeight" Value="40"/>
+    </Style>
+
+    <Style TargetType="ComboBox">
+        <Setter Property="Background" Value="{StaticResource DarkModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource DarkModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="MinHeight" Value="40"/>
+    </Style>
+
+    <Style TargetType="PasswordBox">
+        <Setter Property="Background" Value="{StaticResource DarkModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource DarkModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="MinHeight" Value="40"/>
+    </Style>
+
     <!-- Dark Theme Navigation Styles -->
     <Style x:Key="DarkModernNavigationViewStyle"
             TargetType="NavigationView">

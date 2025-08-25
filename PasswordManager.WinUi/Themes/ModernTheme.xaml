@@ -109,6 +109,55 @@
                 Offset="1"/>
     </LinearGradientBrush>
 
+    <!-- Default Button Style for consistency -->
+    <Style TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource ModernPrimaryBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="16,12"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="MinWidth" Value="100"/>
+        <Setter Property="MinHeight" Value="36"/>
+    </Style>
+
+    <!-- Default TextBox Style for consistency -->
+    <Style TargetType="TextBox">
+        <Setter Property="Background" Value="{StaticResource ModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="MinHeight" Value="40"/>
+    </Style>
+
+    <!-- Default ComboBox Style for consistency -->
+    <Style TargetType="ComboBox">
+        <Setter Property="Background" Value="{StaticResource ModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="MinHeight" Value="40"/>
+    </Style>
+
+    <!-- Default PasswordBox Style for consistency -->
+    <Style TargetType="PasswordBox">
+        <Setter Property="Background" Value="{StaticResource ModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="MinHeight" Value="40"/>
+    </Style>
+
     <!-- Modern Button Styles -->
     <Style x:Key="ModernPrimaryButtonStyle"
             TargetType="Button">
@@ -536,13 +585,15 @@
 
     <!-- Modern 1Password-style Button Style -->
     <Style x:Key="ModernAccentButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="#8B5CF6"/>
+        <Setter Property="Background" Value="{StaticResource ModernPrimaryBrush}"/>
         <Setter Property="Foreground" Value="White"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="CornerRadius" Value="16"/>
-        <Setter Property="Padding" Value="20,10"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="16,10"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="MinWidth" Value="100"/>
+        <Setter Property="MinHeight" Value="36"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -560,12 +611,12 @@
                                 <VisualState x:Name="Normal"/>
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background" Value="#7C3AED"/>
+                                        <Setter Target="RootBorder.Background" Value="#004DCC"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Pressed">
                                     <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background" Value="#6D28D9"/>
+                                        <Setter Target="RootBorder.Background" Value="#0041B3"/>
                                     </VisualState.Setters>
                                 </VisualState>
                             </VisualStateGroup>
