@@ -15,8 +15,8 @@
                MaxHeight="650">
 
     <ScrollViewer>
-        <StackPanel Spacing="24"
-                Padding="24">
+        <StackPanel Spacing="16"
+                Padding="20">
 
             <!-- Search Box -->
             <AutoSuggestBox x:Name="ItemSearchBox"
@@ -47,14 +47,7 @@
                         Grid.Column="0"
                         Click="CategoryButton_Click"
                         Tag="Login"
-                        Background="#1E293B"
-                        BorderThickness="0"
-                        CornerRadius="12"
-                        Padding="12"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        HorizontalContentAlignment="Center"
-                        VerticalContentAlignment="Center"
+                        Style="{StaticResource CardButtonStyle}"
                         Margin="8"
                         MinHeight="100">
                     <StackPanel Spacing="8">
@@ -71,7 +64,7 @@
                         <TextBlock Text="Login"
                                 FontSize="16"
                                 FontWeight="SemiBold"
-                                Foreground="White"
+                                Foreground="{StaticResource ModernTextPrimaryBrush}"
                                 HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -81,14 +74,7 @@
                         Grid.Column="1"
                         Click="CategoryButton_Click"
                         Tag="Secure Note"
-                        Background="#1E293B"
-                        BorderThickness="0"
-                        CornerRadius="12"
-                        Padding="12"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        HorizontalContentAlignment="Center"
-                        VerticalContentAlignment="Center"
+                        Style="{StaticResource CardButtonStyle}"
                         Margin="8"
                         MinHeight="100">
                     <StackPanel Spacing="8">
@@ -105,7 +91,7 @@
                         <TextBlock Text="Secure Note"
                                 FontSize="16"
                                 FontWeight="SemiBold"
-                                Foreground="White"
+                                Foreground="{StaticResource ModernTextPrimaryBrush}"
                                 HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -115,14 +101,7 @@
                         Grid.Column="2"
                         Click="CategoryButton_Click"
                         Tag="Credit Card"
-                        Background="#1E293B"
-                        BorderThickness="0"
-                        CornerRadius="12"
-                        Padding="12"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        HorizontalContentAlignment="Center"
-                        VerticalContentAlignment="Center"
+                        Style="{StaticResource CardButtonStyle}"
                         Margin="8"
                         MinHeight="100">
                     <StackPanel Spacing="8">
@@ -139,7 +118,7 @@
                         <TextBlock Text="Credit Card"
                                 FontSize="16"
                                 FontWeight="SemiBold"
-                                Foreground="White"
+                                Foreground="{StaticResource ModernTextPrimaryBrush}"
                                 HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -167,7 +146,7 @@
                         <TextBlock Text="Identity"
                                 FontSize="16"
                                 FontWeight="SemiBold"
-                                Foreground="White"
+                                Foreground="{StaticResource ModernTextPrimaryBrush}"
                                 HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -194,7 +173,7 @@
                         <TextBlock Text="Password"
                                 FontSize="16"
                                 FontWeight="SemiBold"
-                                Foreground="White"
+                                Foreground="{StaticResource ModernTextPrimaryBrush}"
                                 HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -221,7 +200,7 @@
                         <TextBlock Text="Document"
                                 FontSize="16"
                                 FontWeight="SemiBold"
-                                Foreground="White"
+                                Foreground="{StaticResource ModernTextPrimaryBrush}"
                                 HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -231,7 +210,7 @@
                         Grid.Row="2"
                         Grid.Column="0"
                         Grid.ColumnSpan="3">
-                    <Grid Margin="0,16,0,0">
+                    <Grid Margin="0,12,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
