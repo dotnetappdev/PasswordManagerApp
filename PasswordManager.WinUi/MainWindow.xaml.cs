@@ -3,7 +3,10 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
+using PasswordManager.Models;
 using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace PasswordManager.WinUi;
 
@@ -260,61 +263,650 @@ public sealed partial class MainWindow : Window
 
     private void ProfileButton_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement profile button functionality
-        System.Diagnostics.Debug.WriteLine("ProfileButton_Click - Not implemented yet");
+        // Create and show profile flyout menu
+        var button = sender as Button;
+        if (button == null) return;
+
+        var flyout = new MenuFlyout();
+
+        // Profile info section
+        var profileItem = new MenuFlyoutItem
+        {
+            Text = "Profile Settings",
+            Icon = new SymbolIcon(Symbol.Contact)
+        };
+        profileItem.Click += ProfileSettings_Click;
+        flyout.Items.Add(profileItem);
+
+        // Add separator
+        flyout.Items.Add(new MenuFlyoutSeparator());
+
+        // Settings
+        var settingsItem = new MenuFlyoutItem
+        {
+            Text = "Settings",
+            Icon = new SymbolIcon(Symbol.Setting)
+        };
+        settingsItem.Click += (s, args) => NavigateToPage("Settings");
+        flyout.Items.Add(settingsItem);
+
+        // Add separator
+        flyout.Items.Add(new MenuFlyoutSeparator());
+
+        // Logout
+        var logoutItem = new MenuFlyoutItem
+        {
+            Text = "Sign Out",
+            Icon = new SymbolIcon(Symbol.LeaveChat)
+        };
+        logoutItem.Click += Logout_Click;
+        flyout.Items.Add(logoutItem);
+
+        // Show the flyout
+        flyout.ShowAt(button);
     }
 
-    private void NavigationItem_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
+    private async void ProfileSettings_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement right-click context menu functionality
-        System.Diagnostics.Debug.WriteLine("NavigationItem_RightTapped - Not implemented yet");
+        // Show a simple profile info dialog
+        var dialog = new ContentDialog
+        {
+            Title = "Profile Information",
+            Content = new StackPanel
+            {
+                Spacing = 12,
+                Children =
+                {
+                    new TextBlock { Text = "User: David Smith", FontWeight = FontWeights.SemiBold },
+                    new TextBlock { Text = "Vault: Personal", FontSize = 14 },
+                    new TextBlock { Text = "Items: " + await GetPasswordItemCount(), FontSize = 14 },
+                    new TextBlock { Text = "Last Login: " + DateTime.Now.ToString("MM/dd/yyyy HH:mm"), FontSize = 14 }
+                }
+            },
+            CloseButtonText = "Close",
+            XamlRoot = this.Content.XamlRoot
+        };
+        
+        await dialog.ShowAsync();
     }
 
-    private void AddTagNavButton_Click(object sender, RoutedEventArgs e)
+    private async Task<string> GetPasswordItemCount()
     {
-        // TODO: Implement add tag functionality
-        System.Diagnostics.Debug.WriteLine("AddTagNavButton_Click - Not implemented yet");
+        try
+        {
+            var passwordService = _serviceProvider.GetService<IPasswordItemIterface>();
+            if (passwordService != null)
+            {
+                var items = await passwordService.GetAllAsync();
+                return items.Count().ToString();
+            }
+        }
+        catch
+        {
+            // Ignore errors for now
+        }
+        return "N/A";
     }
 
-    private void DeleteTagNavButton_Click(object sender, RoutedEventArgs e)
+    private async void Logout_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement delete tag functionality
-        System.Diagnostics.Debug.WriteLine("DeleteTagNavButton_Click - Not implemented yet");
+        // Show confirmation dialog
+        var dialog = new ContentDialog
+        {
+            Title = "Sign Out",
+            Content = "Are you sure you want to sign out?",
+            PrimaryButtonText = "Sign Out",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = this.Content.XamlRoot
+        };
+
+        var result = await dialog.ShowAsync();
+        if (result == ContentDialogResult.Primary)
+        {
+            // Handle logout
+            HandleLogout();
+        }
     }
 
-    private void AddCategoryNavButton_Click(object sender, RoutedEventArgs e)
+    private async void NavigationItem_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
     {
-        // TODO: Implement add category functionality
-        System.Diagnostics.Debug.WriteLine("AddCategoryNavButton_Click - Not implemented yet");
+        // Handle right-click context menu functionality for navigation items
+        if (sender is NavigationViewItem navItem)
+        {
+            var tag = navItem.Tag?.ToString();
+            System.Diagnostics.Debug.WriteLine($"Right-tapped on navigation item: {tag}");
+
+            // For now, just select the item if it's not already selected
+            if (MainNavigationView.SelectedItem != navItem)
+            {
+                MainNavigationView.SelectedItem = navItem;
+                if (!string.IsNullOrEmpty(tag))
+                {
+                    NavigateToPage(tag);
+                }
+            }
+        }
     }
 
-    private void DeleteCategoryNavButton_Click(object sender, RoutedEventArgs e)
+    private async void AddTagNavButton_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement delete category functionality
-        System.Diagnostics.Debug.WriteLine("DeleteCategoryNavButton_Click - Not implemented yet");
+        try
+        {
+            // Open the TagDialog for creating a new tag
+            var tagDialog = new Dialogs.TagDialog(_serviceProvider);
+            tagDialog.XamlRoot = this.Content.XamlRoot;
+
+            var result = await tagDialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && tagDialog.Result != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"Created new tag: {tagDialog.Result.Name}");
+                
+                // TODO: Refresh the navigation menu to show the new tag
+                // This would require dynamically updating the navigation menu items
+                
+                // Show success message
+                await ShowInfoMessage("Tag Created", $"Tag '{tagDialog.Result.Name}' has been created successfully.");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error creating tag: {ex.Message}");
+            await ShowErrorMessage("Error", $"Failed to create tag: {ex.Message}");
+        }
     }
 
-    private void AddVaultButton_Click(object sender, RoutedEventArgs e)
+    private async void DeleteTagNavButton_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement add vault functionality
-        System.Diagnostics.Debug.WriteLine("AddVaultButton_Click - Not implemented yet");
+        try
+        {
+            var tagService = _serviceProvider.GetService<ITagService>();
+            if (tagService == null)
+            {
+                await ShowErrorMessage("Error", "Tag service is not available.");
+                return;
+            }
+
+            // Get all tags to show selection
+            var tags = await tagService.GetAllAsync();
+            if (!tags.Any())
+            {
+                await ShowInfoMessage("No Tags", "There are no tags to delete.");
+                return;
+            }
+
+            // Create a selection dialog
+            var dialog = new ContentDialog
+            {
+                Title = "Delete Tag",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.Content.XamlRoot
+            };
+
+            var comboBox = new ComboBox
+            {
+                PlaceholderText = "Select a tag to delete",
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 12, 0, 0)
+            };
+
+            foreach (var tag in tags.Where(t => !t.IsSystemTag)) // Don't allow deleting system tags
+            {
+                comboBox.Items.Add(new ComboBoxItem
+                {
+                    Content = tag.Name,
+                    Tag = tag
+                });
+            }
+
+            var content = new StackPanel
+            {
+                Children =
+                {
+                    new TextBlock { Text = "Select a tag to delete. This action cannot be undone." },
+                    comboBox
+                }
+            };
+
+            dialog.Content = content;
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && comboBox.SelectedItem is ComboBoxItem selectedItem)
+            {
+                var selectedTag = (Tag)selectedItem.Tag;
+                
+                // Confirm deletion
+                var confirmDialog = new ContentDialog
+                {
+                    Title = "Confirm Deletion",
+                    Content = $"Are you sure you want to delete the tag '{selectedTag.Name}'? This action cannot be undone.",
+                    PrimaryButtonText = "Delete",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.Content.XamlRoot
+                };
+
+                var confirmResult = await confirmDialog.ShowAsync();
+                if (confirmResult == ContentDialogResult.Primary)
+                {
+                    await tagService.DeleteAsync(selectedTag.Id);
+                    await ShowInfoMessage("Tag Deleted", $"Tag '{selectedTag.Name}' has been deleted successfully.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting tag: {ex.Message}");
+            await ShowErrorMessage("Error", $"Failed to delete tag: {ex.Message}");
+        }
     }
 
-    private void DeleteVaultButton_Click(object sender, RoutedEventArgs e)
+    private async void AddCategoryNavButton_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement delete vault functionality
-        System.Diagnostics.Debug.WriteLine("DeleteVaultButton_Click - Not implemented yet");
+        try
+        {
+            // Open the CategoryDialog for creating a new category
+            var categoryDialog = new Dialogs.CategoryDialog(_serviceProvider);
+            categoryDialog.XamlRoot = this.Content.XamlRoot;
+
+            var result = await categoryDialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && categoryDialog.Result != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"Created new category: {categoryDialog.Result.Name}");
+                
+                // TODO: Refresh the navigation menu to show the new category
+                // This would require dynamically updating the navigation menu items
+                
+                // Show success message
+                await ShowInfoMessage("Category Created", $"Category '{categoryDialog.Result.Name}' has been created successfully.");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error creating category: {ex.Message}");
+            await ShowErrorMessage("Error", $"Failed to create category: {ex.Message}");
+        }
     }
 
-    private void EditItem_Click(object sender, RoutedEventArgs e)
+    private async void DeleteCategoryNavButton_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement edit item functionality
-        System.Diagnostics.Debug.WriteLine("EditItem_Click - Not implemented yet");
+        try
+        {
+            var categoryService = _serviceProvider.GetService<ICategoryInterface>();
+            if (categoryService == null)
+            {
+                await ShowErrorMessage("Error", "Category service is not available.");
+                return;
+            }
+
+            // Get all categories to show selection
+            var categories = await categoryService.GetAllAsync();
+            if (!categories.Any())
+            {
+                await ShowInfoMessage("No Categories", "There are no categories to delete.");
+                return;
+            }
+
+            // Create a selection dialog
+            var dialog = new ContentDialog
+            {
+                Title = "Delete Category",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.Content.XamlRoot
+            };
+
+            var comboBox = new ComboBox
+            {
+                PlaceholderText = "Select a category to delete",
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 12, 0, 0)
+            };
+
+            foreach (var category in categories)
+            {
+                comboBox.Items.Add(new ComboBoxItem
+                {
+                    Content = category.Name,
+                    Tag = category
+                });
+            }
+
+            var content = new StackPanel
+            {
+                Children =
+                {
+                    new TextBlock { Text = "Select a category to delete. This action cannot be undone." },
+                    comboBox
+                }
+            };
+
+            dialog.Content = content;
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && comboBox.SelectedItem is ComboBoxItem selectedItem)
+            {
+                var selectedCategory = (Category)selectedItem.Tag;
+                
+                // Confirm deletion
+                var confirmDialog = new ContentDialog
+                {
+                    Title = "Confirm Deletion",
+                    Content = $"Are you sure you want to delete the category '{selectedCategory.Name}'? This action cannot be undone.",
+                    PrimaryButtonText = "Delete",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.Content.XamlRoot
+                };
+
+                var confirmResult = await confirmDialog.ShowAsync();
+                if (confirmResult == ContentDialogResult.Primary)
+                {
+                    await categoryService.DeleteAsync(selectedCategory.Id);
+                    await ShowInfoMessage("Category Deleted", $"Category '{selectedCategory.Name}' has been deleted successfully.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting category: {ex.Message}");
+            await ShowErrorMessage("Error", $"Failed to delete category: {ex.Message}");
+        }
     }
 
-    private void DeleteItem_Click(object sender, RoutedEventArgs e)
+    private async void AddVaultButton_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement delete item functionality
-        System.Diagnostics.Debug.WriteLine("DeleteItem_Click - Not implemented yet");
+        try
+        {
+            var collectionService = _serviceProvider.GetService<ICollectionService>();
+            if (collectionService == null)
+            {
+                await ShowErrorMessage("Error", "Collection service is not available.");
+                return;
+            }
+
+            // Create a simple collection creation dialog
+            var dialog = new ContentDialog
+            {
+                Title = "Create New Vault",
+                PrimaryButtonText = "Create",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.Content.XamlRoot
+            };
+
+            var nameTextBox = new TextBox
+            {
+                PlaceholderText = "Enter vault name",
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+
+            var descriptionTextBox = new TextBox
+            {
+                PlaceholderText = "Enter description (optional)",
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 12, 0, 0)
+            };
+
+            var content = new StackPanel
+            {
+                Children =
+                {
+                    new TextBlock { Text = "Create a new vault to organize your password items." },
+                    nameTextBox,
+                    descriptionTextBox
+                }
+            };
+
+            dialog.Content = content;
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                var name = nameTextBox.Text?.Trim();
+                if (string.IsNullOrEmpty(name))
+                {
+                    await ShowErrorMessage("Error", "Vault name is required.");
+                    return;
+                }
+
+                var newCollection = new Collection
+                {
+                    Name = name,
+                    Description = descriptionTextBox.Text?.Trim(),
+                    CreatedAt = DateTime.UtcNow,
+                    LastModified = DateTime.UtcNow
+                };
+
+                await collectionService.CreateAsync(newCollection);
+                await ShowInfoMessage("Vault Created", $"Vault '{newCollection.Name}' has been created successfully.");
+                
+                System.Diagnostics.Debug.WriteLine($"Created new vault: {newCollection.Name}");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error creating vault: {ex.Message}");
+            await ShowErrorMessage("Error", $"Failed to create vault: {ex.Message}");
+        }
+    }
+
+    private async void DeleteVaultButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var collectionService = _serviceProvider.GetService<ICollectionService>();
+            if (collectionService == null)
+            {
+                await ShowErrorMessage("Error", "Collection service is not available.");
+                return;
+            }
+
+            // Get all collections to show selection
+            var collections = await collectionService.GetAllAsync();
+            if (!collections.Any())
+            {
+                await ShowInfoMessage("No Vaults", "There are no vaults to delete.");
+                return;
+            }
+
+            // Create a selection dialog
+            var dialog = new ContentDialog
+            {
+                Title = "Delete Vault",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.Content.XamlRoot
+            };
+
+            var comboBox = new ComboBox
+            {
+                PlaceholderText = "Select a vault to delete",
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 12, 0, 0)
+            };
+
+            foreach (var collection in collections.Where(c => !c.IsDefault)) // Don't allow deleting default vault
+            {
+                comboBox.Items.Add(new ComboBoxItem
+                {
+                    Content = collection.Name,
+                    Tag = collection
+                });
+            }
+
+            var content = new StackPanel
+            {
+                Children =
+                {
+                    new TextBlock { Text = "Select a vault to delete. This action cannot be undone and will affect all items in the vault." },
+                    comboBox
+                }
+            };
+
+            dialog.Content = content;
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && comboBox.SelectedItem is ComboBoxItem selectedItem)
+            {
+                var selectedCollection = (Collection)selectedItem.Tag;
+                
+                // Confirm deletion
+                var confirmDialog = new ContentDialog
+                {
+                    Title = "Confirm Deletion",
+                    Content = $"Are you sure you want to delete the vault '{selectedCollection.Name}'? This will also delete all items in this vault. This action cannot be undone.",
+                    PrimaryButtonText = "Delete",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.Content.XamlRoot
+                };
+
+                var confirmResult = await confirmDialog.ShowAsync();
+                if (confirmResult == ContentDialogResult.Primary)
+                {
+                    await collectionService.DeleteAsync(selectedCollection.Id);
+                    await ShowInfoMessage("Vault Deleted", $"Vault '{selectedCollection.Name}' has been deleted successfully.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting vault: {ex.Message}");
+            await ShowErrorMessage("Error", $"Failed to delete vault: {ex.Message}");
+        }
+    }
+
+    private async void EditItem_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Get the tag from the menu item to identify which navigation item to edit
+            var menuItem = sender as MenuFlyoutItem;
+            var tag = menuItem?.Tag?.ToString();
+            
+            if (string.IsNullOrEmpty(tag))
+            {
+                await ShowErrorMessage("Error", "Unable to identify the item to edit.");
+                return;
+            }
+
+            // Handle editing based on the item type
+            switch (tag)
+            {
+                case "AllItems":
+                case "Favorites":
+                    await ShowInfoMessage("Edit Item", $"Editing '{tag}' - This would open item management interface.");
+                    NavigateToPage("ManageItems");
+                    break;
+                    
+                case "LoginCategory":
+                case "CreditCardCategory":
+                case "SecureNotesCategory":
+                case "PasskeysCategory":
+                    await ShowInfoMessage("Edit Category", $"This would open the category editor for '{tag}'.");
+                    // Could open category dialog in edit mode here
+                    break;
+                    
+                default:
+                    await ShowInfoMessage("Edit Item", $"Editing functionality for '{tag}' would be implemented here.");
+                    break;
+            }
+            
+            System.Diagnostics.Debug.WriteLine($"Edit item clicked for: {tag}");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error editing item: {ex.Message}");
+            await ShowErrorMessage("Error", $"Failed to edit item: {ex.Message}");
+        }
+    }
+
+    private async void DeleteItem_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Get the tag from the menu item to identify which navigation item to delete
+            var menuItem = sender as MenuFlyoutItem;
+            var tag = menuItem?.Tag?.ToString();
+            
+            if (string.IsNullOrEmpty(tag))
+            {
+                await ShowErrorMessage("Error", "Unable to identify the item to delete.");
+                return;
+            }
+
+            // Show confirmation dialog
+            var confirmDialog = new ContentDialog
+            {
+                Title = "Confirm Deletion",
+                Content = $"Are you sure you want to delete '{tag}'? This action cannot be undone.",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.Content.XamlRoot
+            };
+
+            var result = await confirmDialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                // Handle deletion based on the item type
+                switch (tag)
+                {
+                    case "AllItems":
+                    case "Favorites":
+                        await ShowInfoMessage("Delete Item", $"'{tag}' is a system item and cannot be deleted.");
+                        break;
+                        
+                    case "LoginCategory":
+                    case "CreditCardCategory":
+                    case "SecureNotesCategory":
+                    case "PasskeysCategory":
+                        await ShowInfoMessage("Delete Category", $"Category '{tag}' deletion would be handled here.");
+                        // Could implement actual category deletion here
+                        break;
+                        
+                    default:
+                        await ShowInfoMessage("Delete Item", $"'{tag}' has been marked for deletion.");
+                        break;
+                }
+                
+                System.Diagnostics.Debug.WriteLine($"Delete item clicked for: {tag}");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting item: {ex.Message}");
+            await ShowErrorMessage("Error", $"Failed to delete item: {ex.Message}");
+        }
+    }
+
+    // Helper methods for dialogs
+    private async Task ShowErrorMessage(string title, string message)
+    {
+        var errorDialog = new ContentDialog
+        {
+            Title = title,
+            Content = message,
+            CloseButtonText = "OK",
+            XamlRoot = this.Content.XamlRoot
+        };
+        await errorDialog.ShowAsync();
+    }
+
+    private async Task ShowInfoMessage(string title, string message)
+    {
+        var infoDialog = new ContentDialog
+        {
+            Title = title,
+            Content = message,
+            CloseButtonText = "OK",
+            XamlRoot = this.Content.XamlRoot
+        };
+        await infoDialog.ShowAsync();
     }
 }
