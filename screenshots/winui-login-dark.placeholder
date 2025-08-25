@@ -1,0 +1,25 @@
+# WinUI Dark Theme Screenshots - Placeholder
+
+This placeholder represents the login screen in dark theme.
+
+**Screenshot Specifications:**
+- **File**: winui-login-dark.png
+- **Resolution**: 1920x1080 minimum
+- **Theme**: Dark mode with dark background (#0F0F0F)
+- **Content**: Same layout as light theme with dark styling
+
+**Key Visual Elements:**
+- Same split-screen layout as light theme
+- Dark backgrounds: #0F0F0F (main), #1A1A1A (surfaces)
+- Light text: #FFFFFF (primary), #B0B0B0 (secondary)
+- Blue accents maintained: #005BFF
+- Proper contrast ratios for accessibility
+
+**Design Features:**
+- All light theme features adapted to dark mode
+- Maintained visual hierarchy
+- Professional dark theme styling
+- Readable text contrast
+- Consistent with Windows 11 dark theme
+
+When this application is run on Windows, this placeholder should be replaced with an actual screenshot showing these elements.

@@ -1,0 +1,24 @@
+# WinUI Light Theme Screenshots - Placeholder
+
+This placeholder represents the login screen in light theme.
+
+**Screenshot Specifications:**
+- **File**: winui-login-light.png
+- **Resolution**: 1920x1080 minimum
+- **Theme**: Light mode with clean white background (#FAFBFC)
+- **Content**: Split-screen layout with app branding and login form
+
+**Key Visual Elements:**
+- Left side: App logo, title "Password Manager", subtitle
+- Right side: Master password input, "Remember me" checkbox, login button
+- Colors: Blue accent (#005BFF), light backgrounds, proper contrast
+- Typography: Clean, modern fonts matching Windows 11 style
+
+**Design Features:**
+- Windows 11 Fluent Design elements
+- Rounded corners (8px radius)
+- Professional spacing and margins
+- Modern form styling
+- Proper accessibility contrast
+
+When this application is run on Windows, this placeholder should be replaced with an actual screenshot showing these elements.
