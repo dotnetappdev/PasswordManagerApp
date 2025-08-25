@@ -3,25 +3,25 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- Enhanced Dark Theme Color Palette - 1Password Style -->
-    <Color x:Key="DarkModernPrimaryColor">#3b82f6</Color>
-    <Color x:Key="DarkModernPrimaryLightColor">#60a5fa</Color>
-    <Color x:Key="DarkModernPrimaryDarkColor">#2563eb</Color>
-    <Color x:Key="DarkModernAccentColor">#ec4899</Color>
-    <Color x:Key="DarkModernAccentLightColor">#f472b6</Color>
-    <Color x:Key="DarkModernSuccessColor">#10b981</Color>
-    <Color x:Key="DarkModernWarningColor">#f59e0b</Color>
-    <Color x:Key="DarkModernErrorColor">#ef4444</Color>
+    <Color x:Key="DarkModernPrimaryColor">#005BFF</Color>
+    <Color x:Key="DarkModernPrimaryLightColor">#4285F4</Color>
+    <Color x:Key="DarkModernPrimaryDarkColor">#0041CC</Color>
+    <Color x:Key="DarkModernAccentColor">#EC4899</Color>
+    <Color x:Key="DarkModernAccentLightColor">#F472B6</Color>
+    <Color x:Key="DarkModernSuccessColor">#10B981</Color>
+    <Color x:Key="DarkModernWarningColor">#F59E0B</Color>
+    <Color x:Key="DarkModernErrorColor">#EF4444</Color>
 
     <!-- Enhanced Dark Background Colors - 1Password Style -->
-    <Color x:Key="DarkModernBackgroundColor">#1a1a1a</Color>
-    <Color x:Key="DarkModernSurfaceColor">#2d2d2d</Color>
-    <Color x:Key="DarkModernCardColor">#3a3a3a</Color>
-    <Color x:Key="DarkModernElevatedSurfaceColor">#404040</Color>
-    <Color x:Key="DarkModernBorderColor">#4a4a4a</Color>
+    <Color x:Key="DarkModernBackgroundColor">#0F0F0F</Color>
+    <Color x:Key="DarkModernSurfaceColor">#1A1A1A</Color>
+    <Color x:Key="DarkModernCardColor">#2A2A2A</Color>
+    <Color x:Key="DarkModernElevatedSurfaceColor">#333333</Color>
+    <Color x:Key="DarkModernBorderColor">#3A3A3A</Color>
 
     <!-- Enhanced Dark Text Colors -->
-    <Color x:Key="DarkModernTextPrimaryColor">#e5e5e5</Color>
-    <Color x:Key="DarkModernTextSecondaryColor">#b3b3b3</Color>
+    <Color x:Key="DarkModernTextPrimaryColor">#FFFFFF</Color>
+    <Color x:Key="DarkModernTextSecondaryColor">#B0B0B0</Color>
     <Color x:Key="DarkModernTextTertiaryColor">#808080</Color>
 
     <!-- Dark Theme Brushes -->
@@ -92,6 +92,52 @@
         <GradientStop Color="{StaticResource DarkModernSurfaceColor}"
                 Offset="1"/>
     </LinearGradientBrush>
+
+    <!-- Default Dark Theme Styles for consistency -->
+    <Style TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource DarkModernPrimaryBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="16,12"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="MinWidth" Value="100"/>
+        <Setter Property="MinHeight" Value="36"/>
+    </Style>
+
+    <Style TargetType="TextBox">
+        <Setter Property="Background" Value="{StaticResource DarkModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource DarkModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="MinHeight" Value="40"/>
+    </Style>
+
+    <Style TargetType="ComboBox">
+        <Setter Property="Background" Value="{StaticResource DarkModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource DarkModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="MinHeight" Value="40"/>
+    </Style>
+
+    <Style TargetType="PasswordBox">
+        <Setter Property="Background" Value="{StaticResource DarkModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource DarkModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="MinHeight" Value="40"/>
+    </Style>
 
     <!-- Dark Theme Navigation Styles -->
     <Style x:Key="DarkModernNavigationViewStyle"
@@ -175,24 +221,24 @@
                                 <VisualState x:Name="Normal"/>
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background" Value="#3a3a3a"/>
+                                        <Setter Target="LayoutRoot.Background" Value="#2A2A2A"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Pressed">
                                     <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background" Value="#4a4a4a"/>
+                                        <Setter Target="LayoutRoot.Background" Value="#333333"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Selected">
                                     <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background" Value="#2d4a6b"/>
+                                        <Setter Target="LayoutRoot.Background" Value="#1A3D5A"/>
                                         <Setter Target="SelectionIndicator.Opacity" Value="1"/>
                                         <Setter Target="ContentPresenter.Foreground" Value="{StaticResource DarkModernPrimaryBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="PointerOverSelected">
                                     <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background" Value="#3d5a7b"/>
+                                        <Setter Target="LayoutRoot.Background" Value="#224A6A"/>
                                         <Setter Target="SelectionIndicator.Opacity" Value="1"/>
                                         <Setter Target="ContentPresenter.Foreground" Value="{StaticResource DarkModernPrimaryBrush}"/>
                                     </VisualState.Setters>

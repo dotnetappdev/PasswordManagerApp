@@ -92,8 +92,10 @@
 
                             <!-- Password Input -->
                             <StackPanel Spacing="8">
-                                <Border Background="#505050"
+                                <Border Background="#3A3A3A"
                                        CornerRadius="8"
+                                       BorderBrush="#4A4A4A"
+                                       BorderThickness="1"
                                        Padding="16,12"
                                        MinHeight="48">
                                     <PasswordBox x:Name="MasterPasswordBox"
@@ -117,8 +119,10 @@
                             <!-- Confirm Password Input (First-time setup only) -->
                             <StackPanel Spacing="8"
                                        Visibility="{Binding ShowConfirmPassword, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <Border Background="#505050"
+                                <Border Background="#3A3A3A"
                                        CornerRadius="8"
+                                       BorderBrush="#4A4A4A"
+                                       BorderThickness="1"
                                        Padding="16,12"
                                        MinHeight="48">
                                     <PasswordBox x:Name="ConfirmPasswordBox"
@@ -134,8 +138,10 @@
                             <!-- Password Hint Input (First-time setup only) -->
                             <StackPanel Spacing="8"
                                        Visibility="{Binding ShowPasswordHint, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <Border Background="#505050"
+                                <Border Background="#3A3A3A"
                                        CornerRadius="8"
+                                       BorderBrush="#4A4A4A"
+                                       BorderThickness="1"
                                        Padding="16,12"
                                        MinHeight="48">
                                     <TextBox x:Name="PasswordHintBox"
@@ -172,14 +178,10 @@
                             <Button x:Name="PrimaryActionButton"
                                     x:FieldModifier="private"
                                     Content="{Binding PrimaryButtonText, FallbackValue='Unlock'}"
-                                    Background="#4A90E2"
-                                    Foreground="White"
-                                    BorderThickness="0"
-                                    CornerRadius="8"
+                                    Style="{StaticResource ModernPrimaryButtonStyle}"
                                     HorizontalAlignment="Stretch"
                                     MinHeight="48"
                                     FontSize="16"
-                                    FontWeight="SemiBold"
                                     IsEnabled="{Binding IsButtonEnabled}"
                                     Click="PrimaryActionButton_Click"/>
 
@@ -202,11 +204,9 @@
                                 
                                 <!-- Password Hint Display -->
                                 <Button Content="Show password hint"
-                                       Background="Transparent"
-                                       BorderThickness="0"
-                                       Foreground="#8B8B8B"
-                                       FontSize="13"
+                                       Style="{StaticResource ModernSecondaryButtonStyle}"
                                        HorizontalAlignment="Center"
+                                       FontSize="13"
                                        Visibility="{Binding ShowHintButton, Converter={StaticResource BoolToVisibilityConverter}}"/>
                             </StackPanel>
                         </StackPanel>
