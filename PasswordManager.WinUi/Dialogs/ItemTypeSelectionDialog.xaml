@@ -15,8 +15,8 @@
                MaxHeight="650">
 
     <ScrollViewer>
-        <StackPanel Spacing="24"
-                Padding="24">
+        <StackPanel Spacing="16"
+                Padding="20">
 
             <!-- Search Box -->
             <AutoSuggestBox x:Name="ItemSearchBox"
@@ -210,7 +210,7 @@
                         Grid.Row="2"
                         Grid.Column="0"
                         Grid.ColumnSpan="3">
-                    <Grid Margin="0,16,0,0">
+                    <Grid Margin="0,12,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
