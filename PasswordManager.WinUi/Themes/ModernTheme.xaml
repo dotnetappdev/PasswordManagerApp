@@ -247,6 +247,7 @@
     <!-- Card Button Style for Item Type Selection -->
     <Style x:Key="CardButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="{StaticResource ModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="12"/>
@@ -258,38 +259,34 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border Background="{TemplateBinding Background}"
+                    <Border x:Name="RootBorder"
+                            Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{TemplateBinding CornerRadius}"
                             Padding="{TemplateBinding Padding}">
+                        <ContentPresenter x:Name="ContentPresenter"
+                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                        Content="{TemplateBinding Content}"
+                                        Foreground="{TemplateBinding Foreground}"/>
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="CommonStates">
                                 <VisualState x:Name="Normal"/>
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background" Value="{StaticResource ModernElevatedSurfaceBrush}"/>
-                                        <Setter Target="BorderElement.BorderBrush" Value="{StaticResource ModernPrimaryBrush}"/>
+                                        <Setter Target="RootBorder.Background" Value="{StaticResource ModernElevatedSurfaceBrush}"/>
+                                        <Setter Target="RootBorder.BorderBrush" Value="{StaticResource ModernPrimaryBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Pressed">
                                     <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background" Value="{StaticResource ModernPrimaryLightBrush}"/>
-                                        <Setter Target="BorderElement.BorderBrush" Value="{StaticResource ModernPrimaryBrush}"/>
+                                        <Setter Target="RootBorder.Background" Value="{StaticResource ModernPrimaryLightBrush}"/>
+                                        <Setter Target="RootBorder.BorderBrush" Value="{StaticResource ModernPrimaryBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>
-                        <Border x:Name="BorderElement" 
-                                Background="Transparent"
-                                BorderBrush="Transparent"
-                                BorderThickness="0"
-                                CornerRadius="{TemplateBinding CornerRadius}">
-                            <ContentPresenter x:Name="ContentPresenter"
-                                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                            Content="{TemplateBinding Content}"/>
-                        </Border>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -514,11 +511,70 @@
         <Setter Property="CornerRadius" Value="12"/>
     </Style>
 
-    <!-- Content Dialog Button Styles -->
-    <Style x:Key="ContentDialogButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernPrimaryButtonStyle}">
-        <Setter Property="Margin" Value="4"/>
+    <!-- Modern 1Password-style Button Style -->
+    <Style x:Key="ModernAccentButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="#8B5CF6"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="16"/>
+        <Setter Property="Padding" Value="20,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="RootBorder"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter x:Name="ContentPresenter"
+                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                        Content="{TemplateBinding Content}"
+                                        Foreground="{TemplateBinding Foreground}"/>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal"/>
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="RootBorder.Background" Value="#7C3AED"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="RootBorder.Background" Value="#6D28D9"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="ContentDialogPrimaryButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="#8B5CF6"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="24,10"/>
         <Setter Property="MinWidth" Value="120"/>
         <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Margin" Value="4"/>
+    </Style>
+
+    <Style x:Key="ContentDialogSecondaryButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="24,10"/>
+        <Setter Property="MinWidth" Value="120"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Margin" Value="4"/>
     </Style>
 
 </ResourceDictionary>
