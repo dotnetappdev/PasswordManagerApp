@@ -100,13 +100,7 @@
                 </Grid>
             </NavigationView.PaneHeader>
 
-            <!-- Header Content - Reduced height -->
-            <NavigationView.Header>
-                <Grid Height="0"
-                        Margin="0">
-                    <!-- Removed header content as search and profile are now in pane header -->
-                </Grid>
-            </NavigationView.Header>
+            <!-- Header Content - Completely removed to eliminate gaps -->
 
             <!-- Navigation Menu Items -->
             <NavigationView.MenuItems>
