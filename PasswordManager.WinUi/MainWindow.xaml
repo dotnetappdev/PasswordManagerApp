@@ -376,10 +376,9 @@
                                     Style="{StaticResource ModernNavigationViewItemStyle}"
                                     Margin="16,0,0,0">
                     <NavigationViewItem.Icon>
-                        <Border Background="#10b981"
-                                CornerRadius="4"
-                                Width="12"
-                                Height="12"/>
+                        <FontIcon Glyph="&#xE8EC;"
+                                FontSize="16"
+                                Foreground="#10b981"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
