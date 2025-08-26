@@ -9,7 +9,7 @@
                Background="{StaticResource ModernFormBackgroundBrush}"
                Style="{StaticResource Modern1PasswordDialogStyle}"
                PrimaryButtonStyle="{StaticResource ContentDialogPrimaryButtonStyle}"
-               CloseButtonStyle="{StaticResource ContentDialogSecondaryButtonStyle}">
+               CloseButtonStyle="{StaticResource ContentDialogSecondaryButtonStyle}"
                MaxWidth="700"
                MaxHeight="650">
 
