@@ -357,6 +357,156 @@
     .success-message li, .error-message li {
         margin: 4px 0;
     }
+
+    /* Modal Styles - Ensure proper display */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 8px;
+        padding: 0;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-content.large-modal {
+        max-width: 800px;
+    }
+
+    .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: between;
+        align-items: center;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        flex-grow: 1;
+    }
+
+    .close-btn, .close-modal-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0;
+        margin-left: 20px;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    /* Responsive Layout for Sidebar */
+    .password-manager-layout {
+        display: flex;
+        height: 100vh;
+        background-color: #f8f9fa;
+    }
+
+    .sidebar {
+        width: 280px;
+        background-color: #ffffff;
+        border-right: 1px solid #e1e5e9;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    /* Responsive behavior for sidebar */
+    @@media (max-width: 768px) {
+        .password-manager-layout {
+            flex-direction: column;
+        }
+        
+        .sidebar {
+            width: 100%;
+            height: auto;
+            max-height: 40vh;
+            border-right: none;
+            border-bottom: 1px solid #e1e5e9;
+        }
+        
+        .items-list-view {
+            flex: 1;
+            overflow-y: auto;
+        }
+    }
+
+    @@media (min-width: 769px) {
+        .sidebar {
+            /* Ensure sidebar is always visible on larger screens */
+            display: flex !important;
+        }
+    }
+
+    /* Category Modal Specific Styles */
+    .icon-selection, .color-selection {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 10px 0;
+    }
+
+    .icon-option, .color-option {
+        border: 2px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 40px;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+
+    .icon-option:hover, .color-option:hover {
+        border-color: #3b82f6;
+        transform: scale(1.05);
+    }
+
+    .icon-option.selected, .color-option.selected {
+        border-color: #3b82f6;
+        background-color: #eff6ff;
+    }
+
+    .category-preview {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        margin-top: 10px;
+        background-color: #f9fafb;
+    }
 </style>
 
 <div class="password-manager-layout">
@@ -370,14 +520,6 @@
             <button class="logout-btn" @onclick="LogoutAsync" title="Logout">
                 <span>🚪</span>
             </button>
-        </div>
-
-        <div class="search-section">
-            <div class="search-box">
-                <input type="text" @bind="searchTerm" @bind:event="oninput" @onkeyup="SearchItems" 
-                       placeholder="Search your vault..." class="search-input" />
-                <span class="search-icon">🔍</span>
-            </div>
         </div>
 
         <div class="sidebar-navigation">
@@ -396,6 +538,46 @@
                     <span class="nav-icon">🛡️</span>
                     <span class="nav-text">Watchtower</span>
                 </div>
+            </div>
+
+            <!-- Categories Section -->
+            <div class="nav-section">
+                <h3 class="nav-section-header">
+                    <span class="section-toggle" @onclick="ToggleCategoriesExpanded">
+                        @(isCategoriesExpanded ? "▼" : "►")
+                    </span>
+                    <span class="section-title">CATEGORIES</span>
+                    <button class="add-btn" @onclick="ShowAddCategoryModal" title="Add Category">+</button>
+                </h3>
+                @if (isCategoriesExpanded)
+                {
+                    <div class="nav-items">
+                        @foreach (var category in categories.OrderBy(c => c.Name))
+                        {
+                            <div class="nav-item @(selectedCategory == category.Name ? "active" : "")"
+                                 style="display:flex;align-items:center;gap:4px;"
+                                 @onclick="() => SelectCategory(category.Name)">
+                                <span class="nav-icon">@(string.IsNullOrEmpty(category.Icon) ? "📁" : category.Icon)</span>
+                                <span class="nav-text">@category.Name</span>
+                                <span class="nav-count">@filteredItems.Count(i => i.CategoryId == category.Id)</span>
+                                <div class="category-actions" style="margin-left:auto;display:flex;gap:4px;">
+                                    <button class="category-edit-btn" style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => ShowEditCategoryModal(category)"
+                                            title="Edit category">✏️</button>
+                                    <button class="category-delete-btn" style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => DeleteCategory(category)"
+                                            title="Delete category">🗑️</button>
+                                </div>
+                            </div>
+                        }
+                        @if (!categories.Any())
+                        {
+                            <div class="empty-message" style="padding: 5px; font-style: italic; color: #888;">No categories</div>
+                        }
+                    </div>
+                }
             </div>
 
             <!-- Vaults Section -->
@@ -462,6 +644,15 @@
 
     <!-- Items List View -->
     <div class="items-list-view">
+        <!-- Search Section moved from sidebar -->
+        <div class="search-section">
+            <div class="search-box">
+                <input type="text" @bind="searchTerm" @bind:event="oninput" @onkeyup="SearchItems" 
+                       placeholder="Search your vault..." class="search-input" />
+                <span class="search-icon">🔍</span>
+            </div>
+        </div>
+        
         <div class="items-list-header">
             <h3 class="items-list-title">Items</h3>
             <div class="items-list-category-filter">
@@ -1343,6 +1534,12 @@
         isCollectionsExpanded = !isCollectionsExpanded;
         StateHasChanged();
     }
+
+    private void ToggleCategoriesExpanded()
+    {
+        isCategoriesExpanded = !isCategoriesExpanded;
+        StateHasChanged();
+    }
     
     private void ToggleCollectionCategories(int collectionId)
     {
@@ -1527,6 +1724,9 @@ private void OnLengthChanged(ChangeEventArgs e)
                 selectedCollectionId = collections.First().Id;
             }
         }
+        
+        // Create sample data if this is a new installation
+        await CreateSampleDataIfNeeded();
     }
 
     private async Task LoadData()
@@ -2378,13 +2578,15 @@ private void OnLengthChanged(ChangeEventArgs e)
                             <span class="nav-icon">@(string.IsNullOrEmpty(category.Icon) ? "📁" : category.Icon)</span>
                             <span class="nav-text">@category.Name</span>
                             <span class="nav-count">@filteredItems.Count(i => i.CategoryId == category.Id)</span>
-                            <div style="margin-left:auto;">
-                                <button class="category-edit-btn" style="border:none;background:transparent;"
+                            <div class="category-actions" style="margin-left:auto;display:flex;gap:4px;">
+                                <button class="category-edit-btn" style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
                                         @onclick:stopPropagation="true"
-                                        @onclick="() => ShowEditCategoryModal(category)">✏️</button>
-                                <button class="category-delete-btn" style="border:none;background:transparent;"
+                                        @onclick="() => ShowEditCategoryModal(category)"
+                                        title="Edit category">✏️</button>
+                                <button class="category-delete-btn" style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
                                         @onclick:stopPropagation="true"
-                                        @onclick="() => DeleteCategory(category)">🗑️</button>
+                                        @onclick="() => DeleteCategory(category)"
+                                        title="Delete category">🗑️</button>
                             </div>
                         </div>
                     }
@@ -2394,9 +2596,10 @@ private void OnLengthChanged(ChangeEventArgs e)
                     <div class="empty-message" style="padding: 5px; font-style: italic; color: #888;">No categories</div>
                 }
                 <button class="add-category-btn"
-                        style="background:none;border:none;font-size:0.9rem;padding:5px 0;cursor:pointer;color:#007bff;width:100%;text-align:left;"
+                        style="background:none;border:none;font-size:12px;padding:5px 0;cursor:pointer;color:#007bff;width:100%;text-align:left;"
                         @onclick:stopPropagation="true"
-                        @onclick="() => ShowAddCategoryForCollection(collection.Id)">+ Add Category</button>
+                        @onclick="() => ShowAddCategoryForCollection(collection.Id)"
+                        title="Add new category">+ Add Category</button>
             </div>
         }
     };
@@ -2543,6 +2746,69 @@ private void OnCollectionChanged(ChangeEventArgs e)
         await LoadCollections();
         
         StateHasChanged();
+    }
+    
+    private async Task CreateSampleDataIfNeeded()
+    {
+        // Check if there are any items in the database
+        var allItems = await PasswordItemService.GetAllAsync();
+        if (allItems.Any()) return; // Data already exists
+        
+        try
+        {
+            // Create sample categories if none exist
+            if (!categories.Any())
+            {
+                var sampleCategories = new[]
+                {
+                    new Category { Name = "Social Media", Icon = "📱", Color = "#3b82f6" },
+                    new Category { Name = "Banking", Icon = "🏦", Color = "#10b981" },
+                    new Category { Name = "Email", Icon = "📧", Color = "#f59e0b" },
+                    new Category { Name = "Work", Icon = "💼", Color = "#8b5cf6" },
+                    new Category { Name = "Shopping", Icon = "🛒", Color = "#ef4444" }
+                };
+                
+                foreach (var category in sampleCategories)
+                {
+                    if (selectedCollectionId.HasValue)
+                        category.CollectionId = selectedCollectionId.Value;
+                    await CategoryService.CreateAsync(category);
+                }
+                
+                // Reload categories
+                await LoadCategories();
+            }
+            
+            // Create sample password items
+            var socialMediaCategory = categories.FirstOrDefault(c => c.Name == "Social Media");
+            var bankingCategory = categories.FirstOrDefault(c => c.Name == "Banking");
+            var emailCategory = categories.FirstOrDefault(c => c.Name == "Email");
+            
+            if (socialMediaCategory != null)
+            {
+                var sampleItem = new PasswordItem
+                {
+                    Title = "Example Social Media",
+                    Type = ItemType.Login,
+                    CategoryId = socialMediaCategory.Id,
+                    CollectionId = selectedCollectionId ?? 1,
+                    CreatedAt = DateTime.UtcNow,
+                    LastModified = DateTime.UtcNow
+                };
+                
+                // Note: In a real application, you wouldn't create sample passwords like this
+                // This is just for demonstration purposes
+                await PasswordItemService.CreateAsync(sampleItem);
+            }
+            
+            // Reload data to show sample items
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            // Sample data creation failed, but don't break the application
+            System.Diagnostics.Debug.WriteLine($"Failed to create sample data: {ex.Message}");
+        }
     }
 }
 

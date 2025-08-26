@@ -990,6 +990,38 @@
             <div class="modal-body">
                 <label>Category Name</label>
                 <input type="text" @bind="newCategory.Name" class="form-control" placeholder="Enter category name" required />
+                
+                <label>Icon (Optional)</label>
+                <div class="icon-selection">
+                    @foreach (var icon in predefinedCategoryIcons)
+                    {
+                        <button type="button" 
+                                class="icon-option @(newCategory.Icon == icon ? "selected" : "")" 
+                                @onclick="() => SelectCategoryIcon(icon)">
+                            @icon
+                        </button>
+                    }
+                </div>
+                <input type="text" @bind="newCategory.Icon" class="form-control" placeholder="Custom icon (emoji)" />
+                
+                <label>Color (Optional)</label>
+                <div class="color-selection">
+                    @foreach (var color in predefinedColors)
+                    {
+                        <button type="button" 
+                                class="color-option @(newCategory.Color == color ? "selected" : "")" 
+                                style="background-color: @color" 
+                                @onclick="() => SelectCategoryColor(color)">
+                        </button>
+                    }
+                </div>
+                <input type="color" @bind="newCategory.Color" class="form-control color-picker" />
+                
+                <div class="category-preview">
+                    <span class="nav-icon" style="color: @newCategory.Color">@(string.IsNullOrEmpty(newCategory.Icon) ? "📁" : newCategory.Icon)</span>
+                    <span>@(string.IsNullOrWhiteSpace(newCategory.Name) ? "Preview" : newCategory.Name)</span>
+                </div>
+                
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" @onclick="async () => await HideAddCategoryModal()">Cancel</button>
                     <button type="button" class="btn btn-primary" @onclick="SaveCategory">
@@ -1466,7 +1498,7 @@
     private void ShowAddCategoryForCollection(int collectionId)
     {
         editingCategory = null;
-        newCategory = new Category { CollectionId = collectionId };
+        newCategory = new Category { CollectionId = collectionId, Icon = "📁", Color = "#3b82f6" };
         showAddCategoryModal = true;
         StateHasChanged();
     }
@@ -1545,6 +1577,12 @@
     private readonly string[] predefinedColors = {
         "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6",
         "#ec4899", "#6b7280", "#06b6d4", "#84cc16", "#f97316"
+    };
+
+    // Predefined icons for categories
+    private readonly string[] predefinedCategoryIcons = {
+        "📁", "🔐", "💳", "📝", "📶", "🔑", "🏠", "💼", "🎓", "🏥",
+        "🛒", "🎮", "📱", "💻", "🔧", "⚽", "🎵", "📺", "✈️", "🍕"
     };
 
     // New category form data
@@ -1949,7 +1987,7 @@ private void OnLengthChanged(ChangeEventArgs e)
     private void ShowAddCategoryModal()
     {
         editingCategory = null;
-        newCategory = new Category();
+        newCategory = new Category { Icon = "📁", Color = "#3b82f6" };
         showAddCategoryModal = true;
         StateHasChanged();
     }
@@ -2239,6 +2277,18 @@ private void OnLengthChanged(ChangeEventArgs e)
         StateHasChanged();
     }
 
+    private void SelectCategoryIcon(string icon)
+    {
+        newCategory.Icon = icon;
+        StateHasChanged();
+    }
+
+    private void SelectCategoryColor(string color)
+    {
+        newCategory.Color = color;
+        StateHasChanged();
+    }
+
     private async Task SaveTag()
     {
         if (string.IsNullOrWhiteSpace(newTag.Name))
@@ -2277,6 +2327,12 @@ private void OnLengthChanged(ChangeEventArgs e)
         }
         else
         {
+            // Set default values for required fields
+            if (string.IsNullOrEmpty(newCategory.Icon))
+                newCategory.Icon = "📁"; // Default folder icon
+            if (string.IsNullOrEmpty(newCategory.Color))
+                newCategory.Color = "#3b82f6"; // Default blue color
+            
             await CategoryService.CreateAsync(newCategory);
         }
         
