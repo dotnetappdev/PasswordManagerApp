@@ -357,6 +357,156 @@
     .success-message li, .error-message li {
         margin: 4px 0;
     }
+
+    /* Modal Styles - Ensure proper display */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 8px;
+        padding: 0;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-content.large-modal {
+        max-width: 800px;
+    }
+
+    .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: between;
+        align-items: center;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        flex-grow: 1;
+    }
+
+    .close-btn, .close-modal-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0;
+        margin-left: 20px;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    /* Responsive Layout for Sidebar */
+    .password-manager-layout {
+        display: flex;
+        height: 100vh;
+        background-color: #f8f9fa;
+    }
+
+    .sidebar {
+        width: 280px;
+        background-color: #ffffff;
+        border-right: 1px solid #e1e5e9;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    /* Responsive behavior for sidebar */
+    @@media (max-width: 768px) {
+        .password-manager-layout {
+            flex-direction: column;
+        }
+        
+        .sidebar {
+            width: 100%;
+            height: auto;
+            max-height: 40vh;
+            border-right: none;
+            border-bottom: 1px solid #e1e5e9;
+        }
+        
+        .items-list-view {
+            flex: 1;
+            overflow-y: auto;
+        }
+    }
+
+    @@media (min-width: 769px) {
+        .sidebar {
+            /* Ensure sidebar is always visible on larger screens */
+            display: flex !important;
+        }
+    }
+
+    /* Category Modal Specific Styles */
+    .icon-selection, .color-selection {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 10px 0;
+    }
+
+    .icon-option, .color-option {
+        border: 2px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 40px;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+
+    .icon-option:hover, .color-option:hover {
+        border-color: #3b82f6;
+        transform: scale(1.05);
+    }
+
+    .icon-option.selected, .color-option.selected {
+        border-color: #3b82f6;
+        background-color: #eff6ff;
+    }
+
+    .category-preview {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        margin-top: 10px;
+        background-color: #f9fafb;
+    }
 </style>
 
 <div class="password-manager-layout">
