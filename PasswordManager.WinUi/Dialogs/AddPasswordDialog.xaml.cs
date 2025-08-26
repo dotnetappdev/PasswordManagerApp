@@ -94,7 +94,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
         TitleTextBox.Text = _editingItem.Title;
         DescriptionTextBox.Text = _editingItem.Description ?? string.Empty;
         TypeComboBox.SelectedIndex = (int)_editingItem.Type - 1;
-        IsFavoriteCheckBox.IsChecked = _editingItem.IsFavorite;
+        IsFavoriteCheckBox.IsOn = _editingItem.IsFavorite;
 
         // Set login-specific fields if applicable
         if (_editingItem.LoginItem != null)
@@ -218,7 +218,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
             item.Title = TitleTextBox.Text.Trim();
             item.Description = DescriptionTextBox.Text?.Trim();
             item.Type = selectedType;
-            item.IsFavorite = IsFavoriteCheckBox.IsChecked ?? false;
+            item.IsFavorite = IsFavoriteCheckBox.IsOn;
             item.LastModified = DateTime.UtcNow;
 
             // Set category
