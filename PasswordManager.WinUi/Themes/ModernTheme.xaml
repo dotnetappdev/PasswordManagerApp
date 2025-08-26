@@ -13,16 +13,18 @@
     <Color x:Key="ModernErrorColor">#EF4444</Color>
 
     <!-- Enhanced Background Colors - 1Password Style -->
-    <Color x:Key="ModernBackgroundColor">#FAFBFC</Color>
+    <Color x:Key="ModernBackgroundColor">#F8F9FA</Color>
     <Color x:Key="ModernSurfaceColor">#FFFFFF</Color>
     <Color x:Key="ModernCardColor">#FFFFFF</Color>
     <Color x:Key="ModernElevatedSurfaceColor">#FFFFFF</Color>
     <Color x:Key="ModernBorderColor">#E1E5E9</Color>
+    <Color x:Key="ModernFormBackgroundColor">#F6F8FA</Color>
 
     <!-- Dark theme variants -->
     <Color x:Key="ModernDarkBackgroundColor">#0F172A</Color>
     <Color x:Key="ModernDarkSurfaceColor">#1E293B</Color>
     <Color x:Key="ModernDarkCardColor">#334155</Color>
+    <Color x:Key="ModernDarkFormBackgroundColor">#2D3748</Color>
 
     <!-- Text Colors -->
     <Color x:Key="ModernTextPrimaryColor">#0F172A</Color>
@@ -57,6 +59,8 @@
             Color="{StaticResource ModernElevatedSurfaceColor}"/>
     <SolidColorBrush x:Key="ModernBorderBrush"
             Color="{StaticResource ModernBorderColor}"/>
+    <SolidColorBrush x:Key="ModernFormBackgroundBrush"
+            Color="{StaticResource ModernFormBackgroundColor}"/>
 
     <SolidColorBrush x:Key="ModernTextPrimaryBrush"
             Color="{StaticResource ModernTextPrimaryColor}"/>
@@ -910,32 +914,7 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <Style x:Key="ContentDialogPrimaryButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="{StaticResource ModernPrimaryBrush}"/>
-        <Setter Property="Foreground" Value="White"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="CornerRadius" Value="8"/>
-        <Setter Property="Padding" Value="16,10"/>
-        <Setter Property="MinWidth" Value="100"/>
-        <Setter Property="MinHeight" Value="36"/>
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Margin" Value="4"/>
-    </Style>
 
-    <Style x:Key="ContentDialogSecondaryButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="8"/>
-        <Setter Property="Padding" Value="16,10"/>
-        <Setter Property="MinWidth" Value="100"/>
-        <Setter Property="MinHeight" Value="36"/>
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Margin" Value="4"/>
-    </Style>
 
     <!-- Enhanced ContentDialog Styles for 1Password-like forms -->
     <Style x:Key="ContentDialogPrimaryButtonStyle" TargetType="Button">
@@ -1053,7 +1032,7 @@
 
     <!-- Enhanced ContentDialog Style for 1Password-like appearance -->
     <Style x:Key="Modern1PasswordDialogStyle" TargetType="ContentDialog">
-        <Setter Property="Background" Value="{StaticResource ModernSurfaceBrush}"/>
+        <Setter Property="Background" Value="{StaticResource ModernFormBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
@@ -1061,20 +1040,83 @@
         <Setter Property="PrimaryButtonStyle" Value="{StaticResource ContentDialogPrimaryButtonStyle}"/>
         <Setter Property="SecondaryButtonStyle" Value="{StaticResource ContentDialogSecondaryButtonStyle}"/>
         <Setter Property="CloseButtonStyle" Value="{StaticResource ContentDialogSecondaryButtonStyle}"/>
+        <Setter Property="MaxWidth" Value="480"/>
+        <Setter Property="MaxHeight" Value="720"/>
+    </Style>
+    
+    <!-- Modern Icon Button Style for form actions -->
+    <Style x:Key="ModernIconButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource ModernTextSecondaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Padding" Value="8"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="RootBorder"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter x:Name="ContentPresenter"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Content="{TemplateBinding Content}"
+                                        Foreground="{TemplateBinding Foreground}"/>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal">
+                                    <VisualState.Setters>
+                                        <Setter Target="RootBorder.Background" Value="Transparent"/>
+                                        <Setter Target="RootBorder.BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="RootBorder.Background" Value="#10005BFF"/>
+                                        <Setter Target="RootBorder.BorderBrush" Value="{StaticResource ModernPrimaryLightBrush}"/>
+                                        <Setter Target="ContentPresenter.Foreground" Value="{StaticResource ModernPrimaryBrush}"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="RootBorder.Background" Value="#20005BFF"/>
+                                        <Setter Target="RootBorder.BorderBrush" Value="{StaticResource ModernPrimaryBrush}"/>
+                                        <Setter Target="ContentPresenter.Foreground" Value="{StaticResource ModernPrimaryBrush}"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="RootBorder.BorderBrush" Value="#E9ECEF"/>
+                                        <Setter Target="ContentPresenter.Foreground" Value="{StaticResource ModernTextTertiaryBrush}"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
-    <!-- Enhanced form field grouping style -->
+    <!-- Enhanced form field grouping style for dark theme -->
     <Style x:Key="FormFieldGroupStyle" TargetType="StackPanel">
         <Setter Property="Spacing" Value="8"/>
         <Setter Property="Margin" Value="0,0,0,16"/>
+        <Setter Property="Background" Value="Transparent"/>
     </Style>
 
-    <!-- Enhanced form label style -->
+    <!-- Enhanced form label style with better contrast -->
     <Style x:Key="FormLabelStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
         <Setter Property="Margin" Value="0,0,0,6"/>
+        <Setter Property="Opacity" Value="0.9"/>
     </Style>
 
     <!-- Enhanced validation message style -->

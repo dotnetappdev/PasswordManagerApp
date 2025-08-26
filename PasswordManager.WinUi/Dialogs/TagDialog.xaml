@@ -6,10 +6,25 @@
                PrimaryButtonText="Save"
                CloseButtonText="Cancel"
                DefaultButton="Primary"
-               Style="{StaticResource DefaultContentDialogStyle}">
+               Style="{StaticResource Modern1PasswordDialogStyle}"
+               PrimaryButtonStyle="{StaticResource ContentDialogPrimaryButtonStyle}"
+               CloseButtonStyle="{StaticResource ContentDialogSecondaryButtonStyle}">
 
     <ScrollViewer MaxHeight="400" VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="20" Width="400">
+            
+            <!-- Error Message -->
+            <Border x:Name="ErrorMessageBorder"
+                    Background="{StaticResource ModernErrorBrush}"
+                    CornerRadius="8"
+                    Padding="12"
+                    Visibility="Collapsed">
+                <TextBlock x:Name="ErrorMessageText"
+                          Text=""
+                          Foreground="White"
+                          FontSize="14"
+                          TextWrapping="Wrap"/>
+            </Border>
             
             <!-- Tag Name -->
             <StackPanel Spacing="8">

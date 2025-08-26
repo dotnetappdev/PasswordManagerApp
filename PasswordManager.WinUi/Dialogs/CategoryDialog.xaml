@@ -13,6 +13,19 @@
     <ScrollViewer MaxHeight="500" VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="20" Width="400">
             
+            <!-- Error Message -->
+            <Border x:Name="ErrorMessageBorder"
+                    Background="{StaticResource ModernErrorBrush}"
+                    CornerRadius="8"
+                    Padding="12"
+                    Visibility="Collapsed">
+                <TextBlock x:Name="ErrorMessageText"
+                          Text=""
+                          Foreground="White"
+                          FontSize="14"
+                          TextWrapping="Wrap"/>
+            </Border>
+            
             <!-- Category Name -->
             <StackPanel Spacing="8">
                 <TextBlock Text="Category Name" 
