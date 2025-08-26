@@ -15,7 +15,7 @@ namespace PasswordManager.WinUi.Services
 
     public static class ThemeHelper
     {
-        private static AppTheme _currentTheme = AppTheme.System;
+        private static AppTheme _currentTheme = AppTheme.Dark;
         private static Window? _window;
         private static Application? _application;
         private static Windows.UI.ViewManagement.UISettings? _uiSettings;
@@ -90,20 +90,20 @@ namespace PasswordManager.WinUi.Services
                 // Update brush resources based on theme
                 if (actualTheme == AppTheme.Dark)
                 {
-                    // Apply dark theme colors
-                    UpdateResourceIfExists(resources, "ModernBackgroundBrush", "#0F172A");
-                    UpdateResourceIfExists(resources, "ModernSurfaceBrush", "#1E293B");
-                    UpdateResourceIfExists(resources, "ModernCardBrush", "#334155");
-                    UpdateResourceIfExists(resources, "ModernElevatedSurfaceBrush", "#475569");
-                    UpdateResourceIfExists(resources, "ModernFormBackgroundBrush", "#2D3748");
-                    UpdateResourceIfExists(resources, "ModernTextPrimaryBrush", "#F1F5F9");
-                    UpdateResourceIfExists(resources, "ModernTextSecondaryBrush", "#CBD5E1");
-                    UpdateResourceIfExists(resources, "ModernTextTertiaryBrush", "#94A3B8");
+                    // Apply 1Password-style dark theme colors
+                    UpdateResourceIfExists(resources, "ModernBackgroundBrush", "#1A1A1A");
+                    UpdateResourceIfExists(resources, "ModernSurfaceBrush", "#262626");
+                    UpdateResourceIfExists(resources, "ModernCardBrush", "#262626");
+                    UpdateResourceIfExists(resources, "ModernElevatedSurfaceBrush", "#333333");
+                    UpdateResourceIfExists(resources, "ModernFormBackgroundBrush", "#262626");
+                    UpdateResourceIfExists(resources, "ModernTextPrimaryBrush", "#FFFFFF");
+                    UpdateResourceIfExists(resources, "ModernTextSecondaryBrush", "#B0B0B0");
+                    UpdateResourceIfExists(resources, "ModernTextTertiaryBrush", "#808080");
                     
-                    // NavigationView overrides
-                    UpdateResourceIfExists(resources, "NavigationViewDefaultPaneBackground", "#1E293B");
-                    UpdateResourceIfExists(resources, "NavigationViewExpandedPaneBackground", "#1E293B");
-                    UpdateResourceIfExists(resources, "NavigationViewTopPaneBackground", "#1E293B");
+                    // NavigationView overrides - sidebar should be #141414
+                    UpdateResourceIfExists(resources, "NavigationViewDefaultPaneBackground", "#141414");
+                    UpdateResourceIfExists(resources, "NavigationViewExpandedPaneBackground", "#141414");
+                    UpdateResourceIfExists(resources, "NavigationViewTopPaneBackground", "#141414");
                 }
                 else
                 {

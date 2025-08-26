@@ -52,12 +52,12 @@
                     
               <Button x:Name="NewItemButton"
         Content="New Item"
-        Style="{StaticResource ModernPrimaryButtonStyle}"
+        Style="{StaticResource NewItemButtonStyle}"
         Command="{Binding BeginCreateCommand}">
     <Button.Template>
         <ControlTemplate TargetType="Button">
             <Border x:Name="Border"
-                   Background="{StaticResource ModernPrimaryBrush}"
+                   Background="{StaticResource ModernNewItemButtonBrush}"
                    CornerRadius="6"
                    Padding="16,8">
                 <StackPanel Orientation="Horizontal" Spacing="8">
