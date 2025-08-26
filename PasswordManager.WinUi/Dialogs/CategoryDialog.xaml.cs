@@ -47,11 +47,34 @@ public sealed partial class CategoryDialog : ContentDialog
         CategoryNameTextBox.Text = _category.Name;
         CategoryDescriptionTextBox.Text = _category.Description ?? string.Empty;
 
-        // Set color (simplified for now - you can enhance this)
-        CategoryColorComboBox.SelectedIndex = 0; // Default to blue
+        // Set color based on existing value
+        var colorIndex = _category.Color switch
+        {
+            "#3b82f6" => 0, // Blue
+            "#10b981" => 1, // Green
+            "#f59e0b" => 2, // Orange
+            "#ef4444" => 3, // Red
+            "#8b5cf6" => 4, // Purple
+            "#ec4899" => 5, // Pink
+            "#6b7280" => 6, // Gray
+            _ => 0          // Default to blue
+        };
+        CategoryColorComboBox.SelectedIndex = colorIndex;
 
-        // Set icon (simplified for now)
-        CategoryIconComboBox.SelectedIndex = 0; // Default to folder
+        // Set icon based on existing value
+        var iconIndex = _category.Icon switch
+        {
+            "📁" => 0, // Folder
+            "🔑" => 1, // Key
+            "💳" => 2, // Credit Card
+            "📝" => 3, // Note
+            "📶" => 4, // WiFi
+            "🔒" => 5, // Security
+            "⭐" => 6, // Star
+            "📋" => 7, // List
+            _ => 0     // Default to folder
+        };
+        CategoryIconComboBox.SelectedIndex = iconIndex;
     }
 
     private void CategoryColorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -89,6 +112,8 @@ public sealed partial class CategoryDialog : ContentDialog
                 // Update existing category
                 _category.Name = name;
                 _category.Description = CategoryDescriptionTextBox.Text?.Trim();
+                _category.Color = GetSelectedColor();
+                _category.Icon = GetSelectedIcon();
                 _category.LastModified = DateTime.UtcNow;
 
                 await _categoryService.UpdateAsync(_category);
@@ -101,6 +126,8 @@ public sealed partial class CategoryDialog : ContentDialog
                 {
                     Name = name,
                     Description = CategoryDescriptionTextBox.Text?.Trim(),
+                    Color = GetSelectedColor(),
+                    Icon = GetSelectedIcon(),
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow
                 };
@@ -128,5 +155,38 @@ public sealed partial class CategoryDialog : ContentDialog
         // Auto-hide error after 5 seconds
         await Task.Delay(5000);
         ErrorMessageBorder.Visibility = Visibility.Collapsed;
+    }
+
+    private string GetSelectedColor()
+    {
+        var selectedIndex = CategoryColorComboBox.SelectedIndex;
+        return selectedIndex switch
+        {
+            0 => "#3b82f6", // Blue
+            1 => "#10b981", // Green
+            2 => "#f59e0b", // Orange
+            3 => "#ef4444", // Red
+            4 => "#8b5cf6", // Purple
+            5 => "#ec4899", // Pink
+            6 => "#6b7280", // Gray
+            _ => "#3b82f6"  // Default to blue
+        };
+    }
+
+    private string GetSelectedIcon()
+    {
+        var selectedIndex = CategoryIconComboBox.SelectedIndex;
+        return selectedIndex switch
+        {
+            0 => "📁", // Folder
+            1 => "🔑", // Key
+            2 => "💳", // Credit Card
+            3 => "📝", // Note
+            4 => "📶", // WiFi
+            5 => "🔒", // Security
+            6 => "⭐", // Star
+            7 => "📋", // List
+            _ => "📁"  // Default to folder
+        };
     }
 }

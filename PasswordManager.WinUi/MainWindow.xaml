@@ -14,10 +14,11 @@
                         Style="{StaticResource ModernNavigationViewStyle}"
                         IsBackButtonVisible="Collapsed"
                         IsSettingsVisible="False"
-                        IsPaneToggleButtonVisible="True"
-                        OpenPaneLength="320"
-                        CompactModeThresholdWidth="640"
-                        ExpandedModeThresholdWidth="1028"
+                        IsPaneToggleButtonVisible="False"
+                        PaneDisplayMode="Left"
+                        OpenPaneLength="280"
+                        CompactModeThresholdWidth="0"
+                        ExpandedModeThresholdWidth="0"
                         SelectionChanged="MainNavigationView_SelectionChanged"
                         Visibility="Collapsed"
                         Margin="0"
@@ -26,17 +27,11 @@
             <!-- Custom Pane Header with Profile -->
             <NavigationView.PaneHeader>
                 <Grid Margin="16,12">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
                     <!-- Profile Section -->
                     <Border Grid.Row="0"
                             Background="Transparent"
                             CornerRadius="8"
-                            Padding="12,8"
-                            Margin="0,0,0,12">
+                            Padding="12,8">
                         <Button x:Name="ProfileButton"
                                 Background="Transparent"
                                 BorderThickness="0"
@@ -86,21 +81,24 @@
                             </Grid>
                         </Button>
                     </Border>
+                </Grid>
+            </NavigationView.PaneHeader>
 
-                    <!-- Search Box moved here -->
+            <!-- Header Content with Search Box -->
+            <NavigationView.Header>
+                <Grid Margin="24,16">
                     <AutoSuggestBox x:Name="SearchBox"
-                                    Grid.Row="1"
                                     QueryIcon="Find"
                                     PlaceholderText="Search passwords..."
                                     TextChanged="SearchBox_TextChanged"
                                     QuerySubmitted="SearchBox_QuerySubmitted"
                                     Style="{StaticResource ModernAutoSuggestBoxStyle}"
                                     CornerRadius="8"
-                                    Height="36"/>
+                                    Height="36"
+                                    HorizontalAlignment="Stretch"
+                                    MaxWidth="400"/>
                 </Grid>
-            </NavigationView.PaneHeader>
-
-            <!-- Header Content - Completely removed to eliminate gaps -->
+            </NavigationView.Header>
 
             <!-- Navigation Menu Items -->
             <NavigationView.MenuItems>
@@ -176,12 +174,12 @@
                             x:Name="AddVaultButton"
                             Background="Transparent"
                             BorderThickness="0"
-                            Width="24"
-                            Height="24"
+                            Width="20"
+                            Height="20"
                             Click="AddVaultButton_Click"
                             ToolTipService.ToolTip="Add Vault">
                         <FontIcon Glyph="&#xE109;"
-                                FontSize="12"
+                                FontSize="10"
                                 Foreground="{StaticResource ModernPrimaryBrush}"/>
                     </Button>
 
@@ -189,13 +187,13 @@
                             x:Name="DeleteVaultButton"
                             Background="Transparent"
                             BorderThickness="0"
-                            Width="24"
-                            Height="24"
+                            Width="20"
+                            Height="20"
                             Click="DeleteVaultButton_Click"
                             ToolTipService.ToolTip="Delete Vault"
                             Margin="4,0">
                         <FontIcon Glyph="&#xE74D;"
-                                FontSize="12"
+                                FontSize="10"
                                 Foreground="{StaticResource ModernErrorBrush}"/>
                     </Button>
                 </Grid>
@@ -234,12 +232,12 @@
                             x:Name="AddCategoryNavButton"
                             Background="Transparent"
                             BorderThickness="0"
-                            Width="24"
-                            Height="24"
+                            Width="20"
+                            Height="20"
                             Click="AddCategoryNavButton_Click"
                             ToolTipService.ToolTip="Add Category">
                         <FontIcon Glyph="&#xE109;"
-                                FontSize="12"
+                                FontSize="10"
                                 Foreground="{StaticResource ModernPrimaryBrush}"/>
                     </Button>
 
@@ -247,13 +245,13 @@
                             x:Name="DeleteCategoryNavButton"
                             Background="Transparent"
                             BorderThickness="0"
-                            Width="24"
-                            Height="24"
+                            Width="20"
+                            Height="20"
                             Click="DeleteCategoryNavButton_Click"
                             ToolTipService.ToolTip="Delete Category"
                             Margin="4,0">
                         <FontIcon Glyph="&#xE74D;"
-                                FontSize="12"
+                                FontSize="10"
                                 Foreground="{StaticResource ModernErrorBrush}"/>
                     </Button>
                 </Grid>
@@ -340,12 +338,12 @@
                             x:Name="AddTagNavButton"
                             Background="Transparent"
                             BorderThickness="0"
-                            Width="24"
-                            Height="24"
+                            Width="20"
+                            Height="20"
                             Click="AddTagNavButton_Click"
                             ToolTipService.ToolTip="Add Tag">
                         <FontIcon Glyph="&#xE109;"
-                                FontSize="12"
+                                FontSize="10"
                                 Foreground="{StaticResource ModernPrimaryBrush}"/>
                     </Button>
 
@@ -353,13 +351,13 @@
                             x:Name="DeleteTagNavButton"
                             Background="Transparent"
                             BorderThickness="0"
-                            Width="24"
-                            Height="24"
+                            Width="20"
+                            Height="20"
                             Click="DeleteTagNavButton_Click"
                             ToolTipService.ToolTip="Delete Tag"
                             Margin="4,0">
                         <FontIcon Glyph="&#xE74D;"
-                                FontSize="12"
+                                FontSize="10"
                                 Foreground="{StaticResource ModernErrorBrush}"/>
                     </Button>
                 </Grid>

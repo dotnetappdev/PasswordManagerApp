@@ -139,6 +139,7 @@ public partial class App : Application
                 services.AddScoped<ITagService, TagService>();
                 services.AddScoped<ICategoryInterface, CategoryService>();
                 services.AddScoped<ICollectionService, CollectionService>();
+                services.AddScoped<IPasswordEncryptionService, PasswordEncryptionService>(); // Fix: Add missing PasswordEncryptionService registration
                 services.AddScoped<IPasskeyService, PasskeyService>(); // Fix: Add missing PasskeyService registration
                 services.AddScoped<WinUiAuthService>(); // Register the local auth service
                 services.AddScoped<IAuthService, ConfigurableAuthService>(); // Use configurable auth service
@@ -149,6 +150,19 @@ public partial class App : Application
                 services.AddScoped<IUserProfileService, UserProfileService>();
                 services.AddScoped<IVaultSessionService, VaultSessionService>();
                 services.AddScoped<IPasscodeService, PasscodeService>();
+
+                // Register Fido2 service for passkeys
+                services.AddScoped<Fido2NetLib.IFido2>(provider =>
+                {
+                    var config = new Fido2NetLib.Fido2Configuration
+                    {
+                        ServerDomain = "localhost",
+                        ServerName = "PasswordManager WinUI",
+                        Origins = new HashSet<string> { "https://localhost", "http://localhost" },
+                        TimestampDriftTolerance = 300000
+                    };
+                    return new Fido2NetLib.Fido2(config);
+                });
 
                 // Register HTTP client
                 services.AddHttpClient();

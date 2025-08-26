@@ -139,25 +139,19 @@ public static class TestDataSeeder
             var workCollectionId = collections.FirstOrDefault(c => c.Name == "Work")?.Id ?? 4;
             var personalCollectionId = collections.FirstOrDefault(c => c.Name == "Personal")?.Id ?? 5;
             
-            // Get category IDs with fallbacks
-            var checkingCategoryId = categories.FirstOrDefault(c => c.Name == "Checking Account")?.Id ?? 1;
-            var creditCardCategoryId = categories.FirstOrDefault(c => c.Name == "Credit Cards")?.Id ?? 2;
-            var healthInsuranceCategoryId = categories.FirstOrDefault(c => c.Name == "Health Insurance")?.Id ?? 4;
-            var autoInsuranceCategoryId = categories.FirstOrDefault(c => c.Name == "Auto Insurance")?.Id ?? 5;
-            var electricCategoryId = categories.FirstOrDefault(c => c.Name == "Electric")?.Id ?? 7;
-            var internetCategoryId = categories.FirstOrDefault(c => c.Name == "Internet")?.Id ?? 9;
-            var businessCategoryId = categories.FirstOrDefault(c => c.Name == "Business")?.Id ?? 10;
-            var emailCategoryId = categories.FirstOrDefault(c => c.Name == "Email")?.Id ?? 11;
-            var wifiCategoryId = categories.FirstOrDefault(c => c.Name == "WiFi Networks")?.Id ?? 12;
-            var secureNotesCategoryId = categories.FirstOrDefault(c => c.Name == "Secure Notes")?.Id ?? 13;
-            var passkeysCategoryId = categories.FirstOrDefault(c => c.Name == "Passkeys")?.Id ?? 14;
+            // Get category IDs with fallbacks using the correct category names
+            var loginCategoryId = categories.FirstOrDefault(c => c.Name == "Login")?.Id ?? 1;
+            var creditCardCategoryId = categories.FirstOrDefault(c => c.Name == "Credit Card")?.Id ?? 3;
+            var secureNoteCategoryId = categories.FirstOrDefault(c => c.Name == "Secure Note")?.Id ?? 2;
+            var passwordCategoryId = categories.FirstOrDefault(c => c.Name == "Password")?.Id ?? 5;
+            var wifiCategoryId = categories.FirstOrDefault(c => c.Name == "WiFi Networks")?.Id ?? 22;
+            var passkeysCategoryId = categories.FirstOrDefault(c => c.Name == "Passkeys")?.Id ?? 23;
 
             var passwordItems = new List<PasswordItem>();
 
             // Login Items
-            passwordItems.AddRange(CreateLoginItems(testUserId, checkingCategoryId, creditCardCategoryId, healthInsuranceCategoryId, 
-                autoInsuranceCategoryId, electricCategoryId, internetCategoryId, businessCategoryId, emailCategoryId,
-                bankingCollectionId, insuranceCollectionId, utilitiesCollectionId, workCollectionId, personalCollectionId, tags));
+            passwordItems.AddRange(CreateLoginItems(testUserId, loginCategoryId, 
+                bankingCollectionId, personalCollectionId, workCollectionId, tags));
 
             // Credit Card Items
             passwordItems.AddRange(CreateCreditCardItems(testUserId, creditCardCategoryId, bankingCollectionId, tags));
@@ -166,20 +160,21 @@ public static class TestDataSeeder
             passwordItems.AddRange(CreateWiFiItems(testUserId, wifiCategoryId, personalCollectionId, workCollectionId, tags));
 
             // Secure Note Items
-            passwordItems.AddRange(CreateSecureNoteItems(testUserId, secureNotesCategoryId, personalCollectionId, workCollectionId, tags));
+            passwordItems.AddRange(CreateSecureNoteItems(testUserId, secureNoteCategoryId, personalCollectionId, workCollectionId, tags));
 
             // Passkey Items
             passwordItems.AddRange(CreatePasskeyItems(testUserId, passkeysCategoryId, personalCollectionId, workCollectionId, tags));
+
+            // Password Items
+            passwordItems.AddRange(CreatePasswordItems(testUserId, passwordCategoryId, personalCollectionId, workCollectionId, tags));
 
             db.PasswordItems.AddRange(passwordItems);
             db.SaveChanges();
         }
     }
 
-    private static List<PasswordItem> CreateLoginItems(string testUserId, int checkingCategoryId, int creditCardCategoryId, 
-        int healthInsuranceCategoryId, int autoInsuranceCategoryId, int electricCategoryId, int internetCategoryId, 
-        int businessCategoryId, int emailCategoryId, int bankingCollectionId, int insuranceCollectionId, 
-        int utilitiesCollectionId, int workCollectionId, int personalCollectionId, List<Tag> tags)
+    private static List<PasswordItem> CreateLoginItems(string testUserId, int loginCategoryId, 
+        int bankingCollectionId, int personalCollectionId, int workCollectionId, List<Tag> tags)
     {
         return new List<PasswordItem>
         {
@@ -187,7 +182,7 @@ public static class TestDataSeeder
             {
                 Title = "Chase Bank",
                 Type = ItemType.Login,
-                CategoryId = checkingCategoryId,
+                CategoryId = loginCategoryId,
                 CollectionId = bankingCollectionId,
                 UserId = testUserId,
                 LoginItem = new LoginItem
@@ -203,7 +198,7 @@ public static class TestDataSeeder
             {
                 Title = "Personal Gmail",
                 Type = ItemType.Login,
-                CategoryId = emailCategoryId,
+                CategoryId = loginCategoryId,
                 CollectionId = personalCollectionId,
                 UserId = testUserId,
                 LoginItem = new LoginItem
@@ -219,7 +214,7 @@ public static class TestDataSeeder
             {
                 Title = "Netflix",
                 Type = ItemType.Login,
-                CategoryId = emailCategoryId,
+                CategoryId = loginCategoryId,
                 CollectionId = personalCollectionId,
                 UserId = testUserId,
                 LoginItem = new LoginItem
@@ -235,7 +230,7 @@ public static class TestDataSeeder
             {
                 Title = "Amazon",
                 Type = ItemType.Login,
-                CategoryId = emailCategoryId,
+                CategoryId = loginCategoryId,
                 CollectionId = personalCollectionId,
                 UserId = testUserId,
                 LoginItem = new LoginItem
@@ -246,6 +241,38 @@ public static class TestDataSeeder
                     UserId = testUserId
                 },
                 Tags = tags.Where(t => t.Name == "Personal" || t.Name == "Daily Use").ToList()
+            },
+            new PasswordItem
+            {
+                Title = "Microsoft 365",
+                Type = ItemType.Login,
+                CategoryId = loginCategoryId,
+                CollectionId = workCollectionId,
+                UserId = testUserId,
+                LoginItem = new LoginItem
+                {
+                    Website = "https://office.com",
+                    Username = "john.doe@company.com",
+                    Email = "john.doe@company.com",
+                    UserId = testUserId
+                },
+                Tags = tags.Where(t => t.Name == "Work" || t.Name == "Daily Use").ToList()
+            },
+            new PasswordItem
+            {
+                Title = "GitHub",
+                Type = ItemType.Login,
+                CategoryId = loginCategoryId,
+                CollectionId = workCollectionId,
+                UserId = testUserId,
+                LoginItem = new LoginItem
+                {
+                    Website = "https://github.com",
+                    Username = "johndoe",
+                    Email = "john.doe@company.com",
+                    UserId = testUserId
+                },
+                Tags = tags.Where(t => t.Name == "Work" || t.Name == "2FA").ToList()
             }
         };
     }
@@ -396,6 +423,43 @@ Important: Blood Type O+, Allergic to Penicillin",
                     UserId = testUserId
                 },
                 Tags = tags.Where(t => t.Name == "Important" || t.Name == "Biometric" || t.Name == "Daily Use").ToList()
+            }
+        };
+    }
+
+    private static List<PasswordItem> CreatePasswordItems(string testUserId, int passwordCategoryId, int personalCollectionId, int workCollectionId, List<Tag> tags)
+    {
+        return new List<PasswordItem>
+        {
+            new PasswordItem
+            {
+                Title = "Laptop Login Password",
+                Type = ItemType.Password,
+                CategoryId = passwordCategoryId,
+                CollectionId = personalCollectionId,
+                UserId = testUserId,
+                Description = "MacBook Pro login password for main user account",
+                Tags = tags.Where(t => t.Name == "Personal" || t.Name == "Daily Use").ToList()
+            },
+            new PasswordItem
+            {
+                Title = "Router Admin Password",
+                Type = ItemType.Password,
+                CategoryId = passwordCategoryId,
+                CollectionId = personalCollectionId,
+                UserId = testUserId,
+                Description = "ASUS AX6000 router admin password for configuration access",
+                Tags = tags.Where(t => t.Name == "Important" || t.Name == "Rarely Used").ToList()
+            },
+            new PasswordItem
+            {
+                Title = "Backup Drive Encryption",
+                Type = ItemType.Password,
+                CategoryId = passwordCategoryId,
+                CollectionId = personalCollectionId,
+                UserId = testUserId,
+                Description = "FileVault encryption password for external backup drive",
+                Tags = tags.Where(t => t.Name == "High Security" || t.Name == "Backup Account").ToList()
             }
         };
     }
