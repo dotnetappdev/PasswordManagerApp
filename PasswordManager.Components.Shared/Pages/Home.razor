@@ -1574,6 +1574,9 @@ private void OnLengthChanged(ChangeEventArgs e)
                 selectedCollectionId = collections.First().Id;
             }
         }
+        
+        // Create sample data if this is a new installation
+        await CreateSampleDataIfNeeded();
     }
 
     private async Task LoadData()
@@ -2593,6 +2596,69 @@ private void OnCollectionChanged(ChangeEventArgs e)
         await LoadCollections();
         
         StateHasChanged();
+    }
+    
+    private async Task CreateSampleDataIfNeeded()
+    {
+        // Check if there are any items in the database
+        var allItems = await PasswordItemService.GetAllAsync();
+        if (allItems.Any()) return; // Data already exists
+        
+        try
+        {
+            // Create sample categories if none exist
+            if (!categories.Any())
+            {
+                var sampleCategories = new[]
+                {
+                    new Category { Name = "Social Media", Icon = "📱", Color = "#3b82f6" },
+                    new Category { Name = "Banking", Icon = "🏦", Color = "#10b981" },
+                    new Category { Name = "Email", Icon = "📧", Color = "#f59e0b" },
+                    new Category { Name = "Work", Icon = "💼", Color = "#8b5cf6" },
+                    new Category { Name = "Shopping", Icon = "🛒", Color = "#ef4444" }
+                };
+                
+                foreach (var category in sampleCategories)
+                {
+                    if (selectedCollectionId.HasValue)
+                        category.CollectionId = selectedCollectionId.Value;
+                    await CategoryService.CreateAsync(category);
+                }
+                
+                // Reload categories
+                await LoadCategories();
+            }
+            
+            // Create sample password items
+            var socialMediaCategory = categories.FirstOrDefault(c => c.Name == "Social Media");
+            var bankingCategory = categories.FirstOrDefault(c => c.Name == "Banking");
+            var emailCategory = categories.FirstOrDefault(c => c.Name == "Email");
+            
+            if (socialMediaCategory != null)
+            {
+                var sampleItem = new PasswordItem
+                {
+                    Title = "Example Social Media",
+                    Type = ItemType.Login,
+                    CategoryId = socialMediaCategory.Id,
+                    CollectionId = selectedCollectionId ?? 1,
+                    CreatedAt = DateTime.UtcNow,
+                    LastModified = DateTime.UtcNow
+                };
+                
+                // Note: In a real application, you wouldn't create sample passwords like this
+                // This is just for demonstration purposes
+                await PasswordItemService.CreateAsync(sampleItem);
+            }
+            
+            // Reload data to show sample items
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            // Sample data creation failed, but don't break the application
+            System.Diagnostics.Debug.WriteLine($"Failed to create sample data: {ex.Message}");
+        }
     }
 }
 

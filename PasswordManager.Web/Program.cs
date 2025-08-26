@@ -102,10 +102,24 @@ builder.Services.AddScoped<IDatabaseContextFactory, PasswordManager.Services.Ser
 builder.Services.AddScoped<IDatabaseConfigurationService, PasswordManager.Services.Services.DatabaseConfigurationService>();
 builder.Services.AddScoped<IPlatformService, PasswordManager.Services.Services.DefaultPlatformService>();
 builder.Services.AddScoped<IPasswordEncryptionService, PasswordManager.Services.Services.PasswordEncryptionService>();
+builder.Services.AddScoped<IPasskeyService, PasswordManager.Services.Services.PasskeyService>();
 builder.Services.AddScoped<IDatabaseMigrationService, PasswordManager.Services.Services.DatabaseMigrationService>();
 
 // Register crypto services
 builder.Services.AddCryptographyServices();
+
+// Register Fido2 service for passkeys
+builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
+{
+    var config = new Fido2NetLib.Fido2Configuration
+    {
+        ServerDomain = "localhost", // Update this for production
+        ServerName = "PasswordManager",
+        Origins = new HashSet<string> { "https://localhost", "http://localhost" },
+        TimestampDriftTolerance = 300000
+    };
+    return new Fido2NetLib.Fido2(config);
+});
 
 // Add HttpClient for API calls
 builder.Services.AddHttpClient();
