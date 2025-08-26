@@ -374,4 +374,29 @@ public sealed partial class PasswordItemsPage : Page
             await errorDialog.ShowAsync();
         }
     }
+    
+    private void ClearFilters_Click(object sender, RoutedEventArgs e)
+    {
+        // Clear all filter checkboxes and reset to default state
+        if (_viewModel != null)
+        {
+            _viewModel.FilterType = "All";
+        }
+        
+        // Close the filter flyout
+        FilterFlyout?.Hide();
+        
+        // Update content titles
+        UpdateContentTitles("All");
+    }
+    
+    private void ApplyFilters_Click(object sender, RoutedEventArgs e)
+    {
+        // Apply the selected filters
+        // In a real implementation, this would read the checkbox states
+        // and apply multiple filters to the view model
+        
+        // For now, just close the flyout
+        FilterFlyout?.Hide();
+    }
 }

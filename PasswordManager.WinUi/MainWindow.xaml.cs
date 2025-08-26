@@ -99,6 +99,7 @@ public sealed partial class MainWindow : Window
             {
                 "AllItems" => typeof(Views.PasswordItemsPage),
                 "Favorites" => typeof(Views.PasswordItemsPage), // Filter for favorites
+                "Profile" => typeof(Views.ProfilePage),
                 "LoginCategory" => typeof(Views.PasswordItemsPage), // Filter for login items
                 "CreditCardCategory" => typeof(Views.PasswordItemsPage), // Filter for credit cards
                 "SecureNotesCategory" => typeof(Views.PasswordItemsPage), // Filter for secure notes
@@ -264,71 +265,14 @@ public sealed partial class MainWindow : Window
 
     private void ProfileButton_Click(object sender, RoutedEventArgs e)
     {
-        // Create and show profile flyout menu
-        var button = sender as Button;
-        if (button == null) return;
-
-        var flyout = new MenuFlyout();
-
-        // Profile info section
-        var profileItem = new MenuFlyoutItem
-        {
-            Text = "Profile Settings",
-            Icon = new SymbolIcon(Symbol.Contact)
-        };
-        profileItem.Click += ProfileSettings_Click;
-        flyout.Items.Add(profileItem);
-
-        // Add separator
-        flyout.Items.Add(new MenuFlyoutSeparator());
-
-        // Settings
-        var settingsItem = new MenuFlyoutItem
-        {
-            Text = "Settings",
-            Icon = new SymbolIcon(Symbol.Setting)
-        };
-        settingsItem.Click += (s, args) => NavigateToPage("Settings");
-        flyout.Items.Add(settingsItem);
-
-        // Add separator
-        flyout.Items.Add(new MenuFlyoutSeparator());
-
-        // Logout
-        var logoutItem = new MenuFlyoutItem
-        {
-            Text = "Sign Out",
-            Icon = new SymbolIcon(Symbol.LeaveChat)
-        };
-        logoutItem.Click += Logout_Click;
-        flyout.Items.Add(logoutItem);
-
-        // Show the flyout
-        flyout.ShowAt(button);
+        // Navigate directly to Profile page
+        NavigateToPage("Profile");
     }
 
     private async void ProfileSettings_Click(object sender, RoutedEventArgs e)
     {
-        // Show a simple profile info dialog
-        var dialog = new ContentDialog
-        {
-            Title = "Profile Information",
-            Content = new StackPanel
-            {
-                Spacing = 12,
-                Children =
-                {
-                    new TextBlock { Text = "User: David Smith", FontWeight = FontWeights.SemiBold },
-                    new TextBlock { Text = "Vault: Personal", FontSize = 14 },
-                    new TextBlock { Text = "Items: " + await GetPasswordItemCount(), FontSize = 14 },
-                    new TextBlock { Text = "Last Login: " + DateTime.Now.ToString("MM/dd/yyyy HH:mm"), FontSize = 14 }
-                }
-            },
-            CloseButtonText = "Close",
-            XamlRoot = this.Content.XamlRoot
-        };
-
-        await dialog.ShowAsync();
+        // This is now handled by the ProfilePage - keeping for compatibility
+        NavigateToPage("Profile");
     }
 
     private async Task<string> GetPasswordItemCount()
