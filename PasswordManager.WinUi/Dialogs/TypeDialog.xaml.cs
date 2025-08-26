@@ -65,10 +65,10 @@ public sealed partial class TypeDialog : ContentDialog
         {
             // Extract color from the selected item
             var stackPanel = selectedItem.Content as StackPanel;
-            var border = stackPanel?.Children[0] as Border;
-            if (border?.Background is SolidColorBrush colorBrush)
+            var ellipse = stackPanel?.Children[0] as Ellipse;
+            if (ellipse?.Fill is SolidColorBrush colorBrush)
             {
-                ColorPreview.Background = colorBrush;
+                ColorPreview.Fill = colorBrush;
             }
         }
     }
