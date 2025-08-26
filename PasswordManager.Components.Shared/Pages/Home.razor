@@ -372,14 +372,6 @@
             </button>
         </div>
 
-        <div class="search-section">
-            <div class="search-box">
-                <input type="text" @bind="searchTerm" @bind:event="oninput" @onkeyup="SearchItems" 
-                       placeholder="Search your vault..." class="search-input" />
-                <span class="search-icon">🔍</span>
-            </div>
-        </div>
-
         <div class="sidebar-navigation">
             <!-- Main Navigation Items -->
             <div class="nav-section nav-main">
@@ -396,6 +388,46 @@
                     <span class="nav-icon">🛡️</span>
                     <span class="nav-text">Watchtower</span>
                 </div>
+            </div>
+
+            <!-- Categories Section -->
+            <div class="nav-section">
+                <h3 class="nav-section-header">
+                    <span class="section-toggle" @onclick="ToggleCategoriesExpanded">
+                        @(isCategoriesExpanded ? "▼" : "►")
+                    </span>
+                    <span class="section-title">CATEGORIES</span>
+                    <button class="add-btn" @onclick="ShowAddCategoryModal" title="Add Category">+</button>
+                </h3>
+                @if (isCategoriesExpanded)
+                {
+                    <div class="nav-items">
+                        @foreach (var category in categories.OrderBy(c => c.Name))
+                        {
+                            <div class="nav-item @(selectedCategory == category.Name ? "active" : "")"
+                                 style="display:flex;align-items:center;gap:4px;"
+                                 @onclick="() => SelectCategory(category.Name)">
+                                <span class="nav-icon">@(string.IsNullOrEmpty(category.Icon) ? "📁" : category.Icon)</span>
+                                <span class="nav-text">@category.Name</span>
+                                <span class="nav-count">@filteredItems.Count(i => i.CategoryId == category.Id)</span>
+                                <div class="category-actions" style="margin-left:auto;display:flex;gap:4px;">
+                                    <button class="category-edit-btn" style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => ShowEditCategoryModal(category)"
+                                            title="Edit category">✏️</button>
+                                    <button class="category-delete-btn" style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => DeleteCategory(category)"
+                                            title="Delete category">🗑️</button>
+                                </div>
+                            </div>
+                        }
+                        @if (!categories.Any())
+                        {
+                            <div class="empty-message" style="padding: 5px; font-style: italic; color: #888;">No categories</div>
+                        }
+                    </div>
+                }
             </div>
 
             <!-- Vaults Section -->
@@ -462,6 +494,15 @@
 
     <!-- Items List View -->
     <div class="items-list-view">
+        <!-- Search Section moved from sidebar -->
+        <div class="search-section">
+            <div class="search-box">
+                <input type="text" @bind="searchTerm" @bind:event="oninput" @onkeyup="SearchItems" 
+                       placeholder="Search your vault..." class="search-input" />
+                <span class="search-icon">🔍</span>
+            </div>
+        </div>
+        
         <div class="items-list-header">
             <h3 class="items-list-title">Items</h3>
             <div class="items-list-category-filter">
@@ -1341,6 +1382,12 @@
     private void ToggleCollectionsExpanded()
     {
         isCollectionsExpanded = !isCollectionsExpanded;
+        StateHasChanged();
+    }
+
+    private void ToggleCategoriesExpanded()
+    {
+        isCategoriesExpanded = !isCategoriesExpanded;
         StateHasChanged();
     }
     
@@ -2378,13 +2425,15 @@ private void OnLengthChanged(ChangeEventArgs e)
                             <span class="nav-icon">@(string.IsNullOrEmpty(category.Icon) ? "📁" : category.Icon)</span>
                             <span class="nav-text">@category.Name</span>
                             <span class="nav-count">@filteredItems.Count(i => i.CategoryId == category.Id)</span>
-                            <div style="margin-left:auto;">
-                                <button class="category-edit-btn" style="border:none;background:transparent;"
+                            <div class="category-actions" style="margin-left:auto;display:flex;gap:4px;">
+                                <button class="category-edit-btn" style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
                                         @onclick:stopPropagation="true"
-                                        @onclick="() => ShowEditCategoryModal(category)">✏️</button>
-                                <button class="category-delete-btn" style="border:none;background:transparent;"
+                                        @onclick="() => ShowEditCategoryModal(category)"
+                                        title="Edit category">✏️</button>
+                                <button class="category-delete-btn" style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
                                         @onclick:stopPropagation="true"
-                                        @onclick="() => DeleteCategory(category)">🗑️</button>
+                                        @onclick="() => DeleteCategory(category)"
+                                        title="Delete category">🗑️</button>
                             </div>
                         </div>
                     }
@@ -2394,9 +2443,10 @@ private void OnLengthChanged(ChangeEventArgs e)
                     <div class="empty-message" style="padding: 5px; font-style: italic; color: #888;">No categories</div>
                 }
                 <button class="add-category-btn"
-                        style="background:none;border:none;font-size:0.9rem;padding:5px 0;cursor:pointer;color:#007bff;width:100%;text-align:left;"
+                        style="background:none;border:none;font-size:12px;padding:5px 0;cursor:pointer;color:#007bff;width:100%;text-align:left;"
                         @onclick:stopPropagation="true"
-                        @onclick="() => ShowAddCategoryForCollection(collection.Id)">+ Add Category</button>
+                        @onclick="() => ShowAddCategoryForCollection(collection.Id)"
+                        title="Add new category">+ Add Category</button>
             </div>
         }
     };
