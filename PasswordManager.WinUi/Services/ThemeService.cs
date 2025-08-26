@@ -95,6 +95,7 @@ namespace PasswordManager.WinUi.Services
                     UpdateResourceIfExists(resources, "ModernSurfaceBrush", "#1E293B");
                     UpdateResourceIfExists(resources, "ModernCardBrush", "#334155");
                     UpdateResourceIfExists(resources, "ModernElevatedSurfaceBrush", "#475569");
+                    UpdateResourceIfExists(resources, "ModernFormBackgroundBrush", "#2D3748");
                     UpdateResourceIfExists(resources, "ModernTextPrimaryBrush", "#F1F5F9");
                     UpdateResourceIfExists(resources, "ModernTextSecondaryBrush", "#CBD5E1");
                     UpdateResourceIfExists(resources, "ModernTextTertiaryBrush", "#94A3B8");
@@ -111,6 +112,7 @@ namespace PasswordManager.WinUi.Services
                     UpdateResourceIfExists(resources, "ModernSurfaceBrush", "#FFFFFF");
                     UpdateResourceIfExists(resources, "ModernCardBrush", "#FFFFFF");
                     UpdateResourceIfExists(resources, "ModernElevatedSurfaceBrush", "#FFFFFF");
+                    UpdateResourceIfExists(resources, "ModernFormBackgroundBrush", "#F6F8FA");
                     UpdateResourceIfExists(resources, "ModernTextPrimaryBrush", "#1E293B");
                     UpdateResourceIfExists(resources, "ModernTextSecondaryBrush", "#64748B");
                     UpdateResourceIfExists(resources, "ModernTextTertiaryBrush", "#94A3B8");

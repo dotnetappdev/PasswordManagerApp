@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page x:Class="PasswordManager.WinUi.Views.ProfilePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer>
+        <StackPanel Spacing="24" Padding="40">
+            
+            <!-- Header -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Profile Picture -->
+                <Border Grid.Column="0"
+                        Width="80"
+                        Height="80"
+                        CornerRadius="40"
+                        Background="{StaticResource ModernPrimaryGradientBrush}"
+                        Margin="0,0,20,0">
+                    <TextBlock Text="👤"
+                               FontSize="40"
+                               Foreground="White"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Border>
+                
+                <!-- Profile Info -->
+                <StackPanel Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Spacing="8">
+                    <TextBlock Text="David Smith"
+                               Style="{StaticResource ModernHeading2Style}"/>
+                    <TextBlock Text="Personal Vault"
+                               Style="{StaticResource ModernCaptionStyle}"/>
+                    <Button Content="Edit Profile"
+                            Style="{StaticResource ModernSecondaryButtonStyle}"
+                            HorizontalAlignment="Left"
+                            Margin="0,8,0,0"/>
+                </StackPanel>
+            </Grid>
+            
+            <!-- Account Information -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Account Information"
+                               Style="{StaticResource ModernHeading3Style}"/>
+                    
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Grid.Row="0" Grid.Column="0"
+                                   Text="Email:"
+                                   Style="{StaticResource ModernCaptionStyle}"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1"
+                                   Text="david.smith@example.com"
+                                   Style="{StaticResource ModernBodyStyle}"/>
+                        
+                        <TextBlock Grid.Row="1" Grid.Column="0"
+                                   Text="Member Since:"
+                                   Style="{StaticResource ModernCaptionStyle}"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1"
+                                   Text="January 15, 2024"
+                                   Style="{StaticResource ModernBodyStyle}"/>
+                        
+                        <TextBlock Grid.Row="2" Grid.Column="0"
+                                   Text="Last Login:"
+                                   Style="{StaticResource ModernCaptionStyle}"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1"
+                                   Text="Today at 9:32 AM"
+                                   Style="{StaticResource ModernBodyStyle}"/>
+                        
+                        <TextBlock Grid.Row="3" Grid.Column="0"
+                                   Text="Plan:"
+                                   Style="{StaticResource ModernCaptionStyle}"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1"
+                                   Text="Personal (Free)"
+                                   Style="{StaticResource ModernBodyStyle}"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+            
+            <!-- Security Settings -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Security"
+                               Style="{StaticResource ModernHeading3Style}"/>
+                    
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- Master Password -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12" Margin="0,0,0,12">
+                            <FontIcon Glyph="&#xE8D7;" 
+                                      FontSize="16" 
+                                      Foreground="{StaticResource ModernPrimaryBrush}"/>
+                            <TextBlock Text="Master Password"
+                                       Style="{StaticResource ModernBodyStyle}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="Last changed 30 days ago"
+                                       Style="{StaticResource ModernCaptionStyle}"
+                                       VerticalAlignment="Center"/>
+                            <Button Content="Change"
+                                    Style="{StaticResource ModernSecondaryButtonStyle}"
+                                    Margin="auto,0,0,0"
+                                    HorizontalAlignment="Right"/>
+                        </StackPanel>
+                        
+                        <!-- Two-Factor Authentication -->
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12" Margin="0,0,0,12">
+                            <FontIcon Glyph="&#xE72E;" 
+                                      FontSize="16" 
+                                      Foreground="{StaticResource ModernSuccessBrush}"/>
+                            <TextBlock Text="Two-Factor Authentication"
+                                       Style="{StaticResource ModernBodyStyle}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="Enabled"
+                                       Style="{StaticResource ModernCaptionStyle}"
+                                       Foreground="{StaticResource ModernSuccessBrush}"
+                                       VerticalAlignment="Center"/>
+                            <Button Content="Manage"
+                                    Style="{StaticResource ModernSecondaryButtonStyle}"
+                                    Margin="auto,0,0,0"
+                                    HorizontalAlignment="Right"/>
+                        </StackPanel>
+                        
+                        <!-- Biometric Authentication -->
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12">
+                            <FontIcon Glyph="&#xE8F1;" 
+                                      FontSize="16" 
+                                      Foreground="{StaticResource ModernSuccessBrush}"/>
+                            <TextBlock Text="Biometric Authentication"
+                                       Style="{StaticResource ModernBodyStyle}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="Windows Hello enabled"
+                                       Style="{StaticResource ModernCaptionStyle}"
+                                       Foreground="{StaticResource ModernSuccessBrush}"
+                                       VerticalAlignment="Center"/>
+                            <ToggleSwitch IsOn="True"
+                                          Margin="auto,0,0,0"
+                                          HorizontalAlignment="Right"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+            
+            <!-- Vault Statistics -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Vault Statistics"
+                               Style="{StaticResource ModernHeading3Style}"/>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="47"
+                                       Style="{StaticResource ModernHeading2Style}"
+                                       Foreground="{StaticResource ModernPrimaryBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="Total Items"
+                                       Style="{StaticResource ModernCaptionStyle}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock Text="32"
+                                       Style="{StaticResource ModernHeading2Style}"
+                                       Foreground="{StaticResource ModernSuccessBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="Logins"
+                                       Style="{StaticResource ModernCaptionStyle}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="2" Spacing="4">
+                            <TextBlock Text="5"
+                                       Style="{StaticResource ModernHeading2Style}"
+                                       Foreground="{StaticResource ModernWarningBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="Weak Passwords"
+                                       Style="{StaticResource ModernCaptionStyle}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="3" Spacing="4">
+                            <TextBlock Text="8"
+                                       Style="{StaticResource ModernHeading2Style}"
+                                       Foreground="{StaticResource ModernAccentBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="Favorites"
+                                       Style="{StaticResource ModernCaptionStyle}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+            
+        </StackPanel>
+    </ScrollViewer>
+</Page>

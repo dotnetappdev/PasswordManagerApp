@@ -6,11 +6,10 @@
                PrimaryButtonText=""
                CloseButtonText="Cancel"
                PrimaryButtonClick="ContentDialog_PrimaryButtonClick"
-               Background="{StaticResource ModernSurfaceBrush}"
-               Foreground="{StaticResource ModernTextPrimaryBrush}"
-               BorderBrush="{StaticResource ModernBorderBrush}"
-               BorderThickness="1"
-               CornerRadius="12"
+               Background="{StaticResource ModernFormBackgroundBrush}"
+               Style="{StaticResource Modern1PasswordDialogStyle}"
+               PrimaryButtonStyle="{StaticResource ContentDialogPrimaryButtonStyle}"
+               CloseButtonStyle="{StaticResource ContentDialogSecondaryButtonStyle}">
                MaxWidth="700"
                MaxHeight="650">
 
@@ -57,7 +56,7 @@
                                 Height="48">
                             <FontIcon Glyph="&#xE192;"
                                     FontSize="24"
-                                    Foreground="White"
+                                    Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
                                     VerticalAlignment="Center"/>
                         </Border>
@@ -84,7 +83,7 @@
                                 Height="48">
                             <FontIcon Glyph="&#xE70F;"
                                     FontSize="24"
-                                    Foreground="White"
+                                    Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
                                     VerticalAlignment="Center"/>
                         </Border>
@@ -111,7 +110,7 @@
                                 Height="48">
                             <FontIcon Glyph="&#xE8C7;"
                                     FontSize="24"
-                                    Foreground="White"
+                                    Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
                                     VerticalAlignment="Center"/>
                         </Border>
@@ -139,7 +138,7 @@
                                 Height="48">
                             <FontIcon Glyph="&#xE77B;"
                                     FontSize="24"
-                                    Foreground="White"
+                                    Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
                                     VerticalAlignment="Center"/>
                         </Border>
@@ -166,7 +165,7 @@
                                 Height="48">
                             <FontIcon Glyph="&#xE8D7;"
                                     FontSize="24"
-                                    Foreground="White"
+                                    Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
                                     VerticalAlignment="Center"/>
                         </Border>
@@ -193,7 +192,7 @@
                                 Height="48">
                             <FontIcon Glyph="&#xE8A5;"
                                     FontSize="24"
-                                    Foreground="White"
+                                    Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
                                     VerticalAlignment="Center"/>
                         </Border>
@@ -238,14 +237,14 @@
                                         Height="48">
                                     <FontIcon Glyph="&#xE8AC;"
                                             FontSize="24"
-                                            Foreground="White"
+                                            Foreground="{StaticResource ModernTextPrimaryBrush}"
                                               HorizontalAlignment="Center"
                                             VerticalAlignment="Center"/>
                                 </Border>
                                 <TextBlock Text="SSH Key"
                                         FontSize="16"
                                         FontWeight="SemiBold"
-                                        Foreground="White"
+                                        Foreground="{StaticResource ModernTextPrimaryBrush}"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -266,14 +265,14 @@
                                     <TextBlock Text="&#x3C;&#x2F;&#x3E;"
                                             FontSize="20"
                                             FontWeight="Bold"
-                                            Foreground="White"
+                                            Foreground="{StaticResource ModernTextPrimaryBrush}"
                                                HorizontalAlignment="Center"
                                             VerticalAlignment="Center"/>
                                 </Border>
                                 <TextBlock Text="API Credentials"
                                         FontSize="16"
                                         FontWeight="SemiBold"
-                                        Foreground="White"
+                                        Foreground="{StaticResource ModernTextPrimaryBrush}"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -293,14 +292,14 @@
                                         Height="48">
                                     <FontIcon Glyph="&#xE8BC;"
                                             FontSize="24"
-                                            Foreground="White"
+                                            Foreground="{StaticResource ModernTextPrimaryBrush}"
                                               HorizontalAlignment="Center"
                                             VerticalAlignment="Center"/>
                                 </Border>
                                 <TextBlock Text="Bank Account"
                                         FontSize="16"
                                         FontWeight="SemiBold"
-                                        Foreground="White"
+                                        Foreground="{StaticResource ModernTextPrimaryBrush}"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -321,14 +320,14 @@
                                         Height="48">
                                     <FontIcon Glyph="&#xE9E2;"
                                             FontSize="24"
-                                            Foreground="White"
+                                            Foreground="{StaticResource ModernTextPrimaryBrush}"
                                               HorizontalAlignment="Center"
                                             VerticalAlignment="Center"/>
                                 </Border>
                                 <TextBlock Text="Crypto Wallet"
                                         FontSize="16"
                                         FontWeight="SemiBold"
-                                        Foreground="White"
+                                        Foreground="{StaticResource ModernTextPrimaryBrush}"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -348,14 +347,14 @@
                                         Height="48">
                                     <FontIcon Glyph="&#xE968;"
                                             FontSize="24"
-                                            Foreground="White"
+                                            Foreground="{StaticResource ModernTextPrimaryBrush}"
                                               HorizontalAlignment="Center"
                                             VerticalAlignment="Center"/>
                                 </Border>
                                 <TextBlock Text="Database"
                                         FontSize="16"
                                         FontWeight="SemiBold"
-                                        Foreground="White"
+                                        Foreground="{StaticResource ModernTextPrimaryBrush}"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -375,14 +374,14 @@
                                         Height="48">
                                     <FontIcon Glyph="&#xE8D4;"
                                             FontSize="24"
-                                            Foreground="White"
+                                            Foreground="{StaticResource ModernTextPrimaryBrush}"
                                               HorizontalAlignment="Center"
                                             VerticalAlignment="Center"/>
                                 </Border>
                                 <TextBlock Text="Driver License"
                                         FontSize="16"
                                         FontWeight="SemiBold"
-                                        Foreground="White"
+                                        Foreground="{StaticResource ModernTextPrimaryBrush}"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -403,14 +402,14 @@
                                         Height="48">
                                     <FontIcon Glyph="&#xE715;"
                                             FontSize="24"
-                                            Foreground="White"
+                                            Foreground="{StaticResource ModernTextPrimaryBrush}"
                                               HorizontalAlignment="Center"
                                             VerticalAlignment="Center"/>
                                 </Border>
                                 <TextBlock Text="Email"
                                         FontSize="16"
                                         FontWeight="SemiBold"
-                                        Foreground="White"
+                                        Foreground="{StaticResource ModernTextPrimaryBrush}"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -430,14 +429,14 @@
                                         Height="48">
                                     <FontIcon Glyph="&#xE95E;"
                                             FontSize="24"
-                                            Foreground="White"
+                                            Foreground="{StaticResource ModernTextPrimaryBrush}"
                                               HorizontalAlignment="Center"
                                             VerticalAlignment="Center"/>
                                 </Border>
                                 <TextBlock Text="Medical Record"
                                         FontSize="16"
                                         FontWeight="SemiBold"
-                                        Foreground="White"
+                                        Foreground="{StaticResource ModernTextPrimaryBrush}"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -457,14 +456,14 @@
                                         Height="48">
                                     <FontIcon Glyph="&#xE8D8;"
                                             FontSize="24"
-                                            Foreground="White"
+                                            Foreground="{StaticResource ModernTextPrimaryBrush}"
                                               HorizontalAlignment="Center"
                                             VerticalAlignment="Center"/>
                                 </Border>
                                 <TextBlock Text="Membership"
                                         FontSize="16"
                                         FontWeight="SemiBold"
-                                        Foreground="White"
+                                        Foreground="{StaticResource ModernTextPrimaryBrush}"
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>

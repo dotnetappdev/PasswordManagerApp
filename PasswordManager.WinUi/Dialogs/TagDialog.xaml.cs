@@ -134,13 +134,11 @@ public sealed partial class TagDialog : ContentDialog
 
     private async Task ShowErrorMessage(string message)
     {
-        var errorDialog = new ContentDialog
-        {
-            Title = "Error",
-            Content = message,
-            CloseButtonText = "OK",
-            XamlRoot = this.XamlRoot
-        };
-        await errorDialog.ShowAsync();
+        ErrorMessageText.Text = message;
+        ErrorMessageBorder.Visibility = Visibility.Visible;
+        
+        // Auto-hide error after 5 seconds
+        await Task.Delay(5000);
+        ErrorMessageBorder.Visibility = Visibility.Collapsed;
     }
 }

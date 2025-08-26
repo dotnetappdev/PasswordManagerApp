@@ -301,14 +301,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
             PasskeyDeviceTypeTextBox.Text = "Windows PC";
 
             // Show success message for now (actual WebAuthn integration would happen here)
-            var successDialog = new ContentDialog
-            {
-                Title = "Passkey Registration",
-                Content = "Passkey registration initiated. In a full implementation, this would use WebAuthn to register the passkey with the browser/OS.",
-                CloseButtonText = "OK",
-                XamlRoot = this.XamlRoot
-            };
-            await successDialog.ShowAsync();
+            await ShowSuccessMessage("Passkey registration initiated. In a full implementation, this would use WebAuthn to register the passkey with the browser/OS.");
         }
         catch (Exception ex)
         {
@@ -318,14 +311,22 @@ public sealed partial class AddPasswordDialog : ContentDialog
 
     private async Task ShowErrorDialog(string message)
     {
-        var errorDialog = new ContentDialog
-        {
-            Title = "Error",
-            Content = message,
-            CloseButtonText = "OK",
-            XamlRoot = this.XamlRoot
-        };
-        await errorDialog.ShowAsync();
+        ErrorMessageText.Text = message;
+        ErrorMessageBorder.Visibility = Visibility.Visible;
+        
+        // Auto-hide error after 5 seconds
+        await Task.Delay(5000);
+        ErrorMessageBorder.Visibility = Visibility.Collapsed;
+    }
+    
+    private async Task ShowSuccessMessage(string message)
+    {
+        SuccessMessageText.Text = message;
+        SuccessMessageBorder.Visibility = Visibility.Visible;
+        
+        // Auto-hide success message after 5 seconds
+        await Task.Delay(5000);
+        SuccessMessageBorder.Visibility = Visibility.Collapsed;
     }
 
     // New methods for the updated UI
