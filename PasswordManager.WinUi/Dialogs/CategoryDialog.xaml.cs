@@ -6,6 +6,7 @@ using PasswordManager.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
+using Microsoft.UI.Xaml.Shapes;
 
 namespace PasswordManager.WinUi.Dialogs;
 

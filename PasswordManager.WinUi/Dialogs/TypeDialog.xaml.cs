@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Shapes;
 using System;
 using System.Threading.Tasks;
 
@@ -65,7 +66,7 @@ public sealed partial class TypeDialog : ContentDialog
         {
             // Extract color from the selected item
             var stackPanel = selectedItem.Content as StackPanel;
-            var ellipse = stackPanel?.Children[0] as Ellipse;
+            var ellipse = stackPanel?.Children[0] as  Ellipse;
             if (ellipse?.Fill is SolidColorBrush colorBrush)
             {
                 ColorPreview.Fill = colorBrush;
