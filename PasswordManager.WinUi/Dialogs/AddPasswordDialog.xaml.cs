@@ -65,6 +65,21 @@ public sealed partial class AddPasswordDialog : ContentDialog
         
         // Show the appropriate fields panel
         TypeComboBox_SelectionChanged(TypeComboBox, null);
+        
+        // Handle special category-based forms
+        if (!string.IsNullOrEmpty(categoryName))
+        {
+            if (categoryName.Contains("Identity") && itemType == ItemType.SecureNote)
+            {
+                SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
+                IdentityFieldsPanel.Visibility = Visibility.Visible;
+            }
+            else if (categoryName.Contains("API") && itemType == ItemType.SecureNote)
+            {
+                SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
+                APICredentialsFieldsPanel.Visibility = Visibility.Visible;
+            }
+        }
     }
 
     private async void LoadData()
@@ -172,6 +187,29 @@ public sealed partial class AddPasswordDialog : ContentDialog
             SecureNoteFieldsPanel.Visibility = selectedType == ItemType.SecureNote ? Visibility.Visible : Visibility.Collapsed;
             WiFiFieldsPanel.Visibility = selectedType == ItemType.WiFi ? Visibility.Visible : Visibility.Collapsed;
             PasskeyFieldsPanel.Visibility = selectedType == ItemType.Passkey ? Visibility.Visible : Visibility.Collapsed;
+            
+            // Handle special form types using SecureNote as base
+            IdentityFieldsPanel.Visibility = Visibility.Collapsed;
+            APICredentialsFieldsPanel.Visibility = Visibility.Collapsed;
+            
+            // Show Identity panel for Identity-related categories
+            if (selectedType == ItemType.SecureNote)
+            {
+                // Check if this is an Identity or API Credentials item by looking at the category
+                if (CategoryComboBox.SelectedItem is ComboBoxItem categoryItem && categoryItem.Tag is Category category)
+                {
+                    if (category.Name.Contains("Identity"))
+                    {
+                        SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
+                        IdentityFieldsPanel.Visibility = Visibility.Visible;
+                    }
+                    else if (category.Name.Contains("API"))
+                    {
+                        SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
+                        APICredentialsFieldsPanel.Visibility = Visibility.Visible;
+                    }
+                }
+            }
         }
     }
 
