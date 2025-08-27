@@ -20,6 +20,8 @@ public class SettingsViewModel : BaseViewModel
     private int _sessionTimeoutMinutes = 30;
     private string _authenticationMode = "Local Database";
     private string _apiBaseUrl = "https://localhost:7001/api";
+    private string _databaseProvider = "SQLite";
+    private string _databaseConnectionString = "";
 
     public SettingsViewModel(IServiceProvider serviceProvider)
     {
@@ -80,6 +82,18 @@ public class SettingsViewModel : BaseViewModel
         set => SetProperty(ref _apiBaseUrl, value);
     }
 
+    public string DatabaseProvider
+    {
+        get => _databaseProvider;
+        set => SetProperty(ref _databaseProvider, value);
+    }
+
+    public string DatabaseConnectionString
+    {
+        get => _databaseConnectionString;
+        set => SetProperty(ref _databaseConnectionString, value);
+    }
+
     public List<string> AvailableThemes => new List<string> { "Light", "Dark", "System" };
 
     public List<string> AuthenticationModes => new List<string> { "Local Database", "API Server" };
@@ -117,6 +131,12 @@ public class SettingsViewModel : BaseViewModel
             var apiUrl = await _secureStorageService.GetAsync("ApiBaseUrl");
             ApiBaseUrl = apiUrl ?? "https://localhost:7001/api";
 
+            var dbProvider = await _secureStorageService.GetAsync("DatabaseProvider");
+            DatabaseProvider = dbProvider ?? "SQLite";
+
+            var dbConnectionString = await _secureStorageService.GetAsync("DatabaseConnectionString");
+            DatabaseConnectionString = dbConnectionString ?? "";
+
             // Set default export path
             ExportPath = Path.Combine(_platformService.GetDocumentsDirectory(), "PasswordManagerExport");
             
@@ -147,6 +167,8 @@ public class SettingsViewModel : BaseViewModel
             await _secureStorageService.SetAsync("SessionTimeoutMinutes", SessionTimeoutMinutes.ToString());
             await _secureStorageService.SetAsync("AuthenticationMode", AuthenticationMode);
             await _secureStorageService.SetAsync("ApiBaseUrl", ApiBaseUrl);
+            await _secureStorageService.SetAsync("DatabaseProvider", DatabaseProvider);
+            await _secureStorageService.SetAsync("DatabaseConnectionString", DatabaseConnectionString);
             
             // Apply theme change
             ApplyTheme();
