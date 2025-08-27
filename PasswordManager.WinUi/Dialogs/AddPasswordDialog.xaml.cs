@@ -551,4 +551,69 @@ public sealed partial class AddPasswordDialog : ContentDialog
             item.CustomFields.Add(field);
         }
     }
+
+    // Button Event Handlers for Form-Specific Actions
+    private void AddWebsite_Click(object sender, RoutedEventArgs e)
+    {
+        // Add a new URL custom field for login items
+        var websiteField = new CustomField
+        {
+            Name = "Website",
+            Value = "",
+            Type = CustomFieldType.Url,
+            DisplayOrder = _customFields.Count,
+            PasswordItemId = _editingItem?.Id ?? 0
+        };
+
+        _customFields.Add(websiteField);
+        RefreshCustomFieldsUI();
+    }
+
+    private void AddMoreLogin_Click(object sender, RoutedEventArgs e)
+    {
+        // Add a generic text custom field for login items
+        var moreField = new CustomField
+        {
+            Name = "Additional Information",
+            Value = "",
+            Type = CustomFieldType.Text,
+            DisplayOrder = _customFields.Count,
+            PasswordItemId = _editingItem?.Id ?? 0
+        };
+
+        _customFields.Add(moreField);
+        RefreshCustomFieldsUI();
+    }
+
+    private void AddMoreSecureNote_Click(object sender, RoutedEventArgs e)
+    {
+        // Add a generic text custom field for secure notes
+        var moreField = new CustomField
+        {
+            Name = "Additional Note",
+            Value = "",
+            Type = CustomFieldType.TextArea,
+            DisplayOrder = _customFields.Count,
+            PasswordItemId = _editingItem?.Id ?? 0
+        };
+
+        _customFields.Add(moreField);
+        RefreshCustomFieldsUI();
+    }
+
+    private void AddLocation_Click(object sender, RoutedEventArgs e)
+    {
+        // Add a location custom field for secure notes
+        var locationField = new CustomField
+        {
+            Name = "Location",
+            Value = "",
+            Type = CustomFieldType.Text,
+            DisplayOrder = _customFields.Count,
+            PasswordItemId = _editingItem?.Id ?? 0
+        };
+
+        _customFields.Add(locationField);
+        RefreshCustomFieldsUI();
+    }
 }

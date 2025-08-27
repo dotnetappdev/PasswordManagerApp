@@ -41,9 +41,9 @@ public static class CustomFieldHelper
             Content = "🗑️",
             Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
             BorderThickness = new Thickness(0),
-            Padding = new Thickness(8),
-            ToolTipService = { ToolTip = "Remove field" }
+            Padding = new Thickness(8)
         };
+        ToolTipService.SetToolTip(removeButton, "Remove field");
         removeButton.Click += (s, e) => onFieldRemoved?.Invoke(field);
 
         Grid.SetColumn(nameTextBox, 0);
