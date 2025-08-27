@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.WinUi.ViewModels;
 using PasswordManager.WinUi.Helpers;
+using PasswordManager.WinUi.Models;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
 using System.Linq;
@@ -29,18 +30,68 @@ public sealed partial class PasswordItemsPage : Page
     {
         base.OnNavigatedTo(e);
         
-        if (e.Parameter is IServiceProvider serviceProvider)
+        // Handle both old service provider parameter and new filter data parameter
+        if (e.Parameter is NavigationFilterData filterData)
+        {
+            _serviceProvider = filterData.ServiceProvider;
+            _categoryService = _serviceProvider.GetRequiredService<ICategoryInterface>();
+            _viewModel = new PasswordItemsViewModel(_serviceProvider);
+            this.DataContext = _viewModel;
+            
+            // Apply the filter from navigation
+            ApplyNavigationFilter(filterData);
+        }
+        else if (e.Parameter is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
             _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
             _viewModel = new PasswordItemsViewModel(serviceProvider);
             this.DataContext = _viewModel;
-            
+        }
+        
+        if (_serviceProvider != null)
+        {
             // Seed sample data if needed (only runs once)
-            await SampleDataSeeder.SeedSampleDataAsync(serviceProvider);
+            await SampleDataSeeder.SeedSampleDataAsync(_serviceProvider);
             
             // Load categories from database
             await LoadCategoriesAsync();
+        }
+    }
+
+    private void ApplyNavigationFilter(NavigationFilterData filterData)
+    {
+        if (_viewModel == null) return;
+
+        // Update page title
+        if (!string.IsNullOrEmpty(filterData.FilterName))
+        {
+            ContentTitle.Text = filterData.FilterName;
+            ContentSubtitle.Text = $"Showing {filterData.FilterName.ToLower()}";
+        }
+
+        // Apply type filter
+        if (filterData.FilterType.HasValue)
+        {
+            _viewModel.FilterType = filterData.FilterType.Value.ToString();
+        }
+
+        // Apply favorites filter
+        if (filterData.ShowFavorites == true)
+        {
+            _viewModel.FilterType = "Favorites";
+        }
+
+        // Apply archived filter
+        if (filterData.ShowArchived == true)
+        {
+            _viewModel.FilterType = "Archive";
+        }
+
+        // Apply deleted filter
+        if (filterData.ShowDeleted == true)
+        {
+            _viewModel.FilterType = "RecentlyDeleted";
         }
     }
 

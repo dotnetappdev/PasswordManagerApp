@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PasswordManager.Models;
 
 namespace PasswordManager.WinUi.Helpers
 {
@@ -35,13 +36,13 @@ namespace PasswordManager.WinUi.Helpers
         };
 
         // Maps ItemType to icon identifier
-        public static readonly Dictionary<Models.ItemType, string> TypeToIcon = new()
+        public static readonly Dictionary<ItemType, string> TypeToIcon = new()
         {
-            { Models.ItemType.Login, "key" },
-            { Models.ItemType.CreditCard, "creditcard" },
-            { Models.ItemType.SecureNote, "note" },
-            { Models.ItemType.WiFi, "wifi" },
-            { Models.ItemType.Passkey, "security" }
+            { ItemType.Login, "key" },
+            { ItemType.CreditCard, "creditcard" },
+            { ItemType.SecureNote, "note" },
+            { ItemType.WiFi, "wifi" },
+            { ItemType.Passkey, "security" }
         };
 
         public static string GetEmojiForIcon(string? iconId)
@@ -60,18 +61,18 @@ namespace PasswordManager.WinUi.Helpers
             return IconToGlyph.ContainsKey(iconId) ? IconToGlyph[iconId] : IconToGlyph["folder"];
         }
 
-        public static string GetIconForType(Models.ItemType type)
+        public static string GetIconForType(ItemType type)
         {
             return TypeToIcon.ContainsKey(type) ? TypeToIcon[type] : "folder";
         }
 
-        public static string GetEmojiForType(Models.ItemType type)
+        public static string GetEmojiForType(ItemType type)
         {
             var iconId = GetIconForType(type);
             return GetEmojiForIcon(iconId);
         }
 
-        public static string GetGlyphForType(Models.ItemType type)
+        public static string GetGlyphForType(ItemType type)
         {
             var iconId = GetIconForType(type);
             return GetGlyphForIcon(iconId);

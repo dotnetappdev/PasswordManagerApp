@@ -5,6 +5,7 @@ using Microsoft.UI.Text;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
+using PasswordManager.WinUi.Models;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -118,17 +119,17 @@ public sealed partial class MainWindow : Window
                 _ => typeof(Views.DashboardPage)
             };
 
-            // Ensure ContentFrame exists and navigate with service provider
-            if (ContentFrame != null && _serviceProvider != null)
-            {
-                ContentFrame.Navigate(pageType, _serviceProvider);
+            // Prepare navigation data with filters
+            object navigationParameter = CreateNavigationParameter(pageTag);
 
-                // Pass filter parameters for category-specific views
-                PassFilterToPage(pageTag);
+            // Ensure ContentFrame exists and navigate with service provider
+            if (ContentFrame != null)
+            {
+                ContentFrame.Navigate(pageType, navigationParameter);
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation failed - ContentFrame: {ContentFrame != null}, ServiceProvider: {_serviceProvider != null}");
+                System.Diagnostics.Debug.WriteLine($"Navigation failed - ContentFrame: {ContentFrame != null}");
             }
         }
         catch (Exception ex)
@@ -137,42 +138,71 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void PassFilterToPage(string pageTag)
+    private object CreateNavigationParameter(string pageTag)
     {
-        // If we're navigating to PasswordItemsPage with a filter, apply the filter
-        if (ContentFrame.Content is Views.PasswordItemsPage passwordsPage)
+        // For password item pages, create filter data
+        if (IsPasswordItemsPage(pageTag))
         {
-            // This would need to be implemented in the PasswordItemsPage to accept filter parameters
-            // For now, we'll handle this through a public method in the page or its ViewModel
+            var filterData = new NavigationFilterData(_serviceProvider);
+            
             switch (pageTag)
             {
                 case "Favorites":
-                    // Apply favorites filter
+                    filterData.ShowFavorites = true;
+                    filterData.FilterName = "Favorites";
                     break;
                 case "LoginCategory":
-                    // Apply login items filter
+                    filterData.FilterType = ItemType.Login;
+                    filterData.FilterName = "Logins";
                     break;
                 case "CreditCardCategory":
-                    // Apply credit card filter
+                    filterData.FilterType = ItemType.CreditCard;
+                    filterData.FilterName = "Credit Cards";
                     break;
                 case "SecureNotesCategory":
-                    // Apply secure notes filter
+                    filterData.FilterType = ItemType.SecureNote;
+                    filterData.FilterName = "Secure Notes";
                     break;
                 case "WiFiCategory":
-                    // Apply WiFi items filter
+                    filterData.FilterType = ItemType.WiFi;
+                    filterData.FilterName = "WiFi";
                     break;
                 case "PasskeysCategory":
-                    // Apply passkeys filter
+                    filterData.FilterType = ItemType.Passkey;
+                    filterData.FilterName = "Passkeys";
                     break;
                 case "Archive":
-                    // Apply archived items filter
+                    filterData.ShowArchived = true;
+                    filterData.FilterName = "Archive";
                     break;
                 case "RecentlyDeleted":
-                    // Apply recently deleted filter
+                    filterData.ShowDeleted = true;
+                    filterData.FilterName = "Recently Deleted";
+                    break;
+                default:
+                    filterData.FilterName = "All Items";
                     break;
             }
+            
+            return filterData;
         }
+        
+        // For other pages, just pass the service provider
+        return _serviceProvider;
     }
+
+    private bool IsPasswordItemsPage(string pageTag)
+    {
+        return pageTag switch
+        {
+            "AllItems" or "Favorites" or "LoginCategory" or "CreditCardCategory" or 
+            "SecureNotesCategory" or "WiFiCategory" or "PasskeysCategory" or 
+            "Archive" or "RecentlyDeleted" or "Passwords" => true,
+            _ => false
+        };
+    }
+
+
 
     private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
     {
@@ -550,6 +580,17 @@ public sealed partial class MainWindow : Window
                 var confirmResult = await confirmDialog.ShowAsync();
                 if (confirmResult == ContentDialogResult.Primary)
                 {
+                    // Check if category has password items before deleting
+                    var hasPasswordItems = await categoryService.HasPasswordItemsAsync(selectedCategory.Id);
+                    
+                    if (hasPasswordItems)
+                    {
+                        var count = await categoryService.GetPasswordItemCountAsync(selectedCategory.Id);
+                        await ShowErrorMessage("Cannot Delete Category", 
+                            $"The category '{selectedCategory.Name}' cannot be deleted because it contains {count} password item{(count == 1 ? "" : "s")}. Please move or delete the password items first.");
+                        return;
+                    }
+
                     await categoryService.DeleteAsync(selectedCategory.Id);
                     await ShowInfoMessage("Category Deleted", $"Category '{selectedCategory.Name}' has been deleted successfully.");
                 }

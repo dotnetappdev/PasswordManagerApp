@@ -179,9 +179,8 @@ namespace PasswordManager.WinUi.Helpers
                     {
                         CardholderName = "John Doe",
                         CardNumber = "4532-1234-5678-9012",
-                        ExpiryMonth = 12,
-                        ExpiryYear = 2027,
-                        SecurityCode = "123"
+                        ExpiryDate = "12/2027",
+                        CVV = "123"
                     }
                 };
                 await passwordItemService.CreateAsync(sampleCreditCard);
@@ -217,7 +216,7 @@ namespace PasswordManager.WinUi.Helpers
                     {
                         NetworkName = "HomeNetwork_5G",
                         Password = "WifiPassword123!",
-                        SecurityType = "WPA2",
+                        SecurityType = SecurityType.WPA2,
                         Notes = "Located in living room"
                     }
                 };
