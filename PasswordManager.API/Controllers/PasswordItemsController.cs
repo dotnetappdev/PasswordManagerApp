@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using PasswordManager.Services.Interfaces;
@@ -6,12 +7,14 @@ using PasswordManager.Models.DTOs;
 using PasswordManager.Models;
 using PasswordManager.Crypto.Interfaces;
 using PasswordManager.Crypto.Services;
+using System.Security.Claims;
 using ApiDtos = PasswordManager.API.DTOs;
 
 namespace PasswordManager.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class PasswordItemsController : ControllerBase
 {
     private readonly IPasswordItemApiService _passwordItemService;
@@ -162,7 +165,13 @@ public class PasswordItemsController : ControllerBase
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var item = await _passwordItemService.CreateAsync(createDto);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var item = await _passwordItemService.CreateAsync(createDto, userId);
             return CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
         }
         catch (Exception ex)
@@ -567,7 +576,7 @@ public class PasswordItemsController : ControllerBase
                 };
             }
 
-            var createdItem = await _passwordItemService.CreateAsync(itemDto);
+            var createdItem = await _passwordItemService.CreateAsync(itemDto, userId);
             return CreatedAtAction(nameof(GetById), new { id = createdItem.Id }, createdItem);
         }
         catch (Exception ex)

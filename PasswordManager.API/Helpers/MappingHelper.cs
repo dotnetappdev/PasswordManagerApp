@@ -48,6 +48,24 @@ public static class MappingHelper
         };
     }
 
+    public static PasswordItem ToEntity(this CreatePasswordItemDto dto, string userId)
+    {
+        return new PasswordItem
+        {
+            Title = dto.Title,
+            Description = dto.Description,
+            Type = dto.Type,
+            IsFavorite = dto.IsFavorite,
+            CategoryId = dto.CategoryId,
+            CollectionId = dto.CollectionId,
+            UserId = userId,
+            CreatedAt = DateTime.UtcNow,
+            LastModified = DateTime.UtcNow,
+            IsDeleted = false,
+            IsArchived = false
+        };
+    }
+
     public static void UpdateFromDto(this PasswordItem entity, UpdatePasswordItemDto dto)
     {
         entity.Title = dto.Title;
