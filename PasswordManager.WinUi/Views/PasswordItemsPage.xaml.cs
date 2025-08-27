@@ -277,12 +277,11 @@ public sealed partial class PasswordItemsPage : Page
                 if (selectedItem.Tag is string tag && tag == "all")
                 {
                     // Show all items
-                    _viewModel.SelectedCategory = null;
+                    _viewModel.SelectedCategoryId = null;
                 }
                 else if (selectedItem.Tag is Category category)
                 {
-                    // Filter by specific category
-                    _viewModel.SelectedCategory = category.Name;
+                    // Filter by specific category using CategoryId only
                     _viewModel.SelectedCategoryId = category.Id;
                 }
             }
