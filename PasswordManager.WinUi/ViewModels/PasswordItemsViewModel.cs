@@ -11,7 +11,8 @@ public class PasswordItemsViewModel : BaseViewModel
     private readonly IPasswordItemService _passwordItemService;
     private string _searchText = string.Empty;
     private string _filterType = "All";
-    private string _selectedCategory = "All Categories";
+    private string? _selectedCategory = null;
+    private int? _selectedCategoryId = null;
     private ObservableCollection<PasswordItem> _allItems = new();
 
     public PasswordItemsViewModel(IServiceProvider serviceProvider)
@@ -48,12 +49,24 @@ public class PasswordItemsViewModel : BaseViewModel
         }
     }
 
-    public string SelectedCategory
+    public string? SelectedCategory
     {
         get => _selectedCategory;
         set
         {
             if (SetProperty(ref _selectedCategory, value))
+            {
+                _ = ApplyFiltersAsync();
+            }
+        }
+    }
+
+    public int? SelectedCategoryId
+    {
+        get => _selectedCategoryId;
+        set
+        {
+            if (SetProperty(ref _selectedCategoryId, value))
             {
                 _ = ApplyFiltersAsync();
             }
@@ -137,11 +150,18 @@ public class PasswordItemsViewModel : BaseViewModel
                 }
 
                 // Apply category filter
-                if (SelectedCategory != "All Categories" && !string.IsNullOrEmpty(SelectedCategory))
+                if (SelectedCategoryId.HasValue || !string.IsNullOrEmpty(SelectedCategory))
                 {
-                    items = items.Where(item =>
-                        item.Category != null && 
-                        string.Equals(item.Category.Name, SelectedCategory, StringComparison.OrdinalIgnoreCase));
+                    if (SelectedCategoryId.HasValue)
+                    {
+                        items = items.Where(item => item.CategoryId == SelectedCategoryId.Value);
+                    }
+                    else if (!string.IsNullOrEmpty(SelectedCategory))
+                    {
+                        items = items.Where(item =>
+                            item.Category != null && 
+                            string.Equals(item.Category.Name, SelectedCategory, StringComparison.OrdinalIgnoreCase));
+                    }
                 }
 
                 return items.ToList();

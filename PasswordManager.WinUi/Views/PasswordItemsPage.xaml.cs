@@ -2,8 +2,13 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.WinUi.ViewModels;
+using PasswordManager.WinUi.Helpers;
 using PasswordManager.Models;
+using PasswordManager.Services.Interfaces;
 using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System;
 
 namespace PasswordManager.WinUi.Views;
 
@@ -12,22 +17,131 @@ public sealed partial class PasswordItemsPage : Page
     private PasswordItemsViewModel? _viewModel;
     private IServiceProvider? _serviceProvider;
     private PasswordItem? _selectedItem;
+    private ICategoryInterface? _categoryService;
+    private List<Category> _categories = new();
 
     public PasswordItemsPage()
     {
         this.InitializeComponent();
     }
 
-    protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
         
         if (e.Parameter is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+            _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
             _viewModel = new PasswordItemsViewModel(serviceProvider);
             this.DataContext = _viewModel;
+            
+            // Seed sample data if needed (only runs once)
+            await SampleDataSeeder.SeedSampleDataAsync(serviceProvider);
+            
+            // Load categories from database
+            await LoadCategoriesAsync();
         }
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        try
+        {
+            if (_categoryService != null)
+            {
+                _categories = await _categoryService.GetAllAsync();
+                await PopulateCategoryDropdownAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading categories: {ex.Message}");
+        }
+    }
+
+    private async Task PopulateCategoryDropdownAsync()
+    {
+        CategoryDropdown.Items.Clear();
+        
+        // Add "All Categories" option
+        var allCategoriesItem = new ComboBoxItem();
+        var allStackPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        allStackPanel.Children.Add(new Border 
+        { 
+            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LightGray), 
+            CornerRadius = new CornerRadius(4), 
+            Width = 16, 
+            Height = 16 
+        });
+        allStackPanel.Children.Add(new TextBlock { Text = "All Categories", FontWeight = Microsoft.UI.Text.FontWeights.Medium });
+        allCategoriesItem.Content = allStackPanel;
+        allCategoriesItem.Tag = "all";
+        CategoryDropdown.Items.Add(allCategoriesItem);
+
+        // Add categories from database
+        foreach (var category in _categories)
+        {
+            var item = new ComboBoxItem();
+            var stackPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+            
+            // Add color indicator
+            var colorBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush();
+            if (!string.IsNullOrEmpty(category.Color) && Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(Microsoft.UI.Xaml.Media.SolidColorBrush), category.Color) is Microsoft.UI.Xaml.Media.SolidColorBrush brush)
+            {
+                colorBrush = brush;
+            }
+            else
+            {
+                colorBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray);
+            }
+            
+            stackPanel.Children.Add(new Border 
+            { 
+                Background = colorBrush, 
+                CornerRadius = new CornerRadius(4), 
+                Width = 16, 
+                Height = 16 
+            });
+            
+            // Add category name and count
+            var categoryText = new TextBlock 
+            { 
+                Text = category.Name, 
+                FontWeight = Microsoft.UI.Text.FontWeights.Medium 
+            };
+            stackPanel.Children.Add(categoryText);
+            
+            // Add password count if available
+            if (_categoryService != null)
+            {
+                try
+                {
+                    var count = await _categoryService.GetPasswordItemCountAsync(category.Id);
+                    if (count > 0)
+                    {
+                        stackPanel.Children.Add(new TextBlock 
+                        { 
+                            Text = $"({count})", 
+                            FontSize = 12, 
+                            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray),
+                            Margin = new Thickness(4, 0, 0, 0)
+                        });
+                    }
+                }
+                catch
+                {
+                    // Ignore count errors
+                }
+            }
+            
+            item.Content = stackPanel;
+            item.Tag = category;
+            CategoryDropdown.Items.Add(item);
+        }
+        
+        // Select first item (All Categories)
+        CategoryDropdown.SelectedIndex = 0;
     }
 
     public void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -107,10 +221,19 @@ public sealed partial class PasswordItemsPage : Page
     {
         if (sender is ComboBox comboBox && comboBox.SelectedItem is ComboBoxItem selectedItem)
         {
-            var category = selectedItem.Content.ToString();
             if (_viewModel != null)
             {
-                _viewModel.SelectedCategory = category;
+                if (selectedItem.Tag is string tag && tag == "all")
+                {
+                    // Show all items
+                    _viewModel.SelectedCategory = null;
+                }
+                else if (selectedItem.Tag is Category category)
+                {
+                    // Filter by specific category
+                    _viewModel.SelectedCategory = category.Name;
+                    _viewModel.SelectedCategoryId = category.Id;
+                }
             }
         }
     }
@@ -160,14 +283,12 @@ public sealed partial class PasswordItemsPage : Page
 
     private string GetTypeIcon(string type)
     {
-        return type?.ToLower() switch
+        // Use the new IconHelper to get emoji for type
+        if (Enum.TryParse<ItemType>(type, true, out var itemType))
         {
-            "login" => "🔑",
-            "creditcard" => "💳", 
-            "securenote" => "📝",
-            "wifi" => "📶",
-            _ => "🔒"
-        };
+            return IconHelper.GetEmojiForType(itemType);
+        }
+        return IconHelper.GetEmojiForIcon("folder");
     }
 
     private async void RefreshButton_Click(object sender, RoutedEventArgs e)

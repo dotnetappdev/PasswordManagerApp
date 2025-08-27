@@ -46,5 +46,15 @@ namespace PasswordManager.Services.Services
                 await _db.SaveChangesAsync();
             }
         }
+
+        public async Task<bool> HasPasswordItemsAsync(int categoryId)
+        {
+            return await _db.PasswordItems.AnyAsync(pi => pi.CategoryId == categoryId);
+        }
+
+        public async Task<int> GetPasswordItemCountAsync(int categoryId)
+        {
+            return await _db.PasswordItems.CountAsync(pi => pi.CategoryId == categoryId);
+        }
     }
 }
