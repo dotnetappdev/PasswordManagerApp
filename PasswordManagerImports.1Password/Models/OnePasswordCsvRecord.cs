@@ -20,4 +20,19 @@ public class OnePasswordCsvRecord
 
     [FieldQuoted('"', QuoteMode.OptionalForBoth)]
     public string Notes { get; set; } = string.Empty;
+
+    [FieldQuoted('"', QuoteMode.OptionalForBoth)]
+    public string Folder { get; set; } = string.Empty;
+
+    [FieldQuoted('"', QuoteMode.OptionalForBoth)]
+    public string Favorite { get; set; } = string.Empty;
+
+    [FieldQuoted('"', QuoteMode.OptionalForBoth)]
+    public string Type { get; set; } = string.Empty;
+
+    [FieldQuoted('"', QuoteMode.OptionalForBoth)]
+    public string CreatedDate { get; set; } = string.Empty;
+
+    [FieldQuoted('"', QuoteMode.OptionalForBoth)]
+    public string ModifiedDate { get; set; } = string.Empty;
 }

@@ -34,22 +34,39 @@ public sealed partial class ImportPage : Page
 
     private async void BrowseFileButton_Click(object sender, RoutedEventArgs e)
     {
-        // This would normally open a file picker
-        // For demonstration, we'll simulate file selection
-        var dialog = new ContentDialog
+        try
         {
-            Title = "File Selection",
-            Content = "This would open a file picker to select import file.\nFor demo purposes, simulating file selection.",
-            PrimaryButtonText = "Simulate Selection",
-            CloseButtonText = "Cancel",
-            XamlRoot = this.XamlRoot
-        };
-
-        var result = await dialog.ShowAsync();
-        if (result == ContentDialogResult.Primary && _viewModel != null)
+            var filePicker = new Windows.Storage.Pickers.FileOpenPicker();
+            
+            // Get the current window's HWND
+            var app = App.Current as App;
+            var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(app?.MainWindow);
+            
+            // Initialize the file picker with the window handle
+            WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hWnd);
+            
+            filePicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            filePicker.FileTypeFilter.Add(".csv");
+            filePicker.FileTypeFilter.Add(".json");
+            filePicker.FileTypeFilter.Add(".txt");
+            
+            var file = await filePicker.PickSingleFileAsync();
+            if (file != null && _viewModel != null)
+            {
+                _viewModel.SelectedFilePath = file.Path;
+            }
+        }
+        catch (Exception ex)
         {
-            // Simulate a selected file path
-            _viewModel.SelectedFilePath = @"C:\Users\Demo\passwords_export.csv";
+            var dialog = new ContentDialog
+            {
+                Title = "File Selection Error",
+                Content = $"Failed to open file picker: {ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            
+            await dialog.ShowAsync();
         }
     }
 

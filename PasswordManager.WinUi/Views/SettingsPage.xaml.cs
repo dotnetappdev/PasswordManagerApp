@@ -113,30 +113,122 @@ public sealed partial class SettingsPage : Page
 
     private async void ChooseExportFolderButton_Click(object sender, RoutedEventArgs e)
     {
-        // This would normally open a folder picker
-        // For now, show a message that this feature would be implemented with platform-specific code
-        var dialog = new ContentDialog
+        try
         {
-            Title = "Choose Export Folder",
-            Content = "This feature would open a folder picker to choose the export location.",
-            CloseButtonText = "OK",
-            XamlRoot = XamlRoot
-        };
-        
-        await dialog.ShowAsync();
+            var folderPicker = new Windows.Storage.Pickers.FolderPicker();
+            
+            // Get the current window's HWND
+            var app = App.Current as App;
+            var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(app?.MainWindow);
+            
+            // Initialize the folder picker with the window handle
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hWnd);
+            
+            folderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            folderPicker.FileTypeFilter.Add("*");
+            
+            var folder = await folderPicker.PickSingleFolderAsync();
+            if (folder != null && _viewModel != null)
+            {
+                _viewModel.ExportPath = folder.Path;
+                
+                var dialog = new ContentDialog
+                {
+                    Title = "Export Folder Selected",
+                    Content = $"Export folder set to: {folder.Path}",
+                    CloseButtonText = "OK",
+                    XamlRoot = XamlRoot
+                };
+                
+                await dialog.ShowAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog($"Failed to open folder picker: {ex.Message}");
+        }
     }
 
     private async void ConfigureDatabaseButton_Click(object sender, RoutedEventArgs e)
     {
+        // Create database configuration dialog
+        var connectionStringBox = new TextBox
+        {
+            Header = "Connection String",
+            PlaceholderText = "Enter database connection string...",
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            AcceptsReturn = true,
+            MinHeight = 80,
+            Text = _viewModel?.DatabaseConnectionString ?? ""
+        };
+
+        var providerComboBox = new ComboBox
+        {
+            Header = "Database Provider",
+            MinWidth = 200,
+            ItemsSource = new string[] { "SqlServer", "MySQL", "PostgreSQL", "SQLite" },
+            SelectedItem = _viewModel?.DatabaseProvider ?? "SQLite"
+        };
+
+        var testButton = new Button
+        {
+            Content = "Test Connection",
+            Margin = new Microsoft.UI.Xaml.Thickness(0, 8, 0, 0)
+        };
+
+        var stackPanel = new StackPanel { Spacing = 16 };
+        stackPanel.Children.Add(providerComboBox);
+        stackPanel.Children.Add(connectionStringBox);
+        stackPanel.Children.Add(testButton);
+
         var dialog = new ContentDialog
         {
             Title = "Database Configuration",
-            Content = "Database configuration UI would be implemented here.",
-            CloseButtonText = "OK",
+            Content = stackPanel,
+            PrimaryButtonText = "Save",
+            CloseButtonText = "Cancel",
             XamlRoot = XamlRoot
         };
-        
-        await dialog.ShowAsync();
+
+        // Handle test connection button
+        testButton.Click += async (s, e) =>
+        {
+            try
+            {
+                var testDialog = new ContentDialog
+                {
+                    Title = "Connection Test",
+                    Content = "Connection test functionality would be implemented here.\nFor now, simulating successful connection.",
+                    CloseButtonText = "OK",
+                    XamlRoot = XamlRoot
+                };
+                await testDialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorDialog($"Connection test failed: {ex.Message}");
+            }
+        };
+
+        var result = await dialog.ShowAsync();
+        if (result == ContentDialogResult.Primary && _viewModel != null)
+        {
+            // Save database configuration
+            _viewModel.DatabaseProvider = providerComboBox.SelectedItem?.ToString() ?? "SQLite";
+            _viewModel.DatabaseConnectionString = connectionStringBox.Text;
+            
+            var success = await _viewModel.SaveSettingsAsync();
+            
+            var resultDialog = new ContentDialog
+            {
+                Title = success ? "Success" : "Error",
+                Content = success ? "Database configuration saved successfully." : "Failed to save database configuration.",
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot
+            };
+            
+            await resultDialog.ShowAsync();
+        }
     }
 
     private async void ClearDataButton_Click(object sender, RoutedEventArgs e)

@@ -41,9 +41,9 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                         continue;
                     }
 
-                    // Determine collection based on domain or title
-                    var collectionName = DetermineCollection(record.Website, record.Title);
-                    var categoryName = DetermineCategory(record.Website, record.Title);
+                    // Determine collection based on 1Password folder, or fallback to domain/title
+                    var collectionName = DetermineCollection(record.Website, record.Title, record.Folder);
+                    var categoryName = DetermineCategory(record.Website, record.Title, record.Type);
 
                     // Ensure collection exists
                     if (!collectionsToCreate.ContainsKey(collectionName))
@@ -141,8 +141,14 @@ public class OnePasswordImportProvider : IPasswordImportProvider
         return result;
     }
 
-    private string DetermineCollection(string website, string title)
+    private string DetermineCollection(string website, string title, string folder = "")
     {
+        // If folder is provided and not empty, use it as collection name
+        if (!string.IsNullOrWhiteSpace(folder))
+        {
+            return folder.Trim();
+        }
+
         var domain = ExtractDomain(website).ToLowerInvariant();
         var titleLower = title.ToLowerInvariant();
 
@@ -167,12 +173,27 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             return "Utilities";
         }
 
-        // Default to Banking
-        return "Banking";
+        // Default to General
+        return "General";
     }
 
-    private string DetermineCategory(string website, string title)
+    private string DetermineCategory(string website, string title, string type = "")
     {
+        // If type is provided from 1Password, use it for better categorization
+        if (!string.IsNullOrWhiteSpace(type))
+        {
+            return type.Trim() switch
+            {
+                "Login" => "Logins",
+                "Credit Card" => "Credit Cards",
+                "Bank Account" => "Bank Accounts",
+                "Identity" => "Personal Info",
+                "Secure Note" => "Secure Notes",
+                "Password" => "Passwords",
+                _ => "Logins"
+            };
+        }
+
         var domain = ExtractDomain(website).ToLowerInvariant();
         var titleLower = title.ToLowerInvariant();
 
