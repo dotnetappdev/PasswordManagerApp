@@ -32,6 +32,7 @@ namespace PasswordManager.Services.Services
 
         public async Task<Category> UpdateAsync(Category category)
         {
+            category.UpdatedAt = DateTime.UtcNow;
             _db.Categories.Update(category);
             await _db.SaveChangesAsync();
             return category;

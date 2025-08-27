@@ -245,7 +245,7 @@ public static class MappingHelper
             Icon = entity.Icon,
             Color = entity.Color,
             CreatedAt = entity.CreatedAt,
-            LastModified = entity.LastModified
+            UpdatedAt = entity.UpdatedAt
         };
     }
 

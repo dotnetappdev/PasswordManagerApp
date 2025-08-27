@@ -114,7 +114,7 @@ public sealed partial class CategoryDialog : ContentDialog
                 _category.Description = CategoryDescriptionTextBox.Text?.Trim();
                 _category.Color = GetSelectedColor();
                 _category.Icon = GetSelectedIcon();
-                _category.LastModified = DateTime.UtcNow;
+                _category.UpdatedAt = DateTime.UtcNow;
 
                 await _categoryService.UpdateAsync(_category);
                 Result = _category;
@@ -129,7 +129,7 @@ public sealed partial class CategoryDialog : ContentDialog
                     Color = GetSelectedColor(),
                     Icon = GetSelectedIcon(),
                     CreatedAt = DateTime.UtcNow,
-                    LastModified = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow
                 };
 
                 await _categoryService.CreateAsync(newCategory);

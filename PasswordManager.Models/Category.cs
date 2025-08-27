@@ -12,7 +12,6 @@ namespace PasswordManager.Models
         public string? Color { get; set; } // Optional: for UI
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime LastModified { get; set; } = DateTime.UtcNow;
 
         // User relationship
         public string? UserId { get; set; }
