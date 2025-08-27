@@ -4,6 +4,9 @@ using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
+using System.Collections.Generic;
+using System;
+using PasswordManager.WinUi.Helpers;
 
 namespace PasswordManager.WinUi.Dialogs;
 
@@ -14,6 +17,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
     private readonly ICollectionService _collectionService;
     private readonly IPasskeyService _passkeyService;
     private PasswordItem? _editingItem;
+    private List<CustomField> _customFields = new();
 
     public PasswordItem? Result { get; private set; }
 
@@ -36,7 +40,15 @@ public sealed partial class AddPasswordDialog : ContentDialog
         if (_editingItem != null)
         {
             PopulateFields();
+            LoadCustomFields();
         }
+        else
+        {
+            // Initialize with empty custom fields list
+            _customFields = new List<CustomField>();
+        }
+        
+        RefreshCustomFieldsUI();
     }
 
     // Method to set initial item type from the selection dialog
@@ -53,6 +65,21 @@ public sealed partial class AddPasswordDialog : ContentDialog
         
         // Show the appropriate fields panel
         TypeComboBox_SelectionChanged(TypeComboBox, null);
+        
+        // Handle special category-based forms
+        if (!string.IsNullOrEmpty(categoryName))
+        {
+            if (categoryName.Contains("Identity") && itemType == ItemType.SecureNote)
+            {
+                SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
+                IdentityFieldsPanel.Visibility = Visibility.Visible;
+            }
+            else if (categoryName.Contains("API") && itemType == ItemType.SecureNote)
+            {
+                SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
+                APICredentialsFieldsPanel.Visibility = Visibility.Visible;
+            }
+        }
     }
 
     private async void LoadData()
@@ -160,6 +187,29 @@ public sealed partial class AddPasswordDialog : ContentDialog
             SecureNoteFieldsPanel.Visibility = selectedType == ItemType.SecureNote ? Visibility.Visible : Visibility.Collapsed;
             WiFiFieldsPanel.Visibility = selectedType == ItemType.WiFi ? Visibility.Visible : Visibility.Collapsed;
             PasskeyFieldsPanel.Visibility = selectedType == ItemType.Passkey ? Visibility.Visible : Visibility.Collapsed;
+            
+            // Handle special form types using SecureNote as base
+            IdentityFieldsPanel.Visibility = Visibility.Collapsed;
+            APICredentialsFieldsPanel.Visibility = Visibility.Collapsed;
+            
+            // Show Identity panel for Identity-related categories
+            if (selectedType == ItemType.SecureNote)
+            {
+                // Check if this is an Identity or API Credentials item by looking at the category
+                if (CategoryComboBox.SelectedItem is ComboBoxItem categoryItem && categoryItem.Tag is Category category)
+                {
+                    if (category.Name.Contains("Identity"))
+                    {
+                        SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
+                        IdentityFieldsPanel.Visibility = Visibility.Visible;
+                    }
+                    else if (category.Name.Contains("API"))
+                    {
+                        SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
+                        APICredentialsFieldsPanel.Visibility = Visibility.Visible;
+                    }
+                }
+            }
         }
     }
 
@@ -262,6 +312,9 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 // For now, use a placeholder credential ID (in real implementation, this would come from WebAuthn)
                 item.PasskeyItem.CredentialId = "placeholder_credential_id_" + DateTime.Now.Ticks;
             }
+
+            // Update custom fields
+            UpdateCustomFieldsInPasswordItem(item);
 
             // Save item
             if (_editingItem == null)
@@ -433,5 +486,134 @@ public sealed partial class AddPasswordDialog : ContentDialog
         {
             PasswordLengthText.Text = ((int)e.NewValue).ToString();
         }
+    }
+
+    // Custom Fields Methods
+    private void LoadCustomFields()
+    {
+        if (_editingItem?.CustomFields != null)
+        {
+            _customFields = new List<CustomField>(_editingItem.CustomFields);
+        }
+    }
+
+    private void AddCustomField_Click(object sender, RoutedEventArgs e)
+    {
+        var newField = new CustomField
+        {
+            Name = $"Custom Field {_customFields.Count + 1}",
+            Value = "",
+            Type = CustomFieldType.Text,
+            DisplayOrder = _customFields.Count,
+            PasswordItemId = _editingItem?.Id ?? 0
+        };
+
+        _customFields.Add(newField);
+        RefreshCustomFieldsUI();
+    }
+
+    private void RefreshCustomFieldsUI()
+    {
+        CustomFieldsContainer.Children.Clear();
+
+        foreach (var field in _customFields.OrderBy(f => f.DisplayOrder))
+        {
+            var fieldControl = CustomFieldHelper.CreateCustomFieldControl(
+                field,
+                OnCustomFieldChanged,
+                OnCustomFieldRemoved
+            );
+            CustomFieldsContainer.Children.Add(fieldControl);
+        }
+    }
+
+    private void OnCustomFieldChanged(CustomField field)
+    {
+        // Update timestamp
+        field.LastModified = DateTime.UtcNow;
+    }
+
+    private void OnCustomFieldRemoved(CustomField field)
+    {
+        _customFields.Remove(field);
+        RefreshCustomFieldsUI();
+    }
+
+    private void UpdateCustomFieldsInPasswordItem(PasswordItem item)
+    {
+        // Clear existing custom fields
+        item.CustomFields.Clear();
+
+        // Add current custom fields
+        foreach (var field in _customFields)
+        {
+            field.PasswordItemId = item.Id;
+            item.CustomFields.Add(field);
+        }
+    }
+
+    // Button Event Handlers for Form-Specific Actions
+    private void AddWebsite_Click(object sender, RoutedEventArgs e)
+    {
+        // Add a new URL custom field for login items
+        var websiteField = new CustomField
+        {
+            Name = "Website",
+            Value = "",
+            Type = CustomFieldType.Url,
+            DisplayOrder = _customFields.Count,
+            PasswordItemId = _editingItem?.Id ?? 0
+        };
+
+        _customFields.Add(websiteField);
+        RefreshCustomFieldsUI();
+    }
+
+    private void AddMoreLogin_Click(object sender, RoutedEventArgs e)
+    {
+        // Add a generic text custom field for login items
+        var moreField = new CustomField
+        {
+            Name = "Additional Information",
+            Value = "",
+            Type = CustomFieldType.Text,
+            DisplayOrder = _customFields.Count,
+            PasswordItemId = _editingItem?.Id ?? 0
+        };
+
+        _customFields.Add(moreField);
+        RefreshCustomFieldsUI();
+    }
+
+    private void AddMoreSecureNote_Click(object sender, RoutedEventArgs e)
+    {
+        // Add a generic text custom field for secure notes
+        var moreField = new CustomField
+        {
+            Name = "Additional Note",
+            Value = "",
+            Type = CustomFieldType.TextArea,
+            DisplayOrder = _customFields.Count,
+            PasswordItemId = _editingItem?.Id ?? 0
+        };
+
+        _customFields.Add(moreField);
+        RefreshCustomFieldsUI();
+    }
+
+    private void AddLocation_Click(object sender, RoutedEventArgs e)
+    {
+        // Add a location custom field for secure notes
+        var locationField = new CustomField
+        {
+            Name = "Location",
+            Value = "",
+            Type = CustomFieldType.Text,
+            DisplayOrder = _customFields.Count,
+            PasswordItemId = _editingItem?.Id ?? 0
+        };
+
+        _customFields.Add(locationField);
+        RefreshCustomFieldsUI();
     }
 }
