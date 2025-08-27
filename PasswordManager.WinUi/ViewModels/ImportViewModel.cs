@@ -114,10 +114,15 @@ public class ImportViewModel : BaseViewModel
             SkippedItemsCount = 0;
             ErrorItemsCount = 0;
 
+            // Check available providers for debugging
+            var availableProviders = await _importService.GetAvailableProvidersAsync();
+            var providerNames = string.Join(", ", availableProviders.Select(p => p.ProviderName));
+            System.Diagnostics.Debug.WriteLine($"Available import providers: {providerNames}");
+
             // Determine import provider based on selected type
             string providerName = SelectedImportType switch
             {
-                "OnePassword CSV" => "OnePassword",
+                "OnePassword CSV" => "1Password",
                 "Bitwarden CSV" => "Bitwarden", 
                 "Chrome CSV" => "Chrome",
                 "Firefox CSV" => "Firefox",
@@ -128,6 +133,7 @@ public class ImportViewModel : BaseViewModel
             };
 
             ImportStatus = $"Importing from {SelectedImportType}...";
+            System.Diagnostics.Debug.WriteLine($"Looking for provider: {providerName}");
 
             // Perform import
             using var fileStream = new FileStream(SelectedFilePath, FileMode.Open, FileAccess.Read);

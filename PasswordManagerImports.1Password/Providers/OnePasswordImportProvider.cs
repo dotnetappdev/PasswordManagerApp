@@ -20,8 +20,27 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             using var reader = new StreamReader(fileStream);
             var csvContent = await reader.ReadToEndAsync();
 
+            // Check if the CSV content is valid
+            if (string.IsNullOrWhiteSpace(csvContent))
+            {
+                result.Success = false;
+                result.ErrorMessage = "The CSV file is empty or contains no valid content.";
+                return result;
+            }
+
             var engine = new FileHelperEngine<OnePasswordCsvRecord>();
-            var records = engine.ReadString(csvContent);
+            OnePasswordCsvRecord[] records;
+            
+            try
+            {
+                records = engine.ReadString(csvContent);
+            }
+            catch (Exception csvEx)
+            {
+                result.Success = false;
+                result.ErrorMessage = $"Failed to parse CSV file. Please ensure it's a valid 1Password export file. Error: {csvEx.Message}";
+                return result;
+            }
 
             result.TotalItemsProcessed = records.Length;
 

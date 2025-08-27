@@ -22,17 +22,22 @@ public class OnePasswordCsvRecord
     public string Notes { get; set; } = string.Empty;
 
     [FieldQuoted('"', QuoteMode.OptionalForBoth)]
+    [FieldOptional]
     public string Folder { get; set; } = string.Empty;
 
     [FieldQuoted('"', QuoteMode.OptionalForBoth)]
+    [FieldOptional]
     public string Favorite { get; set; } = string.Empty;
 
     [FieldQuoted('"', QuoteMode.OptionalForBoth)]
+    [FieldOptional]
     public string Type { get; set; } = string.Empty;
 
     [FieldQuoted('"', QuoteMode.OptionalForBoth)]
+    [FieldOptional]
     public string CreatedDate { get; set; } = string.Empty;
 
     [FieldQuoted('"', QuoteMode.OptionalForBoth)]
+    [FieldOptional]
     public string ModifiedDate { get; set; } = string.Empty;
 }
