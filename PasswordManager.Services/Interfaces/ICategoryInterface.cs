@@ -11,5 +11,7 @@ namespace PasswordManager.Services.Interfaces
         Task<Category> CreateAsync(Category category);
         Task<Category> UpdateAsync(Category category);
         Task DeleteAsync(int id);
+        Task<bool> HasPasswordItemsAsync(int categoryId);
+        Task<int> GetPasswordItemCountAsync(int categoryId);
     }
 }

@@ -64,14 +64,14 @@ public sealed partial class CategoryDialog : ContentDialog
         // Set icon based on existing value
         var iconIndex = _category.Icon switch
         {
-            "📁" => 0, // Folder
-            "🔑" => 1, // Key
-            "💳" => 2, // Credit Card
-            "📝" => 3, // Note
-            "📶" => 4, // WiFi
-            "🔒" => 5, // Security
-            "⭐" => 6, // Star
-            "📋" => 7, // List
+            "folder" => 0, // Folder
+            "key" => 1, // Key
+            "creditcard" => 2, // Credit Card
+            "note" => 3, // Note
+            "wifi" => 4, // WiFi
+            "security" => 5, // Security
+            "star" => 6, // Star
+            "list" => 7, // List
             _ => 0     // Default to folder
         };
         CategoryIconComboBox.SelectedIndex = iconIndex;
@@ -178,15 +178,15 @@ public sealed partial class CategoryDialog : ContentDialog
         var selectedIndex = CategoryIconComboBox.SelectedIndex;
         return selectedIndex switch
         {
-            0 => "📁", // Folder
-            1 => "🔑", // Key
-            2 => "💳", // Credit Card
-            3 => "📝", // Note
-            4 => "📶", // WiFi
-            5 => "🔒", // Security
-            6 => "⭐", // Star
-            7 => "📋", // List
-            _ => "📁"  // Default to folder
+            0 => "folder", // Folder
+            1 => "key", // Key
+            2 => "creditcard", // Credit Card
+            3 => "note", // Note
+            4 => "wifi", // WiFi
+            5 => "security", // Security
+            6 => "star", // Star
+            7 => "list", // List
+            _ => "folder"  // Default to folder
         };
     }
 }

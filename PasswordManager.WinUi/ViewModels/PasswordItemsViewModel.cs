@@ -11,7 +11,7 @@ public class PasswordItemsViewModel : BaseViewModel
     private readonly IPasswordItemService _passwordItemService;
     private string _searchText = string.Empty;
     private string _filterType = "All";
-    private string _selectedCategory = "All Categories";
+    private int? _selectedCategoryId = null;
     private ObservableCollection<PasswordItem> _allItems = new();
 
     public PasswordItemsViewModel(IServiceProvider serviceProvider)
@@ -48,12 +48,12 @@ public class PasswordItemsViewModel : BaseViewModel
         }
     }
 
-    public string SelectedCategory
+    public int? SelectedCategoryId
     {
-        get => _selectedCategory;
+        get => _selectedCategoryId;
         set
         {
-            if (SetProperty(ref _selectedCategory, value))
+            if (SetProperty(ref _selectedCategoryId, value))
             {
                 _ = ApplyFiltersAsync();
             }
@@ -80,7 +80,7 @@ public class PasswordItemsViewModel : BaseViewModel
             var items = await _passwordItemService.GetAllAsync();
             
             _allItems.Clear();
-            foreach (var item in items.Where(i => !i.IsDeleted && !i.IsArchived))
+            foreach (var item in items)
             {
                 _allItems.Add(item);
             }
@@ -107,6 +107,12 @@ public class PasswordItemsViewModel : BaseViewModel
             {
                 var items = _allItems.AsEnumerable();
 
+                // Apply default filters first (exclude deleted and archived unless specifically requested)
+                if (FilterType != "Archive" && FilterType != "RecentlyDeleted")
+                {
+                    items = items.Where(item => !item.IsDeleted && !item.IsArchived);
+                }
+
                 // Apply search filter
                 if (!string.IsNullOrWhiteSpace(SearchText))
                 {
@@ -123,25 +129,34 @@ public class PasswordItemsViewModel : BaseViewModel
                     switch (FilterType)
                     {
                         case "Favorites":
-                            items = items.Where(item => item.IsFavorite);
+                            items = items.Where(item => item.IsFavorite && !item.IsDeleted && !item.IsArchived);
                             break;
                         case "Recent":
-                            items = items.OrderByDescending(item => item.LastAccessedAt)
+                            items = items.Where(item => !item.IsDeleted && !item.IsArchived)
+                                .OrderByDescending(item => item.LastAccessedAt)
                                 .Take(20);
                             break;
+                        case "Archive":
+                            items = items.Where(item => item.IsArchived && !item.IsDeleted);
+                            break;
+                        case "RecentlyDeleted":
+                            items = items.Where(item => item.IsDeleted);
+                            break;
                         default:
-                            items = items.Where(item => 
-                                string.Equals(item.Type.ToString(), FilterType, StringComparison.OrdinalIgnoreCase));
+                            // Check if it's a valid ItemType
+                            if (Enum.TryParse<ItemType>(FilterType, true, out var itemType))
+                            {
+                                items = items.Where(item => 
+                                    item.Type == itemType && !item.IsDeleted && !item.IsArchived);
+                            }
                             break;
                     }
                 }
 
                 // Apply category filter
-                if (SelectedCategory != "All Categories" && !string.IsNullOrEmpty(SelectedCategory))
+                if (SelectedCategoryId.HasValue)
                 {
-                    items = items.Where(item =>
-                        item.Category != null && 
-                        string.Equals(item.Category.Name, SelectedCategory, StringComparison.OrdinalIgnoreCase));
+                    items = items.Where(item => item.CategoryId == SelectedCategoryId.Value);
                 }
 
                 return items.ToList();

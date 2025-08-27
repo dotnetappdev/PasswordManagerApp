@@ -92,29 +92,47 @@ public sealed partial class CategoriesPage : Page
 
     private async void DeleteCategoryButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button button && button.DataContext is Category category)
+        if (sender is Button button && button.DataContext is Category category && _serviceProvider != null)
         {
-            var dialog = new ContentDialog
+            try
             {
-                Title = "Delete Category",
-                Content = $"Are you sure you want to delete '{category.Name}'? This action cannot be undone.",
-                PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
+                // Check if category has password items
+                var categoryService = _serviceProvider.GetRequiredService<PasswordManager.Services.Interfaces.ICategoryInterface>();
+                var hasPasswordItems = await categoryService.HasPasswordItemsAsync(category.Id);
+                
+                if (hasPasswordItems)
+                {
+                    var count = await categoryService.GetPasswordItemCountAsync(category.Id);
+                    var warningDialog = new ContentDialog
+                    {
+                        Title = "Cannot Delete Category",
+                        Content = $"The category '{category.Name}' cannot be deleted because it contains {count} password item{(count == 1 ? "" : "s")}. Please move or delete the password items first.",
+                        CloseButtonText = "OK",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await warningDialog.ShowAsync();
+                    return;
+                }
 
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary && _viewModel != null)
-            {
-                try
+                var dialog = new ContentDialog
+                {
+                    Title = "Delete Category",
+                    Content = $"Are you sure you want to delete '{category.Name}'? This action cannot be undone.",
+                    PrimaryButtonText = "Delete",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var result = await dialog.ShowAsync();
+                if (result == ContentDialogResult.Primary && _viewModel != null)
                 {
                     await _viewModel.DeleteCategoryAsync(category);
                 }
-                catch (Exception ex)
-                {
-                    await ShowErrorDialog($"Error deleting category: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorDialog($"Error deleting category: {ex.Message}");
             }
         }
     }
