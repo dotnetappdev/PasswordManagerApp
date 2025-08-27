@@ -4,12 +4,12 @@ namespace PasswordManager.Services.Interfaces;
 
 public interface ICategoryApiService
 {
-    Task<IEnumerable<CategoryDto>> GetAllAsync();
-    Task<CategoryDto?> GetByIdAsync(int id);
-    Task<IEnumerable<CategoryDto>> GetByCollectionIdAsync(int collectionId);
-    Task<CategoryDto> CreateAsync(CreateCategoryDto createDto);
-    Task<CategoryDto?> UpdateAsync(int id, UpdateCategoryDto updateDto);
-    Task<bool> DeleteAsync(int id);
+    Task<IEnumerable<CategoryDto>> GetAllAsync(string userId);
+    Task<CategoryDto?> GetByIdAsync(int id, string userId);
+    Task<IEnumerable<CategoryDto>> GetByCollectionIdAsync(int collectionId, string userId);
+    Task<CategoryDto> CreateAsync(CreateCategoryDto createDto, string userId);
+    Task<CategoryDto?> UpdateAsync(int id, UpdateCategoryDto updateDto, string userId);
+    Task<bool> DeleteAsync(int id, string userId);
 }
 
 public interface ICollectionApiService

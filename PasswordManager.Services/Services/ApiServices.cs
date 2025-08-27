@@ -21,12 +21,13 @@ public class CategoryApiService : ICategoryApiService
         _logger = logger;
     }
 
-    public async Task<IEnumerable<CategoryDto>> GetAllAsync()
+    public async Task<IEnumerable<CategoryDto>> GetAllAsync(string userId)
     {
         try
         {
             var categories = await _context.Categories
                 .Include(c => c.Collection)
+                .Where(c => c.UserId == userId)
                 .ToListAsync();
 
             return categories.Select(c => c.ToDto()).ToList();
@@ -38,13 +39,13 @@ public class CategoryApiService : ICategoryApiService
         }
     }
 
-    public async Task<CategoryDto?> GetByIdAsync(int id)
+    public async Task<CategoryDto?> GetByIdAsync(int id, string userId)
     {
         try
         {
             var category = await _context.Categories
                 .Include(c => c.Collection)
-                .FirstOrDefaultAsync(c => c.Id == id);
+                .FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
 
             return category?.ToDto();
         }
@@ -55,13 +56,13 @@ public class CategoryApiService : ICategoryApiService
         }
     }
 
-    public async Task<IEnumerable<CategoryDto>> GetByCollectionIdAsync(int collectionId)
+    public async Task<IEnumerable<CategoryDto>> GetByCollectionIdAsync(int collectionId, string userId)
     {
         try
         {
             var categories = await _context.Categories
                 .Include(c => c.Collection)
-                .Where(c => c.CollectionId == collectionId)
+                .Where(c => c.CollectionId == collectionId && c.UserId == userId)
                 .ToListAsync();
 
             return categories.Select(c => c.ToDto()).ToList();
@@ -73,7 +74,7 @@ public class CategoryApiService : ICategoryApiService
         }
     }
 
-    public async Task<CategoryDto> CreateAsync(CreateCategoryDto createDto)
+    public async Task<CategoryDto> CreateAsync(CreateCategoryDto createDto, string userId)
     {
         try
         {
@@ -84,6 +85,7 @@ public class CategoryApiService : ICategoryApiService
                 Icon = createDto.Icon,
                 Color = createDto.Color,
                 CollectionId = createDto.CollectionId,
+                UserId = userId,
                 CreatedAt = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow
             };
@@ -100,11 +102,11 @@ public class CategoryApiService : ICategoryApiService
         }
     }
 
-    public async Task<CategoryDto?> UpdateAsync(int id, UpdateCategoryDto updateDto)
+    public async Task<CategoryDto?> UpdateAsync(int id, UpdateCategoryDto updateDto, string userId)
     {
         try
         {
-            var category = await _context.Categories.FindAsync(id);
+            var category = await _context.Categories.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
             if (category == null)
                 return null;
 
@@ -126,11 +128,11 @@ public class CategoryApiService : ICategoryApiService
         }
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, string userId)
     {
         try
         {
-            var category = await _context.Categories.FindAsync(id);
+            var category = await _context.Categories.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
             if (category == null)
                 return false;
 

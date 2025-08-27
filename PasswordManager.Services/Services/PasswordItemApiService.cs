@@ -166,11 +166,11 @@ public class PasswordItemApiService : IPasswordItemApiService
         }
     }
 
-    public async Task<PasswordItemDto> CreateAsync(CreatePasswordItemDto createDto)
+    public async Task<PasswordItemDto> CreateAsync(CreatePasswordItemDto createDto, string userId)
     {
         try
         {
-            var item = createDto.ToEntity();
+            var item = createDto.ToEntity(userId);
             
             // Handle tags
             if (createDto.TagIds.Any())

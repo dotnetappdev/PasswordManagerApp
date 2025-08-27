@@ -1,11 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Models.DTOs;
+using System.Security.Claims;
 
 namespace PasswordManager.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class CategoriesController : ControllerBase
 {
     private readonly ICategoryApiService _categoryService;
@@ -27,7 +30,13 @@ public class CategoriesController : ControllerBase
     {
         try
         {
-            var categories = await _categoryService.GetAllAsync();
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var categories = await _categoryService.GetAllAsync(userId);
             return Ok(categories);
         }
         catch (Exception ex)
@@ -45,7 +54,13 @@ public class CategoriesController : ControllerBase
     {
         try
         {
-            var category = await _categoryService.GetByIdAsync(id);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var category = await _categoryService.GetByIdAsync(id, userId);
             if (category == null)
                 return NotFound($"Category with ID {id} not found");
 
@@ -66,7 +81,13 @@ public class CategoriesController : ControllerBase
     {
         try
         {
-            var categories = await _categoryService.GetByCollectionIdAsync(collectionId);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var categories = await _categoryService.GetByCollectionIdAsync(collectionId, userId);
             return Ok(categories);
         }
         catch (Exception ex)
@@ -87,7 +108,13 @@ public class CategoriesController : ControllerBase
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var category = await _categoryService.CreateAsync(createDto);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var category = await _categoryService.CreateAsync(createDto, userId);
             return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
         }
         catch (Exception ex)
@@ -108,7 +135,13 @@ public class CategoriesController : ControllerBase
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var category = await _categoryService.UpdateAsync(id, updateDto);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var category = await _categoryService.UpdateAsync(id, updateDto, userId);
             if (category == null)
                 return NotFound($"Category with ID {id} not found");
 
@@ -129,7 +162,13 @@ public class CategoriesController : ControllerBase
     {
         try
         {
-            var success = await _categoryService.DeleteAsync(id);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var success = await _categoryService.DeleteAsync(id, userId);
             if (!success)
                 return NotFound($"Category with ID {id} not found");
 

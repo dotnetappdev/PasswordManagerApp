@@ -53,6 +53,24 @@ public static class CustomFieldHelper
 
         fieldPanel.Children.Add(headerGrid);
 
+        // Field type selector
+        var typeSelector = CreateFieldTypeSelector(field.Type, (newType) =>
+        {
+            field.Type = newType;
+            
+            // Refresh the value control when type changes
+            // Remove old value control and add new one
+            if (fieldPanel.Children.Count > 2)
+            {
+                fieldPanel.Children.RemoveAt(2); // Remove old value control
+            }
+            var newValueControl = CreateValueControl(field, onFieldChanged);
+            fieldPanel.Children.Add(newValueControl);
+            
+            onFieldChanged?.Invoke(field);
+        });
+        fieldPanel.Children.Add(typeSelector);
+
         // Field value control based on type
         var valueControl = CreateValueControl(field, onFieldChanged);
         fieldPanel.Children.Add(valueControl);
