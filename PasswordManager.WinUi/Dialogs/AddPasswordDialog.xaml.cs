@@ -4,6 +4,9 @@ using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
+using System.Collections.Generic;
+using System;
+using PasswordManager.WinUi.Helpers;
 
 namespace PasswordManager.WinUi.Dialogs;
 
@@ -14,6 +17,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
     private readonly ICollectionService _collectionService;
     private readonly IPasskeyService _passkeyService;
     private PasswordItem? _editingItem;
+    private List<CustomField> _customFields = new();
 
     public PasswordItem? Result { get; private set; }
 
@@ -36,7 +40,15 @@ public sealed partial class AddPasswordDialog : ContentDialog
         if (_editingItem != null)
         {
             PopulateFields();
+            LoadCustomFields();
         }
+        else
+        {
+            // Initialize with empty custom fields list
+            _customFields = new List<CustomField>();
+        }
+        
+        RefreshCustomFieldsUI();
     }
 
     // Method to set initial item type from the selection dialog
@@ -263,6 +275,9 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 item.PasskeyItem.CredentialId = "placeholder_credential_id_" + DateTime.Now.Ticks;
             }
 
+            // Update custom fields
+            UpdateCustomFieldsInPasswordItem(item);
+
             // Save item
             if (_editingItem == null)
             {
@@ -432,6 +447,70 @@ public sealed partial class AddPasswordDialog : ContentDialog
         if (PasswordLengthText != null)
         {
             PasswordLengthText.Text = ((int)e.NewValue).ToString();
+        }
+    }
+
+    // Custom Fields Methods
+    private void LoadCustomFields()
+    {
+        if (_editingItem?.CustomFields != null)
+        {
+            _customFields = new List<CustomField>(_editingItem.CustomFields);
+        }
+    }
+
+    private void AddCustomField_Click(object sender, RoutedEventArgs e)
+    {
+        var newField = new CustomField
+        {
+            Name = $"Custom Field {_customFields.Count + 1}",
+            Value = "",
+            Type = CustomFieldType.Text,
+            DisplayOrder = _customFields.Count,
+            PasswordItemId = _editingItem?.Id ?? 0
+        };
+
+        _customFields.Add(newField);
+        RefreshCustomFieldsUI();
+    }
+
+    private void RefreshCustomFieldsUI()
+    {
+        CustomFieldsContainer.Children.Clear();
+
+        foreach (var field in _customFields.OrderBy(f => f.DisplayOrder))
+        {
+            var fieldControl = CustomFieldHelper.CreateCustomFieldControl(
+                field,
+                OnCustomFieldChanged,
+                OnCustomFieldRemoved
+            );
+            CustomFieldsContainer.Children.Add(fieldControl);
+        }
+    }
+
+    private void OnCustomFieldChanged(CustomField field)
+    {
+        // Update timestamp
+        field.LastModified = DateTime.UtcNow;
+    }
+
+    private void OnCustomFieldRemoved(CustomField field)
+    {
+        _customFields.Remove(field);
+        RefreshCustomFieldsUI();
+    }
+
+    private void UpdateCustomFieldsInPasswordItem(PasswordItem item)
+    {
+        // Clear existing custom fields
+        item.CustomFields.Clear();
+
+        // Add current custom fields
+        foreach (var field in _customFields)
+        {
+            field.PasswordItemId = item.Id;
+            item.CustomFields.Add(field);
         }
     }
 }

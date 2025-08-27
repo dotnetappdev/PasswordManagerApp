@@ -81,4 +81,7 @@ public class PasswordItem
                 LoginItem.WebsiteUrl = value; 
         } 
     }
+    
+    // Custom fields navigation property
+    public List<CustomField> CustomFields { get; set; } = new();
 }

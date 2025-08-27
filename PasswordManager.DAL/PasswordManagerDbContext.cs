@@ -15,6 +15,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
     public DbSet<CreditCardItem> CreditCardItems { get; set; } = null!;
     public DbSet<SecureNoteItem> SecureNoteItems { get; set; } = null!;
     public DbSet<WiFiItem> WiFiItems { get; set; } = null!;
+    public DbSet<CustomField> CustomFields { get; set; } = null!;
     public DbSet<Tag> Tags { get; set; } = null!;
     public DbSet<Category> Categories { get; set; } = null!;
     public DbSet<Collection> Collections { get; set; } = null!;
@@ -67,6 +68,12 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.HasOne(e => e.User)
                   .WithMany(u => u.PasswordItems)
                   .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure CustomFields relationship
+            entity.HasMany(e => e.CustomFields)
+                  .WithOne(cf => cf.PasswordItem)
+                  .HasForeignKey(cf => cf.PasswordItemId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -143,6 +150,27 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.HasOne(e => e.User)
                   .WithMany(u => u.WiFiItems)
                   .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure CustomField
+        modelBuilder.Entity<CustomField>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Value).IsRequired().HasMaxLength(5000);
+            entity.Property(e => e.Type).IsRequired().HasConversion<int>();
+            entity.Property(e => e.IsRequired).IsRequired();
+            entity.Property(e => e.IsProtected).IsRequired();
+            entity.Property(e => e.DisplayOrder).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.LastModified).IsRequired();
+
+            // Configure PasswordItem relationship
+            entity.Property(e => e.PasswordItemId).IsRequired();
+            entity.HasOne(e => e.PasswordItem)
+                  .WithMany(p => p.CustomFields)
+                  .HasForeignKey(e => e.PasswordItemId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
