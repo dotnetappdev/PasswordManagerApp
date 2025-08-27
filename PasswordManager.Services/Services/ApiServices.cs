@@ -87,7 +87,7 @@ public class CategoryApiService : ICategoryApiService
                 CollectionId = createDto.CollectionId,
                 UserId = userId,
                 CreatedAt = DateTime.UtcNow,
-                LastModified = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow
             };
 
             _context.Categories.Add(category);
@@ -115,7 +115,7 @@ public class CategoryApiService : ICategoryApiService
             category.Icon = updateDto.Icon ?? category.Icon;
             category.Color = updateDto.Color ?? category.Color;
             category.CollectionId = updateDto.CollectionId ?? category.CollectionId;
-            category.LastModified = DateTime.UtcNow;
+            category.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 

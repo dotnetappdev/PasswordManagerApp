@@ -434,7 +434,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
     {
         _logger.LogInformation("Syncing categories");
         var sourceCategories = await source.Categories
-            .Where(c => lastSyncTime == null || c.LastModified > lastSyncTime)
+            .Where(c => lastSyncTime == null || c.UpdatedAt > lastSyncTime)
             .ToListAsync();
 
         foreach (var sourceCategory in sourceCategories)
@@ -453,7 +453,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
                     Icon = sourceCategory.Icon,
                     Color = sourceCategory.Color,
                     CreatedAt = sourceCategory.CreatedAt,
-                    LastModified = sourceCategory.LastModified
+                    UpdatedAt = sourceCategory.UpdatedAt
                 };
 
                 target.Categories.Add(newCategory);
@@ -464,14 +464,14 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
             else
             {
                 // Check for conflicts
-                if (targetCategory.LastModified > sourceCategory.LastModified)
+                if (targetCategory.UpdatedAt > sourceCategory.UpdatedAt)
                 {
                     conflicts.Add(new SyncConflictDto
                     {
                         EntityType = "Category",
                         EntityId = sourceCategory.Id,
-                        SourceLastModified = sourceCategory.LastModified,
-                        TargetLastModified = targetCategory.LastModified,
+                        SourceLastModified = sourceCategory.UpdatedAt,
+                        TargetLastModified = targetCategory.UpdatedAt,
                         Resolution = SyncConflictResolution.TargetWins.ToString(),
                         Message = $"Target category '{targetCategory.Name}' is newer than source category '{sourceCategory.Name}'"
                     });
@@ -485,7 +485,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
                 targetCategory.Description = sourceCategory.Description;
                 targetCategory.Icon = sourceCategory.Icon;
                 targetCategory.Color = sourceCategory.Color;
-                targetCategory.LastModified = sourceCategory.LastModified;
+                targetCategory.UpdatedAt = sourceCategory.UpdatedAt;
 
                 await target.SaveChangesAsync();
                 statistics.Updated++;
