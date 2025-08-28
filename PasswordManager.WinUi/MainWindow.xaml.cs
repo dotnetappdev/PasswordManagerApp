@@ -678,6 +678,13 @@ public sealed partial class MainWindow : Window
                     LastModified = DateTime.UtcNow
                 };
 
+                // Set user ID from current authenticated user
+                var authService = _serviceProvider.GetService<IAuthService>();
+                if (authService?.CurrentUser != null)
+                {
+                    newCollection.UserId = authService.CurrentUser.Id;
+                }
+
                 await collectionService.CreateAsync(newCollection);
                 await ShowInfoMessage("Vault Created", $"Vault '{newCollection.Name}' has been created successfully.");
 

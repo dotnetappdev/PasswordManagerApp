@@ -334,6 +334,13 @@ public class DashboardViewModel : BaseViewModel
             CreatedAt = DateTime.UtcNow,
             LoginItem = new LoginItem()
         };
+
+        // Set user ID from current authenticated user
+        if (_authService.CurrentUser != null)
+        {
+            newItem.UserId = _authService.CurrentUser.Id;
+        }
+
         EditItem = newItem;
         IsCreating = true;
         IsEditing = false;
@@ -405,6 +412,7 @@ public class DashboardViewModel : BaseViewModel
             CategoryId = source.CategoryId,
             CollectionId = source.CollectionId,
             Website = source.Website,
+            UserId = source.UserId // Preserve user ID when cloning
         };
 
         if (source.LoginItem != null)
@@ -413,7 +421,54 @@ public class DashboardViewModel : BaseViewModel
             {
                 Username = source.LoginItem.Username,
                 Password = source.LoginItem.Password,
-                WebsiteUrl = source.LoginItem.WebsiteUrl
+                WebsiteUrl = source.LoginItem.WebsiteUrl,
+                UserId = source.LoginItem.UserId // Preserve user ID when cloning
+            };
+        }
+
+        if (source.CreditCardItem != null)
+        {
+            clone.CreditCardItem = new CreditCardItem
+            {
+                CardholderName = source.CreditCardItem.CardholderName,
+                CardNumber = source.CreditCardItem.CardNumber,
+                ExpiryDate = source.CreditCardItem.ExpiryDate,
+                CVV = source.CreditCardItem.CVV,
+                UserId = source.CreditCardItem.UserId // Preserve user ID when cloning
+            };
+        }
+
+        if (source.SecureNoteItem != null)
+        {
+            clone.SecureNoteItem = new SecureNoteItem
+            {
+                Title = source.SecureNoteItem.Title,
+                Content = source.SecureNoteItem.Content,
+                UserId = source.SecureNoteItem.UserId // Preserve user ID when cloning
+            };
+        }
+
+        if (source.WiFiItem != null)
+        {
+            clone.WiFiItem = new WiFiItem
+            {
+                NetworkName = source.WiFiItem.NetworkName,
+                Password = source.WiFiItem.Password,
+                SecurityType = source.WiFiItem.SecurityType,
+                UserId = source.WiFiItem.UserId // Preserve user ID when cloning
+            };
+        }
+
+        if (source.PasskeyItem != null)
+        {
+            clone.PasskeyItem = new PasskeyItem
+            {
+                Website = source.PasskeyItem.Website,
+                WebsiteUrl = source.PasskeyItem.WebsiteUrl,
+                Username = source.PasskeyItem.Username,
+                DisplayName = source.PasskeyItem.DisplayName,
+                CredentialId = source.PasskeyItem.CredentialId,
+                UserId = source.PasskeyItem.UserId // Preserve user ID when cloning
             };
         }
 
