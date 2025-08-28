@@ -19,6 +19,7 @@ public sealed partial class MainWindow : Window
 {
     private readonly IServiceProvider _serviceProvider;
     private bool _isAuthenticated = false;
+    private string? _currentUserId = null;
 
     public MainWindow(IServiceProvider serviceProvider)
     {
@@ -271,6 +272,15 @@ public sealed partial class MainWindow : Window
     public void NavigateToHome()
     {
         _isAuthenticated = true;
+        
+        // Capture current user ID from auth service
+        var authService = _serviceProvider.GetService<IAuthService>();
+        if (authService?.CurrentUser != null)
+        {
+            _currentUserId = authService.CurrentUser.Id;
+            System.Diagnostics.Debug.WriteLine($"MainWindow captured current user ID: {_currentUserId}");
+        }
+        
         SetAuthenticationState(true);
         MainNavigationView.SelectedItem = AllItemsNavItem;
         NavigateToPage("AllItems");
@@ -280,6 +290,7 @@ public sealed partial class MainWindow : Window
     public void HandleLogout()
     {
         _isAuthenticated = false;
+        _currentUserId = null;
 
         // Show login frame and hide main navigation
         SetAuthenticationState(false);
@@ -666,6 +677,13 @@ public sealed partial class MainWindow : Window
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow
                 };
+
+                // Set user ID from current authenticated user
+                var authService = _serviceProvider.GetService<IAuthService>();
+                if (authService?.CurrentUser != null)
+                {
+                    newCollection.UserId = authService.CurrentUser.Id;
+                }
 
                 await collectionService.CreateAsync(newCollection);
                 await ShowInfoMessage("Vault Created", $"Vault '{newCollection.Name}' has been created successfully.");

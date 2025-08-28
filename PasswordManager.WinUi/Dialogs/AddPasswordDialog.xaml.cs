@@ -16,6 +16,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
     private readonly ICategoryInterface _categoryService;
     private readonly ICollectionService _collectionService;
     private readonly IPasskeyService _passkeyService;
+    private readonly IAuthService _authService;
     private PasswordItem? _editingItem;
     private List<CustomField> _customFields = new();
 
@@ -29,6 +30,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
         _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
         _collectionService = serviceProvider.GetRequiredService<ICollectionService>();
         _passkeyService = serviceProvider.GetRequiredService<IPasskeyService>();
+        _authService = serviceProvider.GetRequiredService<IAuthService>();
         _editingItem = editingItem;
 
         Title = editingItem == null ? "Add Password Item" : "Edit Password Item";
@@ -271,6 +273,12 @@ public sealed partial class AddPasswordDialog : ContentDialog
             item.IsFavorite = IsFavoriteCheckBox.IsOn;
             item.LastModified = DateTime.UtcNow;
 
+            // Set user ID from current authenticated user
+            if (_authService.CurrentUser != null)
+            {
+                item.UserId = _authService.CurrentUser.Id;
+            }
+
             // Set category
             if (CategoryComboBox.SelectedItem is ComboBoxItem categoryItem && categoryItem.Tag is Category category)
             {
@@ -292,6 +300,12 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 item.LoginItem.Username = UsernameTextBox.Text?.Trim() ?? string.Empty;
                 item.LoginItem.Password = PasswordTextBox.Password;
                 item.LoginItem.WebsiteUrl = UrlTextBox.Text?.Trim();
+                
+                // Set user ID for the login item
+                if (_authService.CurrentUser != null)
+                {
+                    item.LoginItem.UserId = _authService.CurrentUser.Id;
+                }
             }
 
             // Handle passkey-specific fields
@@ -309,8 +323,59 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 item.PasskeyItem.IsBackedUp = PasskeyIsBackedUpCheckBox.IsChecked ?? false;
                 item.PasskeyItem.Notes = PasskeyNotesTextBox.Text?.Trim();
                 
+                // Set user ID for the passkey item
+                if (_authService.CurrentUser != null)
+                {
+                    item.PasskeyItem.UserId = _authService.CurrentUser.Id;
+                }
+                
                 // For now, use a placeholder credential ID (in real implementation, this would come from WebAuthn)
                 item.PasskeyItem.CredentialId = "placeholder_credential_id_" + DateTime.Now.Ticks;
+            }
+
+            // Handle credit card-specific fields
+            if (selectedType == ItemType.CreditCard)
+            {
+                if (item.CreditCardItem == null)
+                    item.CreditCardItem = new CreditCardItem();
+
+                // Set user ID for the credit card item
+                if (_authService.CurrentUser != null)
+                {
+                    item.CreditCardItem.UserId = _authService.CurrentUser.Id;
+                }
+
+                // Additional credit card fields would be set here when UI is implemented
+            }
+
+            // Handle secure note-specific fields
+            if (selectedType == ItemType.SecureNote)
+            {
+                if (item.SecureNoteItem == null)
+                    item.SecureNoteItem = new SecureNoteItem();
+
+                // Set user ID for the secure note item
+                if (_authService.CurrentUser != null)
+                {
+                    item.SecureNoteItem.UserId = _authService.CurrentUser.Id;
+                }
+
+                // Additional secure note fields would be set here when UI is implemented
+            }
+
+            // Handle WiFi-specific fields
+            if (selectedType == ItemType.WiFi)
+            {
+                if (item.WiFiItem == null)
+                    item.WiFiItem = new WiFiItem();
+
+                // Set user ID for the WiFi item
+                if (_authService.CurrentUser != null)
+                {
+                    item.WiFiItem.UserId = _authService.CurrentUser.Id;
+                }
+
+                // Additional WiFi fields would be set here when UI is implemented
             }
 
             // Update custom fields

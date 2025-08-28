@@ -9,6 +9,7 @@ public class CategoriesViewModel : BaseViewModel
 {
     private readonly ICategoryInterface _categoryService;
     private readonly IPasswordItemService _passwordItemService;
+    private readonly IAuthService _authService;
     private string _searchText = string.Empty;
     private Category? _selectedCategory;
 
@@ -16,6 +17,7 @@ public class CategoriesViewModel : BaseViewModel
     {
         _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
         _passwordItemService = serviceProvider.GetRequiredService<IPasswordItemService>();
+        _authService = serviceProvider.GetRequiredService<IAuthService>();
         
         Categories = new ObservableCollection<Category>();
         
@@ -102,6 +104,12 @@ public class CategoriesViewModel : BaseViewModel
                 Name = name.Trim(),
                 Description = description?.Trim()
             };
+
+            // Set user ID from current authenticated user
+            if (_authService.CurrentUser != null)
+            {
+                category.UserId = _authService.CurrentUser.Id;
+            }
 
             var createdCategory = await _categoryService.CreateAsync(category);
             
