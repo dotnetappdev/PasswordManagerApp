@@ -13,6 +13,8 @@ namespace PasswordManager.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+        public DateTime? LastModified { get; set; }
+
         // User relationship
         public string? UserId { get; set; }
         public ApplicationUser? User { get; set; }

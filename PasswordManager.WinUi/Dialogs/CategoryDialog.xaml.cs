@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml.Shapes;
+using Windows.System;
 
 namespace PasswordManager.WinUi.Dialogs;
 
@@ -115,6 +116,8 @@ public sealed partial class CategoryDialog : ContentDialog
                 _category.Color = GetSelectedColor();
                 _category.Icon = GetSelectedIcon();
                 _category.UpdatedAt = DateTime.UtcNow;
+                _category.LastModified = DateTime.UtcNow;
+                _category.UserId = 
 
                 await _categoryService.UpdateAsync(_category);
                 Result = _category;
@@ -129,7 +132,10 @@ public sealed partial class CategoryDialog : ContentDialog
                     Color = GetSelectedColor(),
                     Icon = GetSelectedIcon(),
                     CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
+                    LastModified = DateTime.UtcNow,
+
+
                 };
 
                 await _categoryService.CreateAsync(newCategory);
