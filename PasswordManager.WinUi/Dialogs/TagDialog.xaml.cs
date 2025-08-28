@@ -13,6 +13,7 @@ namespace PasswordManager.WinUi.Dialogs;
 public sealed partial class TagDialog : ContentDialog
 {
     private readonly ITagService? _tagService;
+    private readonly IAuthService _authService;
     private Tag? _tag;
     private readonly bool _isEditMode;
 
@@ -32,6 +33,7 @@ public sealed partial class TagDialog : ContentDialog
             _tagService = null;
         }
 
+        _authService = serviceProvider.GetRequiredService<IAuthService>();
         _tag = tag;
         _isEditMode = tag != null;
 
@@ -97,6 +99,12 @@ public sealed partial class TagDialog : ContentDialog
                 _tag.Name = name;
                 _tag.Description = TagDescriptionTextBox.Text?.Trim();
                 _tag.LastModified = DateTime.UtcNow;
+                
+                // Set user ID from current authenticated user
+                if (_authService.CurrentUser != null)
+                {
+                    _tag.UserId = _authService.CurrentUser.Id;
+                }
 
                 if (_tagService != null)
                 {
@@ -112,7 +120,8 @@ public sealed partial class TagDialog : ContentDialog
                     Name = name,
                     Description = TagDescriptionTextBox.Text?.Trim(),
                     CreatedAt = DateTime.UtcNow,
-                    LastModified = DateTime.UtcNow
+                    LastModified = DateTime.UtcNow,
+                    UserId = _authService.CurrentUser?.Id
                 };
 
                 if (_tagService != null)

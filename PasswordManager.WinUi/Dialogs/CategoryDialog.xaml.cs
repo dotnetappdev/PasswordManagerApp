@@ -14,6 +14,7 @@ namespace PasswordManager.WinUi.Dialogs;
 public sealed partial class CategoryDialog : ContentDialog
 {
     private readonly ICategoryInterface _categoryService;
+    private readonly IAuthService _authService;
     private Category? _category;
     private readonly bool _isEditMode;
 
@@ -23,6 +24,7 @@ public sealed partial class CategoryDialog : ContentDialog
     {
         this.InitializeComponent();
         _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
+        _authService = serviceProvider.GetRequiredService<IAuthService>();
         _category = category;
         _isEditMode = category != null;
 
@@ -117,7 +119,12 @@ public sealed partial class CategoryDialog : ContentDialog
                 _category.Icon = GetSelectedIcon();
                 _category.UpdatedAt = DateTime.UtcNow;
                 _category.LastModified = DateTime.UtcNow;
-                _category.UserId = 
+                
+                // Set user ID from current authenticated user
+                if (_authService.CurrentUser != null)
+                {
+                    _category.UserId = _authService.CurrentUser.Id;
+                }
 
                 await _categoryService.UpdateAsync(_category);
                 Result = _category;
@@ -134,8 +141,7 @@ public sealed partial class CategoryDialog : ContentDialog
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow,
-
-
+                    UserId = _authService.CurrentUser?.Id
                 };
 
                 await _categoryService.CreateAsync(newCategory);

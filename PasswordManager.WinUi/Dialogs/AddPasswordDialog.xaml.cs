@@ -16,6 +16,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
     private readonly ICategoryInterface _categoryService;
     private readonly ICollectionService _collectionService;
     private readonly IPasskeyService _passkeyService;
+    private readonly IAuthService _authService;
     private PasswordItem? _editingItem;
     private List<CustomField> _customFields = new();
 
@@ -29,6 +30,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
         _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
         _collectionService = serviceProvider.GetRequiredService<ICollectionService>();
         _passkeyService = serviceProvider.GetRequiredService<IPasskeyService>();
+        _authService = serviceProvider.GetRequiredService<IAuthService>();
         _editingItem = editingItem;
 
         Title = editingItem == null ? "Add Password Item" : "Edit Password Item";
@@ -270,6 +272,12 @@ public sealed partial class AddPasswordDialog : ContentDialog
             item.Type = selectedType;
             item.IsFavorite = IsFavoriteCheckBox.IsOn;
             item.LastModified = DateTime.UtcNow;
+
+            // Set user ID from current authenticated user
+            if (_authService.CurrentUser != null)
+            {
+                item.UserId = _authService.CurrentUser.Id;
+            }
 
             // Set category
             if (CategoryComboBox.SelectedItem is ComboBoxItem categoryItem && categoryItem.Tag is Category category)
