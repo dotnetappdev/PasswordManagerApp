@@ -40,6 +40,11 @@ namespace PasswordManager.Services.Services
             {
                 collection.IsDefault = true;
             }
+            // Ensure Icon is not null to satisfy DB constraints / UI expectations
+            if (string.IsNullOrWhiteSpace(collection.Icon))
+            {
+                collection.Icon = "folder"; // default icon
+            }
 
             _db.Collections.Add(collection);
             await _db.SaveChangesAsync();
@@ -55,15 +60,15 @@ namespace PasswordManager.Services.Services
                 // Update the properties manually
                 existingCollection.Name = collection.Name;
                 existingCollection.Description = collection.Description;
-                existingCollection.Icon = collection.Icon;
+                existingCollection.Icon = string.IsNullOrWhiteSpace(collection.Icon) ? existingCollection.Icon ?? "folder" : collection.Icon;
                 existingCollection.Color = collection.Color;
                 existingCollection.ParentCollectionId = collection.ParentCollectionId;
                 existingCollection.IsDefault = collection.IsDefault;
-                
+
                 await _db.SaveChangesAsync();
                 return existingCollection;
             }
-            
+
             // If not found, throw an exception
             throw new InvalidOperationException($"Collection with ID {collection.Id} not found.");
         }
@@ -80,7 +85,7 @@ namespace PasswordManager.Services.Services
                     var newDefault = await _db.Collections
                         .Where(c => c.Id != id)
                         .FirstOrDefaultAsync();
-                        
+
                     if (newDefault != null)
                     {
                         newDefault.IsDefault = true;
@@ -130,7 +135,7 @@ namespace PasswordManager.Services.Services
         {
             // Get all collections without tracking to avoid conflicts
             var collections = await _db.Collections.AsNoTracking().ToListAsync();
-            
+
             // Update each collection's IsDefault property
             foreach (var collection in collections)
             {
@@ -140,7 +145,7 @@ namespace PasswordManager.Services.Services
                     entity.IsDefault = (collection.Id == id);
                 }
             }
-            
+
             await _db.SaveChangesAsync();
         }
     }

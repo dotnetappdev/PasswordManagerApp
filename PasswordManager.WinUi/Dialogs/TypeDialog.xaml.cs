@@ -40,7 +40,7 @@ public sealed partial class TypeDialog : ContentDialog
         if (string.IsNullOrEmpty(_existingTypeName)) return;
 
         TypeNameTextBox.Text = _existingTypeName;
-        
+
         // Set icon based on type name
         var iconIndex = _existingTypeName.ToLower() switch
         {
@@ -53,9 +53,9 @@ public sealed partial class TypeDialog : ContentDialog
             "document" => 6,
             _ => 7 // Other
         };
-        
+
         TypeIconComboBox.SelectedIndex = iconIndex;
-        
+
         // Set default color
         TypeColorComboBox.SelectedIndex = 0; // Default to blue
     }
@@ -66,7 +66,7 @@ public sealed partial class TypeDialog : ContentDialog
         {
             // Extract color from the selected item
             var stackPanel = selectedItem.Content as StackPanel;
-            var ellipse = stackPanel?.Children[0] as  Ellipse;
+            var ellipse = stackPanel?.Children[0] as Ellipse;
             if (ellipse?.Fill is SolidColorBrush colorBrush)
             {
                 ColorPreview.Fill = colorBrush;
@@ -94,7 +94,7 @@ public sealed partial class TypeDialog : ContentDialog
     {
         ErrorMessageText.Text = message;
         ErrorMessageBorder.Visibility = Visibility.Visible;
-        
+
         // Auto-hide error after 5 seconds
         await Task.Delay(5000);
         ErrorMessageBorder.Visibility = Visibility.Collapsed;

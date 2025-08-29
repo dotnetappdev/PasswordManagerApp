@@ -87,14 +87,15 @@ public class Program
                 services.AddDbContext<PasswordManagerDbContext>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
 
+                // Register authentication service early so other services can depend on it
+                services.AddScoped<IAuthService, SimpleAuthService>();
+
                 // Register business services
                 services.AddScoped<IPasswordItemService, PasswordItemService>();
                 services.AddScoped<ITagService, TagService>();
                 services.AddScoped<ICategoryInterface, CategoryService>();
                 services.AddScoped<ICollectionService, CollectionService>();
                 services.AddScoped<IPasskeyService, PasskeyService>();
-                // Use a simple auth service for cross-platform builds
-                services.AddScoped<IAuthService, SimpleAuthService>();
                 services.AddScoped<IPasswordRevealService, PasswordRevealService>();
                 services.AddScoped<IAppSyncService, AppSyncService>();
                 services.AddScoped<IAppStartupService, AppStartupService>();

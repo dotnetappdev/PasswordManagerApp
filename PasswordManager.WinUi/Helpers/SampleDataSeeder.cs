@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
 
@@ -15,6 +16,38 @@ namespace PasswordManager.WinUi.Helpers
                 var categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
                 var passwordItemService = serviceProvider.GetRequiredService<IPasswordItemService>();
                 var collectionService = serviceProvider.GetRequiredService<ICollectionService>();
+                var db = serviceProvider.GetService<PasswordManager.DAL.PasswordManagerDbContext>();
+                // Ensure there is at least one user to own seeded data
+                string seedUserId;
+                if (db != null)
+                {
+                    var existingUser = await db.Users.FirstOrDefaultAsync();
+                    if (existingUser == null)
+                    {
+                        var demoUser = new PasswordManager.Models.ApplicationUser
+                        {
+                            Id = Guid.NewGuid().ToString(),
+                            Email = "demo@local",
+                            UserName = "demo@local",
+                            FirstName = "Demo",
+                            LastName = "User",
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        };
+                        db.Users.Add(demoUser);
+                        await db.SaveChangesAsync();
+                        seedUserId = demoUser.Id;
+                    }
+                    else
+                    {
+                        seedUserId = existingUser.Id;
+                    }
+                }
+                else
+                {
+                    // If DbContext not available, leave UserId blank and rely on services to supply defaults
+                    seedUserId = string.Empty;
+                }
 
                 // Check if categories already exist to avoid duplicates
                 var existingCategories = await categoryService.GetAllAsync();
@@ -28,6 +61,9 @@ namespace PasswordManager.WinUi.Helpers
                 {
                     Name = "Personal",
                     Description = "Personal passwords and accounts",
+                    Icon = "person", // default icon for collections
+                    Color = "#3b82f6",
+                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow
                 };
@@ -37,6 +73,9 @@ namespace PasswordManager.WinUi.Helpers
                 {
                     Name = "Work",
                     Description = "Work-related accounts and credentials",
+                    Icon = "briefcase", // default icon for work vault
+                    Color = "#f59e0b",
+                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow
                 };
@@ -50,6 +89,7 @@ namespace PasswordManager.WinUi.Helpers
                     Icon = "key",
                     Color = "#3b82f6",
                     CollectionId = personalCollection.Id,
+                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow
                 };
@@ -62,6 +102,7 @@ namespace PasswordManager.WinUi.Helpers
                     Icon = "creditcard",
                     Color = "#ef4444",
                     CollectionId = personalCollection.Id,
+                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow
                 };
@@ -74,6 +115,7 @@ namespace PasswordManager.WinUi.Helpers
                     Icon = "note",
                     Color = "#10b981",
                     CollectionId = personalCollection.Id,
+                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow
                 };
@@ -86,6 +128,7 @@ namespace PasswordManager.WinUi.Helpers
                     Icon = "wifi",
                     Color = "#8b5cf6",
                     CollectionId = personalCollection.Id,
+                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow
                 };
@@ -98,6 +141,7 @@ namespace PasswordManager.WinUi.Helpers
                     Icon = "security",
                     Color = "#f59e0b",
                     CollectionId = workCollection.Id,
+                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow
                 };
@@ -113,6 +157,7 @@ namespace PasswordManager.WinUi.Helpers
                         Type = ItemType.Login,
                         CategoryId = loginCategory.Id,
                         CollectionId = personalCollection.Id,
+                        UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
                         Website = "https://gmail.com",
                         CreatedAt = DateTime.UtcNow,
                         LastModified = DateTime.UtcNow,
@@ -120,7 +165,8 @@ namespace PasswordManager.WinUi.Helpers
                         {
                             Username = "john.doe@gmail.com",
                             Password = "MySecurePassword123!",
-                            WebsiteUrl = "https://gmail.com"
+                            WebsiteUrl = "https://gmail.com",
+                            UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId
                         }
                     },
                     new PasswordItem
@@ -130,6 +176,7 @@ namespace PasswordManager.WinUi.Helpers
                         Type = ItemType.Login,
                         CategoryId = workCategory.Id,
                         CollectionId = workCollection.Id,
+                        UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
                         Website = "https://github.com",
                         CreatedAt = DateTime.UtcNow,
                         LastModified = DateTime.UtcNow,
@@ -137,7 +184,8 @@ namespace PasswordManager.WinUi.Helpers
                         {
                             Username = "johndoe_dev",
                             Password = "DevPassword456!",
-                            WebsiteUrl = "https://github.com"
+                            WebsiteUrl = "https://github.com",
+                            UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId
                         }
                     },
                     new PasswordItem
@@ -147,6 +195,7 @@ namespace PasswordManager.WinUi.Helpers
                         Type = ItemType.Login,
                         CategoryId = loginCategory.Id,
                         CollectionId = personalCollection.Id,
+                        UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
                         Website = "https://netflix.com",
                         CreatedAt = DateTime.UtcNow,
                         LastModified = DateTime.UtcNow,
@@ -155,7 +204,8 @@ namespace PasswordManager.WinUi.Helpers
                         {
                             Username = "john.doe@gmail.com",
                             Password = "Netflix789!",
-                            WebsiteUrl = "https://netflix.com"
+                            WebsiteUrl = "https://netflix.com",
+                            UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId
                         }
                     }
                 };
@@ -173,6 +223,7 @@ namespace PasswordManager.WinUi.Helpers
                     Type = ItemType.CreditCard,
                     CategoryId = creditCardCategory.Id,
                     CollectionId = personalCollection.Id,
+                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow,
                     CreditCardItem = new CreditCardItem
@@ -193,6 +244,7 @@ namespace PasswordManager.WinUi.Helpers
                     Type = ItemType.SecureNote,
                     CategoryId = secureNotesCategory.Id,
                     CollectionId = personalCollection.Id,
+                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow,
                     SecureNoteItem = new SecureNoteItem
@@ -210,6 +262,7 @@ namespace PasswordManager.WinUi.Helpers
                     Type = ItemType.WiFi,
                     CategoryId = wifiCategory.Id,
                     CollectionId = personalCollection.Id,
+                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow,
                     WiFiItem = new WiFiItem

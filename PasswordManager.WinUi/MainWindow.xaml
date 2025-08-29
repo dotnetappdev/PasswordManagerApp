@@ -213,6 +213,7 @@
                 <NavigationViewItemSeparator Margin="12,8"/>
 
                 <!-- Categories Section with Icons -->
+                <NavigationViewItemHeader Content="Categories"/>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -255,6 +256,7 @@
                                 Foreground="{StaticResource ModernErrorBrush}"/>
                     </Button>
                 </Grid>
+                <NavigationViewItemHeader Content="Actions"/>
 
                 <NavigationViewItem x:Name="LoginCategoryNavItem"
                                     Content="Logins"

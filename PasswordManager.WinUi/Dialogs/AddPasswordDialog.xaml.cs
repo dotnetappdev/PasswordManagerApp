@@ -25,7 +25,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
     public AddPasswordDialog(IServiceProvider serviceProvider, PasswordItem? editingItem = null)
     {
         this.InitializeComponent();
-        
+
         _passwordItemService = serviceProvider.GetRequiredService<IPasswordItemService>();
         _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
         _collectionService = serviceProvider.GetRequiredService<ICollectionService>();
@@ -38,7 +38,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
         CloseButtonText = "Cancel";
 
         LoadData();
-        
+
         if (_editingItem != null)
         {
             PopulateFields();
@@ -49,7 +49,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
             // Initialize with empty custom fields list
             _customFields = new List<CustomField>();
         }
-        
+
         RefreshCustomFieldsUI();
     }
 
@@ -58,16 +58,16 @@ public sealed partial class AddPasswordDialog : ContentDialog
     {
         // Set the type combo box selection
         TypeComboBox.SelectedIndex = (int)itemType - 1;
-        
+
         // Update the title based on category name
         if (!string.IsNullOrEmpty(categoryName))
         {
             Title = $"Add {categoryName}";
         }
-        
+
         // Show the appropriate fields panel
         TypeComboBox_SelectionChanged(TypeComboBox, null);
-        
+
         // Handle special category-based forms
         if (!string.IsNullOrEmpty(categoryName))
         {
@@ -92,10 +92,10 @@ public sealed partial class AddPasswordDialog : ContentDialog
             var categories = await _categoryService.GetAllAsync();
             foreach (var category in categories)
             {
-                CategoryComboBox.Items.Add(new ComboBoxItem 
-                { 
-                    Content = category.Name, 
-                    Tag = category 
+                CategoryComboBox.Items.Add(new ComboBoxItem
+                {
+                    Content = category.Name,
+                    Tag = category
                 });
             }
 
@@ -103,10 +103,10 @@ public sealed partial class AddPasswordDialog : ContentDialog
             var collections = await _collectionService.GetAllAsync();
             foreach (var collection in collections)
             {
-                CollectionComboBox.Items.Add(new ComboBoxItem 
-                { 
-                    Content = collection.Name, 
-                    Tag = collection 
+                CollectionComboBox.Items.Add(new ComboBoxItem
+                {
+                    Content = collection.Name,
+                    Tag = collection
                 });
             }
         }
@@ -151,8 +151,8 @@ public sealed partial class AddPasswordDialog : ContentDialog
         {
             for (int i = 0; i < CategoryComboBox.Items.Count; i++)
             {
-                if (CategoryComboBox.Items[i] is ComboBoxItem item && 
-                    item.Tag is Category cat && 
+                if (CategoryComboBox.Items[i] is ComboBoxItem item &&
+                    item.Tag is Category cat &&
                     cat.Id == _editingItem.CategoryId)
                 {
                     CategoryComboBox.SelectedIndex = i;
@@ -166,8 +166,8 @@ public sealed partial class AddPasswordDialog : ContentDialog
         {
             for (int i = 0; i < CollectionComboBox.Items.Count; i++)
             {
-                if (CollectionComboBox.Items[i] is ComboBoxItem item && 
-                    item.Tag is Collection col && 
+                if (CollectionComboBox.Items[i] is ComboBoxItem item &&
+                    item.Tag is Collection col &&
                     col.Id == _editingItem.CollectionId)
                 {
                     CollectionComboBox.SelectedIndex = i;
@@ -182,18 +182,18 @@ public sealed partial class AddPasswordDialog : ContentDialog
         if (TypeComboBox.SelectedIndex >= 0)
         {
             var selectedType = (ItemType)(TypeComboBox.SelectedIndex + 1);
-            
+
             // Show/hide fields based on type
             LoginFieldsPanel.Visibility = selectedType == ItemType.Login ? Visibility.Visible : Visibility.Collapsed;
             CreditCardFieldsPanel.Visibility = selectedType == ItemType.CreditCard ? Visibility.Visible : Visibility.Collapsed;
             SecureNoteFieldsPanel.Visibility = selectedType == ItemType.SecureNote ? Visibility.Visible : Visibility.Collapsed;
             WiFiFieldsPanel.Visibility = selectedType == ItemType.WiFi ? Visibility.Visible : Visibility.Collapsed;
             PasskeyFieldsPanel.Visibility = selectedType == ItemType.Passkey ? Visibility.Visible : Visibility.Collapsed;
-            
+
             // Handle special form types using SecureNote as base
             IdentityFieldsPanel.Visibility = Visibility.Collapsed;
             APICredentialsFieldsPanel.Visibility = Visibility.Collapsed;
-            
+
             // Show Identity panel for Identity-related categories
             if (selectedType == ItemType.SecureNote)
             {
@@ -222,7 +222,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
         var random = new Random();
         var password = new string(Enumerable.Repeat(chars, 16)
             .Select(s => s[random.Next(s.Length)]).ToArray());
-        
+
         PasswordTextBox.Password = password;
     }
 
@@ -246,7 +246,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
     private async void ContentDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
     {
         args.Cancel = true; // Prevent immediate close
-        
+
         try
         {
             // Validate required fields
@@ -266,7 +266,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
 
             // Create or update password item
             var item = _editingItem ?? new PasswordItem();
-            
+
             item.Title = TitleTextBox.Text.Trim();
             item.Description = DescriptionTextBox.Text?.Trim();
             item.Type = selectedType;
@@ -290,17 +290,26 @@ public sealed partial class AddPasswordDialog : ContentDialog
             {
                 item.CollectionId = collection.Id;
             }
+            else
+            {
+                // If no collection selected, fallback to default collection to satisfy DB constraints
+                var defaultCollection = await _collectionService.GetDefaultCollectionAsync();
+                if (defaultCollection != null)
+                {
+                    item.CollectionId = defaultCollection.Id;
+                }
+            }
 
             // Handle login-specific fields
             if (selectedType == ItemType.Login)
             {
                 if (item.LoginItem == null)
                     item.LoginItem = new LoginItem();
-                
+
                 item.LoginItem.Username = UsernameTextBox.Text?.Trim() ?? string.Empty;
                 item.LoginItem.Password = PasswordTextBox.Password;
                 item.LoginItem.WebsiteUrl = UrlTextBox.Text?.Trim();
-                
+
                 // Set user ID for the login item
                 if (_authService.CurrentUser != null)
                 {
@@ -313,7 +322,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
             {
                 if (item.PasskeyItem == null)
                     item.PasskeyItem = new PasskeyItem();
-                
+
                 item.PasskeyItem.Website = PasskeyWebsiteTextBox.Text?.Trim();
                 item.PasskeyItem.WebsiteUrl = PasskeyUrlTextBox.Text?.Trim();
                 item.PasskeyItem.Username = PasskeyUsernameTextBox.Text?.Trim();
@@ -322,13 +331,13 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 item.PasskeyItem.RequiresUserVerification = PasskeyRequiresVerificationCheckBox.IsChecked ?? true;
                 item.PasskeyItem.IsBackedUp = PasskeyIsBackedUpCheckBox.IsChecked ?? false;
                 item.PasskeyItem.Notes = PasskeyNotesTextBox.Text?.Trim();
-                
+
                 // Set user ID for the passkey item
                 if (_authService.CurrentUser != null)
                 {
                     item.PasskeyItem.UserId = _authService.CurrentUser.Id;
                 }
-                
+
                 // For now, use a placeholder credential ID (in real implementation, this would come from WebAuthn)
                 item.PasskeyItem.CredentialId = "placeholder_credential_id_" + DateTime.Now.Ticks;
             }
@@ -431,17 +440,17 @@ public sealed partial class AddPasswordDialog : ContentDialog
     {
         ErrorMessageText.Text = message;
         ErrorMessageBorder.Visibility = Visibility.Visible;
-        
+
         // Auto-hide error after 5 seconds
         await Task.Delay(5000);
         ErrorMessageBorder.Visibility = Visibility.Collapsed;
     }
-    
+
     private async Task ShowSuccessMessage(string message)
     {
         SuccessMessageText.Text = message;
         SuccessMessageBorder.Visibility = Visibility.Visible;
-        
+
         // Auto-hide success message after 5 seconds
         await Task.Delay(5000);
         SuccessMessageBorder.Visibility = Visibility.Collapsed;
@@ -455,7 +464,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
             // Hide the selection panel and show the detail panel
             ItemSelectionPanel.Visibility = Visibility.Collapsed;
             LoginDetailPanel.Visibility = Visibility.Visible;
-            
+
             // Update the dialog title
             if (XamlRoot?.Content is FrameworkElement root)
             {
@@ -522,10 +531,10 @@ public sealed partial class AddPasswordDialog : ContentDialog
         bool includeSymbols = SymbolsToggle?.IsOn ?? false;
 
         string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-        
+
         if (includeNumbers)
             chars += "0123456789";
-            
+
         if (includeSymbols)
             chars += "!@#$%^&*()-_=+[]{}|;:,.<>?";
 

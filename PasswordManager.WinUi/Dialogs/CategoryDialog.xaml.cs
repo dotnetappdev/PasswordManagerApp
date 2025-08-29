@@ -142,8 +142,9 @@ public sealed partial class CategoryDialog : ContentDialog
                     UpdatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow,
                     UserId = _authService.CurrentUser?.Id
+                    
                 };
-
+                var TEST = newCategory;
                 await _categoryService.CreateAsync(newCategory);
                 Result = newCategory;
             }
