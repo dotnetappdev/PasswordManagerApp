@@ -105,6 +105,7 @@ public sealed partial class MainWindow : Window
                 "LoginCategory" => typeof(Views.PasswordItemsPage), // Filter for login items
                 "CreditCardCategory" => typeof(Views.PasswordItemsPage), // Filter for credit cards
                 "SecureNotesCategory" => typeof(Views.PasswordItemsPage), // Filter for secure notes
+                "IdentityCategory" => typeof(Views.PasswordItemsPage), // Filter for identity items
                 "WiFiCategory" => typeof(Views.PasswordItemsPage), // Filter for WiFi items
                 "PasskeysCategory" => typeof(Views.PasswordItemsPage), // Filter for passkeys
                 "Categories" => typeof(Views.CategoriesPage),
@@ -164,6 +165,10 @@ public sealed partial class MainWindow : Window
                     filterData.FilterType = ItemType.SecureNote;
                     filterData.FilterName = "Secure Notes";
                     break;
+                case "IdentityCategory":
+                    filterData.FilterType = ItemType.Identity;
+                    filterData.FilterName = "Identity";
+                    break;
                 case "WiFiCategory":
                     filterData.FilterType = ItemType.WiFi;
                     filterData.FilterName = "WiFi";
@@ -197,7 +202,7 @@ public sealed partial class MainWindow : Window
         return pageTag switch
         {
             "AllItems" or "Favorites" or "LoginCategory" or "CreditCardCategory" or 
-            "SecureNotesCategory" or "WiFiCategory" or "PasskeysCategory" or 
+            "SecureNotesCategory" or "IdentityCategory" or "WiFiCategory" or "PasskeysCategory" or 
             "Archive" or "RecentlyDeleted" or "Passwords" => true,
             _ => false
         };
