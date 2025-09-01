@@ -2,6 +2,7 @@
 <ContentDialog x:Class="PasswordManager.WinUi.Dialogs.CategoryDialog"
                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               xmlns:controls="using:PasswordManager.WinUi.Controls"
                Title="New Category"
                PrimaryButtonText="Save"
                CloseButtonText="Cancel"
@@ -10,10 +11,13 @@
                PrimaryButtonStyle="{StaticResource ContentDialogPrimaryButtonStyle}"
                CloseButtonStyle="{StaticResource ContentDialogSecondaryButtonStyle}">
 
-    <Grid Background="{StaticResource ModernFormBackgroundBrush}" MaxWidth="480" MaxHeight="600">
+    <Grid Background="{StaticResource ModernFormBackgroundBrush}"
+          MaxWidth="480"
+          MaxHeight="600">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="24" Margin="32">
-                
+            <StackPanel Spacing="24"
+                        Margin="32">
+
                 <!-- Error Message -->
                 <Border x:Name="ErrorMessageBorder"
                         Background="{StaticResource ModernErrorBrush}"
@@ -21,65 +25,73 @@
                         Padding="16"
                         Visibility="Collapsed">
                     <TextBlock x:Name="ErrorMessageText"
-                              Text=""
-                              Foreground="White"
-                              FontSize="14"
-                              FontWeight="Medium"
-                              TextWrapping="Wrap"/>
+                               Text=""
+                               Foreground="White"
+                               FontSize="14"
+                               FontWeight="Medium"
+                               TextWrapping="Wrap"/>
                 </Border>
-                
+
                 <!-- Category Name Field -->
                 <StackPanel Spacing="8">
-                    <TextBlock Text="Name" 
-                              FontSize="14"
-                              FontWeight="SemiBold"
-                              Foreground="{StaticResource ModernTextPrimaryBrush}"
-                              Margin="0,0,0,4"/>
+                    <TextBlock Text="Name"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource ModernTextPrimaryBrush}"
+                               Margin="0,0,0,4"/>
                     <Border Background="{StaticResource ModernSurfaceBrush}"
                             CornerRadius="8"
                             BorderBrush="{StaticResource ModernBorderBrush}"
                             BorderThickness="1">
-                        <TextBox x:Name="CategoryNameTextBox"
-                                PlaceholderText="Enter category name"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Padding="16,12"
-                                FontSize="14"
-                                MaxLength="100"/>
+                        <Grid>
+                            <TextBox x:Name="CategoryNameTextBox"
+                                     PlaceholderText="Enter category name"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Padding="16,12"
+                                     FontSize="14"
+                                     MaxLength="100"/>
+                            <controls:ReadOnlyField x:Name="CategoryNameTextDisplay"
+                                                    Visibility="Collapsed"/>
+                        </Grid>
                     </Border>
                 </StackPanel>
-                
+
                 <!-- Category Description Field -->
                 <StackPanel Spacing="8">
-                    <TextBlock Text="Description" 
-                              FontSize="14"
-                              FontWeight="SemiBold"
-                              Foreground="{StaticResource ModernTextPrimaryBrush}"
-                              Margin="0,0,0,4"/>
+                    <TextBlock Text="Description"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource ModernTextPrimaryBrush}"
+                               Margin="0,0,0,4"/>
                     <Border Background="{StaticResource ModernSurfaceBrush}"
                             CornerRadius="8"
                             BorderBrush="{StaticResource ModernBorderBrush}"
                             BorderThickness="1">
-                        <TextBox x:Name="CategoryDescriptionTextBox"
-                                PlaceholderText="Add description (optional)"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Padding="16,12"
-                                FontSize="14"
-                                AcceptsReturn="True"
-                                TextWrapping="Wrap"
-                                MaxHeight="80"
-                                MaxLength="500"/>
+                        <Grid>
+                            <TextBox x:Name="CategoryDescriptionTextBox"
+                                     PlaceholderText="Add description (optional)"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Padding="16,12"
+                                     FontSize="14"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     MaxHeight="80"
+                                     MaxLength="500"/>
+                            <controls:ReadOnlyField x:Name="CategoryDescriptionTextDisplay"
+                                                    Visibility="Collapsed"/>
+                        </Grid>
                     </Border>
                 </StackPanel>
 
                 <!-- Category Color Selection -->
                 <StackPanel Spacing="8">
-                    <TextBlock Text="Color" 
-                              FontSize="14"
-                              FontWeight="SemiBold"
-                              Foreground="{StaticResource ModernTextPrimaryBrush}"
-                              Margin="0,0,0,4"/>
+                    <TextBlock Text="Color"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource ModernTextPrimaryBrush}"
+                               Margin="0,0,0,4"/>
                     <Border Background="{StaticResource ModernSurfaceBrush}"
                             CornerRadius="8"
                             BorderBrush="{StaticResource ModernBorderBrush}"
@@ -90,135 +102,211 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            
+
                             <ComboBox x:Name="CategoryColorComboBox"
-                                     Grid.Column="0"
-                                     PlaceholderText="Choose color"
-                                     Background="Transparent"
-                                     BorderThickness="0"
-                                     FontSize="14"
-                                     SelectedIndex="0">
+                                      Grid.Column="0"
+                                      PlaceholderText="Choose color"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      FontSize="14"
+                                      SelectedIndex="0">
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <Ellipse Fill="#3b82f6" Width="20" Height="20"/>
-                                        <TextBlock Text="Blue" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <Ellipse Fill="#3b82f6"
+                                                 Width="20"
+                                                 Height="20"/>
+                                        <TextBlock Text="Blue"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <Ellipse Fill="#10b981" Width="20" Height="20"/>
-                                        <TextBlock Text="Green" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <Ellipse Fill="#10b981"
+                                                 Width="20"
+                                                 Height="20"/>
+                                        <TextBlock Text="Green"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <Ellipse Fill="#f59e0b" Width="20" Height="20"/>
-                                        <TextBlock Text="Orange" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <Ellipse Fill="#f59e0b"
+                                                 Width="20"
+                                                 Height="20"/>
+                                        <TextBlock Text="Orange"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <Ellipse Fill="#ef4444" Width="20" Height="20"/>
-                                        <TextBlock Text="Red" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <Ellipse Fill="#ef4444"
+                                                 Width="20"
+                                                 Height="20"/>
+                                        <TextBlock Text="Red"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <Ellipse Fill="#8b5cf6" Width="20" Height="20"/>
-                                        <TextBlock Text="Purple" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <Ellipse Fill="#8b5cf6"
+                                                 Width="20"
+                                                 Height="20"/>
+                                        <TextBlock Text="Purple"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <Ellipse Fill="#ec4899" Width="20" Height="20"/>
-                                        <TextBlock Text="Pink" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <Ellipse Fill="#ec4899"
+                                                 Width="20"
+                                                 Height="20"/>
+                                        <TextBlock Text="Pink"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <Ellipse Fill="#6b7280" Width="20" Height="20"/>
-                                        <TextBlock Text="Gray" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <Ellipse Fill="#6b7280"
+                                                 Width="20"
+                                                 Height="20"/>
+                                        <TextBlock Text="Gray"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                             </ComboBox>
-                            
+
+                            <controls:ReadOnlyField x:Name="CategoryColorTextDisplay"
+                                                    Grid.Column="0"
+                                                    Visibility="Collapsed"/>
+
                             <Ellipse x:Name="ColorPreview"
-                                   Grid.Column="1"
-                                   Fill="#3b82f6"
-                                   Width="24"
-                                   Height="24"
-                                   Margin="12,0,0,0"/>
+                                     Grid.Column="1"
+                                     Fill="#3b82f6"
+                                     Width="24"
+                                     Height="24"
+                                     Margin="12,0,0,0"/>
                         </Grid>
                     </Border>
                 </StackPanel>
 
                 <!-- Category Icon Selection -->
                 <StackPanel Spacing="8">
-                    <TextBlock Text="Icon" 
-                              FontSize="14"
-                              FontWeight="SemiBold"
-                              Foreground="{StaticResource ModernTextPrimaryBrush}"
-                              Margin="0,0,0,4"/>
+                    <TextBlock Text="Icon"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource ModernTextPrimaryBrush}"
+                               Margin="0,0,0,4"/>
                     <Border Background="{StaticResource ModernSurfaceBrush}"
                             CornerRadius="8"
                             BorderBrush="{StaticResource ModernBorderBrush}"
                             BorderThickness="1"
                             Padding="16,12">
-                        <ComboBox x:Name="CategoryIconComboBox"
-                                 PlaceholderText="Choose icon"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 FontSize="14"
-                                 SelectedIndex="0">
-                            <ComboBoxItem>
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <TextBlock Text="📁" FontSize="18"/>
-                                    <TextBlock Text="Folder" FontSize="14" FontWeight="Medium"/>
-                                </StackPanel>
-                            </ComboBoxItem>
-                            <ComboBoxItem>
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <TextBlock Text="🔑" FontSize="18"/>
-                                    <TextBlock Text="Key" FontSize="14" FontWeight="Medium"/>
-                                </StackPanel>
-                            </ComboBoxItem>
-                            <ComboBoxItem>
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <TextBlock Text="💳" FontSize="18"/>
-                                    <TextBlock Text="Credit Card" FontSize="14" FontWeight="Medium"/>
-                                </StackPanel>
-                            </ComboBoxItem>
-                            <ComboBoxItem>
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <TextBlock Text="📝" FontSize="18"/>
-                                    <TextBlock Text="Note" FontSize="14" FontWeight="Medium"/>
-                                </StackPanel>
-                            </ComboBoxItem>
-                            <ComboBoxItem>
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <TextBlock Text="📶" FontSize="18"/>
-                                    <TextBlock Text="WiFi" FontSize="14" FontWeight="Medium"/>
-                                </StackPanel>
-                            </ComboBoxItem>
-                            <ComboBoxItem>
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <TextBlock Text="🔒" FontSize="18"/>
-                                    <TextBlock Text="Security" FontSize="14" FontWeight="Medium"/>
-                                </StackPanel>
-                            </ComboBoxItem>
-                            <ComboBoxItem>
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <TextBlock Text="⭐" FontSize="18"/>
-                                    <TextBlock Text="Star" FontSize="14" FontWeight="Medium"/>
-                                </StackPanel>
-                            </ComboBoxItem>
-                            <ComboBoxItem>
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <TextBlock Text="📋" FontSize="18"/>
-                                    <TextBlock Text="List" FontSize="14" FontWeight="Medium"/>
-                                </StackPanel>
-                            </ComboBoxItem>
-                        </ComboBox>
+                        <Grid>
+                            <ComboBox x:Name="CategoryIconComboBox"
+                                      PlaceholderText="Choose icon"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      FontSize="14"
+                                      SelectedIndex="0">
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <TextBlock Text="📁"
+                                                   FontSize="18"/>
+                                        <TextBlock Text="Folder"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <TextBlock Text="🔑"
+                                                   FontSize="18"/>
+                                        <TextBlock Text="Key"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <TextBlock Text="💳"
+                                                   FontSize="18"/>
+                                        <TextBlock Text="Credit Card"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <TextBlock Text="📝"
+                                                   FontSize="18"/>
+                                        <TextBlock Text="Note"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <TextBlock Text="📶"
+                                                   FontSize="18"/>
+                                        <TextBlock Text="WiFi"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <TextBlock Text="🔒"
+                                                   FontSize="18"/>
+                                        <TextBlock Text="Security"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <TextBlock Text="⭐"
+                                                   FontSize="18"/>
+                                        <TextBlock Text="Star"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <TextBlock Text="📋"
+                                                   FontSize="18"/>
+                                        <TextBlock Text="List"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                            </ComboBox>
+
+                            <controls:ReadOnlyField x:Name="CategoryIconTextDisplay"
+                                                    Visibility="Collapsed"/>
+                        </Grid>
                     </Border>
                 </StackPanel>
             </StackPanel>

@@ -18,11 +18,12 @@ public sealed partial class AddPasswordDialog : ContentDialog
     private readonly IPasskeyService _passkeyService;
     private readonly IAuthService _authService;
     private PasswordItem? _editingItem;
+    private bool _isReadOnly = false;
     private List<CustomField> _customFields = new();
 
     public PasswordItem? Result { get; private set; }
 
-    public AddPasswordDialog(IServiceProvider serviceProvider, PasswordItem? editingItem = null)
+    public AddPasswordDialog(IServiceProvider serviceProvider, PasswordItem? editingItem = null, bool isReadOnly = false)
     {
         this.InitializeComponent();
 
@@ -32,6 +33,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
         _passkeyService = serviceProvider.GetRequiredService<IPasskeyService>();
         _authService = serviceProvider.GetRequiredService<IAuthService>();
         _editingItem = editingItem;
+        _isReadOnly = isReadOnly;
 
         Title = editingItem == null ? "Add Password Item" : "Edit Password Item";
         PrimaryButtonText = editingItem == null ? "Add" : "Save";
@@ -51,7 +53,92 @@ public sealed partial class AddPasswordDialog : ContentDialog
         }
 
         RefreshCustomFieldsUI();
+
+        // Apply read-only mode UI changes
+        if (_isReadOnly)
+        {
+            // Primary button becomes Close
+            PrimaryButtonText = "Close";
+
+            // Hide all editable textboxes and show text displays where added
+            ToggleReadOnlyUI(true);
+        }
     }
+
+    private void ToggleReadOnlyUI(bool readOnly)
+    {
+        // Title
+        TitleTextBox.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        TitleTextDisplay.Visibility = readOnly ? Visibility.Visible : Visibility.Collapsed;
+        if (readOnly) TitleTextDisplay.Text = TitleTextBox.Text;
+
+        // Description
+        DescriptionTextBox.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        DescriptionTextDisplay.Visibility = readOnly ? Visibility.Visible : Visibility.Collapsed;
+        if (readOnly) DescriptionTextDisplay.Text = DescriptionTextBox.Text;
+
+        // Username
+        UsernameTextBox.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        UsernameTextDisplay.Visibility = readOnly ? Visibility.Visible : Visibility.Collapsed;
+        if (readOnly) UsernameTextDisplay.Text = UsernameTextBox.Text;
+
+        // Password
+        PasswordTextBox.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        PasswordDisplayTextBox.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible; // keep hidden when in edit
+        PasswordTextDisplay.Visibility = readOnly ? Visibility.Visible : Visibility.Collapsed;
+        if (readOnly) PasswordTextDisplay.Text = PasswordTextBox.Password == null || PasswordTextBox.Password.Length == 0 ? "" : new string('•', Math.Max(8, PasswordTextBox.Password.Length));
+
+        // URL
+        UrlTextBox.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        UrlTextDisplay.Visibility = readOnly ? Visibility.Visible : Visibility.Collapsed;
+        if (readOnly) UrlTextDisplay.Text = UrlTextBox.Text;
+
+        // Disable or hide editing-related controls
+        TypeComboBox.IsEnabled = !readOnly;
+        CategoryComboBox.IsEnabled = !readOnly;
+        CollectionComboBox.IsEnabled = !readOnly;
+        IsFavoriteCheckBox.IsEnabled = !readOnly;
+
+        // Hide buttons used for editing/generation
+        TogglePasswordVisibilityButton.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        // GeneratePasswordButton may not be present in older XAML templates; find safely
+        var genObjLocal = this.FindName("GeneratePasswordButton");
+        if (genObjLocal is Button genBtnLocal)
+        {
+            genBtnLocal.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        }
+        AddWebsiteButton.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        AddMoreLoginButton.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        AddCustomFieldButton.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        AddMoreSecureNoteButton.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        AddLocationButton.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+
+        // Disable custom fields editing
+        // StackPanel doesn't expose IsEnabled in a way we can safely use everywhere in code-behind
+        try
+        {
+            foreach (var child in CustomFieldsContainer.Children)
+            {
+                if (child is Control ctl)
+                {
+                    ctl.IsEnabled = !readOnly;
+                }
+            }
+        }
+        catch
+        {
+            // Defensive: if CustomFieldsContainer is missing or children are not controls, ignore
+        }
+
+        // Safely show/hide the generate button if it's present in the template/XAML
+        var genBtnObj = this.FindName("GeneratePasswordButton");
+        if (genBtnObj is Button genBtn)
+        {
+            genBtn.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+    }
+
 
     // Method to set initial item type from the selection dialog
     public void SetInitialItemType(ItemType itemType, string? categoryName = null)
@@ -90,6 +177,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
         {
             // Load categories
             var categories = await _categoryService.GetAllAsync();
+            CategoryComboBox.Items.Clear();
             foreach (var category in categories)
             {
                 CategoryComboBox.Items.Add(new ComboBoxItem
@@ -101,6 +189,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
 
             // Load collections
             var collections = await _collectionService.GetAllAsync();
+            CollectionComboBox.Items.Clear();
             foreach (var collection in collections)
             {
                 CollectionComboBox.Items.Add(new ComboBoxItem
@@ -108,6 +197,35 @@ public sealed partial class AddPasswordDialog : ContentDialog
                     Content = collection.Name,
                     Tag = collection
                 });
+            }
+
+            // GeneratePasswordButton may not have an x:Name in XAML (older markup). Find safely and apply visibility based on current read-only state.
+            var genBtnObj = this.FindName("GeneratePasswordButton");
+            if (genBtnObj is Button genBtn)
+            {
+                genBtn.Visibility = _isReadOnly ? Visibility.Collapsed : Visibility.Visible;
+            }
+
+            // If LoadData completed after construction and we have an editing item,
+            // ensure fields are populated and read-only UI is applied so display TextBlocks show values.
+            try
+            {
+                if (_editingItem != null)
+                {
+                    // Populate fields again in case LoadData filled combo boxes used by selection logic
+                    PopulateFields();
+                    LoadCustomFields();
+                    RefreshCustomFieldsUI();
+
+                    if (_isReadOnly)
+                    {
+                        ToggleReadOnlyUI(true);
+                    }
+                }
+            }
+            catch
+            {
+                // Defensive: ignore any timing-related issues here
             }
         }
         catch (Exception ex)
@@ -174,6 +292,27 @@ public sealed partial class AddPasswordDialog : ContentDialog
                     break;
                 }
             }
+        }
+
+        // If in read-only mode, populate the display TextBlocks
+        if (_isReadOnly)
+        {
+            TitleTextDisplay.Text = TitleTextBox.Text;
+            TitleTextDisplay.CopyText = TitleTextBox.Text;
+
+            DescriptionTextDisplay.Text = DescriptionTextBox.Text;
+            DescriptionTextDisplay.CopyText = DescriptionTextBox.Text;
+
+            UsernameTextDisplay.Text = UsernameTextBox.Text;
+            UsernameTextDisplay.CopyText = UsernameTextBox.Text;
+
+            PasswordTextDisplay.Text = PasswordTextBox.Password == null || PasswordTextBox.Password.Length == 0 ? "" : new string('•', Math.Max(8, PasswordTextBox.Password.Length));
+            PasswordTextDisplay.CopyText = PasswordTextBox.Password;
+
+            UrlTextDisplay.Text = UrlTextBox.Text;
+            UrlTextDisplay.CopyText = UrlTextBox.Text;
+
+            ToggleReadOnlyUI(true);
         }
     }
 
@@ -245,7 +384,14 @@ public sealed partial class AddPasswordDialog : ContentDialog
 
     private async void ContentDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
     {
-        args.Cancel = true; // Prevent immediate close
+        // If read-only, just close
+        if (_isReadOnly)
+        {
+            args.Cancel = false; // allow close
+            return;
+        }
+
+        args.Cancel = true; // Prevent immediate close for save flow
 
         try
         {

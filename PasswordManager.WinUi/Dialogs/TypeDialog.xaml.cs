@@ -11,14 +11,16 @@ public sealed partial class TypeDialog : ContentDialog
 {
     private string? _existingTypeName;
     private readonly bool _isEditMode;
+    private readonly bool _isReadOnly;
 
     public string? Result { get; private set; }
 
-    public TypeDialog(string? existingTypeName = null)
+    public TypeDialog(string? existingTypeName = null, bool isReadOnly = false)
     {
         this.InitializeComponent();
         _existingTypeName = existingTypeName;
         _isEditMode = !string.IsNullOrEmpty(existingTypeName);
+        _isReadOnly = isReadOnly;
 
         // Update dialog title
         Title = _isEditMode ? "Edit Type" : "Add Type";
@@ -32,6 +34,46 @@ public sealed partial class TypeDialog : ContentDialog
         if (_isEditMode && !string.IsNullOrEmpty(_existingTypeName))
         {
             LoadTypeData();
+        }
+
+        if (_isReadOnly)
+        {
+            // populate display controls and hide inputs
+            TypeNameTextDisplay.Text = TypeNameTextBox.Text;
+            TypeNameTextDisplay.CopyText = TypeNameTextBox.Text;
+            TypeDescriptionTextDisplay.Text = TypeDescriptionTextBox.Text;
+            TypeDescriptionTextDisplay.CopyText = TypeDescriptionTextBox.Text;
+            TypeNameTextBox.Visibility = Visibility.Collapsed;
+            TypeNameTextDisplay.Visibility = Visibility.Visible;
+            TypeDescriptionTextBox.Visibility = Visibility.Collapsed;
+            TypeDescriptionTextDisplay.Visibility = Visibility.Visible;
+
+            // Populate and show icon/color display
+            var iconText = "";
+            if (TypeIconComboBox.SelectedItem is ComboBoxItem sel && sel.Content is StackPanel sp && sp.Children.Count > 0 && sp.Children[0] is FontIcon fi)
+            {
+                // can't easily get glyph text; fallback to last textblock
+                if (sel.Content is StackPanel sp2 && sp2.Children.Count > 1 && sp2.Children[1] is TextBlock tb)
+                    iconText = tb.Text;
+            }
+            else if (TypeIconComboBox.SelectedItem is ComboBoxItem sel2 && sel2.Content is StackPanel sp3 && sp3.Children.Count > 1 && sp3.Children[1] is TextBlock tb3)
+            {
+                iconText = tb3.Text;
+            }
+            TypeIconTextDisplay.Text = iconText;
+            TypeIconTextDisplay.CopyText = iconText;
+            TypeIconComboBox.Visibility = Visibility.Collapsed;
+            TypeIconTextDisplay.Visibility = Visibility.Visible;
+
+            var colorText = "";
+            if (TypeColorComboBox.SelectedItem is ComboBoxItem colorSel && colorSel.Content is StackPanel csp && csp.Children.Count > 1 && csp.Children[1] is TextBlock ctb)
+                colorText = ctb.Text;
+            TypeColorTextDisplay.Text = colorText;
+            TypeColorTextDisplay.CopyText = colorText;
+            TypeColorComboBox.Visibility = Visibility.Collapsed;
+            TypeColorTextDisplay.Visibility = Visibility.Visible;
+
+            PrimaryButtonText = "Close";
         }
     }
 

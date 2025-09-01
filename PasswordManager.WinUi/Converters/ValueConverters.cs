@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using PasswordManager.Models;
+using System.Reflection;
 
 namespace PasswordManager.WinUi.Converters;
 
@@ -108,8 +109,8 @@ public class FirstTimeSetupToSubtitleConverter : IValueConverter
     {
         if (value is bool isFirstTimeSetup)
         {
-            return isFirstTimeSetup 
-                ? "Create your master password to get started" 
+            return isFirstTimeSetup
+                ? "Create your master password to get started"
                 : "Enter your master password to continue";
         }
         return "Enter your master password to continue";
@@ -166,9 +167,15 @@ public class StatusToColorConverter : IValueConverter
             "skipped" => "Orange",
             _ => "Gray"
         };
-        
-        return Microsoft.UI.Xaml.Application.Current.Resources[colorName] as SolidColorBrush 
-            ?? new SolidColorBrush(Microsoft.UI.Colors.Gray);
+        // Map statuses to concrete brushes to avoid relying on resource keys that may be missing
+        return value?.ToString()?.ToLower() switch
+        {
+            "success" => new SolidColorBrush(Microsoft.UI.Colors.Green),
+            "error" => new SolidColorBrush(Microsoft.UI.Colors.Red),
+            "warning" => new SolidColorBrush(Microsoft.UI.Colors.Orange),
+            "skipped" => new SolidColorBrush(Microsoft.UI.Colors.Orange),
+            _ => new SolidColorBrush(Microsoft.UI.Colors.Gray)
+        };
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language)

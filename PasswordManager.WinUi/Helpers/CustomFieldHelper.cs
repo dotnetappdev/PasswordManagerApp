@@ -7,6 +7,8 @@ using System.Linq;
 
 namespace PasswordManager.WinUi.Helpers;
 
+using PasswordManager.WinUi.Helpers;
+
 public static class CustomFieldHelper
 {
     public static StackPanel CreateCustomFieldControl(CustomField field, Action<CustomField> onFieldChanged, Action<CustomField> onFieldRemoved)
@@ -27,7 +29,7 @@ public static class CustomFieldHelper
         {
             Text = field.Name,
             PlaceholderText = "Field name",
-            Style = Application.Current.Resources["ModernTextBoxStyle"] as Style,
+            Style = ResourceHelper.GetStyle("ModernTextBoxStyle"),
             Margin = new Thickness(0, 0, 8, 0)
         };
         nameTextBox.TextChanged += (s, e) =>
@@ -57,7 +59,7 @@ public static class CustomFieldHelper
         var typeSelector = CreateFieldTypeSelector(field.Type, (newType) =>
         {
             field.Type = newType;
-            
+
             // Refresh the value control when type changes
             // Remove old value control and add new one
             if (fieldPanel.Children.Count > 2)
@@ -66,7 +68,7 @@ public static class CustomFieldHelper
             }
             var newValueControl = CreateValueControl(field, onFieldChanged);
             fieldPanel.Children.Add(newValueControl);
-            
+
             onFieldChanged?.Invoke(field);
         });
         fieldPanel.Children.Add(typeSelector);
@@ -87,7 +89,7 @@ public static class CustomFieldHelper
                 {
                     Password = field.Value,
                     PlaceholderText = "Enter password",
-                    Style = Application.Current.Resources["ModernPasswordBoxStyle"] as Style
+                    Style = ResourceHelper.GetStyle("ModernPasswordBoxStyle")
                 };
                 passwordBox.PasswordChanged += (s, e) =>
                 {
@@ -99,7 +101,7 @@ public static class CustomFieldHelper
             case CustomFieldType.Date:
                 var datePicker = new DatePicker
                 {
-                    Style = Application.Current.Resources["ModernDatePickerStyle"] as Style
+                    Style = ResourceHelper.GetStyle("ModernDatePickerStyle")
                 };
                 if (DateTime.TryParse(field.Value, out var date))
                 {
@@ -120,7 +122,7 @@ public static class CustomFieldHelper
                     AcceptsReturn = true,
                     TextWrapping = TextWrapping.Wrap,
                     MaxHeight = 120,
-                    Style = Application.Current.Resources["ModernTextBoxStyle"] as Style
+                    Style = ResourceHelper.GetStyle("ModernTextBoxStyle")
                 };
                 textArea.TextChanged += (s, e) =>
                 {
@@ -134,7 +136,7 @@ public static class CustomFieldHelper
                 {
                     Value = double.TryParse(field.Value, out var number) ? number : 0,
                     PlaceholderText = "Enter number",
-                    Style = Application.Current.Resources["ModernNumberBoxStyle"] as Style
+                    Style = ResourceHelper.GetStyle("ModernNumberBoxStyle")
                 };
                 numberBox.ValueChanged += (s, e) =>
                 {
@@ -152,7 +154,7 @@ public static class CustomFieldHelper
                 {
                     Text = field.Value,
                     PlaceholderText = GetPlaceholderForType(field.Type),
-                    Style = Application.Current.Resources["ModernTextBoxStyle"] as Style
+                    Style = ResourceHelper.GetStyle("ModernTextBoxStyle")
                 };
                 textBox.TextChanged += (s, e) =>
                 {
@@ -181,7 +183,7 @@ public static class CustomFieldHelper
         var comboBox = new ComboBox
         {
             PlaceholderText = "Select field type",
-            Style = Application.Current.Resources["ModernComboBoxStyle"] as Style
+            Style = ResourceHelper.GetStyle("ModernComboBoxStyle")
         };
 
         var fieldTypes = Enum.GetValues<CustomFieldType>().ToList();

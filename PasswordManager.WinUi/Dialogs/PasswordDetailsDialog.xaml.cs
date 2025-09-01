@@ -15,13 +15,13 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
     public PasswordDetailsDialog(IServiceProvider serviceProvider, PasswordItem passwordItem)
     {
         this.InitializeComponent();
-        
+
         _passwordRevealService = serviceProvider.GetRequiredService<IPasswordRevealService>();
         _passwordItem = passwordItem;
-        
+
         Title = passwordItem.Title;
         CloseButtonText = "Close";
-        
+
         LoadPasswordDetails();
     }
 
@@ -46,11 +46,16 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
             {
                 LoginDetailsPanel.Visibility = Visibility.Visible;
                 UsernameText.Text = _passwordItem.LoginItem.Username ?? "Not set";
+                UsernameText.CopyText = _passwordItem.LoginItem.Username ?? string.Empty;
+
                 PasswordText.Text = "••••••••";
-                
+                // CopyText will be filled when revealing/copying via the reveal service; keep empty for now
+                PasswordText.CopyText = string.Empty;
+
                 if (!string.IsNullOrEmpty(_passwordItem.LoginItem.WebsiteUrl))
                 {
                     UrlText.Text = _passwordItem.LoginItem.WebsiteUrl;
+                    UrlText.CopyText = _passwordItem.LoginItem.WebsiteUrl;
                     UrlText.Visibility = Visibility.Visible;
                     UrlLabel.Visibility = Visibility.Visible;
                 }
@@ -69,7 +74,7 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
             try
             {
                 _isPasswordVisible = !_isPasswordVisible;
-                
+
                 if (_isPasswordVisible)
                 {
                     // Reveal password - need to pass loginItem and sessionId
@@ -96,7 +101,7 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
 
     private async void CopyUsernameButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_passwordItem.Type == ItemType.Login && _passwordItem.LoginItem != null && 
+        if (_passwordItem.Type == ItemType.Login && _passwordItem.LoginItem != null &&
             !string.IsNullOrEmpty(_passwordItem.LoginItem.Username))
         {
             try
@@ -104,7 +109,7 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
                 var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
                 dataPackage.SetText(_passwordItem.LoginItem.Username);
                 Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
-                
+
                 CopyUsernameButton.Content = "✅ Copied";
                 await Task.Delay(2000);
                 CopyUsernameButton.Content = "📋 Copy";
@@ -128,7 +133,7 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
                     var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
                     dataPackage.SetText(revealedPassword);
                     Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
-                    
+
                     CopyPasswordButton.Content = "✅ Copied";
                     await Task.Delay(2000);
                     CopyPasswordButton.Content = "📋 Copy";
@@ -143,7 +148,7 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
 
     private async void OpenUrlButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_passwordItem.Type == ItemType.Login && _passwordItem.LoginItem != null && 
+        if (_passwordItem.Type == ItemType.Login && _passwordItem.LoginItem != null &&
             !string.IsNullOrEmpty(_passwordItem.LoginItem.WebsiteUrl))
         {
             try

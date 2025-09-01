@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Models;
 using Microsoft.EntityFrameworkCore;
+using PasswordManager.DAL;
 using System;
 using System.Threading.Tasks;
 

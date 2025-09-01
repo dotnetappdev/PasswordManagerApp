@@ -7,6 +7,7 @@ using PasswordManager.WinUi.Models;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
 using System.Linq;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
@@ -26,10 +27,22 @@ public sealed partial class PasswordItemsPage : Page
         this.InitializeComponent();
     }
 
+    private T? GetElement<T>(string name) where T : class
+    {
+        try
+        {
+            return this.FindName(name) as T;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
-        
+
         // Handle both old service provider parameter and new filter data parameter
         if (e.Parameter is NavigationFilterData filterData)
         {
@@ -37,7 +50,7 @@ public sealed partial class PasswordItemsPage : Page
             _categoryService = _serviceProvider.GetRequiredService<ICategoryInterface>();
             _viewModel = new PasswordItemsViewModel(_serviceProvider);
             this.DataContext = _viewModel;
-            
+
             // Apply the filter from navigation
             ApplyNavigationFilter(filterData);
         }
@@ -48,12 +61,12 @@ public sealed partial class PasswordItemsPage : Page
             _viewModel = new PasswordItemsViewModel(serviceProvider);
             this.DataContext = _viewModel;
         }
-        
+
         if (_serviceProvider != null)
         {
             // Seed sample data if needed (only runs once)
             await SampleDataSeeder.SeedSampleDataAsync(_serviceProvider);
-            
+
             // Load categories from database
             await LoadCategoriesAsync();
         }
@@ -66,8 +79,10 @@ public sealed partial class PasswordItemsPage : Page
         // Update page title
         if (!string.IsNullOrEmpty(filterData.FilterName))
         {
-            ContentTitle.Text = filterData.FilterName;
-            ContentSubtitle.Text = $"Showing {filterData.FilterName.ToLower()}";
+            var contentTitle = GetElement<TextBlock>("ContentTitle");
+            var contentSubtitle = GetElement<TextBlock>("ContentSubtitle");
+            if (contentTitle != null) contentTitle.Text = filterData.FilterName;
+            if (contentSubtitle != null) contentSubtitle.Text = $"Showing {filterData.FilterName.ToLower()}";
         }
 
         // Apply type filter
@@ -113,29 +128,36 @@ public sealed partial class PasswordItemsPage : Page
 
     private async Task PopulateCategoryDropdownAsync()
     {
-        CategoryDropdown.Items.Clear();
-        
+
+        var categoryDropdown = GetElement<ComboBox>("CategoryDropdown");
+        if (categoryDropdown == null)
+        {
+            // If the control is missing, skip population to avoid exceptions
+            return;
+        }
+        categoryDropdown.Items.Clear();
+
         // Add "All Categories" option
         var allCategoriesItem = new ComboBoxItem();
         var allStackPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
-        allStackPanel.Children.Add(new Border 
-        { 
-            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LightGray), 
-            CornerRadius = new CornerRadius(4), 
-            Width = 16, 
-            Height = 16 
+        allStackPanel.Children.Add(new Border
+        {
+            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LightGray),
+            CornerRadius = new CornerRadius(4),
+            Width = 16,
+            Height = 16
         });
         allStackPanel.Children.Add(new TextBlock { Text = "All Categories", FontWeight = Microsoft.UI.Text.FontWeights.Medium });
         allCategoriesItem.Content = allStackPanel;
         allCategoriesItem.Tag = "all";
-        CategoryDropdown.Items.Add(allCategoriesItem);
+        categoryDropdown.Items.Add(allCategoriesItem);
 
         // Add categories from database
         foreach (var category in _categories)
         {
             var item = new ComboBoxItem();
             var stackPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
-            
+
             // Add color indicator
             var colorBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush();
             if (!string.IsNullOrEmpty(category.Color) && Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(Microsoft.UI.Xaml.Media.SolidColorBrush), category.Color) is Microsoft.UI.Xaml.Media.SolidColorBrush brush)
@@ -146,23 +168,23 @@ public sealed partial class PasswordItemsPage : Page
             {
                 colorBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray);
             }
-            
-            stackPanel.Children.Add(new Border 
-            { 
-                Background = colorBrush, 
-                CornerRadius = new CornerRadius(4), 
-                Width = 16, 
-                Height = 16 
+
+            stackPanel.Children.Add(new Border
+            {
+                Background = colorBrush,
+                CornerRadius = new CornerRadius(4),
+                Width = 16,
+                Height = 16
             });
-            
+
             // Add category name and count
-            var categoryText = new TextBlock 
-            { 
-                Text = category.Name, 
-                FontWeight = Microsoft.UI.Text.FontWeights.Medium 
+            var categoryText = new TextBlock
+            {
+                Text = category.Name,
+                FontWeight = Microsoft.UI.Text.FontWeights.Medium
             };
             stackPanel.Children.Add(categoryText);
-            
+
             // Add password count if available
             if (_categoryService != null)
             {
@@ -171,10 +193,10 @@ public sealed partial class PasswordItemsPage : Page
                     var count = await _categoryService.GetPasswordItemCountAsync(category.Id);
                     if (count > 0)
                     {
-                        stackPanel.Children.Add(new TextBlock 
-                        { 
-                            Text = $"({count})", 
-                            FontSize = 12, 
+                        stackPanel.Children.Add(new TextBlock
+                        {
+                            Text = $"({count})",
+                            FontSize = 12,
                             Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray),
                             Margin = new Thickness(4, 0, 0, 0)
                         });
@@ -185,14 +207,14 @@ public sealed partial class PasswordItemsPage : Page
                     // Ignore count errors
                 }
             }
-            
+
             item.Content = stackPanel;
             item.Tag = category;
-            CategoryDropdown.Items.Add(item);
+            categoryDropdown.Items.Add(item);
         }
-        
+
         // Select first item (All Categories)
-        CategoryDropdown.SelectedIndex = 0;
+        categoryDropdown.SelectedIndex = 0;
     }
 
     public void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -209,61 +231,83 @@ public sealed partial class PasswordItemsPage : Page
         {
             // Update UI to show selected filter
             UpdateFilterButtonStyles(button);
-            
+
             // Apply filter to view model
             if (_viewModel != null)
             {
                 _viewModel.FilterType = filterType;
             }
-            
+
             // Update content titles
             UpdateContentTitles(filterType);
         }
     }
-    
+
     private void UpdateFilterButtonStyles(Button selectedButton)
     {
-        // Reset all filter buttons to normal style
-        AllItemsButton.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
-        
-        // Find all filter buttons and reset them
-        var buttons = new[] { AllItemsButton };
-        foreach (var button in buttons)
+        // Safely reset filter buttons if they exist (some layouts removed buttons)
+        try
         {
-            button.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            var allItemsBtn = this.FindName("AllItemsButton") as Button;
+            if (allItemsBtn != null)
+            {
+                allItemsBtn.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            }
+
+            // Example: if there are more named filter buttons, try to reset them too
+            var namedButtons = new[] { "AllItemsButton", "FavoritesButton", "RecentButton", "LoginButton" };
+            foreach (var name in namedButtons)
+            {
+                var btn = this.FindName(name) as Button;
+                if (btn != null)
+                {
+                    btn.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                }
+            }
+
+            // Set selected button style if provided (defensive resource lookup)
+            if (selectedButton != null)
+            {
+                selectedButton.Background = Helpers.ResourceHelper.GetBrush("ModernPrimaryBrush", new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent));
+            }
         }
-        
-        // Set selected button style
-        selectedButton.Background = Application.Current.Resources["ModernPrimaryBrush"] as Microsoft.UI.Xaml.Media.Brush;
+        catch
+        {
+            // Defensive: if FindName or resource lookup fails, ignore and continue
+        }
     }
-    
+
     private void UpdateContentTitles(string filterType)
     {
+        var contentTitle = GetElement<TextBlock>("ContentTitle");
+        var contentSubtitle = GetElement<TextBlock>("ContentSubtitle");
+        if (contentTitle == null || contentSubtitle == null) return;
+
         switch (filterType)
         {
             case "All":
-                ContentTitle.Text = "All Items";
-                ContentSubtitle.Text = "Showing all password items";
+                contentTitle.Text = "All Items";
+                contentSubtitle.Text = "Showing all password items";
                 break;
             case "Favorites":
-                ContentTitle.Text = "Favorites";
-                ContentSubtitle.Text = "Your favorite password items";
+                contentTitle.Text = "Favorites";
+                contentSubtitle.Text = "Your favorite password items";
                 break;
             case "Recent":
-                ContentTitle.Text = "Recently Used";
-                ContentSubtitle.Text = "Recently accessed items";
+                contentTitle.Text = "Recently Used";
+                contentSubtitle.Text = "Recently accessed items";
                 break;
             case "Login":
-                ContentTitle.Text = "Logins";
-                ContentSubtitle.Text = "Login credentials";
+                contentTitle.Text = "Logins";
+                contentSubtitle.Text = "Login credentials";
                 break;
             case "CreditCard":
-                ContentTitle.Text = "Credit Cards";
-                ContentSubtitle.Text = "Payment card information";
+                contentTitle.Text = "Credit Cards";
+                contentSubtitle.Text = "Payment card information";
                 break;
             case "SecureNote":
-                ContentTitle.Text = "Secure Notes";
-                ContentSubtitle.Text = "Private notes and documents";
+                contentTitle.Text = "Secure Notes";
+                contentSubtitle.Text = "Private notes and documents";
                 break;
         }
     }
@@ -290,45 +334,134 @@ public sealed partial class PasswordItemsPage : Page
 
     private void ItemsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is ListView listView && listView.SelectedItem is PasswordItem selectedItem)
+        var listView = sender as ListView ?? GetElement<ListView>("ItemsList");
+        if (listView != null && listView.SelectedItem is PasswordItem selectedItem)
         {
             _selectedItem = selectedItem;
             ShowItemDetails(selectedItem);
-            
-            // Sync with cards view
-            PasswordCardsView.SelectedItem = selectedItem;
         }
     }
 
     private void PasswordCardsView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is GridView gridView && gridView.SelectedItem is PasswordItem selectedItem)
+        // Card view removed; keep method stub for compatibility if referenced elsewhere
+    }
+
+    private void RevealPasswordButton_Click(object sender, RoutedEventArgs e)
+    {
+        var list = GetElement<ListView>("ItemsList");
+        var selected = _selectedItem ?? (list?.SelectedItem as PasswordItem);
+        if (selected == null) return;
+
+        var detailPassword = GetElement<TextBlock>("DetailPassword");
+        if (detailPassword == null) return;
+
+        // Toggle between masked and plain text
+        if (!string.IsNullOrEmpty(detailPassword.Text) && detailPassword.Text.StartsWith("•"))
         {
-            _selectedItem = selectedItem;
-            ShowItemDetails(selectedItem);
-            
-            // Sync with list view
-            ItemsList.SelectedItem = selectedItem;
+            // Show actual password if available
+            detailPassword.Text = selected.Password ?? selected.LoginItem?.Password ?? "";
         }
+        else
+        {
+            // Mask
+            var pwd = selected.Password ?? selected.LoginItem?.Password ?? "";
+            detailPassword.Text = string.IsNullOrEmpty(pwd) ? "" : new string('•', Math.Max(8, pwd.Length));
+        }
+    }
+
+    private async void CopyPasswordButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var list = GetElement<ListView>("ItemsList");
+            var selected = _selectedItem ?? (list?.SelectedItem as PasswordItem);
+            var pwd = selected?.Password ?? selected?.LoginItem?.Password;
+            if (string.IsNullOrEmpty(pwd))
+            {
+                await ShowTemporaryMessageAsync("No password available to copy");
+                return;
+            }
+
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetText(pwd);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+            await ShowTemporaryMessageAsync("Password copied to clipboard");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error copying password: {ex.Message}");
+        }
+    }
+
+    private async void OpenWebsiteButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var list = GetElement<ListView>("ItemsList");
+            var selected = _selectedItem ?? (list?.SelectedItem as PasswordItem);
+            var url = selected?.Website ?? selected?.LoginItem?.WebsiteUrl;
+            if (string.IsNullOrEmpty(url))
+            {
+                await ShowTemporaryMessageAsync("No website URL available");
+                return;
+            }
+
+            var uri = new Uri(url);
+            await Windows.System.Launcher.LaunchUriAsync(uri);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error opening website: {ex.Message}");
+        }
+    }
+
+    private async Task ShowTemporaryMessageAsync(string message)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "",
+            Content = message,
+            CloseButtonText = "OK",
+            XamlRoot = this.XamlRoot
+        };
+        await dialog.ShowAsync();
     }
 
     private void ShowItemDetails(PasswordItem item)
     {
         if (item == null) return;
 
-        // Show detail panel
-        DetailPanel.Visibility = Visibility.Visible;
-        
-        // Update detail content
-        DetailTitle.Text = "Item Details";
-        DetailSubtitle.Text = $"Details for {item.Title}";
-        DetailItemTitle.Text = item.Title;
-        DetailItemSubtitle.Text = item.Description ?? item.Username ?? "No additional information";
-        DetailUsername.Text = item.Username ?? "";
-        DetailWebsite.Text = item.Website ?? "";
-        
+        // Safe lookups for all named XAML elements to avoid compile-time errors when XAML g.i.cs is missing
+        var detailPanel = GetElement<Grid>("DetailPanel");
+        var detailTitle = GetElement<TextBlock>("DetailTitle");
+        var detailSubtitle = GetElement<TextBlock>("DetailSubtitle");
+        var detailItemTitle = GetElement<TextBlock>("DetailItemTitle");
+        var detailItemSubtitle = GetElement<TextBlock>("DetailItemSubtitle");
+        var detailUsername = GetElement<TextBlock>("DetailUsername");
+        var detailWebsite = GetElement<TextBlock>("DetailWebsite");
+        var detailPassword = GetElement<TextBlock>("DetailPassword");
+        var detailIcon = GetElement<TextBlock>("DetailIcon");
+        var detailCategory = GetElement<TextBlock>("DetailCategory");
+
+        if (detailPanel != null) detailPanel.Visibility = Visibility.Visible;
+        if (detailTitle != null) detailTitle.Text = "Item Details";
+        if (detailSubtitle != null) detailSubtitle.Text = $"Details for {item.Title}";
+        if (detailItemTitle != null) detailItemTitle.Text = item.Title;
+        if (detailItemSubtitle != null) detailItemSubtitle.Text = item.Description ?? item.Username ?? "No additional information";
+        if (detailUsername != null) detailUsername.Text = item.Username ?? "";
+        if (detailWebsite != null) detailWebsite.Text = item.Website ?? "";
+
+        // By default show masked password in the read-only detail view
+        var pwd = item.Password ?? item.LoginItem?.Password ?? string.Empty;
+        if (detailPassword != null) detailPassword.Text = string.IsNullOrEmpty(pwd) ? string.Empty : new string('•', Math.Max(8, pwd.Length));
+
         // Update icon based on type
-        DetailIcon.Text = GetTypeIcon(item.Type.ToString());
+        if (detailIcon != null) detailIcon.Text = GetTypeIcon(item.Type.ToString());
+
+        // Category
+        var cat = item.Category;
+        if (detailCategory != null) detailCategory.Text = cat != null ? cat.Name : "Uncategorized";
     }
 
     private string GetTypeIcon(string type)
@@ -402,7 +535,7 @@ public sealed partial class PasswordItemsPage : Page
                     }
                 }
             }
-        }  
+        }
         catch (Exception ex)
         {
             var errorDialog = new ContentDialog
@@ -418,7 +551,7 @@ public sealed partial class PasswordItemsPage : Page
 
     private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is MenuFlyoutItem menuItem && 
+        if (sender is MenuFlyoutItem menuItem &&
             menuItem.DataContext is PasswordItem item &&
             _viewModel != null)
         {
@@ -442,49 +575,75 @@ public sealed partial class PasswordItemsPage : Page
 
     private async void EditMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is MenuFlyoutItem menuItem && 
-            menuItem.DataContext is PasswordItem item)
-        {
-            try
-            {
-                // Check if service provider is available
-                if (_serviceProvider == null)
-                {
-                    var errorDialog = new ContentDialog
-                    {
-                        Title = "Error",
-                        Content = "Service provider not initialized. Please navigate to this page properly.",
-                        CloseButtonText = "OK",
-                        XamlRoot = this.XamlRoot
-                    };
-                    await errorDialog.ShowAsync();
-                    return;
-                }
+        PasswordItem? item = null;
 
-                var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, item);
-                dialog.XamlRoot = this.XamlRoot;
-                
-                var result = await dialog.ShowAsync();
-                if (result == ContentDialogResult.Primary && dialog.Result != null)
-                {
-                    // Refresh the list to show the updated item
-                    if (_viewModel != null)
-                    {
-                        await _viewModel.RefreshAsync();
-                    }
-                }
-            }
-            catch (Exception ex)
+        // Support both MenuFlyoutItem (context menu) and Button (detail header Edit button)
+        if (sender is MenuFlyoutItem menuItem && menuItem.DataContext is PasswordItem mi)
+        {
+            item = mi;
+        }
+        else if (sender is Button btn)
+        {
+            // Use the currently selected item in the list/detail view
+            item = _selectedItem;
+        }
+
+        if (item == null)
+        {
+            // Nothing to edit
+            return;
+        }
+
+        try
+        {
+            if (_serviceProvider == null)
             {
                 var errorDialog = new ContentDialog
                 {
                     Title = "Error",
-                    Content = $"Error editing password: {ex.Message}",
+                    Content = "Service provider not initialized. Please navigate to this page properly.",
                     CloseButtonText = "OK",
                     XamlRoot = this.XamlRoot
                 };
                 await errorDialog.ShowAsync();
+                return;
             }
+
+            // Open the edit dialog (reuse AddPasswordDialog in edit mode)
+            var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, item);
+            dialog.XamlRoot = this.XamlRoot;
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && dialog.Result != null)
+            {
+                // Refresh the list to show the updated item and re-display details
+                if (_viewModel != null)
+                {
+                    await _viewModel.RefreshAsync();
+                }
+
+                // Re-load item details from fresh data source if possible
+                if (_viewModel != null)
+                {
+                    var fresh = _viewModel.PasswordItems?.FirstOrDefault(pi => pi.Id == item.Id);
+                    if (fresh != null)
+                    {
+                        _selectedItem = fresh;
+                        ShowItemDetails(fresh);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = "Error",
+                Content = $"Error editing password: {ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await errorDialog.ShowAsync();
         }
     }
 
@@ -518,7 +677,8 @@ public sealed partial class PasswordItemsPage : Page
 
     private void ItemsList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
     {
-        if (ItemsList.SelectedItem is PasswordItem item)
+        var list = GetElement<ListView>("ItemsList");
+        if (list != null && list.SelectedItem is PasswordItem item)
         {
             // Open password details view
             ShowPasswordDetails(item);
@@ -529,7 +689,21 @@ public sealed partial class PasswordItemsPage : Page
     {
         try
         {
-            var dialog = new Dialogs.PasswordDetailsDialog(_serviceProvider, item);
+            if (_serviceProvider is null)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = "Service provider not initialized. Please navigate to this page properly.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+                return;
+            }
+
+            // Use the AddPasswordDialog in read-only mode for a richer view
+            var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, item, true);
             dialog.XamlRoot = this.XamlRoot;
             await dialog.ShowAsync();
         }
@@ -545,7 +719,47 @@ public sealed partial class PasswordItemsPage : Page
             await errorDialog.ShowAsync();
         }
     }
-    
+
+    private async void ViewDetailButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedItem is null)
+        {
+            await ShowTemporaryMessageAsync("No item selected to view");
+            return;
+        }
+
+        try
+        {
+            if (_serviceProvider is null)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = "Service provider not initialized. Please navigate to this page properly.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+                return;
+            }
+
+            var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, _selectedItem, true);
+            dialog.XamlRoot = this.XamlRoot;
+            await dialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = "Error",
+                Content = $"Error opening view dialog: {ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await errorDialog.ShowAsync();
+        }
+    }
+
     private void ClearFilters_Click(object sender, RoutedEventArgs e)
     {
         // Clear all filter checkboxes and reset to default state
@@ -553,21 +767,23 @@ public sealed partial class PasswordItemsPage : Page
         {
             _viewModel.FilterType = "All";
         }
-        
-        // Close the filter flyout
-        FilterFlyout?.Hide();
-        
+
+        // Close the filter flyout (safe)
+        var filterFlyout = GetElement<Flyout>("FilterFlyout");
+        filterFlyout?.Hide();
+
         // Update content titles
         UpdateContentTitles("All");
     }
-    
+
     private void ApplyFilters_Click(object sender, RoutedEventArgs e)
     {
         // Apply the selected filters
         // In a real implementation, this would read the checkbox states
         // and apply multiple filters to the view model
-        
+
         // For now, just close the flyout
-        FilterFlyout?.Hide();
+        var filterFlyout = GetElement<Flyout>("FilterFlyout");
+        filterFlyout?.Hide();
     }
 }

@@ -9,6 +9,7 @@ using PasswordManager.Imports.Interfaces;
 using PasswordManager.Imports.Services;
 using Microsoft.Extensions.Configuration;
 using PasswordManager.Crypto.Extensions;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using PasswordManager.Models;
 
@@ -86,6 +87,18 @@ public class Program
                 
                 services.AddDbContext<PasswordManagerDbContext>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
+
+                // Add Identity services so UserManager<ApplicationUser> and related types are available
+                services.AddIdentityCore<ApplicationUser>(options =>
+                {
+                    options.SignIn.RequireConfirmedAccount = false;
+                    options.Password.RequireDigit = true;
+                    options.Password.RequiredLength = 8;
+                    options.Password.RequireNonAlphanumeric = false;
+                    options.Password.RequireUppercase = true;
+                    options.Password.RequireLowercase = true;
+                })
+                .AddEntityFrameworkStores<PasswordManagerDbContextApp>();
 
                 // Register authentication service early so other services can depend on it
                 services.AddScoped<IAuthService, SimpleAuthService>();

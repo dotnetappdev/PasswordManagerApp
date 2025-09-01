@@ -11,6 +11,8 @@ using PasswordManager.Imports.Services;
 using Microsoft.Extensions.Configuration;
 using PasswordManager.Crypto.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Identity;
+using PasswordManager.Models;
 using PasswordManager.WinUi.Services;
 
 namespace PasswordManager.WinUi;
@@ -40,15 +42,15 @@ public partial class App : Application
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         m_window = new MainWindow(_host.Services);
-        
+
         // Initialize theme system
         ThemeHelper.Initialize(m_window, this);
-        
+
         // Load saved theme setting
         _ = LoadSavedTheme();
-        
+
         m_window.Activate();
-        
+
         // Initialize services
         _ = Task.Run(async () =>
         {
@@ -57,6 +59,21 @@ public partial class App : Application
                 await _host.StartAsync();
                 // Initialize database and services
                 using var scope = _host.Services.CreateScope();
+
+                // DEBUG: quick DI self-check to confirm Identity/UserManager and UserProfileService are registered
+#if DEBUG
+                try
+                {
+                    var dbgUserManager = scope.ServiceProvider.GetService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
+                    var dbgUserProfile = scope.ServiceProvider.GetService<IUserProfileService>();
+                    System.Diagnostics.Debug.WriteLine($"DEBUG DI check: UserManager {(dbgUserManager != null ? "RESOLVED" : "MISSING")}, UserProfileService {(dbgUserProfile != null ? "RESOLVED" : "MISSING")} ");
+                }
+                catch (Exception dbgEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"DEBUG DI check exception: {dbgEx}");
+                }
+#endif
+
                 var startupService = scope.ServiceProvider.GetRequiredService<IAppStartupService>();
                 await startupService.InitializeAsync();
             }
@@ -67,7 +84,7 @@ public partial class App : Application
             }
         });
     }
-    
+
     private async Task LoadSavedTheme()
     {
         try
@@ -75,7 +92,7 @@ public partial class App : Application
             using var scope = _host.Services.CreateScope();
             var secureStorage = scope.ServiceProvider.GetRequiredService<ISecureStorageService>();
             var savedTheme = await secureStorage.GetAsync("SelectedTheme");
-            
+
             if (!string.IsNullOrEmpty(savedTheme))
             {
                 var theme = savedTheme switch
@@ -85,7 +102,7 @@ public partial class App : Application
                     "System" => PasswordManager.WinUi.Services.AppTheme.System,
                     _ => PasswordManager.WinUi.Services.AppTheme.System
                 };
-                
+
                 PasswordManager.WinUi.Services.ThemeHelper.SetTheme(theme);
             }
         }
@@ -126,12 +143,24 @@ public partial class App : Application
 
                 services.AddDbContext<PasswordManagerDbContextApp>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
-                
+
                 services.AddDbContext<PasswordManagerDbContext>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
 
+                // Add Identity services so UserManager<ApplicationUser> is available to services
+                services.AddIdentityCore<ApplicationUser>(options =>
+                {
+                    options.SignIn.RequireConfirmedAccount = false;
+                    options.Password.RequireDigit = true;
+                    options.Password.RequiredLength = 8;
+                    options.Password.RequireNonAlphanumeric = false;
+                    options.Password.RequireUppercase = true;
+                    options.Password.RequireLowercase = true;
+                })
+                .AddEntityFrameworkStores<PasswordManagerDbContextApp>();
+
                 // Register the interface mapping for dependency injection
-                services.AddScoped<DAL.Interfaces.IPasswordManagerDbContext>(provider => 
+                services.AddScoped<DAL.Interfaces.IPasswordManagerDbContext>(provider =>
                     provider.GetRequiredService<PasswordManagerDbContext>());
 
                 // Register business services
