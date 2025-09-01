@@ -743,10 +743,10 @@
     <Style x:Key="ModernNavigationViewItemStyle"
            TargetType="NavigationViewItem">
         <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
-        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="FontSize" Value="14"/>
-        <Setter Property="Margin" Value="4,2"/>
-        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Margin" Value="8,4"/>
+        <Setter Property="CornerRadius" Value="8"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="NavigationViewItem">
@@ -763,7 +763,7 @@
                                     Opacity="0"/>
                             
                             <Grid x:Name="ContentGrid"
-                                  Margin="16,8,16,8">
+                                  Margin="20,12,20,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
@@ -774,7 +774,7 @@
                                 <ContentPresenter x:Name="Icon"
                                                 Grid.Column="0"
                                                 Content="{TemplateBinding Icon}"
-                                                Margin="0,0,12,0"
+                                                Margin="0,0,16,0"
                                                 VerticalAlignment="Center"/>
                                 
                                 <!-- Content -->

@@ -813,4 +813,78 @@ public sealed partial class PasswordItemsPage : Page
         var filterFlyout = GetElement<Flyout>("FilterFlyout");
         filterFlyout?.Hide();
     }
+
+    private void CategorySearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (sender is TextBox searchBox)
+        {
+            string searchText = searchBox.Text?.ToLower() ?? "";
+            FilterCategoryDropdown(searchText);
+        }
+    }
+
+    private void FilterCategoryDropdown(string searchText)
+    {
+        var categoryDropdown = GetElement<ComboBox>("CategoryDropdown");
+        if (categoryDropdown == null) return;
+
+        categoryDropdown.Items.Clear();
+
+        // Always add "All Categories" option
+        var allCategoriesItem = new ComboBoxItem();
+        var allStackPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        allStackPanel.Children.Add(new Border
+        {
+            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LightGray),
+            CornerRadius = new CornerRadius(4),
+            Width = 16,
+            Height = 16
+        });
+        allStackPanel.Children.Add(new TextBlock { Text = "All Categories", FontWeight = Microsoft.UI.Text.FontWeights.Medium });
+        allCategoriesItem.Content = allStackPanel;
+        allCategoriesItem.Tag = "all";
+        categoryDropdown.Items.Add(allCategoriesItem);
+
+        // Filter categories based on search text
+        var filteredCategories = string.IsNullOrEmpty(searchText) 
+            ? _categories 
+            : _categories.Where(c => c.Name.ToLower().Contains(searchText)).ToList();
+
+        // Add filtered categories to dropdown
+        foreach (var category in filteredCategories)
+        {
+            var item = new ComboBoxItem();
+            var stackPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+
+            // Add color indicator
+            var colorBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush();
+            if (!string.IsNullOrEmpty(category.Color) && Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(Microsoft.UI.Xaml.Media.SolidColorBrush), category.Color) is Microsoft.UI.Xaml.Media.SolidColorBrush brush)
+            {
+                colorBrush = brush;
+            }
+            else
+            {
+                colorBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray);
+            }
+
+            stackPanel.Children.Add(new Border
+            {
+                Background = colorBrush,
+                CornerRadius = new CornerRadius(4),
+                Width = 16,
+                Height = 16
+            });
+
+            // Add category name
+            stackPanel.Children.Add(new TextBlock 
+            { 
+                Text = category.Name, 
+                FontWeight = Microsoft.UI.Text.FontWeights.Medium 
+            });
+
+            item.Content = stackPanel;
+            item.Tag = category;
+            categoryDropdown.Items.Add(item);
+        }
+    }
 }

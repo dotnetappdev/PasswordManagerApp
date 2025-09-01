@@ -86,7 +86,7 @@
 
             <!-- Header Content with Search Box -->
             <NavigationView.Header>
-                <Grid Margin="24,16">
+                <Grid Margin="0">
                     <AutoSuggestBox x:Name="SearchBox"
                                     QueryIcon="Find"
                                     PlaceholderText="Search passwords..."
@@ -95,8 +95,7 @@
                                     Style="{StaticResource ModernAutoSuggestBoxStyle}"
                                     CornerRadius="8"
                                     Height="36"
-                                    HorizontalAlignment="Stretch"
-                                    MaxWidth="400"/>
+                                    HorizontalAlignment="Stretch"/>
                 </Grid>
             </NavigationView.Header>
 
