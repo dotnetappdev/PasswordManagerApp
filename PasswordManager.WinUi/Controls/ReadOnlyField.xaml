@@ -14,40 +14,44 @@
 
     <UserControl.KeyboardAccelerators>
         <KeyboardAccelerator Key="C"
-                Modifiers="Control"
-                Invoked="CopyKeyboardAccelerator_Invoked"/>
+                             Modifiers="Control"
+                             Invoked="CopyKeyboardAccelerator_Invoked"/>
     </UserControl.KeyboardAccelerators>
 
     <Grid Background="Transparent"
           PointerEntered="Root_PointerEntered"
-          PointerExited="Root_PointerExited">
+          PointerExited="Root_PointerExited"
+          Padding="0,8,0,8">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Displayed value -->
+        <!-- Displayed value styled as label -->
         <TextBlock x:Name="ValueTextBlock"
                    Text="{x:Bind Text, Mode=OneWay}"
                    TextTrimming="CharacterEllipsis"
                    VerticalAlignment="Center"
-                   Foreground="{ThemeResource ModernTextPrimaryBrush}"
-                   FontFamily="{x:Bind FontFamilyOverride, Mode=OneWay}"/>
+                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                   FontSize="18"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,0"/>
 
-        <!-- Copy button - appears when hovered -->
+        <!-- Copy button - subtle, only on hover -->
         <Button x:Name="CopyButton"
                 Grid.Column="1"
                 Visibility="Collapsed"
                 Click="CopyButton_Click"
-                Margin="8,0,0,0"
-                Padding="12,6"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Center">
+                Margin="12,0,0,0"
+                Padding="6,0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="Transparent"
+                BorderThickness="0">
             <StackPanel Orientation="Horizontal"
-                        Spacing="8">
-                <TextBlock Text="Copy"
-                           Foreground="White"
-                           FontWeight="SemiBold"/>
+                        Spacing="4">
+                <SymbolIcon Symbol="Copy"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
             </StackPanel>
         </Button>
     </Grid>

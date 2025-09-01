@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -82,16 +83,39 @@ public sealed partial class AddPasswordDialog : ContentDialog
         UsernameTextDisplay.Visibility = readOnly ? Visibility.Visible : Visibility.Collapsed;
         if (readOnly) UsernameTextDisplay.Text = UsernameTextBox.Text;
 
+        // Make the surrounding border look like a label when read-only
+        if (this.FindName("UsernameFieldBorder") is Border usernameBorder)
+        {
+            // Remove the surrounding input-style background and border when read-only so the ReadOnlyField looks like a label
+            usernameBorder.Background = readOnly ? null : (Brush)Application.Current.Resources["ModernSurfaceBrush"];
+            usernameBorder.BorderThickness = readOnly ? new Thickness(0) : new Thickness(1);
+            usernameBorder.BorderBrush = readOnly ? null : (Brush)Application.Current.Resources["ModernBorderBrush"];
+        }
+
         // Password
         PasswordTextBox.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
         PasswordDisplayTextBox.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible; // keep hidden when in edit
         PasswordTextDisplay.Visibility = readOnly ? Visibility.Visible : Visibility.Collapsed;
         if (readOnly) PasswordTextDisplay.Text = PasswordTextBox.Password == null || PasswordTextBox.Password.Length == 0 ? "" : new string('•', Math.Max(8, PasswordTextBox.Password.Length));
 
+        if (this.FindName("PasswordFieldBorder") is Border passwordBorder)
+        {
+            passwordBorder.Background = readOnly ? null : (Brush)Application.Current.Resources["ModernSurfaceBrush"];
+            passwordBorder.BorderThickness = readOnly ? new Thickness(0) : new Thickness(1);
+            passwordBorder.BorderBrush = readOnly ? null : (Brush)Application.Current.Resources["ModernBorderBrush"];
+        }
+
         // URL
         UrlTextBox.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
         UrlTextDisplay.Visibility = readOnly ? Visibility.Visible : Visibility.Collapsed;
         if (readOnly) UrlTextDisplay.Text = UrlTextBox.Text;
+
+        if (this.FindName("UrlFieldBorder") is Border urlBorder)
+        {
+            urlBorder.Background = readOnly ? null : (Brush)Application.Current.Resources["ModernSurfaceBrush"];
+            urlBorder.BorderThickness = readOnly ? new Thickness(0) : new Thickness(1);
+            urlBorder.BorderBrush = readOnly ? null : (Brush)Application.Current.Resources["ModernBorderBrush"];
+        }
 
         // Disable or hide editing-related controls
         TypeComboBox.IsEnabled = !readOnly;
@@ -158,15 +182,24 @@ public sealed partial class AddPasswordDialog : ContentDialog
         // Handle special category-based forms
         if (!string.IsNullOrEmpty(categoryName))
         {
-            if (categoryName.Contains("Identity") && itemType == ItemType.SecureNote)
+            // If the category is "Identity" we prefer using the Login fields layout
+            if (categoryName.Contains("Identity", StringComparison.OrdinalIgnoreCase))
             {
+                // Show login fields instead of identity-specific layout
+                LoginFieldsPanel.Visibility = Visibility.Visible;
                 SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
-                IdentityFieldsPanel.Visibility = Visibility.Visible;
+                IdentityFieldsPanel.Visibility = Visibility.Collapsed;
             }
-            else if (categoryName.Contains("API") && itemType == ItemType.SecureNote)
+            else if (categoryName.Contains("API", StringComparison.OrdinalIgnoreCase) && itemType == ItemType.SecureNote)
             {
                 SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
                 APICredentialsFieldsPanel.Visibility = Visibility.Visible;
+            }
+            else if (categoryName.Contains("Identity") && itemType == ItemType.SecureNote)
+            {
+                // Fallback to previous behavior
+                SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
+                IdentityFieldsPanel.Visibility = Visibility.Visible;
             }
         }
     }
@@ -262,6 +295,25 @@ public sealed partial class AddPasswordDialog : ContentDialog
             PasskeyRequiresVerificationCheckBox.IsChecked = _editingItem.PasskeyItem.RequiresUserVerification;
             PasskeyIsBackedUpCheckBox.IsChecked = _editingItem.PasskeyItem.IsBackedUp;
             PasskeyNotesTextBox.Text = _editingItem.PasskeyItem.Notes ?? string.Empty;
+        }
+
+        // If this item belongs to an "Identity" category, prefer the login-style layout
+        try
+        {
+            var catName = _editingItem.Category?.Name ?? string.Empty;
+            if (!string.IsNullOrEmpty(catName) && catName.IndexOf("Identity", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                // Show login fields and hide other type-specific panels so Identity acts like a filtered Login form
+                LoginFieldsPanel.Visibility = Visibility.Visible;
+                CreditCardFieldsPanel.Visibility = Visibility.Collapsed;
+                SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
+                PasskeyFieldsPanel.Visibility = Visibility.Collapsed;
+                IdentityFieldsPanel.Visibility = Visibility.Collapsed;
+            }
+        }
+        catch
+        {
+            // Defensive: if panels are renamed in XAML, ignore and allow existing behavior
         }
 
         // Select category

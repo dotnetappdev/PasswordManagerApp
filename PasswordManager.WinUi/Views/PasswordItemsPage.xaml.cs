@@ -448,12 +448,39 @@ public sealed partial class PasswordItemsPage : Page
         if (detailTitle != null) detailTitle.Text = "Item Details";
         if (detailSubtitle != null) detailSubtitle.Text = $"Details for {item.Title}";
         if (detailItemTitle != null) detailItemTitle.Text = item.Title;
-        if (detailItemSubtitle != null) detailItemSubtitle.Text = item.Description ?? item.Username ?? "No additional information";
-        if (detailUsername != null) detailUsername.Text = item.Username ?? "";
-        if (detailWebsite != null) detailWebsite.Text = item.Website ?? "";
 
-        // By default show masked password in the read-only detail view
-        var pwd = item.Password ?? item.LoginItem?.Password ?? string.Empty;
+        // Prefer login-style display. If item has a LoginItem use that. If the item category contains "Identity",
+        // treat it like a login and map passkey/secure-note data where possible into username/website fields.
+        string username = string.Empty;
+        string website = string.Empty;
+        string pwd = string.Empty;
+
+        if (item.LoginItem != null)
+        {
+            username = item.LoginItem.Username ?? item.Username ?? string.Empty;
+            website = item.LoginItem.WebsiteUrl ?? item.Website ?? string.Empty;
+            pwd = item.LoginItem.Password ?? item.Password ?? string.Empty;
+        }
+        else if (item.Category != null && item.Category.Name != null && item.Category.Name.IndexOf("Identity", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            // Treat identity category as login-style: prefer passkey username/website where available
+            username = item.PasskeyItem?.Username ?? item.Username ?? string.Empty;
+            website = item.PasskeyItem?.WebsiteUrl ?? item.Website ?? string.Empty;
+            // Identity items typically don't have a password; prefer stored Password field if present
+            pwd = item.Password ?? string.Empty;
+        }
+        else
+        {
+            username = item.Username ?? string.Empty;
+            website = item.Website ?? string.Empty;
+            pwd = item.Password ?? string.Empty;
+        }
+
+        if (detailItemSubtitle != null) detailItemSubtitle.Text = item.Description ?? (!string.IsNullOrEmpty(username) ? username : "No additional information");
+        if (detailUsername != null) detailUsername.Text = username;
+        if (detailWebsite != null) detailWebsite.Text = website;
+
+        // Show masked password if there is one
         if (detailPassword != null) detailPassword.Text = string.IsNullOrEmpty(pwd) ? string.Empty : new string('•', Math.Max(8, pwd.Length));
 
         // Update icon based on type

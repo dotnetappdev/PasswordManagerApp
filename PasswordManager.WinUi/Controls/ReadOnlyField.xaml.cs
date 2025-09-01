@@ -20,8 +20,7 @@ namespace PasswordManager.WinUi.Controls
         public static readonly DependencyProperty TextProperty =
             DependencyProperty.Register("Text", typeof(string), typeof(ReadOnlyField), new PropertyMetadata(string.Empty));
 
-        public Microsoft.UI.Xaml.Media.FontFamily FontFamilyOverride { get; set; }
-
+        // FontFamilyOverride removed - TextBlock uses theme/default font to avoid WinRT binding issues
         // Raw value to copy to clipboard (may differ from displayed Text)
         public string CopyText
         {
