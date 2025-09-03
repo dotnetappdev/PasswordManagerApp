@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using PasswordManager.Models.DTOs.Auth;
 using PasswordManager.Services.Interfaces;
 using System;
 using System.Linq;
@@ -11,6 +12,7 @@ public class LoginViewModel : BaseViewModel
     private readonly IAuthService _authService;
     private readonly IVaultSessionService _vaultSessionService;
     private readonly ISecureStorageService _secureStorageService;
+    private readonly IUserProfileService _userProfileService;
     private string _masterPassword = string.Empty;
     private string _confirmMasterPassword = string.Empty;
     private string _passwordHint = string.Empty;
@@ -22,12 +24,15 @@ public class LoginViewModel : BaseViewModel
     private string _passwordPlaceholder = "Enter your master password";
     private bool _isAuthenticated = false;
     private bool _isButtonEnabled = true;
+    private UserDto? _selectedUser;
+    private bool _showProfileSelection = true;
 
     public LoginViewModel(IServiceProvider serviceProvider)
     {
         _authService = serviceProvider.GetRequiredService<IAuthService>();
         _vaultSessionService = serviceProvider.GetRequiredService<IVaultSessionService>();
         _secureStorageService = serviceProvider.GetRequiredService<ISecureStorageService>();
+        _userProfileService = serviceProvider.GetRequiredService<IUserProfileService>();
         
         // Initialize with default state and then asynchronously update
         UpdateUIForSetupMode(); // Set initial UI state
@@ -51,7 +56,23 @@ public class LoginViewModel : BaseViewModel
                 return;
             }
 
-            _isFirstTimeSetup = await _authService.IsFirstTimeSetupAsync();
+            // Check if there are any existing users
+            var users = await _userProfileService.GetAllUsersAsync();
+            var activeUsers = users.Where(u => u.IsActive).ToList();
+
+            if (activeUsers.Count == 0)
+            {
+                // First time setup - no users exist
+                _isFirstTimeSetup = true;
+                ShowProfileSelection = false;
+            }
+            else
+            {
+                // Users exist - show profile selection
+                _isFirstTimeSetup = false;
+                ShowProfileSelection = true;
+            }
+
             UpdateUIForSetupMode();
         }
         catch (Exception ex)
@@ -59,6 +80,7 @@ public class LoginViewModel : BaseViewModel
             System.Diagnostics.Debug.WriteLine($"Error during initialization: {ex.Message}");
             // Default to first-time setup on error
             _isFirstTimeSetup = true;
+            ShowProfileSelection = false;
             UpdateUIForSetupMode();
         }
         finally
@@ -93,6 +115,8 @@ public class LoginViewModel : BaseViewModel
         OnPropertyChanged(nameof(IsFirstTimeSetup));
         OnPropertyChanged(nameof(ShowConfirmPassword));
         OnPropertyChanged(nameof(ShowPasswordHint));
+        OnPropertyChanged(nameof(ShowProfileSelection));
+        OnPropertyChanged(nameof(ShowPasswordEntry));
         
         System.Diagnostics.Debug.WriteLine($"UpdateUIForSetupMode completed - PageTitle: {PageTitle}, PrimaryButtonText: {PrimaryButtonText}");
     }
@@ -168,6 +192,20 @@ public class LoginViewModel : BaseViewModel
         get => _isButtonEnabled && !IsLoading;
         set => SetProperty(ref _isButtonEnabled, value);
     }
+
+    public UserDto? SelectedUser
+    {
+        get => _selectedUser;
+        set => SetProperty(ref _selectedUser, value);
+    }
+
+    public bool ShowProfileSelection
+    {
+        get => _showProfileSelection;
+        set => SetProperty(ref _showProfileSelection, value);
+    }
+
+    public bool ShowPasswordEntry => !ShowProfileSelection;
 
     // Legacy properties for backward compatibility (not used in new flow)
     public string Username { get; set; } = string.Empty;
@@ -261,6 +299,13 @@ public class LoginViewModel : BaseViewModel
 
     private async Task<bool> LoginWithMasterPasswordAsync()
     {
+        // If we have a selected user, we need to authenticate against that specific user
+        if (SelectedUser != null)
+        {
+            return await AuthenticateSpecificUserAsync(SelectedUser, MasterPassword);
+        }
+        
+        // Fallback to original authentication
         var loginResult = await _authService.AuthenticateAsync(MasterPassword);
         
         if (loginResult)
@@ -292,5 +337,75 @@ public class LoginViewModel : BaseViewModel
     public async Task<bool> RegisterAsync()
     {
         return await AuthenticateAsync();
+    }
+
+    public void SelectUserProfile(UserDto user)
+    {
+        SelectedUser = user;
+        ShowProfileSelection = false;
+        
+        // Update UI for selected user
+        if (!string.IsNullOrEmpty(user.FirstName) && !string.IsNullOrEmpty(user.LastName))
+        {
+            PageTitle = $"Welcome back, {user.FirstName}!";
+        }
+        else if (!string.IsNullOrEmpty(user.FirstName))
+        {
+            PageTitle = $"Welcome back, {user.FirstName}!";
+        }
+        else
+        {
+            PageTitle = "Welcome back!";
+        }
+        
+        OnPropertyChanged(nameof(ShowProfileSelection));
+        OnPropertyChanged(nameof(ShowPasswordEntry));
+    }
+
+    public void GoBackToProfileSelection()
+    {
+        SelectedUser = null;
+        ShowProfileSelection = true;
+        PageTitle = "Sign In";
+        MasterPassword = string.Empty;
+        ErrorMessage = string.Empty;
+        
+        OnPropertyChanged(nameof(ShowProfileSelection));
+        OnPropertyChanged(nameof(ShowPasswordEntry));
+    }
+
+    private async Task<bool> AuthenticateSpecificUserAsync(UserDto user, string masterPassword)
+    {
+        try
+        {
+            // For now, use the general auth service
+            // In a full implementation, we'd need to modify the auth service to support specific user authentication
+            var loginResult = await _authService.AuthenticateAsync(masterPassword);
+            
+            if (loginResult)
+            {
+                return true;
+            }
+            else
+            {
+                // Try to get password hint for this specific user
+                var userDetails = await _userProfileService.GetUserByIdAsync(user.Id);
+                if (userDetails is UserProfileDetailsDto details && !string.IsNullOrEmpty(details.MasterPasswordHint))
+                {
+                    ErrorMessage = $"Incorrect master password. Hint: {details.MasterPasswordHint}";
+                }
+                else
+                {
+                    ErrorMessage = "Incorrect master password. Please try again.";
+                }
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error authenticating user {user.Email}: {ex.Message}");
+            ErrorMessage = "Authentication failed. Please try again.";
+            return false;
+        }
     }
 }

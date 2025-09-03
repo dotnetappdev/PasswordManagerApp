@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.WinUi.ViewModels;
+using PasswordManager.Models.DTOs.Auth;
 using System;
 using System.Threading.Tasks;
 
@@ -15,6 +16,7 @@ public sealed partial class LoginPage : Page
 {
     private IServiceProvider? _serviceProvider;
     private LoginViewModel? _viewModel;
+    private UserProfileSelectionViewModel? _profileSelectionViewModel;
 
     public LoginPage()
     {
@@ -46,7 +48,16 @@ public sealed partial class LoginPage : Page
         {
             _serviceProvider = serviceProvider;
             _viewModel = new LoginViewModel(serviceProvider);
+            _profileSelectionViewModel = new UserProfileSelectionViewModel(serviceProvider);
+            
+            // Set data context for the main view
             this.DataContext = _viewModel;
+            
+            // Set data context for user profiles list
+            if (this.FindName("UserProfilesList") is ItemsControl userProfilesList)
+            {
+                userProfilesList.ItemsSource = _profileSelectionViewModel.UserProfiles;
+            }
 
             System.Diagnostics.Debug.WriteLine($"LoginPage DataContext set - ViewModel created");
             System.Diagnostics.Debug.WriteLine($"Initial ViewModel state - PageTitle: {_viewModel.PageTitle}, PrimaryButtonText: {_viewModel.PrimaryButtonText}");
@@ -174,6 +185,40 @@ public sealed partial class LoginPage : Page
     private async void CreateAccountButton_Click(object sender, RoutedEventArgs e)
     {
         await DoPrimaryActionAsync();
+    }
+
+    private void ProfileButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is UserDto user && _viewModel != null)
+        {
+            _viewModel.SelectUserProfile(user);
+        }
+    }
+
+    private void BackToProfilesButton_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel?.GoBackToProfileSelection();
+    }
+
+    private async void CreateProfileButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Navigate to profile creation - for now, we'll implement a simple dialog
+        // In a full implementation, this would open a profile creation dialog
+        await ShowCreateProfileDialog();
+    }
+
+    private async Task ShowCreateProfileDialog()
+    {
+        // This is a simplified implementation
+        // In a full app, you'd want a proper dialog with input validation
+        System.Diagnostics.Debug.WriteLine("Create profile functionality - would show dialog here");
+        
+        // For now, just trigger first-time setup
+        if (_viewModel != null)
+        {
+            _viewModel.IsFirstTimeSetup = true;
+            _viewModel.ShowProfileSelection = false;
+        }
     }
 
     #endregion
