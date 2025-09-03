@@ -22,7 +22,100 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
         Title = passwordItem.Title;
         CloseButtonText = "Close";
 
+        // Update the title area and show delete button only if we have a valid item id
+        DialogTitleText.Text = passwordItem.Title;
+        if (_passwordItem != null && _passwordItem.Id > 0)
+        {
+            DeleteItemButton.Visibility = Visibility.Visible;
+        }
+
         LoadPasswordDetails();
+    }
+
+    private async void DeleteItemButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_passwordItem == null || _passwordItem.Id <= 0) return;
+
+            var confirm = new ContentDialog
+            {
+                Title = "Confirm Deletion",
+                Content = $"Are you sure you want to delete '{_passwordItem.Title}'? This action cannot be undone.",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
+
+            var res = await confirm.ShowAsync();
+            if (res == ContentDialogResult.Primary)
+            {
+                // Resolve password item service from the app's host services
+                var serviceProvider = (App.Current as App)?.Services;
+                var passwordService = serviceProvider?.GetService<PasswordManager.Services.Interfaces.IPasswordItemService>();
+                if (passwordService != null)
+                {
+                    await passwordService.DeleteAsync(_passwordItem.Id);
+
+                    // Update and show the in-dialog ModerateInfoBar message
+                    if (ModerateInfoBar != null)
+                    {
+                        ModerateInfoBar.IsOpen = true;
+                        ModerateInfoBar.Visibility = Visibility.Visible;
+                        // Update message content if possible
+                        try
+                        {
+                            ModerateInfoBar.Message = $"'{_passwordItem.Title}' has been deleted.";
+                        }
+                        catch { }
+                    }
+                }
+
+                // Close dialog after a short delay to let user see the message
+                await Task.Delay(900);
+                this.Hide();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting item: {ex.Message}");
+        }
+    }
+
+    private async void EditItemButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var serviceProvider = (App.Current as App)?.Services;
+            if (serviceProvider == null) return;
+
+            var dialog = new Dialogs.AddPasswordDialog(serviceProvider, _passwordItem);
+            // Prefer attaching new dialogs to the main window XamlRoot so they center on screen
+            var mainRoot = (App.Current as App)?.MainWindow?.Content?.XamlRoot;
+            dialog.XamlRoot = mainRoot ?? this.XamlRoot;
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && dialog.Result is not null)
+            {
+                // Refresh details from service
+                var passwordService = serviceProvider.GetService<PasswordManager.Services.Interfaces.IPasswordItemService>();
+                if (passwordService != null)
+                {
+                    var updated = await passwordService.GetByIdAsync(_passwordItem.Id);
+                    if (updated != null)
+                    {
+                        _passwordItem.Title = updated.Title;
+                        _passwordItem.Description = updated.Description;
+                        _passwordItem.LastModified = updated.LastModified;
+                        LoadPasswordDetails();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error editing item: {ex.Message}");
+        }
     }
 
     private async void LoadPasswordDetails()

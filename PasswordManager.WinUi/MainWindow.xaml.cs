@@ -9,6 +9,7 @@ using PasswordManager.WinUi.Models;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using PasswordManager.WinUi.ViewModels;
 
 namespace PasswordManager.WinUi;
 
@@ -90,7 +91,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    public void NavigateToPage(string pageTag)
+    public void NavigateToPage(string pageTag, string? searchText = null)
     {
         // Only allow navigation if authenticated, except for login
         if (!_isAuthenticated && pageTag != "Login") return;
@@ -122,7 +123,7 @@ public sealed partial class MainWindow : Window
             };
 
             // Prepare navigation data with filters
-            object navigationParameter = CreateNavigationParameter(pageTag);
+            object navigationParameter = CreateNavigationParameter(pageTag, searchText);
 
             // Ensure ContentFrame exists and navigate with service provider
             if (ContentFrame != null)
@@ -140,13 +141,13 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private object CreateNavigationParameter(string pageTag)
+    private object CreateNavigationParameter(string pageTag, string? searchText = null)
     {
         // For password item pages, create filter data
         if (IsPasswordItemsPage(pageTag))
         {
             var filterData = new NavigationFilterData(_serviceProvider);
-            
+
             switch (pageTag)
             {
                 case "Favorites":
@@ -189,10 +190,16 @@ public sealed partial class MainWindow : Window
                     filterData.FilterName = "All Items";
                     break;
             }
-            
+
+            // Attach optional search text
+            if (!string.IsNullOrEmpty(searchText))
+            {
+                filterData.SearchText = searchText;
+            }
+
             return filterData;
         }
-        
+
         // For other pages, just pass the service provider
         return _serviceProvider;
     }
@@ -201,8 +208,8 @@ public sealed partial class MainWindow : Window
     {
         return pageTag switch
         {
-            "AllItems" or "Favorites" or "LoginCategory" or "CreditCardCategory" or 
-            "SecureNotesCategory" or "IdentityCategory" or "WiFiCategory" or "PasskeysCategory" or 
+            "AllItems" or "Favorites" or "LoginCategory" or "CreditCardCategory" or
+            "SecureNotesCategory" or "IdentityCategory" or "WiFiCategory" or "PasskeysCategory" or
             "Archive" or "RecentlyDeleted" or "Passwords" => true,
             _ => false
         };
@@ -227,30 +234,33 @@ public sealed partial class MainWindow : Window
 
         if (!string.IsNullOrEmpty(searchQuery))
         {
-            // Navigate to passwords page with search query
-            NavigateToPage("AllItems");
-
-            // Use a more reliable way to pass search query
-            Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
-            {
-                PassSearchQueryToPage(searchQuery);
-            });
+            // Navigate to passwords page and pass search query in the navigation parameter
+            NavigateToPage("AllItems", searchQuery);
         }
     }
 
     private void PassSearchQueryToPage(string searchQuery)
     {
-        // Pass search query to the passwords page if it's currently loaded
-        if (ContentFrame.Content is Views.PasswordItemsPage passwordsPage)
+        // If the passwords page is loaded and its DataContext is the viewmodel, set the SearchText directly
+        if (ContentFrame?.Content is Views.PasswordItemsPage passwordsPage)
         {
-            // Try to find the search textbox and set the search text
+            if (passwordsPage.DataContext is PasswordItemsViewModel vm)
+            {
+                vm.SearchText = searchQuery;
+                return;
+            }
+
+            // Fallback: set the search textbox text which will update the viewmodel
             var searchTextBox = FindChildControl<TextBox>(passwordsPage, "SearchTextBox");
             if (searchTextBox != null)
             {
-                // Setting Text triggers TextChanged automatically; no need to manually raise the event
                 searchTextBox.Text = searchQuery;
+                return;
             }
         }
+
+        // If page not loaded, navigate to AllItems with the search text
+        NavigateToPage("AllItems", searchQuery);
     }
 
     // Helper method to find child controls
@@ -277,7 +287,7 @@ public sealed partial class MainWindow : Window
     public void NavigateToHome()
     {
         _isAuthenticated = true;
-        
+
         // Capture current user ID from auth service
         var authService = _serviceProvider.GetService<IAuthService>();
         if (authService?.CurrentUser != null)
@@ -285,7 +295,7 @@ public sealed partial class MainWindow : Window
             _currentUserId = authService.CurrentUser.Id;
             System.Diagnostics.Debug.WriteLine($"MainWindow captured current user ID: {_currentUserId}");
         }
-        
+
         SetAuthenticationState(true);
         MainNavigationView.SelectedItem = AllItemsNavItem;
         NavigateToPage("AllItems");
@@ -407,92 +417,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async void DeleteTagNavButton_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var tagService = _serviceProvider.GetService<ITagService>();
-            if (tagService == null)
-            {
-                await ShowErrorMessage("Error", "Tag service is not available.");
-                return;
-            }
-
-            // Get all tags to show selection
-            var tags = await tagService.GetAllAsync();
-            if (!tags.Any())
-            {
-                await ShowInfoMessage("No Tags", "There are no tags to delete.");
-                return;
-            }
-
-            // Create a selection dialog
-            var dialog = new ContentDialog
-            {
-                Title = "Delete Tag",
-                PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.Content.XamlRoot
-            };
-
-            var comboBox = new ComboBox
-            {
-                PlaceholderText = "Select a tag to delete",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Margin = new Thickness(0, 12, 0, 0)
-            };
-
-            foreach (var tag in tags.Where(t => !t.IsSystemTag)) // Don't allow deleting system tags
-            {
-                comboBox.Items.Add(new ComboBoxItem
-                {
-                    Content = tag.Name,
-                    Tag = tag
-                });
-            }
-
-            var content = new StackPanel
-            {
-                Children =
-                {
-                    new TextBlock { Text = "Select a tag to delete. This action cannot be undone." },
-                    comboBox
-                }
-            };
-
-            dialog.Content = content;
-
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary && comboBox.SelectedItem is ComboBoxItem selectedItem)
-            {
-                var selectedTag = (Tag)selectedItem.Tag;
-
-                // Confirm deletion
-                var confirmDialog = new ContentDialog
-                {
-                    Title = "Confirm Deletion",
-                    Content = $"Are you sure you want to delete the tag '{selectedTag.Name}'? This action cannot be undone.",
-                    PrimaryButtonText = "Delete",
-                    CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Close,
-                    XamlRoot = this.Content.XamlRoot
-                };
-
-                var confirmResult = await confirmDialog.ShowAsync();
-                if (confirmResult == ContentDialogResult.Primary)
-                {
-                    await tagService.DeleteAsync(selectedTag.Id);
-                    await ShowInfoMessage("Tag Deleted", $"Tag '{selectedTag.Name}' has been deleted successfully.");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error deleting tag: {ex.Message}");
-            await ShowErrorMessage("Error", $"Failed to delete tag: {ex.Message}");
-        }
-    }
+    // Delete tag navigation handler removed (UI buttons removed). Kept method removed per request.
 
     private async void AddCategoryNavButton_Click(object sender, RoutedEventArgs e)
     {
@@ -521,103 +446,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async void DeleteCategoryNavButton_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var categoryService = _serviceProvider.GetService<ICategoryInterface>();
-            if (categoryService == null)
-            {
-                await ShowErrorMessage("Error", "Category service is not available.");
-                return;
-            }
-
-            // Get all categories to show selection
-            var categories = await categoryService.GetAllAsync();
-            if (!categories.Any())
-            {
-                await ShowInfoMessage("No Categories", "There are no categories to delete.");
-                return;
-            }
-
-            // Create a selection dialog
-            var dialog = new ContentDialog
-            {
-                Title = "Delete Category",
-                PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.Content.XamlRoot
-            };
-
-            var comboBox = new ComboBox
-            {
-                PlaceholderText = "Select a category to delete",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Margin = new Thickness(0, 12, 0, 0)
-            };
-
-            foreach (var category in categories)
-            {
-                comboBox.Items.Add(new ComboBoxItem
-                {
-                    Content = category.Name,
-                    Tag = category
-                });
-            }
-
-            var content = new StackPanel
-            {
-                Children =
-                {
-                    new TextBlock { Text = "Select a category to delete. This action cannot be undone." },
-                    comboBox
-                }
-            };
-
-            dialog.Content = content;
-
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary && comboBox.SelectedItem is ComboBoxItem selectedItem)
-            {
-                var selectedCategory = (Category)selectedItem.Tag;
-
-                // Confirm deletion
-                var confirmDialog = new ContentDialog
-                {
-                    Title = "Confirm Deletion",
-                    Content = $"Are you sure you want to delete the category '{selectedCategory.Name}'? This action cannot be undone.",
-                    PrimaryButtonText = "Delete",
-                    CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Close,
-                    XamlRoot = this.Content.XamlRoot
-                };
-
-                var confirmResult = await confirmDialog.ShowAsync();
-                if (confirmResult == ContentDialogResult.Primary)
-                {
-                    // Check if category has password items before deleting
-                    var hasPasswordItems = await categoryService.HasPasswordItemsAsync(selectedCategory.Id);
-                    
-                    if (hasPasswordItems)
-                    {
-                        var count = await categoryService.GetPasswordItemCountAsync(selectedCategory.Id);
-                        await ShowErrorMessage("Cannot Delete Category", 
-                            $"The category '{selectedCategory.Name}' cannot be deleted because it contains {count} password item{(count == 1 ? "" : "s")}. Please move or delete the password items first.");
-                        return;
-                    }
-
-                    await categoryService.DeleteAsync(selectedCategory.Id);
-                    await ShowInfoMessage("Category Deleted", $"Category '{selectedCategory.Name}' has been deleted successfully.");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error deleting category: {ex.Message}");
-            await ShowErrorMessage("Error", $"Failed to delete category: {ex.Message}");
-        }
-    }
+    // Delete category navigation handler removed (UI buttons removed). Kept method removed per request.
 
     private async void AddVaultButton_Click(object sender, RoutedEventArgs e)
     {
@@ -703,92 +532,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async void DeleteVaultButton_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var collectionService = _serviceProvider.GetService<ICollectionService>();
-            if (collectionService == null)
-            {
-                await ShowErrorMessage("Error", "Collection service is not available.");
-                return;
-            }
-
-            // Get all collections to show selection
-            var collections = await collectionService.GetAllAsync();
-            if (!collections.Any())
-            {
-                await ShowInfoMessage("No Vaults", "There are no vaults to delete.");
-                return;
-            }
-
-            // Create a selection dialog
-            var dialog = new ContentDialog
-            {
-                Title = "Delete Vault",
-                PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.Content.XamlRoot
-            };
-
-            var comboBox = new ComboBox
-            {
-                PlaceholderText = "Select a vault to delete",
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Margin = new Thickness(0, 12, 0, 0)
-            };
-
-            foreach (var collection in collections.Where(c => !c.IsDefault)) // Don't allow deleting default vault
-            {
-                comboBox.Items.Add(new ComboBoxItem
-                {
-                    Content = collection.Name,
-                    Tag = collection
-                });
-            }
-
-            var content = new StackPanel
-            {
-                Children =
-                {
-                    new TextBlock { Text = "Select a vault to delete. This action cannot be undone and will affect all items in the vault." },
-                    comboBox
-                }
-            };
-
-            dialog.Content = content;
-
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary && comboBox.SelectedItem is ComboBoxItem selectedItem)
-            {
-                var selectedCollection = (Collection)selectedItem.Tag;
-
-                // Confirm deletion
-                var confirmDialog = new ContentDialog
-                {
-                    Title = "Confirm Deletion",
-                    Content = $"Are you sure you want to delete the vault '{selectedCollection.Name}'? This will also delete all items in this vault. This action cannot be undone.",
-                    PrimaryButtonText = "Delete",
-                    CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Close,
-                    XamlRoot = this.Content.XamlRoot
-                };
-
-                var confirmResult = await confirmDialog.ShowAsync();
-                if (confirmResult == ContentDialogResult.Primary)
-                {
-                    await collectionService.DeleteAsync(selectedCollection.Id);
-                    await ShowInfoMessage("Vault Deleted", $"Vault '{selectedCollection.Name}' has been deleted successfully.");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error deleting vault: {ex.Message}");
-            await ShowErrorMessage("Error", $"Failed to delete vault: {ex.Message}");
-        }
-    }
+    // Delete vault navigation handler removed (UI buttons removed). Kept method removed per request.
 
     private async void EditItem_Click(object sender, RoutedEventArgs e)
     {

@@ -61,8 +61,8 @@
 
                                 <!-- User Info -->
                                 <StackPanel Grid.Column="1"
-                                        VerticalAlignment="Center"
-                                        Spacing="2">
+                                            VerticalAlignment="Center"
+                                            Spacing="2">
                                     <TextBlock x:Name="UserNameText"
                                                Text="David Smith"
                                                FontSize="14"
@@ -109,19 +109,19 @@
                                     RightTapped="NavigationItem_RightTapped">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8A5;"
-                                FontSize="18"
-                                Foreground="{StaticResource ModernPrimaryBrush}"/>
+                                  FontSize="18"
+                                  Foreground="{StaticResource ModernPrimaryBrush}"/>
                     </NavigationViewItem.Icon>
                     <NavigationViewItem.ContextFlyout>
                         <MenuFlyout>
                             <MenuFlyoutItem Text="Edit"
-                                    Icon="Edit"
-                                    Click="EditItem_Click"
-                                    Tag="AllItems"/>
+                                            Icon="Edit"
+                                            Click="EditItem_Click"
+                                            Tag="AllItems"/>
                             <MenuFlyoutItem Text="Delete"
-                                    Icon="Delete"
-                                    Click="DeleteItem_Click"
-                                    Tag="AllItems"/>
+                                            Icon="Delete"
+                                            Click="DeleteItem_Click"
+                                            Tag="AllItems"/>
                         </MenuFlyout>
                     </NavigationViewItem.ContextFlyout>
                 </NavigationViewItem>
@@ -134,78 +134,31 @@
                                     RightTapped="NavigationItem_RightTapped">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE734;"
-                                FontSize="18"
-                                Foreground="{StaticResource ModernWarningBrush}"/>
+                                  FontSize="18"
+                                  Foreground="{StaticResource ModernWarningBrush}"/>
                     </NavigationViewItem.Icon>
                     <NavigationViewItem.ContextFlyout>
                         <MenuFlyout>
                             <MenuFlyoutItem Text="Edit"
-                                    Icon="Edit"
-                                    Click="EditItem_Click"
-                                    Tag="Favorites"/>
+                                            Icon="Edit"
+                                            Click="EditItem_Click"
+                                            Tag="Favorites"/>
                             <MenuFlyoutItem Text="Delete"
-                                    Icon="Delete"
-                                    Click="DeleteItem_Click"
-                                    Tag="Favorites"/>
+                                            Icon="Delete"
+                                            Click="DeleteItem_Click"
+                                            Tag="Favorites"/>
                         </MenuFlyout>
                     </NavigationViewItem.ContextFlyout>
                 </NavigationViewItem>
 
-                <NavigationViewItemSeparator Margin="12,8"/>
-
-                <!-- Vaults Section with Plus Icon -->
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <TextBlock Grid.Column="0"
-                               Text="VAULTS"
-                               FontSize="12"
-                               FontWeight="SemiBold"
-                               Foreground="{StaticResource ModernTextSecondaryBrush}"
-                               VerticalAlignment="Center"
-                               Margin="16,8"/>
-
-                    <Button Grid.Column="1"
-                            x:Name="AddVaultButton"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Width="20"
-                            Height="20"
-                            Click="AddVaultButton_Click"
-                            ToolTipService.ToolTip="Add Vault">
-                        <FontIcon Glyph="&#xE109;"
-                                FontSize="10"
-                                Foreground="{StaticResource ModernPrimaryBrush}"/>
-                    </Button>
-
-                    <Button Grid.Column="2"
-                            x:Name="DeleteVaultButton"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Width="20"
-                            Height="20"
-                            Click="DeleteVaultButton_Click"
-                            ToolTipService.ToolTip="Delete Vault"
-                            Margin="4,0">
-                        <FontIcon Glyph="&#xE74D;"
-                                FontSize="10"
-                                Foreground="{StaticResource ModernErrorBrush}"/>
-                    </Button>
-                </Grid>
-
-                <!-- Personal Vault -->
+                <!-- Personal (use the same PasswordItemsPage as other categories) -->
                 <NavigationViewItem Content="Personal"
-                                    Tag="PersonalVault"
-                                    Style="{StaticResource ModernNavigationViewItemStyle}"
-                                    Margin="16,0,0,0">
+                                    Tag="Passwords"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#x25A0;"
-                                FontSize="16"
-                                Foreground="#3b82f6"/>
+                                  FontSize="16"
+                                  Foreground="#3b82f6"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
@@ -228,92 +181,62 @@
                                VerticalAlignment="Center"
                                Margin="16,8"/>
 
-                    <Button Grid.Column="1"
-                            x:Name="AddCategoryNavButton"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Width="20"
-                            Height="20"
-                            Click="AddCategoryNavButton_Click"
-                            ToolTipService.ToolTip="Add Category">
-                        <FontIcon Glyph="&#xE109;"
-                                FontSize="10"
-                                Foreground="{StaticResource ModernPrimaryBrush}"/>
-                    </Button>
-
-                    <Button Grid.Column="2"
-                            x:Name="DeleteCategoryNavButton"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Width="20"
-                            Height="20"
-                            Click="DeleteCategoryNavButton_Click"
-                            ToolTipService.ToolTip="Delete Category"
-                            Margin="4,0">
-                        <FontIcon Glyph="&#xE74D;"
-                                FontSize="10"
-                                Foreground="{StaticResource ModernErrorBrush}"/>
-                    </Button>
+                    <!-- Add/Delete category buttons removed for a cleaner UI -->
                 </Grid>
                 <NavigationViewItemHeader Content="Actions"/>
 
                 <NavigationViewItem x:Name="LoginCategoryNavItem"
                                     Content="Logins"
                                     Tag="LoginCategory"
-                                    Style="{StaticResource ModernNavigationViewItemStyle}"
-                                    Margin="16,0,0,0">
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE192;"
-                                FontSize="16"
-                                Foreground="#3b82f6"/>
+                                  FontSize="16"
+                                  Foreground="#3b82f6"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
                 <NavigationViewItem x:Name="CreditCardCategoryNavItem"
                                     Content="Credit Cards"
                                     Tag="CreditCardCategory"
-                                    Style="{StaticResource ModernNavigationViewItemStyle}"
-                                    Margin="16,0,0,0">
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8C7;"
-                                FontSize="16"
-                                Foreground="#10b981"/>
+                                  FontSize="16"
+                                  Foreground="#10b981"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
                 <NavigationViewItem x:Name="SecureNotesCategoryNavItem"
                                     Content="Secure Notes"
                                     Tag="SecureNotesCategory"
-                                    Style="{StaticResource ModernNavigationViewItemStyle}"
-                                    Margin="16,0,0,0">
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE70F;"
-                                FontSize="16"
-                                Foreground="#f59e0b"/>
+                                  FontSize="16"
+                                  Foreground="#f59e0b"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
                 <NavigationViewItem x:Name="IdentityCategoryNavItem"
                                     Content="Identity"
                                     Tag="IdentityCategory"
-                                    Style="{StaticResource ModernNavigationViewItemStyle}"
-                                    Margin="16,0,0,0">
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE77B;"
-                                FontSize="16"
-                                Foreground="#8b5cf6"/>
+                                  FontSize="16"
+                                  Foreground="#8b5cf6"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
                 <NavigationViewItem x:Name="PasskeysCategoryNavItem"
                                     Content="Passkeys"
                                     Tag="PasskeysCategory"
-                                    Style="{StaticResource ModernNavigationViewItemStyle}"
-                                    Margin="16,0,0,0">
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8D7;"
-                                FontSize="16"
-                                Foreground="#ec4899"/>
+                                  FontSize="16"
+                                  Foreground="#ec4899"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
@@ -335,43 +258,17 @@
                                VerticalAlignment="Center"
                                Margin="16,8"/>
 
-                    <Button Grid.Column="1"
-                            x:Name="AddTagNavButton"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Width="20"
-                            Height="20"
-                            Click="AddTagNavButton_Click"
-                            ToolTipService.ToolTip="Add Tag">
-                        <FontIcon Glyph="&#xE109;"
-                                FontSize="10"
-                                Foreground="{StaticResource ModernPrimaryBrush}"/>
-                    </Button>
-
-                    <Button Grid.Column="2"
-                            x:Name="DeleteTagNavButton"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Width="20"
-                            Height="20"
-                            Click="DeleteTagNavButton_Click"
-                            ToolTipService.ToolTip="Delete Tag"
-                            Margin="4,0">
-                        <FontIcon Glyph="&#xE74D;"
-                                FontSize="10"
-                                Foreground="{StaticResource ModernErrorBrush}"/>
-                    </Button>
+                    <!-- Add/Delete tag buttons removed for a cleaner UI -->
                 </Grid>
 
                 <!-- Sample tags -->
                 <NavigationViewItem Content="Starter Kit"
                                     Tag="StarterKitTag"
-                                    Style="{StaticResource ModernNavigationViewItemStyle}"
-                                    Margin="16,0,0,0">
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8EC;"
-                                FontSize="16"
-                                Foreground="#10b981"/>
+                                  FontSize="16"
+                                  Foreground="#10b981"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
@@ -384,8 +281,8 @@
                                     Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE72E;"
-                                FontSize="18"
-                                Foreground="{StaticResource ModernErrorBrush}"/>
+                                  FontSize="18"
+                                  Foreground="{StaticResource ModernErrorBrush}"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
@@ -396,8 +293,8 @@
                                     Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8B5;"
-                                FontSize="18"
-                                Foreground="{StaticResource ModernSuccessBrush}"/>
+                                  FontSize="18"
+                                  Foreground="{StaticResource ModernSuccessBrush}"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
@@ -411,8 +308,8 @@
                                     Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8FD;"
-                                FontSize="16"
-                                Foreground="{StaticResource ModernAccentBrush}"/>
+                                  FontSize="16"
+                                  Foreground="{StaticResource ModernAccentBrush}"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
@@ -424,8 +321,8 @@
                                     Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7B8;"
-                                FontSize="16"
-                                Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                  FontSize="16"
+                                  Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
@@ -435,8 +332,8 @@
                                     Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE74D;"
-                                FontSize="16"
-                                Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                  FontSize="16"
+                                  Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
@@ -448,8 +345,8 @@
                                     Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE713;"
-                                FontSize="16"
-                                Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                  FontSize="16"
+                                  Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.FooterMenuItems>
