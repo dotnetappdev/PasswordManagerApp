@@ -6,11 +6,14 @@ namespace PasswordManagerImports.OnePassword.Models;
 [IgnoreFirst(1)] // Skip header row
 public class OnePasswordCsvRecord
 {
+    // Following the exact order from 1Password export format:
+    // Title,Url,Username,Password,OTPAuth,Favorite,Archived,Tags,Notes
+    
     [FieldQuoted('"', QuoteMode.OptionalForBoth)]
     public string Title { get; set; } = string.Empty;
 
     [FieldQuoted('"', QuoteMode.OptionalForBoth)]
-    public string Website { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
 
     [FieldQuoted('"', QuoteMode.OptionalForBoth)]
     public string Username { get; set; } = string.Empty;
@@ -19,11 +22,8 @@ public class OnePasswordCsvRecord
     public string Password { get; set; } = string.Empty;
 
     [FieldQuoted('"', QuoteMode.OptionalForBoth)]
-    public string Notes { get; set; } = string.Empty;
-
-    [FieldQuoted('"', QuoteMode.OptionalForBoth)]
     [FieldOptional]
-    public string Folder { get; set; } = string.Empty;
+    public string OTPAuth { get; set; } = string.Empty;
 
     [FieldQuoted('"', QuoteMode.OptionalForBoth)]
     [FieldOptional]
@@ -31,13 +31,13 @@ public class OnePasswordCsvRecord
 
     [FieldQuoted('"', QuoteMode.OptionalForBoth)]
     [FieldOptional]
-    public string Type { get; set; } = string.Empty;
+    public string Archived { get; set; } = string.Empty;
 
     [FieldQuoted('"', QuoteMode.OptionalForBoth)]
     [FieldOptional]
-    public string CreatedDate { get; set; } = string.Empty;
+    public string Tags { get; set; } = string.Empty;
 
     [FieldQuoted('"', QuoteMode.OptionalForBoth)]
     [FieldOptional]
-    public string ModifiedDate { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
 }
