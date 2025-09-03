@@ -91,6 +91,14 @@ public sealed partial class PasswordItemsPage : Page
             if (contentSubtitle != null) contentSubtitle.Text = $"Showing {filterData.FilterName.ToLower()}";
         }
 
+        // Apply category filter
+        if (filterData.FilterCategoryId.HasValue)
+        {
+            _viewModel.SelectedCategoryId = filterData.FilterCategoryId.Value;
+            // Update title with actual category name if available
+            _ = UpdateCategoryTitle(filterData.FilterCategoryId.Value);
+        }
+
         // Apply type filter
         if (filterData.FilterType.HasValue)
         {
@@ -127,6 +135,28 @@ public sealed partial class PasswordItemsPage : Page
             {
                 searchBox.Text = filterData.SearchText;
             }
+        }
+    }
+
+    private async Task UpdateCategoryTitle(int categoryId)
+    {
+        try
+        {
+            if (_categoryService != null)
+            {
+                var category = await _categoryService.GetByIdAsync(categoryId);
+                if (category != null)
+                {
+                    var contentTitle = GetElement<TextBlock>("ContentTitle");
+                    var contentSubtitle = GetElement<TextBlock>("ContentSubtitle");
+                    if (contentTitle != null) contentTitle.Text = category.Name;
+                    if (contentSubtitle != null) contentSubtitle.Text = $"Showing {category.Name.ToLower()}";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error updating category title: {ex.Message}");
         }
     }
 

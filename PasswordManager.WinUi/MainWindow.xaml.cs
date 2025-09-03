@@ -98,29 +98,40 @@ public sealed partial class MainWindow : Window
 
         try
         {
-            Type pageType = pageTag switch
+            Type pageType;
+            
+            // Handle dynamic category navigation
+            if (pageTag.StartsWith("Category_"))
             {
-                "AllItems" => typeof(Views.PasswordItemsPage),
-                "Favorites" => typeof(Views.PasswordItemsPage), // Filter for favorites
-                "Profile" => typeof(Views.ProfilePage),
-                "LoginCategory" => typeof(Views.PasswordItemsPage), // Filter for login items
-                "CreditCardCategory" => typeof(Views.PasswordItemsPage), // Filter for credit cards
-                "SecureNotesCategory" => typeof(Views.PasswordItemsPage), // Filter for secure notes
-                "IdentityCategory" => typeof(Views.PasswordItemsPage), // Filter for identity items
-                "WiFiCategory" => typeof(Views.PasswordItemsPage), // Filter for WiFi items
-                "PasskeysCategory" => typeof(Views.PasswordItemsPage), // Filter for passkeys
-                "Categories" => typeof(Views.CategoriesPage),
-                "ManageItems" => typeof(Views.ManageItemsPage),
-                "SecurityDashboard" => typeof(Views.DashboardPage), // Could create security dashboard
-                "Archive" => typeof(Views.PasswordItemsPage), // Filter for archived items
-                "RecentlyDeleted" => typeof(Views.PasswordItemsPage), // Filter for deleted items
-                "Import" => typeof(Views.ImportPage),
-                "Settings" => typeof(Views.SettingsPage),
-                "Home" => typeof(Views.DashboardPage),
-                "Passwords" => typeof(Views.PasswordItemsPage),
-                "Login" => typeof(Views.LoginPage),
-                _ => typeof(Views.DashboardPage)
-            };
+                pageType = typeof(Views.PasswordItemsPage);
+            }
+            else
+            {
+                pageType = pageTag switch
+                {
+                    "AllItems" => typeof(Views.PasswordItemsPage),
+                    "Favorites" => typeof(Views.PasswordItemsPage), // Filter for favorites
+                    "Profile" => typeof(Views.ProfilePage),
+                    "LoginCategory" => typeof(Views.PasswordItemsPage), // Filter for login items
+                    "CreditCardCategory" => typeof(Views.PasswordItemsPage), // Filter for credit cards
+                    "SecureNotesCategory" => typeof(Views.PasswordItemsPage), // Filter for secure notes
+                    "IdentityCategory" => typeof(Views.PasswordItemsPage), // Filter for identity items
+                    "WiFiCategory" => typeof(Views.PasswordItemsPage), // Filter for WiFi items
+                    "WorkAccountsCategory" => typeof(Views.PasswordItemsPage), // Filter for work accounts
+                    "PasskeysCategory" => typeof(Views.PasswordItemsPage), // Filter for passkeys
+                    "Categories" => typeof(Views.CategoriesPage),
+                    "ManageItems" => typeof(Views.ManageItemsPage),
+                    "SecurityDashboard" => typeof(Views.DashboardPage), // Could create security dashboard
+                    "Archive" => typeof(Views.PasswordItemsPage), // Filter for archived items
+                    "RecentlyDeleted" => typeof(Views.PasswordItemsPage), // Filter for deleted items
+                    "Import" => typeof(Views.ImportPage),
+                    "Settings" => typeof(Views.SettingsPage),
+                    "Home" => typeof(Views.DashboardPage),
+                    "Passwords" => typeof(Views.PasswordItemsPage),
+                    "Login" => typeof(Views.LoginPage),
+                    _ => typeof(Views.DashboardPage)
+                };
+            }
 
             // Prepare navigation data with filters
             object navigationParameter = CreateNavigationParameter(pageTag, searchText);
@@ -148,47 +159,64 @@ public sealed partial class MainWindow : Window
         {
             var filterData = new NavigationFilterData(_serviceProvider);
 
-            switch (pageTag)
+            // Handle dynamic categories
+            if (pageTag.StartsWith("Category_"))
             {
-                case "Favorites":
-                    filterData.ShowFavorites = true;
-                    filterData.FilterName = "Favorites";
-                    break;
-                case "LoginCategory":
-                    filterData.FilterType = ItemType.Login;
-                    filterData.FilterName = "Logins";
-                    break;
-                case "CreditCardCategory":
-                    filterData.FilterType = ItemType.CreditCard;
-                    filterData.FilterName = "Credit Cards";
-                    break;
-                case "SecureNotesCategory":
-                    filterData.FilterType = ItemType.SecureNote;
-                    filterData.FilterName = "Secure Notes";
-                    break;
-                case "IdentityCategory":
-                    filterData.FilterType = ItemType.Identity;
-                    filterData.FilterName = "Identity";
-                    break;
-                case "WiFiCategory":
-                    filterData.FilterType = ItemType.WiFi;
-                    filterData.FilterName = "WiFi";
-                    break;
-                case "PasskeysCategory":
-                    filterData.FilterType = ItemType.Passkey;
-                    filterData.FilterName = "Passkeys";
-                    break;
-                case "Archive":
-                    filterData.ShowArchived = true;
-                    filterData.FilterName = "Archive";
-                    break;
-                case "RecentlyDeleted":
-                    filterData.ShowDeleted = true;
-                    filterData.FilterName = "Recently Deleted";
-                    break;
-                default:
-                    filterData.FilterName = "All Items";
-                    break;
+                var categoryIdStr = pageTag.Substring("Category_".Length);
+                if (int.TryParse(categoryIdStr, out var categoryId))
+                {
+                    filterData.FilterCategoryId = categoryId;
+                    filterData.FilterName = "Category"; // Will be updated with actual category name
+                }
+            }
+            else
+            {
+                switch (pageTag)
+                {
+                    case "Favorites":
+                        filterData.ShowFavorites = true;
+                        filterData.FilterName = "Favorites";
+                        break;
+                    case "LoginCategory":
+                        filterData.FilterType = ItemType.Login;
+                        filterData.FilterName = "Logins";
+                        break;
+                    case "CreditCardCategory":
+                        filterData.FilterType = ItemType.CreditCard;
+                        filterData.FilterName = "Credit Cards";
+                        break;
+                    case "SecureNotesCategory":
+                        filterData.FilterType = ItemType.SecureNote;
+                        filterData.FilterName = "Secure Notes";
+                        break;
+                    case "IdentityCategory":
+                        filterData.FilterType = ItemType.Identity;
+                        filterData.FilterName = "Identity";
+                        break;
+                    case "WiFiCategory":
+                        filterData.FilterType = ItemType.WiFi;
+                        filterData.FilterName = "WiFi";
+                        break;
+                    case "WorkAccountsCategory":
+                        filterData.FilterName = "Work Accounts";
+                        // This could be a custom category or a tag filter
+                        break;
+                    case "PasskeysCategory":
+                        filterData.FilterType = ItemType.Passkey;
+                        filterData.FilterName = "Passkeys";
+                        break;
+                    case "Archive":
+                        filterData.ShowArchived = true;
+                        filterData.FilterName = "Archive";
+                        break;
+                    case "RecentlyDeleted":
+                        filterData.ShowDeleted = true;
+                        filterData.FilterName = "Recently Deleted";
+                        break;
+                    default:
+                        filterData.FilterName = "All Items";
+                        break;
+                }
             }
 
             // Attach optional search text
@@ -209,9 +237,9 @@ public sealed partial class MainWindow : Window
         return pageTag switch
         {
             "AllItems" or "Favorites" or "LoginCategory" or "CreditCardCategory" or
-            "SecureNotesCategory" or "IdentityCategory" or "WiFiCategory" or "PasskeysCategory" or
+            "SecureNotesCategory" or "IdentityCategory" or "WiFiCategory" or "WorkAccountsCategory" or "PasskeysCategory" or
             "Archive" or "RecentlyDeleted" or "Passwords" => true,
-            _ => false
+            _ => pageTag.StartsWith("Category_") // Handle dynamic categories
         };
     }
 
@@ -299,6 +327,9 @@ public sealed partial class MainWindow : Window
         SetAuthenticationState(true);
         MainNavigationView.SelectedItem = AllItemsNavItem;
         NavigateToPage("AllItems");
+
+        // Load dynamic categories after authentication
+        _ = LoadDynamicCategoriesAsync();
     }
 
     // Public method to handle logout
@@ -432,8 +463,8 @@ public sealed partial class MainWindow : Window
             {
                 System.Diagnostics.Debug.WriteLine($"Created new category: {categoryDialog.Result.Name}");
 
-                // TODO: Refresh the navigation menu to show the new category
-                // This would require dynamically updating the navigation menu items
+                // Reload dynamic categories to show the new one
+                await LoadDynamicCategoriesAsync();
 
                 // Show success message
                 await ShowInfoMessage("Category Created", $"Category '{categoryDialog.Result.Name}' has been created successfully.");
@@ -661,5 +692,167 @@ public sealed partial class MainWindow : Window
             XamlRoot = this.Content.XamlRoot
         };
         await infoDialog.ShowAsync();
+    }
+
+    private async void DeleteCategoryItem_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Get the tag from the menu item to identify which category to delete
+            var menuItem = sender as MenuFlyoutItem;
+            var categoryTag = menuItem?.Tag?.ToString();
+
+            if (string.IsNullOrEmpty(categoryTag))
+            {
+                await ShowErrorMessage("Error", "Unable to identify the category to delete.");
+                return;
+            }
+
+            // Show confirmation dialog
+            var confirmDialog = new ContentDialog
+            {
+                Title = "Confirm Category Deletion",
+                Content = $"Are you sure you want to delete the '{categoryTag}' category? This action cannot be undone.",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.Content.XamlRoot
+            };
+
+            var result = await confirmDialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                // For now, show info that this would delete the category
+                // In a full implementation, this would:
+                // 1. Check if the category has passwords in it
+                // 2. If it does, prevent deletion
+                // 3. If it doesn't, delete it from the database
+                // 4. Remove the navigation item from the UI
+
+                await ShowInfoMessage("Category Deletion", $"Category '{categoryTag}' would be deleted here. Categories with passwords cannot be deleted.");
+                System.Diagnostics.Debug.WriteLine($"Delete category requested for: {categoryTag}");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting category: {ex.Message}");
+            await ShowErrorMessage("Error", $"Failed to delete category: {ex.Message}");
+        }
+    }
+
+    // Method to dynamically load categories from database and add them to navigation
+    public async Task LoadDynamicCategoriesAsync()
+    {
+        try
+        {
+            if (DynamicCategoriesPanel == null) return;
+
+            // Clear existing dynamic categories
+            DynamicCategoriesPanel.Children.Clear();
+
+            var categoryService = _serviceProvider.GetService<ICategoryInterface>();
+            if (categoryService == null) return;
+
+            var categories = await categoryService.GetAllAsync();
+            var passwordService = _serviceProvider.GetService<IPasswordItemService>();
+
+            foreach (var category in categories)
+            {
+                // Check if this category has passwords in it
+                var hasPasswords = false;
+                if (passwordService != null)
+                {
+                    var passwordsInCategory = await passwordService.GetByCategoryAsync(category.Id);
+                    hasPasswords = passwordsInCategory.Any();
+                }
+
+                // Create navigation item for this category
+                var navItem = new NavigationViewItem
+                {
+                    Content = category.Name,
+                    Tag = $"Category_{category.Id}",
+                    Style = (Style)Application.Current.Resources["ModernNavigationViewItemStyle"]
+                };
+
+                // Add icon
+                navItem.Icon = new FontIcon
+                {
+                    Glyph = "\uE8A5", // Folder icon
+                    FontSize = 16,
+                    Foreground = new SolidColorBrush(Microsoft.UI.Colors.Gray)
+                };
+
+                // Add context menu with delete option (only if no passwords)
+                if (!hasPasswords)
+                {
+                    var contextMenu = new MenuFlyout();
+                    var deleteItem = new MenuFlyoutItem
+                    {
+                        Text = "Delete Category",
+                        Icon = new SymbolIcon(Symbol.Delete),
+                        Tag = category.Id.ToString()
+                    };
+                    deleteItem.Click += DeleteDynamicCategoryItem_Click;
+                    contextMenu.Items.Add(deleteItem);
+                    navItem.ContextFlyout = contextMenu;
+                }
+
+                DynamicCategoriesPanel.Children.Add(navItem);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading dynamic categories: {ex.Message}");
+        }
+    }
+
+    private async void DeleteDynamicCategoryItem_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var menuItem = sender as MenuFlyoutItem;
+            var categoryId = menuItem?.Tag?.ToString();
+
+            if (string.IsNullOrEmpty(categoryId) || !int.TryParse(categoryId, out var id))
+            {
+                await ShowErrorMessage("Error", "Unable to identify the category to delete.");
+                return;
+            }
+
+            var categoryService = _serviceProvider.GetService<ICategoryInterface>();
+            if (categoryService == null) return;
+
+            var category = await categoryService.GetByIdAsync(id);
+            if (category == null)
+            {
+                await ShowErrorMessage("Error", "Category not found.");
+                return;
+            }
+
+            // Confirm deletion
+            var confirmDialog = new ContentDialog
+            {
+                Title = "Confirm Category Deletion",
+                Content = $"Are you sure you want to delete '{category.Name}'? This action cannot be undone.",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.Content.XamlRoot
+            };
+
+            var result = await confirmDialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                await categoryService.DeleteAsync(id);
+                await ShowInfoMessage("Category Deleted", $"Category '{category.Name}' has been deleted successfully.");
+                
+                // Reload dynamic categories
+                await LoadDynamicCategoriesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage("Error", $"Failed to delete category: {ex.Message}");
+        }
     }
 }

@@ -19,6 +19,12 @@ public sealed partial class CategoriesPage : Page
         this.InitializeComponent();
     }
 
+    // Helper to prefer the main window XamlRoot so dialogs center on the app window
+    private Microsoft.UI.Xaml.XamlRoot? GetMainXamlRoot()
+    {
+        return (App.Current as App)?.MainWindow?.Content?.XamlRoot;
+    }
+
     protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
@@ -38,7 +44,7 @@ public sealed partial class CategoriesPage : Page
         try
         {
             var dialog = new CategoryDialog(_serviceProvider);
-            dialog.XamlRoot = this.XamlRoot;
+            dialog.XamlRoot = GetMainXamlRoot() ?? this.XamlRoot;
             
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary && dialog.Result != null && _viewModel != null)
@@ -75,7 +81,7 @@ public sealed partial class CategoriesPage : Page
             try
             {
                 var dialog = new CategoryDialog(_serviceProvider, category);
-                dialog.XamlRoot = this.XamlRoot;
+                dialog.XamlRoot = GetMainXamlRoot() ?? this.XamlRoot;
                 
                 var result = await dialog.ShowAsync();
                 if (result == ContentDialogResult.Primary && dialog.Result != null && _viewModel != null)
@@ -121,7 +127,7 @@ public sealed partial class CategoriesPage : Page
                     PrimaryButtonText = "Delete",
                     CloseButtonText = "Cancel",
                     DefaultButton = ContentDialogButton.Close,
-                    XamlRoot = this.XamlRoot
+                    XamlRoot = GetMainXamlRoot() ?? this.XamlRoot
                 };
 
                 var result = await dialog.ShowAsync();
@@ -144,7 +150,7 @@ public sealed partial class CategoriesPage : Page
             Title = "Error",
             Content = message,
             CloseButtonText = "OK",
-            XamlRoot = this.XamlRoot
+            XamlRoot = GetMainXamlRoot() ?? this.XamlRoot
         };
         await errorDialog.ShowAsync();
     }

@@ -162,10 +162,21 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
+                <!-- Logins moved here to be closer to Personal -->
+                <NavigationViewItem x:Name="LoginCategoryNavItem"
+                                    Content="Logins"
+                                    Tag="LoginCategory"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE192;"
+                                  FontSize="16"
+                                  Foreground="#3b82f6"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
                 <NavigationViewItemSeparator Margin="12,8"/>
 
-                <!-- Categories Section with Icons -->
-                <NavigationViewItemHeader Content="Categories"/>
+                <!-- Categories Section with Management Controls -->
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -181,21 +192,25 @@
                                VerticalAlignment="Center"
                                Margin="16,8"/>
 
-                    <!-- Add/Delete category buttons removed for a cleaner UI -->
+                    <!-- Add Category Button -->
+                    <Button Grid.Column="1"
+                            x:Name="AddCategoryButton"
+                            Content="+"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Width="24"
+                            Height="24"
+                            Margin="4,0"
+                            Background="Transparent"
+                            Foreground="{StaticResource ModernSuccessBrush}"
+                            BorderThickness="1"
+                            BorderBrush="{StaticResource ModernSuccessBrush}"
+                            CornerRadius="12"
+                            ToolTipService.ToolTip="Add Category"
+                            Click="AddCategoryNavButton_Click"/>
                 </Grid>
-                <NavigationViewItemHeader Content="Actions"/>
 
-                <NavigationViewItem x:Name="LoginCategoryNavItem"
-                                    Content="Logins"
-                                    Tag="LoginCategory"
-                                    Style="{StaticResource ModernNavigationViewItemStyle}">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE192;"
-                                  FontSize="16"
-                                  Foreground="#3b82f6"/>
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-
+                <!-- Category Items - Auto-expanded -->
                 <NavigationViewItem x:Name="CreditCardCategoryNavItem"
                                     Content="Credit Cards"
                                     Tag="CreditCardCategory"
@@ -205,6 +220,14 @@
                                   FontSize="16"
                                   Foreground="#10b981"/>
                     </NavigationViewItem.Icon>
+                    <NavigationViewItem.ContextFlyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem Text="Delete Category"
+                                            Icon="Delete"
+                                            Click="DeleteCategoryItem_Click"
+                                            Tag="CreditCardCategory"/>
+                        </MenuFlyout>
+                    </NavigationViewItem.ContextFlyout>
                 </NavigationViewItem>
 
                 <NavigationViewItem x:Name="SecureNotesCategoryNavItem"
@@ -216,29 +239,58 @@
                                   FontSize="16"
                                   Foreground="#f59e0b"/>
                     </NavigationViewItem.Icon>
+                    <NavigationViewItem.ContextFlyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem Text="Delete Category"
+                                            Icon="Delete"
+                                            Click="DeleteCategoryItem_Click"
+                                            Tag="SecureNotesCategory"/>
+                        </MenuFlyout>
+                    </NavigationViewItem.ContextFlyout>
                 </NavigationViewItem>
 
-                <NavigationViewItem x:Name="IdentityCategoryNavItem"
-                                    Content="Identity"
-                                    Tag="IdentityCategory"
+                <NavigationViewItem x:Name="WiFiPasswordsCategoryNavItem"
+                                    Content="WiFi Passwords"
+                                    Tag="WiFiCategory"
                                     Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE77B;"
+                        <FontIcon Glyph="&#xE701;"
                                   FontSize="16"
                                   Foreground="#8b5cf6"/>
                     </NavigationViewItem.Icon>
+                    <NavigationViewItem.ContextFlyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem Text="Delete Category"
+                                            Icon="Delete"
+                                            Click="DeleteCategoryItem_Click"
+                                            Tag="WiFiCategory"/>
+                        </MenuFlyout>
+                    </NavigationViewItem.ContextFlyout>
                 </NavigationViewItem>
 
-                <NavigationViewItem x:Name="PasskeysCategoryNavItem"
-                                    Content="Passkeys"
-                                    Tag="PasskeysCategory"
+                <NavigationViewItem x:Name="WorkAccountsCategoryNavItem"
+                                    Content="Work Accounts"
+                                    Tag="WorkAccountsCategory"
                                     Style="{StaticResource ModernNavigationViewItemStyle}">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8D7;"
+                        <FontIcon Glyph="&#xE8FC;"
                                   FontSize="16"
-                                  Foreground="#ec4899"/>
+                                  Foreground="#f97316"/>
                     </NavigationViewItem.Icon>
+                    <NavigationViewItem.ContextFlyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem Text="Delete Category"
+                                            Icon="Delete"
+                                            Click="DeleteCategoryItem_Click"
+                                            Tag="WorkAccountsCategory"/>
+                        </MenuFlyout>
+                    </NavigationViewItem.ContextFlyout>
                 </NavigationViewItem>
+
+                <!-- Dynamic Categories (loaded from database) will be inserted here programmatically -->
+                <StackPanel x:Name="DynamicCategoriesPanel">
+                    <!-- Categories loaded from database will be added here -->
+                </StackPanel>
 
                 <NavigationViewItemSeparator Margin="12,8"/>
 
