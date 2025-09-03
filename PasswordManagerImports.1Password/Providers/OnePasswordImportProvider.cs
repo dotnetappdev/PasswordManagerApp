@@ -60,9 +60,9 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                         continue;
                     }
 
-                    // Determine collection based on 1Password folder, or fallback to domain/title
-                    var collectionName = DetermineCollection(record.Website, record.Title, record.Folder);
-                    var categoryName = DetermineCategory(record.Website, record.Title, record.Type);
+                    // Determine collection based on URL/title analysis (no folder in new format)
+                    var collectionName = DetermineCollection(record.Url, record.Title);
+                    var categoryName = DetermineCategory(record.Url, record.Title);
 
                     // Ensure collection exists
                     if (!collectionsToCreate.ContainsKey(collectionName))
@@ -104,11 +104,12 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                         LastModified = DateTime.UtcNow,
                         LoginItem = new LoginItem
                         {
-                            Website = record.Website.Trim(),
+                            Website = record.Url.Trim(),
                             Username = record.Username.Trim(),
                             Password = record.Password.Trim(), // Temporary property for import
                             Email = IsEmail(record.Username.Trim()) ? record.Username.Trim() : null,
-                            Notes = record.Notes.Trim() // Temporary property for import
+                            Notes = record.Notes.Trim(), // Temporary property for import
+                            TotpSecret = !string.IsNullOrWhiteSpace(record.OTPAuth) ? record.OTPAuth.Trim() : null // Handle OTPAuth field
                         },
                         Tags = new List<Tag>()
                     };
@@ -122,8 +123,50 @@ public class OnePasswordImportProvider : IPasswordImportProvider
 
                     passwordItem.Tags.Add(importTag);
                     
+                    // Handle favorite items
+                    if (!string.IsNullOrWhiteSpace(record.Favorite) && 
+                        (record.Favorite.Equals("true", StringComparison.OrdinalIgnoreCase) || record.Favorite == "1"))
+                    {
+                        var favoriteTag = new Tag
+                        {
+                            Name = "Favorite",
+                            Color = "#fbbf24"
+                        };
+                        passwordItem.Tags.Add(favoriteTag);
+                    }
+                    
+                    // Handle archived items
+                    if (!string.IsNullOrWhiteSpace(record.Archived) && 
+                        (record.Archived.Equals("true", StringComparison.OrdinalIgnoreCase) || record.Archived == "1"))
+                    {
+                        var archivedTag = new Tag
+                        {
+                            Name = "Archived",
+                            Color = "#6b7280"
+                        };
+                        passwordItem.Tags.Add(archivedTag);
+                    }
+                    
+                    // Handle custom tags from 1Password
+                    if (!string.IsNullOrWhiteSpace(record.Tags))
+                    {
+                        var tags = record.Tags.Split(',', ';')
+                            .Where(t => !string.IsNullOrWhiteSpace(t))
+                            .Select(t => t.Trim());
+                            
+                        foreach (var tagName in tags)
+                        {
+                            var customTag = new Tag
+                            {
+                                Name = tagName,
+                                Color = "#a855f7" // Purple for custom tags
+                            };
+                            passwordItem.Tags.Add(customTag);
+                        }
+                    }
+                    
                     // Add high priority tag if it looks important
-                    if (IsHighPriority(record.Title, record.Website))
+                    if (IsHighPriority(record.Title, record.Url))
                     {
                         var highPriorityTag = new Tag
                         {
@@ -148,6 +191,8 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             // Add standard tags
             result.RequiredTags.Add(new Tag { Name = "Imported", Color = "#8b5cf6" });
             result.RequiredTags.Add(new Tag { Name = "High Priority", Color = "#ef4444" });
+            result.RequiredTags.Add(new Tag { Name = "Favorite", Color = "#fbbf24" });
+            result.RequiredTags.Add(new Tag { Name = "Archived", Color = "#6b7280" });
 
             result.Success = true;
         }
@@ -160,15 +205,9 @@ public class OnePasswordImportProvider : IPasswordImportProvider
         return result;
     }
 
-    private string DetermineCollection(string website, string title, string folder = "")
+    private string DetermineCollection(string url, string title)
     {
-        // If folder is provided and not empty, use it as collection name
-        if (!string.IsNullOrWhiteSpace(folder))
-        {
-            return folder.Trim();
-        }
-
-        var domain = ExtractDomain(website).ToLowerInvariant();
+        var domain = ExtractDomain(url).ToLowerInvariant();
         var titleLower = title.ToLowerInvariant();
 
         // Banking keywords
@@ -196,24 +235,9 @@ public class OnePasswordImportProvider : IPasswordImportProvider
         return "General";
     }
 
-    private string DetermineCategory(string website, string title, string type = "")
+    private string DetermineCategory(string url, string title)
     {
-        // If type is provided from 1Password, use it for better categorization
-        if (!string.IsNullOrWhiteSpace(type))
-        {
-            return type.Trim() switch
-            {
-                "Login" => "Logins",
-                "Credit Card" => "Credit Cards",
-                "Bank Account" => "Bank Accounts",
-                "Identity" => "Personal Info",
-                "Secure Note" => "Secure Notes",
-                "Password" => "Passwords",
-                _ => "Logins"
-            };
-        }
-
-        var domain = ExtractDomain(website).ToLowerInvariant();
+        var domain = ExtractDomain(url).ToLowerInvariant();
         var titleLower = title.ToLowerInvariant();
 
         // Banking categories
@@ -247,7 +271,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             return "Internet";
 
         // Default based on collection
-        var collection = DetermineCollection(website, title);
+        var collection = DetermineCollection(url, title);
         return collection switch
         {
             "Banking" => "Checking",
@@ -275,22 +299,22 @@ public class OnePasswordImportProvider : IPasswordImportProvider
         return utilityDomains.Any(ud => domain.Contains(ud));
     }
 
-    private string ExtractDomain(string website)
+    private string ExtractDomain(string url)
     {
-        if (string.IsNullOrWhiteSpace(website))
+        if (string.IsNullOrWhiteSpace(url))
             return string.Empty;
 
         try
         {
-            if (!website.StartsWith("http"))
-                website = "https://" + website;
+            if (!url.StartsWith("http"))
+                url = "https://" + url;
 
-            var uri = new Uri(website);
+            var uri = new Uri(url);
             return uri.Host.Replace("www.", "");
         }
         catch
         {
-            return website;
+            return url;
         }
     }
 
@@ -299,13 +323,13 @@ public class OnePasswordImportProvider : IPasswordImportProvider
         return !string.IsNullOrWhiteSpace(input) && input.Contains("@") && input.Contains(".");
     }
 
-    private bool IsHighPriority(string title, string website)
+    private bool IsHighPriority(string title, string url)
     {
         var titleLower = title.ToLowerInvariant();
-        var websiteLower = website.ToLowerInvariant();
+        var urlLower = url.ToLowerInvariant();
 
         return titleLower.Contains("bank") || titleLower.Contains("root") || titleLower.Contains("admin") ||
-               websiteLower.Contains("aws") || websiteLower.Contains("azure") || websiteLower.Contains("google");
+               urlLower.Contains("aws") || urlLower.Contains("azure") || urlLower.Contains("google");
     }
 
     private string GetCollectionIcon(string collectionName)
