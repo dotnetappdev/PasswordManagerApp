@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Page x:Class="PasswordManager.WinUi.Views.ProfilePage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:converters="using:PasswordManager.WinUi.Converters"
+      Background="#2D2D2D">
+
+    <Page.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+    </Page.Resources>
 
     <ScrollViewer>
         <StackPanel Spacing="24" Padding="40">
@@ -11,6 +18,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 
                 <!-- Profile Picture -->
@@ -20,7 +28,8 @@
                         CornerRadius="40"
                         Background="{StaticResource ModernPrimaryGradientBrush}"
                         Margin="0,0,20,0">
-                    <TextBlock Text="👤"
+                    <TextBlock x:Name="ProfileInitials"
+                               Text="👤"
                                FontSize="40"
                                Foreground="White"
                                HorizontalAlignment="Center"
@@ -31,16 +40,157 @@
                 <StackPanel Grid.Column="1"
                             VerticalAlignment="Center"
                             Spacing="8">
-                    <TextBlock Text="David Smith"
+                    <TextBlock Text="{Binding CurrentUserDisplayName, FallbackValue='Current User'}"
                                Style="{StaticResource ModernHeading2Style}"/>
                     <TextBlock Text="Personal Vault"
                                Style="{StaticResource ModernCaptionStyle}"/>
-                    <Button Content="Edit Profile"
+                </StackPanel>
+
+                <!-- Action Buttons -->
+                <StackPanel Grid.Column="2"
+                           Orientation="Horizontal"
+                           Spacing="12"
+                           VerticalAlignment="Center">
+                    <Button Content="Switch Profile"
                             Style="{StaticResource ModernSecondaryButtonStyle}"
-                            HorizontalAlignment="Left"
-                            Margin="0,8,0,0"/>
+                            Click="SwitchProfileButton_Click"/>
+                    <Button x:Name="EditProfileButton"
+                            Content="Edit Profile"
+                            Style="{StaticResource ModernSecondaryButtonStyle}"
+                            Click="EditProfileButton_Click"
+                            Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                    <Button x:Name="SaveProfileButton"
+                            Content="Save"
+                            Style="{StaticResource ModernPrimaryButtonStyle}"
+                            Click="SaveProfileButton_Click"
+                            Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <Button x:Name="CancelEditButton"
+                            Content="Cancel"
+                            Style="{StaticResource ModernSecondaryButtonStyle}"
+                            Click="CancelEditButton_Click"
+                            Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
                 </StackPanel>
             </Grid>
+
+            <!-- Error Message -->
+            <Border Background="#5D2A2A"
+                    BorderBrush="#DC2626"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16,12"
+                    Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal"
+                            Spacing="8">
+                    <FontIcon Glyph="&#xE783;"
+                              FontSize="16"
+                              Foreground="#DC2626"/>
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Foreground="#FCA5A5"
+                               TextWrapping="Wrap"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Profile Management Dialog -->
+            <Border x:Name="ProfileManagementDialog"
+                    Background="#1A1A1A"
+                    BorderBrush="#4A4A4A"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="24"
+                    Visibility="{Binding ShowProfileManagement, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Spacing="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Grid.Column="0"
+                                   Text="Switch Profile"
+                                   Style="{StaticResource ModernHeading3Style}"/>
+                        
+                        <Button Grid.Column="1"
+                                Content="✕"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Foreground="#B0B0B0"
+                                Click="CloseProfileManagementButton_Click"/>
+                    </Grid>
+
+                    <!-- Profile List -->
+                    <ScrollViewer MaxHeight="300"
+                                 HorizontalScrollBarVisibility="Disabled"
+                                 VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding AllProfiles}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Spacing="12"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Background="#2D2D2D"
+                                           BorderBrush="#4A4A4A"
+                                           BorderThickness="1"
+                                           CornerRadius="8"
+                                           HorizontalAlignment="Stretch"
+                                           Padding="16,12"
+                                           MinHeight="64"
+                                           Click="ProfileSwitchButton_Click">
+                                        <Button.Tag>
+                                            <Binding />
+                                        </Button.Tag>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <!-- Profile Avatar -->
+                                            <Border Grid.Column="0"
+                                                   Background="#8B7355"
+                                                   CornerRadius="24"
+                                                   Width="48"
+                                                   Height="48"
+                                                   Margin="0,0,12,0">
+                                                <TextBlock Text="👤"
+                                                          FontSize="20"
+                                                          Foreground="White"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"/>
+                                            </Border>
+                                            
+                                            <!-- Profile Info -->
+                                            <StackPanel Grid.Column="1"
+                                                       VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding FirstName}"
+                                                          FontSize="16"
+                                                          FontWeight="SemiBold"
+                                                          Foreground="White"/>
+                                                <TextBlock Text="{Binding Email}"
+                                                          FontSize="13"
+                                                          Foreground="#B0B0B0"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Add New Profile Button -->
+                    <Button Content="+ Create New Profile"
+                           Background="#4A90E2"
+                           Foreground="White"
+                           BorderThickness="0"
+                           CornerRadius="8"
+                           HorizontalAlignment="Stretch"
+                           MinHeight="48"
+                           FontSize="16"
+                           Click="CreateNewProfileButton_Click"/>
+                </StackPanel>
+            </Border>
             
             <!-- Account Information -->
             <Border Style="{StaticResource ModernCardStyle}">
@@ -53,44 +203,65 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="150"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         
+                        <!-- First Name -->
                         <TextBlock Grid.Row="0" Grid.Column="0"
+                                   Text="First Name:"
+                                   Style="{StaticResource ModernCaptionStyle}"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1"
+                                   Text="{Binding FirstName}"
+                                   Style="{StaticResource ModernBodyStyle}"
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                        <TextBox Grid.Row="0" Grid.Column="1"
+                                 Text="{Binding FirstName, Mode=TwoWay}"
+                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        
+                        <!-- Last Name -->
+                        <TextBlock Grid.Row="1" Grid.Column="0"
+                                   Text="Last Name:"
+                                   Style="{StaticResource ModernCaptionStyle}"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1"
+                                   Text="{Binding LastName}"
+                                   Style="{StaticResource ModernBodyStyle}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,8,0,0"
+                                   Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                        <TextBox Grid.Row="1" Grid.Column="1"
+                                 Text="{Binding LastName, Mode=TwoWay}"
+                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 Margin="0,8,0,0"
+                                 Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        
+                        <!-- Email -->
+                        <TextBlock Grid.Row="2" Grid.Column="0"
                                    Text="Email:"
                                    Style="{StaticResource ModernCaptionStyle}"
-                                   FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1"
-                                   Text="david.smith@example.com"
-                                   Style="{StaticResource ModernBodyStyle}"/>
-                        
-                        <TextBlock Grid.Row="1" Grid.Column="0"
-                                   Text="Member Since:"
-                                   Style="{StaticResource ModernCaptionStyle}"
-                                   FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1"
-                                   Text="January 15, 2024"
-                                   Style="{StaticResource ModernBodyStyle}"/>
-                        
-                        <TextBlock Grid.Row="2" Grid.Column="0"
-                                   Text="Last Login:"
-                                   Style="{StaticResource ModernCaptionStyle}"
-                                   FontWeight="SemiBold"/>
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Margin="0,8,0,0"/>
                         <TextBlock Grid.Row="2" Grid.Column="1"
-                                   Text="Today at 9:32 AM"
-                                   Style="{StaticResource ModernBodyStyle}"/>
-                        
-                        <TextBlock Grid.Row="3" Grid.Column="0"
-                                   Text="Plan:"
-                                   Style="{StaticResource ModernCaptionStyle}"
-                                   FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="3" Grid.Column="1"
-                                   Text="Personal (Free)"
-                                   Style="{StaticResource ModernBodyStyle}"/>
+                                   Text="{Binding Email}"
+                                   Style="{StaticResource ModernBodyStyle}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,8,0,0"
+                                   Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                        <TextBox Grid.Row="2" Grid.Column="1"
+                                 Text="{Binding Email, Mode=TwoWay}"
+                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 Margin="0,8,0,0"
+                                 Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     </Grid>
                 </StackPanel>
             </Border>
