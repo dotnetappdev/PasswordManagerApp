@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using PasswordManager.Models;
 using PasswordManager.DAL.Interfaces;
-using PasswordManager.Services.Interfaces;
 
 namespace PasswordManager.DAL.Seed;
 
@@ -14,18 +13,18 @@ public class IdentityDataSeeder
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<ApplicationRole> _roleManager;
-    private readonly IPermissionService _permissionService;
+    // private readonly IPermissionService _permissionService;
     private readonly ILogger<IdentityDataSeeder> _logger;
 
     public IdentityDataSeeder(
         UserManager<ApplicationUser> userManager,
         RoleManager<ApplicationRole> roleManager,
-        IPermissionService permissionService,
+        // IPermissionService permissionService,
         ILogger<IdentityDataSeeder> logger)
     {
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _roleManager = roleManager ?? throw new ArgumentNullException(nameof(roleManager));
-        _permissionService = permissionService ?? throw new ArgumentNullException(nameof(permissionService));
+        // _permissionService = permissionService ?? throw new ArgumentNullException(nameof(permissionService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -36,7 +35,7 @@ public class IdentityDataSeeder
     {
         await SeedRolesAsync();
         await SeedDefaultUsersAsync();
-        await SeedParentChildRelationshipsAsync();
+        // await SeedParentChildRelationshipsAsync(); // TODO: Re-enable after fixing circular dependency
     }
 
     /// <summary>
@@ -159,7 +158,9 @@ public class IdentityDataSeeder
 
     /// <summary>
     /// Seeds parent-child relationships and permission configurations
+    /// TODO: Re-enable after fixing circular dependency with Services
     /// </summary>
+    /*
     private async Task SeedParentChildRelationshipsAsync()
     {
         try
@@ -222,4 +223,5 @@ public class IdentityDataSeeder
             _logger.LogError(ex, "Error seeding parent-child relationships");
         }
     }
+    */
 }

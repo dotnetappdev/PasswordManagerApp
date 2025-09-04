@@ -37,6 +37,13 @@ public class ApplicationUser : IdentityUser
     /// </summary>
     public int MasterPasswordIterations { get; set; } = 600000;
 
+    /// <summary>
+    /// Master key identifier for lookup during master key login
+    /// Allows users to login with just their master key without username
+    /// </summary>
+    [MaxLength(500)]
+    public string? MasterKeyIdentifier { get; set; }
+
 
     // One-Time Passcode (OTP) properties
     /// <summary>

@@ -83,6 +83,24 @@ public interface IPasswordCryptoService
     /// <param name="masterKey">Pre-derived master key</param>
     /// <returns>Decrypted password</returns>
     string DecryptPasswordWithKey(EncryptedPasswordData encryptedPasswordData, byte[] masterKey);
+
+    /// <summary>
+    /// Creates a master key identifier for user lookup during master key login
+    /// This creates a searchable hash that allows finding users by their master key
+    /// </summary>
+    /// <param name="masterPassword">User's master password</param>
+    /// <param name="userSalt">User-specific salt</param>
+    /// <returns>Identifier hash for database lookup</returns>
+    string CreateMasterKeyIdentifier(string masterPassword, byte[] userSalt);
+
+    /// <summary>
+    /// Verifies if a master password matches a stored master key identifier
+    /// </summary>
+    /// <param name="masterPassword">Password to verify</param>
+    /// <param name="userSalt">User-specific salt</param>
+    /// <param name="storedIdentifier">Stored master key identifier</param>
+    /// <returns>True if master password matches the identifier</returns>
+    bool VerifyMasterKeyIdentifier(string masterPassword, byte[] userSalt, string storedIdentifier);
 }
 
 /// <summary>

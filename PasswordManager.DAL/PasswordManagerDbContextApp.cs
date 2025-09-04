@@ -24,7 +24,7 @@ public class PasswordManagerDbContextApp : IdentityDbContext<ApplicationUser, Ap
     public DbSet<UserPasskey> UserPasskeys { get; set; } = null!;
     public DbSet<UserTwoFactorBackupCode> UserTwoFactorBackupCodes { get; set; } = null!;
     public DbSet<UserRelationship> UserRelationships { get; set; } = null!;
-    public DbSet<ChildPermissionConfig> ChildPermissionConfigs { get; set; } = null!
+    public DbSet<ChildPermissionConfig> ChildPermissionConfigs { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
