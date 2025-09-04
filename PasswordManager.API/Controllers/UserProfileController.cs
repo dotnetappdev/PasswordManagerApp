@@ -2,10 +2,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PasswordManager.Models.DTOs.Auth;
 using PasswordManager.Services.Interfaces;
+using PasswordManager.Models;
 
 namespace PasswordManager.API.Controllers;
 
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = ApplicationRoles.Admin)]
 [ApiController]
 [Route("api/[controller]")]
 public class UserProfileController : ControllerBase
