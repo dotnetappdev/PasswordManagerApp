@@ -1,0 +1,571 @@
+@page "/child-management"
+@using PasswordManager.Models
+@using PasswordManager.Services.Interfaces
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@inject IPermissionService PermissionService
+@inject UserManager<ApplicationUser> UserManager
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+
+<PageTitle>Child Management</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudPaper Class="pa-6">
+        <MudText Typo="Typo.h4" Class="mb-4">
+            <MudIcon Icon="Icons.Material.Filled.FamilyRestroom" Class="mr-2" />
+            Child Management
+        </MudText>
+
+        @if (!IsAuthorized)
+        {
+            <MudAlert Severity="Severity.Warning">
+                You don't have permission to access this page. Only Parent and Admin users can manage children.
+            </MudAlert>
+        }
+        else
+        {
+            <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+                <MudTabPanel Text="My Children" Icon="Icons.Material.Filled.Children">
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.h6" Class="mb-4">Children Under Your Management</MudText>
+                            
+                            @if (Children?.Any() == true)
+                            {
+                                <MudDataGrid T="ChildUserInfo" Items="Children" Elevation="0" Class="mb-4">
+                                    <Columns>
+                                        <PropertyColumn Property="x => x.FirstName" Title="First Name" />
+                                        <PropertyColumn Property="x => x.LastName" Title="Last Name" />
+                                        <PropertyColumn Property="x => x.Email" Title="Email" />
+                                        <PropertyColumn Property="x => x.LastLoginAt" Title="Last Login" Format="yyyy-MM-dd HH:mm" />
+                                        <TemplateColumn Title="Status">
+                                            <CellTemplate>
+                                                <MudChip Color="@(context.Item.IsActive ? Color.Success : Color.Error)" 
+                                                         Size="Size.Small">
+                                                    @(context.Item.IsActive ? "Active" : "Inactive")
+                                                </MudChip>
+                                            </CellTemplate>
+                                        </TemplateColumn>
+                                        <TemplateColumn Title="Actions">
+                                            <CellTemplate>
+                                                <MudIconButton Icon="Icons.Material.Filled.Settings" 
+                                                               Color="Color.Primary" 
+                                                               Size="Size.Small"
+                                                               OnClick="() => OpenPermissionsDialog(context.Item)"
+                                                               Title="Manage Permissions" />
+                                                <MudIconButton Icon="Icons.Material.Filled.RemoveCircle" 
+                                                               Color="Color.Error" 
+                                                               Size="Size.Small"
+                                                               OnClick="() => RemoveChildRelationship(context.Item)"
+                                                               Title="Remove Relationship" />
+                                            </CellTemplate>
+                                        </TemplateColumn>
+                                    </Columns>
+                                </MudDataGrid>
+                            }
+                            else
+                            {
+                                <MudAlert Severity="Severity.Info">
+                                    You don't have any children assigned to your account yet.
+                                </MudAlert>
+                            }
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Add Child" Icon="Icons.Material.Filled.PersonAdd">
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <MudCard>
+                                <MudCardContent>
+                                    <MudText Typo="Typo.h6" Class="mb-4">Add New Child Relationship</MudText>
+                                    
+                                    <EditForm Model="CreateRelationshipModel" OnValidSubmit="CreateChildRelationship">
+                                        <DataAnnotationsValidator />
+                                        
+                                        <MudTextField @bind-Value="CreateRelationshipModel.ChildEmail"
+                                                      Label="Child's Email Address"
+                                                      Variant="Variant.Outlined"
+                                                      Margin="Margin.Normal"
+                                                      FullWidth="true"
+                                                      Required="true"
+                                                      HelperText="Enter the email address of the child user" />
+                                        
+                                        <MudTextField @bind-Value="CreateRelationshipModel.Notes"
+                                                      Label="Notes (Optional)"
+                                                      Variant="Variant.Outlined"
+                                                      Margin="Margin.Normal"
+                                                      FullWidth="true"
+                                                      Lines="3"
+                                                      HelperText="Optional notes about this relationship" />
+                                        
+                                        <MudButton ButtonType="ButtonType.Submit"
+                                                   Variant="Variant.Filled"
+                                                   Color="Color.Primary"
+                                                   Class="mt-4"
+                                                   Disabled="IsCreatingRelationship">
+                                            @if (IsCreatingRelationship)
+                                            {
+                                                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                                                <MudText Class="ms-2">Creating...</MudText>
+                                            }
+                                            else
+                                            {
+                                                <MudText>Add Child</MudText>
+                                            }
+                                        </MudButton>
+                                    </EditForm>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                        
+                        <MudItem xs="12" md="6">
+                            <MudAlert Severity="Severity.Info">
+                                <strong>How to add a child:</strong>
+                                <ul class="mt-2">
+                                    <li>The child user must already exist in the system</li>
+                                    <li>The child user must have the "Child" role assigned</li>
+                                    <li>Enter their email address to establish the relationship</li>
+                                    <li>You'll be able to manage their permissions once added</li>
+                                </ul>
+                            </MudAlert>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+            </MudTabs>
+        }
+    </MudPaper>
+</MudContainer>
+
+<!-- Child Permissions Dialog -->
+<MudDialog @bind-IsVisible="IsPermissionsDialogOpen" Options="@(new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true })">
+    <TitleContent>
+        <div style="display: flex; align-items: center;">
+            <MudIcon Icon="Icons.Material.Filled.Security" Class="mr-3" />
+            <MudText Typo="Typo.h6">Manage Permissions - @SelectedChild?.FirstName @SelectedChild?.LastName</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        @if (SelectedChild != null && CurrentPermissions != null)
+        {
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudText Typo="Typo.subtitle1" Class="mb-3">Password Operations</MudText>
+                    
+                    <MudSwitch @bind-Checked="CurrentPermissions.CanViewPasswords"
+                               Label="Can View Passwords"
+                               Color="Color.Primary"
+                               Class="mb-2" />
+                    
+                    <MudSwitch @bind-Checked="CurrentPermissions.CanCreatePasswords"
+                               Label="Can Create Passwords"
+                               Color="Color.Warning"
+                               Class="mb-2" />
+                    
+                    <MudSwitch @bind-Checked="CurrentPermissions.CanEditPasswords"
+                               Label="Can Edit Passwords"
+                               Color="Color.Warning"
+                               Class="mb-2" />
+                    
+                    <MudSwitch @bind-Checked="CurrentPermissions.CanDeletePasswords"
+                               Label="Can Delete Passwords"
+                               Color="Color.Error"
+                               Class="mb-2" />
+                    
+                    <MudSwitch @bind-Checked="CurrentPermissions.CanRevealPasswords"
+                               Label="Can Reveal Password Details"
+                               Color="Color.Error"
+                               Class="mb-4" />
+                </MudItem>
+                
+                <MudItem xs="12">
+                    <MudText Typo="Typo.subtitle1" Class="mb-3">Data Operations</MudText>
+                    
+                    <MudSwitch @bind-Checked="CurrentPermissions.CanSharePasswords"
+                               Label="Can Share Passwords"
+                               Color="Color.Warning"
+                               Class="mb-2" />
+                    
+                    <MudSwitch @bind-Checked="CurrentPermissions.CanExportData"
+                               Label="Can Export Data"
+                               Color="Color.Error"
+                               Class="mb-2" />
+                    
+                    <MudSwitch @bind-Checked="CurrentPermissions.CanCreateCollections"
+                               Label="Can Create Collections"
+                               Color="Color.Info"
+                               Class="mb-2" />
+                    
+                    <MudSwitch @bind-Checked="CurrentPermissions.CanManageOwnCollections"
+                               Label="Can Manage Own Collections"
+                               Color="Color.Info"
+                               Class="mb-4" />
+                </MudItem>
+                
+                <MudItem xs="12">
+                    <MudText Typo="Typo.subtitle1" Class="mb-3">Access Restrictions</MudText>
+                    
+                    <MudGrid>
+                        <MudItem xs="6">
+                            <MudTimePicker @bind-Time="AccessStartTime"
+                                           Label="Access Start Time"
+                                           Variant="Variant.Outlined"
+                                           Margin="Margin.Normal" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudTimePicker @bind-Time="AccessEndTime"
+                                           Label="Access End Time"
+                                           Variant="Variant.Outlined"
+                                           Margin="Margin.Normal" />
+                        </MudItem>
+                    </MudGrid>
+                    
+                    <MudText Typo="Typo.body2" Class="mt-3 mb-2">Allowed Days of Week:</MudText>
+                    <MudCheckBox @bind-Checked="AllowedDays[0]" Label="Sunday" Dense="true" />
+                    <MudCheckBox @bind-Checked="AllowedDays[1]" Label="Monday" Dense="true" />
+                    <MudCheckBox @bind-Checked="AllowedDays[2]" Label="Tuesday" Dense="true" />
+                    <MudCheckBox @bind-Checked="AllowedDays[3]" Label="Wednesday" Dense="true" />
+                    <MudCheckBox @bind-Checked="AllowedDays[4]" Label="Thursday" Dense="true" />
+                    <MudCheckBox @bind-Checked="AllowedDays[5]" Label="Friday" Dense="true" />
+                    <MudCheckBox @bind-Checked="AllowedDays[6]" Label="Saturday" Dense="true" />
+                </MudItem>
+                
+                <MudItem xs="12">
+                    <MudText Typo="Typo.subtitle1" Class="mb-3">Other Settings</MudText>
+                    
+                    <MudSwitch @bind-Checked="CurrentPermissions.RequireParentApproval"
+                               Label="Require Parent Approval for Changes"
+                               Color="Color.Warning"
+                               Class="mb-2" />
+                    
+                    <MudSwitch @bind-Checked="CurrentPermissions.LogActivities"
+                               Label="Log Child Activities"
+                               Color="Color.Info"
+                               Class="mb-2" />
+                    
+                    <MudNumericField @bind-Value="CurrentPermissions.MaxPasswordItems"
+                                     Label="Maximum Password Items (0 = No Limit)"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Normal"
+                                     Min="0"
+                                     Max="1000" />
+                </MudItem>
+            </MudGrid>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="ClosePermissionsDialog">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SavePermissions" Disabled="IsSavingPermissions">
+            @if (IsSavingPermissions)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Saving...</MudText>
+            }
+            else
+            {
+                <MudText>Save Permissions</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private bool IsAuthorized = false;
+    private List<ChildUserInfo> Children = new();
+    private CreateChildRelationshipModel CreateRelationshipModel = new();
+    private bool IsCreatingRelationship = false;
+    
+    // Permissions dialog state
+    private bool IsPermissionsDialogOpen = false;
+    private bool IsSavingPermissions = false;
+    private ChildUserInfo? SelectedChild;
+    private ChildPermissionConfigModel? CurrentPermissions;
+    private TimeSpan? AccessStartTime;
+    private TimeSpan? AccessEndTime;
+    private bool[] AllowedDays = new bool[7]; // Sunday to Saturday
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckAuthorization();
+        if (IsAuthorized)
+        {
+            await LoadChildren();
+        }
+    }
+
+    private async Task CheckAuthorization()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                IsAuthorized = await PermissionService.IsInRoleAsync(userId, ApplicationRoles.Parent) ||
+                              await PermissionService.IsInRoleAsync(userId, ApplicationRoles.Admin);
+            }
+        }
+    }
+
+    private async Task LoadChildren()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var children = await PermissionService.GetChildrenAsync(userId);
+                Children = children.Select(c => new ChildUserInfo
+                {
+                    Id = c.Id,
+                    Email = c.Email,
+                    FirstName = c.FirstName,
+                    LastName = c.LastName,
+                    CreatedAt = c.CreatedAt,
+                    LastLoginAt = c.LastLoginAt,
+                    IsActive = c.IsActive
+                }).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading children: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CreateChildRelationship()
+    {
+        if (string.IsNullOrEmpty(CreateRelationshipModel.ChildEmail))
+            return;
+
+        IsCreatingRelationship = true;
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            if (!string.IsNullOrEmpty(userId))
+            {
+                // Find child user by email
+                var childUser = await UserManager.FindByEmailAsync(CreateRelationshipModel.ChildEmail);
+                if (childUser == null)
+                {
+                    Snackbar.Add("User not found with that email address", Severity.Error);
+                    return;
+                }
+
+                // Check if user has Child role
+                if (!await UserManager.IsInRoleAsync(childUser, ApplicationRoles.Child))
+                {
+                    Snackbar.Add("Target user must have Child role assigned", Severity.Error);
+                    return;
+                }
+
+                // Create relationship
+                await PermissionService.CreateParentChildRelationshipAsync(
+                    userId, childUser.Id, userId, CreateRelationshipModel.Notes);
+
+                Snackbar.Add("Child relationship created successfully!", Severity.Success);
+                CreateRelationshipModel = new(); // Reset form
+                await LoadChildren(); // Refresh list
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating relationship: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsCreatingRelationship = false;
+        }
+    }
+
+    private async Task RemoveChildRelationship(ChildUserInfo child)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"Are you sure you want to remove the parent-child relationship with {child.FirstName} {child.LastName}?");
+        
+        if (!confirmed) return;
+
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            if (!string.IsNullOrEmpty(userId))
+            {
+                await PermissionService.RemoveParentChildRelationshipAsync(userId, child.Id);
+                Snackbar.Add("Relationship removed successfully", Severity.Success);
+                await LoadChildren();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error removing relationship: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OpenPermissionsDialog(ChildUserInfo child)
+    {
+        SelectedChild = child;
+        
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var config = await PermissionService.GetChildPermissionConfigAsync(child.Id, userId);
+                if (config == null)
+                {
+                    config = PermissionService.GetDefaultChildPermissionConfig();
+                }
+
+                CurrentPermissions = new ChildPermissionConfigModel
+                {
+                    CanViewPasswords = config.CanViewPasswords,
+                    CanCreatePasswords = config.CanCreatePasswords,
+                    CanEditPasswords = config.CanEditPasswords,
+                    CanDeletePasswords = config.CanDeletePasswords,
+                    CanRevealPasswords = config.CanRevealPasswords,
+                    CanSharePasswords = config.CanSharePasswords,
+                    CanExportData = config.CanExportData,
+                    CanCreateCollections = config.CanCreateCollections,
+                    CanManageOwnCollections = config.CanManageOwnCollections,
+                    MaxPasswordItems = config.MaxPasswordItems,
+                    RequireParentApproval = config.RequireParentApproval,
+                    LogActivities = config.LogActivities
+                };
+
+                // Parse time restrictions
+                if (TimeSpan.TryParse(config.AccessStartTime, out var startTime))
+                    AccessStartTime = startTime;
+                if (TimeSpan.TryParse(config.AccessEndTime, out var endTime))
+                    AccessEndTime = endTime;
+
+                // Parse allowed days
+                if (!string.IsNullOrEmpty(config.AllowedDaysOfWeek))
+                {
+                    var days = config.AllowedDaysOfWeek.Split(',')
+                        .Select(d => d.Trim())
+                        .Where(d => int.TryParse(d, out _))
+                        .Select(int.Parse);
+                    
+                    foreach (var day in days)
+                    {
+                        if (day >= 0 && day < 7)
+                            AllowedDays[day] = true;
+                    }
+                }
+
+                IsPermissionsDialogOpen = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading permissions: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task SavePermissions()
+    {
+        if (SelectedChild == null || CurrentPermissions == null)
+            return;
+
+        IsSavingPermissions = true;
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var config = new ChildPermissionConfig
+                {
+                    ChildUserId = SelectedChild.Id,
+                    ParentUserId = userId,
+                    CanViewPasswords = CurrentPermissions.CanViewPasswords,
+                    CanCreatePasswords = CurrentPermissions.CanCreatePasswords,
+                    CanEditPasswords = CurrentPermissions.CanEditPasswords,
+                    CanDeletePasswords = CurrentPermissions.CanDeletePasswords,
+                    CanRevealPasswords = CurrentPermissions.CanRevealPasswords,
+                    CanSharePasswords = CurrentPermissions.CanSharePasswords,
+                    CanExportData = CurrentPermissions.CanExportData,
+                    CanCreateCollections = CurrentPermissions.CanCreateCollections,
+                    CanManageOwnCollections = CurrentPermissions.CanManageOwnCollections,
+                    MaxPasswordItems = CurrentPermissions.MaxPasswordItems,
+                    AccessStartTime = AccessStartTime?.ToString(@"hh\:mm"),
+                    AccessEndTime = AccessEndTime?.ToString(@"hh\:mm"),
+                    AllowedDaysOfWeek = string.Join(",", AllowedDays
+                        .Select((allowed, index) => allowed ? index.ToString() : null)
+                        .Where(d => d != null)),
+                    RequireParentApproval = CurrentPermissions.RequireParentApproval,
+                    LogActivities = CurrentPermissions.LogActivities
+                };
+
+                await PermissionService.SetChildPermissionConfigAsync(SelectedChild.Id, userId, config);
+                Snackbar.Add("Permissions updated successfully!", Severity.Success);
+                ClosePermissionsDialog();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving permissions: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsSavingPermissions = false;
+        }
+    }
+
+    private void ClosePermissionsDialog()
+    {
+        IsPermissionsDialogOpen = false;
+        SelectedChild = null;
+        CurrentPermissions = null;
+        AccessStartTime = null;
+        AccessEndTime = null;
+        AllowedDays = new bool[7];
+    }
+
+    // Models
+    public class ChildUserInfo
+    {
+        public string Id { get; set; } = string.Empty;
+        public string? Email { get; set; }
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? LastLoginAt { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class CreateChildRelationshipModel
+    {
+        public string ChildEmail { get; set; } = string.Empty;
+        public string? Notes { get; set; }
+    }
+
+    public class ChildPermissionConfigModel
+    {
+        public bool CanViewPasswords { get; set; } = true;
+        public bool CanCreatePasswords { get; set; } = false;
+        public bool CanEditPasswords { get; set; } = false;
+        public bool CanDeletePasswords { get; set; } = false;
+        public bool CanRevealPasswords { get; set; } = false;
+        public bool CanSharePasswords { get; set; } = false;
+        public bool CanExportData { get; set; } = false;
+        public bool CanCreateCollections { get; set; } = false;
+        public bool CanManageOwnCollections { get; set; } = true;
+        public int MaxPasswordItems { get; set; } = 0;
+        public bool RequireParentApproval { get; set; } = true;
+        public bool LogActivities { get; set; } = true;
+    }
+}

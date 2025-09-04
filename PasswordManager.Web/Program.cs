@@ -105,6 +105,7 @@ builder.Services.AddScoped<IPlatformService, PasswordManager.Services.Services.D
 builder.Services.AddScoped<IPasswordEncryptionService, PasswordManager.Services.Services.PasswordEncryptionService>();
 builder.Services.AddScoped<IPasskeyService, PasswordManager.Services.Services.PasskeyService>();
 builder.Services.AddScoped<IDatabaseMigrationService, PasswordManager.Services.Services.DatabaseMigrationService>();
+builder.Services.AddScoped<IPermissionService, PasswordManager.Services.Services.PermissionService>();
 
 // Register crypto services
 builder.Services.AddCryptographyServices();

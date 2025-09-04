@@ -131,4 +131,82 @@ public class ApplicationUser : IdentityUser
     public virtual ICollection<UserPasskey> UserPasskeys { get; set; } = new List<UserPasskey>();
     public virtual ICollection<UserTwoFactorBackupCode> TwoFactorBackupCodes { get; set; } = new List<UserTwoFactorBackupCode>();
 
+    // Parent-Child relationship navigation properties
+    /// <summary>
+    /// Relationships where this user is the parent
+    /// </summary>
+    [InverseProperty(nameof(UserRelationship.ParentUser))]
+    public virtual ICollection<UserRelationship> ChildRelationships { get; set; } = new List<UserRelationship>();
+
+    /// <summary>
+    /// Relationships where this user is the child
+    /// </summary>
+    [InverseProperty(nameof(UserRelationship.ChildUser))]
+    public virtual ICollection<UserRelationship> ParentRelationships { get; set; } = new List<UserRelationship>();
+
+    /// <summary>
+    /// Permission configurations where this user is the child
+    /// </summary>
+    [InverseProperty(nameof(ChildPermissionConfig.ChildUser))]
+    public virtual ICollection<ChildPermissionConfig> ChildPermissionConfigs { get; set; } = new List<ChildPermissionConfig>();
+
+    /// <summary>
+    /// Permission configurations where this user is the parent managing children
+    /// </summary>
+    [InverseProperty(nameof(ChildPermissionConfig.ParentUser))]
+    public virtual ICollection<ChildPermissionConfig> ManagedChildPermissions { get; set; } = new List<ChildPermissionConfig>();
+
+    /// <summary>
+    /// Helper property to get direct parent user (for Child role users)
+    /// </summary>
+    [NotMapped]
+    public ApplicationUser? ParentUser
+    {
+        get
+        {
+            var activeParentRelation = ParentRelationships
+                .Where(r => r.IsActive && r.RelationshipType == UserRelationshipTypes.ParentChild)
+                .FirstOrDefault();
+            return activeParentRelation?.ParentUser;
+        }
+    }
+
+    /// <summary>
+    /// Helper property to get direct children (for Parent role users)
+    /// </summary>
+    [NotMapped]
+    public IEnumerable<ApplicationUser> ChildrenUsers
+    {
+        get
+        {
+            return ChildRelationships
+                .Where(r => r.IsActive && r.RelationshipType == UserRelationshipTypes.ParentChild)
+                .Select(r => r.ChildUser)
+                .Where(u => u != null)
+                .Cast<ApplicationUser>();
+        }
+    }
+
+    /// <summary>
+    /// Helper method to check if user is a child of a specific parent
+    /// </summary>
+    public bool IsChildOf(string parentUserId)
+    {
+        return ParentRelationships.Any(r => 
+            r.IsActive && 
+            r.ParentUserId == parentUserId && 
+            r.RelationshipType == UserRelationshipTypes.ParentChild);
+    }
+
+    /// <summary>
+    /// Helper method to check if user is a parent of a specific child
+    /// </summary>
+    public bool IsParentOf(string childUserId)
+    {
+        return ChildRelationships.Any(r => 
+            r.IsActive && 
+            r.ChildUserId == childUserId && 
+            r.RelationshipType == UserRelationshipTypes.ParentChild);
+    }
+
 }

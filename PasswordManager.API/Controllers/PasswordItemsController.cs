@@ -5,6 +5,7 @@ using PasswordManager.Services.Interfaces;
 using PasswordManager.API.DTOs;
 using PasswordManager.Models.DTOs;
 using PasswordManager.Models;
+using PasswordManager.Models.Authorization;
 using PasswordManager.Crypto.Interfaces;
 using PasswordManager.Crypto.Services;
 using System.Security.Claims;
@@ -21,6 +22,7 @@ public class PasswordItemsController : ControllerBase
     private readonly IPasswordEncryptionService _passwordEncryptionService;
     private readonly IVaultSessionService _vaultSessionService;
     private readonly IPasswordCryptoService _passwordCryptoService;
+    private readonly IPermissionService _permissionService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<PasswordItemsController> _logger;
 
@@ -29,6 +31,7 @@ public class PasswordItemsController : ControllerBase
         IPasswordEncryptionService passwordEncryptionService,
         IVaultSessionService vaultSessionService,
         IPasswordCryptoService passwordCryptoService,
+        IPermissionService permissionService,
         UserManager<ApplicationUser> userManager,
         ILogger<PasswordItemsController> logger)
     {
@@ -36,24 +39,47 @@ public class PasswordItemsController : ControllerBase
         _passwordEncryptionService = passwordEncryptionService;
         _vaultSessionService = vaultSessionService;
         _passwordCryptoService = passwordCryptoService;
+        _permissionService = permissionService;
         _userManager = userManager;
         _logger = logger;
     }
 
     /// <summary>
-    /// Get all password items
+    /// Get all password items (with permission checks)
     /// </summary>
     [HttpGet]
+    [ChildSafeOperation]
     public async Task<ActionResult<IEnumerable<PasswordItemDto>>> GetAll()
     {
         try
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            // Check if user has permission to view passwords
+            if (!await _permissionService.HasPermissionAsync(userId, Permissions.Passwords.View))
+            {
+                return Forbid("You don't have permission to view passwords");
+            }
+
+            // For child users, check additional restrictions
+            if (await _permissionService.IsInRoleAsync(userId, ApplicationRoles.Child))
+            {
+                if (!await _permissionService.ChildCanPerformPasswordOperationAsync(userId, "view"))
+                {
+                    return Forbid("Child access is currently restricted");
+                }
+            }
+
             var items = await _passwordItemService.GetAllAsync();
             return Ok(items);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving all password items");
+            _logger.LogError(ex, "Error retrieving all password items for user {UserId}", User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             return StatusCode(500, "An error occurred while retrieving password items");
         }
     }
@@ -155,9 +181,10 @@ public class PasswordItemsController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new password item
+    /// Create a new password item (restricted for children)
     /// </summary>
     [HttpPost]
+    [RestrictedFromChildren]
     public async Task<ActionResult<PasswordItemDto>> Create([FromBody] CreatePasswordItemDto createDto)
     {
         try
@@ -171,26 +198,68 @@ public class PasswordItemsController : ControllerBase
                 return Unauthorized();
             }
 
+            // Check if user has permission to create passwords
+            if (!await _permissionService.HasPermissionAsync(userId, Permissions.Passwords.Create))
+            {
+                return Forbid("You don't have permission to create passwords");
+            }
+
+            // Additional check for child users
+            if (await _permissionService.IsInRoleAsync(userId, ApplicationRoles.Child))
+            {
+                if (!await _permissionService.ChildCanPerformPasswordOperationAsync(userId, "create"))
+                {
+                    return Forbid("Children are not allowed to create passwords");
+                }
+            }
+
             var item = await _passwordItemService.CreateAsync(createDto, userId);
             return CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating password item");
+            _logger.LogError(ex, "Error creating password item for user {UserId}", User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             return StatusCode(500, "An error occurred while creating the password item");
         }
     }
 
     /// <summary>
-    /// Update a password item
+    /// Update a password item (restricted for children)
     /// </summary>
     [HttpPut("{id}")]
+    [RestrictedFromChildren]
     public async Task<ActionResult<PasswordItemDto>> Update(int id, [FromBody] UpdatePasswordItemDto updateDto)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            // Get the item to check ownership
+            var existingItem = await _passwordItemService.GetByIdAsync(id);
+            if (existingItem == null)
+                return NotFound($"Password item with ID {id} not found");
+
+            // Check permissions
+            if (!await _permissionService.CanAccessResourceAsync(userId, existingItem.UserId, Permissions.Passwords.Edit))
+            {
+                return Forbid("You don't have permission to edit this password");
+            }
+
+            // Additional check for child users
+            if (await _permissionService.IsInRoleAsync(userId, ApplicationRoles.Child))
+            {
+                if (!await _permissionService.ChildCanPerformPasswordOperationAsync(userId, "edit"))
+                {
+                    return Forbid("Children are not allowed to edit passwords");
+                }
+            }
 
             var item = await _passwordItemService.UpdateAsync(id, updateDto);
             if (item == null)
@@ -200,7 +269,7 @@ public class PasswordItemsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating password item with ID {Id}", id);
+            _logger.LogError(ex, "Error updating password item with ID {Id} for user {UserId}", id, User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             return StatusCode(500, "An error occurred while updating the password item");
         }
     }
@@ -587,9 +656,10 @@ public class PasswordItemsController : ControllerBase
     }
 
     /// <summary>
-    /// Reveal password for a specific item using master password (Bitwarden-style)
+    /// Reveal password for a specific item using master password (restricted for children)
     /// </summary>
     [HttpPost("{id}/reveal")]
+    [RestrictedFromChildren]
     public async Task<ActionResult<ApiDtos.RevealPasswordResponseDto>> RevealPassword(int id, [FromBody] ApiDtos.RevealPasswordRequestDto request)
     {
         try
@@ -605,6 +675,18 @@ public class PasswordItemsController : ControllerBase
             var userId = _vaultSessionService.GetSessionUserId(sessionId);
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized("Invalid session");
+
+            // Check if user has permission to view sensitive password data
+            if (!await _permissionService.HasPermissionAsync(userId, Permissions.Passwords.ViewSensitive))
+            {
+                return Forbid("You don't have permission to reveal passwords");
+            }
+
+            // Additional check for child users - they should never be able to reveal passwords
+            if (await _permissionService.IsInRoleAsync(userId, ApplicationRoles.Child))
+            {
+                return Forbid("Children are not allowed to reveal password details");
+            }
 
             // Get user from database
             var user = await _userManager.FindByIdAsync(userId);
@@ -626,9 +708,11 @@ public class PasswordItemsController : ControllerBase
             if (item == null)
                 return NotFound($"Password item with ID {id} not found");
 
-            // Verify the item belongs to the user
-            if (item.UserId != userId)
-                return Forbid("Access denied");
+            // Check resource access permissions
+            if (!await _permissionService.CanAccessResourceAsync(userId, item.UserId, Permissions.Passwords.ViewSensitive))
+            {
+                return Forbid("Access denied to this password item");
+            }
 
             if (item.LoginItem != null && !string.IsNullOrEmpty(item.LoginItem.EncryptedPassword))
             {
@@ -657,7 +741,7 @@ public class PasswordItemsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error revealing password for item ID {Id}", id);
+            _logger.LogError(ex, "Error revealing password for item ID {Id} for user {UserId}", id, _vaultSessionService.GetSessionUserId(HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "")));
             return StatusCode(500, "An error occurred while revealing the password");
         }
     }
