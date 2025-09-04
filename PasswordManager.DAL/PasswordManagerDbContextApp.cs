@@ -5,7 +5,7 @@ using PasswordManager.DAL.Interfaces;
 
 namespace PasswordManager.DAL;
 
-public class PasswordManagerDbContextApp : IdentityDbContext<ApplicationUser>, IPasswordManagerDbContextApp
+public class PasswordManagerDbContextApp : IdentityDbContext<ApplicationUser, ApplicationRole, string>, IPasswordManagerDbContextApp
 {
     public PasswordManagerDbContextApp(DbContextOptions<PasswordManagerDbContextApp> options) : base(options)
     {

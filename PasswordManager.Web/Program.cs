@@ -76,8 +76,8 @@ else
     }
 }
 
-// Add Identity services
-builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
+// Add Identity services with roles
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
     options.Password.RequireDigit = true;
@@ -86,7 +86,8 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     options.Password.RequireUppercase = true;
     options.Password.RequireLowercase = true;
 })
-.AddEntityFrameworkStores<PasswordManagerDbContextApp>();
+.AddEntityFrameworkStores<PasswordManagerDbContextApp>()
+.AddDefaultTokenProviders();
 
 // Register application services
 builder.Services.AddScoped<IPasswordItemService, PasswordManager.Services.PasswordItemService>();
@@ -120,6 +121,9 @@ builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
     };
     return new Fido2NetLib.Fido2(config);
 });
+
+// Register Identity data seeder
+builder.Services.AddScoped<PasswordManager.DAL.Seed.IdentityDataSeeder>();
 
 // Add HttpClient for API calls
 builder.Services.AddHttpClient();
@@ -177,6 +181,18 @@ using (var scope = app.Services.CreateScope())
             {
                 Console.WriteLine("✅ Database already exists and is up to date");
             }
+        }
+
+        // Seed Identity data (roles and default users)
+        try
+        {
+            var identitySeeder = scope.ServiceProvider.GetRequiredService<PasswordManager.DAL.Seed.IdentityDataSeeder>();
+            await identitySeeder.SeedAsync();
+            Console.WriteLine("✅ Identity data seeded successfully");
+        }
+        catch (Exception seedEx)
+        {
+            Console.WriteLine($"⚠️  Identity seeding warning: {seedEx.Message}");
         }
     }
     catch (Exception ex)
