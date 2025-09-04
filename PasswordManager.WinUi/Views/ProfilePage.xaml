@@ -11,8 +11,9 @@
     </Page.Resources>
 
     <ScrollViewer>
-        <StackPanel Spacing="24" Padding="40">
-            
+        <StackPanel Spacing="24"
+                Padding="40">
+
             <!-- Header -->
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -20,7 +21,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                
+
                 <!-- Profile Picture -->
                 <Border Grid.Column="0"
                         Width="80"
@@ -35,7 +36,7 @@
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
                 </Border>
-                
+
                 <!-- Profile Info -->
                 <StackPanel Grid.Column="1"
                             VerticalAlignment="Center"
@@ -48,9 +49,9 @@
 
                 <!-- Action Buttons -->
                 <StackPanel Grid.Column="2"
-                           Orientation="Horizontal"
-                           Spacing="12"
-                           VerticalAlignment="Center">
+                            Orientation="Horizontal"
+                            Spacing="12"
+                            VerticalAlignment="Center">
                     <Button Content="Switch Profile"
                             Style="{StaticResource ModernSecondaryButtonStyle}"
                             Click="SwitchProfileButton_Click"/>
@@ -105,11 +106,11 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        
+
                         <TextBlock Grid.Column="0"
                                    Text="Switch Profile"
                                    Style="{StaticResource ModernHeading3Style}"/>
-                        
+
                         <Button Grid.Column="1"
                                 Content="✕"
                                 Background="Transparent"
@@ -120,8 +121,8 @@
 
                     <!-- Profile List -->
                     <ScrollViewer MaxHeight="300"
-                                 HorizontalScrollBarVisibility="Disabled"
-                                 VerticalScrollBarVisibility="Auto">
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding AllProfiles}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -131,46 +132,46 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Button Background="#2D2D2D"
-                                           BorderBrush="#4A4A4A"
-                                           BorderThickness="1"
-                                           CornerRadius="8"
-                                           HorizontalAlignment="Stretch"
-                                           Padding="16,12"
-                                           MinHeight="64"
-                                           Click="ProfileSwitchButton_Click">
+                                            BorderBrush="#4A4A4A"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            HorizontalAlignment="Stretch"
+                                            Padding="16,12"
+                                            MinHeight="64"
+                                            Click="ProfileSwitchButton_Click">
                                         <Button.Tag>
-                                            <Binding />
+                                            <Binding/>
                                         </Button.Tag>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
-                                            
+
                                             <!-- Profile Avatar -->
                                             <Border Grid.Column="0"
-                                                   Background="#8B7355"
-                                                   CornerRadius="24"
-                                                   Width="48"
-                                                   Height="48"
-                                                   Margin="0,0,12,0">
+                                                    Background="#8B7355"
+                                                    CornerRadius="24"
+                                                    Width="48"
+                                                    Height="48"
+                                                    Margin="0,0,12,0">
                                                 <TextBlock Text="👤"
-                                                          FontSize="20"
-                                                          Foreground="White"
-                                                          HorizontalAlignment="Center"
-                                                          VerticalAlignment="Center"/>
+                                                           FontSize="20"
+                                                           Foreground="White"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
                                             </Border>
-                                            
+
                                             <!-- Profile Info -->
                                             <StackPanel Grid.Column="1"
-                                                       VerticalAlignment="Center">
+                                                        VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding FirstName}"
-                                                          FontSize="16"
-                                                          FontWeight="SemiBold"
-                                                          Foreground="White"/>
+                                                           FontSize="16"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="White"/>
                                                 <TextBlock Text="{Binding Email}"
-                                                          FontSize="13"
-                                                          Foreground="#B0B0B0"/>
+                                                           FontSize="13"
+                                                           Foreground="#B0B0B0"/>
                                             </StackPanel>
                                         </Grid>
                                     </Button>
@@ -181,23 +182,23 @@
 
                     <!-- Add New Profile Button -->
                     <Button Content="+ Create New Profile"
-                           Background="#4A90E2"
-                           Foreground="White"
-                           BorderThickness="0"
-                           CornerRadius="8"
-                           HorizontalAlignment="Stretch"
-                           MinHeight="48"
-                           FontSize="16"
-                           Click="CreateNewProfileButton_Click"/>
+                            Background="#4A90E2"
+                            Foreground="White"
+                            BorderThickness="0"
+                            CornerRadius="8"
+                            HorizontalAlignment="Stretch"
+                            MinHeight="48"
+                            FontSize="16"
+                            Click="CreateNewProfileButton_Click"/>
                 </StackPanel>
             </Border>
-            
+
             <!-- Account Information -->
             <Border Style="{StaticResource ModernCardStyle}">
                 <StackPanel Spacing="16">
                     <TextBlock Text="Account Information"
                                Style="{StaticResource ModernHeading3Style}"/>
-                    
+
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -208,56 +209,65 @@
                             <ColumnDefinition Width="150"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        
+
                         <!-- First Name -->
-                        <TextBlock Grid.Row="0" Grid.Column="0"
+                        <TextBlock Grid.Row="0"
+                                Grid.Column="0"
                                    Text="First Name:"
                                    Style="{StaticResource ModernCaptionStyle}"
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1"
+                        <TextBlock Grid.Row="0"
+                                Grid.Column="1"
                                    Text="{Binding FirstName}"
                                    Style="{StaticResource ModernBodyStyle}"
                                    VerticalAlignment="Center"
                                    Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                        <TextBox Grid.Row="0" Grid.Column="1"
+                        <TextBox Grid.Row="0"
+                                Grid.Column="1"
                                  Text="{Binding FirstName, Mode=TwoWay}"
                                  Style="{StaticResource ModernTextBoxStyle}"
                                  Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                        
+
                         <!-- Last Name -->
-                        <TextBlock Grid.Row="1" Grid.Column="0"
+                        <TextBlock Grid.Row="1"
+                                Grid.Column="0"
                                    Text="Last Name:"
                                    Style="{StaticResource ModernCaptionStyle}"
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Center"
                                    Margin="0,8,0,0"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1"
+                        <TextBlock Grid.Row="1"
+                                Grid.Column="1"
                                    Text="{Binding LastName}"
                                    Style="{StaticResource ModernBodyStyle}"
                                    VerticalAlignment="Center"
                                    Margin="0,8,0,0"
                                    Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                        <TextBox Grid.Row="1" Grid.Column="1"
+                        <TextBox Grid.Row="1"
+                                Grid.Column="1"
                                  Text="{Binding LastName, Mode=TwoWay}"
                                  Style="{StaticResource ModernTextBoxStyle}"
                                  Margin="0,8,0,0"
                                  Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                        
+
                         <!-- Email -->
-                        <TextBlock Grid.Row="2" Grid.Column="0"
+                        <TextBlock Grid.Row="2"
+                                Grid.Column="0"
                                    Text="Email:"
                                    Style="{StaticResource ModernCaptionStyle}"
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Center"
                                    Margin="0,8,0,0"/>
-                        <TextBlock Grid.Row="2" Grid.Column="1"
+                        <TextBlock Grid.Row="2"
+                                Grid.Column="1"
                                    Text="{Binding Email}"
                                    Style="{StaticResource ModernBodyStyle}"
                                    VerticalAlignment="Center"
                                    Margin="0,8,0,0"
                                    Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                        <TextBox Grid.Row="2" Grid.Column="1"
+                        <TextBox Grid.Row="2"
+                                Grid.Column="1"
                                  Text="{Binding Email, Mode=TwoWay}"
                                  Style="{StaticResource ModernTextBoxStyle}"
                                  Margin="0,8,0,0"
@@ -265,24 +275,27 @@
                     </Grid>
                 </StackPanel>
             </Border>
-            
+
             <!-- Security Settings -->
             <Border Style="{StaticResource ModernCardStyle}">
                 <StackPanel Spacing="16">
                     <TextBlock Text="Security"
                                Style="{StaticResource ModernHeading3Style}"/>
-                    
+
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        
+
                         <!-- Master Password -->
-                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12" Margin="0,0,0,12">
-                            <FontIcon Glyph="&#xE8D7;" 
-                                      FontSize="16" 
+                        <StackPanel Grid.Row="0"
+                                Orientation="Horizontal"
+                                Spacing="12"
+                                Margin="0,0,0,12">
+                            <FontIcon Glyph="&#xE8D7;"
+                                      FontSize="16"
                                       Foreground="{StaticResource ModernPrimaryBrush}"/>
                             <TextBlock Text="Master Password"
                                        Style="{StaticResource ModernBodyStyle}"
@@ -292,14 +305,17 @@
                                        VerticalAlignment="Center"/>
                             <Button Content="Change"
                                     Style="{StaticResource ModernSecondaryButtonStyle}"
-                                    Margin="auto,0,0,0"
+                                    Margin="0"
                                     HorizontalAlignment="Right"/>
                         </StackPanel>
-                        
+
                         <!-- Two-Factor Authentication -->
-                        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12" Margin="0,0,0,12">
-                            <FontIcon Glyph="&#xE72E;" 
-                                      FontSize="16" 
+                        <StackPanel Grid.Row="1"
+                                Orientation="Horizontal"
+                                Spacing="12"
+                                Margin="0,0,0,12">
+                            <FontIcon Glyph="&#xE72E;"
+                                      FontSize="16"
                                       Foreground="{StaticResource ModernSuccessBrush}"/>
                             <TextBlock Text="Two-Factor Authentication"
                                        Style="{StaticResource ModernBodyStyle}"
@@ -310,14 +326,16 @@
                                        VerticalAlignment="Center"/>
                             <Button Content="Manage"
                                     Style="{StaticResource ModernSecondaryButtonStyle}"
-                                    Margin="auto,0,0,0"
+                                    Margin="0"
                                     HorizontalAlignment="Right"/>
                         </StackPanel>
-                        
+
                         <!-- Biometric Authentication -->
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12">
-                            <FontIcon Glyph="&#xE8F1;" 
-                                      FontSize="16" 
+                        <StackPanel Grid.Row="2"
+                                Orientation="Horizontal"
+                                Spacing="12">
+                            <FontIcon Glyph="&#xE8F1;"
+                                      FontSize="16"
                                       Foreground="{StaticResource ModernSuccessBrush}"/>
                             <TextBlock Text="Biometric Authentication"
                                        Style="{StaticResource ModernBodyStyle}"
@@ -327,19 +345,19 @@
                                        Foreground="{StaticResource ModernSuccessBrush}"
                                        VerticalAlignment="Center"/>
                             <ToggleSwitch IsOn="True"
-                                          Margin="auto,0,0,0"
+                                          Margin="0"
                                           HorizontalAlignment="Right"/>
                         </StackPanel>
                     </Grid>
                 </StackPanel>
             </Border>
-            
+
             <!-- Vault Statistics -->
             <Border Style="{StaticResource ModernCardStyle}">
                 <StackPanel Spacing="16">
                     <TextBlock Text="Vault Statistics"
                                Style="{StaticResource ModernHeading3Style}"/>
-                    
+
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -347,8 +365,9 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        
-                        <StackPanel Grid.Column="0" Spacing="4">
+
+                        <StackPanel Grid.Column="0"
+                                Spacing="4">
                             <TextBlock Text="47"
                                        Style="{StaticResource ModernHeading2Style}"
                                        Foreground="{StaticResource ModernPrimaryBrush}"
@@ -357,8 +376,9 @@
                                        Style="{StaticResource ModernCaptionStyle}"
                                        HorizontalAlignment="Center"/>
                         </StackPanel>
-                        
-                        <StackPanel Grid.Column="1" Spacing="4">
+
+                        <StackPanel Grid.Column="1"
+                                Spacing="4">
                             <TextBlock Text="32"
                                        Style="{StaticResource ModernHeading2Style}"
                                        Foreground="{StaticResource ModernSuccessBrush}"
@@ -367,8 +387,9 @@
                                        Style="{StaticResource ModernCaptionStyle}"
                                        HorizontalAlignment="Center"/>
                         </StackPanel>
-                        
-                        <StackPanel Grid.Column="2" Spacing="4">
+
+                        <StackPanel Grid.Column="2"
+                                Spacing="4">
                             <TextBlock Text="5"
                                        Style="{StaticResource ModernHeading2Style}"
                                        Foreground="{StaticResource ModernWarningBrush}"
@@ -377,8 +398,9 @@
                                        Style="{StaticResource ModernCaptionStyle}"
                                        HorizontalAlignment="Center"/>
                         </StackPanel>
-                        
-                        <StackPanel Grid.Column="3" Spacing="4">
+
+                        <StackPanel Grid.Column="3"
+                                Spacing="4">
                             <TextBlock Text="8"
                                        Style="{StaticResource ModernHeading2Style}"
                                        Foreground="{StaticResource ModernAccentBrush}"
@@ -390,7 +412,7 @@
                     </Grid>
                 </StackPanel>
             </Border>
-            
+
         </StackPanel>
     </ScrollViewer>
 </Page>

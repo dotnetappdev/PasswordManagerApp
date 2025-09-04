@@ -22,54 +22,25 @@ public class PluginDiscoveryService
     /// </summary>
     public async Task<IEnumerable<IPasswordImportPlugin>> DiscoverPluginsAsync()
     {
-        // If the configured plugin directory exists, load plugins from it.
-        if (Directory.Exists(_pluginDirectory))
+        if (!Directory.Exists(_pluginDirectory))
         {
-            var pluginDirectories = Directory.GetDirectories(_pluginDirectory);
-            foreach (var pluginDir in pluginDirectories)
-            {
-                try
-                {
-                    await LoadPluginFromDirectoryAsync(pluginDir);
-                }
-                catch (Exception ex)
-                {
-                    // Log error but continue with other plugins
-                    Console.WriteLine($"Failed to load plugin from {pluginDir}: {ex.Message}");
-                }
-            }
+            Directory.CreateDirectory(_pluginDirectory);
+            return _loadedPlugins;
         }
 
-        // Additional: search the application's base directory for any plugin.json files
-        // This handles cases where build outputs place provider DLLs/plugin.json in runtime-specific
-        // subfolders (e.g. win-x64) or when the app is run from a different working directory.
-        try
+        var pluginDirectories = Directory.GetDirectories(_pluginDirectory);
+
+        foreach (var pluginDir in pluginDirectories)
         {
-            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            var pluginJsonFiles = Directory.GetFiles(baseDir, "plugin.json", SearchOption.AllDirectories);
-            foreach (var metadataFile in pluginJsonFiles)
+            try
             {
-                var pluginDir = Path.GetDirectoryName(metadataFile);
-                if (string.IsNullOrEmpty(pluginDir)) continue;
-
-                // Avoid loading the same plugin twice
-                if (_loadedPlugins.Any(p => string.Equals(p.Metadata.DisplayName, Path.GetFileName(pluginDir), StringComparison.OrdinalIgnoreCase)))
-                    continue;
-
-                try
-                {
-                    await LoadPluginFromDirectoryAsync(pluginDir);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Failed to load plugin from discovered metadata at {pluginDir}: {ex.Message}");
-                }
+                await LoadPluginFromDirectoryAsync(pluginDir);
             }
-        }
-        catch (Exception ex)
-        {
-            // Swallow search errors but log
-            Console.WriteLine($"Plugin discovery search error: {ex.Message}");
+            catch (Exception ex)
+            {
+                // Log error but continue with other plugins
+                Console.WriteLine($"Failed to load plugin from {pluginDir}: {ex.Message}");
+            }
         }
 
         return _loadedPlugins;

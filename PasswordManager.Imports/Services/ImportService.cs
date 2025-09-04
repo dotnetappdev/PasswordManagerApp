@@ -89,35 +89,6 @@ public class ImportService : IImportService
                 .Where(assembly => !assembly.IsDynamic)
                 .ToList();
 
-            // Ensure assemblies from PasswordManagerImports.* are loaded into the AppDomain so their providers
-            // (which implement IPasswordImportProvider) can be discovered. Some plugin projects are copied to the
-            // app output folder but not automatically loaded into the AppDomain until referenced. Load them explicitly.
-            try
-            {
-                var baseDir = AppDomain.CurrentDomain.BaseDirectory ?? AppContext.BaseDirectory;
-                var importDlls = Directory.GetFiles(baseDir, "PasswordManagerImports.*.dll");
-                foreach (var dll in importDlls)
-                {
-                    try
-                    {
-                        var name = Path.GetFileNameWithoutExtension(dll);
-                        if (!assemblies.Any(a => string.Equals(a.GetName().Name, name, StringComparison.OrdinalIgnoreCase)))
-                        {
-                            var loaded = Assembly.LoadFrom(dll);
-                            assemblies.Add(loaded);
-                        }
-                    }
-                    catch
-                    {
-                        // Ignore load failures for individual assemblies
-                    }
-                }
-            }
-            catch
-            {
-                // Ignore any IO errors while probing for plugin assemblies
-            }
-
             foreach (var assembly in assemblies)
             {
                 try

@@ -39,12 +39,6 @@ public sealed partial class PasswordItemsPage : Page
         }
     }
 
-    // Helper to prefer the main window XamlRoot so dialogs center on the app window
-    private Microsoft.UI.Xaml.XamlRoot? GetMainXamlRoot()
-    {
-        return (App.Current as App)?.MainWindow?.Content?.XamlRoot;
-    }
-
     protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
@@ -91,14 +85,6 @@ public sealed partial class PasswordItemsPage : Page
             if (contentSubtitle != null) contentSubtitle.Text = $"Showing {filterData.FilterName.ToLower()}";
         }
 
-        // Apply category filter
-        if (filterData.FilterCategoryId.HasValue)
-        {
-            _viewModel.SelectedCategoryId = filterData.FilterCategoryId.Value;
-            // Update title with actual category name if available
-            _ = UpdateCategoryTitle(filterData.FilterCategoryId.Value);
-        }
-
         // Apply type filter
         if (filterData.FilterType.HasValue)
         {
@@ -121,42 +107,6 @@ public sealed partial class PasswordItemsPage : Page
         if (filterData.ShowDeleted == true)
         {
             _viewModel.FilterType = "RecentlyDeleted";
-        }
-
-        // Apply search text if provided
-        if (!string.IsNullOrEmpty(filterData.SearchText))
-        {
-            // Update the viewmodel search text which triggers ApplyFiltersAsync
-            _viewModel.SearchText = filterData.SearchText;
-
-            // Also reflect the search text in the UI textbox if available
-            var searchBox = GetElement<TextBox>("SearchTextBox");
-            if (searchBox != null)
-            {
-                searchBox.Text = filterData.SearchText;
-            }
-        }
-    }
-
-    private async Task UpdateCategoryTitle(int categoryId)
-    {
-        try
-        {
-            if (_categoryService != null)
-            {
-                var category = await _categoryService.GetByIdAsync(categoryId);
-                if (category != null)
-                {
-                    var contentTitle = GetElement<TextBlock>("ContentTitle");
-                    var contentSubtitle = GetElement<TextBlock>("ContentSubtitle");
-                    if (contentTitle != null) contentTitle.Text = category.Name;
-                    if (contentSubtitle != null) contentSubtitle.Text = $"Showing {category.Name.ToLower()}";
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error updating category title: {ex.Message}");
         }
     }
 
@@ -586,14 +536,14 @@ public sealed partial class PasswordItemsPage : Page
 
             // First show the item type selection dialog (1Password style)
             var typeSelectionDialog = new Dialogs.ItemTypeSelectionDialog();
-            typeSelectionDialog.XamlRoot = GetMainXamlRoot() ?? this.XamlRoot;
+            typeSelectionDialog.XamlRoot = this.XamlRoot;
 
             var typeResult = await typeSelectionDialog.ShowAsync();
             if (typeResult == ContentDialogResult.Primary || typeSelectionDialog.SelectedItemType != null)
             {
                 // Then show the main add dialog with the selected type pre-filled
                 var dialog = new Dialogs.AddPasswordDialog(_serviceProvider);
-                dialog.XamlRoot = GetMainXamlRoot() ?? this.XamlRoot;
+                dialog.XamlRoot = this.XamlRoot;
 
                 // Pre-select the item type if one was chosen
                 if (typeSelectionDialog.SelectedItemType.HasValue)
@@ -620,7 +570,7 @@ public sealed partial class PasswordItemsPage : Page
                 Title = "Error",
                 Content = $"Error adding password: {ex.Message}",
                 CloseButtonText = "OK",
-                XamlRoot = GetMainXamlRoot() ?? this.XamlRoot
+                XamlRoot = this.XamlRoot
             };
             await errorDialog.ShowAsync();
         }
@@ -639,7 +589,7 @@ public sealed partial class PasswordItemsPage : Page
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Close,
-                XamlRoot = GetMainXamlRoot() ?? this.XamlRoot
+                XamlRoot = this.XamlRoot
             };
 
             var result = await dialog.ShowAsync();
@@ -687,8 +637,8 @@ public sealed partial class PasswordItemsPage : Page
             }
 
             // Open the edit dialog (reuse AddPasswordDialog in edit mode)
-                var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, item);
-            dialog.XamlRoot = GetMainXamlRoot() ?? this.XamlRoot;
+            var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, item);
+            dialog.XamlRoot = this.XamlRoot;
 
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary && dialog.Result != null)
@@ -718,7 +668,7 @@ public sealed partial class PasswordItemsPage : Page
                 Title = "Error",
                 Content = $"Error editing password: {ex.Message}",
                 CloseButtonText = "OK",
-                XamlRoot = GetMainXamlRoot() ?? this.XamlRoot
+                XamlRoot = this.XamlRoot
             };
             await errorDialog.ShowAsync();
         }
@@ -781,7 +731,7 @@ public sealed partial class PasswordItemsPage : Page
 
             // Use the AddPasswordDialog in read-only mode for a richer view
             var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, item, true);
-            dialog.XamlRoot = GetMainXamlRoot() ?? this.XamlRoot;
+            dialog.XamlRoot = this.XamlRoot;
             await dialog.ShowAsync();
         }
         catch (Exception ex)
@@ -821,7 +771,7 @@ public sealed partial class PasswordItemsPage : Page
             }
 
             var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, _selectedItem, true);
-            dialog.XamlRoot = GetMainXamlRoot() ?? this.XamlRoot;
+            dialog.XamlRoot = this.XamlRoot;
             await dialog.ShowAsync();
         }
         catch (Exception ex)

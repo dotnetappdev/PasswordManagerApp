@@ -195,19 +195,21 @@
                     <!-- Add Category Button -->
                     <Button Grid.Column="1"
                             x:Name="AddCategoryButton"
-                            Content="+"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Width="24"
-                            Height="24"
+                            Width="28"
+                            Height="28"
                             Margin="4,0"
                             Background="Transparent"
                             Foreground="{StaticResource ModernSuccessBrush}"
                             BorderThickness="1"
                             BorderBrush="{StaticResource ModernSuccessBrush}"
-                            CornerRadius="12"
+                            CornerRadius="14"
                             ToolTipService.ToolTip="Add Category"
-                            Click="AddCategoryNavButton_Click"/>
+                            Click="AddCategoryNavButton_Click">
+                        <FontIcon Glyph="&#xE710;"
+                                  FontSize="14"
+                                  VerticalAlignment="Center"
+                                  HorizontalAlignment="Center"/>
+                    </Button>
                 </Grid>
 
                 <!-- Category Items - Auto-expanded -->
@@ -354,7 +356,7 @@
             <!-- Footer Menu Items -->
             <NavigationView.FooterMenuItems>
                 <!-- Manage Items -->
-                <NavigationViewItem x:Name="ManageAllItemsNavItem"
+                <!--<NavigationViewItem x:Name="ManageAllItemsNavItem"
                                     Content="Manage Collections, Types &amp; Tags"
                                     Tag="ManageItems"
                                     Style="{StaticResource ModernNavigationViewItemStyle}">
@@ -363,7 +365,7 @@
                                   FontSize="16"
                                   Foreground="{StaticResource ModernAccentBrush}"/>
                     </NavigationViewItem.Icon>
-                </NavigationViewItem>
+                </NavigationViewItem>-->
 
                 <NavigationViewItemSeparator Margin="8,4"/>
 

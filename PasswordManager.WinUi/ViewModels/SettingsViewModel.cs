@@ -11,7 +11,7 @@ public class SettingsViewModel : BaseViewModel
     private readonly IPlatformService _platformService;
     private readonly ISecureStorageService _secureStorageService;
     private readonly IAuthService _authService;
-    
+
     private bool _enableSync = false;
     private bool _enableTwoFactor = false;
     private bool _requirePasscode = false;
@@ -30,7 +30,7 @@ public class SettingsViewModel : BaseViewModel
         _platformService = serviceProvider.GetRequiredService<IPlatformService>();
         _secureStorageService = serviceProvider.GetRequiredService<ISecureStorageService>();
         _authService = serviceProvider.GetRequiredService<IAuthService>();
-        
+
         LoadSettingsAsync();
     }
 
@@ -105,20 +105,20 @@ public class SettingsViewModel : BaseViewModel
         try
         {
             IsLoading = true;
-            
+
             // Load user preferences from secure storage
             var syncEnabled = await _secureStorageService.GetAsync("EnableSync");
             EnableSync = syncEnabled == "true";
-            
+
             var twoFactorEnabled = await _secureStorageService.GetAsync("EnableTwoFactor");
             EnableTwoFactor = twoFactorEnabled == "true";
-            
+
             var passcodeRequired = await _secureStorageService.GetAsync("RequirePasscode");
             RequirePasscode = passcodeRequired == "true";
-            
+
             var theme = await _secureStorageService.GetAsync("SelectedTheme");
             SelectedTheme = theme ?? "System";
-            
+
             var timeout = await _secureStorageService.GetAsync("SessionTimeoutMinutes");
             if (int.TryParse(timeout, out var timeoutValue))
             {
@@ -139,7 +139,7 @@ public class SettingsViewModel : BaseViewModel
 
             // Set default export path
             ExportPath = Path.Combine(_platformService.GetDocumentsDirectory(), "PasswordManagerExport");
-            
+
             // Apply the loaded theme
             ApplyTheme();
         }
@@ -158,7 +158,7 @@ public class SettingsViewModel : BaseViewModel
         try
         {
             IsLoading = true;
-            
+
             // Save settings to secure storage
             await _secureStorageService.SetAsync("EnableSync", EnableSync.ToString().ToLower());
             await _secureStorageService.SetAsync("EnableTwoFactor", EnableTwoFactor.ToString().ToLower());
@@ -169,10 +169,10 @@ public class SettingsViewModel : BaseViewModel
             await _secureStorageService.SetAsync("ApiBaseUrl", ApiBaseUrl);
             await _secureStorageService.SetAsync("DatabaseProvider", DatabaseProvider);
             await _secureStorageService.SetAsync("DatabaseConnectionString", DatabaseConnectionString);
-            
+
             // Apply theme change
             ApplyTheme();
-            
+
             return true;
         }
         catch (Exception ex)
@@ -185,7 +185,7 @@ public class SettingsViewModel : BaseViewModel
             IsLoading = false;
         }
     }
-    
+
     private void ApplyTheme()
     {
         var theme = SelectedTheme switch
@@ -195,7 +195,7 @@ public class SettingsViewModel : BaseViewModel
             "System" => AppTheme.System,
             _ => AppTheme.System
         };
-        
+
         ThemeHelper.SetTheme(theme);
     }
 
@@ -204,11 +204,11 @@ public class SettingsViewModel : BaseViewModel
         try
         {
             IsLoading = true;
-            
+
             // This would integrate with the export service
             // For now, just simulate the operation
             await Task.Delay(2000);
-            
+
             return true;
         }
         catch (Exception ex)
@@ -227,10 +227,10 @@ public class SettingsViewModel : BaseViewModel
         try
         {
             IsLoading = true;
-            
+
             // Use the auth service for master password changes in WinUI
             var result = await _authService.ChangeMasterPasswordAsync(currentPassword, newPassword);
-            
+
             return result;
         }
         catch (Exception ex)
@@ -249,10 +249,61 @@ public class SettingsViewModel : BaseViewModel
         try
         {
             IsLoading = true;
-            
-            // This would clear all user data
-            await Task.Delay(1000);
-            
+
+            // Clear secure storage (preferences, tokens, etc.)
+            try
+            {
+                _secureStorageService.RemoveAll();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Warning: could not clear secure storage: {ex.Message}");
+            }
+
+            // Delete database files under the app data directory
+            try
+            {
+                var dataDir = _platformService.GetAppDataDirectory();
+                var dbDir = Path.Combine(dataDir, "data");
+                if (Directory.Exists(dbDir))
+                {
+                    // Only delete database files - keep other app files intact
+                    foreach (var file in Directory.GetFiles(dbDir, "*.db", SearchOption.TopDirectoryOnly))
+                    {
+                        try { File.Delete(file); } catch { /* ignore individual file delete errors */ }
+                    }
+
+                    // Also delete any .db-wal/.db-shm files
+                    foreach (var file in Directory.GetFiles(dbDir, "*.db-*", SearchOption.TopDirectoryOnly))
+                    {
+                        try { File.Delete(file); } catch { }
+                    }
+                }
+
+                // Delete encrypted key file if present
+                var keyPath = Path.Combine(dataDir, ".dbkey");
+                if (File.Exists(keyPath))
+                {
+                    try { File.Delete(keyPath); } catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Warning: error clearing database files: {ex.Message}");
+            }
+
+            // Optionally, we can reset stored database configuration
+            try
+            {
+                var config = await _databaseConfigurationService.GetConfigurationAsync();
+                config.IsFirstRun = true;
+                await _databaseConfigurationService.SaveConfigurationAsync(config);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Warning: could not reset database configuration: {ex.Message}");
+            }
+
             return true;
         }
         catch (Exception ex)

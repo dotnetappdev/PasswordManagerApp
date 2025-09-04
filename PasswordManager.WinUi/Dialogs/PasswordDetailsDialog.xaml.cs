@@ -90,9 +90,7 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
             if (serviceProvider == null) return;
 
             var dialog = new Dialogs.AddPasswordDialog(serviceProvider, _passwordItem);
-            // Prefer attaching new dialogs to the main window XamlRoot so they center on screen
-            var mainRoot = (App.Current as App)?.MainWindow?.Content?.XamlRoot;
-            dialog.XamlRoot = mainRoot ?? this.XamlRoot;
+            dialog.XamlRoot = this.XamlRoot;
 
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary && dialog.Result is not null)
