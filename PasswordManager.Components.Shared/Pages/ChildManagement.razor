@@ -3,9 +3,11 @@
 @using PasswordManager.Services.Interfaces
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @inject IPermissionService PermissionService
 @inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
 @inject ISnackbar Snackbar
 
