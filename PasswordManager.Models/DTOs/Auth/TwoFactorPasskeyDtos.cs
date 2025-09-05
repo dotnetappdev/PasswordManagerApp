@@ -176,3 +176,13 @@ public class LoginResponseDto
     public AuthResponseDto? AuthResponse { get; set; }
     public string? TwoFactorToken { get; set; } // Temporary token for 2FA completion
 }
+
+// Master Key Login DTOs
+public class MasterKeyLoginRequestDto
+{
+    [Required]
+    public string MasterKey { get; set; } = string.Empty;
+    
+    public string? TwoFactorCode { get; set; }
+    public bool IsTwoFactorBackupCode { get; set; } = false;
+}

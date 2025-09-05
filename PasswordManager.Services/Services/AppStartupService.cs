@@ -84,6 +84,9 @@ public class AppStartupService : IAppStartupService
                         // Ensure basic database structure without migrations for unconfigured databases
                         await dbContext.Database.EnsureCreatedAsync();
                         await dbContextApp.Database.EnsureCreatedAsync();
+                        
+                        // Seed Identity data for new installations
+                        await SeedIdentityDataIfNeeded(scope);
                         return;
                     }
 
@@ -99,6 +102,9 @@ public class AppStartupService : IAppStartupService
                     else
                     {
                         _logger.LogInformation("Database is up to date");
+                        
+                        // Seed Identity data first
+                        await SeedIdentityDataIfNeeded(scope);
                         
                         // Seed test data if database is empty
                         await SeedTestDataIfNeeded(dbContext);
@@ -199,6 +205,30 @@ public class AppStartupService : IAppStartupService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error seeding test data");
+            // Don't throw - seeding failure shouldn't prevent app startup
+        }
+    }
+
+    private async Task SeedIdentityDataIfNeeded(IServiceScope scope)
+    {
+        try
+        {
+            // Try to get the Identity seeder (may not be available in all configurations)
+            var identitySeeder = scope.ServiceProvider.GetService<PasswordManager.DAL.Seed.IdentityDataSeeder>();
+            if (identitySeeder != null)
+            {
+                _logger.LogInformation("Seeding Identity data (roles and default users)");
+                await identitySeeder.SeedAsync();
+                _logger.LogInformation("Identity data seeding completed successfully");
+            }
+            else
+            {
+                _logger.LogDebug("Identity seeder not available, skipping Identity data seeding");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error seeding Identity data");
             // Don't throw - seeding failure shouldn't prevent app startup
         }
     }

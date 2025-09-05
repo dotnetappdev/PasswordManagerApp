@@ -2,7 +2,6 @@ using PasswordManager.Models.DTOs;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PasswordManager.Models;
 

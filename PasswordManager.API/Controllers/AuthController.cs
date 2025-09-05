@@ -61,6 +61,124 @@ public class AuthController : ControllerBase
 
 
     /// <summary>
+    /// Master key login - allows users to login with just their master key
+    /// </summary>
+    [HttpPost("login/masterkey")]
+    public async Task<ActionResult<LoginResponseDto>> LoginWithMasterKey([FromBody] MasterKeyLoginRequestDto loginRequest)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Find user by master key identifier
+            ApplicationUser? user = null;
+            var allUsers = await _userManager.Users.ToListAsync();
+            
+            foreach (var candidateUser in allUsers)
+            {
+                if (!string.IsNullOrEmpty(candidateUser.MasterKeyIdentifier) && 
+                    !string.IsNullOrEmpty(candidateUser.UserSalt))
+                {
+                    var userSalt = Convert.FromBase64String(candidateUser.UserSalt);
+                    if (_passwordCryptoService.VerifyMasterKeyIdentifier(
+                        loginRequest.MasterKey, 
+                        userSalt, 
+                        candidateUser.MasterKeyIdentifier))
+                    {
+                        user = candidateUser;
+                        break;
+                    }
+                }
+            }
+
+            if (user == null)
+            {
+                return Unauthorized("Invalid master key");
+            }
+
+            // Verify master password using the full authentication hash
+            if (!_passwordCryptoService.VerifyMasterPassword(
+                loginRequest.MasterKey, 
+                user.MasterPasswordHash, 
+                Convert.FromBase64String(user.UserSalt), 
+                user.MasterPasswordIterations))
+            {
+                return Unauthorized("Invalid master key");
+            }
+
+            // Check if user has 2FA enabled
+            if (user.TwoFactorEnabled)
+            {
+                // If 2FA code is provided, verify it
+                if (!string.IsNullOrEmpty(loginRequest.TwoFactorCode))
+                {
+                    var clientIp = Request.HttpContext.Connection.RemoteIpAddress?.ToString();
+                    var isValidCode = await _twoFactorService.VerifyTwoFactorCodeAsync(
+                        user.Id, 
+                        loginRequest.TwoFactorCode, 
+                        loginRequest.IsTwoFactorBackupCode, 
+                        clientIp);
+                    
+                    if (!isValidCode)
+                    {
+                        return BadRequest("Invalid 2FA code");
+                    }
+                }
+                else
+                {
+                    // Return response indicating 2FA is required
+                    return Ok(new LoginResponseDto
+                    {
+                        RequiresTwoFactor = true,
+                        SupportsPasskey = user.PasskeysEnabled,
+                        TwoFactorToken = GenerateTemporaryToken(user.Id)
+                    });
+                }
+            }
+
+            // Complete login process
+            var masterKey = _passwordCryptoService.DeriveMasterKey(loginRequest.MasterKey, Convert.FromBase64String(user.UserSalt));
+            var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
+
+            var authResponse = new AuthResponseDto
+            {
+                Token = sessionId,
+                RefreshToken = "",
+                ExpiresAt = DateTime.UtcNow.AddHours(8),
+                User = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    CreatedAt = user.CreatedAt,
+                    LastLoginAt = user.LastLoginAt,
+                    IsActive = user.IsActive
+                }
+            };
+
+            // Update last login time
+            user.LastLoginAt = DateTime.UtcNow;
+            await _userManager.UpdateAsync(user);
+
+            return Ok(new LoginResponseDto
+            {
+                RequiresTwoFactor = false,
+                SupportsPasskey = user.PasskeysEnabled,
+                AuthResponse = authResponse
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during master key login");
+            return StatusCode(500, "An error occurred during login");
+        }
+    }
+
+    /// <summary>
     /// Enhanced login with 2FA and passkey support
     /// </summary>
     [HttpPost("login/enhanced")]

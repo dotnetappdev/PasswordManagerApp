@@ -5,7 +5,7 @@ using PasswordManager.DAL.Interfaces;
 
 namespace PasswordManager.DAL;
 
-public class PasswordManagerDbContextApp : IdentityDbContext<ApplicationUser>, IPasswordManagerDbContextApp
+public class PasswordManagerDbContextApp : IdentityDbContext<ApplicationUser, ApplicationRole, string>, IPasswordManagerDbContextApp
 {
     public PasswordManagerDbContextApp(DbContextOptions<PasswordManagerDbContextApp> options) : base(options)
     {
@@ -23,6 +23,8 @@ public class PasswordManagerDbContextApp : IdentityDbContext<ApplicationUser>, I
     public DbSet<QrLoginToken> QrLoginTokens { get; set; } = null!;
     public DbSet<UserPasskey> UserPasskeys { get; set; } = null!;
     public DbSet<UserTwoFactorBackupCode> UserTwoFactorBackupCodes { get; set; } = null!;
+    public DbSet<UserRelationship> UserRelationships { get; set; } = null!;
+    public DbSet<ChildPermissionConfig> ChildPermissionConfigs { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -75,6 +77,64 @@ public class PasswordManagerDbContextApp : IdentityDbContext<ApplicationUser>, I
             entity.Property(e => e.UserAgent).HasMaxLength(500);
             entity.Property(e => e.IpAddress).HasMaxLength(45);
             entity.Property(e => e.Status).HasConversion<int>();
+        });
+
+        // Configure UserRelationship
+        modelBuilder.Entity<UserRelationship>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ParentUserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.ChildUserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.RelationshipType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.LastModified).IsRequired();
+            entity.Property(e => e.CreatedBy).HasMaxLength(450);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+
+            // Configure unique constraint to prevent duplicate relationships
+            entity.HasIndex(e => new { e.ParentUserId, e.ChildUserId, e.RelationshipType })
+                  .IsUnique()
+                  .HasDatabaseName("IX_UserRelationship_Unique");
+
+            // Configure foreign key relationships
+            entity.HasOne(e => e.ParentUser)
+                  .WithMany(u => u.ChildRelationships)
+                  .HasForeignKey(e => e.ParentUserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ChildUser)
+                  .WithMany(u => u.ParentRelationships)
+                  .HasForeignKey(e => e.ChildUserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure ChildPermissionConfig
+        modelBuilder.Entity<ChildPermissionConfig>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ChildUserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.ParentUserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.LastModified).IsRequired();
+            entity.Property(e => e.AccessStartTime).HasMaxLength(5);
+            entity.Property(e => e.AccessEndTime).HasMaxLength(5);
+            entity.Property(e => e.AllowedDaysOfWeek).HasMaxLength(20);
+
+            // Configure unique constraint - one config per child-parent pair
+            entity.HasIndex(e => new { e.ChildUserId, e.ParentUserId })
+                  .IsUnique()
+                  .HasDatabaseName("IX_ChildPermissionConfig_Unique");
+
+            // Configure foreign key relationships
+            entity.HasOne(e => e.ChildUser)
+                  .WithMany(u => u.ChildPermissionConfigs)
+                  .HasForeignKey(e => e.ChildUserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ParentUser)
+                  .WithMany(u => u.ManagedChildPermissions)
+                  .HasForeignKey(e => e.ParentUserId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

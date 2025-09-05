@@ -117,6 +117,7 @@ builder.Services.AddScoped<IApiKeyService, PasswordManager.Services.Services.Api
 builder.Services.AddScoped<IDatabaseMigrationService, PasswordManager.Services.Services.DatabaseMigrationService>();
 builder.Services.AddScoped<ITwoFactorService, PasswordManager.Services.Services.TwoFactorService>();
 builder.Services.AddScoped<IPasskeyService, PasswordManager.Services.Services.PasskeyService>();
+builder.Services.AddScoped<IPermissionService, PasswordManager.Services.Services.PermissionService>();
 builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncService>();
 
 // Register cryptography services

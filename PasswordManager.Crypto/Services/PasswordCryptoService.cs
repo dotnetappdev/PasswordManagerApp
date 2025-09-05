@@ -272,4 +272,60 @@ public class PasswordCryptoService : IPasswordCryptoService
         // Decrypt the password using AES-256-GCM with the provided master key
         return _cryptographyService.DecryptAes256Gcm(encryptedData, masterKey);
     }
+
+    /// <summary>
+    /// Creates a master key identifier for user lookup during master key login
+    /// This creates a searchable hash that allows finding users by their master key
+    /// Uses a separate salt to create a lookup hash independent of the auth hash
+    /// </summary>
+    public string CreateMasterKeyIdentifier(string masterPassword, byte[] userSalt)
+    {
+        if (string.IsNullOrEmpty(masterPassword))
+            throw new ArgumentException("Master password cannot be null or empty", nameof(masterPassword));
+        
+        if (userSalt == null || userSalt.Length == 0)
+            throw new ArgumentException("User salt cannot be null or empty", nameof(userSalt));
+
+        // Create a lookup salt by appending a fixed identifier to the user salt
+        // This ensures the lookup hash is different from the auth hash
+        var lookupSaltSuffix = Encoding.UTF8.GetBytes("MASTERKEY_LOOKUP");
+        var lookupSalt = new byte[userSalt.Length + lookupSaltSuffix.Length];
+        Buffer.BlockCopy(userSalt, 0, lookupSalt, 0, userSalt.Length);
+        Buffer.BlockCopy(lookupSaltSuffix, 0, lookupSalt, userSalt.Length, lookupSaltSuffix.Length);
+
+        try
+        {
+            // Create identifier hash using fewer iterations for faster lookup
+            // Security comes from the fact this is only used for identification, not authentication
+            return _cryptographyService.HashPassword(masterPassword, lookupSalt, 100000);
+        }
+        finally
+        {
+            // Clear lookup salt from memory
+            Array.Clear(lookupSalt, 0, lookupSalt.Length);
+            Array.Clear(lookupSaltSuffix, 0, lookupSaltSuffix.Length);
+        }
+    }
+
+    /// <summary>
+    /// Verifies if a master password matches a stored master key identifier
+    /// </summary>
+    public bool VerifyMasterKeyIdentifier(string masterPassword, byte[] userSalt, string storedIdentifier)
+    {
+        if (string.IsNullOrEmpty(masterPassword) || string.IsNullOrEmpty(storedIdentifier))
+            return false;
+
+        if (userSalt == null || userSalt.Length == 0)
+            return false;
+
+        try
+        {
+            var computedIdentifier = CreateMasterKeyIdentifier(masterPassword, userSalt);
+            return computedIdentifier.Equals(storedIdentifier, StringComparison.Ordinal);
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }

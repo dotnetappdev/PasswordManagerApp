@@ -88,8 +88,8 @@ public class Program
                 services.AddDbContext<PasswordManagerDbContext>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
 
-                // Add Identity services so UserManager<ApplicationUser> and related types are available
-                services.AddIdentityCore<ApplicationUser>(options =>
+                // Add Identity services with roles so all Identity tables are created
+                services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
                 {
                     options.SignIn.RequireConfirmedAccount = false;
                     options.Password.RequireDigit = true;
@@ -98,7 +98,8 @@ public class Program
                     options.Password.RequireUppercase = true;
                     options.Password.RequireLowercase = true;
                 })
-                .AddEntityFrameworkStores<PasswordManagerDbContextApp>();
+                .AddEntityFrameworkStores<PasswordManagerDbContextApp>()
+                .AddDefaultTokenProviders();
 
                 // Register authentication service early so other services can depend on it
                 services.AddScoped<IAuthService, SimpleAuthService>();
@@ -116,6 +117,9 @@ public class Program
                 services.AddScoped<IUserProfileService, UserProfileService>();
                 services.AddScoped<IVaultSessionService, VaultSessionService>();
                 services.AddScoped<IPasscodeService, PasscodeService>();
+
+                // Register Identity data seeder
+                services.AddScoped<PasswordManager.DAL.Seed.IdentityDataSeeder>();
 
                 // Register HTTP client
                 services.AddHttpClient();

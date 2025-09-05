@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PasswordManager.DAL;
 
@@ -10,9 +11,11 @@ using PasswordManager.DAL;
 namespace PasswordManager.DAL.Migrations
 {
     [DbContext(typeof(PasswordManagerDbContextApp))]
-    partial class PasswordManagerDbContextAppModelSnapshot : ModelSnapshot
+    [Migration("20250904175440_AddIdentityRoles")]
+    partial class AddIdentityRoles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.8");
@@ -272,10 +275,6 @@ namespace PasswordManager.DAL.Migrations
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("MasterKeyIdentifier")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("MasterPasswordHash")
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
@@ -400,87 +399,6 @@ namespace PasswordManager.DAL.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Categories");
-                });
-
-            modelBuilder.Entity("PasswordManager.Models.ChildPermissionConfig", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("AccessEndTime")
-                        .HasMaxLength(5)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("AccessStartTime")
-                        .HasMaxLength(5)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("AllowedDaysOfWeek")
-                        .HasMaxLength(20)
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("CanCreateCollections")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("CanCreatePasswords")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("CanDeletePasswords")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("CanEditPasswords")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("CanExportData")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("CanManageOwnCollections")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("CanRevealPasswords")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("CanSharePasswords")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("CanViewPasswords")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ChildUserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("LastModified")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("LogActivities")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("MaxPasswordItems")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ParentUserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("RequireParentApproval")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParentUserId");
-
-                    b.HasIndex("ChildUserId", "ParentUserId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_ChildPermissionConfig_Unique");
-
-                    b.ToTable("ChildPermissionConfigs");
                 });
 
             modelBuilder.Entity("PasswordManager.Models.Collection", b =>
@@ -1455,55 +1373,6 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("UserPasskeys");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.UserRelationship", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ChildUserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("LastModified")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ParentUserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("RelationshipType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChildUserId");
-
-                    b.HasIndex("ParentUserId", "ChildUserId", "RelationshipType")
-                        .IsUnique()
-                        .HasDatabaseName("IX_UserRelationship_Unique");
-
-                    b.ToTable("UserRelationships");
-                });
-
             modelBuilder.Entity("PasswordManager.Models.UserTwoFactorBackupCode", b =>
                 {
                     b.Property<int>("Id")
@@ -1831,25 +1700,6 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.ChildPermissionConfig", b =>
-                {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "ChildUser")
-                        .WithMany("ChildPermissionConfigs")
-                        .HasForeignKey("ChildUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "ParentUser")
-                        .WithMany("ManagedChildPermissions")
-                        .HasForeignKey("ParentUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ChildUser");
-
-                    b.Navigation("ParentUser");
-                });
-
             modelBuilder.Entity("PasswordManager.Models.Collection", b =>
                 {
                     b.HasOne("PasswordManager.Models.Collection", "ParentCollection")
@@ -1998,25 +1848,6 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.UserRelationship", b =>
-                {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "ChildUser")
-                        .WithMany("ParentRelationships")
-                        .HasForeignKey("ChildUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "ParentUser")
-                        .WithMany("ChildRelationships")
-                        .HasForeignKey("ParentUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ChildUser");
-
-                    b.Navigation("ParentUser");
-                });
-
             modelBuilder.Entity("PasswordManager.Models.UserTwoFactorBackupCode", b =>
                 {
                     b.HasOne("PasswordManager.Models.ApplicationUser", "User")
@@ -2051,19 +1882,11 @@ namespace PasswordManager.DAL.Migrations
 
                     b.Navigation("Categories");
 
-                    b.Navigation("ChildPermissionConfigs");
-
-                    b.Navigation("ChildRelationships");
-
                     b.Navigation("Collections");
 
                     b.Navigation("CreditCardItems");
 
                     b.Navigation("LoginItems");
-
-                    b.Navigation("ManagedChildPermissions");
-
-                    b.Navigation("ParentRelationships");
 
                     b.Navigation("PasswordItems");
 

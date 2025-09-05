@@ -99,6 +99,9 @@ public class UserProfileService : IUserProfileService
             // Create authentication hash for master password verification
             var authHash = _passwordCryptoService.CreateAuthHash(masterKey, createUserDto.Password);
 
+            // Create master key identifier for master key login
+            var masterKeyIdentifier = _passwordCryptoService.CreateMasterKeyIdentifier(createUserDto.Password, salt);
+
             // Create new user
             var newUser = new ApplicationUser
             {
@@ -108,6 +111,7 @@ public class UserProfileService : IUserProfileService
                 LastName = createUserDto.LastName,
                 UserSalt = Convert.ToBase64String(salt),
                 MasterPasswordHash = authHash,
+                MasterKeyIdentifier = masterKeyIdentifier,
                 MasterPasswordIterations = 600000, // Using OWASP recommendation
                 MasterPasswordHint = createUserDto.MasterPasswordHint,
                 IsActive = true,
@@ -209,9 +213,13 @@ public class UserProfileService : IUserProfileService
             // Create new authentication hash
             var authHash = _passwordCryptoService.CreateAuthHash(masterKey, newPassword);
 
+            // Create new master key identifier for master key login
+            var masterKeyIdentifier = _passwordCryptoService.CreateMasterKeyIdentifier(newPassword, salt);
+
             // Update user's salt and password hash
             user.UserSalt = Convert.ToBase64String(salt);
             user.MasterPasswordHash = authHash;
+            user.MasterKeyIdentifier = masterKeyIdentifier;
             user.MasterPasswordHint = newPasswordHint;
             user.UpdatedAt = DateTime.UtcNow;
 
