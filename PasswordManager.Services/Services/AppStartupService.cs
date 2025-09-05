@@ -90,25 +90,61 @@ public class AppStartupService : IAppStartupService
                         return;
                     }
 
-                    // Check for pending migrations but do not apply them automatically
+                    // Check for pending migrations
                     var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
                     var pendingMigrationsApp = await dbContextApp.Database.GetPendingMigrationsAsync();
                     
+                    // For desktop applications (WinUI), automatically apply pending migrations
+                    // to ensure the database schema is up to date
+                    var isDesktopApp = Environment.OSVersion.Platform == PlatformID.Win32NT && 
+                                      !Environment.GetCommandLineArgs().Any(arg => arg.Contains("server") || arg.Contains("web"));
+                    
                     if (pendingMigrations.Any() || pendingMigrationsApp.Any())
                     {
-                        _logger.LogInformation("Database has pending migrations (API: {ApiMigrations}, App: {AppMigrations}). User will need to apply them manually.", 
-                            pendingMigrations.Count(), pendingMigrationsApp.Count());
+                        if (isDesktopApp)
+                        {
+                            _logger.LogInformation("Desktop app detected with pending migrations (API: {ApiMigrations}, App: {AppMigrations}). Applying automatically.", 
+                                pendingMigrations.Count(), pendingMigrationsApp.Count());
+                            
+                            try
+                            {
+                                // Apply pending migrations for both contexts
+                                if (pendingMigrations.Any())
+                                {
+                                    _logger.LogInformation("Applying {Count} pending API migrations", pendingMigrations.Count());
+                                    await dbContext.Database.MigrateAsync();
+                                }
+                                
+                                if (pendingMigrationsApp.Any())
+                                {
+                                    _logger.LogInformation("Applying {Count} pending App migrations", pendingMigrationsApp.Count());
+                                    await dbContextApp.Database.MigrateAsync();
+                                }
+                                
+                                _logger.LogInformation("All pending migrations applied successfully");
+                            }
+                            catch (Exception migrationEx)
+                            {
+                                _logger.LogError(migrationEx, "Failed to apply pending migrations automatically");
+                                // Continue with app startup even if migration fails
+                            }
+                        }
+                        else
+                        {
+                            _logger.LogInformation("Web/server app detected with pending migrations (API: {ApiMigrations}, App: {AppMigrations}). User will need to apply them manually.", 
+                                pendingMigrations.Count(), pendingMigrationsApp.Count());
+                        }
                     }
                     else
                     {
                         _logger.LogInformation("Database is up to date");
-                        
-                        // Seed Identity data first
-                        await SeedIdentityDataIfNeeded(scope);
-                        
-                        // Seed test data if database is empty
-                        await SeedTestDataIfNeeded(dbContext);
                     }
+                    
+                    // Seed Identity data and test data regardless of migration status
+                    await SeedIdentityDataIfNeeded(scope);
+                    
+                    // Seed test data if database is empty
+                    await SeedTestDataIfNeeded(dbContext);
                 }
                 catch (ObjectDisposedException ex)
                 {
