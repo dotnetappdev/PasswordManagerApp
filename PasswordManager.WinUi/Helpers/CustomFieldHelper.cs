@@ -1,13 +1,13 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using PasswordManager.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace PasswordManager.WinUi.Helpers;
-
-using PasswordManager.WinUi.Helpers;
 
 public static class CustomFieldHelper
 {
