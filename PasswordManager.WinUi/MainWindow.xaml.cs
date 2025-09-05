@@ -212,29 +212,82 @@ public sealed partial class MainWindow : Window
 
     private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
     {
-        // Handle search text changes
+        // Handle search text changes and provide suggestions
         if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
         {
-            // You can implement search suggestions here
-            // For now, we'll just handle the basic search functionality
+            var query = sender.Text?.ToLower() ?? "";
+            
+            if (!string.IsNullOrWhiteSpace(query) && query.Length >= 2)
+            {
+                // Provide basic search suggestions
+                var suggestions = new List<string>();
+                
+                // Add common search categories as suggestions
+                var commonSearches = new[] { "logins", "passwords", "credit cards", "secure notes", "wifi", "favorites" };
+                foreach (var category in commonSearches)
+                {
+                    if (category.Contains(query))
+                    {
+                        suggestions.Add(category);
+                    }
+                }
+                
+                // Add "search for" prefix for better UX
+                if (suggestions.Count == 0)
+                {
+                    suggestions.Add($"Search for '{query}'");
+                }
+                
+                sender.ItemsSource = suggestions;
+            }
+            else
+            {
+                sender.ItemsSource = null;
+            }
         }
     }
 
     private void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
     {
-        // Handle search query submission
-        string searchQuery = args.QueryText;
+        // Handle search query submission with better feedback
+        string searchQuery = args.QueryText?.Trim() ?? "";
 
         if (!string.IsNullOrEmpty(searchQuery))
         {
-            // Navigate to passwords page with search query
-            NavigateToPage("AllItems");
-
-            // Use a more reliable way to pass search query
-            Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+            try
             {
-                PassSearchQueryToPage(searchQuery);
-            });
+                // Navigate to passwords page with search query
+                NavigateToPage("AllItems");
+
+                // Use a more reliable way to pass search query
+                Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+                {
+                    PassSearchQueryToPage(searchQuery);
+                });
+                
+                // Provide visual feedback
+                sender.PlaceholderText = $"Searching for '{searchQuery}'...";
+                
+                // Reset placeholder after a delay
+                Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(
+                    Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                {
+                    Task.Delay(3000).ContinueWith(_ =>
+                    {
+                        Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+                        {
+                            if (sender.PlaceholderText.StartsWith("Searching"))
+                            {
+                                sender.PlaceholderText = "Search passwords...";
+                            }
+                        });
+                    });
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error during search: {ex.Message}");
+            }
         }
     }
 
