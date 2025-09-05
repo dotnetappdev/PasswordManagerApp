@@ -6,6 +6,7 @@ using PasswordManager.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PasswordManager.Services.Interfaces;
+using Microsoft.Data.Sqlite;
 
 namespace PasswordManager.WinUi.Services;
 
@@ -53,6 +54,9 @@ public class WinUiAuthService : IAuthService
             // Create master password hash for authentication
             var masterPasswordHash = _passwordCryptoService.CreateMasterPasswordHash(masterPassword, userSalt);
             
+            // Create master key identifier for lookup during master key login
+            var masterKeyIdentifier = _passwordCryptoService.CreateMasterKeyIdentifier(masterPassword, userSalt);
+            
             // Create user record in database with username instead of email
             var user = new ApplicationUser
             {
@@ -61,13 +65,42 @@ public class WinUiAuthService : IAuthService
                 Email = "user@passwordmanager.local", // Keep for compatibility but not used for auth
                 UserSalt = Convert.ToBase64String(userSalt),
                 MasterPasswordHash = masterPasswordHash,
+                MasterKeyIdentifier = masterKeyIdentifier,
                 MasterPasswordHint = hint,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
             _dbContext.Users.Add(user);
-            await _dbContext.SaveChangesAsync();
+            
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no column named MasterKeyIdentifier"))
+            {
+                _logger.LogWarning("MasterKeyIdentifier column not found, attempting to apply pending migrations");
+                
+                // Try to apply pending migrations that might include the MasterKeyIdentifier column
+                try
+                {
+                    await _dbContext.Database.MigrateAsync();
+                    _logger.LogInformation("Migrations applied successfully, retrying user creation");
+                    
+                    // Retry saving the user after migration
+                    await _dbContext.SaveChangesAsync();
+                }
+                catch (Exception migrationEx)
+                {
+                    _logger.LogError(migrationEx, "Failed to apply migrations for MasterKeyIdentifier column");
+                    
+                    // Fallback: create user without MasterKeyIdentifier for now
+                    user.MasterKeyIdentifier = null;
+                    await _dbContext.SaveChangesAsync();
+                    
+                    _logger.LogWarning("User created without MasterKeyIdentifier due to migration failure");
+                }
+            }
 
             // Store user salt securely in Windows secure storage
             await StoreUserSaltSecurelyAsync(user.Id.ToString(), userSalt);
@@ -284,6 +317,9 @@ public class WinUiAuthService : IAuthService
             
             // Create new master password hash
             var newMasterPasswordHash = _passwordCryptoService.CreateMasterPasswordHash(newPassword, newUserSalt);
+            
+            // Create new master key identifier for lookup during master key login
+            var newMasterKeyIdentifier = _passwordCryptoService.CreateMasterKeyIdentifier(newPassword, newUserSalt);
 
             // Get the current master key for re-encryption
             var currentMasterKey = _passwordCryptoService.DeriveMasterKey(currentPassword, userSalt);
@@ -298,10 +334,38 @@ public class WinUiAuthService : IAuthService
             // Update user record in database
             user.UserSalt = Convert.ToBase64String(newUserSalt);
             user.MasterPasswordHash = newMasterPasswordHash;
+            user.MasterKeyIdentifier = newMasterKeyIdentifier;
             user.MasterPasswordHint = newPasswordHint;
             user.UpdatedAt = DateTime.UtcNow;
 
-            await _dbContext.SaveChangesAsync();
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no column named MasterKeyIdentifier"))
+            {
+                _logger.LogWarning("MasterKeyIdentifier column not found during password change, attempting to apply pending migrations");
+                
+                // Try to apply pending migrations that might include the MasterKeyIdentifier column
+                try
+                {
+                    await _dbContext.Database.MigrateAsync();
+                    _logger.LogInformation("Migrations applied successfully, retrying password change");
+                    
+                    // Retry saving the user after migration
+                    await _dbContext.SaveChangesAsync();
+                }
+                catch (Exception migrationEx)
+                {
+                    _logger.LogError(migrationEx, "Failed to apply migrations for MasterKeyIdentifier column during password change");
+                    
+                    // Fallback: update user without MasterKeyIdentifier for now
+                    user.MasterKeyIdentifier = null;
+                    await _dbContext.SaveChangesAsync();
+                    
+                    _logger.LogWarning("Password changed without updating MasterKeyIdentifier due to migration failure");
+                }
+            }
 
             // Update secure storage with new salt
             await StoreUserSaltSecurelyAsync(user.Id.ToString(), newUserSalt);

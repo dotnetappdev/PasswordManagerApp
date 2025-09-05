@@ -176,6 +176,7 @@ public partial class App : Application
                 services.AddScoped<IAppSyncService, AppSyncService>();
                 services.AddScoped<IAppStartupService, AppStartupService>();
                 services.AddScoped<IDatabaseMigrationService, DatabaseMigrationService>();
+                services.AddScoped<IDatabaseHealthService, DatabaseHealthService>();
                 services.AddScoped<IUserProfileService, UserProfileService>();
                 services.AddScoped<IVaultSessionService, VaultSessionService>();
                 services.AddScoped<IPasscodeService, PasscodeService>();
