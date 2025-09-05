@@ -88,19 +88,18 @@ public class Program
                 services.AddDbContext<PasswordManagerDbContext>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
 
-                // Note: Identity services are disabled for cross-platform console builds
                 // Add Identity services with roles so all Identity tables are created
-                // services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
-                // {
-                //     options.SignIn.RequireConfirmedAccount = false;
-                //     options.Password.RequireDigit = true;
-                //     options.Password.RequiredLength = 8;
-                //     options.Password.RequireNonAlphanumeric = false;
-                //     options.Password.RequireUppercase = true;
-                //     options.Password.RequireLowercase = true;
-                // })
-                // .AddEntityFrameworkStores<PasswordManagerDbContextApp>()
-                // .AddDefaultTokenProviders();
+                services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+                {
+                    options.SignIn.RequireConfirmedAccount = false;
+                    options.Password.RequireDigit = true;
+                    options.Password.RequiredLength = 8;
+                    options.Password.RequireNonAlphanumeric = false;
+                    options.Password.RequireUppercase = true;
+                    options.Password.RequireLowercase = true;
+                })
+                .AddEntityFrameworkStores<PasswordManagerDbContextApp>()
+                .AddDefaultTokenProviders();
 
                 // Register authentication service early so other services can depend on it
                 services.AddScoped<IAuthService, SimpleAuthService>();

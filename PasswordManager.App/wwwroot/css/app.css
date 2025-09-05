@@ -1,4 +1,5 @@
-﻿@import url('password-manager.css');
+﻿@import url('modern-theme.css');
+@import url('password-manager.css');
 @import url('auth.css');
 /*#if (SampleContent)*/
 html, body {

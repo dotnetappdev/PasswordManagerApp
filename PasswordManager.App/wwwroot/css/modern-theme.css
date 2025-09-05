@@ -1,0 +1,496 @@
+/* Modern Theme CSS for MAUI App - Based on WinUI Styling */
+
+/* Enhanced Modern Color Palette - 1Password Style */
+:root {
+    /* Primary Colors */
+    --modern-primary-color: #005BFF;
+    --modern-primary-light-color: #3B82F6;
+    --modern-primary-dark-color: #0041CC;
+    --modern-accent-color: #EC4899;
+    --modern-accent-light-color: #F472B6;
+    --modern-success-color: #10B981;
+    --modern-warning-color: #F59E0B;
+    --modern-error-color: #EF4444;
+
+    /* Enhanced Background Colors - 1Password Dark Theme Style (Default) */
+    --modern-background-color: #1A1A1A;
+    --modern-surface-color: #262626;
+    --modern-card-color: #262626;
+    --modern-elevated-surface-color: #333333;
+    --modern-border-color: #404040;
+    --modern-form-background-color: #262626;
+
+    /* Sidebar specific colors */
+    --modern-sidebar-background-color: #141414;
+    
+    /* New item button color */
+    --modern-new-item-button-color: #C08FDA;
+
+    /* Light theme variants (for future use) */
+    --modern-light-background-color: #F8F9FA;
+    --modern-light-surface-color: #FFFFFF;
+    --modern-light-card-color: #FFFFFF;
+    --modern-light-form-background-color: #F6F8FA;
+
+    /* Text Colors for Dark Theme */
+    --modern-text-primary-color: #FFFFFF;
+    --modern-text-secondary-color: #B0B0B0;
+    --modern-text-tertiary-color: #808080;
+
+    /* Hover and focus effects */
+    --modern-hover-opacity: 0.8;
+    --modern-focus-ring: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    --modern-border-radius: 8px;
+    --modern-border-radius-small: 6px;
+    --modern-border-radius-large: 12px;
+}
+
+/* Global Styling */
+body {
+    background-color: var(--modern-background-color);
+    color: var(--modern-text-primary-color);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+}
+
+/* Modern Card Styling */
+.modern-card {
+    background-color: var(--modern-card-color);
+    border: 1px solid var(--modern-border-color);
+    border-radius: var(--modern-border-radius);
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: box-shadow 0.2s ease;
+}
+
+.modern-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.modern-card-elevated {
+    background-color: var(--modern-elevated-surface-color);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Modern Button Styles */
+.modern-button {
+    background-color: var(--modern-primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--modern-border-radius);
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    min-height: 40px;
+}
+
+.modern-button:hover {
+    opacity: var(--modern-hover-opacity);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 91, 255, 0.3);
+}
+
+.modern-button:focus {
+    outline: none;
+    box-shadow: var(--modern-focus-ring);
+}
+
+.modern-button:active {
+    transform: translateY(0);
+}
+
+.modern-button-secondary {
+    background-color: var(--modern-surface-color);
+    color: var(--modern-text-primary-color);
+    border: 1px solid var(--modern-border-color);
+}
+
+.modern-button-secondary:hover {
+    background-color: var(--modern-elevated-surface-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.modern-button-accent {
+    background-color: var(--modern-accent-color);
+}
+
+.modern-button-accent:hover {
+    box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+}
+
+.modern-button-success {
+    background-color: var(--modern-success-color);
+}
+
+.modern-button-success:hover {
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.modern-button-error {
+    background-color: var(--modern-error-color);
+}
+
+.modern-button-error:hover {
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.modern-button-small {
+    padding: 8px 16px;
+    font-size: 12px;
+    min-height: 32px;
+}
+
+.modern-button-large {
+    padding: 16px 32px;
+    font-size: 16px;
+    min-height: 48px;
+}
+
+/* Icon Button Styles */
+.modern-icon-button {
+    background-color: transparent;
+    color: var(--modern-text-secondary-color);
+    border: none;
+    border-radius: var(--modern-border-radius-small);
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+}
+
+.modern-icon-button:hover {
+    background-color: var(--modern-surface-color);
+    color: var(--modern-text-primary-color);
+}
+
+.modern-icon-button:focus {
+    outline: none;
+    box-shadow: var(--modern-focus-ring);
+}
+
+/* Modern Text Input Styles */
+.modern-textbox {
+    background-color: var(--modern-form-background-color);
+    color: var(--modern-text-primary-color);
+    border: 1px solid var(--modern-border-color);
+    border-radius: var(--modern-border-radius);
+    padding: 12px 16px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+.modern-textbox:focus {
+    outline: none;
+    border-color: var(--modern-primary-color);
+    box-shadow: var(--modern-focus-ring);
+}
+
+.modern-textbox::placeholder {
+    color: var(--modern-text-tertiary-color);
+}
+
+.modern-textbox.error {
+    border-color: var(--modern-error-color);
+}
+
+.modern-textbox.error:focus {
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+}
+
+/* Modern Search Box */
+.modern-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.modern-search-input {
+    background-color: var(--modern-form-background-color);
+    color: var(--modern-text-primary-color);
+    border: 1px solid var(--modern-border-color);
+    border-radius: var(--modern-border-radius);
+    padding: 12px 16px 12px 44px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+.modern-search-input:focus {
+    outline: none;
+    border-color: var(--modern-primary-color);
+    box-shadow: var(--modern-focus-ring);
+}
+
+.modern-search-icon {
+    position: absolute;
+    left: 16px;
+    color: var(--modern-text-tertiary-color);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Modern Form Layouts */
+.modern-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modern-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.modern-form-label {
+    color: var(--modern-text-primary-color);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.modern-form-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.modern-form-row .modern-form-group {
+    flex: 1;
+}
+
+/* Validation Styling */
+.validation-error {
+    border-color: var(--modern-error-color) !important;
+}
+
+.validation-message {
+    color: var(--modern-error-color);
+    font-size: 12px;
+    margin-top: 4px;
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.validation-message::before {
+    content: "⚠";
+    font-size: 14px;
+}
+
+/* Inline notification styles */
+.inline-notification {
+    padding: 12px 16px;
+    border-radius: var(--modern-border-radius);
+    font-size: 14px;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: slideIn 0.3s ease;
+}
+
+.inline-notification.success {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--modern-success-color);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.inline-notification.error {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--modern-error-color);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.inline-notification.warning {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--modern-warning-color);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* Loading indicators */
+.modern-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--modern-text-secondary-color);
+}
+
+.modern-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--modern-border-color);
+    border-top: 2px solid var(--modern-primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Layout Components */
+.modern-toolbar {
+    background-color: var(--modern-surface-color);
+    border-bottom: 1px solid var(--modern-border-color);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.modern-sidebar {
+    background-color: var(--modern-sidebar-background-color);
+    border-right: 1px solid var(--modern-border-color);
+    height: 100vh;
+    padding: 16px;
+    min-width: 240px;
+}
+
+.modern-content {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+}
+
+.modern-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.modern-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.modern-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.modern-flex {
+    display: flex;
+    gap: 16px;
+}
+
+.modern-flex-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Accessibility improvements */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .modern-card {
+        padding: 16px;
+    }
+    
+    .modern-form-row {
+        flex-direction: column;
+    }
+    
+    .modern-toolbar {
+        padding: 12px;
+    }
+    
+    .modern-content {
+        padding: 16px;
+    }
+    
+    .modern-sidebar {
+        min-width: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .modern-button {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+    
+    .modern-textbox {
+        padding: 10px 14px;
+    }
+    
+    .modern-card {
+        padding: 12px;
+    }
+}
+
+/* Dark theme overrides for better contrast */
+.mud-theme-dark {
+    --mud-palette-background: var(--modern-background-color);
+    --mud-palette-surface: var(--modern-surface-color);
+    --mud-palette-primary: var(--modern-primary-color);
+    --mud-palette-text-primary: var(--modern-text-primary-color);
+    --mud-palette-text-secondary: var(--modern-text-secondary-color);
+}
+
+/* Override MudBlazor default styles */
+.mud-paper {
+    background-color: var(--modern-card-color) !important;
+    border: 1px solid var(--modern-border-color) !important;
+}
+
+.mud-button {
+    border-radius: var(--modern-border-radius) !important;
+}
+
+.mud-input {
+    background-color: var(--modern-form-background-color) !important;
+    border-color: var(--modern-border-color) !important;
+}
+
+.mud-input:focus {
+    border-color: var(--modern-primary-color) !important;
+}
