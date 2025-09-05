@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using PasswordManager.DAL;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
