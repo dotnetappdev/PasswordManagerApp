@@ -447,18 +447,45 @@ public sealed partial class AddPasswordDialog : ContentDialog
 
         try
         {
-            // Validate required fields
+            // Validate required fields with inline feedback
+            bool isValid = true;
+            
+            // Clear previous validation messages
+            TitleValidationMessage.Visibility = Visibility.Collapsed;
+            TypeValidationMessage.Visibility = Visibility.Collapsed;
+            
             if (string.IsNullOrWhiteSpace(TitleTextBox.Text))
             {
-                await ShowErrorDialog("Title is required");
-                return;
+                TitleValidationMessage.Text = "Title is required";
+                TitleValidationMessage.Visibility = Visibility.Visible;
+                isValid = false;
             }
 
             if (TypeComboBox.SelectedIndex < 0)
             {
-                await ShowErrorDialog("Please select a type");
+                TypeValidationMessage.Text = "Please select a type";
+                TypeValidationMessage.Visibility = Visibility.Visible;
+                isValid = false;
+            }
+            
+            // Show additional validation for login items
+            if (TypeComboBox.SelectedIndex == 0 && LoginFieldsPanel.Visibility == Visibility.Visible)
+            {
+                if (string.IsNullOrWhiteSpace(UsernameTextBox.Text) && string.IsNullOrWhiteSpace(PasswordTextBox.Password))
+                {
+                    TitleValidationMessage.Text = "Username or password is required for login items";
+                    TitleValidationMessage.Visibility = Visibility.Visible;
+                    isValid = false;
+                }
+            }
+            
+            if (!isValid)
+            {
                 return;
             }
+
+            // Show loading indicator
+            ShowLoadingIndicator(true, _editingItem == null ? "Creating item..." : "Updating item...");
 
             var selectedType = (ItemType)(TypeComboBox.SelectedIndex + 1);
 
@@ -598,11 +625,38 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 Result = await _passwordItemService.UpdateAsync(item);
             }
 
+            // Hide loading indicator and close dialog
+            ShowLoadingIndicator(false);
             Hide();
         }
         catch (Exception ex)
         {
+            // Hide loading indicator and show error
+            ShowLoadingIndicator(false);
             await ShowErrorDialog($"Error saving password: {ex.Message}");
+        }
+    }
+
+    private void ShowLoadingIndicator(bool show, string message = "Loading...")
+    {
+        try
+        {
+            if (LoadingIndicator != null)
+            {
+                LoadingIndicator.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            }
+            
+            if (LoadingText != null && show)
+            {
+                LoadingText.Text = message;
+            }
+            
+            // Disable primary button during loading
+            this.IsPrimaryButtonEnabled = !show;
+        }
+        catch
+        {
+            // Ignore if UI elements not found
         }
     }
 

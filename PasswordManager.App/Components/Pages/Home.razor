@@ -19,86 +19,6 @@
 @inject IPasswordRevealService PasswordRevealService
 @inject IAppSyncService AppSyncService
 
-<style>
-    .validation-error {
-        border: 2px solid #007bff !important;
-        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5) !important;
-    }
-    
-    .validation-message {
-        color: #dc3545;
-        font-size: 14px;
-        margin-top: 5px;
-        font-weight: 500;
-    }
-
-    .header-buttons {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .import-btn {
-        background: #10b981;
-        color: white;
-        border: none;
-        padding: 10px 16px;
-        border-radius: 8px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
-
-    .import-btn:hover {
-        background: #059669;
-    }
-
-    .sync-btn {
-        background: #3b82f6;
-        color: white;
-        border: none;
-        padding: 10px 16px;
-        border-radius: 8px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
-
-    .sync-btn:hover {
-        background: #2563eb;
-    }
-
-    .sync-btn:disabled {
-        background: #9ca3af;
-        cursor: not-allowed;
-    }
-
-    .sync-info {
-        background: #f0f9ff;
-        border: 1px solid #0ea5e9;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 16px;
-    }
-
-    .sync-warning {
-        background: #fef3c7;
-        border: 1px solid #d97706;
-        border-radius: 8px;
-        padding: 12px;
-        margin-top: 12px;
-    }
-
-    .sync-warning p {
-        margin: 0;
-        color: #92400e;
-    }
-
-    .text-success {
-        color: #10b981;
-        font-weight: 600;
-    }
-
     .text-danger {
         color: #ef4444;
         font-weight: 600;
@@ -434,50 +354,55 @@
     }
 </style>
 
-<div class="password-manager-layout">
+<div class="modern-flex">
     <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <div class="logo-section">
-                <span class="logo-icon">🔐</span>
-                <h2>Password Manager</h2>
-            </div>
-            <button class="logout-btn" @onclick="LogoutAsync" title="Logout">
-                <span>🚪</span>
-            </button>
-        </div>
-
-        <div class="search-section">
-            <div class="search-box">
-                <input type="text" @bind="searchTerm" @bind:event="oninput" @onkeyup="SearchItems" 
-                       placeholder="Search your vault..." class="search-input" />
-                <span class="search-icon">🔍</span>
+    <div class="modern-sidebar">
+        <div class="modern-card">
+            <div class="modern-flex" style="justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 24px;">🔐</span>
+                    <h2 style="margin: 0; color: var(--modern-text-primary-color);">Password Manager</h2>
+                </div>
+                <button class="modern-icon-button" @onclick="LogoutAsync" title="Logout">
+                    <span>🚪</span>
+                </button>
             </div>
         </div>
 
-        <div class="sidebar-navigation">
+        <div class="modern-search" style="margin: 16px 0;">
+            <span class="modern-search-icon">🔍</span>
+            <input type="text" @bind="searchTerm" @bind:event="oninput" @onkeyup="SearchItems" 
+                   placeholder="Search your vault..." class="modern-search-input" />
+        </div>
+
+        <div class="modern-flex-column">
             <!-- Main Navigation Items -->
-            <div class="nav-section nav-main">
-                <div class="nav-item @(selectedCategory == "all" ? "active" : "")" @onclick="@(async () => await SelectCategory("all"))">>
-                    <span class="nav-icon">📋</span>
-                    <span class="nav-text">All Items</span>
-                    <span class="item-count">@totalItems</span>
-                </div>
-                <div class="nav-item @(selectedCategory == "favorites" ? "active" : "")" @onclick="@(async () => await SelectCategory("favorites"))">>
-                    <span class="nav-icon">⭐</span>
-                    <span class="nav-text">Favorites</span>
-                </div>
-                <div class="nav-item @(selectedCategory == "watchtower" ? "active" : "")" @onclick="@(async () => await SelectCategory("watchtower"))">>
-                    <span class="nav-icon">🛡️</span>
-                    <span class="nav-text">Watchtower</span>
-                </div>
+            <div class="modern-flex-column">
+                <button class="modern-button @(selectedCategory == "all" ? "" : "modern-button-secondary")" 
+                        @onclick="@(async () => await SelectCategory("all"))" 
+                        style="justify-content: space-between;">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span>📋</span>
+                        <span>All Items</span>
+                    </span>
+                    <span class="modern-badge">@totalItems</span>
+                </button>
+                <button class="modern-button @(selectedCategory == "favorites" ? "" : "modern-button-secondary")" 
+                        @onclick="@(async () => await SelectCategory("favorites"))">
+                    <span>⭐</span>
+                    <span>Favorites</span>
+                </button>
+                <button class="modern-button @(selectedCategory == "watchtower" ? "" : "modern-button-secondary")" 
+                        @onclick="@(async () => await SelectCategory("watchtower"))">
+                    <span>🛡️</span>
+                    <span>Watchtower</span>
+                </button>
             </div>
 
             <!-- Vaults Section -->
-            <div class="nav-section">
-                <h3 class="nav-section-header">
-                    <span class="section-toggle" @onclick="ToggleCollectionsExpanded">
-                        @(isCollectionsExpanded ? "▼" : "►")
+            <div class="modern-card">
+                <h3 class="modern-form-label" style="cursor: pointer;" @onclick="ToggleCollectionsExpanded">
+                    <span>@(isCollectionsExpanded ? "▼" : "►")</span>
                     </span>
                     <span class="section-title">VAULTS</span>
                     <button class="add-btn" @onclick="ShowAddCollectionModal" title="Add Vault">+</button>

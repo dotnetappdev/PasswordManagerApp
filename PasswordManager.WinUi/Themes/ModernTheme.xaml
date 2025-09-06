@@ -1215,4 +1215,155 @@
         </Setter>
     </Style>
 
+    <!-- Enhanced Button Styles for Better Visual Feedback -->
+    <Style x:Key="ModernIconButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource ModernTextSecondaryBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Padding" Value="8"/>
+        <Setter Property="MinWidth" Value="36"/>
+        <Setter Property="MinHeight" Value="36"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="RootBorder"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter x:Name="ContentPresenter"
+                                        Content="{TemplateBinding Content}"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"/>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal"/>
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="RootBorder.Background" Value="{StaticResource ModernElevatedSurfaceBrush}"/>
+                                        <Setter Target="ContentPresenter.Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="RootBorder.Background" Value="{StaticResource ModernBorderBrush}"/>
+                                        <Setter Target="ContentPresenter.Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="ContentPresenter.Foreground" Value="{StaticResource ModernTextTertiaryBrush}"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Enhanced TextBox Style with better validation feedback -->
+    <Style x:Key="ModernTextBoxStyle" TargetType="TextBox">
+        <Setter Property="Background" Value="{StaticResource ModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border x:Name="BorderElement"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                        <ScrollViewer x:Name="ContentElement"
+                                    Margin="{TemplateBinding Padding}"
+                                    VerticalAlignment="Center"
+                                    HorizontalScrollMode="Auto"
+                                    HorizontalScrollBarVisibility="Auto"
+                                    VerticalScrollMode="Auto"
+                                    VerticalScrollBarVisibility="Auto"
+                                    ZoomMode="Disabled"/>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal"/>
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="BorderElement.BorderBrush" Value="{StaticResource ModernPrimaryBrush}"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Focused">
+                                    <VisualState.Setters>
+                                        <Setter Target="BorderElement.BorderBrush" Value="{StaticResource ModernPrimaryBrush}"/>
+                                        <Setter Target="BorderElement.BorderThickness" Value="2"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="BorderElement.Background" Value="{StaticResource ModernBorderBrush}"/>
+                                        <Setter Target="BorderElement.BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Enhanced ComboBox Style -->
+    <Style x:Key="ModernComboBoxStyle" TargetType="ComboBox">
+        <Setter Property="Background" Value="{StaticResource ModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="MinHeight" Value="40"/>
+    </Style>
+
+    <!-- Validation Error Message Style -->
+    <Style x:Key="ValidationErrorTextStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource ModernErrorBrush}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Margin" Value="0,4,0,0"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+
+    <!-- Loading Indicator Style -->
+    <Style x:Key="ModernProgressRingStyle" TargetType="ProgressRing">
+        <Setter Property="Foreground" Value="{StaticResource ModernPrimaryBrush}"/>
+        <Setter Property="Width" Value="24"/>
+        <Setter Property="Height" Value="24"/>
+    </Style>
+
+    <!-- Success Message Style -->
+    <Style x:Key="SuccessMessageStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource ModernSuccessBrush}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+
+    <!-- Enhanced AutoSuggestBox Style -->
+    <Style x:Key="ModernAutoSuggestBoxStyle" TargetType="AutoSuggestBox">
+        <Setter Property="Background" Value="{StaticResource ModernSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="MinHeight" Value="40"/>
+    </Style>
+
 </ResourceDictionary>

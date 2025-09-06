@@ -418,14 +418,39 @@ public sealed partial class PasswordItemsPage : Page
 
     private async Task ShowTemporaryMessageAsync(string message)
     {
-        var dialog = new ContentDialog
+        try
         {
-            Title = "",
-            Content = message,
-            CloseButtonText = "OK",
-            XamlRoot = this.XamlRoot
-        };
-        await dialog.ShowAsync();
+            // Try to show a subtle notification instead of a dialog
+            var contentSubtitle = GetElement<TextBlock>("ContentSubtitle");
+            if (contentSubtitle != null)
+            {
+                var originalText = contentSubtitle.Text;
+                contentSubtitle.Text = $"✓ {message}";
+                contentSubtitle.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Green);
+                
+                // Reset after a delay
+                await Task.Delay(2000);
+                contentSubtitle.Text = originalText;
+                contentSubtitle.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray);
+            }
+            else
+            {
+                // Fallback to dialog if we can't find the subtitle element
+                var dialog = new ContentDialog
+                {
+                    Title = "",
+                    Content = message,
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await dialog.ShowAsync();
+            }
+        }
+        catch
+        {
+            // Fallback to debug output if UI updates fail
+            System.Diagnostics.Debug.WriteLine($"Notification: {message}");
+        }
     }
 
     private void ShowItemDetails(PasswordItem item)
@@ -805,13 +830,70 @@ public sealed partial class PasswordItemsPage : Page
 
     private void ApplyFilters_Click(object sender, RoutedEventArgs e)
     {
-        // Apply the selected filters
-        // In a real implementation, this would read the checkbox states
-        // and apply multiple filters to the view model
+        try
+        {
+            // Apply the selected filters based on checkbox states in the filter flyout
+            if (_viewModel != null)
+            {
+                // Get the filter flyout content and read checkbox states
+                var filterFlyout = GetElement<Flyout>("FilterFlyout");
+                if (filterFlyout?.Content is StackPanel filterPanel)
+                {
+                    // Apply filters based on checkbox selections
+                    // This would be implemented based on the specific filter criteria
+                    // For now, we'll apply a general filter update
+                    _viewModel.ApplyFilters();
+                }
+            }
 
-        // For now, just close the flyout
-        var filterFlyout = GetElement<Flyout>("FilterFlyout");
-        filterFlyout?.Hide();
+            // Close the flyout
+            var filterFlyout = GetElement<Flyout>("FilterFlyout");
+            filterFlyout?.Hide();
+            
+            // Show feedback to user
+            ShowFilterAppliedFeedback();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error applying filters: {ex.Message}");
+        }
+    }
+
+    private void ShowFilterAppliedFeedback()
+    {
+        // Provide visual feedback that filters have been applied
+        // This could be a subtle animation or status update
+        try
+        {
+            var contentTitle = GetElement<TextBlock>("ContentTitle");
+            if (contentTitle != null)
+            {
+                // Temporarily update the subtitle to show filter feedback
+                var contentSubtitle = GetElement<TextBlock>("ContentSubtitle");
+                if (contentSubtitle != null)
+                {
+                    var originalText = contentSubtitle.Text;
+                    contentSubtitle.Text = "Filters applied";
+                    
+                    // Reset after a brief delay
+                    Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                    {
+                        Task.Delay(2000).ContinueWith(_ =>
+                        {
+                            Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+                            {
+                                contentSubtitle.Text = originalText;
+                            });
+                        });
+                    });
+                }
+            }
+        }
+        catch
+        {
+            // Ignore feedback errors
+        }
     }
 
     private void CategorySearchTextBox_TextChanged(object sender, TextChangedEventArgs e)

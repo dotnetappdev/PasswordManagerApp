@@ -186,6 +186,11 @@ public class PasswordItemsViewModel : BaseViewModel
         await LoadPasswordItemsAsync();
     }
 
+    public async Task ApplyFilters()
+    {
+        await ApplyFiltersAsync();
+    }
+
     public async Task DeleteItemAsync(PasswordItem item)
     {
         try
