@@ -252,6 +252,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.Email).HasMaxLength(256);
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.LastModified).IsRequired();
+            entity.Property(e => e.MasterKeyIdentifier).HasMaxLength(500);
         });
 
         // Configure QrLoginToken
