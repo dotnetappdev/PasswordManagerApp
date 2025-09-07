@@ -147,8 +147,8 @@ public partial class App : Application
                 services.AddDbContext<PasswordManagerDbContext>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
 
-                // Add Identity services so UserManager<ApplicationUser> is available to services
-                services.AddIdentityCore<ApplicationUser>(options =>
+                // Add Identity services with roles so all Identity tables are created
+                services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
                 {
                     options.SignIn.RequireConfirmedAccount = false;
                     options.Password.RequireDigit = true;
@@ -157,7 +157,8 @@ public partial class App : Application
                     options.Password.RequireUppercase = true;
                     options.Password.RequireLowercase = true;
                 })
-                .AddEntityFrameworkStores<PasswordManagerDbContextApp>();
+                .AddEntityFrameworkStores<PasswordManagerDbContextApp>()
+                .AddDefaultTokenProviders();
 
                 // Register the interface mapping for dependency injection
                 services.AddScoped<DAL.Interfaces.IPasswordManagerDbContext>(provider =>
@@ -180,6 +181,9 @@ public partial class App : Application
                 services.AddScoped<IUserProfileService, UserProfileService>();
                 services.AddScoped<IVaultSessionService, VaultSessionService>();
                 services.AddScoped<IPasscodeService, PasscodeService>();
+
+                // Register Identity data seeder for proper Identity table initialization
+                services.AddScoped<PasswordManager.DAL.Seed.IdentityDataSeeder>();
 
                 // Register Fido2 service for passkeys
                 services.AddScoped<Fido2NetLib.IFido2>(provider =>

@@ -64,16 +64,51 @@ public class AppStartupService : IAppStartupService
                     var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
                     var dbContextApp = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
                     
-                    // First, ensure the database exists (this creates it if it doesn't exist)
-                    // Use EnsureCreatedAsync for initial database creation to avoid migration conflicts on first run
+                    // Check if the database exists and can connect
                     var canConnect = await dbContext.Database.CanConnectAsync();
-                    if (!canConnect)
+                    var canConnectApp = await dbContextApp.Database.CanConnectAsync();
+                    
+                    if (!canConnect || !canConnectApp)
                     {
                         _logger.LogInformation("Database not found, creating initial database structure");
-                        await dbContext.Database.EnsureCreatedAsync();
-                        await dbContextApp.Database.EnsureCreatedAsync();
-                        _logger.LogInformation("Initial database structure created successfully");
-                        return; // Skip migrations on fresh database creation
+                        
+                        // For new databases, use migrations to ensure proper Identity table creation
+                        try
+                        {
+                            await dbContext.Database.MigrateAsync();
+                            await dbContextApp.Database.MigrateAsync();
+                            _logger.LogInformation("Initial database created successfully using migrations");
+                        }
+                        catch (Exception migrationEx)
+                        {
+                            _logger.LogWarning(migrationEx, "Migration failed during initial setup, falling back to EnsureCreated");
+                            await dbContext.Database.EnsureCreatedAsync();
+                            await dbContextApp.Database.EnsureCreatedAsync();
+                        }
+                        
+                        // Seed Identity data for new installations
+                        await SeedIdentityDataIfNeeded(scope);
+                        return; 
+                    }
+
+                    // Check if Identity tables exist - this is crucial for the reported issue
+                    var identityTablesExist = await CheckIdentityTablesExistAsync(dbContextApp);
+                    if (!identityTablesExist)
+                    {
+                        _logger.LogWarning("Database exists but Identity tables are missing - applying migrations to create them");
+                        try
+                        {
+                            await dbContextApp.Database.MigrateAsync();
+                            _logger.LogInformation("Identity tables created successfully via migration");
+                        }
+                        catch (Exception migrationEx)
+                        {
+                            _logger.LogError(migrationEx, "Failed to create Identity tables via migration, trying EnsureCreated");
+                            await dbContextApp.Database.EnsureCreatedAsync();
+                        }
+                        
+                        // Seed Identity data after creating tables
+                        await SeedIdentityDataIfNeeded(scope);
                     }
 
                     // If database exists, check if database is properly configured before applying migrations
@@ -266,6 +301,35 @@ public class AppStartupService : IAppStartupService
         {
             _logger.LogError(ex, "Error seeding Identity data");
             // Don't throw - seeding failure shouldn't prevent app startup
+        }
+    }
+    
+    /// <summary>
+    /// Checks if ASP.NET Core Identity tables exist in the database
+    /// This is crucial for ensuring the reported issue is resolved
+    /// </summary>
+    private async Task<bool> CheckIdentityTablesExistAsync(PasswordManagerDbContextApp dbContext)
+    {
+        try
+        {
+            // Check if the main Identity tables exist by attempting to query them
+            var aspNetUsersExists = await dbContext.Database.ExecuteSqlRawAsync(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='AspNetUsers'") >= 0;
+            
+            var aspNetRolesExists = await dbContext.Database.ExecuteSqlRawAsync(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='AspNetRoles'") >= 0;
+
+            // If we can execute these queries without error, the tables exist
+            // Additional verification by checking if we can query the Users table
+            var userCount = await dbContext.Users.CountAsync();
+            
+            _logger.LogInformation("Identity tables check: AspNetUsers and AspNetRoles appear to exist (user count: {UserCount})", userCount);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Identity tables do not exist or are not accessible");
+            return false;
         }
     }
 }
