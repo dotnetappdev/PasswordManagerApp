@@ -847,7 +847,7 @@ public sealed partial class PasswordItemsPage : Page
             }
 
             // Close the flyout
-            var filterFlyout = GetElement<Flyout>("FilterFlyout");
+            filterFlyout = GetElement<Flyout>("FilterFlyout");
             filterFlyout?.Hide();
             
             // Show feedback to user
