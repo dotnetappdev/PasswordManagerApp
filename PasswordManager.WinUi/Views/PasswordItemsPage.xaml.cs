@@ -828,26 +828,27 @@ public sealed partial class PasswordItemsPage : Page
         UpdateContentTitles("All");
     }
 
-    private void ApplyFilters_Click(object sender, RoutedEventArgs e)
+    private async void ApplyFilters_Click(object sender, RoutedEventArgs e)
     {
         try
         {
+            // Get the filter flyout once and reuse to avoid variable shadowing
+            var filterFlyout = GetElement<Flyout>("FilterFlyout");
+
             // Apply the selected filters based on checkbox states in the filter flyout
             if (_viewModel != null)
             {
                 // Get the filter flyout content and read checkbox states
-                var filterFlyout = GetElement<Flyout>("FilterFlyout");
                 if (filterFlyout?.Content is StackPanel filterPanel)
                 {
                     // Apply filters based on checkbox selections
                     // This would be implemented based on the specific filter criteria
                     // For now, we'll apply a general filter update
-                    _viewModel.ApplyFilters();
+                    await _viewModel.ApplyFilters();
                 }
             }
 
             // Close the flyout
-            filterFlyout = GetElement<Flyout>("FilterFlyout");
             filterFlyout?.Hide();
             
             // Show feedback to user
