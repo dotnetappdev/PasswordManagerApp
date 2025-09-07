@@ -18,7 +18,7 @@ public class WinUiAuthService : IAuthService
 {
     private readonly IPasswordCryptoService _passwordCryptoService;
     private readonly IVaultSessionService _vaultSessionService;
-    private readonly PasswordManagerDbContext _dbContext;
+    private readonly PasswordManagerDbContextApp _dbContext;
     private readonly ISecureStorageService _secureStorageService;
     private readonly ILogger<WinUiAuthService> _logger;
     private bool _isAuthenticated = false;
@@ -27,7 +27,7 @@ public class WinUiAuthService : IAuthService
     public WinUiAuthService(
         IPasswordCryptoService passwordCryptoService,
         IVaultSessionService vaultSessionService,
-        PasswordManagerDbContext dbContext,
+        PasswordManagerDbContextApp dbContext,
         ISecureStorageService secureStorageService,
         ILogger<WinUiAuthService> logger)
     {

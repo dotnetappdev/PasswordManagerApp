@@ -25,6 +25,9 @@ public class PasswordManagerDbContextApp : IdentityDbContext<ApplicationUser, Ap
     public DbSet<UserTwoFactorBackupCode> UserTwoFactorBackupCodes { get; set; } = null!;
     public DbSet<UserRelationship> UserRelationships { get; set; } = null!;
     public DbSet<ChildPermissionConfig> ChildPermissionConfigs { get; set; } = null!;
+    
+    // ApplicationUser DbSet - this will map to AspNetUsers table automatically via IdentityDbContext
+    public DbSet<ApplicationUser> Users { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

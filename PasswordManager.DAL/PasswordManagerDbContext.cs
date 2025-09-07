@@ -247,12 +247,12 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
         // Configure ApplicationUser
         modelBuilder.Entity<ApplicationUser>(entity =>
         {
-            entity.ToTable("AspNetUsers"); // Map to AspNetUsers table to match ASP.NET Core Identity conventions
             entity.Property(e => e.Id).IsRequired();
             entity.Property(e => e.UserName).HasMaxLength(256);
             entity.Property(e => e.Email).HasMaxLength(256);
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.LastModified).IsRequired();
+            entity.Property(e => e.MasterKeyIdentifier).HasMaxLength(500);
         });
 
         // Configure QrLoginToken
