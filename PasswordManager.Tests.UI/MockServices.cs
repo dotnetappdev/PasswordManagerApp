@@ -75,6 +75,17 @@ public class MockDatabaseConfigurationService : IDatabaseConfigurationService
     {
         return true; // Always show for testing
     }
+
+    public Task<string> BuildConnectionStringAsync(DatabaseConfiguration configuration)
+    {
+        return Task.FromResult(BuildConnectionString(configuration));
+    }
+
+    public Task EnsureBasicSqliteDatabaseAsync(IServiceProvider serviceProvider)
+    {
+        // Mock implementation - just return completed task
+        return Task.CompletedTask;
+    }
 }
 
 /// <summary>
@@ -158,6 +169,24 @@ public class MockAuthService : IAuthService
     public Task<bool> ValidateMasterPasswordAsync(string masterPassword) => AuthenticateAsync(masterPassword);
     public Task<bool> IsFirstTimeSetupAsync() => Task.FromResult(_masterPasswordHash == null);
     public Task<string> GetMasterPasswordHintAsync() => Task.FromResult(_hint ?? string.Empty);
+
+    public Task<bool> RegisterAsync(string email, string password)
+    {
+        // Simple registration mock - just setup master password
+        return SetupMasterPasswordAsync(password);
+    }
+
+    public Task<bool> ChangeMasterPasswordAsync(string currentPassword, string newPassword, string newPasswordHint = "")
+    {
+        // Verify current password first
+        if (_masterPasswordHash == null || !BCrypt.Net.BCrypt.Verify(currentPassword, _masterPasswordHash))
+            return Task.FromResult(false);
+
+        // Update to new password
+        _masterPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        _hint = newPasswordHint;
+        return Task.FromResult(true);
+    }
 }
 
 /// <summary>
@@ -398,6 +427,20 @@ public class MockPasswordCryptoService : IPasswordCryptoService
     public string DecryptPasswordWithKey(EncryptedPasswordData encryptedPasswordData, byte[] masterKey)
     {
         return System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(encryptedPasswordData.EncryptedPassword));
+    }
+
+    public string CreateMasterKeyIdentifier(string masterPassword, byte[] userSalt)
+    {
+        // Simple implementation for testing - combine and hash master password with salt
+        var combined = masterPassword + Convert.ToBase64String(userSalt);
+        return BCrypt.Net.BCrypt.HashPassword(combined);
+    }
+
+    public bool VerifyMasterKeyIdentifier(string masterPassword, byte[] userSalt, string storedIdentifier)
+    {
+        // Verify by recreating the identifier and comparing
+        var combined = masterPassword + Convert.ToBase64String(userSalt);
+        return BCrypt.Net.BCrypt.Verify(combined, storedIdentifier);
     }
 }
 
