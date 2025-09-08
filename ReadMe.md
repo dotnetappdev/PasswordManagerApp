@@ -39,6 +39,7 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 ### 📋 Additional Documentation
 | Document | Description |
 |----------|-------------|
+| **Entity Framework Identity Setup** | Complete guide for EF Identity and migration management | [EF_IDENTITY_SETUP_GUIDE.md](EF_IDENTITY_SETUP_GUIDE.md) |
 | **WinUI Screenshots** | Visual interface documentation for Windows app | [screenshots.md](screenshots.md) |
 | **Complete Setup Guide** | Full setup and configuration guide | [SETUP.md](SETUP.md) |
 | **Browser Extension Setup** | Browser extension installation guide | [INSTALLATION.md](INSTALLATION.md) |

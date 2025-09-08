@@ -100,11 +100,28 @@ public class AppStartupService : IAppStartupService
                         {
                             await dbContextApp.Database.MigrateAsync();
                             _logger.LogInformation("Identity tables created successfully via migration");
+                            
+                            // Verify tables were created successfully
+                            var tablesExistAfterMigration = await CheckIdentityTablesExistAsync(dbContextApp);
+                            if (!tablesExistAfterMigration)
+                            {
+                                _logger.LogError("Identity tables still missing after migration, attempting EnsureCreated fallback");
+                                await dbContextApp.Database.EnsureCreatedAsync();
+                            }
                         }
                         catch (Exception migrationEx)
                         {
                             _logger.LogError(migrationEx, "Failed to create Identity tables via migration, trying EnsureCreated");
-                            await dbContextApp.Database.EnsureCreatedAsync();
+                            try
+                            {
+                                await dbContextApp.Database.EnsureCreatedAsync();
+                                _logger.LogInformation("Database structure created using EnsureCreated fallback");
+                            }
+                            catch (Exception ensureEx)
+                            {
+                                _logger.LogError(ensureEx, "Failed to create database structure using EnsureCreated");
+                                throw new InvalidOperationException("Could not initialize database: both migration and EnsureCreated failed", ensureEx);
+                            }
                         }
                         
                         // Seed Identity data after creating tables
@@ -117,8 +134,18 @@ public class AppStartupService : IAppStartupService
                     {
                         _logger.LogInformation("Database exists but not fully configured, ensuring basic structure is available");
                         // Ensure basic database structure without migrations for unconfigured databases
-                        await dbContext.Database.EnsureCreatedAsync();
-                        await dbContextApp.Database.EnsureCreatedAsync();
+                        try
+                        {
+                            await dbContext.Database.EnsureCreatedAsync();
+                            await dbContextApp.Database.EnsureCreatedAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to ensure database structure for unconfigured database");
+                            // Try migrations as fallback
+                            await dbContext.Database.MigrateAsync();
+                            await dbContextApp.Database.MigrateAsync();
+                        }
                         
                         // Seed Identity data for new installations
                         await SeedIdentityDataIfNeeded(scope);
@@ -312,23 +339,38 @@ public class AppStartupService : IAppStartupService
     {
         try
         {
-            // Check if the main Identity tables exist by attempting to query them
-            var aspNetUsersExists = await dbContext.Database.ExecuteSqlRawAsync(
-                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='AspNetUsers'") >= 0;
-            
-            var aspNetRolesExists = await dbContext.Database.ExecuteSqlRawAsync(
-                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='AspNetRoles'") >= 0;
+            // Check if the database can be connected to first
+            if (!await dbContext.Database.CanConnectAsync())
+            {
+                _logger.LogWarning("Cannot connect to database, Identity tables check skipped");
+                return false;
+            }
 
-            // If we can execute these queries without error, the tables exist
-            // Additional verification by checking if we can query the Users table
+            // Use a more reliable method to check for table existence in SQLite
+            // Query sqlite_master to check if AspNetUsers table exists
+            using var connection = dbContext.Database.GetDbConnection();
+            await connection.OpenAsync();
+            
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='AspNetUsers'";
+            var result = await command.ExecuteScalarAsync();
+            var aspNetUsersExists = Convert.ToInt32(result) > 0;
+
+            if (!aspNetUsersExists)
+            {
+                _logger.LogWarning("AspNetUsers table does not exist in the database");
+                return false;
+            }
+
+            // Double-check by querying the Users table (this will throw if table doesn't exist)
             var userCount = await dbContext.Users.CountAsync();
             
-            _logger.LogInformation("Identity tables check: AspNetUsers and AspNetRoles appear to exist (user count: {UserCount})", userCount);
+            _logger.LogInformation("Identity tables check passed: AspNetUsers table exists (user count: {UserCount})", userCount);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Identity tables do not exist or are not accessible");
+            _logger.LogWarning(ex, "Identity tables do not exist or are not accessible: {Message}", ex.Message);
             return false;
         }
     }
