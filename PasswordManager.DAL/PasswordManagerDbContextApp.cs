@@ -27,7 +27,8 @@ public class PasswordManagerDbContextApp : IdentityDbContext<ApplicationUser, Ap
     public DbSet<ChildPermissionConfig> ChildPermissionConfigs { get; set; } = null!;
     
     // ApplicationUser DbSet - this will map to AspNetUsers table automatically via IdentityDbContext
-    public DbSet<ApplicationUser> Users { get; set; } = null!;
+    // Use 'new' keyword to explicitly hide the inherited Users property from IdentityDbContext
+    public new DbSet<ApplicationUser> Users { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
