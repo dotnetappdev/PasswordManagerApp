@@ -57,18 +57,24 @@ public class WinUiAuthService : IAuthService
             // Create master key identifier for lookup during master key login
             var masterKeyIdentifier = _passwordCryptoService.CreateMasterKeyIdentifier(masterPassword, userSalt);
             
-            // Create user record in database with username instead of email
+            // Create user record in database with simple setup that doesn't require full Identity registration
             var user = new ApplicationUser
             {
                 Id = Guid.NewGuid().ToString(),
-                UserName = "admin", // Simple username for single-user setup
-                Email = "user@passwordmanager.local", // Keep for compatibility but not used for auth
+                UserName = $"user_{DateTime.UtcNow.Ticks}", // Unique username for master-key-only setup
+                NormalizedUserName = $"USER_{DateTime.UtcNow.Ticks}",
+                Email = "user@passwordmanager.local", // Default email for compatibility
+                NormalizedEmail = "USER@PASSWORDMANAGER.LOCAL",
+                EmailConfirmed = true, // Skip email confirmation for master-key-only setup
                 UserSalt = Convert.ToBase64String(userSalt),
                 MasterPasswordHash = masterPasswordHash,
                 MasterKeyIdentifier = masterKeyIdentifier,
                 MasterPasswordHint = hint,
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow,
+                IsActive = true,
+                SecurityStamp = Guid.NewGuid().ToString(), // Required by Identity
+                ConcurrencyStamp = Guid.NewGuid().ToString() // Required by Identity
             };
 
             _dbContext.Users.Add(user);
@@ -76,6 +82,27 @@ public class WinUiAuthService : IAuthService
             try
             {
                 await _dbContext.SaveChangesAsync();
+                _logger.LogInformation("User created successfully for master-key-only authentication");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such table: AspNetUsers"))
+            {
+                _logger.LogWarning("AspNetUsers table not found, attempting to create Identity tables");
+                
+                // Try to ensure Identity tables are created
+                try
+                {
+                    await _dbContext.Database.MigrateAsync();
+                    _logger.LogInformation("Identity tables created successfully, retrying user creation");
+                    
+                    // Retry saving the user after migration
+                    await _dbContext.SaveChangesAsync();
+                    _logger.LogInformation("User created successfully after Identity table creation");
+                }
+                catch (Exception migrationEx)
+                {
+                    _logger.LogError(migrationEx, "Failed to create Identity tables");
+                    throw new InvalidOperationException("Cannot create user: Identity tables are missing and could not be created. Please ensure the database is properly initialized.", migrationEx);
+                }
             }
             catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no column named MasterKeyIdentifier"))
             {
