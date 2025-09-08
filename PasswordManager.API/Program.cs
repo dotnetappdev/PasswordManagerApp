@@ -83,7 +83,7 @@ switch (databaseProvider.ToLower())
 }
 
 // Add Identity services with API endpoints (new .NET 9 approach)
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
     options.Password.RequireDigit = true;
