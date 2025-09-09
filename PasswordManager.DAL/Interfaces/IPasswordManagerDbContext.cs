@@ -24,5 +24,6 @@ public interface IPasswordManagerDbContext : IDisposable
 
     DbSet<UserPasskey> UserPasskeys { get; set; }
     DbSet<UserTwoFactorBackupCode> UserTwoFactorBackupCodes { get; set; }
+    DbSet<CustomField> CustomFields { get; set; }
 
 }

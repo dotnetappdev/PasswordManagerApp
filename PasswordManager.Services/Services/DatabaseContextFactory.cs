@@ -78,4 +78,21 @@ public class DatabaseContextFactory : IDatabaseContextFactory
                               throw new InvalidOperationException("Postgres connection string not found");
         return await CreateContextAsync("postgres", connectionString);
     }
+
+    public IPasswordManagerDbContext CreateDbContext()
+    {
+        // For synchronous operations, default to SQLite
+        var connectionString = _configuration.GetConnectionString("SQLiteConnection") ?? "Data Source=passwordmanager.db";
+        var optionsBuilder = new DbContextOptionsBuilder<PasswordManagerDbContext>();
+        optionsBuilder.UseSqlite(connectionString);
+        
+        _logger.LogInformation("Creating synchronous database context with SQLite provider");
+        
+        var context = new PasswordManagerDbContext(optionsBuilder.Options);
+        
+        // Ensure database is created synchronously
+        context.Database.EnsureCreated();
+
+        return context;
+    }
 }

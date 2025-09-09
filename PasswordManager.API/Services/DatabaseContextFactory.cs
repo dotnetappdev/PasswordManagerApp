@@ -83,6 +83,23 @@ public class DatabaseContextFactory : IDatabaseContextFactory
         
         return await CreateContextAsync("postgres", connectionString);
     }
+
+    public IPasswordManagerDbContext CreateDbContext()
+    {
+        // For synchronous operations, default to SQLite
+        var connectionString = _configuration.GetConnectionString("SqliteConnection") ?? "Data Source=passwordmanager.db";
+        var optionsBuilder = new DbContextOptionsBuilder<PasswordManagerDbContext>();
+        optionsBuilder.UseSqlite(connectionString);
+        
+        _logger.LogInformation("Creating synchronous database context with SQLite provider");
+        
+        var context = new PasswordManagerDbContext(optionsBuilder.Options);
+        
+        // Ensure database is created synchronously
+        context.Database.EnsureCreated();
+
+        return new PasswordManagerDbContextWrapper(context);
+    }
 }
 
 // Wrapper to implement IPasswordManagerDbContext
@@ -111,6 +128,7 @@ public class PasswordManagerDbContextWrapper : IPasswordManagerDbContext
 
     public DbSet<UserPasskey> UserPasskeys { get => _context.UserPasskeys; set => _context.UserPasskeys = value; }
     public DbSet<UserTwoFactorBackupCode> UserTwoFactorBackupCodes { get => _context.UserTwoFactorBackupCodes; set => _context.UserTwoFactorBackupCodes = value; }
+    public DbSet<CustomField> CustomFields { get => _context.CustomFields; set => _context.CustomFields = value; }
 
     public Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade Database => _context.Database;
 
