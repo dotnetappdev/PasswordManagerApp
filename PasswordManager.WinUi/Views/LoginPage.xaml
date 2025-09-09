@@ -317,6 +317,27 @@
                                        HorizontalAlignment="Center"
                                        FontSize="13"
                                        Visibility="{Binding ShowHintButton, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                <!-- Create Account Button -->
+                                <Border x:Name="CreateAccountSection"
+                                        BorderBrush="#4A4A4A"
+                                        BorderThickness="0,1,0,0"
+                                        Padding="0,16,0,0"
+                                        Margin="0,16,0,0"
+                                        Visibility="{Binding ShowCreateAccountButton, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="Don't have an account?"
+                                                   FontSize="13"
+                                                   Foreground="#B0B0B0"
+                                                   HorizontalAlignment="Center"/>
+                                        <Button x:Name="CreateAccountButton"
+                                                Content="Create New Account"
+                                                Style="{StaticResource ModernSecondaryButtonStyle}"
+                                                HorizontalAlignment="Center"
+                                                FontSize="14"
+                                                Click="CreateAccountButton_Click"/>
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
                         </StackPanel>
 
