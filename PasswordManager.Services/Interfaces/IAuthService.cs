@@ -85,4 +85,10 @@ public interface IAuthService
     /// <param name="newPasswordHint">Optional hint for the new master password</param>
     /// <returns>True if the password change was successful</returns>
     Task<bool> ChangeMasterPasswordAsync(string currentPassword, string newPassword, string newPasswordHint = "");
+
+    /// <summary>
+    /// Gets the current authenticated user's ID
+    /// </summary>
+    /// <returns>The user ID if authenticated, null otherwise</returns>
+    Task<string?> GetCurrentUserIdAsync();
 }

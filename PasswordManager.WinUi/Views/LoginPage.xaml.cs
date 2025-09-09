@@ -184,10 +184,7 @@ public sealed partial class LoginPage : Page
         await DoPrimaryActionAsync();
     }
 
-    private async void CreateAccountButton_Click(object sender, RoutedEventArgs e)
-    {
-        await DoPrimaryActionAsync();
-    }
+
 
     private void ProfileButton_Click(object sender, RoutedEventArgs e)
     {
@@ -289,7 +286,7 @@ public sealed partial class LoginPage : Page
                 return;
             }
 
-            var registrationDialog = new Dialogs.UserRegistrationDialog();
+            var registrationDialog = new Dialogs.UserRegistrationDialog(_serviceProvider);
             registrationDialog.XamlRoot = this.XamlRoot;
 
             var result = await registrationDialog.ShowAsync();

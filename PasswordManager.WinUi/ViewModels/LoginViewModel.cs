@@ -408,4 +408,28 @@ public class LoginViewModel : BaseViewModel
             return false;
         }
     }
+
+    /// <summary>
+    /// Refreshes the login view state and user profiles
+    /// </summary>
+    public async Task RefreshAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            ErrorMessage = string.Empty;
+            
+            // Re-initialize the view model state
+            await InitializeAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to refresh: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"RefreshAsync error: {ex}");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
 }
