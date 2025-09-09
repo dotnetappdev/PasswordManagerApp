@@ -3,6 +3,7 @@ using PasswordManager.Services.Interfaces;
 using PasswordManager.Models;
 using Microsoft.EntityFrameworkCore;
 using PasswordManager.DAL;
+using PasswordManager.Crypto.Interfaces;
 using System;
 using System.Threading.Tasks;
 
@@ -17,6 +18,7 @@ namespace PasswordManager.WinUi.Helpers
                 var categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
                 var passwordItemService = serviceProvider.GetRequiredService<IPasswordItemService>();
                 var collectionService = serviceProvider.GetRequiredService<ICollectionService>();
+                var cryptoService = serviceProvider.GetRequiredService<IPasswordCryptoService>();
                 var db = serviceProvider.GetService<PasswordManager.DAL.PasswordManagerDbContext>();
                 // Ensure there is at least one user to own seeded data
                 string seedUserId;
@@ -25,6 +27,18 @@ namespace PasswordManager.WinUi.Helpers
                     var existingUser = await db.Users.FirstOrDefaultAsync();
                     if (existingUser == null)
                     {
+                        // Create demo user with proper cryptographic setup
+                        const string demoMasterPassword = "DemoPassword123!";
+                        
+                        // Generate user salt for cryptographic operations
+                        var userSalt = cryptoService.GenerateUserSalt();
+                        
+                        // Create master password hash for authentication
+                        var masterPasswordHash = cryptoService.CreateMasterPasswordHash(demoMasterPassword, userSalt);
+                        
+                        // Create master key identifier for lookup during master key login
+                        var masterKeyIdentifier = cryptoService.CreateMasterKeyIdentifier(demoMasterPassword, userSalt);
+
                         var demoUser = new PasswordManager.Models.ApplicationUser
                         {
                             Id = Guid.NewGuid().ToString(),
@@ -33,11 +47,21 @@ namespace PasswordManager.WinUi.Helpers
                             FirstName = "Demo",
                             LastName = "User",
                             CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
+                            UpdatedAt = DateTime.UtcNow,
+                            UserSalt = Convert.ToBase64String(userSalt),
+                            MasterPasswordHash = masterPasswordHash,
+                            MasterKeyIdentifier = masterKeyIdentifier,
+                            MasterPasswordHint = "Demo user password: DemoPassword123!",
+                            SecurityStamp = Guid.NewGuid().ToString(),
+                            ConcurrencyStamp = Guid.NewGuid().ToString(),
+                            IsActive = true
                         };
                         db.Users.Add(demoUser);
                         await db.SaveChangesAsync();
                         seedUserId = demoUser.Id;
+                        
+                        System.Diagnostics.Debug.WriteLine($"Created demo user with proper cryptographic setup: {demoUser.Email}");
+                        System.Diagnostics.Debug.WriteLine($"Demo master password: {demoMasterPassword}");
                     }
                     else
                     {
