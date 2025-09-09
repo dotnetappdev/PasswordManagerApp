@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.WinUi.ViewModels;
 using PasswordManager.Models.DTOs.Auth;
+using PasswordManager.Models;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Threading.Tasks;
 
@@ -209,15 +211,71 @@ public sealed partial class LoginPage : Page
 
     private async Task ShowCreateProfileDialog()
     {
-        // This is a simplified implementation
-        // In a full app, you'd want a proper dialog with input validation
-        System.Diagnostics.Debug.WriteLine("Create profile functionality - would show dialog here");
-        
-        // For now, just trigger first-time setup
-        if (_viewModel != null)
+        try
         {
-            _viewModel.IsFirstTimeSetup = true;
-            _viewModel.ShowProfileSelection = false;
+            // Get current user for permissions check
+            ApplicationUser? currentUser = null;
+            try
+            {
+                if (_serviceProvider != null)
+                {
+                    using var scope = _serviceProvider.CreateScope();
+                    var authService = scope.ServiceProvider.GetService<IAuthService>();
+                    if (authService != null)
+                    {
+                        var currentUserId = await authService.GetCurrentUserIdAsync();
+                        if (!string.IsNullOrEmpty(currentUserId))
+                        {
+                            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+                            currentUser = await userManager.FindByIdAsync(currentUserId);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Could not get current user for permissions check: {ex.Message}");
+            }
+
+            // Create and show the registration dialog
+            var registrationDialog = new Dialogs.UserRegistrationDialog(_serviceProvider!, currentUser);
+            var result = await registrationDialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary && registrationDialog.Result != null)
+            {
+                // User was created successfully
+                var userResult = registrationDialog.Result;
+                System.Diagnostics.Debug.WriteLine($"User created successfully: {userResult.User.Email} with role: {userResult.Role}");
+
+                // Optionally auto-login the new user
+                if (_viewModel != null)
+                {
+                    _viewModel.MasterPassword = userResult.MasterPassword;
+                    _viewModel.SelectedUser = new Models.DTOs.Auth.UserDto
+                    {
+                        Id = userResult.User.Id,
+                        Email = userResult.User.Email!,
+                        FirstName = userResult.User.FirstName!,
+                        LastName = userResult.User.LastName!,
+                        IsActive = userResult.User.IsActive
+                    };
+                    _viewModel.ShowProfileSelection = false;
+                    
+                    // Attempt to authenticate with the new user
+                    var success = await _viewModel.AuthenticateAsync();
+                    if (success)
+                    {
+                        if (GetMainWindow() is MainWindow mainWindow)
+                        {
+                            mainWindow.NavigateToHome();
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error showing create profile dialog: {ex.Message}");
         }
     }
 
