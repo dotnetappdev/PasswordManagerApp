@@ -21,6 +21,8 @@ public sealed partial class PasswordItemsPage : Page
     private PasswordItem? _selectedItem;
     private ICategoryInterface? _categoryService;
     private List<Category> _categories = new();
+    private List<CustomField> _customFields = new();
+    private ICustomFieldService? _customFieldService;
 
     public PasswordItemsPage()
     {
@@ -48,6 +50,7 @@ public sealed partial class PasswordItemsPage : Page
         {
             _serviceProvider = filterData.ServiceProvider;
             _categoryService = _serviceProvider.GetRequiredService<ICategoryInterface>();
+            _customFieldService = _serviceProvider.GetService<ICustomFieldService>();
             _viewModel = new PasswordItemsViewModel(_serviceProvider);
             this.DataContext = _viewModel;
 
@@ -58,6 +61,7 @@ public sealed partial class PasswordItemsPage : Page
         {
             _serviceProvider = serviceProvider;
             _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
+            _customFieldService = serviceProvider.GetService<ICustomFieldService>();
             _viewModel = new PasswordItemsViewModel(serviceProvider);
             this.DataContext = _viewModel;
         }
@@ -663,6 +667,9 @@ public sealed partial class PasswordItemsPage : Page
 
             // Load categories for the dropdown
             await LoadCategoriesForEdit();
+
+            // Load custom fields
+            await LoadCustomFields();
         }
         catch (Exception ex)
         {
@@ -681,6 +688,9 @@ public sealed partial class PasswordItemsPage : Page
 
             // Update the item with values from edit fields
             UpdateItemFromEditFields(_selectedItem);
+
+            // Save custom fields first
+            await SaveCustomFields();
 
             // Save to database
             await passwordService.UpdateAsync(_selectedItem);
@@ -748,8 +758,10 @@ public sealed partial class PasswordItemsPage : Page
         // Toggle edit-only fields
         var editDescriptionField = GetElement<StackPanel>("EditDescriptionField");
         var editCategoryField = GetElement<StackPanel>("EditCategoryField");
+        var editCustomFieldsSection = GetElement<StackPanel>("EditCustomFieldsSection");
         if (editDescriptionField != null) editDescriptionField.Visibility = isEdit ? Visibility.Visible : Visibility.Collapsed;
         if (editCategoryField != null) editCategoryField.Visibility = isEdit ? Visibility.Visible : Visibility.Collapsed;
+        if (editCustomFieldsSection != null) editCustomFieldsSection.Visibility = isEdit ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void LoadValuesIntoEditFields(PasswordItem item)
@@ -1206,4 +1218,362 @@ public sealed partial class PasswordItemsPage : Page
         await messageDialog.ShowAsync();
         timer.Dispose();
     }
+
+    #region Custom Fields Management
+
+    private async void AddCustomFieldButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Show field type selection dialog
+            var typeDialog = new ContentDialog
+            {
+                Title = "Add Custom Field",
+                Content = await CreateCustomFieldTypeSelector(),
+                PrimaryButtonText = "Add",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await typeDialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && typeDialog.Content is Grid grid)
+            {
+                var nameBox = grid.Children.OfType<TextBox>().FirstOrDefault(tb => tb.Name == "FieldNameBox");
+                var typeCombo = grid.Children.OfType<ComboBox>().FirstOrDefault(cb => cb.Name == "FieldTypeCombo");
+
+                if (nameBox != null && typeCombo != null && !string.IsNullOrWhiteSpace(nameBox.Text))
+                {
+                    var fieldType = (CustomFieldType)(typeCombo.SelectedIndex + 1);
+                    await AddCustomField(nameBox.Text.Trim(), fieldType);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog($"Error adding custom field: {ex.Message}");
+        }
+    }
+
+    private async Task<Grid> CreateCustomFieldTypeSelector()
+    {
+        var grid = new Grid();
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        // Field name input
+        var nameLabel = new TextBlock { Text = "Field Name", Margin = new Thickness(0, 0, 0, 8) };
+        var nameBox = new TextBox 
+        { 
+            Name = "FieldNameBox",
+            PlaceholderText = "Enter field name",
+            Margin = new Thickness(0, 0, 0, 16)
+        };
+
+        // Field type selector
+        var typeLabel = new TextBlock { Text = "Field Type", Margin = new Thickness(0, 0, 0, 8) };
+        var typeCombo = new ComboBox 
+        { 
+            Name = "FieldTypeCombo",
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+        
+        typeCombo.Items.Add("Text");
+        typeCombo.Items.Add("Password");
+        typeCombo.Items.Add("Date");
+        typeCombo.Items.Add("Number");
+        typeCombo.Items.Add("Email");
+        typeCombo.Items.Add("URL");
+        typeCombo.Items.Add("Text Area");
+        typeCombo.Items.Add("Phone");
+        typeCombo.Items.Add("File");
+        typeCombo.SelectedIndex = 0;
+
+        var nameStack = new StackPanel();
+        nameStack.Children.Add(nameLabel);
+        nameStack.Children.Add(nameBox);
+
+        var typeStack = new StackPanel();
+        typeStack.Children.Add(typeLabel);
+        typeStack.Children.Add(typeCombo);
+
+        Grid.SetRow(nameStack, 0);
+        Grid.SetRow(typeStack, 1);
+
+        grid.Children.Add(nameStack);
+        grid.Children.Add(typeStack);
+
+        return grid;
+    }
+
+    private async Task AddCustomField(string name, CustomFieldType type)
+    {
+        var newField = new CustomField
+        {
+            Name = name,
+            Value = "",
+            Type = type,
+            DisplayOrder = _customFields.Count,
+            PasswordItemId = _selectedItem?.Id ?? 0,
+            IsRequired = false,
+            IsProtected = type == CustomFieldType.Password
+        };
+
+        _customFields.Add(newField);
+        await RefreshCustomFieldsUI();
+    }
+
+    private async Task RefreshCustomFieldsUI()
+    {
+        var container = GetElement<StackPanel>("CustomFieldsContainer");
+        if (container == null) return;
+
+        container.Children.Clear();
+
+        foreach (var field in _customFields.OrderBy(f => f.DisplayOrder))
+        {
+            var fieldUI = await CreateCustomFieldUI(field);
+            container.Children.Add(fieldUI);
+        }
+    }
+
+    private async Task<Border> CreateCustomFieldUI(CustomField field)
+    {
+        var border = new Border
+        {
+            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            CornerRadius = new CornerRadius(8),
+            BorderBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LightGray),
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(12),
+            Margin = new Thickness(0, 4)
+        };
+
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var content = new StackPanel { Spacing = 8 };
+
+        // Field label
+        var label = new TextBlock 
+        { 
+            Text = field.Name,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            FontSize = 14
+        };
+        content.Children.Add(label);
+
+        // Field input based on type
+        FrameworkElement input = field.Type switch
+        {
+            CustomFieldType.Password => new PasswordBox 
+            { 
+                Password = field.Value,
+                PlaceholderText = "Enter password"
+            },
+            CustomFieldType.TextArea => new TextBox 
+            { 
+                Text = field.Value,
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                MinHeight = 80,
+                PlaceholderText = "Enter text"
+            },
+            CustomFieldType.Date => new DatePicker 
+            { 
+                Date = DateTime.TryParse(field.Value, out var date) ? date : DateTime.Now
+            },
+            CustomFieldType.File => await CreateFileInputUI(field),
+            _ => new TextBox 
+            { 
+                Text = field.Value,
+                PlaceholderText = GetPlaceholderForType(field.Type)
+            }
+        };
+
+        input.Tag = field;
+        content.Children.Add(input);
+
+        // Delete button
+        var deleteButton = new Button
+        {
+            Content = "🗑️",
+            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            BorderThickness = new Thickness(0),
+            VerticalAlignment = VerticalAlignment.Top,
+            Padding = new Thickness(8),
+            Tag = field
+        };
+        deleteButton.Click += DeleteCustomField_Click;
+
+        Grid.SetColumn(content, 0);
+        Grid.SetColumn(deleteButton, 1);
+
+        grid.Children.Add(content);
+        grid.Children.Add(deleteButton);
+        border.Child = grid;
+
+        return border;
+    }
+
+    private async Task<Grid> CreateFileInputUI(CustomField field)
+    {
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var textBox = new TextBox
+        {
+            Text = field.Value,
+            IsReadOnly = true,
+            PlaceholderText = "No file selected"
+        };
+
+        var browseButton = new Button
+        {
+            Content = "Browse...",
+            Margin = new Thickness(8, 0, 0, 0),
+            Tag = field
+        };
+        browseButton.Click += BrowseFileButton_Click;
+
+        Grid.SetColumn(textBox, 0);
+        Grid.SetColumn(browseButton, 1);
+
+        grid.Children.Add(textBox);
+        grid.Children.Add(browseButton);
+
+        return grid;
+    }
+
+    private async void BrowseFileButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (sender is Button button && button.Tag is CustomField field)
+            {
+                var filePicker = new Windows.Storage.Pickers.FileOpenPicker();
+                
+                // Get the current window's HWND
+                var app = App.Current as App;
+                var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(app?.MainWindow);
+                
+                // Initialize the file picker with the window handle
+                WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hWnd);
+                
+                filePicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+                filePicker.FileTypeFilter.Add("*");
+                
+                var file = await filePicker.PickSingleFileAsync();
+                if (file != null)
+                {
+                    // Update the field value with the file path
+                    field.Value = file.Path;
+                    
+                    // Update the UI
+                    if (button.Parent is Grid grid && grid.Children[0] is TextBox textBox)
+                    {
+                        textBox.Text = file.Name; // Show just the filename in the UI
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog($"Error selecting file: {ex.Message}");
+        }
+    }
+
+    private void DeleteCustomField_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is CustomField field)
+        {
+            _customFields.Remove(field);
+            _ = RefreshCustomFieldsUI();
+        }
+    }
+
+    private string GetPlaceholderForType(CustomFieldType type)
+    {
+        return type switch
+        {
+            CustomFieldType.Email => "Enter email address",
+            CustomFieldType.Url => "Enter URL",
+            CustomFieldType.Phone => "Enter phone number",
+            CustomFieldType.Number => "Enter number",
+            _ => "Enter value"
+        };
+    }
+
+    private async Task LoadCustomFields()
+    {
+        if (_selectedItem == null || _customFieldService == null) return;
+
+        try
+        {
+            _customFields = await _customFieldService.GetByPasswordItemIdAsync(_selectedItem.Id);
+            await RefreshCustomFieldsUI();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading custom fields: {ex.Message}");
+        }
+    }
+
+    private async Task SaveCustomFields()
+    {
+        if (_selectedItem == null || _customFieldService == null) return;
+
+        try
+        {
+            // Get values from UI and update custom fields
+            var container = GetElement<StackPanel>("CustomFieldsContainer");
+            if (container != null)
+            {
+                foreach (var child in container.Children)
+                {
+                    if (child is Border border && border.Child is Grid grid)
+                    {
+                        var content = grid.Children[0] as StackPanel;
+                        if (content?.Children.Count > 1)
+                        {
+                            var input = content.Children[1];
+                            if (input.Tag is CustomField field)
+                            {
+                                field.Value = input switch
+                                {
+                                    TextBox tb => tb.Text,
+                                    PasswordBox pb => pb.Password,
+                                    DatePicker dp => dp.Date?.ToString("yyyy-MM-dd") ?? "",
+                                    Grid fileGrid => field.Value, // File path already updated
+                                    _ => field.Value
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Save to database
+            foreach (var field in _customFields)
+            {
+                if (field.Id == 0)
+                {
+                    field.PasswordItemId = _selectedItem.Id;
+                    await _customFieldService.CreateAsync(field);
+                }
+                else
+                {
+                    await _customFieldService.UpdateAsync(field);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error saving custom fields: {ex.Message}");
+        }
+    }
+
+    #endregion
 }

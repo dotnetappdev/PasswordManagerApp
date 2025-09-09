@@ -43,5 +43,6 @@ public enum CustomFieldType
     Email = 5,
     Url = 6,
     TextArea = 7,
-    Phone = 8
+    Phone = 8,
+    File = 9
 }

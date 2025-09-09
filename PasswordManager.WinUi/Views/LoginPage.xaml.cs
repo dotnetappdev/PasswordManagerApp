@@ -279,5 +279,59 @@ public sealed partial class LoginPage : Page
         }
     }
 
+    private async void CreateAccountButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_serviceProvider == null)
+            {
+                await ShowErrorDialog("Service provider not initialized.");
+                return;
+            }
+
+            var registrationDialog = new Dialogs.UserRegistrationDialog();
+            registrationDialog.XamlRoot = this.XamlRoot;
+
+            var result = await registrationDialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                // Registration was successful, refresh the login page
+                if (_viewModel != null)
+                {
+                    await _viewModel.RefreshAsync();
+                }
+                await ShowSuccessMessage("Account created successfully! You can now log in.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog($"Error creating account: {ex.Message}");
+        }
+    }
+
+    private async Task ShowErrorDialog(string message)
+    {
+        var errorDialog = new ContentDialog
+        {
+            Title = "Error",
+            Content = message,
+            CloseButtonText = "OK",
+            XamlRoot = this.XamlRoot
+        };
+        await errorDialog.ShowAsync();
+    }
+
+    private async Task ShowSuccessMessage(string message)
+    {
+        var successDialog = new ContentDialog
+        {
+            Title = "Success",
+            Content = message,
+            CloseButtonText = "OK",
+            XamlRoot = this.XamlRoot
+        };
+        await successDialog.ShowAsync();
+    }
+
     #endregion
 }
