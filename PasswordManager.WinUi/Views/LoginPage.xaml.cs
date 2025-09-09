@@ -184,10 +184,7 @@ public sealed partial class LoginPage : Page
         await DoPrimaryActionAsync();
     }
 
-    private async void CreateAccountButton_Click(object sender, RoutedEventArgs e)
-    {
-        await DoPrimaryActionAsync();
-    }
+
 
     private void ProfileButton_Click(object sender, RoutedEventArgs e)
     {
