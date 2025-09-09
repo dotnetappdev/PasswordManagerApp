@@ -89,7 +89,8 @@ public class Program
                     options.UseSqlite($"Data Source={defaultDbPath}"));
 
                 // Add Identity services with roles so all Identity tables are created
-                services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+                // Using AddIdentityCore for cross-platform compatibility
+                services.AddIdentityCore<ApplicationUser>(options =>
                 {
                     options.SignIn.RequireConfirmedAccount = false;
                     options.Password.RequireDigit = true;
@@ -98,8 +99,8 @@ public class Program
                     options.Password.RequireUppercase = true;
                     options.Password.RequireLowercase = true;
                 })
-                .AddEntityFrameworkStores<PasswordManagerDbContextApp>()
-                .AddDefaultTokenProviders();
+                .AddRoles<ApplicationRole>()
+                .AddEntityFrameworkStores<PasswordManagerDbContextApp>();
 
                 // Register authentication service early so other services can depend on it
                 services.AddScoped<IAuthService, SimpleAuthService>();
