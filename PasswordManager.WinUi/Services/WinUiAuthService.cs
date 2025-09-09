@@ -143,33 +143,42 @@ public class WinUiAuthService : IAuthService
     }
 
     /// <summary>
-    /// Authenticates user with master password
+    /// Authenticates user with master password using master key identifier lookup
     /// </summary>
     public async Task<bool> AuthenticateAsync(string masterPassword)
     {
         try
         {
-            // Get user from database (for single-user setup, get the first user)
-            var user = await _dbContext.Users.FirstOrDefaultAsync();
+            // Try to find user by master key identifier
+            var user = await FindUserByMasterKeyAsync(masterPassword);
             if (user == null)
             {
-                _logger.LogWarning("No user found in database");
+                _logger.LogWarning("No user found with matching master key");
                 return false;
             }
 
-            // Retrieve user salt from secure storage
-            var userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
-            if (userSalt == null)
+            // Retrieve user salt
+            byte[] userSalt;
+            if (!string.IsNullOrEmpty(user.UserSalt))
             {
-                _logger.LogError("Failed to retrieve user salt from secure storage");
-                return false;
+                userSalt = Convert.FromBase64String(user.UserSalt);
+            }
+            else
+            {
+                // Fallback: try secure storage for user salt
+                userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
+                if (userSalt == null)
+                {
+                    _logger.LogError("Failed to retrieve user salt for user {UserId}", user.Id);
+                    return false;
+                }
             }
 
             // Verify master password
             var isValid = _passwordCryptoService.VerifyMasterPassword(
                 masterPassword, 
                 user.MasterPasswordHash!, 
-                Convert.FromBase64String(user.UserSalt!)
+                userSalt
             );
 
             if (isValid)
@@ -183,11 +192,12 @@ public class WinUiAuthService : IAuthService
                 // Store session in secure storage instead of browser storage
                 await _secureStorageService.SetAsync("sessionId", sessionId);
                 await _secureStorageService.SetAsync("isAuthenticated", "true");
+                await _secureStorageService.SetAsync("currentUserId", user.Id);
                 
                 _isAuthenticated = true;
                 _currentUser = user;
                 
-                _logger.LogInformation("User {UserId} authenticated successfully", user.Id);
+                _logger.LogInformation("User {UserId} ({Email}) authenticated successfully with master key", user.Id, user.Email);
                 return true;
             }
 
@@ -198,6 +208,48 @@ public class WinUiAuthService : IAuthService
         {
             _logger.LogError(ex, "Authentication error");
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Finds a user by their master key using master key identifier lookup
+    /// </summary>
+    private async Task<ApplicationUser?> FindUserByMasterKeyAsync(string masterPassword)
+    {
+        try
+        {
+            // Get all users and check their master key identifiers
+            var users = await _dbContext.Users.ToListAsync();
+            
+            foreach (var user in users)
+            {
+                if (string.IsNullOrEmpty(user.UserSalt) || string.IsNullOrEmpty(user.MasterKeyIdentifier))
+                    continue;
+
+                var userSalt = Convert.FromBase64String(user.UserSalt);
+                
+                // Check if the master password matches this user's master key identifier
+                if (_passwordCryptoService.VerifyMasterKeyIdentifier(masterPassword, userSalt, user.MasterKeyIdentifier))
+                {
+                    _logger.LogInformation("Found user {Email} matching master key", user.Email);
+                    return user;
+                }
+            }
+
+            // Fallback for backwards compatibility: try first user with valid data
+            var firstUser = users.FirstOrDefault(u => !string.IsNullOrEmpty(u.UserSalt) && !string.IsNullOrEmpty(u.MasterPasswordHash));
+            if (firstUser != null)
+            {
+                _logger.LogInformation("Using fallback authentication for user {Email}", firstUser.Email);
+                return firstUser;
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error finding user by master key");
+            return null;
         }
     }
 
@@ -509,6 +561,94 @@ public class WinUiAuthService : IAuthService
         {
             _logger.LogError(ex, "Failed to retrieve user salt from secure storage");
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Authenticates user with master password for a specific user email
+    /// Useful when multiple users share the same master key but have different roles
+    /// </summary>
+    public async Task<bool> AuthenticateAsUserAsync(string masterPassword, string userEmail)
+    {
+        try
+        {
+            // Find specific user by email
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+            if (user == null)
+            {
+                _logger.LogWarning("User {Email} not found in database", userEmail);
+                return false;
+            }
+
+            // Verify master password for this specific user
+            if (string.IsNullOrEmpty(user.UserSalt) || string.IsNullOrEmpty(user.MasterPasswordHash))
+            {
+                _logger.LogWarning("User {Email} missing required authentication data", userEmail);
+                return false;
+            }
+
+            var userSalt = Convert.FromBase64String(user.UserSalt);
+            var isValid = _passwordCryptoService.VerifyMasterPassword(
+                masterPassword, 
+                user.MasterPasswordHash, 
+                userSalt
+            );
+
+            if (isValid)
+            {
+                // Derive master key for session
+                var masterKey = _passwordCryptoService.DeriveMasterKey(masterPassword, userSalt);
+                
+                // Initialize session with master key
+                var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
+                
+                // Store session in secure storage
+                await _secureStorageService.SetAsync("sessionId", sessionId);
+                await _secureStorageService.SetAsync("isAuthenticated", "true");
+                await _secureStorageService.SetAsync("currentUserId", user.Id);
+                await _secureStorageService.SetAsync("currentUserEmail", user.Email);
+                
+                _isAuthenticated = true;
+                _currentUser = user;
+                
+                _logger.LogInformation("User {UserId} ({Email}) authenticated successfully as specific user", user.Id, user.Email);
+                return true;
+            }
+
+            _logger.LogWarning("Authentication failed for user {Email}", userEmail);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Authentication error for user {Email}", userEmail);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Gets all available users that can be authenticated with the master key
+    /// </summary>
+    public async Task<List<ApplicationUser>> GetAvailableUsersAsync()
+    {
+        try
+        {
+            var users = await _dbContext.Users
+                .Where(u => !string.IsNullOrEmpty(u.UserSalt) && !string.IsNullOrEmpty(u.MasterPasswordHash))
+                .Select(u => new ApplicationUser 
+                { 
+                    Id = u.Id, 
+                    Email = u.Email, 
+                    FirstName = u.FirstName, 
+                    LastName = u.LastName 
+                })
+                .ToListAsync();
+
+            return users;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving available users");
+            return new List<ApplicationUser>();
         }
     }
 }

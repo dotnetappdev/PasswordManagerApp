@@ -76,6 +76,20 @@ public partial class App : Application
 
                 var startupService = scope.ServiceProvider.GetRequiredService<IAppStartupService>();
                 await startupService.InitializeAsync();
+
+                // Test the identity seeder with common master key (DEBUG only)
+#if DEBUG
+                try
+                {
+                    System.Diagnostics.Debug.WriteLine("Running Identity Seeder test...");
+                    var testResult = await Tests.IdentitySeederTests.TestCommonMasterKeySetupAsync(_host.Services);
+                    System.Diagnostics.Debug.WriteLine($"Identity Seeder test result: {(testResult ? "PASSED" : "FAILED")}");
+                }
+                catch (Exception testEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Identity Seeder test exception: {testEx.Message}");
+                }
+#endif
             }
             catch (Exception ex)
             {

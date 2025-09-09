@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using PasswordManager.Models;
 using PasswordManager.DAL.Interfaces;
+using PasswordManager.Crypto.Interfaces;
 
 namespace PasswordManager.DAL.Seed;
 
@@ -13,17 +14,23 @@ public class IdentityDataSeeder
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<ApplicationRole> _roleManager;
+    private readonly IPasswordCryptoService _passwordCryptoService;
     // private readonly IPermissionService _permissionService;
     private readonly ILogger<IdentityDataSeeder> _logger;
+    
+    // Common master key for all seeded users to enable master-key-only login
+    private const string CommonMasterKey = "CommonMaster123!";
 
     public IdentityDataSeeder(
         UserManager<ApplicationUser> userManager,
         RoleManager<ApplicationRole> roleManager,
+        IPasswordCryptoService passwordCryptoService,
         // IPermissionService permissionService,
         ILogger<IdentityDataSeeder> logger)
     {
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _roleManager = roleManager ?? throw new ArgumentNullException(nameof(roleManager));
+        _passwordCryptoService = passwordCryptoService ?? throw new ArgumentNullException(nameof(passwordCryptoService));
         // _permissionService = permissionService ?? throw new ArgumentNullException(nameof(permissionService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -73,56 +80,58 @@ public class IdentityDataSeeder
     }
 
     /// <summary>
-    /// Seeds default users for each role
+    /// Seeds default users for each role with a common master key
     /// </summary>
     private async Task SeedDefaultUsersAsync()
     {
-        // Create default admin user
-        await CreateDefaultUserAsync(
+        // Create default admin user with common master key
+        await CreateDefaultUserWithMasterKeyAsync(
             "admin@passwordmanager.local",
             "Administrator",
             "User",
             ApplicationRoles.Admin,
-            "Admin123!"
+            CommonMasterKey
         );
 
-        // Create default parent user
-        await CreateDefaultUserAsync(
+        // Create default parent user with common master key
+        await CreateDefaultUserWithMasterKeyAsync(
             "parent@passwordmanager.local",
             "Parent",
             "User",
             ApplicationRoles.Parent,
-            "Parent123!"
+            CommonMasterKey
         );
 
-        // Create default standard user
-        await CreateDefaultUserAsync(
+        // Create default standard user with common master key
+        await CreateDefaultUserWithMasterKeyAsync(
             "user@passwordmanager.local",
             "Regular",
             "User",
             ApplicationRoles.User,
-            "User123!"
+            CommonMasterKey
         );
 
-        // Create default child user
-        await CreateDefaultUserAsync(
+        // Create default child user with common master key
+        await CreateDefaultUserWithMasterKeyAsync(
             "child@passwordmanager.local",
             "Child",
             "User",
             ApplicationRoles.Child,
-            "Child123!"
+            CommonMasterKey
         );
+        
+        _logger.LogInformation("All default users created with common master key: {MasterKey}", CommonMasterKey);
     }
 
     /// <summary>
-    /// Creates a default user with specified role
+    /// Creates a default user with specified role and master key
     /// </summary>
-    private async Task CreateDefaultUserAsync(
+    private async Task CreateDefaultUserWithMasterKeyAsync(
         string email,
         string firstName,
         string lastName,
         string roleName,
-        string password)
+        string masterPassword)
     {
         var existingUser = await _userManager.FindByEmailAsync(email);
         if (existingUser != null)
@@ -130,6 +139,15 @@ public class IdentityDataSeeder
             _logger.LogInformation("User {Email} already exists", email);
             return;
         }
+
+        // Generate user salt for cryptographic operations
+        var userSalt = _passwordCryptoService.GenerateUserSalt();
+        
+        // Create master password hash for authentication
+        var masterPasswordHash = _passwordCryptoService.CreateMasterPasswordHash(masterPassword, userSalt);
+        
+        // Create master key identifier for lookup during master key login
+        var masterKeyIdentifier = _passwordCryptoService.CreateMasterKeyIdentifier(masterPassword, userSalt);
 
         var user = new ApplicationUser
         {
@@ -140,14 +158,23 @@ public class IdentityDataSeeder
             LastName = lastName,
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
-            LastModified = DateTime.UtcNow
+            LastModified = DateTime.UtcNow,
+            UserSalt = Convert.ToBase64String(userSalt),
+            MasterPasswordHash = masterPasswordHash,
+            MasterKeyIdentifier = masterKeyIdentifier,
+            MasterPasswordHint = $"Common master key for all {roleName} users",
+            SecurityStamp = Guid.NewGuid().ToString(),
+            ConcurrencyStamp = Guid.NewGuid().ToString()
         };
 
-        var result = await _userManager.CreateAsync(user, password);
+        // Use a temporary password for Identity creation, but the user will actually login with master key
+        var tempPassword = $"TempPass_{DateTime.UtcNow.Ticks}!";
+        var result = await _userManager.CreateAsync(user, tempPassword);
+        
         if (result.Succeeded)
         {
             await _userManager.AddToRoleAsync(user, roleName);
-            _logger.LogInformation("Created default user {Email} with role {Role}", email, roleName);
+            _logger.LogInformation("Created default user {Email} with role {Role} and master key support", email, roleName);
         }
         else
         {
