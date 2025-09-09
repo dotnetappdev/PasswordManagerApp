@@ -13,7 +13,7 @@ public class ProfilePageViewModel : BaseViewModel
     private readonly IUserProfileService _userProfileService;
     private readonly IAuthService _authService;
     private readonly IServiceProvider _serviceProvider;
-    
+
     private UserDto? _currentUser;
     private ObservableCollection<UserDto> _allProfiles = new();
     private string _firstName = string.Empty;
@@ -28,7 +28,7 @@ public class ProfilePageViewModel : BaseViewModel
         _serviceProvider = serviceProvider;
         _userProfileService = serviceProvider.GetRequiredService<IUserProfileService>();
         _authService = serviceProvider.GetRequiredService<IAuthService>();
-        
+
         _ = LoadProfileDataAsync();
     }
 
@@ -93,7 +93,7 @@ public class ProfilePageViewModel : BaseViewModel
 
             // Load current user
             CurrentUser = await _userProfileService.GetCurrentUserAsync();
-            
+
             if (CurrentUser != null)
             {
                 FirstName = CurrentUser.FirstName ?? string.Empty;
@@ -133,7 +133,7 @@ public class ProfilePageViewModel : BaseViewModel
     {
         IsEditing = false;
         ErrorMessage = string.Empty;
-        
+
         // Reset to current user values
         if (CurrentUser != null)
         {
@@ -178,10 +178,10 @@ public class ProfilePageViewModel : BaseViewModel
                 CurrentUser.FirstName = FirstName.Trim();
                 CurrentUser.LastName = LastName.Trim();
                 CurrentUser.Email = Email.Trim();
-                
+
                 OnPropertyChanged(nameof(CurrentUser));
                 OnPropertyChanged(nameof(CurrentUserDisplayName));
-                
+
                 IsEditing = false;
                 return true;
             }
@@ -224,10 +224,10 @@ public class ProfilePageViewModel : BaseViewModel
             FirstName = profile.FirstName ?? string.Empty;
             LastName = profile.LastName ?? string.Empty;
             Email = profile.Email;
-            
+
             OnPropertyChanged(nameof(CurrentUser));
             OnPropertyChanged(nameof(CurrentUserDisplayName));
-            
+
             HideManageProfiles();
             return true;
         }
@@ -242,7 +242,7 @@ public class ProfilePageViewModel : BaseViewModel
     public string GetDisplayName(UserDto? user)
     {
         if (user == null) return "Unknown User";
-        
+
         if (!string.IsNullOrEmpty(user.FirstName) && !string.IsNullOrEmpty(user.LastName))
         {
             return $"{user.FirstName} {user.LastName}";
@@ -264,10 +264,10 @@ public class ProfilePageViewModel : BaseViewModel
     public string GetInitials(UserDto? user)
     {
         if (user == null) return "?";
-        
+
         var firstName = user.FirstName?.Trim();
         var lastName = user.LastName?.Trim();
-        
+
         if (!string.IsNullOrEmpty(firstName) && !string.IsNullOrEmpty(lastName))
         {
             return $"{firstName[0]}{lastName[0]}".ToUpper();

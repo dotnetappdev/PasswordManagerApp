@@ -20,7 +20,7 @@ public sealed partial class ProfilePage : Page
     protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
-        
+
         if (e.Parameter is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;

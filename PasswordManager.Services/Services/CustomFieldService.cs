@@ -19,8 +19,8 @@ public class CustomFieldService : ICustomFieldService
 
     public async Task<List<CustomField>> GetByPasswordItemIdAsync(int passwordItemId)
     {
-        using var context = _contextFactory.CreateDbContext();
-        return await context.CustomFields
+    using var context = await _contextFactory.CreateSqliteContextAsync();
+    return await context.CustomFields
             .Where(cf => cf.PasswordItemId == passwordItemId)
             .OrderBy(cf => cf.DisplayOrder)
             .ToListAsync();
@@ -28,7 +28,7 @@ public class CustomFieldService : ICustomFieldService
 
     public async Task<CustomField> CreateAsync(CustomField customField)
     {
-        using var context = _contextFactory.CreateDbContext();
+    using var context = await _contextFactory.CreateSqliteContextAsync();
         customField.CreatedAt = DateTime.UtcNow;
         customField.LastModified = DateTime.UtcNow;
         
@@ -39,7 +39,7 @@ public class CustomFieldService : ICustomFieldService
 
     public async Task<CustomField> UpdateAsync(CustomField customField)
     {
-        using var context = _contextFactory.CreateDbContext();
+    using var context = await _contextFactory.CreateSqliteContextAsync();
         customField.LastModified = DateTime.UtcNow;
         
         context.CustomFields.Update(customField);
@@ -49,8 +49,8 @@ public class CustomFieldService : ICustomFieldService
 
     public async Task DeleteAsync(int id)
     {
-        using var context = _contextFactory.CreateDbContext();
-        var customField = await context.CustomFields.FindAsync(id);
+    using var context = await _contextFactory.CreateSqliteContextAsync();
+    var customField = await context.CustomFields.FindAsync(id);
         if (customField != null)
         {
             context.CustomFields.Remove(customField);
@@ -60,8 +60,8 @@ public class CustomFieldService : ICustomFieldService
 
     public async Task<List<CustomField>> GetAllAsync()
     {
-        using var context = _contextFactory.CreateDbContext();
-        return await context.CustomFields
+    using var context = await _contextFactory.CreateSqliteContextAsync();
+    return await context.CustomFields
             .OrderBy(cf => cf.PasswordItemId)
             .ThenBy(cf => cf.DisplayOrder)
             .ToListAsync();

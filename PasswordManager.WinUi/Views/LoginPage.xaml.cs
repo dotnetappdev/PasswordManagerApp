@@ -51,10 +51,10 @@ public sealed partial class LoginPage : Page
             _serviceProvider = serviceProvider;
             _viewModel = new LoginViewModel(serviceProvider);
             _profileSelectionViewModel = new UserProfileSelectionViewModel(serviceProvider);
-            
+
             // Set data context for the main view
             this.DataContext = _viewModel;
-            
+
             // Set data context for user profiles list
             if (this.FindName("UserProfilesList") is ItemsControl userProfilesList)
             {
@@ -248,7 +248,7 @@ public sealed partial class LoginPage : Page
                 if (_viewModel != null)
                 {
                     _viewModel.MasterPassword = userResult.MasterPassword;
-                    _viewModel.SelectedUser = new Models.DTOs.Auth.UserDto
+                    _viewModel.SelectedUser = new UserDto
                     {
                         Id = userResult.User.Id,
                         Email = userResult.User.Email!,
@@ -257,7 +257,7 @@ public sealed partial class LoginPage : Page
                         IsActive = userResult.User.IsActive
                     };
                     _viewModel.ShowProfileSelection = false;
-                    
+
                     // Attempt to authenticate with the new user
                     var success = await _viewModel.AuthenticateAsync();
                     if (success)

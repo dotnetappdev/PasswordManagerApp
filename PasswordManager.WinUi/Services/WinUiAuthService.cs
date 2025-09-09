@@ -4,6 +4,7 @@ using PasswordManager.Crypto.Interfaces;
 using PasswordManager.DAL;
 using PasswordManager.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Data.Common;
 using Microsoft.Extensions.Logging;
 using PasswordManager.Services.Interfaces;
 using Microsoft.Data.Sqlite;
@@ -50,13 +51,13 @@ public class WinUiAuthService : IAuthService
         {
             // Generate user salt
             var userSalt = _passwordCryptoService.GenerateUserSalt();
-            
+
             // Create master password hash for authentication
             var masterPasswordHash = _passwordCryptoService.CreateMasterPasswordHash(masterPassword, userSalt);
-            
+
             // Create master key identifier for lookup during master key login
             var masterKeyIdentifier = _passwordCryptoService.CreateMasterKeyIdentifier(masterPassword, userSalt);
-            
+
             // Create user record in database with simple setup that doesn't require full Identity registration
             var user = new ApplicationUser
             {
@@ -78,22 +79,23 @@ public class WinUiAuthService : IAuthService
             };
 
             _dbContext.Users.Add(user);
-            
+
             try
             {
+                _logger.LogInformation("Attempting to save new user to database (UserId={UserId})", user.Id);
                 await _dbContext.SaveChangesAsync();
-                _logger.LogInformation("User created successfully for master-key-only authentication");
+                _logger.LogInformation("User created successfully for master-key-only authentication (UserId={UserId})", user.Id);
             }
             catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such table: AspNetUsers"))
             {
                 _logger.LogWarning("AspNetUsers table not found, attempting to create Identity tables");
-                
+
                 // Try to ensure Identity tables are created
                 try
                 {
                     await _dbContext.Database.MigrateAsync();
                     _logger.LogInformation("Identity tables created successfully, retrying user creation");
-                    
+
                     // Retry saving the user after migration
                     await _dbContext.SaveChangesAsync();
                     _logger.LogInformation("User created successfully after Identity table creation");
@@ -101,30 +103,76 @@ public class WinUiAuthService : IAuthService
                 catch (Exception migrationEx)
                 {
                     _logger.LogError(migrationEx, "Failed to create Identity tables");
+                    // Add diagnostic info about database and tables to help debugging
+                    try
+                    {
+                        var canConnect = await _dbContext.Database.CanConnectAsync();
+                        _logger.LogError("Database connectivity: {CanConnect}", canConnect);
+
+                        // Inspect sqlite_master for AspNetUsers presence
+                        try
+                        {
+                            using var conn = _dbContext.Database.GetDbConnection();
+                            await conn.OpenAsync();
+                            using var cmd = conn.CreateCommand();
+                            cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='AspNetUsers';";
+                            var result = await cmd.ExecuteScalarAsync();
+                            _logger.LogError("AspNetUsers table presence check result: {Result}", result ?? "<null>");
+                        }
+                        catch (Exception tblEx)
+                        {
+                            _logger.LogError(tblEx, "Error while checking sqlite_master for AspNetUsers");
+                        }
+                    }
+                    catch (Exception diagEx)
+                    {
+                        _logger.LogError(diagEx, "Error gathering diagnostic database information");
+                    }
+
                     throw new InvalidOperationException("Cannot create user: Identity tables are missing and could not be created. Please ensure the database is properly initialized.", migrationEx);
                 }
             }
             catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no column named MasterKeyIdentifier"))
             {
                 _logger.LogWarning("MasterKeyIdentifier column not found, attempting to apply pending migrations");
-                
+
                 // Try to apply pending migrations that might include the MasterKeyIdentifier column
                 try
                 {
                     await _dbContext.Database.MigrateAsync();
                     _logger.LogInformation("Migrations applied successfully, retrying user creation");
-                    
+
                     // Retry saving the user after migration
                     await _dbContext.SaveChangesAsync();
                 }
                 catch (Exception migrationEx)
                 {
                     _logger.LogError(migrationEx, "Failed to apply migrations for MasterKeyIdentifier column");
-                    
+
+                    // Attempt a diagnostic check of table/column presence
+                    try
+                    {
+                        using var conn = _dbContext.Database.GetDbConnection();
+                        await conn.OpenAsync();
+                        using var cmd = conn.CreateCommand();
+                        cmd.CommandText = "PRAGMA table_info('AspNetUsers');";
+                        using var reader = await cmd.ExecuteReaderAsync();
+                        var columns = new List<string>();
+                        while (await reader.ReadAsync())
+                        {
+                            columns.Add(reader[1]?.ToString() ?? "");
+                        }
+                        _logger.LogError("AspNetUsers columns: {Columns}", string.Join(',', columns));
+                    }
+                    catch (Exception diagEx)
+                    {
+                        _logger.LogError(diagEx, "Error while checking AspNetUsers columns");
+                    }
+
                     // Fallback: create user without MasterKeyIdentifier for now
                     user.MasterKeyIdentifier = null;
                     await _dbContext.SaveChangesAsync();
-                    
+
                     _logger.LogWarning("User created without MasterKeyIdentifier due to migration failure");
                 }
             }
@@ -143,61 +191,51 @@ public class WinUiAuthService : IAuthService
     }
 
     /// <summary>
-    /// Authenticates user with master password using master key identifier lookup
+    /// Authenticates user with master password
     /// </summary>
     public async Task<bool> AuthenticateAsync(string masterPassword)
     {
         try
         {
-            // Try to find user by master key identifier
-            var user = await FindUserByMasterKeyAsync(masterPassword);
+            // Get user from database (for single-user setup, get the first user)
+            var user = await _dbContext.Users.FirstOrDefaultAsync();
             if (user == null)
             {
-                _logger.LogWarning("No user found with matching master key");
+                _logger.LogWarning("No user found in database");
                 return false;
             }
 
-            // Retrieve user salt
-            byte[] userSalt;
-            if (!string.IsNullOrEmpty(user.UserSalt))
+            // Retrieve user salt from secure storage
+            var userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
+            if (userSalt == null)
             {
-                userSalt = Convert.FromBase64String(user.UserSalt);
-            }
-            else
-            {
-                // Fallback: try secure storage for user salt
-                userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
-                if (userSalt == null)
-                {
-                    _logger.LogError("Failed to retrieve user salt for user {UserId}", user.Id);
-                    return false;
-                }
+                _logger.LogError("Failed to retrieve user salt from secure storage");
+                return false;
             }
 
             // Verify master password
             var isValid = _passwordCryptoService.VerifyMasterPassword(
-                masterPassword, 
-                user.MasterPasswordHash!, 
-                userSalt
+                masterPassword,
+                user.MasterPasswordHash!,
+                Convert.FromBase64String(user.UserSalt!)
             );
 
             if (isValid)
             {
                 // Derive master key for session
                 var masterKey = _passwordCryptoService.DeriveMasterKey(masterPassword, userSalt);
-                
+
                 // Initialize session with master key
                 var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
-                
+
                 // Store session in secure storage instead of browser storage
                 await _secureStorageService.SetAsync("sessionId", sessionId);
                 await _secureStorageService.SetAsync("isAuthenticated", "true");
-                await _secureStorageService.SetAsync("currentUserId", user.Id);
-                
+
                 _isAuthenticated = true;
                 _currentUser = user;
-                
-                _logger.LogInformation("User {UserId} ({Email}) authenticated successfully with master key", user.Id, user.Email);
+
+                _logger.LogInformation("User {UserId} authenticated successfully", user.Id);
                 return true;
             }
 
@@ -212,48 +250,6 @@ public class WinUiAuthService : IAuthService
     }
 
     /// <summary>
-    /// Finds a user by their master key using master key identifier lookup
-    /// </summary>
-    private async Task<ApplicationUser?> FindUserByMasterKeyAsync(string masterPassword)
-    {
-        try
-        {
-            // Get all users and check their master key identifiers
-            var users = await _dbContext.Users.ToListAsync();
-            
-            foreach (var user in users)
-            {
-                if (string.IsNullOrEmpty(user.UserSalt) || string.IsNullOrEmpty(user.MasterKeyIdentifier))
-                    continue;
-
-                var userSalt = Convert.FromBase64String(user.UserSalt);
-                
-                // Check if the master password matches this user's master key identifier
-                if (_passwordCryptoService.VerifyMasterKeyIdentifier(masterPassword, userSalt, user.MasterKeyIdentifier))
-                {
-                    _logger.LogInformation("Found user {Email} matching master key", user.Email);
-                    return user;
-                }
-            }
-
-            // Fallback for backwards compatibility: try first user with valid data
-            var firstUser = users.FirstOrDefault(u => !string.IsNullOrEmpty(u.UserSalt) && !string.IsNullOrEmpty(u.MasterPasswordHash));
-            if (firstUser != null)
-            {
-                _logger.LogInformation("Using fallback authentication for user {Email}", firstUser.Email);
-                return firstUser;
-            }
-
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error finding user by master key");
-            return null;
-        }
-    }
-
-    /// <summary>
     /// Checks if user is already authenticated
     /// </summary>
     public async Task<bool> CheckAuthenticationStatusAsync()
@@ -263,7 +259,7 @@ public class WinUiAuthService : IAuthService
             var isAuth = await _secureStorageService.GetAsync("isAuthenticated");
             var sessionId = await _secureStorageService.GetAsync("sessionId");
             var isSessionValid = !string.IsNullOrEmpty(isAuth) && isAuth == "true";
-            
+
             if (isSessionValid && !string.IsNullOrEmpty(sessionId) && _vaultSessionService.IsVaultUnlocked(sessionId))
             {
                 _isAuthenticated = true;
@@ -274,7 +270,7 @@ public class WinUiAuthService : IAuthService
                 }
                 return true;
             }
-            
+
             _isAuthenticated = false;
             return false;
         }
@@ -293,18 +289,18 @@ public class WinUiAuthService : IAuthService
         try
         {
             var sessionId = await _secureStorageService.GetAsync("sessionId");
-            
+
             _isAuthenticated = false;
             _currentUser = null;
-            
+
             if (!string.IsNullOrEmpty(sessionId))
             {
                 _vaultSessionService.ClearSession(sessionId);
             }
-            
+
             _secureStorageService.Remove("isAuthenticated");
             _secureStorageService.Remove("sessionId");
-            
+
             _logger.LogInformation("User logged out successfully");
         }
         catch (Exception ex)
@@ -380,8 +376,8 @@ public class WinUiAuthService : IAuthService
 
             // Verify current password
             var isCurrentPasswordValid = _passwordCryptoService.VerifyMasterPassword(
-                currentPassword, 
-                user.MasterPasswordHash!, 
+                currentPassword,
+                user.MasterPasswordHash!,
                 Convert.FromBase64String(user.UserSalt!)
             );
 
@@ -393,23 +389,23 @@ public class WinUiAuthService : IAuthService
 
             // Generate new user salt for enhanced security
             var newUserSalt = _passwordCryptoService.GenerateUserSalt();
-            
+
             // Create new master password hash
             var newMasterPasswordHash = _passwordCryptoService.CreateMasterPasswordHash(newPassword, newUserSalt);
-            
+
             // Create new master key identifier for lookup during master key login
             var newMasterKeyIdentifier = _passwordCryptoService.CreateMasterKeyIdentifier(newPassword, newUserSalt);
 
             // Get the current master key for re-encryption
             var currentMasterKey = _passwordCryptoService.DeriveMasterKey(currentPassword, userSalt);
-            
+
             // Derive new master key
             var newMasterKey = _passwordCryptoService.DeriveMasterKey(newPassword, newUserSalt);
 
             // TODO: Re-encrypt all vault data with new master key
             // This would require getting all password items and re-encrypting them
             // For now, we'll update the user record and session
-            
+
             // Update user record in database
             user.UserSalt = Convert.ToBase64String(newUserSalt);
             user.MasterPasswordHash = newMasterPasswordHash;
@@ -424,24 +420,24 @@ public class WinUiAuthService : IAuthService
             catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no column named MasterKeyIdentifier"))
             {
                 _logger.LogWarning("MasterKeyIdentifier column not found during password change, attempting to apply pending migrations");
-                
+
                 // Try to apply pending migrations that might include the MasterKeyIdentifier column
                 try
                 {
                     await _dbContext.Database.MigrateAsync();
                     _logger.LogInformation("Migrations applied successfully, retrying password change");
-                    
+
                     // Retry saving the user after migration
                     await _dbContext.SaveChangesAsync();
                 }
                 catch (Exception migrationEx)
                 {
                     _logger.LogError(migrationEx, "Failed to apply migrations for MasterKeyIdentifier column during password change");
-                    
+
                     // Fallback: update user without MasterKeyIdentifier for now
                     user.MasterKeyIdentifier = null;
                     await _dbContext.SaveChangesAsync();
-                    
+
                     _logger.LogWarning("Password changed without updating MasterKeyIdentifier due to migration failure");
                 }
             }
@@ -549,7 +545,7 @@ public class WinUiAuthService : IAuthService
         try
         {
             var saltBase64 = await _secureStorageService.GetAsync($"userSalt_{userId}");
-            
+
             if (string.IsNullOrEmpty(saltBase64))
             {
                 return null;
@@ -561,94 +557,6 @@ public class WinUiAuthService : IAuthService
         {
             _logger.LogError(ex, "Failed to retrieve user salt from secure storage");
             return null;
-        }
-    }
-
-    /// <summary>
-    /// Authenticates user with master password for a specific user email
-    /// Useful when multiple users share the same master key but have different roles
-    /// </summary>
-    public async Task<bool> AuthenticateAsUserAsync(string masterPassword, string userEmail)
-    {
-        try
-        {
-            // Find specific user by email
-            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
-            if (user == null)
-            {
-                _logger.LogWarning("User {Email} not found in database", userEmail);
-                return false;
-            }
-
-            // Verify master password for this specific user
-            if (string.IsNullOrEmpty(user.UserSalt) || string.IsNullOrEmpty(user.MasterPasswordHash))
-            {
-                _logger.LogWarning("User {Email} missing required authentication data", userEmail);
-                return false;
-            }
-
-            var userSalt = Convert.FromBase64String(user.UserSalt);
-            var isValid = _passwordCryptoService.VerifyMasterPassword(
-                masterPassword, 
-                user.MasterPasswordHash, 
-                userSalt
-            );
-
-            if (isValid)
-            {
-                // Derive master key for session
-                var masterKey = _passwordCryptoService.DeriveMasterKey(masterPassword, userSalt);
-                
-                // Initialize session with master key
-                var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
-                
-                // Store session in secure storage
-                await _secureStorageService.SetAsync("sessionId", sessionId);
-                await _secureStorageService.SetAsync("isAuthenticated", "true");
-                await _secureStorageService.SetAsync("currentUserId", user.Id);
-                await _secureStorageService.SetAsync("currentUserEmail", user.Email);
-                
-                _isAuthenticated = true;
-                _currentUser = user;
-                
-                _logger.LogInformation("User {UserId} ({Email}) authenticated successfully as specific user", user.Id, user.Email);
-                return true;
-            }
-
-            _logger.LogWarning("Authentication failed for user {Email}", userEmail);
-            return false;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Authentication error for user {Email}", userEmail);
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Gets all available users that can be authenticated with the master key
-    /// </summary>
-    public async Task<List<ApplicationUser>> GetAvailableUsersAsync()
-    {
-        try
-        {
-            var users = await _dbContext.Users
-                .Where(u => !string.IsNullOrEmpty(u.UserSalt) && !string.IsNullOrEmpty(u.MasterPasswordHash))
-                .Select(u => new ApplicationUser 
-                { 
-                    Id = u.Id, 
-                    Email = u.Email, 
-                    FirstName = u.FirstName, 
-                    LastName = u.LastName 
-                })
-                .ToListAsync();
-
-            return users;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving available users");
-            return new List<ApplicationUser>();
         }
     }
 }

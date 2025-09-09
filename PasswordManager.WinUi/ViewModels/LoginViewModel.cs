@@ -33,7 +33,7 @@ public class LoginViewModel : BaseViewModel
         _vaultSessionService = serviceProvider.GetRequiredService<IVaultSessionService>();
         _secureStorageService = serviceProvider.GetRequiredService<ISecureStorageService>();
         _userProfileService = serviceProvider.GetRequiredService<IUserProfileService>();
-        
+
         // Initialize with default state and then asynchronously update
         UpdateUIForSetupMode(); // Set initial UI state
         _ = InitializeAsync();
@@ -44,7 +44,7 @@ public class LoginViewModel : BaseViewModel
         try
         {
             IsLoading = true;
-            
+
             // First check if user is already authenticated
             var isAlreadyAuthenticated = await _authService.IsAuthenticatedAsync();
             if (isAlreadyAuthenticated)
@@ -92,7 +92,7 @@ public class LoginViewModel : BaseViewModel
     private void UpdateUIForSetupMode()
     {
         System.Diagnostics.Debug.WriteLine($"UpdateUIForSetupMode called - IsFirstTimeSetup: {_isFirstTimeSetup}");
-        
+
         if (_isFirstTimeSetup)
         {
             PageTitle = "Set up Password Manager";
@@ -107,7 +107,7 @@ public class LoginViewModel : BaseViewModel
             PasswordLabel = "Master Password";
             PasswordPlaceholder = "Enter your master password";
         }
-        
+
         OnPropertyChanged(nameof(PageTitle));
         OnPropertyChanged(nameof(PrimaryButtonText));
         OnPropertyChanged(nameof(PasswordLabel));
@@ -117,7 +117,7 @@ public class LoginViewModel : BaseViewModel
         OnPropertyChanged(nameof(ShowPasswordHint));
         OnPropertyChanged(nameof(ShowProfileSelection));
         OnPropertyChanged(nameof(ShowPasswordEntry));
-        
+
         System.Diagnostics.Debug.WriteLine($"UpdateUIForSetupMode completed - PageTitle: {PageTitle}, PrimaryButtonText: {PrimaryButtonText}");
     }
 
@@ -280,7 +280,7 @@ public class LoginViewModel : BaseViewModel
 
         // Setup master password
         var setupResult = await _authService.SetupMasterPasswordAsync(MasterPassword, PasswordHint);
-        
+
         if (setupResult)
         {
             // Auto-authenticate after setup
@@ -304,10 +304,10 @@ public class LoginViewModel : BaseViewModel
         {
             return await AuthenticateSpecificUserAsync(SelectedUser, MasterPassword);
         }
-        
+
         // Fallback to original authentication
         var loginResult = await _authService.AuthenticateAsync(MasterPassword);
-        
+
         if (loginResult)
         {
             return true;
@@ -343,7 +343,7 @@ public class LoginViewModel : BaseViewModel
     {
         SelectedUser = user;
         ShowProfileSelection = false;
-        
+
         // Update UI for selected user
         if (!string.IsNullOrEmpty(user.FirstName) && !string.IsNullOrEmpty(user.LastName))
         {
@@ -357,7 +357,7 @@ public class LoginViewModel : BaseViewModel
         {
             PageTitle = "Welcome back!";
         }
-        
+
         OnPropertyChanged(nameof(ShowProfileSelection));
         OnPropertyChanged(nameof(ShowPasswordEntry));
     }
@@ -369,7 +369,7 @@ public class LoginViewModel : BaseViewModel
         PageTitle = "Sign In";
         MasterPassword = string.Empty;
         ErrorMessage = string.Empty;
-        
+
         OnPropertyChanged(nameof(ShowProfileSelection));
         OnPropertyChanged(nameof(ShowPasswordEntry));
     }
@@ -381,7 +381,7 @@ public class LoginViewModel : BaseViewModel
             // For now, use the general auth service
             // In a full implementation, we'd need to modify the auth service to support specific user authentication
             var loginResult = await _authService.AuthenticateAsync(masterPassword);
-            
+
             if (loginResult)
             {
                 return true;
@@ -418,7 +418,7 @@ public class LoginViewModel : BaseViewModel
         {
             IsLoading = true;
             ErrorMessage = string.Empty;
-            
+
             // Re-initialize the view model state
             await InitializeAsync();
         }

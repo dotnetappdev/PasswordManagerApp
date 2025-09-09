@@ -70,7 +70,7 @@ public class UserContextService
             // 2. Update the authentication context
             // 3. Clear any cached data from the previous user
             // 4. Reload data for the new user
-            
+
             _currentUser = targetUser;
             return true;
         }
@@ -104,7 +104,7 @@ public class UserContextService
         }
 
         var userId = _currentUser.Id;
-        
+
         // This is a simplified example - in reality, different entity types
         // might have different properties for user association
         return entity => EF.Property<string>(entity, "UserId") == userId;
@@ -128,7 +128,7 @@ public static class UserDataFilterExtensions
         // - Category.UserId
         // - Collection.UserId
         // etc.
-        
+
         return query.Where(entity => EF.Property<string>(entity, "UserId") == userId);
     }
 }

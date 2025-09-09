@@ -69,7 +69,7 @@ public class UserProfileSelectionViewModel : BaseViewModel
         {
             IsLoading = true;
             var users = await _userProfileService.GetAllUsersAsync();
-            
+
             UserProfiles.Clear();
             foreach (var user in users)
             {
@@ -113,8 +113,8 @@ public class UserProfileSelectionViewModel : BaseViewModel
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(CreateProfileFirstName) || 
-                string.IsNullOrWhiteSpace(CreateProfileLastName) || 
+            if (string.IsNullOrWhiteSpace(CreateProfileFirstName) ||
+                string.IsNullOrWhiteSpace(CreateProfileLastName) ||
                 string.IsNullOrWhiteSpace(CreateProfileEmail))
             {
                 return false;
@@ -191,7 +191,7 @@ public class UserProfileSelectionViewModel : BaseViewModel
     {
         var firstName = profile.FirstName?.Trim();
         var lastName = profile.LastName?.Trim();
-        
+
         if (!string.IsNullOrEmpty(firstName) && !string.IsNullOrEmpty(lastName))
         {
             return $"{firstName[0]}{lastName[0]}".ToUpper();

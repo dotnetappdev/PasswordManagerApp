@@ -20,7 +20,7 @@ public class ConfigurableAuthService : IAuthService
     private readonly HttpClient _httpClient;
     private readonly ISecureStorageService _secureStorageService;
     private readonly ILogger<ConfigurableAuthService> _logger;
-    
+
     private bool _isAuthenticated = false;
     private ApplicationUser? _currentUser;
 
@@ -60,7 +60,7 @@ public class ConfigurableAuthService : IAuthService
     public async Task<bool> IsAuthenticatedAsync()
     {
         var mode = await GetAuthenticationModeAsync();
-        
+
         if (mode == "Local Database")
         {
             var isAuth = await _localAuthService.IsAuthenticatedAsync();
@@ -81,9 +81,9 @@ public class ConfigurableAuthService : IAuthService
             try
             {
                 var apiUrl = await GetApiBaseUrlAsync();
-                _httpClient.DefaultRequestHeaders.Authorization = 
+                _httpClient.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-                
+
                 var response = await _httpClient.GetAsync($"{apiUrl}/auth/verify");
                 if (response.IsSuccessStatusCode)
                 {
@@ -110,7 +110,7 @@ public class ConfigurableAuthService : IAuthService
             {
                 _logger.LogError(ex, "Error verifying API session");
             }
-            
+
             _isAuthenticated = false;
             return false;
         }
@@ -119,7 +119,7 @@ public class ConfigurableAuthService : IAuthService
     public async Task<bool> LoginAsync(string usernameOrEmail, string password)
     {
         var mode = await GetAuthenticationModeAsync();
-        
+
         if (mode == "Local Database")
         {
             var result = await _localAuthService.LoginAsync(usernameOrEmail, password);
@@ -147,7 +147,7 @@ public class ConfigurableAuthService : IAuthService
                         // Store the session token
                         await _secureStorageService.SetAsync("apiSessionToken", authResponse.Token);
                         await _secureStorageService.SetAsync("apiTokenExpiry", authResponse.ExpiresAt.ToString());
-                        
+
                         _currentUser = new ApplicationUser
                         {
                             Id = authResponse.User.Id,
@@ -159,7 +159,7 @@ public class ConfigurableAuthService : IAuthService
                             LastLoginAt = authResponse.User.LastLoginAt,
                             IsActive = authResponse.User.IsActive
                         };
-                        
+
                         _isAuthenticated = true;
                         _logger.LogInformation("API login successful for user {Email}", usernameOrEmail);
                         return true;
@@ -167,7 +167,7 @@ public class ConfigurableAuthService : IAuthService
                 }
                 else
                 {
-                    _logger.LogWarning("API login failed for user {Email}: {StatusCode}", 
+                    _logger.LogWarning("API login failed for user {Email}: {StatusCode}",
                         usernameOrEmail, response.StatusCode);
                 }
             }
@@ -175,7 +175,7 @@ public class ConfigurableAuthService : IAuthService
             {
                 _logger.LogError(ex, "Error during API login for user {Email}", usernameOrEmail);
             }
-            
+
             return false;
         }
     }
@@ -183,7 +183,7 @@ public class ConfigurableAuthService : IAuthService
     public async Task<bool> RegisterAsync(string username, string password)
     {
         var mode = await GetAuthenticationModeAsync();
-        
+
         if (mode == "Local Database")
         {
             var result = await _localAuthService.RegisterAsync(username, password);
@@ -213,7 +213,7 @@ public class ConfigurableAuthService : IAuthService
                         // Store the session token
                         await _secureStorageService.SetAsync("apiSessionToken", authResponse.Token);
                         await _secureStorageService.SetAsync("apiTokenExpiry", authResponse.ExpiresAt.ToString());
-                        
+
                         _currentUser = new ApplicationUser
                         {
                             Id = authResponse.User.Id,
@@ -225,7 +225,7 @@ public class ConfigurableAuthService : IAuthService
                             LastLoginAt = authResponse.User.LastLoginAt,
                             IsActive = authResponse.User.IsActive
                         };
-                        
+
                         _isAuthenticated = true;
                         _logger.LogInformation("API registration successful for user {Email}", username);
                         return true;
@@ -233,7 +233,7 @@ public class ConfigurableAuthService : IAuthService
                 }
                 else
                 {
-                    _logger.LogWarning("API registration failed for user {Email}: {StatusCode}", 
+                    _logger.LogWarning("API registration failed for user {Email}: {StatusCode}",
                         username, response.StatusCode);
                 }
             }
@@ -241,7 +241,7 @@ public class ConfigurableAuthService : IAuthService
             {
                 _logger.LogError(ex, "Error during API registration for user {Email}", username);
             }
-            
+
             return false;
         }
     }
@@ -249,7 +249,7 @@ public class ConfigurableAuthService : IAuthService
     public async Task LogoutAsync()
     {
         var mode = await GetAuthenticationModeAsync();
-        
+
         if (mode == "Local Database")
         {
             await _localAuthService.LogoutAsync();
@@ -260,12 +260,12 @@ public class ConfigurableAuthService : IAuthService
             {
                 var apiUrl = await GetApiBaseUrlAsync();
                 var token = await _secureStorageService.GetAsync("apiSessionToken");
-                
+
                 if (!string.IsNullOrEmpty(token))
                 {
-                    _httpClient.DefaultRequestHeaders.Authorization = 
+                    _httpClient.DefaultRequestHeaders.Authorization =
                         new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-                    
+
                     await _httpClient.PostAsync($"{apiUrl}/auth/logout", null);
                 }
             }
@@ -280,7 +280,7 @@ public class ConfigurableAuthService : IAuthService
                 _secureStorageService.Remove("apiTokenExpiry");
             }
         }
-        
+
         _isAuthenticated = false;
         _currentUser = null;
     }
@@ -288,7 +288,7 @@ public class ConfigurableAuthService : IAuthService
     public async Task<bool> IsFirstTimeSetupAsync()
     {
         var mode = await GetAuthenticationModeAsync();
-        
+
         if (mode == "Local Database")
         {
             return await _localAuthService.IsFirstTimeSetupAsync();
@@ -310,7 +310,7 @@ public class ConfigurableAuthService : IAuthService
     public async Task<bool> SetupMasterPasswordAsync(string masterPassword, string hint = "")
     {
         var mode = await GetAuthenticationModeAsync();
-        
+
         if (mode == "Local Database")
         {
             return await _localAuthService.SetupMasterPasswordAsync(masterPassword, hint);
@@ -322,7 +322,7 @@ public class ConfigurableAuthService : IAuthService
             try
             {
                 var apiUrl = await GetApiBaseUrlAsync();
-                var setupRequest = new 
+                var setupRequest = new
                 {
                     MasterPassword = masterPassword,
                     Hint = hint
@@ -342,7 +342,7 @@ public class ConfigurableAuthService : IAuthService
     public async Task<bool> AuthenticateAsync(string masterPassword)
     {
         var mode = await GetAuthenticationModeAsync();
-        
+
         if (mode == "Local Database")
         {
             var result = await _localAuthService.AuthenticateAsync(masterPassword);
@@ -357,7 +357,7 @@ public class ConfigurableAuthService : IAuthService
             try
             {
                 var apiUrl = await GetApiBaseUrlAsync();
-                var authRequest = new 
+                var authRequest = new
                 {
                     MasterPassword = masterPassword
                 };
@@ -370,7 +370,7 @@ public class ConfigurableAuthService : IAuthService
                     {
                         await _secureStorageService.SetAsync("apiSessionToken", authResponse.Token);
                         await _secureStorageService.SetAsync("apiTokenExpiry", authResponse.ExpiresAt.ToString());
-                        
+
                         _currentUser = new ApplicationUser
                         {
                             Id = authResponse.User.Id,
@@ -382,7 +382,7 @@ public class ConfigurableAuthService : IAuthService
                             LastLoginAt = authResponse.User.LastLoginAt,
                             IsActive = authResponse.User.IsActive
                         };
-                        
+
                         _isAuthenticated = true;
                         return true;
                     }
@@ -392,7 +392,7 @@ public class ConfigurableAuthService : IAuthService
             {
                 _logger.LogError(ex, "Error during API master password authentication");
             }
-            
+
             return false;
         }
     }
@@ -400,7 +400,7 @@ public class ConfigurableAuthService : IAuthService
     public async Task<string> GetMasterPasswordHintAsync()
     {
         var mode = await GetAuthenticationModeAsync();
-        
+
         if (mode == "Local Database")
         {
             return await _localAuthService.GetMasterPasswordHintAsync();
@@ -412,13 +412,13 @@ public class ConfigurableAuthService : IAuthService
             {
                 var apiUrl = await GetApiBaseUrlAsync();
                 var token = await _secureStorageService.GetAsync("apiSessionToken");
-                
+
                 if (!string.IsNullOrEmpty(token))
                 {
-                    _httpClient.DefaultRequestHeaders.Authorization = 
+                    _httpClient.DefaultRequestHeaders.Authorization =
                         new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
                 }
-                
+
                 var response = await _httpClient.GetAsync($"{apiUrl}/auth/password-hint");
                 if (response.IsSuccessStatusCode)
                 {
@@ -430,7 +430,7 @@ public class ConfigurableAuthService : IAuthService
             {
                 _logger.LogError(ex, "Error getting password hint from API");
             }
-            
+
             return "";
         }
     }
@@ -438,7 +438,7 @@ public class ConfigurableAuthService : IAuthService
     public async Task<bool> ChangeMasterPasswordAsync(string currentPassword, string newPassword, string newPasswordHint = "")
     {
         var mode = await GetAuthenticationModeAsync();
-        
+
         if (mode == "Local Database")
         {
             return await _localAuthService.ChangeMasterPasswordAsync(currentPassword, newPassword, newPasswordHint);
@@ -450,17 +450,17 @@ public class ConfigurableAuthService : IAuthService
             {
                 var apiUrl = await GetApiBaseUrlAsync();
                 var token = await _secureStorageService.GetAsync("apiSessionToken");
-                
+
                 if (string.IsNullOrEmpty(token))
                 {
                     _logger.LogWarning("No API session token found for password change");
                     return false;
                 }
-                
-                _httpClient.DefaultRequestHeaders.Authorization = 
+
+                _httpClient.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-                
-                var changePasswordRequest = new 
+
+                var changePasswordRequest = new
                 {
                     CurrentPassword = currentPassword,
                     NewPassword = newPassword,
@@ -482,7 +482,7 @@ public class ConfigurableAuthService : IAuthService
             {
                 _logger.LogError(ex, "Error during API master password change");
             }
-            
+
             return false;
         }
     }
