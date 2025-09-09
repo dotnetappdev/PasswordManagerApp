@@ -598,4 +598,40 @@ public class AuthService : IAuthService
         await Task.CompletedTask;
         return false;
     }
+
+    /// <summary>
+    /// Gets the current authenticated user's ID
+    /// </summary>
+    public async Task<string?> GetCurrentUserIdAsync()
+    {
+        try
+        {
+            // If we have a current user in memory, return their ID
+            if (_currentUser != null)
+            {
+                return _currentUser.Id;
+            }
+
+            // Try to get from session storage
+            var currentUserId = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "currentUserId");
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                return currentUserId;
+            }
+
+            // If authenticated but no specific user ID, get the first user (for backward compatibility)
+            if (_isAuthenticated)
+            {
+                var user = await _dbContext.Users.FirstOrDefaultAsync();
+                return user?.Id;
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting current user ID");
+            return null;
+        }
+    }
 }
