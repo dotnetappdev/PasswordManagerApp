@@ -162,17 +162,15 @@ public partial class App : Application
                     options.UseSqlite($"Data Source={defaultDbPath}"));
 
                 // Add Identity services with roles so all Identity tables are created
-                services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+                services.AddIdentityCore<ApplicationUser>(options =>
                 {
                     options.SignIn.RequireConfirmedAccount = false;
                     options.Password.RequireDigit = true;
-                    options.Password.RequiredLength = 8;
-                    options.Password.RequireNonAlphanumeric = false;
                     options.Password.RequireUppercase = true;
                     options.Password.RequireLowercase = true;
                 })
-                .AddEntityFrameworkStores<PasswordManagerDbContextApp>()
-                .AddDefaultTokenProviders();
+                .AddRoles<ApplicationRole>()
+                .AddEntityFrameworkStores<PasswordManagerDbContextApp>();
 
                 // Register the interface mapping for dependency injection
                 services.AddScoped<DAL.Interfaces.IPasswordManagerDbContext>(provider =>
