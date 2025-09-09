@@ -20,6 +20,19 @@ This allows you to log in to any user level using just the master key, without n
 
 All accounts use the common master key `CommonMaster123!` for authentication.
 
+### Authentication Methods
+
+1. **Automatic User Detection**: The app automatically finds the correct user account based on the master key identifier
+2. **Specific User Login**: Use `AuthenticateAsUserAsync(masterKey, email)` to login as a specific user role
+3. **Available Users**: Use `GetAvailableUsersAsync()` to see all users that can be authenticated with the master key
+
+### How It Works
+
+- Each user has their own unique salt and master key identifier
+- The common master key works with all users due to the master key identifier system
+- Users maintain separate encrypted vaults despite sharing the master key
+- Role-based permissions are enforced based on the authenticated user's role
+
 ## 🚀 Features Implemented
 
 ### ✅ Core Architecture
