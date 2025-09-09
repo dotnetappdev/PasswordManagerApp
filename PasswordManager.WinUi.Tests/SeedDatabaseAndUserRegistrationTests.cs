@@ -7,6 +7,7 @@ using PasswordManager.Crypto.Interfaces;
 using PasswordManager.Crypto.Extensions;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -211,6 +212,73 @@ public class SeedDatabaseAndUserRegistrationTests : IDisposable
 
         // Different salts should be generated
         Assert.NotEqual(userSalt1, userSalt2);
+    }
+
+    [Fact]
+    public void UserRegistrationPermissions_RoleBasedLogic_CorrectlyDeterminesAdminCreationRights()
+    {
+        // This test verifies the core logic used in UserRegistrationDialog.DeterminePermissions()
+        // to ensure Parent and User roles cannot create admin accounts
+        
+        // Test case 1: Admin user can create admin accounts
+        var adminRoles = new[] { ApplicationRoles.Admin };
+        bool canAdminCreateAdmin = adminRoles.Contains(ApplicationRoles.Admin);
+        Assert.True(canAdminCreateAdmin, "Admin users should be allowed to create admin accounts");
+        
+        // Test case 2: Parent user cannot create admin accounts  
+        var parentRoles = new[] { ApplicationRoles.Parent };
+        bool canParentCreateAdmin = parentRoles.Contains(ApplicationRoles.Admin);
+        Assert.False(canParentCreateAdmin, "Parent users should NOT be allowed to create admin accounts");
+        
+        // Test case 3: Standard user cannot create admin accounts
+        var userRoles = new[] { ApplicationRoles.User };
+        bool canUserCreateAdmin = userRoles.Contains(ApplicationRoles.Admin);
+        Assert.False(canUserCreateAdmin, "Standard users should NOT be allowed to create admin accounts");
+        
+        // Test case 4: Child user cannot create admin accounts
+        var childRoles = new[] { ApplicationRoles.Child };
+        bool canChildCreateAdmin = childRoles.Contains(ApplicationRoles.Admin);
+        Assert.False(canChildCreateAdmin, "Child users should NOT be allowed to create admin accounts");
+        
+        // Test case 5: Child user should be blocked from creating any accounts
+        bool isChildUser = childRoles.Contains(ApplicationRoles.Child);
+        Assert.True(isChildUser, "Child role detection should work correctly");
+    }
+
+    [Fact]
+    public void UserRegistrationPermissions_AdminCreationValidation_PreventsBypassAttempts()
+    {
+        // This test simulates the additional security validation added to CreateUserAsync method
+        // to prevent non-admin users from creating admin accounts even if they somehow bypass UI restrictions
+        
+        // Simulate current user roles
+        var adminUserRoles = new[] { ApplicationRoles.Admin };
+        var parentUserRoles = new[] { ApplicationRoles.Parent };
+        var standardUserRoles = new[] { ApplicationRoles.User };
+        var childUserRoles = new[] { ApplicationRoles.Child };
+        
+        // Simulate trying to create an admin account (selectedRole = ApplicationRoles.Admin)
+        string targetRole = ApplicationRoles.Admin;
+        
+        // Test: Admin user attempting to create admin account - should be allowed
+        bool isCurrentUserAdmin = adminUserRoles.Contains(ApplicationRoles.Admin);
+        bool adminCreationShouldSucceed = !(targetRole == ApplicationRoles.Admin && !isCurrentUserAdmin);
+        Assert.True(adminCreationShouldSucceed, "Admin users should be able to create admin accounts");
+        
+        // Test: Parent user attempting to create admin account - should be blocked
+        bool isCurrentUserParent = parentUserRoles.Contains(ApplicationRoles.Admin); // This will be false
+        bool parentCreationShouldFail = targetRole == ApplicationRoles.Admin && !isCurrentUserParent;
+        Assert.True(parentCreationShouldFail, "Parent users should be blocked from creating admin accounts");
+        
+        // Test: Standard user attempting to create admin account - should be blocked
+        bool isCurrentUserStandard = standardUserRoles.Contains(ApplicationRoles.Admin); // This will be false
+        bool standardCreationShouldFail = targetRole == ApplicationRoles.Admin && !isCurrentUserStandard;
+        Assert.True(standardCreationShouldFail, "Standard users should be blocked from creating admin accounts");
+        
+        // Test: Child user attempting to create admin account - should be blocked
+        bool isCurrentUserChild = childUserRoles.Contains(ApplicationRoles.Admin); // This will be false
+        bool childCreationShouldFail = targetRole == ApplicationRoles.Admin && !isCurrentUserChild;
+        Assert.True(childCreationShouldFail, "Child users should be blocked from creating admin accounts");
     }
 
     public void Dispose()

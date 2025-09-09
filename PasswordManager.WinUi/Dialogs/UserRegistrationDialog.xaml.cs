@@ -198,6 +198,20 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
                 selectedRole = ApplicationRoles.User;
             }
 
+            // Additional security validation: Ensure non-admin users cannot create admin accounts
+            if (selectedRole == ApplicationRoles.Admin && _currentUser != null)
+            {
+                var currentUserRoles = await _userManager.GetRolesAsync(_currentUser);
+                var isCurrentUserAdmin = currentUserRoles.Contains(ApplicationRoles.Admin);
+                
+                if (!isCurrentUserAdmin)
+                {
+                    ShowErrorMessage("Only administrators can create admin accounts. Access denied.");
+                    System.Diagnostics.Debug.WriteLine($"Security violation: User {_currentUser.Email} with roles [{string.Join(", ", currentUserRoles)}] attempted to create admin account");
+                    return false;
+                }
+            }
+
             // Generate cryptographic components
             var userSalt = _cryptoService.GenerateUserSalt();
             var masterPassword = MasterPasswordBox.Password;
