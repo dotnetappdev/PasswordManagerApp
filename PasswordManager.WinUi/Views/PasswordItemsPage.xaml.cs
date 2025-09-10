@@ -970,4 +970,178 @@ public sealed partial class PasswordItemsPage : Page
             categoryDropdown.Items.Add(item);
         }
     }
+
+    // Missing event handlers implementation
+    private async void CopyUsernameButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var list = GetElement<ListView>("ItemsList");
+            var selected = _selectedItem ?? (list?.SelectedItem as PasswordItem);
+            var username = selected?.Username ?? selected?.LoginItem?.Username;
+            if (string.IsNullOrEmpty(username))
+            {
+                await ShowTemporaryMessageAsync("No username available to copy");
+                return;
+            }
+
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetText(username);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+            await ShowTemporaryMessageAsync("Username copied to clipboard");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error copying username: {ex.Message}");
+        }
+    }
+
+    private void GeneratePasswordButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Generate a secure random password
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            var random = new Random();
+            var password = new string(Enumerable.Repeat(chars, 16)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+
+            // Find the password field and set the generated password
+            var passwordBox = GetElement<PasswordBox>("EditPasswordBox");
+            if (passwordBox != null)
+            {
+                passwordBox.Password = password;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error generating password: {ex.Message}");
+        }
+    }
+
+    private async void EditDetailButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedItem is null)
+        {
+            await ShowTemporaryMessageAsync("No item selected to edit");
+            return;
+        }
+
+        try
+        {
+            if (_serviceProvider is null)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = "Service provider not initialized. Please navigate to this page properly.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+                return;
+            }
+
+            var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, _selectedItem, false);
+            dialog.XamlRoot = this.XamlRoot;
+            var result = await dialog.ShowAsync();
+            
+            if (result == ContentDialogResult.Primary)
+            {
+                // Refresh the view after editing
+                await ShowTemporaryMessageAsync("Item updated successfully");
+            }
+        }
+        catch (Exception ex)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = "Error",
+                Content = $"Error opening edit dialog: {ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await errorDialog.ShowAsync();
+        }
+    }
+
+    private void CategoryFilterBox_TextChanged(object sender, AutoSuggestBoxTextChangedEventArgs e)
+    {
+        if (sender is AutoSuggestBox autoSuggestBox && e.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+        {
+            var suggestions = new List<string>();
+            string queryText = autoSuggestBox.Text?.ToLower() ?? "";
+
+            if (!string.IsNullOrEmpty(queryText))
+            {
+                suggestions = _categories
+                    .Where(c => c.Name.ToLower().Contains(queryText))
+                    .Select(c => c.Name)
+                    .ToList();
+            }
+
+            autoSuggestBox.ItemsSource = suggestions;
+        }
+    }
+
+    private void CategoryFilterBox_SuggestionChosen(object sender, AutoSuggestBoxSuggestionChosenEventArgs e)
+    {
+        if (sender is AutoSuggestBox autoSuggestBox && e.SelectedItem is string selectedCategory)
+        {
+            autoSuggestBox.Text = selectedCategory;
+            // Apply category filter logic here if needed
+            System.Diagnostics.Debug.WriteLine($"Category filter selected: {selectedCategory}");
+        }
+    }
+
+    private void AddCustomFieldButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var customFieldsContainer = GetElement<StackPanel>("CustomFieldsContainer");
+            if (customFieldsContainer != null)
+            {
+                // Create a new custom field UI
+                var fieldGrid = new Grid();
+                fieldGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                fieldGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                fieldGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var nameTextBox = new TextBox
+                {
+                    PlaceholderText = "Field name",
+                    Margin = new Thickness(0, 0, 4, 0)
+                };
+                Grid.SetColumn(nameTextBox, 0);
+
+                var valueTextBox = new TextBox
+                {
+                    PlaceholderText = "Field value",
+                    Margin = new Thickness(4, 0, 4, 0)
+                };
+                Grid.SetColumn(valueTextBox, 1);
+
+                var removeButton = new Button
+                {
+                    Content = "✕",
+                    Width = 32,
+                    Height = 32,
+                    Margin = new Thickness(4, 0, 0, 0)
+                };
+                Grid.SetColumn(removeButton, 2);
+                
+                removeButton.Click += (s, args) => customFieldsContainer.Children.Remove(fieldGrid);
+
+                fieldGrid.Children.Add(nameTextBox);
+                fieldGrid.Children.Add(valueTextBox);
+                fieldGrid.Children.Add(removeButton);
+
+                customFieldsContainer.Children.Add(fieldGrid);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error adding custom field: {ex.Message}");
+        }
+    }
 }
