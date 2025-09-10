@@ -398,4 +398,9 @@ public class SimpleAuthService : IAuthService
         Console.WriteLine("Master password change attempted");
         return Task.FromResult(true);
     }
+
+    public Task<string?> GetCurrentUserIdAsync()
+    {
+        return Task.FromResult(_currentUser?.Id);
+    }
 }
