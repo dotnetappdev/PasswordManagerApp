@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using PasswordManager.Crypto.Interfaces;
 using PasswordManager.DAL;
@@ -586,6 +588,91 @@ public class WinUiAuthService : IAuthService
         {
             _logger.LogError(ex, "Failed to retrieve user salt from secure storage");
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Gets all available users in the system
+    /// </summary>
+    /// <returns>List of available users</returns>
+    public async Task<List<ApplicationUser>> GetAvailableUsersAsync()
+    {
+        try
+        {
+            var users = await _dbContext.Users
+                .Where(u => u.IsActive)
+                .OrderBy(u => u.Email)
+                .ToListAsync();
+
+            _logger.LogInformation("Retrieved {UserCount} available users", users.Count);
+            return users;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving available users");
+            return new List<ApplicationUser>();
+        }
+    }
+
+    /// <summary>
+    /// Authenticates a specific user by email with master password
+    /// </summary>
+    /// <param name="masterPassword">The master password to verify</param>
+    /// <param name="email">The email of the user to authenticate</param>
+    /// <returns>True if authentication was successful</returns>
+    public async Task<bool> AuthenticateAsUserAsync(string masterPassword, string email)
+    {
+        try
+        {
+            // Find the specific user by email
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email && u.IsActive);
+            if (user == null)
+            {
+                _logger.LogWarning("User with email {Email} not found or inactive", email);
+                return false;
+            }
+
+            // Retrieve user salt from secure storage
+            var userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
+            if (userSalt == null)
+            {
+                _logger.LogError("Failed to retrieve user salt from secure storage for user {Email}", email);
+                return false;
+            }
+
+            // Verify master password
+            var isValid = _passwordCryptoService.VerifyMasterPassword(
+                masterPassword,
+                user.MasterPasswordHash!,
+                Convert.FromBase64String(user.UserSalt!)
+            );
+
+            if (isValid)
+            {
+                // Derive master key for session
+                var masterKey = _passwordCryptoService.DeriveMasterKey(masterPassword, userSalt);
+
+                // Initialize session with master key
+                var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
+
+                // Store session in secure storage instead of browser storage
+                await _secureStorageService.SetAsync("sessionId", sessionId);
+                await _secureStorageService.SetAsync("isAuthenticated", "true");
+
+                _isAuthenticated = true;
+                _currentUser = user;
+
+                _logger.LogInformation("User {Email} (ID: {UserId}) authenticated successfully", user.Email, user.Id);
+                return true;
+            }
+
+            _logger.LogWarning("Authentication failed for user {Email}", email);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Authentication error for user {Email}", email);
+            return false;
         }
     }
 }
