@@ -164,60 +164,108 @@
                                Spacing="32"
                                Visibility="{Binding ShowPasswordEntry, Converter={StaticResource BoolToVisibilityConverter}}">
 
-                        <!-- User Avatar and Welcome -->
+                        <!-- App Logo and Current User -->
                         <StackPanel HorizontalAlignment="Center"
-                                   Spacing="16">
-                            <!-- User Avatar -->
-                            <Border Background="#8B7355"
-                                    CornerRadius="32"
+                                   Spacing="24">
+                            
+                            <!-- App Logo (similar to 1Password) -->
+                            <Border Background="#4A90E2"
+                                    CornerRadius="20"
                                     Width="80"
                                     Height="80"
                                     HorizontalAlignment="Center">
-                                <TextBlock Text="👤"
+                                <FontIcon Glyph="&#xE192;"
                                           FontSize="40"
+                                          Foreground="White"
                                           HorizontalAlignment="Center"
                                           VerticalAlignment="Center"/>
                             </Border>
 
-                            <!-- Welcome Text -->
-                            <TextBlock Text="{Binding PageTitle, FallbackValue='Welcome back'}"
-                                       FontSize="20"
-                                       FontWeight="SemiBold"
-                                       Foreground="White"
+                            <!-- Current User Profile Display -->
+                            <StackPanel HorizontalAlignment="Center"
+                                       Spacing="12">
+                                <!-- User Avatar and Name -->
+                                <StackPanel Orientation="Horizontal"
+                                           HorizontalAlignment="Center"
+                                           Spacing="12">
+                                    <Border Background="#8B7355"
+                                            CornerRadius="20"
+                                            Width="40"
+                                            Height="40">
+                                        <TextBlock Text="👤"
+                                                  FontSize="20"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                                    </Border>
+                                    
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding SelectedUser.FirstName, FallbackValue='User'}"
+                                                   FontSize="16"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="White"
+                                                   HorizontalAlignment="Left"/>
+                                        <TextBlock Text="{Binding SelectedUser.Email, FallbackValue='user@example.com'}"
+                                                   FontSize="12"
+                                                   Foreground="#B0B0B0"
+                                                   HorizontalAlignment="Left"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                
+                                <!-- Discreet Switch Account Button -->
+                                <Button Content="Switch Account"
+                                       Background="Transparent"
+                                       Foreground="#B0B0B0"
+                                       BorderThickness="0"
+                                       FontSize="12"
+                                       Padding="8,4"
+                                       Click="BackToProfilesButton_Click"
                                        HorizontalAlignment="Center"/>
-                                       
-                            <!-- Back to Profile Selection -->
-                            <Button Content="← Switch Profile"
-                                   Background="Transparent"
-                                   Foreground="#B0B0B0"
-                                   BorderThickness="0"
-                                   FontSize="13"
-                                   Click="BackToProfilesButton_Click"/>
+                            </StackPanel>
                         </StackPanel>
 
                         <!-- Master Password Form -->
-                        <StackPanel Spacing="24" 
+                        <StackPanel Spacing="20" 
                                    HorizontalAlignment="Stretch">
 
                             <!-- Password Input -->
-                            <StackPanel Spacing="8">
+                            <StackPanel Spacing="12">
                                 <Border Background="#3A3A3A"
                                        CornerRadius="8"
                                        BorderBrush="#4A4A4A"
                                        BorderThickness="1"
                                        Padding="16,12"
                                        MinHeight="48">
-                                    <PasswordBox x:Name="MasterPasswordBox"
-                                                x:FieldModifier="private"
-                                                PlaceholderText="Enter your password"
-                                                Background="Transparent"
-                                                BorderThickness="0"
-                                                Foreground="White"
-                                                FontSize="16"
-                                                KeyDown="MasterPasswordBox_KeyDown"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <PasswordBox x:Name="MasterPasswordBox"
+                                                    x:FieldModifier="private"
+                                                    Grid.Column="0"
+                                                    PlaceholderText="Enter your password"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Foreground="White"
+                                                    FontSize="16"
+                                                    KeyDown="MasterPasswordBox_KeyDown"/>
+                                        
+                                        <!-- Eye icon for password visibility (like in reference image) -->
+                                        <Button Grid.Column="1"
+                                               Background="Transparent"
+                                               BorderThickness="0"
+                                               Width="32"
+                                               Height="32"
+                                               Padding="0">
+                                            <FontIcon Glyph="&#xE7B3;"
+                                                      FontSize="16"
+                                                      Foreground="#B0B0B0"/>
+                                        </Button>
+                                    </Grid>
                                 </Border>
                                 
-                                <!-- Lock Status Text -->
+                                <!-- Lock Status Text (like "1Password was locked manually.") -->
                                 <TextBlock Text="Password Manager was locked manually."
                                           FontSize="13"
                                           Foreground="#B0B0B0"
@@ -283,16 +331,24 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Action Button -->
-                            <Button x:Name="PrimaryActionButton"
-                                    x:FieldModifier="private"
-                                    Content="{Binding PrimaryButtonText, FallbackValue='Unlock'}"
-                                    Style="{StaticResource ModernPrimaryButtonStyle}"
-                                    HorizontalAlignment="Stretch"
-                                    MinHeight="48"
-                                    FontSize="16"
-                                    IsEnabled="{Binding IsButtonEnabled}"
-                                    Click="PrimaryActionButton_Click"/>
+                            <!-- Action Button with Smiley Face -->
+                            <StackPanel Spacing="16">
+                                <!-- Smiley face (like in reference image) -->
+                                <TextBlock Text="😊"
+                                          FontSize="24"
+                                          HorizontalAlignment="Center"
+                                          Visibility="{Binding ShowLockMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                
+                                <Button x:Name="PrimaryActionButton"
+                                        x:FieldModifier="private"
+                                        Content="{Binding PrimaryButtonText, FallbackValue='Unlock'}"
+                                        Style="{StaticResource ModernPrimaryButtonStyle}"
+                                        HorizontalAlignment="Stretch"
+                                        MinHeight="48"
+                                        FontSize="16"
+                                        IsEnabled="{Binding IsButtonEnabled}"
+                                        Click="PrimaryActionButton_Click"/>
+                            </StackPanel>
 
                             <!-- Progress Ring -->
                             <ProgressRing x:Name="AuthProgressRing"
@@ -306,10 +362,6 @@
                             <!-- Additional Options -->
                             <StackPanel Spacing="12"
                                        HorizontalAlignment="Center">
-                                <TextBlock Text="😊"
-                                          FontSize="24"
-                                          HorizontalAlignment="Center"
-                                          Visibility="Collapsed"/>
                                 
                                 <!-- Password Hint Display -->
                                 <Button Content="Show password hint"

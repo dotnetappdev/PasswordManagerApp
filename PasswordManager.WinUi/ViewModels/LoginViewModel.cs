@@ -26,6 +26,7 @@ public class LoginViewModel : BaseViewModel
     private bool _isButtonEnabled = true;
     private UserDto? _selectedUser;
     private bool _showProfileSelection = true;
+    private bool _showLockMessage = false;
 
     public LoginViewModel(IServiceProvider serviceProvider)
     {
@@ -66,9 +67,32 @@ public class LoginViewModel : BaseViewModel
                 _isFirstTimeSetup = true;
                 ShowProfileSelection = false;
             }
+            else if (activeUsers.Count == 1)
+            {
+                // Single user - automatically select them and show password entry
+                _isFirstTimeSetup = false;
+                var singleUser = activeUsers.First();
+                SelectedUser = singleUser;
+                ShowProfileSelection = false;
+                ShowLockMessage = true; // Show lock message for single user
+                
+                // Update UI for selected user
+                if (!string.IsNullOrEmpty(singleUser.FirstName) && !string.IsNullOrEmpty(singleUser.LastName))
+                {
+                    PageTitle = $"Welcome back, {singleUser.FirstName}!";
+                }
+                else if (!string.IsNullOrEmpty(singleUser.FirstName))
+                {
+                    PageTitle = $"Welcome back, {singleUser.FirstName}!";
+                }
+                else
+                {
+                    PageTitle = "Welcome back!";
+                }
+            }
             else
             {
-                // Users exist - show profile selection
+                // Multiple users - show profile selection by default
                 _isFirstTimeSetup = false;
                 ShowProfileSelection = true;
             }
@@ -207,6 +231,12 @@ public class LoginViewModel : BaseViewModel
 
     public bool ShowPasswordEntry => !ShowProfileSelection;
 
+    public bool ShowLockMessage
+    {
+        get => _showLockMessage;
+        set => SetProperty(ref _showLockMessage, value);
+    }
+
     // Legacy properties for backward compatibility (not used in new flow)
     public string Username { get; set; } = string.Empty;
     public string UsernameLabel { get; set; } = "Username";
@@ -343,6 +373,7 @@ public class LoginViewModel : BaseViewModel
     {
         SelectedUser = user;
         ShowProfileSelection = false;
+        ShowLockMessage = true; // Show lock message when user is selected
 
         // Update UI for selected user
         if (!string.IsNullOrEmpty(user.FirstName) && !string.IsNullOrEmpty(user.LastName))
@@ -360,18 +391,21 @@ public class LoginViewModel : BaseViewModel
 
         OnPropertyChanged(nameof(ShowProfileSelection));
         OnPropertyChanged(nameof(ShowPasswordEntry));
+        OnPropertyChanged(nameof(ShowLockMessage));
     }
 
     public void GoBackToProfileSelection()
     {
         SelectedUser = null;
         ShowProfileSelection = true;
-        PageTitle = "Sign In";
+        ShowLockMessage = false; // Hide lock message when going back to selection
+        PageTitle = "Choose Your Profile";
         MasterPassword = string.Empty;
         ErrorMessage = string.Empty;
 
         OnPropertyChanged(nameof(ShowProfileSelection));
         OnPropertyChanged(nameof(ShowPasswordEntry));
+        OnPropertyChanged(nameof(ShowLockMessage));
     }
 
     private async Task<bool> AuthenticateSpecificUserAsync(UserDto user, string masterPassword)
