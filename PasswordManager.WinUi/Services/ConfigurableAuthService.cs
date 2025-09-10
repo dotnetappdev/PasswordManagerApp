@@ -486,4 +486,51 @@ public class ConfigurableAuthService : IAuthService
             return false;
         }
     }
+
+    /// <summary>
+    /// Gets the current authenticated user's ID
+    /// </summary>
+    public async Task<string?> GetCurrentUserIdAsync()
+    {
+        var mode = await GetAuthenticationModeAsync();
+
+        if (mode == "Local Database")
+        {
+            return await _localAuthService.GetCurrentUserIdAsync();
+        }
+        else
+        {
+            try
+            {
+                // If we have a current user in memory, return their ID
+                if (_currentUser != null)
+                {
+                    return _currentUser.Id;
+                }
+
+                // Try to get user info from API if we have a valid session
+                var token = await _secureStorageService.GetAsync("apiSessionToken");
+                if (!string.IsNullOrEmpty(token))
+                {
+                    var apiUrl = await GetApiBaseUrlAsync();
+                    _httpClient.DefaultRequestHeaders.Authorization =
+                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                    var response = await _httpClient.GetAsync($"{apiUrl}/auth/current-user");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var userDto = await response.Content.ReadFromJsonAsync<UserDto>();
+                        return userDto?.Id;
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current user ID from API");
+                return null;
+            }
+        }
+    }
 }

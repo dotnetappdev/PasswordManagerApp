@@ -538,6 +538,35 @@ public class WinUiAuthService : IAuthService
     }
 
     /// <summary>
+    /// Gets the current authenticated user's ID
+    /// </summary>
+    public async Task<string?> GetCurrentUserIdAsync()
+    {
+        try
+        {
+            // If we have a current user in memory, return their ID
+            if (_currentUser != null)
+            {
+                return _currentUser.Id;
+            }
+
+            // If authenticated but no current user, try to get from database
+            if (_isAuthenticated)
+            {
+                var user = await _dbContext.Users.FirstOrDefaultAsync();
+                return user?.Id;
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting current user ID");
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Retrieves user salt from Windows secure storage
     /// </summary>
     private async Task<byte[]?> GetUserSaltSecurelyAsync(string userId)
