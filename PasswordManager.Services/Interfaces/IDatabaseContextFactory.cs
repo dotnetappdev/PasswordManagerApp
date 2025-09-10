@@ -8,4 +8,5 @@ public interface IDatabaseContextFactory
     Task<IPasswordManagerDbContext> CreateSqliteContextAsync();
     Task<IPasswordManagerDbContext> CreateSqlServerContextAsync();
     Task<IPasswordManagerDbContext> CreatePostgresContextAsync();
+    IPasswordManagerDbContext CreateDbContext();
 }
