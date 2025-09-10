@@ -187,6 +187,11 @@ public class MockAuthService : IAuthService
         _hint = newPasswordHint;
         return Task.FromResult(true);
     }
+
+    public Task<string?> GetCurrentUserIdAsync()
+    {
+        return Task.FromResult(_currentUser?.Id);
+    }
 }
 
 /// <summary>
