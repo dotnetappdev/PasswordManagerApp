@@ -129,6 +129,17 @@ builder.Services.AddScoped<PasswordManager.DAL.Seed.IdentityDataSeeder>();
 // Add HttpClient for API calls
 builder.Services.AddHttpClient();
 
+// Add HttpClient for API communication with Bearer token support
+builder.Services.AddHttpClient("PasswordManagerAPI", client =>
+{
+    var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7001";
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+// Add API service for external API communication if needed
+builder.Services.AddScoped<IAppSyncService, PasswordManager.Services.Services.AppSyncService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

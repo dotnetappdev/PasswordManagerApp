@@ -1,0 +1,419 @@
+@page "/profilelogin"
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Models.DTOs.Auth
+@using Microsoft.AspNetCore.Components.Web
+@inject IUserProfileService UserProfileService
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-0" Style="height: 100vh; display: flex;">
+    <!-- Left Side: App Branding -->
+    <MudPaper Class="flex-none" Style="width: 60%; background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%); display: flex; align-items: center; justify-content: center;">
+        <MudStack AlignItems="AlignItems.Center" Spacing="6">
+            <!-- Large App Icon -->
+            <MudAvatar Style="width: 120px; height: 120px; background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);">
+                <MudIcon Icon="@Icons.Material.Filled.VpnKey" Size="Size.Large" Style="font-size: 60px;" />
+            </MudAvatar>
+
+            <!-- App Title -->
+            <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                <MudText Typo="Typo.h3" Style="color: white; font-weight: bold;">Password Manager</MudText>
+                <MudText Typo="Typo.h6" Style="color: #B0B0B0;">Secure your digital life</MudText>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+
+    <!-- Right Side: Profile Selection/Login -->
+    <MudPaper Class="flex-grow" Style="background-color: #404040; display: flex; align-items: center; justify-content: center; padding: 40px;">
+        <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
+            
+            @if (showProfileSelection && userProfiles.Any())
+            {
+                <!-- Profile Selection View -->
+                <MudStack AlignItems="AlignItems.Center" Spacing="6">
+                    <!-- Profile Selection Header -->
+                    <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                        <MudText Typo="Typo.h4" Style="color: white; font-weight: 600;">Choose Your Profile</MudText>
+                        <MudText Typo="Typo.body1" Style="color: #B0B0B0; text-align: center;">
+                            Select a profile to continue to your secure vault
+                        </MudText>
+                    </MudStack>
+
+                    <!-- User Profiles List -->
+                    <MudContainer Class="pa-0" Style="max-height: 400px; overflow-y: auto;">
+                        <MudStack Spacing="3">
+                            @foreach (var profile in userProfiles)
+                            {
+                                <MudButton Variant="Variant.Outlined" 
+                                          FullWidth="true"
+                                          Class="pa-4"
+                                          Style="background-color: #2D2D2D; border-color: #4A4A4A; border-radius: 12px; min-height: 80px; justify-content: flex-start;"
+                                          OnClick="() => SelectProfile(profile)">
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="3" Class="full-width">
+                                        <!-- Profile Avatar -->
+                                        <MudAvatar Size="Size.Large" 
+                                                  Style="background: linear-gradient(135deg, #8B7355 0%, #A68B5B 100%);">
+                                            <MudIcon Icon="@Icons.Material.Filled.Person" />
+                                        </MudAvatar>
+                                        
+                                        <!-- Profile Info -->
+                                        <MudStack Class="flex-grow" AlignItems="AlignItems.Start" Spacing="1">
+                                            <MudText Typo="Typo.h6" Style="color: white; font-weight: 600;">
+                                                @(profile.FirstName ?? "User")
+                                            </MudText>
+                                            <MudText Typo="Typo.body2" Style="color: #B0B0B0;">
+                                                @profile.Email
+                                            </MudText>
+                                        </MudStack>
+                                    </MudStack>
+                                </MudButton>
+                            }
+                        </MudStack>
+                    </MudContainer>
+
+                    <!-- Create New Profile Button -->
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Primary" 
+                              FullWidth="true"
+                              Class="pa-3"
+                              Style="border-radius: 8px;"
+                              OnClick="ShowCreateProfile"
+                              StartIcon="@Icons.Material.Filled.Add">
+                        Create New Profile
+                    </MudButton>
+                </MudStack>
+            }
+            else if (showCreateProfile)
+            {
+                <!-- Create Profile View -->
+                <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                    <MudText Typo="Typo.h4" Style="color: white; font-weight: 600;">Create Your Profile</MudText>
+                    
+                    <MudForm @ref="createProfileForm" @bind-IsValid="@createProfileFormValid">
+                        <MudStack Spacing="3">
+                            <MudTextField @bind-value="newProfile.FirstName" 
+                                         Label="First Name" 
+                                         Variant="Variant.Outlined"
+                                         Required="true"
+                                         Style="background-color: #2a2a2a;" />
+
+                            <MudTextField @bind-value="newProfile.LastName" 
+                                         Label="Last Name" 
+                                         Variant="Variant.Outlined"
+                                         Style="background-color: #2a2a2a;" />
+
+                            <MudTextField @bind-value="newProfile.Email" 
+                                         Label="Email" 
+                                         Variant="Variant.Outlined"
+                                         Required="true"
+                                         InputType="InputType.Email"
+                                         Style="background-color: #2a2a2a;" />
+
+                            <MudTextField @bind-value="newProfile.Password" 
+                                         Label="Master Password" 
+                                         Variant="Variant.Outlined"
+                                         Required="true"
+                                         InputType="@(showPassword ? InputType.Text : InputType.Password)"
+                                         Style="background-color: #2a2a2a;"
+                                         Adornment="Adornment.End"
+                                         AdornmentIcon="@(showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                                         OnAdornmentClick="TogglePasswordVisibility" />
+
+                            <MudTextField @bind-value="newProfile.ConfirmPassword" 
+                                         Label="Confirm Password" 
+                                         Variant="Variant.Outlined"
+                                         Required="true"
+                                         InputType="@(showPassword ? InputType.Text : InputType.Password)"
+                                         Style="background-color: #2a2a2a;" />
+
+                            <MudTextField @bind-value="newProfile.MasterPasswordHint" 
+                                         Label="Password Hint (Optional)" 
+                                         Variant="Variant.Outlined"
+                                         Style="background-color: #2a2a2a;" />
+                        </MudStack>
+                    </MudForm>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <MudAlert Severity="Severity.Error" ShowCloseIcon="true" CloseIconClicked="@(() => errorMessage = null)">
+                            @errorMessage
+                        </MudAlert>
+                    }
+
+                    <MudStack Row Spacing="2" Class="full-width">
+                        <MudButton Variant="Variant.Outlined" 
+                                  Color="Color.Secondary" 
+                                  FullWidth="true"
+                                  OnClick="BackToProfileSelection"
+                                  StartIcon="@Icons.Material.Filled.ArrowBack">
+                            Back
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Primary" 
+                                  FullWidth="true"
+                                  Disabled="isCreating || !createProfileFormValid"
+                                  OnClick="CreateProfile"
+                                  StartIcon="@Icons.Material.Filled.PersonAdd">
+                            @if (isCreating)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                <MudText Class="ml-2">Creating...</MudText>
+                            }
+                            else
+                            {
+                                <MudText>Create Profile</MudText>
+                            }
+                        </MudButton>
+                    </MudStack>
+                </MudStack>
+            }
+            else
+            {
+                <!-- Master Password Entry View -->
+                <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                    @if (selectedProfile != null)
+                    {
+                        <!-- Selected Profile Info -->
+                        <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                            <MudAvatar Size="Size.Large" 
+                                      Style="background: linear-gradient(135deg, #8B7355 0%, #A68B5B 100%);">
+                                <MudIcon Icon="@Icons.Material.Filled.Person" />
+                            </MudAvatar>
+                            <MudText Typo="Typo.h5" Style="color: white; font-weight: 600;">
+                                Welcome back, @(selectedProfile.FirstName ?? "User")
+                            </MudText>
+                            <MudText Typo="Typo.body2" Style="color: #B0B0B0;">
+                                @selectedProfile.Email
+                            </MudText>
+                        </MudStack>
+                    }
+
+                    <!-- Master Password Input -->
+                    <MudForm @ref="loginForm" @bind-IsValid="@loginFormValid">
+                        <MudStack Spacing="3">
+                            <MudTextField @bind-value="masterPassword" 
+                                         Label="Master Password" 
+                                         Variant="Variant.Outlined"
+                                         Required="true"
+                                         InputType="@(showPassword ? InputType.Text : InputType.Password)"
+                                         Style="background-color: #2a2a2a; min-width: 300px;"
+                                         Adornment="Adornment.End"
+                                         AdornmentIcon="@(showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                                         OnAdornmentClick="TogglePasswordVisibility"
+                                         @onkeyup="OnKeyUp" />
+                        </MudStack>
+                    </MudForm>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <MudAlert Severity="Severity.Error" ShowCloseIcon="true" CloseIconClicked="@(() => errorMessage = null)">
+                            @errorMessage
+                        </MudAlert>
+                    }
+
+                    <MudStack Row Spacing="2" Class="full-width">
+                        <MudButton Variant="Variant.Outlined" 
+                                  Color="Color.Secondary" 
+                                  FullWidth="true"
+                                  OnClick="BackToProfileSelection"
+                                  StartIcon="@Icons.Material.Filled.ArrowBack">
+                            Back
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Primary" 
+                                  FullWidth="true"
+                                  Disabled="isLoggingIn || !loginFormValid"
+                                  OnClick="Login"
+                                  StartIcon="@Icons.Material.Filled.Lock">
+                            @if (isLoggingIn)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                <MudText Class="ml-2">Signing in...</MudText>
+                            }
+                            else
+                            {
+                                <MudText>Sign In</MudText>
+                            }
+                        </MudButton>
+                    </MudStack>
+                </MudStack>
+            }
+        </MudContainer>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<UserDto> userProfiles = new();
+    private UserDto? selectedProfile = null;
+    private CreateUserProfileDto newProfile = new();
+    private string masterPassword = "";
+    private string errorMessage = "";
+    
+    private bool showProfileSelection = true;
+    private bool showCreateProfile = false;
+    private bool showPassword = false;
+    private bool isLoggingIn = false;
+    private bool isCreating = false;
+    
+    private MudForm? loginForm;
+    private MudForm? createProfileForm;
+    private bool loginFormValid = false;
+    private bool createProfileFormValid = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if user is already authenticated
+        var isAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (isAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        await LoadUserProfiles();
+        
+        // If no profiles exist, show create profile form
+        if (!userProfiles.Any())
+        {
+            showProfileSelection = false;
+            showCreateProfile = true;
+        }
+    }
+
+    private async Task LoadUserProfiles()
+    {
+        try
+        {
+            userProfiles = await UserProfileService.GetAllUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading profiles: {ex.Message}";
+        }
+    }
+
+    private void SelectProfile(UserDto profile)
+    {
+        selectedProfile = profile;
+        showProfileSelection = false;
+        showCreateProfile = false;
+        masterPassword = "";
+        errorMessage = "";
+    }
+
+    private void ShowCreateProfile()
+    {
+        showCreateProfile = true;
+        showProfileSelection = false;
+        newProfile = new CreateUserProfileDto();
+        errorMessage = "";
+    }
+
+    private void BackToProfileSelection()
+    {
+        showProfileSelection = true;
+        showCreateProfile = false;
+        selectedProfile = null;
+        masterPassword = "";
+        errorMessage = "";
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+
+    private async Task OnKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && loginFormValid && !isLoggingIn)
+        {
+            await Login();
+        }
+    }
+
+    private async Task Login()
+    {
+        if (selectedProfile == null || string.IsNullOrEmpty(masterPassword))
+            return;
+
+        try
+        {
+            isLoggingIn = true;
+            errorMessage = "";
+
+            var success = await AuthService.LoginAsync(selectedProfile.Email, masterPassword);
+            if (success)
+            {
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                errorMessage = "Invalid password. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Login failed: {ex.Message}";
+        }
+        finally
+        {
+            isLoggingIn = false;
+        }
+    }
+
+    private async Task CreateProfile()
+    {
+        if (!createProfileFormValid)
+            return;
+
+        try
+        {
+            isCreating = true;
+            errorMessage = "";
+
+            var result = await UserProfileService.CreateUserAsync(newProfile);
+            if (result.Result.Succeeded && result.User != null)
+            {
+                // Auto-login the new user
+                var loginSuccess = await AuthService.LoginAsync(newProfile.Email, newProfile.Password);
+                if (loginSuccess)
+                {
+                    Navigation.NavigateTo("/");
+                }
+                else
+                {
+                    // Refresh profiles and go back to selection
+                    await LoadUserProfiles();
+                    BackToProfileSelection();
+                }
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage ?? "Failed to create profile. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error creating profile: {ex.Message}";
+        }
+        finally
+        {
+            isCreating = false;
+        }
+    }
+}
+
+<style>
+    .full-width {
+        width: 100%;
+    }
+    
+    .flex-grow {
+        flex-grow: 1;
+    }
+    
+    .flex-none {
+        flex: none;
+    }
+</style>
