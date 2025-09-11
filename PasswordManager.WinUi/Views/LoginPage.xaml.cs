@@ -55,12 +55,6 @@ public sealed partial class LoginPage : Page
             // Set data context for the main view
             this.DataContext = _viewModel;
 
-            // Set data context for user profiles list
-            if (this.FindName("UserProfilesList") is ItemsControl userProfilesList)
-            {
-                userProfilesList.ItemsSource = _profileSelectionViewModel.UserProfiles;
-            }
-
             System.Diagnostics.Debug.WriteLine($"LoginPage DataContext set - ViewModel created");
             System.Diagnostics.Debug.WriteLine($"Initial ViewModel state - PageTitle: {_viewModel.PageTitle}, PrimaryButtonText: {_viewModel.PrimaryButtonText}");
 

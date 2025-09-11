@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Models.DTOs.Auth;
 using PasswordManager.Services.Interfaces;
 using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -27,6 +28,7 @@ public class LoginViewModel : BaseViewModel
     private UserDto? _selectedUser;
     private bool _showProfileSelection = true;
     private bool _showLockMessage = false;
+    private ObservableCollection<UserDto> _userProfiles = new();
 
     public LoginViewModel(IServiceProvider serviceProvider)
     {
@@ -57,9 +59,22 @@ public class LoginViewModel : BaseViewModel
                 return;
             }
 
+            // Wait for database initialization to complete to avoid race condition
+            await WaitForDatabaseInitializationAsync();
+
             // Check if there are any existing users
             var users = await _userProfileService.GetAllUsersAsync();
-            var activeUsers = users.Where(u => u.IsActive).ToList();
+            var activeUsers = users?.Where(u => u?.IsActive == true).ToList() ?? new List<UserDto>();
+
+            // Update the UserProfiles collection for binding
+            UserProfiles.Clear();
+            foreach (var user in activeUsers)
+            {
+                if (user != null)
+                {
+                    UserProfiles.Add(user);
+                }
+            }
 
             if (activeUsers.Count == 0)
             {
@@ -72,22 +87,33 @@ public class LoginViewModel : BaseViewModel
                 // Single user - automatically select them and show password entry
                 _isFirstTimeSetup = false;
                 var singleUser = activeUsers.First();
-                SelectedUser = singleUser;
-                ShowProfileSelection = false;
-                ShowLockMessage = true; // Show lock message for single user
                 
-                // Update UI for selected user
-                if (!string.IsNullOrEmpty(singleUser.FirstName) && !string.IsNullOrEmpty(singleUser.LastName))
+                // Null-safe check for user properties
+                if (singleUser != null)
                 {
-                    PageTitle = $"Welcome back, {singleUser.FirstName}!";
-                }
-                else if (!string.IsNullOrEmpty(singleUser.FirstName))
-                {
-                    PageTitle = $"Welcome back, {singleUser.FirstName}!";
+                    SelectedUser = singleUser;
+                    ShowProfileSelection = false;
+                    ShowLockMessage = true; // Show lock message for single user
+                    
+                    // Update UI for selected user with null-safe property access
+                    if (!string.IsNullOrEmpty(singleUser.FirstName) && !string.IsNullOrEmpty(singleUser.LastName))
+                    {
+                        PageTitle = $"Welcome back, {singleUser.FirstName}!";
+                    }
+                    else if (!string.IsNullOrEmpty(singleUser.FirstName))
+                    {
+                        PageTitle = $"Welcome back, {singleUser.FirstName}!";
+                    }
+                    else
+                    {
+                        PageTitle = "Welcome back!";
+                    }
                 }
                 else
                 {
-                    PageTitle = "Welcome back!";
+                    // User is null, fallback to first-time setup
+                    _isFirstTimeSetup = true;
+                    ShowProfileSelection = false;
                 }
             }
             else
@@ -110,6 +136,48 @@ public class LoginViewModel : BaseViewModel
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Waits for database initialization to complete to avoid race condition with seeding
+    /// </summary>
+    private async Task WaitForDatabaseInitializationAsync()
+    {
+        const int maxWaitTimeMs = 10000; // 10 seconds max wait
+        const int pollIntervalMs = 100; // Check every 100ms
+        int totalWaitTime = 0;
+
+        try
+        {
+            // Try to access the user service to ensure database is ready
+            while (totalWaitTime < maxWaitTimeMs)
+            {
+                try
+                {
+                    // Attempt a simple database operation to check if initialization is complete
+                    var testUsers = await _userProfileService.GetAllUsersAsync();
+                    // If we get here without exception, database is ready
+                    System.Diagnostics.Debug.WriteLine($"Database initialization confirmed after {totalWaitTime}ms");
+                    return;
+                }
+                catch (Exception ex) when (ex.Message.Contains("no such table") || 
+                                          ex.Message.Contains("database is locked") ||
+                                          ex.Message.Contains("SQLite Error"))
+                {
+                    // Database still initializing, wait a bit more
+                    System.Diagnostics.Debug.WriteLine($"Database still initializing, waiting... ({totalWaitTime}ms elapsed)");
+                    await Task.Delay(pollIntervalMs);
+                    totalWaitTime += pollIntervalMs;
+                }
+            }
+            
+            System.Diagnostics.Debug.WriteLine($"Database initialization wait timeout after {maxWaitTimeMs}ms");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error during database initialization wait: {ex.Message}");
+            // Continue anyway, let the normal error handling deal with it
         }
     }
 
@@ -235,6 +303,12 @@ public class LoginViewModel : BaseViewModel
     {
         get => _showLockMessage;
         set => SetProperty(ref _showLockMessage, value);
+    }
+
+    public ObservableCollection<UserDto> UserProfiles
+    {
+        get => _userProfiles;
+        set => SetProperty(ref _userProfiles, value);
     }
 
     // Legacy properties for backward compatibility (not used in new flow)

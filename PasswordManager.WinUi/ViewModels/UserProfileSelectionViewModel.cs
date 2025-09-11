@@ -71,11 +71,14 @@ public class UserProfileSelectionViewModel : BaseViewModel
             var users = await _userProfileService.GetAllUsersAsync();
 
             UserProfiles.Clear();
-            foreach (var user in users)
+            if (users != null)
             {
-                if (user.IsActive)
+                foreach (var user in users)
                 {
-                    UserProfiles.Add(user);
+                    if (user?.IsActive == true)
+                    {
+                        UserProfiles.Add(user);
+                    }
                 }
             }
 
@@ -169,6 +172,9 @@ public class UserProfileSelectionViewModel : BaseViewModel
 
     public string GetProfileDisplayName(UserDto profile)
     {
+        if (profile == null)
+            return "Unknown User";
+            
         if (!string.IsNullOrEmpty(profile.FirstName) && !string.IsNullOrEmpty(profile.LastName))
         {
             return $"{profile.FirstName} {profile.LastName}";
@@ -183,12 +189,15 @@ public class UserProfileSelectionViewModel : BaseViewModel
         }
         else
         {
-            return profile.Email;
+            return profile.Email ?? "Unknown User";
         }
     }
 
     public string GetProfileInitials(UserDto profile)
     {
+        if (profile == null)
+            return "?";
+            
         var firstName = profile.FirstName?.Trim();
         var lastName = profile.LastName?.Trim();
 
@@ -206,7 +215,7 @@ public class UserProfileSelectionViewModel : BaseViewModel
         }
         else
         {
-            return profile.Email.Length > 0 ? profile.Email[0].ToString().ToUpper() : "?";
+            return !string.IsNullOrEmpty(profile.Email) && profile.Email.Length > 0 ? profile.Email[0].ToString().ToUpper() : "?";
         }
     }
 }
