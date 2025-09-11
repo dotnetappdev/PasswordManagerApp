@@ -38,32 +38,32 @@
                             {
                                 <MudDataGrid T="ChildUserInfo" Items="Children" Elevation="0" Class="mb-4">
                                     <Columns>
-                                        <PropertyColumn Property="x => x.FirstName" Title="First Name" />
-                                        <PropertyColumn Property="x => x.LastName" Title="Last Name" />
-                                        <PropertyColumn Property="x => x.Email" Title="Email" />
-                                        <PropertyColumn Property="x => x.LastLoginAt" Title="Last Login" Format="yyyy-MM-dd HH:mm" />
-                                        <TemplateColumn Title="Status">
-                                            <CellTemplate>
-                                                <MudChip Color="@(context.Item.IsActive ? Color.Success : Color.Error)" 
+                                        <MudBlazor.PropertyColumn Property="x => x.FirstName" Title="First Name" />
+                                        <MudBlazor.PropertyColumn Property="x => x.LastName" Title="Last Name" />
+                                        <MudBlazor.PropertyColumn Property="x => x.Email" Title="Email" />
+                                        <MudBlazor.PropertyColumn Property="x => x.LastLoginAt" Title="Last Login" Format="yyyy-MM-dd HH:mm" />
+                                        <MudBlazor.TemplateColumn Title="Status">
+                                            <CellTemplate Context="cellContext">
+                                                <MudChip T="string" Color="@(cellContext.Item.IsActive ? Color.Success : Color.Error)" 
                                                          Size="Size.Small">
-                                                    @(context.Item.IsActive ? "Active" : "Inactive")
+                                                    @(cellContext.Item.IsActive ? "Active" : "Inactive")
                                                 </MudChip>
                                             </CellTemplate>
-                                        </TemplateColumn>
-                                        <TemplateColumn Title="Actions">
-                                            <CellTemplate>
+                                        </MudBlazor.TemplateColumn>
+                                        <MudBlazor.TemplateColumn Title="Actions">
+                                            <CellTemplate Context="actionContext">
                                                 <MudIconButton Icon="Icons.Material.Filled.Settings" 
                                                                Color="Color.Primary" 
                                                                Size="Size.Small"
-                                                               OnClick="() => OpenPermissionsDialog(context.Item)"
+                                                               OnClick="() => OpenPermissionsDialog(actionContext.Item)"
                                                                Title="Manage Permissions" />
                                                 <MudIconButton Icon="Icons.Material.Filled.RemoveCircle" 
                                                                Color="Color.Error" 
                                                                Size="Size.Small"
-                                                               OnClick="() => RemoveChildRelationship(context.Item)"
+                                                               OnClick="() => RemoveChildRelationship(actionContext.Item)"
                                                                Title="Remove Relationship" />
                                             </CellTemplate>
-                                        </TemplateColumn>
+                                        </MudBlazor.TemplateColumn>
                                     </Columns>
                                 </MudDataGrid>
                             }
@@ -142,7 +142,7 @@
 </MudContainer>
 
 <!-- Child Permissions Dialog -->
-<MudDialog @bind-IsVisible="IsPermissionsDialogOpen" Options="@(new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true })">
+<MudDialog IsVisible="IsPermissionsDialogOpen" IsVisibleChanged="(value) => IsPermissionsDialogOpen = value" Options="@(new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true })">
     <TitleContent>
         <div style="display: flex; align-items: center;">
             <MudIcon Icon="Icons.Material.Filled.Security" Class="mr-3" />
@@ -156,27 +156,27 @@
                 <MudItem xs="12">
                     <MudText Typo="Typo.subtitle1" Class="mb-3">Password Operations</MudText>
                     
-                    <MudSwitch @bind-Checked="CurrentPermissions.CanViewPasswords"
+                    <MudSwitch T="bool" @bind-Checked="CurrentPermissions.CanViewPasswords"
                                Label="Can View Passwords"
                                Color="Color.Primary"
                                Class="mb-2" />
                     
-                    <MudSwitch @bind-Checked="CurrentPermissions.CanCreatePasswords"
+                    <MudSwitch T="bool" @bind-Checked="CurrentPermissions.CanCreatePasswords"
                                Label="Can Create Passwords"
                                Color="Color.Warning"
                                Class="mb-2" />
                     
-                    <MudSwitch @bind-Checked="CurrentPermissions.CanEditPasswords"
+                    <MudSwitch T="bool" @bind-Checked="CurrentPermissions.CanEditPasswords"
                                Label="Can Edit Passwords"
                                Color="Color.Warning"
                                Class="mb-2" />
                     
-                    <MudSwitch @bind-Checked="CurrentPermissions.CanDeletePasswords"
+                    <MudSwitch T="bool" @bind-Checked="CurrentPermissions.CanDeletePasswords"
                                Label="Can Delete Passwords"
                                Color="Color.Error"
                                Class="mb-2" />
                     
-                    <MudSwitch @bind-Checked="CurrentPermissions.CanRevealPasswords"
+                    <MudSwitch T="bool" @bind-Checked="CurrentPermissions.CanRevealPasswords"
                                Label="Can Reveal Password Details"
                                Color="Color.Error"
                                Class="mb-4" />
@@ -185,22 +185,22 @@
                 <MudItem xs="12">
                     <MudText Typo="Typo.subtitle1" Class="mb-3">Data Operations</MudText>
                     
-                    <MudSwitch @bind-Checked="CurrentPermissions.CanSharePasswords"
+                    <MudSwitch T="bool" @bind-Checked="CurrentPermissions.CanSharePasswords"
                                Label="Can Share Passwords"
                                Color="Color.Warning"
                                Class="mb-2" />
                     
-                    <MudSwitch @bind-Checked="CurrentPermissions.CanExportData"
+                    <MudSwitch T="bool" @bind-Checked="CurrentPermissions.CanExportData"
                                Label="Can Export Data"
                                Color="Color.Error"
                                Class="mb-2" />
                     
-                    <MudSwitch @bind-Checked="CurrentPermissions.CanCreateCollections"
+                    <MudSwitch T="bool" @bind-Checked="CurrentPermissions.CanCreateCollections"
                                Label="Can Create Collections"
                                Color="Color.Info"
                                Class="mb-2" />
                     
-                    <MudSwitch @bind-Checked="CurrentPermissions.CanManageOwnCollections"
+                    <MudSwitch T="bool" @bind-Checked="CurrentPermissions.CanManageOwnCollections"
                                Label="Can Manage Own Collections"
                                Color="Color.Info"
                                Class="mb-4" />
@@ -225,24 +225,24 @@
                     </MudGrid>
                     
                     <MudText Typo="Typo.body2" Class="mt-3 mb-2">Allowed Days of Week:</MudText>
-                    <MudCheckBox @bind-Checked="AllowedDays[0]" Label="Sunday" Dense="true" />
-                    <MudCheckBox @bind-Checked="AllowedDays[1]" Label="Monday" Dense="true" />
-                    <MudCheckBox @bind-Checked="AllowedDays[2]" Label="Tuesday" Dense="true" />
-                    <MudCheckBox @bind-Checked="AllowedDays[3]" Label="Wednesday" Dense="true" />
-                    <MudCheckBox @bind-Checked="AllowedDays[4]" Label="Thursday" Dense="true" />
-                    <MudCheckBox @bind-Checked="AllowedDays[5]" Label="Friday" Dense="true" />
-                    <MudCheckBox @bind-Checked="AllowedDays[6]" Label="Saturday" Dense="true" />
+                    <MudCheckBox T="bool" @bind-Checked="AllowedDays[0]" Label="Sunday" Dense="true" />
+                    <MudCheckBox T="bool" @bind-Checked="AllowedDays[1]" Label="Monday" Dense="true" />
+                    <MudCheckBox T="bool" @bind-Checked="AllowedDays[2]" Label="Tuesday" Dense="true" />
+                    <MudCheckBox T="bool" @bind-Checked="AllowedDays[3]" Label="Wednesday" Dense="true" />
+                    <MudCheckBox T="bool" @bind-Checked="AllowedDays[4]" Label="Thursday" Dense="true" />
+                    <MudCheckBox T="bool" @bind-Checked="AllowedDays[5]" Label="Friday" Dense="true" />
+                    <MudCheckBox T="bool" @bind-Checked="AllowedDays[6]" Label="Saturday" Dense="true" />
                 </MudItem>
                 
                 <MudItem xs="12">
                     <MudText Typo="Typo.subtitle1" Class="mb-3">Other Settings</MudText>
                     
-                    <MudSwitch @bind-Checked="CurrentPermissions.RequireParentApproval"
+                    <MudSwitch T="bool" @bind-Checked="CurrentPermissions.RequireParentApproval"
                                Label="Require Parent Approval for Changes"
                                Color="Color.Warning"
                                Class="mb-2" />
                     
-                    <MudSwitch @bind-Checked="CurrentPermissions.LogActivities"
+                    <MudSwitch T="bool" @bind-Checked="CurrentPermissions.LogActivities"
                                Label="Log Child Activities"
                                Color="Color.Info"
                                Class="mb-2" />
