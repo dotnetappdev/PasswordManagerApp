@@ -84,8 +84,7 @@
                         <ScrollViewer MaxHeight="300" 
                                      HorizontalScrollBarVisibility="Disabled"
                                      VerticalScrollBarVisibility="Auto">
-                            <ItemsControl x:Name="UserProfilesList"
-                                         ItemsSource="{Binding UserProfiles}">
+                            <ItemsControl x:Name="UserProfilesList">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <StackPanel Spacing="12"/>

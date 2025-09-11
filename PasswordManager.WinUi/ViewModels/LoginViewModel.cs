@@ -2,7 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Models.DTOs.Auth;
 using PasswordManager.Services.Interfaces;
 using System;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -28,7 +27,6 @@ public class LoginViewModel : BaseViewModel
     private UserDto? _selectedUser;
     private bool _showProfileSelection = true;
     private bool _showLockMessage = false;
-    private ObservableCollection<UserDto> _userProfiles = new();
 
     public LoginViewModel(IServiceProvider serviceProvider)
     {
@@ -65,16 +63,6 @@ public class LoginViewModel : BaseViewModel
             // Check if there are any existing users
             var users = await _userProfileService.GetAllUsersAsync();
             var activeUsers = users?.Where(u => u?.IsActive == true).ToList() ?? new List<UserDto>();
-
-            // Update the UserProfiles collection for binding
-            UserProfiles.Clear();
-            foreach (var user in activeUsers)
-            {
-                if (user != null)
-                {
-                    UserProfiles.Add(user);
-                }
-            }
 
             if (activeUsers.Count == 0)
             {
@@ -303,12 +291,6 @@ public class LoginViewModel : BaseViewModel
     {
         get => _showLockMessage;
         set => SetProperty(ref _showLockMessage, value);
-    }
-
-    public ObservableCollection<UserDto> UserProfiles
-    {
-        get => _userProfiles;
-        set => SetProperty(ref _userProfiles, value);
     }
 
     // Legacy properties for backward compatibility (not used in new flow)
