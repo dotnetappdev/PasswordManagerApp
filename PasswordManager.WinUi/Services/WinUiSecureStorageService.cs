@@ -15,14 +15,31 @@ public class WinUiSecureStorageService : ISecureStorageService
             // Use Windows Data Protection API (DPAPI) for secure storage
             var filePath = GetSecureFilePath(key);
             if (!File.Exists(filePath))
+            {
+                // Debug logging for missing salt files
+                if (key.StartsWith("userSalt_"))
+                {
+                    System.Diagnostics.Debug.WriteLine($"SecureStorage: Salt file not found for key '{key}' at path '{filePath}'");
+                }
                 return null;
+            }
 
             var encryptedData = await File.ReadAllBytesAsync(filePath);
             var decryptedData = ProtectedData.Unprotect(encryptedData, null, DataProtectionScope.CurrentUser);
-            return Encoding.UTF8.GetString(decryptedData);
+            var result = Encoding.UTF8.GetString(decryptedData);
+            
+            // Debug logging for salt retrieval
+            if (key.StartsWith("userSalt_"))
+            {
+                System.Diagnostics.Debug.WriteLine($"SecureStorage: Successfully retrieved salt for key '{key}'");
+            }
+            
+            return result;
         }
-        catch
+        catch (Exception ex)
         {
+            // Enhanced error logging
+            System.Diagnostics.Debug.WriteLine($"SecureStorage GetAsync error for key '{key}': {ex.Message}");
             return null;
         }
     }
@@ -42,10 +59,18 @@ public class WinUiSecureStorageService : ISecureStorageService
             }
 
             await File.WriteAllBytesAsync(filePath, encryptedData);
+            
+            // Debug logging for salt storage
+            if (key.StartsWith("userSalt_"))
+            {
+                System.Diagnostics.Debug.WriteLine($"SecureStorage: Stored salt for key '{key}' at path '{filePath}'");
+            }
         }
-        catch
+        catch (Exception ex)
         {
-            // Log error but don't throw - secure storage failures shouldn't crash the app
+            // Enhanced error logging for debugging
+            System.Diagnostics.Debug.WriteLine($"SecureStorage SetAsync error for key '{key}': {ex.Message}");
+            // Don't throw - secure storage failures shouldn't crash the app, but we should know about them
         }
     }
 

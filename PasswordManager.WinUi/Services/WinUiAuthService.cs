@@ -193,55 +193,100 @@ public class WinUiAuthService : IAuthService
     }
 
     /// <summary>
-    /// Authenticates user with master password
+    /// Authenticates user with master password - tries to find matching user by master key
     /// </summary>
     public async Task<bool> AuthenticateAsync(string masterPassword)
     {
         try
         {
-            // Get user from database (for single-user setup, get the first user)
-            var user = await _dbContext.Users.FirstOrDefaultAsync();
-            if (user == null)
+            // Get all active users from database to support common master key
+            var users = await _dbContext.Users.Where(u => u.IsActive).ToListAsync();
+            if (!users.Any())
             {
-                _logger.LogWarning("No user found in database");
+                _logger.LogWarning("No users found in database");
                 return false;
             }
 
-            // Retrieve user salt from secure storage
-            var userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
-            if (userSalt == null)
+            _logger.LogInformation("Attempting authentication with {UserCount} users in database", users.Count);
+
+            // Try to authenticate against each user until we find a match
+            foreach (var user in users)
             {
-                _logger.LogError("Failed to retrieve user salt from secure storage");
-                return false;
+                try
+                {
+                    _logger.LogDebug("Trying authentication for user {UserId} ({Email})", user.Id, user.Email);
+
+                    // Skip users without proper crypto setup
+                    if (string.IsNullOrEmpty(user.UserSalt) || string.IsNullOrEmpty(user.MasterPasswordHash))
+                    {
+                        _logger.LogWarning("User {UserId} missing crypto setup, skipping", user.Id);
+                        continue;
+                    }
+
+                    // Retrieve user salt from secure storage, with fallback to database
+                    var userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
+                    if (userSalt == null && !string.IsNullOrEmpty(user.UserSalt))
+                    {
+                        // Fallback: if salt not in secure storage, get it from database and store it securely
+                        _logger.LogDebug("User salt not found in secure storage, using salt from database for user {UserId}", user.Id);
+                        try
+                        {
+                            userSalt = Convert.FromBase64String(user.UserSalt);
+                            // Store it in secure storage for future use
+                            await StoreUserSaltSecurelyAsync(user.Id.ToString(), userSalt);
+                            _logger.LogDebug("User salt stored securely for user {UserId}", user.Id);
+                        }
+                        catch (Exception saltEx)
+                        {
+                            _logger.LogError(saltEx, "Failed to convert user salt from database for user {UserId}", user.Id);
+                            continue; // Try next user
+                        }
+                    }
+                    
+                    if (userSalt == null)
+                    {
+                        _logger.LogWarning("Failed to retrieve user salt for user {UserId}, skipping", user.Id);
+                        continue; // Try next user
+                    }
+
+                    // Verify master password against this user
+                    var isValid = _passwordCryptoService.VerifyMasterPassword(
+                        masterPassword,
+                        user.MasterPasswordHash!,
+                        Convert.FromBase64String(user.UserSalt!)
+                    );
+
+                    if (isValid)
+                    {
+                        // Derive master key for session
+                        var masterKey = _passwordCryptoService.DeriveMasterKey(masterPassword, userSalt);
+
+                        // Initialize session with master key
+                        var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
+
+                        // Store session in secure storage
+                        await _secureStorageService.SetAsync("sessionId", sessionId);
+                        await _secureStorageService.SetAsync("isAuthenticated", "true");
+
+                        _isAuthenticated = true;
+                        _currentUser = user;
+
+                        _logger.LogInformation("User {UserId} ({Email}) authenticated successfully with master password", user.Id, user.Email);
+                        return true;
+                    }
+                    else
+                    {
+                        _logger.LogDebug("Master password verification failed for user {UserId}", user.Id);
+                    }
+                }
+                catch (Exception userEx)
+                {
+                    _logger.LogWarning(userEx, "Error authenticating user {UserId}, trying next user", user.Id);
+                    continue; // Try next user
+                }
             }
 
-            // Verify master password
-            var isValid = _passwordCryptoService.VerifyMasterPassword(
-                masterPassword,
-                user.MasterPasswordHash!,
-                Convert.FromBase64String(user.UserSalt!)
-            );
-
-            if (isValid)
-            {
-                // Derive master key for session
-                var masterKey = _passwordCryptoService.DeriveMasterKey(masterPassword, userSalt);
-
-                // Initialize session with master key
-                var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
-
-                // Store session in secure storage instead of browser storage
-                await _secureStorageService.SetAsync("sessionId", sessionId);
-                await _secureStorageService.SetAsync("isAuthenticated", "true");
-
-                _isAuthenticated = true;
-                _currentUser = user;
-
-                _logger.LogInformation("User {UserId} authenticated successfully", user.Id);
-                return true;
-            }
-
-            _logger.LogWarning("Authentication failed for user {UserId}", user.Id);
+            _logger.LogWarning("Master password authentication failed for all {UserCount} users", users.Count);
             return false;
         }
         catch (Exception ex)
