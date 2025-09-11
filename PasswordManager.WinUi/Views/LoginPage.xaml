@@ -84,8 +84,7 @@
                         <ScrollViewer MaxHeight="300" 
                                      HorizontalScrollBarVisibility="Disabled"
                                      VerticalScrollBarVisibility="Auto">
-                            <ItemsControl x:Name="UserProfilesList"
-                                         ItemsSource="{Binding UserProfiles}">
+                            <ItemsControl x:Name="UserProfilesList">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <StackPanel Spacing="12"/>
@@ -129,12 +128,12 @@
                                                 <StackPanel Grid.Column="1"
                                                            VerticalAlignment="Center">
                                                     <TextBlock x:Name="ProfileName"
-                                                              Text="{Binding FirstName}"
+                                                              Text="{Binding FirstName, FallbackValue='User'}"
                                                               FontSize="16"
                                                               FontWeight="SemiBold"
                                                               Foreground="White"/>
                                                     <TextBlock x:Name="ProfileEmail"
-                                                              Text="{Binding Email}"
+                                                              Text="{Binding Email, FallbackValue='No email'}"
                                                               FontSize="13"
                                                               Foreground="#B0B0B0"/>
                                                 </StackPanel>
