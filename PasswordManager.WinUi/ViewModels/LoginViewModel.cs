@@ -60,6 +60,9 @@ public class LoginViewModel : BaseViewModel
             // Wait for database initialization to complete to avoid race condition
             await WaitForDatabaseInitializationAsync();
 
+            // Debug: Check if users are properly seeded
+            await DebugCheckUsersAsync();
+
             // Check if there are any existing users
             var users = await _userProfileService.GetAllUsersAsync();
             var activeUsers = users?.Where(u => u?.IsActive == true).ToList() ?? new List<UserDto>();
@@ -385,31 +388,74 @@ public class LoginViewModel : BaseViewModel
 
     private async Task<bool> LoginWithMasterPasswordAsync()
     {
-        // If we have a selected user, we need to authenticate against that specific user
-        if (SelectedUser != null)
+        try
         {
-            return await AuthenticateSpecificUserAsync(SelectedUser, MasterPassword);
-        }
+            // Add more detailed logging for debugging
+            System.Diagnostics.Debug.WriteLine($"LoginWithMasterPasswordAsync - Starting authentication process. SelectedUser: {SelectedUser?.Email ?? "None"}");
 
-        // Fallback to original authentication
-        var loginResult = await _authService.AuthenticateAsync(MasterPassword);
-
-        if (loginResult)
-        {
-            return true;
-        }
-        else
-        {
-            // Check if there's a password hint available
-            var hint = await _authService.GetMasterPasswordHintAsync();
-            if (!string.IsNullOrEmpty(hint))
+            // If we have a selected user, we need to authenticate against that specific user
+            if (SelectedUser != null)
             {
-                ErrorMessage = $"Incorrect master password. Hint: {hint}";
+                System.Diagnostics.Debug.WriteLine($"Authenticating specific user: {SelectedUser.Email}");
+                return await AuthenticateSpecificUserAsync(SelectedUser, MasterPassword);
+            }
+
+            // Fallback to original authentication (try all users)
+            System.Diagnostics.Debug.WriteLine("Attempting master password authentication against all users");
+            var loginResult = await _authService.AuthenticateAsync(MasterPassword);
+
+            if (loginResult)
+            {
+                System.Diagnostics.Debug.WriteLine("Authentication successful");
+                return true;
             }
             else
             {
-                ErrorMessage = "Incorrect master password. Please try again.";
+                System.Diagnostics.Debug.WriteLine("Authentication failed, checking for hints");
+                
+                // First check if any users exist in the database
+                try
+                {
+                    var users = await _userProfileService.GetAllUsersAsync();
+                    var activeUsers = users?.Where(u => u?.IsActive == true).ToList() ?? new List<UserDto>();
+                    
+                    if (activeUsers.Count == 0)
+                    {
+                        ErrorMessage = "No users found in the database. Please check your database setup or create a new account.";
+                        System.Diagnostics.Debug.WriteLine("No active users found in database");
+                        return false;
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Found {activeUsers.Count} active users in database");
+                    }
+                }
+                catch (Exception userEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error checking users: {userEx.Message}");
+                    ErrorMessage = "Database error occurred. Please check your database configuration.";
+                    return false;
+                }
+
+                // Check if there's a password hint available
+                var hint = await _authService.GetMasterPasswordHintAsync();
+                if (!string.IsNullOrEmpty(hint))
+                {
+                    ErrorMessage = $"Incorrect master password. Hint: {hint}";
+                }
+                else
+                {
+                    ErrorMessage = "Incorrect master password. Please try again. If this is your first login, try 'CommonMaster123!'";
+                }
+                
+                System.Diagnostics.Debug.WriteLine($"Authentication failed with error: {ErrorMessage}");
+                return false;
             }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"LoginWithMasterPasswordAsync error: {ex.Message}");
+            ErrorMessage = $"Login error: {ex.Message}";
             return false;
         }
     }
@@ -520,6 +566,38 @@ public class LoginViewModel : BaseViewModel
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Debug method to check if users are properly seeded with crypto data
+    /// </summary>
+    private async Task DebugCheckUsersAsync()
+    {
+        try
+        {
+            // Direct database check to verify seeded users
+            using var scope = ((App)Microsoft.UI.Xaml.Application.Current).Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManager.DAL.PasswordManagerDbContextApp>();
+            
+            var dbUsers = await dbContext.Users.ToListAsync();
+            System.Diagnostics.Debug.WriteLine($"=== DEBUG: Database User Check ===");
+            System.Diagnostics.Debug.WriteLine($"Total users in database: {dbUsers.Count}");
+            
+            foreach (var user in dbUsers)
+            {
+                System.Diagnostics.Debug.WriteLine($"User: {user.Email}");
+                System.Diagnostics.Debug.WriteLine($"  - IsActive: {user.IsActive}");
+                System.Diagnostics.Debug.WriteLine($"  - HasUserSalt: {!string.IsNullOrEmpty(user.UserSalt)}");
+                System.Diagnostics.Debug.WriteLine($"  - HasMasterPasswordHash: {!string.IsNullOrEmpty(user.MasterPasswordHash)}");
+                System.Diagnostics.Debug.WriteLine($"  - MasterPasswordHint: {user.MasterPasswordHint ?? "None"}");
+                System.Diagnostics.Debug.WriteLine($"  - HasMasterKeyIdentifier: {!string.IsNullOrEmpty(user.MasterKeyIdentifier)}");
+            }
+            System.Diagnostics.Debug.WriteLine($"=== End DEBUG ===");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"DEBUG: Error checking users: {ex.Message}");
         }
     }
 }
