@@ -36,7 +36,22 @@ public class MauiPlatformService : IPlatformService
     {
         try
         {
-            // Store app data under the platform app data directory to ensure persistence
+            // On Windows, use the same path as WinUI app for database sharing
+            if (DeviceInfo.Platform == DevicePlatform.WinUI)
+            {
+                var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                var appDir = Path.Combine(localAppData, "PasswordManager");
+                
+                // Ensure directory exists
+                if (!Directory.Exists(appDir))
+                {
+                    Directory.CreateDirectory(appDir);
+                }
+                
+                return appDir;
+            }
+            
+            // For other platforms, use the platform-specific app data directory
             return Path.Combine(FileSystem.AppDataDirectory, "PasswordManager");
         }
         catch
