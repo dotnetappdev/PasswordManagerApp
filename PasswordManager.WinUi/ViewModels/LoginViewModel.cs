@@ -3,7 +3,9 @@ using PasswordManager.Models.DTOs.Auth;
 using PasswordManager.Services.Interfaces;
 using System;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+
 
 namespace PasswordManager.WinUi.ViewModels;
 

@@ -9,6 +9,7 @@ using PasswordManager.WinUi.Models;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using PasswordManager.Services;
 
 namespace PasswordManager.WinUi;
 
@@ -32,6 +33,8 @@ public sealed partial class MainWindow : Window
 
         // Initialize navigation - start with Login if not authenticated, otherwise Home
         InitializeNavigation();
+    // Load dynamic categories for navigation
+    _ = RefreshCategoriesAsync();
     }
 
     private void InitializeNavigation()
@@ -441,15 +444,17 @@ public sealed partial class MainWindow : Window
             var tagDialog = new Dialogs.TagDialog(_serviceProvider);
             tagDialog.XamlRoot = this.Content.XamlRoot;
 
+            // Subscribe to saved event to refresh nav if needed
+            tagDialog.TagSaved += async (s, tag) =>
+            {
+                // For now, just refresh categories panel as tags may influence UI
+                await RefreshCategoriesAsync();
+            };
+
             var result = await tagDialog.ShowAsync();
             if (result == ContentDialogResult.Primary && tagDialog.Result is not null)
             {
                 System.Diagnostics.Debug.WriteLine($"Created new tag: {tagDialog.Result.Name}");
-
-                // TODO: Refresh the navigation menu to show the new tag
-                // This would require dynamically updating the navigation menu items
-
-                // Show success message
                 await ShowInfoMessage("Tag Created", $"Tag '{tagDialog.Result.Name}' has been created successfully.");
             }
         }
@@ -470,15 +475,16 @@ public sealed partial class MainWindow : Window
             var categoryDialog = new Dialogs.CategoryDialog(_serviceProvider);
             categoryDialog.XamlRoot = this.Content.XamlRoot;
 
+            // Subscribe to category saved event to refresh navigation
+            categoryDialog.CategorySaved += async (s, cat) =>
+            {
+                await RefreshCategoriesAsync();
+            };
+
             var result = await categoryDialog.ShowAsync();
             if (result == ContentDialogResult.Primary && categoryDialog.Result is not null)
             {
                 System.Diagnostics.Debug.WriteLine($"Created new category: {categoryDialog.Result.Name}");
-
-                // TODO: Refresh the navigation menu to show the new category
-                // This would require dynamically updating the navigation menu items
-
-                // Show success message
                 await ShowInfoMessage("Category Created", $"Category '{categoryDialog.Result.Name}' has been created successfully.");
             }
         }
@@ -486,6 +492,65 @@ public sealed partial class MainWindow : Window
         {
             System.Diagnostics.Debug.WriteLine($"Error creating category: {ex.Message}");
             await ShowErrorMessage("Error", $"Failed to create category: {ex.Message}");
+        }
+    }
+
+    // Populate the DynamicCategoriesPanel with categories from the service
+    public async Task RefreshCategoriesAsync()
+    {
+        try
+        {
+            var categoryService = _serviceProvider.GetService<PasswordManager.Services.Interfaces.ICategoryInterface>();
+            if (categoryService == null) return;
+
+            var categories = await categoryService.GetAllAsync();
+
+            // Update UI on dispatcher
+            Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+            {
+                var fe = this.Content as FrameworkElement;
+                var dynamicPanel = fe?.FindName("DynamicCategoriesPanel") as StackPanel;
+                if (dynamicPanel == null)
+                {
+                    return; // panel not available (e.g., XAML not loaded yet)
+                }
+                dynamicPanel.Children.Clear();
+
+                foreach (var cat in categories)
+                {
+                    // Safely obtain navigation item style; if not present, omit to avoid runtime COMException
+                    Microsoft.UI.Xaml.Style? navItemStyle = null;
+                    try
+                    {
+                        var fe = this.Content as FrameworkElement;
+                        if (fe != null && fe.Resources.TryGetValue("ModernNavigationViewItemStyle", out var styleObj))
+                        {
+                            navItemStyle = styleObj as Microsoft.UI.Xaml.Style;
+                        }
+                        else if (Application.Current.Resources.TryGetValue("ModernNavigationViewItemStyle", out var appStyleObj))
+                        {
+                            navItemStyle = appStyleObj as Microsoft.UI.Xaml.Style;
+                        }
+                    }
+                    catch { /* ignore lookup errors */ }
+
+                    var navItem = new NavigationViewItem
+                    {
+                        Content = cat.Name,
+                        Tag = $"{cat.Name}Category",
+                        Style = navItemStyle
+                    };
+
+                    // Attach right-tap handlers and context menu
+                    navItem.RightTapped += NavigationItem_RightTapped;
+
+                    dynamicPanel.Children.Add(navItem);
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error refreshing categories: {ex.Message}");
         }
     }
 

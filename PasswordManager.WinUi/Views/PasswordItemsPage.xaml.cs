@@ -561,14 +561,16 @@ public sealed partial class PasswordItemsPage : Page
 
             // First show the item type selection dialog (1Password style)
             var typeSelectionDialog = new Dialogs.ItemTypeSelectionDialog();
-            typeSelectionDialog.XamlRoot = this.XamlRoot;
+            // Prefer main window XamlRoot so the dialog is centered on the app window
+            var mainWindow = GetMainWindow();
+            typeSelectionDialog.XamlRoot = mainWindow?.Content.XamlRoot ?? this.XamlRoot;
 
             var typeResult = await typeSelectionDialog.ShowAsync();
             if (typeResult == ContentDialogResult.Primary || typeSelectionDialog.SelectedItemType != null)
             {
                 // Then show the main add dialog with the selected type pre-filled
                 var dialog = new Dialogs.AddPasswordDialog(_serviceProvider);
-                dialog.XamlRoot = this.XamlRoot;
+                dialog.XamlRoot = mainWindow?.Content.XamlRoot ?? this.XamlRoot;
 
                 // Pre-select the item type if one was chosen
                 if (typeSelectionDialog.SelectedItemType.HasValue)
@@ -662,8 +664,9 @@ public sealed partial class PasswordItemsPage : Page
             }
 
             // Open the edit dialog (reuse AddPasswordDialog in edit mode)
+            var mainWindow = GetMainWindow();
             var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, item);
-            dialog.XamlRoot = this.XamlRoot;
+            dialog.XamlRoot = mainWindow?.Content.XamlRoot ?? this.XamlRoot;
 
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary && dialog.Result != null)
@@ -756,7 +759,8 @@ public sealed partial class PasswordItemsPage : Page
 
             // Use the AddPasswordDialog in read-only mode for a richer view
             var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, item, true);
-            dialog.XamlRoot = this.XamlRoot;
+            var mainWindow2 = GetMainWindow();
+            dialog.XamlRoot = mainWindow2?.Content.XamlRoot ?? this.XamlRoot;
             await dialog.ShowAsync();
         }
         catch (Exception ex)
@@ -796,7 +800,8 @@ public sealed partial class PasswordItemsPage : Page
             }
 
             var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, _selectedItem, true);
-            dialog.XamlRoot = this.XamlRoot;
+            var mainWindow3 = GetMainWindow();
+            dialog.XamlRoot = mainWindow3?.Content.XamlRoot ?? this.XamlRoot;
             await dialog.ShowAsync();
         }
         catch (Exception ex)
@@ -1043,7 +1048,8 @@ public sealed partial class PasswordItemsPage : Page
             }
 
             var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, _selectedItem, false);
-            dialog.XamlRoot = this.XamlRoot;
+            var mainWindow4 = GetMainWindow();
+            dialog.XamlRoot = mainWindow4?.Content.XamlRoot ?? this.XamlRoot;
             var result = await dialog.ShowAsync();
             
             if (result == ContentDialogResult.Primary)

@@ -19,6 +19,8 @@ public sealed partial class TagDialog : ContentDialog
 
     public Tag? Result { get; private set; }
 
+    public event EventHandler<Tag?>? TagSaved;
+
     public TagDialog(IServiceProvider serviceProvider, Tag? tag = null)
     {
         this.InitializeComponent();
@@ -129,6 +131,7 @@ public sealed partial class TagDialog : ContentDialog
                     await _tagService.CreateAsync(newTag);
                 }
                 Result = newTag;
+                TagSaved?.Invoke(this, Result);
             }
         }
         catch (Exception ex)

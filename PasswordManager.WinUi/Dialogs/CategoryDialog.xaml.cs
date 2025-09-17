@@ -20,6 +20,9 @@ public sealed partial class CategoryDialog : ContentDialog
 
     public Category? Result { get; private set; }
 
+    // Event fired when a category is successfully created or updated
+    public event EventHandler<Category?>? CategorySaved;
+
     public CategoryDialog(IServiceProvider serviceProvider, Category? category = null)
     {
         this.InitializeComponent();
@@ -147,6 +150,8 @@ public sealed partial class CategoryDialog : ContentDialog
                 var TEST = newCategory;
                 await _categoryService.CreateAsync(newCategory);
                 Result = newCategory;
+                // Notify listeners that a category was created
+                CategorySaved?.Invoke(this, Result);
             }
         }
         catch (Exception ex)
