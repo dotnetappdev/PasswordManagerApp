@@ -1185,9 +1185,22 @@
         <Setter Property="CloseButtonStyle"
                 Value="{StaticResource ContentDialogSecondaryButtonStyle}"/>
         <Setter Property="MaxWidth"
-                Value="480"/>
+                Value="520"/>
         <Setter Property="MaxHeight"
                 Value="720"/>
+        <!-- Add proper centering for maximized windows -->
+        <Setter Property="HorizontalAlignment"
+                Value="Center"/>
+        <Setter Property="VerticalAlignment"
+                Value="Center"/>
+        <Setter Property="Margin"
+                Value="20"/>
+        <!-- Add shadow effect for better visual separation -->
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <ThemeShadow/>
+            </Setter.Value>
+        </Setter>
     </Style>
 
 
