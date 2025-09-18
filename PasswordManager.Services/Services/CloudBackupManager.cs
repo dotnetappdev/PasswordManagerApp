@@ -1,0 +1,259 @@
+using Microsoft.Extensions.Logging;
+using PasswordManager.Services.Interfaces;
+using PasswordManager.Models.DTOs;
+
+namespace PasswordManager.Services.Services;
+
+/// <summary>
+/// Service for managing cloud backup operations across different providers
+/// </summary>
+public class CloudBackupManager
+{
+    private readonly ILogger<CloudBackupManager> _logger;
+    private readonly IDatabaseBackupService _databaseBackupService;
+    private readonly IOneDriveBackupService _oneDriveService;
+    private readonly IiCloudBackupService _iCloudService;
+
+    public CloudBackupManager(
+        ILogger<CloudBackupManager> logger,
+        IDatabaseBackupService databaseBackupService,
+        IOneDriveBackupService oneDriveService,
+        IiCloudBackupService iCloudService)
+    {
+        _logger = logger;
+        _databaseBackupService = databaseBackupService;
+        _oneDriveService = oneDriveService;
+        _iCloudService = iCloudService;
+    }
+
+    /// <summary>
+    /// Get all available cloud backup providers
+    /// </summary>
+    /// <returns>List of available providers</returns>
+    public List<CloudProviderInfo> GetAvailableProviders()
+    {
+        return new List<CloudProviderInfo>
+        {
+            new CloudProviderInfo
+            {
+                Provider = CloudBackupProvider.OneDrive,
+                DisplayName = _oneDriveService.ServiceName,
+                IsAvailable = true, // Always show as available (authentication happens later)
+                MaxBackupSizeMB = _oneDriveService.MaxBackupSizeBytes / (1024 * 1024)
+            },
+            new CloudProviderInfo
+            {
+                Provider = CloudBackupProvider.iCloud,
+                DisplayName = _iCloudService.ServiceName,
+                IsAvailable = _iCloudService.IsAvailable,
+                MaxBackupSizeMB = _iCloudService.MaxBackupSizeBytes / (1024 * 1024)
+            }
+        };
+    }
+
+    /// <summary>
+    /// Create and upload backup to specified cloud provider
+    /// </summary>
+    /// <param name="provider">Cloud provider to use</param>
+    /// <param name="masterPassword">User's master password for encryption</param>
+    /// <param name="fileName">Name for the backup file</param>
+    /// <param name="description">Optional description</param>
+    /// <returns>Result of the backup operation</returns>
+    public async Task<CloudBackupResult> CreateAndUploadBackupAsync(
+        CloudBackupProvider provider, 
+        string masterPassword, 
+        string fileName, 
+        string? description = null)
+    {
+        try
+        {
+            _logger.LogInformation("Creating backup for provider {Provider}", provider);
+
+            // Create the database backup
+            var backupResult = await _databaseBackupService.CreateBackupAsync(masterPassword, compress: true);
+            if (!backupResult.Success || backupResult.BackupData == null)
+            {
+                return new CloudBackupResult
+                {
+                    Success = false,
+                    ErrorMessage = backupResult.ErrorMessage ?? "Failed to create backup"
+                };
+            }
+
+            // Upload to the specified provider
+            var cloudService = GetCloudService(provider);
+            if (cloudService == null)
+            {
+                return new CloudBackupResult
+                {
+                    Success = false,
+                    ErrorMessage = $"Provider {provider} is not available"
+                };
+            }
+
+            // Ensure authentication
+            if (!await cloudService.IsAuthenticatedAsync())
+            {
+                var authResult = await cloudService.AuthenticateAsync();
+                if (!authResult)
+                {
+                    return new CloudBackupResult
+                    {
+                        Success = false,
+                        ErrorMessage = $"Authentication failed for {provider}"
+                    };
+                }
+            }
+
+            // Ensure the filename has the correct extension
+            if (!fileName.EndsWith(".pwmbackup"))
+            {
+                fileName += ".pwmbackup";
+            }
+
+            // Upload the backup
+            var uploadResult = await cloudService.UploadBackupAsync(backupResult.BackupData, fileName, description);
+            
+            _logger.LogInformation("Backup upload completed for provider {Provider}. Success: {Success}", 
+                provider, uploadResult.Success);
+
+            return uploadResult;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create and upload backup to {Provider}", provider);
+            return new CloudBackupResult
+            {
+                Success = false,
+                ErrorMessage = $"Backup failed: {ex.Message}"
+            };
+        }
+    }
+
+    /// <summary>
+    /// Download and restore backup from specified cloud provider
+    /// </summary>
+    /// <param name="provider">Cloud provider to use</param>
+    /// <param name="backupId">ID of the backup to restore</param>
+    /// <param name="masterPassword">User's master password for decryption</param>
+    /// <returns>Result of the restore operation</returns>
+    public async Task<bool> DownloadAndRestoreBackupAsync(
+        CloudBackupProvider provider, 
+        string backupId, 
+        string masterPassword)
+    {
+        try
+        {
+            _logger.LogInformation("Downloading backup {BackupId} from provider {Provider}", backupId, provider);
+
+            var cloudService = GetCloudService(provider);
+            if (cloudService == null)
+            {
+                _logger.LogError("Provider {Provider} is not available", provider);
+                return false;
+            }
+
+            // Download the backup
+            var downloadResult = await cloudService.DownloadBackupAsync(backupId);
+            if (!downloadResult.Success || downloadResult.BackupData == null)
+            {
+                _logger.LogError("Failed to download backup: {Error}", downloadResult.ErrorMessage);
+                return false;
+            }
+
+            // Restore the backup
+            var restoreResult = await _databaseBackupService.RestoreBackupAsync(
+                downloadResult.BackupData, masterPassword);
+
+            _logger.LogInformation("Backup restore completed. Success: {Success}", restoreResult);
+            return restoreResult;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to download and restore backup from {Provider}", provider);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// List backups from all providers
+    /// </summary>
+    /// <returns>List of available backups from all providers</returns>
+    public async Task<List<CloudBackupInfo>> ListAllBackupsAsync()
+    {
+        var allBackups = new List<CloudBackupInfo>();
+
+        // Get backups from OneDrive
+        try
+        {
+            if (await _oneDriveService.IsAuthenticatedAsync())
+            {
+                var oneDriveBackups = await _oneDriveService.ListBackupsAsync();
+                allBackups.AddRange(oneDriveBackups);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list OneDrive backups");
+        }
+
+        // Get backups from iCloud
+        try
+        {
+            if (await _iCloudService.IsAuthenticatedAsync())
+            {
+                var iCloudBackups = await _iCloudService.ListBackupsAsync();
+                allBackups.AddRange(iCloudBackups);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list iCloud backups");
+        }
+
+        return allBackups.OrderByDescending(b => b.ModifiedAt).ToList();
+    }
+
+    /// <summary>
+    /// Delete backup from specified provider
+    /// </summary>
+    public async Task<bool> DeleteBackupAsync(CloudBackupProvider provider, string backupId)
+    {
+        try
+        {
+            var cloudService = GetCloudService(provider);
+            if (cloudService == null)
+            {
+                return false;
+            }
+
+            return await cloudService.DeleteBackupAsync(backupId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete backup {BackupId} from {Provider}", backupId, provider);
+            return false;
+        }
+    }
+
+    private ICloudBackupService? GetCloudService(CloudBackupProvider provider)
+    {
+        return provider switch
+        {
+            CloudBackupProvider.OneDrive => _oneDriveService,
+            CloudBackupProvider.iCloud => _iCloudService,
+            _ => null
+        };
+    }
+}
+
+/// <summary>
+/// Information about a cloud backup provider
+/// </summary>
+public class CloudProviderInfo
+{
+    public CloudBackupProvider Provider { get; set; }
+    public string DisplayName { get; set; } = string.Empty;
+    public bool IsAvailable { get; set; }
+    public long MaxBackupSizeMB { get; set; }
+}
