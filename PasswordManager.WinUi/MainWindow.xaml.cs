@@ -1,15 +1,13 @@
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Text;
-using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.WinUi.Models;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using PasswordManager.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using PasswordManager.Models;
+using PasswordManager.Services.Interfaces;
+using PasswordManager.WinUi.Models;
 
 namespace PasswordManager.WinUi;
 
@@ -21,15 +19,19 @@ public sealed partial class MainWindow : Window
     private readonly IServiceProvider _serviceProvider;
     private bool _isAuthenticated = false;
     private string? _currentUserId = null;
+    private Style? _navItemStyle; // cache for dynamic nav items
 
     public MainWindow(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
-        this.InitializeComponent();
+    this.InitializeComponent();
         this.Title = "Password Manager - WinUI";
 
         // Set window size
         this.AppWindow.Resize(new Windows.Graphics.SizeInt32(1200, 800));
+
+    // Cache style early (after resources loaded by InitializeComponent)
+    _navItemStyle = TryGetNavItemStyle();
 
         // Initialize navigation - start with Login if not authenticated, otherwise Home
         InitializeNavigation();
@@ -500,7 +502,7 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            var categoryService = _serviceProvider.GetService<PasswordManager.Services.Interfaces.ICategoryInterface>();
+            var categoryService = _serviceProvider.GetService<ICategoryInterface>();
             if (categoryService == null) return;
 
             var categories = await categoryService.GetAllAsync();
@@ -516,34 +518,19 @@ public sealed partial class MainWindow : Window
                 }
                 dynamicPanel.Children.Clear();
 
+                // ensure cached style (attempt again if previously null)
+                _navItemStyle ??= TryGetNavItemStyle();
+
                 foreach (var cat in categories)
                 {
-                    // Safely obtain navigation item style; if not present, omit to avoid runtime COMException
-                    Microsoft.UI.Xaml.Style? navItemStyle = null;
-                    try
-                    {
-                        var fe = this.Content as FrameworkElement;
-                        if (fe != null && fe.Resources.TryGetValue("ModernNavigationViewItemStyle", out var styleObj))
-                        {
-                            navItemStyle = styleObj as Microsoft.UI.Xaml.Style;
-                        }
-                        else if (Application.Current.Resources.TryGetValue("ModernNavigationViewItemStyle", out var appStyleObj))
-                        {
-                            navItemStyle = appStyleObj as Microsoft.UI.Xaml.Style;
-                        }
-                    }
-                    catch { /* ignore lookup errors */ }
-
                     var navItem = new NavigationViewItem
                     {
                         Content = cat.Name,
                         Tag = $"{cat.Name}Category",
-                        Style = navItemStyle
+                        Style = _navItemStyle // may be null; safe
                     };
 
-                    // Attach right-tap handlers and context menu
                     navItem.RightTapped += NavigationItem_RightTapped;
-
                     dynamicPanel.Children.Add(navItem);
                 }
             });
@@ -806,5 +793,23 @@ public sealed partial class MainWindow : Window
             XamlRoot = this.Content.XamlRoot
         };
         await infoDialog.ShowAsync();
+    }
+
+    private Style? TryGetNavItemStyle()
+    {
+        try
+        {
+            // Check window resources first
+            if (this.Resources.TryGetValue("ModernNavigationViewItemStyle", out var styleObj) && styleObj is Style s1)
+                return s1;
+            // Then current content tree
+            if (this.Content is FrameworkElement fe && fe.Resources.TryGetValue("ModernNavigationViewItemStyle", out var styleObj2) && styleObj2 is Style s2)
+                return s2;
+            // Finally application resources
+            if (Application.Current.Resources.TryGetValue("ModernNavigationViewItemStyle", out var appStyle) && appStyle is Style s3)
+                return s3;
+        }
+        catch { }
+        return null; // fallback - style optional
     }
 }

@@ -1051,7 +1051,7 @@ public sealed partial class PasswordItemsPage : Page
             var mainWindow4 = GetMainWindow();
             dialog.XamlRoot = mainWindow4?.Content.XamlRoot ?? this.XamlRoot;
             var result = await dialog.ShowAsync();
-            
+
             if (result == ContentDialogResult.Primary)
             {
                 // Refresh the view after editing
@@ -1135,7 +1135,7 @@ public sealed partial class PasswordItemsPage : Page
                     Margin = new Thickness(4, 0, 0, 0)
                 };
                 Grid.SetColumn(removeButton, 2);
-                
+
                 removeButton.Click += (s, args) => customFieldsContainer.Children.Remove(fieldGrid);
 
                 fieldGrid.Children.Add(nameTextBox);

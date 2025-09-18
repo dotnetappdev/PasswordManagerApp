@@ -101,7 +101,7 @@ public sealed partial class TagDialog : ContentDialog
                 _tag.Name = name;
                 _tag.Description = TagDescriptionTextBox.Text?.Trim();
                 _tag.LastModified = DateTime.UtcNow;
-                
+
                 // Set user ID from current authenticated user
                 if (_authService.CurrentUser != null)
                 {
@@ -149,7 +149,7 @@ public sealed partial class TagDialog : ContentDialog
     {
         ErrorMessageText.Text = message;
         ErrorMessageBorder.Visibility = Visibility.Visible;
-        
+
         // Auto-hide error after 5 seconds
         await Task.Delay(5000);
         ErrorMessageBorder.Visibility = Visibility.Collapsed;
