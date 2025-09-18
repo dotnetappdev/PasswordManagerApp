@@ -25,6 +25,45 @@ public sealed partial class CategoriesPage : Page
         return (App.Current as App)?.MainWindow?.Content?.XamlRoot;
     }
 
+    /// <summary>
+    /// Helper method to properly configure dialog for centering
+    /// </summary>
+    private void ConfigureDialogForCentering(ContentDialog dialog)
+    {
+        try
+        {
+            // Set XamlRoot to the main window's content for proper centering
+            var mainXamlRoot = GetMainXamlRoot();
+            if (mainXamlRoot != null)
+            {
+                dialog.XamlRoot = mainXamlRoot;
+            }
+            else if (this.XamlRoot != null)
+            {
+                dialog.XamlRoot = this.XamlRoot;
+            }
+            
+            // Ensure the dialog uses the proper style for centering if it doesn't have one already
+            if (dialog.Style == null)
+            {
+                // Apply the Modern1PasswordDialogStyle from resources
+                if (Application.Current.Resources.ContainsKey("Modern1PasswordDialogStyle"))
+                {
+                    dialog.Style = Application.Current.Resources["Modern1PasswordDialogStyle"] as Style;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error configuring dialog centering: {ex.Message}");
+            // Fallback to page XamlRoot
+            if (this.XamlRoot != null)
+            {
+                dialog.XamlRoot = this.XamlRoot;
+            }
+        }
+    }
+
     protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
@@ -44,7 +83,7 @@ public sealed partial class CategoriesPage : Page
         try
         {
             var dialog = new CategoryDialog(_serviceProvider);
-            dialog.XamlRoot = GetMainXamlRoot() ?? this.XamlRoot;
+            ConfigureDialogForCentering(dialog);
             
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary && dialog.Result != null && _viewModel != null)
@@ -81,7 +120,7 @@ public sealed partial class CategoriesPage : Page
             try
             {
                 var dialog = new CategoryDialog(_serviceProvider, category);
-                dialog.XamlRoot = GetMainXamlRoot() ?? this.XamlRoot;
+                ConfigureDialogForCentering(dialog);
                 
                 var result = await dialog.ShowAsync();
                 if (result == ContentDialogResult.Primary && dialog.Result != null && _viewModel != null)
@@ -113,9 +152,9 @@ public sealed partial class CategoriesPage : Page
                     {
                         Title = "Cannot Delete Category",
                         Content = $"The category '{category.Name}' cannot be deleted because it contains {count} password item{(count == 1 ? "" : "s")}. Please move or delete the password items first.",
-                        CloseButtonText = "OK",
-                        XamlRoot = this.XamlRoot
+                        CloseButtonText = "OK"
                     };
+                    ConfigureDialogForCentering(warningDialog);
                     await warningDialog.ShowAsync();
                     return;
                 }
@@ -126,9 +165,9 @@ public sealed partial class CategoriesPage : Page
                     Content = $"Are you sure you want to delete '{category.Name}'? This action cannot be undone.",
                     PrimaryButtonText = "Delete",
                     CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Close,
-                    XamlRoot = GetMainXamlRoot() ?? this.XamlRoot
+                    DefaultButton = ContentDialogButton.Close
                 };
+                ConfigureDialogForCentering(dialog);
 
                 var result = await dialog.ShowAsync();
                 if (result == ContentDialogResult.Primary && _viewModel != null)
@@ -149,9 +188,9 @@ public sealed partial class CategoriesPage : Page
         {
             Title = "Error",
             Content = message,
-            CloseButtonText = "OK",
-            XamlRoot = GetMainXamlRoot() ?? this.XamlRoot
+            CloseButtonText = "OK"
         };
+        ConfigureDialogForCentering(errorDialog);
         await errorDialog.ShowAsync();
     }
 }
