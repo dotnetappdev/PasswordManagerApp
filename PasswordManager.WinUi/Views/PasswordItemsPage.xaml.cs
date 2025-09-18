@@ -552,25 +552,23 @@ public sealed partial class PasswordItemsPage : Page
                 {
                     Title = "Error",
                     Content = "Service provider not initialized. Please navigate to this page properly.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
+                    CloseButtonText = "OK"
                 };
+                ConfigureDialogForCentering(errorDialog);
                 await errorDialog.ShowAsync();
                 return;
             }
 
             // First show the item type selection dialog (1Password style)
             var typeSelectionDialog = new Dialogs.ItemTypeSelectionDialog();
-            // Prefer main window XamlRoot so the dialog is centered on the app window
-            var mainWindow = GetMainWindow();
-            typeSelectionDialog.XamlRoot = mainWindow?.Content.XamlRoot ?? this.XamlRoot;
+            ConfigureDialogForCentering(typeSelectionDialog);
 
             var typeResult = await typeSelectionDialog.ShowAsync();
             if (typeResult == ContentDialogResult.Primary || typeSelectionDialog.SelectedItemType != null)
             {
                 // Then show the main add dialog with the selected type pre-filled
                 var dialog = new Dialogs.AddPasswordDialog(_serviceProvider);
-                dialog.XamlRoot = mainWindow?.Content.XamlRoot ?? this.XamlRoot;
+                ConfigureDialogForCentering(dialog);
 
                 // Pre-select the item type if one was chosen
                 if (typeSelectionDialog.SelectedItemType.HasValue)
@@ -596,9 +594,9 @@ public sealed partial class PasswordItemsPage : Page
             {
                 Title = "Error",
                 Content = $"Error adding password: {ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = this.XamlRoot
+                CloseButtonText = "OK"
             };
+            ConfigureDialogForCentering(errorDialog);
             await errorDialog.ShowAsync();
         }
     }
@@ -664,9 +662,8 @@ public sealed partial class PasswordItemsPage : Page
             }
 
             // Open the edit dialog (reuse AddPasswordDialog in edit mode)
-            var mainWindow = GetMainWindow();
             var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, item);
-            dialog.XamlRoot = mainWindow?.Content.XamlRoot ?? this.XamlRoot;
+            ConfigureDialogForCentering(dialog);
 
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary && dialog.Result != null)
@@ -730,6 +727,47 @@ public sealed partial class PasswordItemsPage : Page
         return (App.Current as App)?.MainWindow;
     }
 
+    /// <summary>
+    /// Helper method to properly configure dialog for centering
+    /// </summary>
+    private void ConfigureDialogForCentering(ContentDialog dialog)
+    {
+        try
+        {
+            // Try to get the main window for proper centering
+            var mainWindow = GetMainWindow();
+            
+            // Set XamlRoot to the main window's content for proper centering
+            if (mainWindow?.Content?.XamlRoot != null)
+            {
+                dialog.XamlRoot = mainWindow.Content.XamlRoot;
+            }
+            else if (this.XamlRoot != null)
+            {
+                dialog.XamlRoot = this.XamlRoot;
+            }
+            
+            // Ensure the dialog uses the proper style for centering if it doesn't have one already
+            if (dialog.Style == null)
+            {
+                // Apply the Modern1PasswordDialogStyle from resources
+                if (Application.Current.Resources.ContainsKey("Modern1PasswordDialogStyle"))
+                {
+                    dialog.Style = Application.Current.Resources["Modern1PasswordDialogStyle"] as Style;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error configuring dialog centering: {ex.Message}");
+            // Fallback to page XamlRoot
+            if (this.XamlRoot != null)
+            {
+                dialog.XamlRoot = this.XamlRoot;
+            }
+        }
+    }
+
     private void ItemsList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
     {
         var list = GetElement<ListView>("ItemsList");
@@ -759,8 +797,7 @@ public sealed partial class PasswordItemsPage : Page
 
             // Use the AddPasswordDialog in read-only mode for a richer view
             var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, item, true);
-            var mainWindow2 = GetMainWindow();
-            dialog.XamlRoot = mainWindow2?.Content.XamlRoot ?? this.XamlRoot;
+            ConfigureDialogForCentering(dialog);
             await dialog.ShowAsync();
         }
         catch (Exception ex)
@@ -769,9 +806,9 @@ public sealed partial class PasswordItemsPage : Page
             {
                 Title = "Error",
                 Content = $"Error showing password details: {ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = this.XamlRoot
+                CloseButtonText = "OK"
             };
+            ConfigureDialogForCentering(errorDialog);
             await errorDialog.ShowAsync();
         }
     }
@@ -800,8 +837,7 @@ public sealed partial class PasswordItemsPage : Page
             }
 
             var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, _selectedItem, true);
-            var mainWindow3 = GetMainWindow();
-            dialog.XamlRoot = mainWindow3?.Content.XamlRoot ?? this.XamlRoot;
+            ConfigureDialogForCentering(dialog);
             await dialog.ShowAsync();
         }
         catch (Exception ex)
@@ -810,9 +846,9 @@ public sealed partial class PasswordItemsPage : Page
             {
                 Title = "Error",
                 Content = $"Error opening view dialog: {ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = this.XamlRoot
+                CloseButtonText = "OK"
             };
+            ConfigureDialogForCentering(errorDialog);
             await errorDialog.ShowAsync();
         }
     }
@@ -1048,8 +1084,7 @@ public sealed partial class PasswordItemsPage : Page
             }
 
             var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, _selectedItem, false);
-            var mainWindow4 = GetMainWindow();
-            dialog.XamlRoot = mainWindow4?.Content.XamlRoot ?? this.XamlRoot;
+            ConfigureDialogForCentering(dialog);
             var result = await dialog.ShowAsync();
 
             if (result == ContentDialogResult.Primary)

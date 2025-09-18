@@ -447,6 +447,9 @@ public sealed partial class AddPasswordDialog : ContentDialog
 
         try
         {
+            // Clear any previous error messages
+            ErrorMessageBorder.Visibility = Visibility.Collapsed;
+
             // Validate required fields with inline feedback
             bool isValid = true;
             
@@ -484,6 +487,19 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 return;
             }
 
+            // Validate services are available
+            if (_passwordItemService == null)
+            {
+                await ShowErrorDialog("Password service is not initialized. Please restart the application.");
+                return;
+            }
+
+            if (_authService?.CurrentUser == null)
+            {
+                await ShowErrorDialog("No authenticated user found. Please log in again.");
+                return;
+            }
+
             // Show loading indicator
             ShowLoadingIndicator(true, _editingItem == null ? "Creating item..." : "Updating item...");
 
@@ -499,10 +515,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
             item.LastModified = DateTime.UtcNow;
 
             // Set user ID from current authenticated user
-            if (_authService.CurrentUser != null)
-            {
-                item.UserId = _authService.CurrentUser.Id;
-            }
+            item.UserId = _authService.CurrentUser.Id;
 
             // Set category
             if (CategoryComboBox.SelectedItem is ComboBoxItem categoryItem && categoryItem.Tag is Category category)
@@ -510,112 +523,36 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 item.CategoryId = category.Id;
             }
 
-            // Set collection
+            // Set collection with better fallback handling
             if (CollectionComboBox.SelectedItem is ComboBoxItem collectionItem && collectionItem.Tag is Collection collection)
             {
                 item.CollectionId = collection.Id;
             }
-            else
+            else if (_editingItem == null) // Only set default for new items
             {
                 // If no collection selected, fallback to default collection to satisfy DB constraints
-                var defaultCollection = await _collectionService.GetDefaultCollectionAsync();
-                if (defaultCollection != null)
+                try
                 {
-                    item.CollectionId = defaultCollection.Id;
+                    var defaultCollection = await _collectionService.GetDefaultCollectionAsync();
+                    if (defaultCollection != null)
+                    {
+                        item.CollectionId = defaultCollection.Id;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Warning: Could not get default collection: {ex.Message}");
+                    // Continue without collection ID - let the service handle it
                 }
             }
 
-            // Handle login-specific fields
-            if (selectedType == ItemType.Login)
-            {
-                if (item.LoginItem == null)
-                    item.LoginItem = new LoginItem();
-
-                item.LoginItem.Username = UsernameTextBox.Text?.Trim() ?? string.Empty;
-                item.LoginItem.Password = PasswordTextBox.Password;
-                item.LoginItem.WebsiteUrl = UrlTextBox.Text?.Trim();
-
-                // Set user ID for the login item
-                if (_authService.CurrentUser != null)
-                {
-                    item.LoginItem.UserId = _authService.CurrentUser.Id;
-                }
-            }
-
-            // Handle passkey-specific fields
-            if (selectedType == ItemType.Passkey)
-            {
-                if (item.PasskeyItem == null)
-                    item.PasskeyItem = new PasskeyItem();
-
-                item.PasskeyItem.Website = PasskeyWebsiteTextBox.Text?.Trim();
-                item.PasskeyItem.WebsiteUrl = PasskeyUrlTextBox.Text?.Trim();
-                item.PasskeyItem.Username = PasskeyUsernameTextBox.Text?.Trim();
-                item.PasskeyItem.DisplayName = PasskeyDisplayNameTextBox.Text?.Trim();
-                item.PasskeyItem.DeviceType = PasskeyDeviceTypeTextBox.Text?.Trim();
-                item.PasskeyItem.RequiresUserVerification = PasskeyRequiresVerificationCheckBox.IsChecked ?? true;
-                item.PasskeyItem.IsBackedUp = PasskeyIsBackedUpCheckBox.IsChecked ?? false;
-                item.PasskeyItem.Notes = PasskeyNotesTextBox.Text?.Trim();
-
-                // Set user ID for the passkey item
-                if (_authService.CurrentUser != null)
-                {
-                    item.PasskeyItem.UserId = _authService.CurrentUser.Id;
-                }
-
-                // For now, use a placeholder credential ID (in real implementation, this would come from WebAuthn)
-                item.PasskeyItem.CredentialId = "placeholder_credential_id_" + DateTime.Now.Ticks;
-            }
-
-            // Handle credit card-specific fields
-            if (selectedType == ItemType.CreditCard)
-            {
-                if (item.CreditCardItem == null)
-                    item.CreditCardItem = new CreditCardItem();
-
-                // Set user ID for the credit card item
-                if (_authService.CurrentUser != null)
-                {
-                    item.CreditCardItem.UserId = _authService.CurrentUser.Id;
-                }
-
-                // Additional credit card fields would be set here when UI is implemented
-            }
-
-            // Handle secure note-specific fields
-            if (selectedType == ItemType.SecureNote)
-            {
-                if (item.SecureNoteItem == null)
-                    item.SecureNoteItem = new SecureNoteItem();
-
-                // Set user ID for the secure note item
-                if (_authService.CurrentUser != null)
-                {
-                    item.SecureNoteItem.UserId = _authService.CurrentUser.Id;
-                }
-
-                // Additional secure note fields would be set here when UI is implemented
-            }
-
-            // Handle WiFi-specific fields
-            if (selectedType == ItemType.WiFi)
-            {
-                if (item.WiFiItem == null)
-                    item.WiFiItem = new WiFiItem();
-
-                // Set user ID for the WiFi item
-                if (_authService.CurrentUser != null)
-                {
-                    item.WiFiItem.UserId = _authService.CurrentUser.Id;
-                }
-
-                // Additional WiFi fields would be set here when UI is implemented
-            }
+            // Handle type-specific fields
+            await PopulateTypeSpecificFields(item, selectedType);
 
             // Update custom fields
             UpdateCustomFieldsInPasswordItem(item);
 
-            // Save item
+            // Save item with better error handling
             if (_editingItem == null)
             {
                 Result = await _passwordItemService.CreateAsync(item);
@@ -623,6 +560,12 @@ public sealed partial class AddPasswordDialog : ContentDialog
             else
             {
                 Result = await _passwordItemService.UpdateAsync(item);
+            }
+
+            // Verify the result
+            if (Result == null)
+            {
+                throw new InvalidOperationException("Save operation completed but returned null result");
             }
 
             // Hide loading indicator and close dialog
@@ -633,7 +576,104 @@ public sealed partial class AddPasswordDialog : ContentDialog
         {
             // Hide loading indicator and show error
             ShowLoadingIndicator(false);
-            await ShowErrorDialog($"Error saving password: {ex.Message}");
+            
+            var errorMessage = ex.InnerException?.Message ?? ex.Message;
+            System.Diagnostics.Debug.WriteLine($"Error saving password item: {errorMessage}");
+            
+            await ShowErrorDialog($"Error saving item: {errorMessage}");
+        }
+    }
+
+    /// <summary>
+    /// Populates type-specific fields for the password item
+    /// </summary>
+    private async Task PopulateTypeSpecificFields(PasswordItem item, ItemType selectedType)
+    {
+        // Handle login-specific fields
+        if (selectedType == ItemType.Login)
+        {
+            if (item.LoginItem == null)
+                item.LoginItem = new LoginItem();
+
+            item.LoginItem.Username = UsernameTextBox.Text?.Trim() ?? string.Empty;
+            item.LoginItem.Password = PasswordTextBox.Password;
+            item.LoginItem.WebsiteUrl = UrlTextBox.Text?.Trim();
+
+            // Set user ID for the login item
+            if (_authService.CurrentUser != null)
+            {
+                item.LoginItem.UserId = _authService.CurrentUser.Id;
+            }
+        }
+
+        // Handle passkey-specific fields
+        if (selectedType == ItemType.Passkey)
+        {
+            if (item.PasskeyItem == null)
+                item.PasskeyItem = new PasskeyItem();
+
+            item.PasskeyItem.Website = PasskeyWebsiteTextBox.Text?.Trim();
+            item.PasskeyItem.WebsiteUrl = PasskeyUrlTextBox.Text?.Trim();
+            item.PasskeyItem.Username = PasskeyUsernameTextBox.Text?.Trim();
+            item.PasskeyItem.DisplayName = PasskeyDisplayNameTextBox.Text?.Trim();
+            item.PasskeyItem.DeviceType = PasskeyDeviceTypeTextBox.Text?.Trim();
+            item.PasskeyItem.RequiresUserVerification = PasskeyRequiresVerificationCheckBox.IsChecked ?? true;
+            item.PasskeyItem.IsBackedUp = PasskeyIsBackedUpCheckBox.IsChecked ?? false;
+            item.PasskeyItem.Notes = PasskeyNotesTextBox.Text?.Trim();
+
+            // Set user ID for the passkey item
+            if (_authService.CurrentUser != null)
+            {
+                item.PasskeyItem.UserId = _authService.CurrentUser.Id;
+            }
+
+            // For now, use a placeholder credential ID (in real implementation, this would come from WebAuthn)
+            item.PasskeyItem.CredentialId = "placeholder_credential_id_" + DateTime.Now.Ticks;
+        }
+
+        // Handle credit card-specific fields
+        if (selectedType == ItemType.CreditCard)
+        {
+            if (item.CreditCardItem == null)
+                item.CreditCardItem = new CreditCardItem();
+
+            // Set user ID for the credit card item
+            if (_authService.CurrentUser != null)
+            {
+                item.CreditCardItem.UserId = _authService.CurrentUser.Id;
+            }
+
+            // Additional credit card fields would be set here when UI is implemented
+        }
+
+        // Handle secure note-specific fields
+        if (selectedType == ItemType.SecureNote)
+        {
+            if (item.SecureNoteItem == null)
+                item.SecureNoteItem = new SecureNoteItem();
+
+            // Set user ID for the secure note item
+            if (_authService.CurrentUser != null)
+            {
+                item.SecureNoteItem.UserId = _authService.CurrentUser.Id;
+            }
+
+            // Additional secure note fields would be set here when UI is implemented
+        }
+
+        // Handle WiFi-specific fields
+        if (selectedType == ItemType.WiFi)
+        {
+            if (item.WiFiItem == null)
+                item.WiFiItem = new WiFiItem();
+
+            // Set user ID for the WiFi item
+            if (_authService.CurrentUser != null)
+            {
+                item.WiFiItem.UserId = _authService.CurrentUser.Id;
+            }
+
+            // Additional WiFi fields would be set here when UI is implemented
         }
     }
 

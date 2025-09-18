@@ -1165,7 +1165,7 @@
         </Setter>
     </Style>
 
-    <!-- Enhanced ContentDialog Style for 1Password-like appearance -->
+    <!-- Enhanced ContentDialog Style for 1Password-like appearance with proper centering -->
     <Style x:Key="Modern1PasswordDialogStyle"
             TargetType="ContentDialog">
         <Setter Property="Background"
@@ -1188,17 +1188,130 @@
                 Value="520"/>
         <Setter Property="MaxHeight"
                 Value="720"/>
-        <!-- Add proper centering for maximized windows -->
+        <Setter Property="MinWidth"
+                Value="480"/>
+        <Setter Property="MinHeight"
+                Value="300"/>
+        <!-- Enhanced centering with proper positioning for all screen sizes -->
         <Setter Property="HorizontalAlignment"
                 Value="Center"/>
         <Setter Property="VerticalAlignment"
                 Value="Center"/>
         <Setter Property="Margin"
-                Value="20"/>
+                Value="40"/>
         <!-- Add shadow effect for better visual separation -->
         <Setter Property="Shadow">
             <Setter.Value>
                 <ThemeShadow/>
+            </Setter.Value>
+        </Setter>
+        <!-- Override template for better centering control -->
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentDialog">
+                    <Grid x:Name="Container">
+                        <!-- Backdrop -->
+                        <Rectangle x:Name="SmokeLayerBackground"
+                                   Fill="{ThemeResource ContentDialogSmokeFill}"/>
+                        
+                        <!-- Dialog container with absolute centering -->
+                        <Border x:Name="BackgroundElement"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Shadow="{TemplateBinding Shadow}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                MaxWidth="{TemplateBinding MaxWidth}"
+                                MaxHeight="{TemplateBinding MaxHeight}"
+                                MinWidth="{TemplateBinding MinWidth}"
+                                MinHeight="{TemplateBinding MinHeight}"
+                                Margin="{TemplateBinding Margin}">
+                            
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                
+                                <!-- Content area -->
+                                <ScrollViewer x:Name="ContentScrollViewer"
+                                              Grid.Row="0"
+                                              HorizontalScrollBarVisibility="Disabled"
+                                              VerticalScrollBarVisibility="Auto"
+                                              IsTabStop="False"
+                                              Padding="24">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <!-- Title -->
+                                        <ContentControl x:Name="Title"
+                                                        Grid.Row="0"
+                                                        Content="{TemplateBinding Title}"
+                                                        ContentTemplate="{TemplateBinding TitleTemplate}"
+                                                        FontSize="20"
+                                                        FontWeight="SemiBold"
+                                                        Foreground="{TemplateBinding Foreground}"
+                                                        HorizontalAlignment="Left"
+                                                        VerticalAlignment="Top"
+                                                        IsTabStop="False"
+                                                        MaxLines="2"
+                                                        Margin="0,0,0,20"/>
+                                        
+                                        <!-- Content -->
+                                        <ContentPresenter x:Name="Content"
+                                                          Grid.Row="1"
+                                                          Content="{TemplateBinding Content}"
+                                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                          HorizontalAlignment="Stretch"
+                                                          VerticalAlignment="Stretch"/>
+                                    </Grid>
+                                </ScrollViewer>
+                                
+                                <!-- Button area -->
+                                <Border x:Name="CommandSpace"
+                                        Grid.Row="1"
+                                        Background="{ThemeResource ContentDialogBottomAreaBackground}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="0,1,0,0"
+                                        Padding="24,16">
+                                    <Grid x:Name="CommandAreaGrid">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <Button x:Name="PrimaryButton"
+                                                Grid.Column="1"
+                                                Content="{TemplateBinding PrimaryButtonText}"
+                                                Style="{TemplateBinding PrimaryButtonStyle}"
+                                                Margin="0,0,8,0"
+                                                IsEnabled="{TemplateBinding IsPrimaryButtonEnabled}"/>
+                                        
+                                        <Button x:Name="SecondaryButton"
+                                                Grid.Column="2"
+                                                Content="{TemplateBinding SecondaryButtonText}"
+                                                Style="{TemplateBinding SecondaryButtonStyle}"
+                                                Margin="0,0,8,0"
+                                                IsEnabled="{TemplateBinding IsSecondaryButtonEnabled}"/>
+                                        
+                                        <Button x:Name="CloseButton"
+                                                Grid.Column="3"
+                                                Content="{TemplateBinding CloseButtonText}"
+                                                Style="{TemplateBinding CloseButtonStyle}"
+                                                IsEnabled="{TemplateBinding IsCloseButtonEnabled}"/>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
