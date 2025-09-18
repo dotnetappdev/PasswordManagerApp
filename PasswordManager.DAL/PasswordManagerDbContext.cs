@@ -28,6 +28,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
 
     public DbSet<UserPasskey> UserPasskeys { get; set; } = null!;
     public DbSet<UserTwoFactorBackupCode> UserTwoFactorBackupCodes { get; set; } = null!;
+    public DbSet<UserBackupSettings> UserBackupSettings { get; set; } = null!;
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -325,6 +326,34 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => new { e.UserId, e.IsActive });
             entity.HasIndex(e => e.IsActive);
+        });
+
+        // Configure UserBackupSettings
+        modelBuilder.Entity<UserBackupSettings>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.EnableCloudBackup).IsRequired();
+            entity.Property(e => e.SelectedCloudProvider).HasConversion<int>().IsRequired();
+            entity.Property(e => e.AutoBackupEnabled).IsRequired();
+            entity.Property(e => e.MaxBackupsToKeep).IsRequired();
+            entity.Property(e => e.BackupIntervalHours).IsRequired();
+            entity.Property(e => e.CompressBackups).IsRequired();
+            entity.Property(e => e.BackupFolderPath).HasMaxLength(500);
+            entity.Property(e => e.LastBackupAt);
+            entity.Property(e => e.NextBackupAt);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.LastModified).IsRequired();
+
+            // Configure User relationship
+            entity.HasOne(e => e.User)
+                  .WithMany() // User doesn't need navigation property to backup settings
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Add indexes for performance
+            entity.HasIndex(e => e.UserId).IsUnique(); // One setting per user
+            entity.HasIndex(e => e.NextBackupAt); // For scheduled backup queries
         });
     }
 }

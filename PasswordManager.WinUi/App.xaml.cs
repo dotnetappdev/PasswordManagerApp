@@ -223,6 +223,7 @@ public partial class App : Application
                 services.AddScoped<IOneDriveBackupService, OneDriveBackupService>();
                 services.AddScoped<IiCloudBackupService, iCloudBackupService>();
                 services.AddScoped<CloudBackupManager>();
+                services.AddScoped<IBackupSettingsService, BackupSettingsService>();
 
                 // Add logging
                 services.AddLogging(builder => builder.AddDebug());

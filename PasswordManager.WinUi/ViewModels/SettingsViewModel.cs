@@ -14,6 +14,7 @@ public class SettingsViewModel : BaseViewModel
     private readonly ISecureStorageService _secureStorageService;
     private readonly IAuthService _authService;
     private readonly CloudBackupManager? _cloudBackupManager;
+    private readonly IBackupSettingsService? _backupSettingsService;
 
     private bool _enableSync = false;
     private bool _enableTwoFactor = false;
@@ -44,9 +45,11 @@ public class SettingsViewModel : BaseViewModel
         
         // Cloud backup manager is optional since services may not be registered yet
         _cloudBackupManager = serviceProvider.GetService<CloudBackupManager>();
+        _backupSettingsService = serviceProvider.GetService<IBackupSettingsService>();
 
         LoadSettingsAsync();
         LoadCloudProvidersAsync();
+        LoadCloudBackupSettingsAsync();
     }
 
     public bool EnableSync
@@ -225,6 +228,9 @@ public class SettingsViewModel : BaseViewModel
             // Apply theme change
             ApplyTheme();
 
+            // Save cloud backup settings to database
+            await SaveCloudBackupSettingsAsync();
+
             return true;
         }
         catch (Exception ex)
@@ -389,6 +395,72 @@ public class SettingsViewModel : BaseViewModel
         }
     }
 
+    private async Task LoadCloudBackupSettingsAsync()
+    {
+        try
+        {
+            if (_backupSettingsService == null || _authService?.CurrentUser == null)
+            {
+                return;
+            }
+
+            var userId = _authService.CurrentUser.Id;
+            var settings = await _backupSettingsService.GetOrCreateSettingsAsync(userId);
+            
+            if (settings != null)
+            {
+                // Update UI properties with database values
+                EnableCloudBackup = settings.EnableCloudBackup;
+                SelectedCloudProvider = settings.SelectedCloudProvider;
+                AutoBackupEnabled = settings.AutoBackupEnabled;
+                MaxBackupsToKeep = settings.MaxBackupsToKeep;
+                
+                System.Diagnostics.Debug.WriteLine($"Loaded backup settings for user {userId}: Provider={settings.SelectedCloudProvider}, Enabled={settings.EnableCloudBackup}");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading cloud backup settings: {ex.Message}");
+        }
+    }
+
+    private async Task SaveCloudBackupSettingsAsync()
+    {
+        try
+        {
+            if (_backupSettingsService == null || _authService?.CurrentUser == null)
+            {
+                return;
+            }
+
+            var userId = _authService.CurrentUser.Id;
+            var settings = new UserBackupSettings
+            {
+                UserId = userId,
+                EnableCloudBackup = EnableCloudBackup,
+                SelectedCloudProvider = SelectedCloudProvider,
+                AutoBackupEnabled = AutoBackupEnabled,
+                MaxBackupsToKeep = MaxBackupsToKeep,
+                BackupIntervalHours = 24, // Default to daily
+                CompressBackups = true // Default to compressed
+            };
+
+            var success = await _backupSettingsService.SaveSettingsAsync(settings);
+            if (success)
+            {
+                System.Diagnostics.Debug.WriteLine($"Saved backup settings for user {userId}");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to save backup settings for user {userId}");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error saving cloud backup settings: {ex.Message}");
+        }
+    }
+
     public async Task<bool> CreateCloudBackupAsync(string masterPassword, string description = "")
     {
         try
@@ -411,6 +483,12 @@ public class SettingsViewModel : BaseViewModel
             {
                 // Refresh backup list
                 await LoadAvailableBackupsAsync();
+                
+                // Update last backup time in database
+                if (_backupSettingsService != null && _authService?.CurrentUser != null)
+                {
+                    await _backupSettingsService.UpdateLastBackupAsync(_authService.CurrentUser.Id, DateTime.UtcNow);
+                }
             }
 
             return result.Success;
