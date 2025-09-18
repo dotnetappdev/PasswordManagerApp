@@ -1,59 +1,58 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Graph;
-using Microsoft.Graph.Models;
-using Microsoft.Identity.Client;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Models.DTOs;
-using System.Text;
 
 namespace PasswordManager.Services.Services;
 
 /// <summary>
-/// OneDrive backup service implementation using Microsoft Graph API
+/// OneDrive backup service implementation using local OneDrive folder detection
+/// Works with users already signed into OneDrive on Windows - no credentials collected
 /// </summary>
 public class OneDriveBackupService : IOneDriveBackupService
 {
     private readonly ILogger<OneDriveBackupService> _logger;
-    private readonly HttpClient _httpClient;
-    private string? _accessToken;
     private const string BackupFolderName = "PasswordManager";
 
     public string ServiceName => "OneDrive";
     public long MaxBackupSizeBytes => 100 * 1024 * 1024; // 100MB limit for personal OneDrive
 
-    public OneDriveBackupService(ILogger<OneDriveBackupService> logger, HttpClient httpClient)
+    public OneDriveBackupService(ILogger<OneDriveBackupService> logger)
     {
         _logger = logger;
-        _httpClient = httpClient;
     }
 
     public async Task<bool> AuthenticateAsync()
     {
         try
         {
-            // For now, this is a placeholder implementation
-            // In a real application, this would handle OAuth2 flow with Microsoft
-            _logger.LogWarning("OneDrive authentication is not fully implemented. This is a placeholder.");
-            
-            // Simulate authentication success for demonstration
-            _accessToken = "placeholder-token";
-            return false; // Return false since it's not really authenticated
+            // Check if OneDrive is set up and syncing on this Windows machine
+            var oneDrivePath = GetOneDrivePath();
+            if (oneDrivePath != null)
+            {
+                _logger.LogInformation("OneDrive folder detected at: {Path}", oneDrivePath);
+                return true;
+            }
+
+            _logger.LogInformation("OneDrive is not set up or not syncing on this machine");
+            return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to authenticate with OneDrive");
+            _logger.LogError(ex, "Failed to detect OneDrive");
             return false;
         }
     }
 
     public async Task<bool> IsAuthenticatedAsync()
     {
-        return !string.IsNullOrEmpty(_accessToken);
+        return GetOneDrivePath() != null;
     }
 
     public async Task SignOutAsync()
     {
-        _accessToken = null;
+        // Cannot programmatically sign out of OneDrive on Windows
+        // User needs to sign out through OneDrive app or Windows settings
+        _logger.LogInformation("User must sign out of OneDrive through Windows settings or OneDrive app");
     }
 
     public async Task<CloudBackupResult> UploadBackupAsync(byte[] backupData, string fileName, string? description = null)
@@ -65,7 +64,7 @@ public class OneDriveBackupService : IOneDriveBackupService
                 return new CloudBackupResult 
                 { 
                     Success = false, 
-                    ErrorMessage = "Not authenticated with OneDrive" 
+                    ErrorMessage = "OneDrive is not set up or not syncing on this machine" 
                 };
             }
 
@@ -78,21 +77,40 @@ public class OneDriveBackupService : IOneDriveBackupService
                 };
             }
 
-            // Placeholder implementation
-            _logger.LogInformation("OneDrive upload would be implemented here for file: {FileName}", fileName);
-            
+            var oneDrivePath = GetOneDrivePath();
+            if (oneDrivePath == null)
+            {
+                return new CloudBackupResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "OneDrive path not found" 
+                };
+            }
+
+            // Create PasswordManager folder in OneDrive
+            var backupFolder = Path.Combine(oneDrivePath, BackupFolderName);
+            if (!Directory.Exists(backupFolder))
+            {
+                Directory.CreateDirectory(backupFolder);
+                _logger.LogInformation("Created backup folder at: {Path}", backupFolder);
+            }
+
+            var filePath = Path.Combine(backupFolder, fileName);
+            await File.WriteAllBytesAsync(filePath, backupData);
+
+            var fileInfo = new FileInfo(filePath);
             return new CloudBackupResult
             {
                 Success = true,
                 BackupInfo = new CloudBackupInfo
                 {
-                    Id = Guid.NewGuid().ToString(),
+                    Id = filePath,
                     FileName = fileName,
                     Description = description,
-                    CreatedAt = DateTime.UtcNow,
-                    ModifiedAt = DateTime.UtcNow,
-                    SizeInBytes = backupData.Length,
-                    CloudPath = $"OneDrive://{BackupFolderName}/{fileName}",
+                    CreatedAt = fileInfo.CreationTimeUtc,
+                    ModifiedAt = fileInfo.LastWriteTimeUtc,
+                    SizeInBytes = fileInfo.Length,
+                    CloudPath = filePath,
                     ServiceName = ServiceName
                 }
             };
@@ -112,22 +130,32 @@ public class OneDriveBackupService : IOneDriveBackupService
     {
         try
         {
-            if (!await IsAuthenticatedAsync())
+            if (!File.Exists(backupId))
             {
                 return new CloudBackupResult 
                 { 
                     Success = false, 
-                    ErrorMessage = "Not authenticated with OneDrive" 
+                    ErrorMessage = "Backup file not found" 
                 };
             }
 
-            // Placeholder implementation
-            _logger.LogInformation("OneDrive download would be implemented here for backup: {BackupId}", backupId);
-            
+            var backupData = await File.ReadAllBytesAsync(backupId);
+            var fileInfo = new FileInfo(backupId);
+
             return new CloudBackupResult
             {
-                Success = false,
-                ErrorMessage = "OneDrive download is not yet implemented"
+                Success = true,
+                BackupData = backupData,
+                BackupInfo = new CloudBackupInfo
+                {
+                    Id = backupId,
+                    FileName = fileInfo.Name,
+                    CreatedAt = fileInfo.CreationTimeUtc,
+                    ModifiedAt = fileInfo.LastWriteTimeUtc,
+                    SizeInBytes = fileInfo.Length,
+                    CloudPath = backupId,
+                    ServiceName = ServiceName
+                }
             };
         }
         catch (Exception ex)
@@ -150,9 +178,36 @@ public class OneDriveBackupService : IOneDriveBackupService
                 return new List<CloudBackupInfo>();
             }
 
-            // Placeholder implementation
-            _logger.LogInformation("OneDrive list backups would be implemented here");
-            return new List<CloudBackupInfo>();
+            var oneDrivePath = GetOneDrivePath();
+            if (oneDrivePath == null)
+            {
+                return new List<CloudBackupInfo>();
+            }
+
+            var backupFolder = Path.Combine(oneDrivePath, BackupFolderName);
+            if (!Directory.Exists(backupFolder))
+            {
+                return new List<CloudBackupInfo>();
+            }
+
+            var backupFiles = Directory.GetFiles(backupFolder, "*.pwmbackup")
+                .Select(filePath =>
+                {
+                    var fileInfo = new FileInfo(filePath);
+                    return new CloudBackupInfo
+                    {
+                        Id = filePath,
+                        FileName = fileInfo.Name,
+                        CreatedAt = fileInfo.CreationTimeUtc,
+                        ModifiedAt = fileInfo.LastWriteTimeUtc,
+                        SizeInBytes = fileInfo.Length,
+                        CloudPath = filePath,
+                        ServiceName = ServiceName
+                    };
+                })
+                .ToList();
+
+            return backupFiles;
         }
         catch (Exception ex)
         {
@@ -165,14 +220,12 @@ public class OneDriveBackupService : IOneDriveBackupService
     {
         try
         {
-            if (!await IsAuthenticatedAsync())
+            if (File.Exists(backupId))
             {
-                return false;
+                File.Delete(backupId);
+                return true;
             }
-
-            // Placeholder implementation
-            _logger.LogInformation("OneDrive delete would be implemented here for backup: {BackupId}", backupId);
-            return true;
+            return false;
         }
         catch (Exception ex)
         {
@@ -190,14 +243,22 @@ public class OneDriveBackupService : IOneDriveBackupService
                 return null;
             }
 
-            // Placeholder implementation
+            var oneDrivePath = GetOneDrivePath();
+            if (oneDrivePath == null)
+            {
+                return null;
+            }
+
+            // Try to get available space from the OneDrive folder
+            var driveInfo = new DriveInfo(Path.GetPathRoot(oneDrivePath) ?? oneDrivePath);
+            
             return new OneDriveAccountInfo
             {
                 DisplayName = "OneDrive User",
-                Email = "user@outlook.com",
-                TotalSpace = 5 * 1024 * 1024 * 1024L, // 5GB
-                UsedSpace = 1024 * 1024 * 1024L, // 1GB
-                AvailableSpace = 4 * 1024 * 1024 * 1024L // 4GB
+                Email = "user@outlook.com", // Cannot determine actual email without API
+                TotalSpace = driveInfo.TotalSize,
+                UsedSpace = driveInfo.TotalSize - driveInfo.AvailableFreeSpace,
+                AvailableSpace = driveInfo.AvailableFreeSpace
             };
         }
         catch (Exception ex)
@@ -217,6 +278,66 @@ public class OneDriveBackupService : IOneDriveBackupService
         catch
         {
             return 0;
+        }
+    }
+
+    /// <summary>
+    /// Detects OneDrive folder path on Windows when user is already signed in
+    /// This approach doesn't collect credentials and works with existing Windows OneDrive integration
+    /// </summary>
+    private string? GetOneDrivePath()
+    {
+        try
+        {
+            // Method 1: Check environment variable (most reliable)
+            var oneDriveEnv = Environment.GetEnvironmentVariable("OneDrive");
+            if (!string.IsNullOrEmpty(oneDriveEnv) && Directory.Exists(oneDriveEnv))
+            {
+                _logger.LogDebug("OneDrive detected via environment variable: {Path}", oneDriveEnv);
+                return oneDriveEnv;
+            }
+
+            // Method 2: Check user profile folder (common location)
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var commonPaths = new[]
+            {
+                Path.Combine(userProfile, "OneDrive"),
+                Path.Combine(userProfile, "OneDrive - Personal"),
+                Path.Combine(userProfile, "OneDrive - Microsoft")
+            };
+
+            foreach (var path in commonPaths)
+            {
+                if (Directory.Exists(path))
+                {
+                    _logger.LogDebug("OneDrive detected at: {Path}", path);
+                    return path;
+                }
+            }
+
+            // Method 3: Check for OneDrive registry key (Windows specific)
+            try
+            {
+                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\OneDrive\Accounts\Personal");
+                var userFolder = key?.GetValue("UserFolder")?.ToString();
+                if (!string.IsNullOrEmpty(userFolder) && Directory.Exists(userFolder))
+                {
+                    _logger.LogDebug("OneDrive detected via registry: {Path}", userFolder);
+                    return userFolder;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Could not check OneDrive registry key");
+            }
+
+            _logger.LogInformation("OneDrive folder not found - user may not be signed in or OneDrive may not be syncing");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error detecting OneDrive path");
+            return null;
         }
     }
 }
