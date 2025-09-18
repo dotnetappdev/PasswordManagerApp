@@ -218,6 +218,12 @@ public partial class App : Application
                 services.AddSingleton<PluginDiscoveryService>();
                 services.AddScoped<IImportService, ImportService>();
 
+                // Register cloud backup services
+                services.AddScoped<IDatabaseBackupService, DatabaseBackupService>();
+                services.AddScoped<IOneDriveBackupService, OneDriveBackupService>();
+                services.AddScoped<IiCloudBackupService, iCloudBackupService>();
+                services.AddScoped<CloudBackupManager>();
+
                 // Add logging
                 services.AddLogging(builder => builder.AddDebug());
             });

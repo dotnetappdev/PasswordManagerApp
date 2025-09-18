@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
+using PasswordManager.Services.Services;
+using PasswordManager.Models.DTOs;
 using PasswordManager.WinUi.Services;
 
 namespace PasswordManager.WinUi.ViewModels;
@@ -11,6 +13,7 @@ public class SettingsViewModel : BaseViewModel
     private readonly IPlatformService _platformService;
     private readonly ISecureStorageService _secureStorageService;
     private readonly IAuthService _authService;
+    private readonly CloudBackupManager? _cloudBackupManager;
 
     private bool _enableSync = false;
     private bool _enableTwoFactor = false;
@@ -22,6 +25,14 @@ public class SettingsViewModel : BaseViewModel
     private string _apiBaseUrl = "https://localhost:7001/api";
     private string _databaseProvider = "SQLite";
     private string _databaseConnectionString = "";
+    
+    // Cloud backup properties
+    private bool _enableCloudBackup = false;
+    private CloudBackupProvider _selectedCloudProvider = CloudBackupProvider.OneDrive;
+    private bool _autoBackupEnabled = false;
+    private int _maxBackupsToKeep = 10;
+    private List<CloudProviderInfo> _availableCloudProviders = new();
+    private List<CloudBackupInfo> _availableBackups = new();
 
     public SettingsViewModel(IServiceProvider serviceProvider)
     {
@@ -30,8 +41,12 @@ public class SettingsViewModel : BaseViewModel
         _platformService = serviceProvider.GetRequiredService<IPlatformService>();
         _secureStorageService = serviceProvider.GetRequiredService<ISecureStorageService>();
         _authService = serviceProvider.GetRequiredService<IAuthService>();
+        
+        // Cloud backup manager is optional since services may not be registered yet
+        _cloudBackupManager = serviceProvider.GetService<CloudBackupManager>();
 
         LoadSettingsAsync();
+        LoadCloudProvidersAsync();
     }
 
     public bool EnableSync
@@ -92,6 +107,43 @@ public class SettingsViewModel : BaseViewModel
     {
         get => _databaseConnectionString;
         set => SetProperty(ref _databaseConnectionString, value);
+    }
+
+    // Cloud Backup Properties
+    public bool EnableCloudBackup
+    {
+        get => _enableCloudBackup;
+        set => SetProperty(ref _enableCloudBackup, value);
+    }
+
+    public CloudBackupProvider SelectedCloudProvider
+    {
+        get => _selectedCloudProvider;
+        set => SetProperty(ref _selectedCloudProvider, value);
+    }
+
+    public bool AutoBackupEnabled
+    {
+        get => _autoBackupEnabled;
+        set => SetProperty(ref _autoBackupEnabled, value);
+    }
+
+    public int MaxBackupsToKeep
+    {
+        get => _maxBackupsToKeep;
+        set => SetProperty(ref _maxBackupsToKeep, value);
+    }
+
+    public List<CloudProviderInfo> AvailableCloudProviders
+    {
+        get => _availableCloudProviders;
+        set => SetProperty(ref _availableCloudProviders, value);
+    }
+
+    public List<CloudBackupInfo> AvailableBackups
+    {
+        get => _availableBackups;
+        set => SetProperty(ref _availableBackups, value);
     }
 
     public List<string> AvailableThemes => new List<string> { "Light", "Dark", "System" };
@@ -310,6 +362,182 @@ public class SettingsViewModel : BaseViewModel
         {
             System.Diagnostics.Debug.WriteLine($"Error clearing data: {ex.Message}");
             return false;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    // Cloud Backup Methods
+    private async Task LoadCloudProvidersAsync()
+    {
+        try
+        {
+            if (_cloudBackupManager == null)
+            {
+                AvailableCloudProviders = new List<CloudProviderInfo>();
+                return;
+            }
+
+            AvailableCloudProviders = _cloudBackupManager.GetAvailableProviders();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading cloud providers: {ex.Message}");
+            AvailableCloudProviders = new List<CloudProviderInfo>();
+        }
+    }
+
+    public async Task<bool> CreateCloudBackupAsync(string masterPassword, string description = "")
+    {
+        try
+        {
+            if (_cloudBackupManager == null)
+            {
+                return false;
+            }
+
+            IsLoading = true;
+
+            var fileName = $"PasswordManager_Backup_{DateTime.Now:yyyyMMdd_HHmmss}";
+            var result = await _cloudBackupManager.CreateAndUploadBackupAsync(
+                SelectedCloudProvider, 
+                masterPassword, 
+                fileName, 
+                description);
+
+            if (result.Success)
+            {
+                // Refresh backup list
+                await LoadAvailableBackupsAsync();
+            }
+
+            return result.Success;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error creating cloud backup: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    public async Task<bool> RestoreCloudBackupAsync(CloudBackupInfo backup, string masterPassword)
+    {
+        try
+        {
+            if (_cloudBackupManager == null)
+            {
+                return false;
+            }
+
+            IsLoading = true;
+
+            // Parse the provider from the service name
+            var provider = backup.ServiceName == "OneDrive" 
+                ? CloudBackupProvider.OneDrive 
+                : CloudBackupProvider.iCloud;
+
+            return await _cloudBackupManager.DownloadAndRestoreBackupAsync(
+                provider, 
+                backup.Id, 
+                masterPassword);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error restoring cloud backup: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    public async Task LoadAvailableBackupsAsync()
+    {
+        try
+        {
+            if (_cloudBackupManager == null)
+            {
+                AvailableBackups = new List<CloudBackupInfo>();
+                return;
+            }
+
+            var backups = await _cloudBackupManager.ListAllBackupsAsync();
+            AvailableBackups = backups;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading available backups: {ex.Message}");
+            AvailableBackups = new List<CloudBackupInfo>();
+        }
+    }
+
+    public async Task<bool> DeleteCloudBackupAsync(CloudBackupInfo backup)
+    {
+        try
+        {
+            if (_cloudBackupManager == null)
+            {
+                return false;
+            }
+
+            // Parse the provider from the service name
+            var provider = backup.ServiceName == "OneDrive" 
+                ? CloudBackupProvider.OneDrive 
+                : CloudBackupProvider.iCloud;
+
+            var result = await _cloudBackupManager.DeleteBackupAsync(provider, backup.Id);
+            
+            if (result)
+            {
+                // Refresh backup list
+                await LoadAvailableBackupsAsync();
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting cloud backup: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<BrowserExportResult?> ExportToBrowserAsync(BrowserExportFormat format)
+    {
+        try
+        {
+            if (_cloudBackupManager == null)
+            {
+                return null;
+            }
+
+            IsLoading = true;
+
+            // Get database backup service from cloud backup manager
+            // For now, return a placeholder result
+            return new BrowserExportResult
+            {
+                Success = false,
+                ErrorMessage = "Browser export functionality is not yet fully implemented",
+                ExportedCount = 0
+            };
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error exporting to browser: {ex.Message}");
+            return new BrowserExportResult
+            {
+                Success = false,
+                ErrorMessage = ex.Message,
+                ExportedCount = 0
+            };
         }
         finally
         {

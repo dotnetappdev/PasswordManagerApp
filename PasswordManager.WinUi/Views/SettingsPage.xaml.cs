@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.WinUi.ViewModels;
 using PasswordManager.Services.Interfaces;
+using PasswordManager.Models.DTOs;
 using System.Linq;
 
 namespace PasswordManager.WinUi.Views;
@@ -411,5 +412,183 @@ public sealed partial class SettingsPage : Page
             XamlRoot = XamlRoot
         };
         await errorDialog.ShowAsync();
+    }
+
+    // Cloud Backup Event Handlers
+    private async void CloudBackupToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
+        {
+            await _viewModel.SaveSettingsAsync();
+            if (_viewModel.EnableCloudBackup)
+            {
+                await _viewModel.LoadAvailableBackupsAsync();
+            }
+        }
+    }
+
+    private async void CreateBackupButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
+        {
+            // Show password dialog
+            var passwordDialog = new ContentDialog
+            {
+                Title = "Create Cloud Backup",
+                Content = await CreateMasterPasswordInput(),
+                PrimaryButtonText = "Create Backup",
+                CloseButtonText = "Cancel",
+                XamlRoot = XamlRoot
+            };
+
+            var result = await passwordDialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && passwordDialog.Content is PasswordBox passwordBox)
+            {
+                var success = await _viewModel.CreateCloudBackupAsync(passwordBox.Password);
+                
+                var message = success ? "Backup created successfully!" : "Backup creation failed. Please try again.";
+                var dialog = new ContentDialog
+                {
+                    Title = success ? "Success" : "Error",
+                    Content = message,
+                    CloseButtonText = "OK",
+                    XamlRoot = XamlRoot
+                };
+                
+                await dialog.ShowAsync();
+            }
+        }
+    }
+
+    private async void RefreshBackupsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
+        {
+            await _viewModel.LoadAvailableBackupsAsync();
+        }
+    }
+
+    private async void RestoreBackupButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null && sender is Button button && button.Tag is CloudBackupInfo backup)
+        {
+            // Show confirmation dialog
+            var confirmDialog = new ContentDialog
+            {
+                Title = "Restore Backup",
+                Content = $"This will replace all current data with the backup from {backup.CreatedAt:MMM dd, yyyy HH:mm}. This action cannot be undone.\n\nAre you sure you want to continue?",
+                PrimaryButtonText = "Yes, Restore",
+                CloseButtonText = "Cancel",
+                XamlRoot = XamlRoot
+            };
+
+            if (await confirmDialog.ShowAsync() == ContentDialogResult.Primary)
+            {
+                // Show password dialog
+                var passwordDialog = new ContentDialog
+                {
+                    Title = "Enter Master Password",
+                    Content = await CreateMasterPasswordInput(),
+                    PrimaryButtonText = "Restore",
+                    CloseButtonText = "Cancel",
+                    XamlRoot = XamlRoot
+                };
+
+                if (await passwordDialog.ShowAsync() == ContentDialogResult.Primary && passwordDialog.Content is PasswordBox passwordBox)
+                {
+                    var success = await _viewModel.RestoreCloudBackupAsync(backup, passwordBox.Password);
+                    
+                    var message = success ? "Backup restored successfully!" : "Backup restoration failed. Please check your master password and try again.";
+                    var dialog = new ContentDialog
+                    {
+                        Title = success ? "Success" : "Error",
+                        Content = message,
+                        CloseButtonText = "OK",
+                        XamlRoot = XamlRoot
+                    };
+                    
+                    await dialog.ShowAsync();
+                }
+            }
+        }
+    }
+
+    private async void DeleteBackupButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null && sender is Button button && button.Tag is CloudBackupInfo backup)
+        {
+            var confirmDialog = new ContentDialog
+            {
+                Title = "Delete Backup",
+                Content = $"Are you sure you want to delete the backup '{backup.FileName}'? This action cannot be undone.",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                XamlRoot = XamlRoot
+            };
+
+            if (await confirmDialog.ShowAsync() == ContentDialogResult.Primary)
+            {
+                var success = await _viewModel.DeleteCloudBackupAsync(backup);
+                
+                if (!success)
+                {
+                    var errorDialog = new ContentDialog
+                    {
+                        Title = "Error",
+                        Content = "Failed to delete backup. Please try again.",
+                        CloseButtonText = "OK",
+                        XamlRoot = XamlRoot
+                    };
+                    
+                    await errorDialog.ShowAsync();
+                }
+            }
+        }
+    }
+
+    private async void ExportToBrowserButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null && sender is Button button)
+        {
+            var browserName = button.Tag?.ToString();
+            if (Enum.TryParse<BrowserExportFormat>(browserName, out var format))
+            {
+                var result = await _viewModel.ExportToBrowserAsync(format);
+                
+                var message = result?.Success == true 
+                    ? $"Successfully exported {result.ExportedCount} passwords to {browserName} format." 
+                    : $"Export to {browserName} failed: {result?.ErrorMessage}";
+                
+                var dialog = new ContentDialog
+                {
+                    Title = result?.Success == true ? "Export Success" : "Export Failed",
+                    Content = message,
+                    CloseButtonText = "OK",
+                    XamlRoot = XamlRoot
+                };
+                
+                await dialog.ShowAsync();
+            }
+        }
+    }
+
+    private async Task<PasswordBox> CreateMasterPasswordInput()
+    {
+        var stackPanel = new StackPanel { Spacing = 8 };
+        
+        stackPanel.Children.Add(new TextBlock 
+        { 
+            Text = "Enter your master password:",
+            Style = Application.Current.Resources["ModernBodyStyle"] as Style
+        });
+        
+        var passwordBox = new PasswordBox 
+        { 
+            PlaceholderText = "Master Password",
+            Width = 300
+        };
+        stackPanel.Children.Add(passwordBox);
+
+        return passwordBox;
     }
 }
