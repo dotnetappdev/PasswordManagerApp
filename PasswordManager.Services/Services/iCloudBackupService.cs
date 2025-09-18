@@ -5,9 +5,15 @@ using PasswordManager.Models.DTOs;
 namespace PasswordManager.Services.Services;
 
 /// <summary>
-/// iCloud backup service implementation
+/// iCloud backup service implementation using Windows iCloud Drive folder detection
 /// Note: iCloud integration is limited on non-Apple platforms
 /// This provides a basic file-based approach for Windows/Linux
+/// 
+/// Security Model (similar to Microsoft Authenticator):
+/// - Stores backups in iCloudDrive/Apps/PasswordManager folder (app-specific secure location)
+/// - Sets folder and file attributes as Hidden for additional security
+/// - Files are encrypted before storage and have .pwmbackup extension
+/// - Works with existing iCloud for Windows installation
 /// </summary>
 public class iCloudBackupService : IiCloudBackupService
 {
@@ -81,15 +87,40 @@ public class iCloudBackupService : IiCloudBackupService
                 };
             }
 
-            // Create PasswordManager folder in iCloud Drive
-            var backupFolder = Path.Combine(icloudPath, "PasswordManager");
+            // Create secure PasswordManager folder in iCloud Drive (similar to Microsoft Authenticator)
+            var backupFolder = Path.Combine(icloudPath, "Apps", "PasswordManager");
             if (!Directory.Exists(backupFolder))
             {
                 Directory.CreateDirectory(backupFolder);
+                _logger.LogInformation("Created secure iCloud backup folder at: {Path}", backupFolder);
+                
+                // Set folder as hidden for additional security
+                try
+                {
+                    var directoryInfo = new DirectoryInfo(backupFolder);
+                    directoryInfo.Attributes |= FileAttributes.Hidden;
+                    _logger.LogDebug("Set secure attributes on iCloud backup folder");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not set secure attributes on iCloud backup folder");
+                }
             }
 
             var filePath = Path.Combine(backupFolder, fileName);
             await File.WriteAllBytesAsync(filePath, backupData);
+
+            // Set secure file attributes
+            try
+            {
+                var secureFileInfo = new FileInfo(filePath);
+                secureFileInfo.Attributes |= FileAttributes.Hidden;
+                _logger.LogDebug("Set secure attributes on iCloud backup file: {FileName}", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not set secure attributes on iCloud backup file: {FileName}", fileName);
+            }
 
             var fileInfo = new FileInfo(filePath);
             return new CloudBackupResult
@@ -177,7 +208,7 @@ public class iCloudBackupService : IiCloudBackupService
                 return new List<CloudBackupInfo>();
             }
 
-            var backupFolder = Path.Combine(icloudPath, "PasswordManager");
+            var backupFolder = Path.Combine(icloudPath, "Apps", "PasswordManager");
             if (!Directory.Exists(backupFolder))
             {
                 return new List<CloudBackupInfo>();
