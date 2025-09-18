@@ -217,7 +217,7 @@ public sealed partial class MainWindow : Window
 
     private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
     {
-        // Handle search text changes and provide suggestions
+        // Handle search text changes and provide suggestions + auto-filter
         if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
         {
             var query = sender.Text?.ToLower() ?? "";
@@ -244,10 +244,42 @@ public sealed partial class MainWindow : Window
                 }
                 
                 sender.ItemsSource = suggestions;
+                
+                // Auto-filter: Navigate to passwords page and apply search immediately
+                try
+                {
+                    NavigateToPage("AllItems");
+                    
+                    // Apply auto-filter with slight delay to ensure page is loaded
+                    Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+                    {
+                        PassSearchQueryToPage(query);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error during auto-filter: {ex.Message}");
+                }
             }
             else
             {
                 sender.ItemsSource = null;
+                
+                // Clear filters when search is empty
+                if (string.IsNullOrWhiteSpace(query))
+                {
+                    try
+                    {
+                        Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+                        {
+                            PassSearchQueryToPage("");
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error clearing filter: {ex.Message}");
+                    }
+                }
             }
         }
     }
