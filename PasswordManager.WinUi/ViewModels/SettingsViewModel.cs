@@ -32,6 +32,7 @@ public class SettingsViewModel : BaseViewModel
     private CloudBackupProvider _selectedCloudProvider = CloudBackupProvider.OneDrive;
     private bool _autoBackupEnabled = false;
     private int _maxBackupsToKeep = 10;
+    private string _networkPath = string.Empty;
     private List<CloudProviderInfo> _availableCloudProviders = new();
     private List<CloudBackupInfo> _availableBackups = new();
 
@@ -135,6 +136,12 @@ public class SettingsViewModel : BaseViewModel
     {
         get => _maxBackupsToKeep;
         set => SetProperty(ref _maxBackupsToKeep, value);
+    }
+
+    public string NetworkPath
+    {
+        get => _networkPath;
+        set => SetProperty(ref _networkPath, value);
     }
 
     public List<CloudProviderInfo> AvailableCloudProviders
@@ -414,6 +421,13 @@ public class SettingsViewModel : BaseViewModel
                 SelectedCloudProvider = settings.SelectedCloudProvider;
                 AutoBackupEnabled = settings.AutoBackupEnabled;
                 MaxBackupsToKeep = settings.MaxBackupsToKeep;
+                NetworkPath = settings.NetworkPath ?? string.Empty;
+                
+                // Set network path in the cloud backup manager if configured
+                if (!string.IsNullOrEmpty(settings.NetworkPath) && _cloudBackupManager != null)
+                {
+                    _cloudBackupManager.SetNetworkPath(settings.NetworkPath);
+                }
                 
                 System.Diagnostics.Debug.WriteLine($"Loaded backup settings for user {userId}: Provider={settings.SelectedCloudProvider}, Enabled={settings.EnableCloudBackup}");
             }
@@ -441,6 +455,7 @@ public class SettingsViewModel : BaseViewModel
                 SelectedCloudProvider = SelectedCloudProvider,
                 AutoBackupEnabled = AutoBackupEnabled,
                 MaxBackupsToKeep = MaxBackupsToKeep,
+                NetworkPath = NetworkPath,
                 BackupIntervalHours = 24, // Default to daily
                 CompressBackups = true // Default to compressed
             };
@@ -448,6 +463,12 @@ public class SettingsViewModel : BaseViewModel
             var success = await _backupSettingsService.SaveSettingsAsync(settings);
             if (success)
             {
+                // Set network path in cloud backup manager if configured
+                if (!string.IsNullOrEmpty(NetworkPath) && _cloudBackupManager != null)
+                {
+                    _cloudBackupManager.SetNetworkPath(NetworkPath);
+                }
+                
                 System.Diagnostics.Debug.WriteLine($"Saved backup settings for user {userId}");
             }
             else
@@ -621,5 +642,113 @@ public class SettingsViewModel : BaseViewModel
         {
             IsLoading = false;
         }
+    }
+
+    /// <summary>
+    /// Choose network location path for backups
+    /// </summary>
+    public async Task ChooseNetworkLocationAsync()
+    {
+        try
+        {
+            var folderPicker = new Windows.Storage.Pickers.FolderPicker();
+            
+            // Get the current window's HWND
+            var app = App.Current as App;
+            var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(app?.MainWindow);
+            
+            // Initialize the folder picker with the window handle
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hWnd);
+            
+            folderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.NetworkFolder;
+            folderPicker.FileTypeFilter.Add("*");
+            
+            var folder = await folderPicker.PickSingleFolderAsync();
+            if (folder != null)
+            {
+                NetworkPath = folder.Path;
+                
+                // Save settings immediately
+                await SaveCloudBackupSettingsAsync();
+                
+                System.Diagnostics.Debug.WriteLine($"Network location set to: {folder.Path}");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error choosing network location: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Restore database from backup file using file dialog
+    /// </summary>
+    public async Task<bool> RestoreFromFileAsync()
+    {
+        try
+        {
+            if (_cloudBackupManager == null)
+            {
+                return false;
+            }
+
+            var filePicker = new Windows.Storage.Pickers.FileOpenPicker();
+            
+            // Get the current window's HWND
+            var app = App.Current as App;
+            var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(app?.MainWindow);
+            
+            // Initialize the file picker with the window handle
+            WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hWnd);
+            
+            filePicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            filePicker.FileTypeFilter.Add(".pwmbackup");
+            filePicker.FileTypeFilter.Add("*");
+            
+            var file = await filePicker.PickSingleFileAsync();
+            if (file != null)
+            {
+                // Prompt for master password
+                var masterPassword = await PromptForMasterPasswordAsync("Enter your master password to restore the backup:");
+                
+                if (!string.IsNullOrEmpty(masterPassword))
+                {
+                    IsLoading = true;
+                    
+                    var success = await _cloudBackupManager.RestoreFromFileAsync(file.Path, masterPassword);
+                    
+                    if (success)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Successfully restored from file: {file.Name}");
+                        return true;
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Failed to restore from file: {file.Name}");
+                    }
+                }
+            }
+            
+            return false;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error restoring from file: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Prompt user for master password
+    /// </summary>
+    private async Task<string> PromptForMasterPasswordAsync(string message)
+    {
+        // This is a placeholder - in a real implementation you would show a proper dialog
+        // For now, return empty string to prevent null reference issues
+        return string.Empty;
     }
 }

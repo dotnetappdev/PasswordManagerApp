@@ -60,6 +60,12 @@ public class UserBackupSettings
     public string? BackupFolderPath { get; set; }
 
     /// <summary>
+    /// Network location path for network backups (UNC path, mapped drive, etc.)
+    /// </summary>
+    [MaxLength(500)]
+    public string? NetworkPath { get; set; }
+
+    /// <summary>
     /// Last successful backup timestamp
     /// </summary>
     public DateTime? LastBackupAt { get; set; }

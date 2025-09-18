@@ -29,6 +29,9 @@ public sealed partial class SettingsPage : Page
             _authService = serviceProvider.GetRequiredService<IAuthService>();
             _viewModel = new SettingsViewModel(serviceProvider);
             DataContext = _viewModel;
+            
+            // Update network location visibility based on initial provider selection
+            UpdateNetworkLocationVisibility();
         }
     }
 
@@ -427,6 +430,20 @@ public sealed partial class SettingsPage : Page
         }
     }
 
+    private void CloudProviderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        UpdateNetworkLocationVisibility();
+    }
+
+    private void UpdateNetworkLocationVisibility()
+    {
+        if (_viewModel != null && NetworkLocationPanel != null)
+        {
+            NetworkLocationPanel.Visibility = _viewModel.SelectedCloudProvider == CloudBackupProvider.NetworkLocation 
+                ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
     private async void CreateBackupButton_Click(object sender, RoutedEventArgs e)
     {
         if (_viewModel != null)
@@ -465,6 +482,36 @@ public sealed partial class SettingsPage : Page
         if (_viewModel != null)
         {
             await _viewModel.LoadAvailableBackupsAsync();
+        }
+    }
+
+    private async void ChooseNetworkLocationButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
+        {
+            await _viewModel.ChooseNetworkLocationAsync();
+        }
+    }
+
+    private async void RestoreFromFileButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
+        {
+            var success = await _viewModel.RestoreFromFileAsync();
+            
+            var message = success ? 
+                "Database restored successfully from file!" : 
+                "Failed to restore database from file. Please check the file and master password.";
+            
+            var dialog = new ContentDialog
+            {
+                Title = success ? "Success" : "Error",
+                Content = message,
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot
+            };
+            
+            await dialog.ShowAsync();
         }
     }
 

@@ -54,6 +54,7 @@ public class BackupSettingsService : IBackupSettingsService
                 existingSettings.BackupIntervalHours = settings.BackupIntervalHours;
                 existingSettings.CompressBackups = settings.CompressBackups;
                 existingSettings.BackupFolderPath = settings.BackupFolderPath;
+                existingSettings.NetworkPath = settings.NetworkPath;
                 existingSettings.LastModified = settings.LastModified;
 
                 _context.UserBackupSettings.Update(existingSettings);

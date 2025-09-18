@@ -13,17 +13,20 @@ public class CloudBackupManager
     private readonly IDatabaseBackupService _databaseBackupService;
     private readonly IOneDriveBackupService _oneDriveService;
     private readonly IiCloudBackupService _iCloudService;
+    private readonly INetworkLocationBackupService _networkLocationService;
 
     public CloudBackupManager(
         ILogger<CloudBackupManager> logger,
         IDatabaseBackupService databaseBackupService,
         IOneDriveBackupService oneDriveService,
-        IiCloudBackupService iCloudService)
+        IiCloudBackupService iCloudService,
+        INetworkLocationBackupService networkLocationService)
     {
         _logger = logger;
         _databaseBackupService = databaseBackupService;
         _oneDriveService = oneDriveService;
         _iCloudService = iCloudService;
+        _networkLocationService = networkLocationService;
     }
 
     /// <summary>
@@ -47,6 +50,13 @@ public class CloudBackupManager
                 DisplayName = _iCloudService.ServiceName,
                 IsAvailable = _iCloudService.IsAvailable,
                 MaxBackupSizeMB = _iCloudService.MaxBackupSizeBytes / (1024 * 1024)
+            },
+            new CloudProviderInfo
+            {
+                Provider = CloudBackupProvider.NetworkLocation,
+                DisplayName = _networkLocationService.ServiceName,
+                IsAvailable = true, // Always show as available (path can be configured)
+                MaxBackupSizeMB = 1000 // No specific limit for network locations
             }
         };
     }
@@ -236,12 +246,80 @@ public class CloudBackupManager
         }
     }
 
+    /// <summary>
+    /// Configure network location path for network backup provider
+    /// </summary>
+    /// <param name="networkPath">UNC path, mapped drive, or network location</param>
+    public void SetNetworkPath(string networkPath)
+    {
+        _networkLocationService.SetNetworkPath(networkPath);
+        _logger.LogInformation("Network backup path configured: {Path}", networkPath);
+    }
+
+    /// <summary>
+    /// Get the configured network path
+    /// </summary>
+    /// <returns>Network path or empty string if not configured</returns>
+    public string GetNetworkPath()
+    {
+        return _networkLocationService.GetNetworkPath();
+    }
+
+    /// <summary>
+    /// Validate network location accessibility
+    /// </summary>
+    /// <returns>True if network location is accessible</returns>
+    public async Task<bool> ValidateNetworkLocationAsync()
+    {
+        return await _networkLocationService.ValidateNetworkLocationAsync();
+    }
+
+    /// <summary>
+    /// Restore database from backup file with file dialog
+    /// </summary>
+    /// <param name="backupFilePath">Path to backup file</param>
+    /// <param name="masterPassword">Master password for decryption</param>
+    /// <returns>True if restore was successful</returns>
+    public async Task<bool> RestoreFromFileAsync(string backupFilePath, string masterPassword)
+    {
+        try
+        {
+            if (!File.Exists(backupFilePath))
+            {
+                _logger.LogWarning("Backup file not found: {Path}", backupFilePath);
+                return false;
+            }
+
+            var backupData = await File.ReadAllBytesAsync(backupFilePath);
+            
+            // Use database backup service to restore
+            var result = await _databaseBackupService.RestoreBackupAsync(backupData, masterPassword);
+            
+            if (result)
+            {
+                _logger.LogInformation("Successfully restored database from file: {Path}", backupFilePath);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to restore database from file: {Path}", backupFilePath);
+            }
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error restoring database from file: {Path}", backupFilePath);
+            return false;
+        }
+    }
+
     private ICloudBackupService? GetCloudService(CloudBackupProvider provider)
     {
         return provider switch
         {
             CloudBackupProvider.OneDrive => _oneDriveService,
             CloudBackupProvider.iCloud => _iCloudService,
+            CloudBackupProvider.NetworkLocation => _networkLocationService,
             _ => null
         };
     }

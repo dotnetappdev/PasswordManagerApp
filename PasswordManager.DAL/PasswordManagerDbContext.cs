@@ -340,6 +340,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.BackupIntervalHours).IsRequired();
             entity.Property(e => e.CompressBackups).IsRequired();
             entity.Property(e => e.BackupFolderPath).HasMaxLength(500);
+            entity.Property(e => e.NetworkPath).HasMaxLength(500);
             entity.Property(e => e.LastBackupAt);
             entity.Property(e => e.NextBackupAt);
             entity.Property(e => e.CreatedAt).IsRequired();

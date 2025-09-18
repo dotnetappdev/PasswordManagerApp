@@ -47,5 +47,6 @@ public enum CloudBackupProvider
 {
     None = 0,
     OneDrive = 1,
-    iCloud = 2
+    iCloud = 2,
+    NetworkLocation = 3
 }

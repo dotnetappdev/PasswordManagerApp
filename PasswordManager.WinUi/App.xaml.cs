@@ -222,6 +222,7 @@ public partial class App : Application
                 services.AddScoped<IDatabaseBackupService, DatabaseBackupService>();
                 services.AddScoped<IOneDriveBackupService, OneDriveBackupService>();
                 services.AddScoped<IiCloudBackupService, iCloudBackupService>();
+                services.AddScoped<INetworkLocationBackupService, NetworkLocationBackupService>();
                 services.AddScoped<CloudBackupManager>();
                 services.AddScoped<IBackupSettingsService, BackupSettingsService>();
 
