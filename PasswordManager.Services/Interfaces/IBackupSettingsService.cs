@@ -47,4 +47,9 @@ public interface IBackupSettingsService
     /// Update next backup time for a user
     /// </summary>
     Task UpdateNextBackupTimeAsync(string userId, DateTime nextBackupTime);
+
+    /// <summary>
+    /// Get all backup settings for all users
+    /// </summary>
+    Task<List<UserBackupSettings>> GetAllSettingsAsync();
 }

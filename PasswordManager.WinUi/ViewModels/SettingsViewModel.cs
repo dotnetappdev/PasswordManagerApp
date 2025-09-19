@@ -33,6 +33,10 @@ public class SettingsViewModel : BaseViewModel
     private bool _autoBackupEnabled = false;
     private int _maxBackupsToKeep = 10;
     private string _networkPath = string.Empty;
+    private BackupScheduleInterval _backupScheduleInterval = BackupScheduleInterval.Manual;
+    private TimeSpan _preferredBackupTime = new TimeSpan(2, 0, 0);
+    private DateTime? _nextScheduledBackup;
+    private List<BackupScheduleOption> _scheduleIntervalOptions = new();
     private List<CloudProviderInfo> _availableCloudProviders = new();
     private List<CloudBackupInfo> _availableBackups = new();
 
@@ -51,6 +55,7 @@ public class SettingsViewModel : BaseViewModel
         LoadSettingsAsync();
         LoadCloudProvidersAsync();
         LoadCloudBackupSettingsAsync();
+        InitializeScheduleOptions();
     }
 
     public bool EnableSync
@@ -142,6 +147,30 @@ public class SettingsViewModel : BaseViewModel
     {
         get => _networkPath;
         set => SetProperty(ref _networkPath, value);
+    }
+
+    public BackupScheduleInterval BackupScheduleInterval
+    {
+        get => _backupScheduleInterval;
+        set => SetProperty(ref _backupScheduleInterval, value);
+    }
+
+    public TimeSpan PreferredBackupTime
+    {
+        get => _preferredBackupTime;
+        set => SetProperty(ref _preferredBackupTime, value);
+    }
+
+    public DateTime? NextScheduledBackup
+    {
+        get => _nextScheduledBackup;
+        set => SetProperty(ref _nextScheduledBackup, value);
+    }
+
+    public List<BackupScheduleOption> ScheduleIntervalOptions
+    {
+        get => _scheduleIntervalOptions;
+        set => SetProperty(ref _scheduleIntervalOptions, value);
     }
 
     public List<CloudProviderInfo> AvailableCloudProviders
@@ -422,6 +451,9 @@ public class SettingsViewModel : BaseViewModel
                 AutoBackupEnabled = settings.AutoBackupEnabled;
                 MaxBackupsToKeep = settings.MaxBackupsToKeep;
                 NetworkPath = settings.NetworkPath ?? string.Empty;
+                BackupScheduleInterval = settings.BackupScheduleInterval;
+                PreferredBackupTime = settings.PreferredBackupTime;
+                NextScheduledBackup = settings.NextBackupAt;
                 
                 // Set network path in the cloud backup manager if configured
                 if (!string.IsNullOrEmpty(settings.NetworkPath) && _cloudBackupManager != null)
@@ -456,9 +488,15 @@ public class SettingsViewModel : BaseViewModel
                 AutoBackupEnabled = AutoBackupEnabled,
                 MaxBackupsToKeep = MaxBackupsToKeep,
                 NetworkPath = NetworkPath,
-                BackupIntervalHours = 24, // Default to daily
+                BackupScheduleInterval = BackupScheduleInterval,
+                PreferredBackupTime = PreferredBackupTime,
+                BackupIntervalHours = 24, // Legacy field - keep for compatibility
                 CompressBackups = true // Default to compressed
             };
+
+            // Update next backup time based on schedule
+            settings.UpdateNextBackupTime();
+            NextScheduledBackup = settings.NextBackupAt;
 
             var success = await _backupSettingsService.SaveSettingsAsync(settings);
             if (success)
@@ -480,6 +518,11 @@ public class SettingsViewModel : BaseViewModel
         {
             System.Diagnostics.Debug.WriteLine($"Error saving cloud backup settings: {ex.Message}");
         }
+    }
+
+    private void InitializeScheduleOptions()
+    {
+        ScheduleIntervalOptions = BackupScheduleOption.GetAllOptions();
     }
 
     public async Task<bool> CreateCloudBackupAsync(string masterPassword, string description = "")

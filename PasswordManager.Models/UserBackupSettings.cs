@@ -44,9 +44,19 @@ public class UserBackupSettings
     public int MaxBackupsToKeep { get; set; } = 10;
 
     /// <summary>
-    /// Backup interval in hours (default: 24 hours)
+    /// Backup interval in hours (default: 24 hours) - legacy field
     /// </summary>
     public int BackupIntervalHours { get; set; } = 24;
+
+    /// <summary>
+    /// Backup schedule interval (Daily, Weekly, Monthly, etc.)
+    /// </summary>
+    public BackupScheduleInterval BackupScheduleInterval { get; set; } = BackupScheduleInterval.Manual;
+
+    /// <summary>
+    /// Preferred time of day for scheduled backups (UTC)
+    /// </summary>
+    public TimeSpan PreferredBackupTime { get; set; } = new TimeSpan(2, 0, 0); // 2:00 AM UTC
 
     /// <summary>
     /// Whether to compress backups
@@ -84,4 +94,39 @@ public class UserBackupSettings
     /// When settings were last modified
     /// </summary>
     public DateTime LastModified { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Get backup schedule information
+    /// </summary>
+    [NotMapped]
+    public BackupScheduleInfo ScheduleInfo => new BackupScheduleInfo
+    {
+        Interval = BackupScheduleInterval,
+        PreferredTime = PreferredBackupTime,
+        LastScheduledBackup = LastBackupAt,
+        NextScheduledBackup = NextBackupAt,
+        IsEnabled = AutoBackupEnabled && BackupScheduleInterval != BackupScheduleInterval.Manual
+    };
+
+    /// <summary>
+    /// Update next backup time based on current schedule
+    /// </summary>
+    public void UpdateNextBackupTime()
+    {
+        if (!AutoBackupEnabled || BackupScheduleInterval == BackupScheduleInterval.Manual)
+        {
+            NextBackupAt = null;
+            return;
+        }
+
+        NextBackupAt = ScheduleInfo.CalculateNextBackupTime();
+    }
+
+    /// <summary>
+    /// Check if a backup is currently due
+    /// </summary>
+    public bool IsBackupDue()
+    {
+        return ScheduleInfo.IsBackupDue();
+    }
 }

@@ -225,6 +225,8 @@ public partial class App : Application
                 services.AddScoped<INetworkLocationBackupService, NetworkLocationBackupService>();
                 services.AddScoped<CloudBackupManager>();
                 services.AddScoped<IBackupSettingsService, BackupSettingsService>();
+                services.AddSingleton<IScheduledBackupService, ScheduledBackupService>();
+                services.AddHostedService<ScheduledBackupService>();
 
                 // Add logging
                 services.AddLogging(builder => builder.AddDebug());

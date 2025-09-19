@@ -14,19 +14,22 @@ public class CloudBackupManager
     private readonly IOneDriveBackupService _oneDriveService;
     private readonly IiCloudBackupService _iCloudService;
     private readonly INetworkLocationBackupService _networkLocationService;
+    private readonly IBackupSettingsService _backupSettingsService;
 
     public CloudBackupManager(
         ILogger<CloudBackupManager> logger,
         IDatabaseBackupService databaseBackupService,
         IOneDriveBackupService oneDriveService,
         IiCloudBackupService iCloudService,
-        INetworkLocationBackupService networkLocationService)
+        INetworkLocationBackupService networkLocationService,
+        IBackupSettingsService backupSettingsService)
     {
         _logger = logger;
         _databaseBackupService = databaseBackupService;
         _oneDriveService = oneDriveService;
         _iCloudService = iCloudService;
         _networkLocationService = networkLocationService;
+        _backupSettingsService = backupSettingsService;
     }
 
     /// <summary>
@@ -322,6 +325,86 @@ public class CloudBackupManager
             CloudBackupProvider.NetworkLocation => _networkLocationService,
             _ => null
         };
+    }
+
+    /// <summary>
+    /// Create a scheduled backup for a user
+    /// </summary>
+    public async Task<CloudBackupResult> CreateScheduledBackupAsync(string userId, string description)
+    {
+        try
+        {
+            _logger.LogInformation("Creating scheduled backup for user {UserId}", userId);
+            
+            // Get user settings
+            var settings = await _backupSettingsService.GetSettingsAsync(userId);
+            if (settings == null || !settings.EnableCloudBackup)
+            {
+                return new CloudBackupResult
+                {
+                    Success = false,
+                    ErrorMessage = "Cloud backup is not enabled for this user"
+                };
+            }
+
+            // Generate filename for scheduled backup
+            var fileName = $"PasswordManager_Scheduled_{DateTime.UtcNow:yyyyMMdd_HHmmss}.pwmbackup";
+            
+            // For scheduled backups, we'll need to handle master password differently
+            // This is a placeholder - in production, you'd need a secure way to handle this
+            var masterPassword = ""; // TODO: Handle master password for scheduled backups
+            
+            return await CreateAndUploadBackupAsync(settings.SelectedCloudProvider, masterPassword, fileName, description);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating scheduled backup for user {UserId}", userId);
+            return new CloudBackupResult
+            {
+                Success = false,
+                ErrorMessage = $"Failed to create scheduled backup: {ex.Message}"
+            };
+        }
+    }
+
+    /// <summary>
+    /// Create a manual backup for a user
+    /// </summary>
+    public async Task<CloudBackupResult> CreateManualBackupAsync(string userId, string description)
+    {
+        try
+        {
+            _logger.LogInformation("Creating manual backup for user {UserId}", userId);
+            
+            // Get user settings
+            var settings = await _backupSettingsService.GetSettingsAsync(userId);
+            if (settings == null || !settings.EnableCloudBackup)
+            {
+                return new CloudBackupResult
+                {
+                    Success = false,
+                    ErrorMessage = "Cloud backup is not enabled for this user"
+                };
+            }
+
+            // Generate filename for manual backup
+            var fileName = $"PasswordManager_Manual_{DateTime.UtcNow:yyyyMMdd_HHmmss}.pwmbackup";
+            
+            // For manual backups, we'll need to handle master password differently
+            // This is a placeholder - in production, you'd need a secure way to handle this
+            var masterPassword = ""; // TODO: Handle master password for manual backups
+            
+            return await CreateAndUploadBackupAsync(settings.SelectedCloudProvider, masterPassword, fileName, description);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating manual backup for user {UserId}", userId);
+            return new CloudBackupResult
+            {
+                Success = false,
+                ErrorMessage = $"Failed to create manual backup: {ex.Message}"
+            };
+        }
     }
 }
 

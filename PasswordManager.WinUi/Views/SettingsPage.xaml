@@ -237,6 +237,36 @@
                             </StackPanel>
                         </StackPanel>
 
+                        <!-- Backup Schedule Settings -->
+                        <StackPanel Spacing="12" Visibility="{Binding EnableCloudBackup, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Backup Schedule" 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            
+                            <ComboBox Header="Schedule Frequency"
+                                     ItemsSource="{Binding ScheduleIntervalOptions}"
+                                     SelectedValue="{Binding BackupScheduleInterval, Mode=TwoWay}"
+                                     SelectedValuePath="Interval"
+                                     DisplayMemberPath="DisplayName"
+                                     Style="{StaticResource ModernComboBoxStyle}"
+                                     MinWidth="200"/>
+                            
+                            <!-- Time Picker for preferred backup time -->
+                            <StackPanel Spacing="8" Visibility="{Binding AutoBackupEnabled, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="Preferred Backup Time"
+                                          Style="{StaticResource ModernCaptionStyle}"/>
+                                <TimePicker x:Name="BackupTimePicker"
+                                           Time="{Binding PreferredBackupTime, Mode=TwoWay}"
+                                           ClockIdentifier="24HourClock"
+                                           Style="{StaticResource DefaultTimePickerStyle}"/>
+                                           
+                                <TextBlock Text="{Binding NextScheduledBackup, StringFormat='Next backup: {0:yyyy-MM-dd HH:mm} UTC'}"
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          Foreground="{ThemeResource SystemAccentColor}"
+                                          Visibility="{Binding NextScheduledBackup, Converter={StaticResource NotNullToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </StackPanel>
+
                         <StackPanel Spacing="12" Visibility="{Binding EnableCloudBackup, Converter={StaticResource BoolToVisibilityConverter}}">
                             <TextBlock Text="Backup Management" 
                                       Style="{StaticResource ModernCaptionStyle}"

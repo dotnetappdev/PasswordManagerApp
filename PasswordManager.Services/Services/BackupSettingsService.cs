@@ -52,9 +52,12 @@ public class BackupSettingsService : IBackupSettingsService
                 existingSettings.AutoBackupEnabled = settings.AutoBackupEnabled;
                 existingSettings.MaxBackupsToKeep = settings.MaxBackupsToKeep;
                 existingSettings.BackupIntervalHours = settings.BackupIntervalHours;
+                existingSettings.BackupScheduleInterval = settings.BackupScheduleInterval;
+                existingSettings.PreferredBackupTime = settings.PreferredBackupTime;
                 existingSettings.CompressBackups = settings.CompressBackups;
                 existingSettings.BackupFolderPath = settings.BackupFolderPath;
                 existingSettings.NetworkPath = settings.NetworkPath;
+                existingSettings.NextBackupAt = settings.NextBackupAt;
                 existingSettings.LastModified = settings.LastModified;
 
                 _context.UserBackupSettings.Update(existingSettings);
@@ -134,6 +137,8 @@ public class BackupSettingsService : IBackupSettingsService
                 AutoBackupEnabled = false,
                 MaxBackupsToKeep = 10,
                 BackupIntervalHours = 24,
+                BackupScheduleInterval = BackupScheduleInterval.Manual,
+                PreferredBackupTime = new TimeSpan(2, 0, 0), // 2:00 AM
                 CompressBackups = true,
                 CreatedAt = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow
@@ -155,6 +160,8 @@ public class BackupSettingsService : IBackupSettingsService
                 AutoBackupEnabled = false,
                 MaxBackupsToKeep = 10,
                 BackupIntervalHours = 24,
+                BackupScheduleInterval = BackupScheduleInterval.Manual,
+                PreferredBackupTime = new TimeSpan(2, 0, 0),
                 CompressBackups = true
             };
         }
@@ -230,6 +237,19 @@ public class BackupSettingsService : IBackupSettingsService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating next backup time for user {UserId}", userId);
+        }
+    }
+
+    public async Task<List<UserBackupSettings>> GetAllSettingsAsync()
+    {
+        try
+        {
+            return await _context.UserBackupSettings.ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all backup settings");
+            return new List<UserBackupSettings>();
         }
     }
 }
