@@ -172,6 +172,235 @@
                 </StackPanel>
             </Border>
             
+            <!-- Cloud Backup Settings -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Spacing="20">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Background="{StaticResource ModernPrimaryBrush}"
+                               CornerRadius="10"
+                               Width="24"
+                               Height="24">
+                            <FontIcon Glyph="&#xE753;" 
+                                     FontSize="12"
+                                     Foreground="White"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Cloud Backup" 
+                                  Style="{StaticResource ModernHeading3Style}"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                    
+                    <StackPanel Spacing="16">
+                        <ToggleSwitch x:Name="CloudBackupToggle"
+                                     Header="Enable Cloud Backup" 
+                                     IsOn="{Binding EnableCloudBackup, Mode=TwoWay}"
+                                     Toggled="CloudBackupToggle_Toggled"/>
+                        
+                        <StackPanel Spacing="8" Visibility="{Binding EnableCloudBackup, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Cloud Provider" 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            <ComboBox x:Name="CloudProviderComboBox"
+                                     ItemsSource="{Binding AvailableCloudProviders}"
+                                     SelectedValue="{Binding SelectedCloudProvider, Mode=TwoWay}"
+                                     SelectedValuePath="Provider"
+                                     DisplayMemberPath="DisplayName"
+                                     Style="{StaticResource ModernComboBoxStyle}"
+                                     SelectionChanged="CloudProviderComboBox_SelectionChanged"
+                                     MinWidth="200"/>
+                        </StackPanel>
+
+                        <!-- Network Location Configuration -->
+                        <StackPanel Spacing="8" x:Name="NetworkLocationPanel" Visibility="Collapsed">
+                            <TextBlock Text="Network Location Settings" 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBox x:Name="NetworkPathTextBox"
+                                        Text="{Binding NetworkPath, Mode=TwoWay}"
+                                        PlaceholderText="\\server\share\folder or Z:\backups"
+                                        Header="Network Path"
+                                        Style="{StaticResource ModernTextBoxStyle}"
+                                        MinWidth="300"/>
+                                        
+                                <Button x:Name="ChooseNetworkLocationButton"
+                                       Style="{StaticResource ModernSecondaryButtonStyle}"
+                                       Click="ChooseNetworkLocationButton_Click"
+                                       VerticalAlignment="Bottom">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE8B7;" FontSize="14"/>
+                                        <TextBlock Text="Browse"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Backup Schedule Settings -->
+                        <StackPanel Spacing="12" Visibility="{Binding EnableCloudBackup, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Backup Schedule" 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            
+                            <ComboBox Header="Schedule Frequency"
+                                     ItemsSource="{Binding ScheduleIntervalOptions}"
+                                     SelectedValue="{Binding BackupScheduleInterval, Mode=TwoWay}"
+                                     SelectedValuePath="Interval"
+                                     DisplayMemberPath="DisplayName"
+                                     Style="{StaticResource ModernComboBoxStyle}"
+                                     MinWidth="200"/>
+                            
+                            <!-- Time Picker for preferred backup time -->
+                            <StackPanel Spacing="8" Visibility="{Binding AutoBackupEnabled, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="Preferred Backup Time"
+                                          Style="{StaticResource ModernCaptionStyle}"/>
+                                <TimePicker x:Name="BackupTimePicker"
+                                           Time="{Binding PreferredBackupTime, Mode=TwoWay}"
+                                           ClockIdentifier="24HourClock"
+                                           Style="{StaticResource DefaultTimePickerStyle}"/>
+                                           
+                                <TextBlock Text="{Binding NextScheduledBackup, StringFormat='Next backup: {0:yyyy-MM-dd HH:mm} UTC'}"
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          Foreground="{ThemeResource SystemAccentColor}"
+                                          Visibility="{Binding NextScheduledBackup, Converter={StaticResource NotNullToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel Spacing="12" Visibility="{Binding EnableCloudBackup, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Backup Management" 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <Button x:Name="CreateBackupButton"
+                                       Style="{StaticResource ModernSecondaryButtonStyle}"
+                                       Click="CreateBackupButton_Click"
+                                       IsEnabled="{Binding IsLoading, Converter={StaticResource BoolNegationConverter}}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE753;" FontSize="14"/>
+                                        <TextBlock Text="Create Backup"/>
+                                    </StackPanel>
+                                </Button>
+                                
+                                <Button x:Name="RefreshBackupsButton"
+                                       Style="{StaticResource ModernSecondaryButtonStyle}"
+                                       Click="RefreshBackupsButton_Click"
+                                       IsEnabled="{Binding IsLoading, Converter={StaticResource BoolNegationConverter}}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE72C;" FontSize="14"/>
+                                        <TextBlock Text="Refresh"/>
+                                    </StackPanel>
+                                </Button>
+                                
+                                <Button x:Name="RestoreFromFileButton"
+                                       Style="{StaticResource ModernSecondaryButtonStyle}"
+                                       Click="RestoreFromFileButton_Click"
+                                       IsEnabled="{Binding IsLoading, Converter={StaticResource BoolNegationConverter}}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE8E5;" FontSize="14"/>
+                                        <TextBlock Text="Restore from File"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                            
+                            <ListView x:Name="BackupsListView"
+                                     ItemsSource="{Binding AvailableBackups}"
+                                     MaxHeight="200"
+                                     ScrollViewer.HorizontalScrollMode="Disabled"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding CreatedAt, StringFormat='Created: {0:MMM dd, yyyy HH:mm}'}" 
+                                                          Style="{StaticResource ModernCaptionStyle}"/>
+                                                <TextBlock Text="{Binding ServiceName}" 
+                                                          Style="{StaticResource ModernCaptionStyle}"
+                                                          Foreground="{StaticResource ModernPrimaryBrush}"/>
+                                            </StackPanel>
+                                            
+                                            <Button Grid.Column="1" 
+                                                   Content="Restore" 
+                                                   Style="{StaticResource ModernSecondaryButtonStyle}"
+                                                   Margin="8,0"
+                                                   Click="RestoreBackupButton_Click"
+                                                   Tag="{Binding}"/>
+                                            
+                                            <Button Grid.Column="2" 
+                                                   Content="Delete" 
+                                                   Background="{StaticResource ModernErrorBrush}"
+                                                   Foreground="White"
+                                                   BorderThickness="0"
+                                                   CornerRadius="4"
+                                                   Padding="8,4"
+                                                   Click="DeleteBackupButton_Click"
+                                                   Tag="{Binding}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            
+            <!-- Browser Export Settings -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Spacing="20">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Background="{StaticResource ModernWarningBrush}"
+                               CornerRadius="10"
+                               Width="24"
+                               Height="24">
+                            <FontIcon Glyph="&#xE774;" 
+                                     FontSize="12"
+                                     Foreground="White"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Browser Export" 
+                                  Style="{StaticResource ModernHeading3Style}"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                    
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Export passwords to browser password managers" 
+                                  Style="{StaticResource ModernCaptionStyle}"
+                                  TextWrapping="Wrap"/>
+                        
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button x:Name="ExportToChromeButton"
+                                   Style="{StaticResource ModernSecondaryButtonStyle}"
+                                   Click="ExportToBrowserButton_Click"
+                                   Tag="Chrome">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE774;" FontSize="14"/>
+                                    <TextBlock Text="Export to Chrome"/>
+                                </StackPanel>
+                            </Button>
+                            
+                            <Button x:Name="ExportToEdgeButton"
+                                   Style="{StaticResource ModernSecondaryButtonStyle}"
+                                   Click="ExportToBrowserButton_Click"
+                                   Tag="Edge">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE774;" FontSize="14"/>
+                                    <TextBlock Text="Export to Edge"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            
             <!-- Import/Export Settings -->
             <Border Style="{StaticResource ModernCardStyle}">
                 <StackPanel Spacing="20">
@@ -186,7 +415,7 @@
                                      HorizontalAlignment="Center"
                                      VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="Import/Export" 
+                        <TextBlock Text="Local Import/Export" 
                                   Style="{StaticResource ModernHeading3Style}"
                                   VerticalAlignment="Center"/>
                     </StackPanel>
