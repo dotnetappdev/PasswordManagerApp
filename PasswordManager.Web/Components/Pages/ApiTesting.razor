@@ -1,0 +1,839 @@
+@page "/api-testing"
+@using PasswordManager.Models
+@using System.Net.Http
+@using System.Text
+@using System.Text.Json
+@using System.Diagnostics
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>API Testing</PageTitle>
+
+<style>
+    .api-testing-container {
+        height: calc(100vh - 100px);
+        display: flex;
+        overflow: hidden;
+    }
+
+    .sidebar {
+        width: 300px;
+        background: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+        overflow-y: auto;
+        flex-shrink: 0;
+    }
+
+    .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .request-panel {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .response-panel {
+        height: 300px;
+        background: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .collection-item {
+        padding: 8px 16px;
+        border-bottom: 1px solid #e9ecef;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .collection-item:hover {
+        background: #e9ecef;
+    }
+
+    .collection-item.active {
+        background: #007bff;
+        color: white;
+    }
+
+    .request-item {
+        padding: 6px 32px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.9em;
+    }
+
+    .request-item:hover {
+        background: #e9ecef;
+    }
+
+    .request-item.active {
+        background: #007bff;
+        color: white;
+    }
+
+    .method-badge {
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.75em;
+        font-weight: bold;
+        margin-right: 8px;
+    }
+
+    .method-get { background: #28a745; color: white; }
+    .method-post { background: #007bff; color: white; }
+    .method-put { background: #ffc107; color: black; }
+    .method-delete { background: #dc3545; color: white; }
+    .method-patch { background: #6c757d; color: white; }
+
+    .send-button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+
+    .send-button:hover {
+        background: #0056b3;
+    }
+
+    .send-button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+    }
+
+    .request-url-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .method-dropdown {
+        width: 120px;
+    }
+
+    .url-input {
+        flex: 1;
+    }
+
+    .response-tabs {
+        display: flex;
+        border-bottom: 1px solid #dee2e6;
+        background: white;
+    }
+
+    .response-tab {
+        padding: 10px 20px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+    }
+
+    .response-tab.active {
+        border-bottom-color: #007bff;
+        color: #007bff;
+        font-weight: bold;
+    }
+
+    .response-content {
+        flex: 1;
+        overflow: auto;
+        padding: 15px;
+        background: white;
+    }
+
+    .add-button {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 0.8em;
+    }
+
+    .add-button:hover {
+        background: #218838;
+    }
+
+    .sidebar-header {
+        padding: 15px;
+        background: #e9ecef;
+        border-bottom: 1px solid #dee2e6;
+        font-weight: bold;
+    }
+
+    .key-value-pair {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+    }
+
+    .key-value-pair input {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+    }
+
+    .remove-button {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 5px 8px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 0.7em;
+    }
+
+    .textarea-large {
+        min-height: 150px;
+        resize: vertical;
+    }
+</style>
+
+<div class="api-testing-container">
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            Collections & Requests
+            <button class="add-button" @onclick="ShowAddCollectionModal" style="float: right;">+ Collection</button>
+        </div>
+        
+        @foreach (var collection in apiCollections)
+        {
+            <div class="collection-item @(selectedCollectionId == collection.Id ? "active" : "")"
+                 @onclick="() => SelectCollection(collection.Id)">
+                <div>
+                    <span>@collection.Icon</span> @collection.Name
+                </div>
+                <div>
+                    <button class="add-button" @onclick:stopPropagation="true" 
+                            @onclick="() => ShowAddRequestModal(collection.Id)">+ Request</button>
+                </div>
+            </div>
+            
+            @foreach (var request in collection.ApiRequests)
+            {
+                <div class="request-item @(selectedRequestId == request.Id ? "active" : "")"
+                     @onclick="() => SelectRequest(request.Id)">
+                    <div>
+                        <span class="method-badge method-@(request.Method.ToString().ToLower())">@request.Method</span>
+                        @request.Name
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Request Configuration Panel -->
+        <div class="request-panel">
+            @if (selectedRequest != null)
+            {
+                <h4>@selectedRequest.Name</h4>
+                
+                <!-- Request URL Row -->
+                <div class="request-url-row">
+                    <select @bind="selectedRequest.Method" class="form-control method-dropdown">
+                        @foreach (var method in Enum.GetValues<PasswordManager.Models.HttpMethod>())
+                        {
+                            <option value="@method">@method</option>
+                        }
+                    </select>
+                    <input type="text" @bind="selectedRequest.Url" class="form-control url-input" placeholder="Enter request URL" />
+                    <button class="send-button" @onclick="SendRequest" disabled="@isRequestInProgress">
+                        @if (isRequestInProgress)
+                        {
+                            <span>Sending...</span>
+                        }
+                        else
+                        {
+                            <span>Send</span>
+                        }
+                    </button>
+                </div>
+
+                <!-- Tabs for different sections -->
+                <MudTabs Elevation="0" Rounded="true" PanelClass="pa-4">
+                    <MudTabPanel Text="Headers">
+                        <h6>Headers</h6>
+                        @if (requestHeaders.Any())
+                        {
+                            @foreach (var header in requestHeaders)
+                            {
+                                <div class="key-value-pair">
+                                    <input type="text" @bind="header.Key" placeholder="Header name" />
+                                    <input type="text" @bind="header.Value" placeholder="Header value" />
+                                    <button class="remove-button" @onclick="() => RemoveHeader(header)">×</button>
+                                </div>
+                            }
+                        }
+                        <button class="add-button" @onclick="AddHeader">+ Add Header</button>
+                    </MudTabPanel>
+
+                    <MudTabPanel Text="Body">
+                        <h6>Request Body</h6>
+                        <select @bind="selectedRequest.ContentType" class="form-control" style="margin-bottom: 10px;">
+                            <option value="application/json">JSON</option>
+                            <option value="application/xml">XML</option>
+                            <option value="text/plain">Text</option>
+                            <option value="application/x-www-form-urlencoded">Form Data</option>
+                        </select>
+                        <textarea @bind="selectedRequest.Body" class="form-control textarea-large" 
+                                  placeholder="Enter request body content"></textarea>
+                    </MudTabPanel>
+
+                    <MudTabPanel Text="Query Params">
+                        <h6>Query Parameters</h6>
+                        @if (queryParams.Any())
+                        {
+                            @foreach (var param in queryParams)
+                            {
+                                <div class="key-value-pair">
+                                    <input type="text" @bind="param.Key" placeholder="Parameter name" />
+                                    <input type="text" @bind="param.Value" placeholder="Parameter value" />
+                                    <button class="remove-button" @onclick="() => RemoveQueryParam(param)">×</button>
+                                </div>
+                            }
+                        }
+                        <button class="add-button" @onclick="AddQueryParam">+ Add Parameter</button>
+                    </MudTabPanel>
+                </MudTabs>
+            }
+            else
+            {
+                <div style="text-align: center; padding: 50px; color: #6c757d;">
+                    <h5>Select a request to get started</h5>
+                    <p>Choose a request from the sidebar or create a new collection and request.</p>
+                </div>
+            }
+        </div>
+
+        <!-- Response Panel -->
+        @if (selectedRequest != null)
+        {
+            <div class="response-panel">
+                <div class="response-tabs">
+                    <button class="response-tab @(activeResponseTab == "body" ? "active" : "")" 
+                            @onclick='() => activeResponseTab = "body"'>Response</button>
+                    <button class="response-tab @(activeResponseTab == "headers" ? "active" : "")" 
+                            @onclick='() => activeResponseTab = "headers"'>Headers</button>
+                    <button class="response-tab @(activeResponseTab == "info" ? "active" : "")" 
+                            @onclick='() => activeResponseTab = "info"'>Info</button>
+                </div>
+                
+                <div class="response-content">
+                    @if (currentTestResult != null)
+                    {
+                        @if (activeResponseTab == "body")
+                        {
+                            <pre style="white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 12px;">@currentTestResult.ResponseBody</pre>
+                        }
+                        else if (activeResponseTab == "headers")
+                        {
+                            <pre style="font-family: 'Courier New', monospace; font-size: 12px;">@currentTestResult.ResponseHeaders</pre>
+                        }
+                        else if (activeResponseTab == "info")
+                        {
+                            <div>
+                                <p><strong>Status:</strong> @currentTestResult.StatusCode @currentTestResult.StatusText</p>
+                                <p><strong>Time:</strong> @currentTestResult.ResponseTimeMs ms</p>
+                                <p><strong>Size:</strong> @currentTestResult.ResponseSizeBytes bytes</p>
+                                <p><strong>Executed:</strong> @currentTestResult.ExecutedAt.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                                @if (!string.IsNullOrEmpty(currentTestResult.ErrorMessage))
+                                {
+                                    <p><strong>Error:</strong> <span style="color: red;">@currentTestResult.ErrorMessage</span></p>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div style="text-align: center; color: #6c757d; padding: 20px;">
+                            <p>No response yet. Click the Send button to execute the request.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Add Collection Modal -->
+@if (showAddCollectionModal)
+{
+    <div class="modal" style="display: block; background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000;">
+        <div class="modal-dialog" style="margin: 10% auto; background: white; padding: 20px; border-radius: 8px; max-width: 500px;">
+            <h5>Create New Collection</h5>
+            <div class="form-group" style="margin: 15px 0;">
+                <label>Collection Name</label>
+                <input type="text" @bind="newCollectionName" class="form-control" placeholder="Enter collection name" />
+            </div>
+            <div class="form-group" style="margin: 15px 0;">
+                <label>Description (Optional)</label>
+                <input type="text" @bind="newCollectionDescription" class="form-control" placeholder="Enter description" />
+            </div>
+            <div style="text-align: right; margin-top: 20px;">
+                <button class="btn btn-secondary" @onclick="HideAddCollectionModal" style="margin-right: 10px;">Cancel</button>
+                <button class="btn btn-primary" @onclick="CreateCollection" disabled="@string.IsNullOrWhiteSpace(newCollectionName)">Create</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Add Request Modal -->
+@if (showAddRequestModal)
+{
+    <div class="modal" style="display: block; background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000;">
+        <div class="modal-dialog" style="margin: 10% auto; background: white; padding: 20px; border-radius: 8px; max-width: 500px;">
+            <h5>Create New Request</h5>
+            <div class="form-group" style="margin: 15px 0;">
+                <label>Request Name</label>
+                <input type="text" @bind="newRequestName" class="form-control" placeholder="Enter request name" />
+            </div>
+            <div class="form-group" style="margin: 15px 0;">
+                <label>Method</label>
+                <select @bind="newRequestMethod" class="form-control">
+                    @foreach (var method in Enum.GetValues<PasswordManager.Models.HttpMethod>())
+                    {
+                        <option value="@method">@method</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group" style="margin: 15px 0;">
+                <label>URL</label>
+                <input type="text" @bind="newRequestUrl" class="form-control" placeholder="Enter request URL" />
+            </div>
+            <div style="text-align: right; margin-top: 20px;">
+                <button class="btn btn-secondary" @onclick="HideAddRequestModal" style="margin-right: 10px;">Cancel</button>
+                <button class="btn btn-primary" @onclick="CreateRequest" disabled="@string.IsNullOrWhiteSpace(newRequestName)">Create</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // Data properties
+    private List<ApiCollection> apiCollections = new();
+    private List<ApiRequest> apiRequests = new();
+    private ApiRequest? selectedRequest = null;
+    private ApiTestResult? currentTestResult = null;
+    
+    // Selection state
+    private int? selectedCollectionId = null;
+    private int? selectedRequestId = null;
+    
+    // UI state
+    private string activeResponseTab = "body";
+    private bool isRequestInProgress = false;
+    
+    // Request configuration
+    private List<KeyValueModel> requestHeaders = new();
+    private List<KeyValueModel> queryParams = new();
+    
+    // Helper class for editable key-value pairs
+    public class KeyValueModel
+    {
+        public string Key { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+    }
+    
+    // Modal state
+    private bool showAddCollectionModal = false;
+    private bool showAddRequestModal = false;
+    private int newRequestCollectionId = 0;
+    
+    // Form data
+    private string newCollectionName = string.Empty;
+    private string newCollectionDescription = string.Empty;
+    private string newRequestName = string.Empty;
+    private string newRequestUrl = string.Empty;
+    private PasswordManager.Models.HttpMethod newRequestMethod = PasswordManager.Models.HttpMethod.GET;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+    
+    private async Task LoadData()
+    {
+        // For now, create some sample data
+        // In a real implementation, this would load from a database
+        apiCollections = new List<ApiCollection>
+        {
+            new ApiCollection
+            {
+                Id = 1,
+                Name = "My API Tests",
+                Description = "General API testing collection",
+                Icon = "📁",
+                Color = "#007bff",
+                ApiRequests = new List<ApiRequest>
+                {
+                    new ApiRequest
+                    {
+                        Id = 1,
+                        Name = "Get Users",
+                        Url = "https://jsonplaceholder.typicode.com/users",
+                        Method = PasswordManager.Models.HttpMethod.GET,
+                        ApiCollectionId = 1
+                    },
+                    new ApiRequest
+                    {
+                        Id = 2,
+                        Name = "Create User",
+                        Url = "https://jsonplaceholder.typicode.com/users",
+                        Method = PasswordManager.Models.HttpMethod.POST,
+                        Body = "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\"\n}",
+                        ContentType = "application/json",
+                        ApiCollectionId = 1
+                    }
+                }
+            },
+            new ApiCollection
+            {
+                Id = 2,
+                Name = "Password Manager API",
+                Description = "Testing the password manager endpoints",
+                Icon = "🔐",
+                Color = "#28a745",
+                ApiRequests = new List<ApiRequest>
+                {
+                    new ApiRequest
+                    {
+                        Id = 3,
+                        Name = "Get API Keys",
+                        Url = "http://localhost:5000/api/apikeys",
+                        Method = PasswordManager.Models.HttpMethod.GET,
+                        Headers = "{\"X-API-Key\":\"your-api-key-here\"}",
+                        ApiCollectionId = 2
+                    }
+                }
+            }
+        };
+        
+        StateHasChanged();
+    }
+    
+    private void SelectCollection(int collectionId)
+    {
+        selectedCollectionId = collectionId;
+        selectedRequestId = null;
+        selectedRequest = null;
+        currentTestResult = null;
+        StateHasChanged();
+    }
+    
+    private void SelectRequest(int requestId)
+    {
+        selectedRequestId = requestId;
+        selectedRequest = apiCollections
+            .SelectMany(c => c.ApiRequests)
+            .FirstOrDefault(r => r.Id == requestId);
+            
+        if (selectedRequest != null)
+        {
+            selectedCollectionId = selectedRequest.ApiCollectionId;
+            LoadRequestConfiguration();
+        }
+        
+        currentTestResult = null;
+        StateHasChanged();
+    }
+    
+    private void LoadRequestConfiguration()
+    {
+        if (selectedRequest == null) return;
+        
+        // Load headers
+        requestHeaders.Clear();
+        if (!string.IsNullOrEmpty(selectedRequest.Headers))
+        {
+            try
+            {
+                var headers = JsonSerializer.Deserialize<Dictionary<string, string>>(selectedRequest.Headers);
+                if (headers != null)
+                {
+                    requestHeaders.AddRange(headers.Select(h => new KeyValueModel { Key = h.Key, Value = h.Value }));
+                }
+            }
+            catch
+            {
+                // Invalid JSON, ignore
+            }
+        }
+        
+        // Load query parameters
+        queryParams.Clear();
+        if (!string.IsNullOrEmpty(selectedRequest.QueryParameters))
+        {
+            try
+            {
+                var qParams = JsonSerializer.Deserialize<Dictionary<string, string>>(selectedRequest.QueryParameters);
+                if (qParams != null)
+                {
+                    queryParams.AddRange(qParams.Select(q => new KeyValueModel { Key = q.Key, Value = q.Value }));
+                }
+            }
+            catch
+            {
+                // Invalid JSON, ignore
+            }
+        }
+    }
+    
+    private async Task SendRequest()
+    {
+        if (selectedRequest == null || isRequestInProgress) return;
+        
+        isRequestInProgress = true;
+        StateHasChanged();
+        
+        var stopwatch = Stopwatch.StartNew();
+        
+        try
+        {
+            using var httpClient = new HttpClient();
+            
+            // Build URL with query parameters
+            var url = selectedRequest.Url;
+            if (queryParams.Any(q => !string.IsNullOrEmpty(q.Key)))
+            {
+                var queryString = string.Join("&", 
+                    queryParams.Where(q => !string.IsNullOrEmpty(q.Key))
+                              .Select(q => $"{Uri.EscapeDataString(q.Key)}={Uri.EscapeDataString(q.Value ?? "")}"));
+                url += (url.Contains("?") ? "&" : "?") + queryString;
+            }
+            
+            // Create request message
+            var requestMessage = new HttpRequestMessage(
+                new System.Net.Http.HttpMethod(selectedRequest.Method.ToString()),
+                url);
+            
+            // Add headers
+            foreach (var header in requestHeaders.Where(h => !string.IsNullOrEmpty(h.Key)))
+            {
+                try
+                {
+                    requestMessage.Headers.Add(header.Key, header.Value);
+                }
+                catch
+                {
+                    // Invalid header, skip
+                }
+            }
+            
+            // Add body for POST, PUT, PATCH requests
+            if (selectedRequest.Method == PasswordManager.Models.HttpMethod.POST || 
+                selectedRequest.Method == PasswordManager.Models.HttpMethod.PUT || 
+                selectedRequest.Method == PasswordManager.Models.HttpMethod.PATCH)
+            {
+                if (!string.IsNullOrEmpty(selectedRequest.Body))
+                {
+                    requestMessage.Content = new StringContent(
+                        selectedRequest.Body,
+                        Encoding.UTF8,
+                        selectedRequest.ContentType ?? "application/json");
+                }
+            }
+            
+            // Send request
+            var response = await httpClient.SendAsync(requestMessage);
+            stopwatch.Stop();
+            
+            // Read response
+            var responseBody = await response.Content.ReadAsStringAsync();
+            var responseHeaders = JsonSerializer.Serialize(
+                response.Headers.ToDictionary(h => h.Key, h => string.Join(", ", h.Value)),
+                new JsonSerializerOptions { WriteIndented = true });
+            
+            // Create test result
+            currentTestResult = new ApiTestResult
+            {
+                ApiRequestId = selectedRequest.Id,
+                StatusCode = (int)response.StatusCode,
+                StatusText = response.StatusCode.ToString(),
+                ResponseBody = responseBody,
+                ResponseHeaders = responseHeaders,
+                ResponseTimeMs = stopwatch.ElapsedMilliseconds,
+                ResponseSizeBytes = responseBody?.Length ?? 0,
+                IsSuccess = response.IsSuccessStatusCode,
+                ExecutedAt = DateTime.UtcNow
+            };
+            
+            activeResponseTab = "body";
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            
+            currentTestResult = new ApiTestResult
+            {
+                ApiRequestId = selectedRequest?.Id ?? 0,
+                StatusCode = 0,
+                StatusText = "Error",
+                ErrorMessage = ex.Message,
+                ResponseTimeMs = stopwatch.ElapsedMilliseconds,
+                IsSuccess = false,
+                ExecutedAt = DateTime.UtcNow
+            };
+            
+            activeResponseTab = "info";
+        }
+        finally
+        {
+            isRequestInProgress = false;
+            StateHasChanged();
+        }
+    }
+    
+    // Header management
+    private void AddHeader()
+    {
+        requestHeaders.Add(new KeyValueModel());
+        StateHasChanged();
+    }
+    
+    private void RemoveHeader(KeyValueModel header)
+    {
+        requestHeaders.Remove(header);
+        UpdateRequestHeaders();
+        StateHasChanged();
+    }
+    
+    private void UpdateRequestHeaders()
+    {
+        if (selectedRequest != null)
+        {
+            var headers = requestHeaders.Where(h => !string.IsNullOrEmpty(h.Key))
+                                     .ToDictionary(h => h.Key, h => h.Value);
+            selectedRequest.Headers = headers.Any() ? JsonSerializer.Serialize(headers) : null;
+        }
+    }
+    
+    // Query parameter management
+    private void AddQueryParam()
+    {
+        queryParams.Add(new KeyValueModel());
+        StateHasChanged();
+    }
+    
+    private void RemoveQueryParam(KeyValueModel param)
+    {
+        queryParams.Remove(param);
+        UpdateQueryParameters();
+        StateHasChanged();
+    }
+    
+    private void UpdateQueryParameters()
+    {
+        if (selectedRequest != null)
+        {
+            var qParams = queryParams.Where(q => !string.IsNullOrEmpty(q.Key))
+                                   .ToDictionary(q => q.Key, q => q.Value);
+            selectedRequest.QueryParameters = qParams.Any() ? JsonSerializer.Serialize(qParams) : null;
+        }
+    }
+    
+    // Collection management
+    private void ShowAddCollectionModal()
+    {
+        newCollectionName = string.Empty;
+        newCollectionDescription = string.Empty;
+        showAddCollectionModal = true;
+        StateHasChanged();
+    }
+    
+    private void HideAddCollectionModal()
+    {
+        showAddCollectionModal = false;
+        StateHasChanged();
+    }
+    
+    private void CreateCollection()
+    {
+        if (string.IsNullOrWhiteSpace(newCollectionName)) return;
+        
+        var newCollection = new ApiCollection
+        {
+            Id = apiCollections.Max(c => c.Id) + 1,
+            Name = newCollectionName,
+            Description = newCollectionDescription,
+            Icon = "📁",
+            Color = "#007bff",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            ApiRequests = new List<ApiRequest>()
+        };
+        
+        apiCollections.Add(newCollection);
+        HideAddCollectionModal();
+        StateHasChanged();
+        
+        Snackbar.Add($"Collection '{newCollectionName}' created successfully!", Severity.Success);
+    }
+    
+    // Request management
+    private void ShowAddRequestModal(int collectionId)
+    {
+        newRequestCollectionId = collectionId;
+        newRequestName = string.Empty;
+        newRequestUrl = string.Empty;
+        newRequestMethod = PasswordManager.Models.HttpMethod.GET;
+        showAddRequestModal = true;
+        StateHasChanged();
+    }
+    
+    private void HideAddRequestModal()
+    {
+        showAddRequestModal = false;
+        StateHasChanged();
+    }
+    
+    private void CreateRequest()
+    {
+        if (string.IsNullOrWhiteSpace(newRequestName)) return;
+        
+        var collection = apiCollections.FirstOrDefault(c => c.Id == newRequestCollectionId);
+        if (collection == null) return;
+        
+        var newRequest = new ApiRequest
+        {
+            Id = apiCollections.SelectMany(c => c.ApiRequests).Max(r => r.Id) + 1,
+            Name = newRequestName,
+            Url = newRequestUrl,
+            Method = newRequestMethod,
+            ApiCollectionId = newRequestCollectionId,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        
+        collection.ApiRequests.Add(newRequest);
+        HideAddRequestModal();
+        StateHasChanged();
+        
+        Snackbar.Add($"Request '{newRequestName}' created successfully!", Severity.Success);
+    }
+}
