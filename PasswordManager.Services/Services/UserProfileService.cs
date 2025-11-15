@@ -54,7 +54,9 @@ public class UserProfileService : IUserProfileService
             LastLoginAt = user.LastLoginAt,
             IsActive = user.IsActive,
             MasterPasswordHint = user.MasterPasswordHint,
-            UpdatedAt = user.UpdatedAt
+            UpdatedAt = user.UpdatedAt,
+            PhoneNumber = user.PhoneNumber,
+            TwoFactorEnabled = user.TwoFactorEnabled
         };
     }
 
@@ -74,7 +76,9 @@ public class UserProfileService : IUserProfileService
             LastLoginAt = user.LastLoginAt,
             IsActive = user.IsActive,
             MasterPasswordHint = user.MasterPasswordHint,
-            UpdatedAt = user.UpdatedAt
+            UpdatedAt = user.UpdatedAt,
+            PhoneNumber = user.PhoneNumber,
+            TwoFactorEnabled = user.TwoFactorEnabled
         };
     }
 

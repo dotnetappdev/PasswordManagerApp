@@ -63,8 +63,6 @@ public class UserProfileDetailsDto : UserDto
     
     public DateTime? UpdatedAt { get; set; }
     
-    public new bool IsActive { get; set; }
-    
     public bool TwoFactorEnabled { get; set; }
     
     public string? PhoneNumber { get; set; }
