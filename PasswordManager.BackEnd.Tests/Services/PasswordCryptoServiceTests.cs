@@ -156,7 +156,7 @@ public class PasswordCryptoServiceTests
         var ex = Assert.Throws<ArgumentNullException>(() => 
             _passwordCryptoService.DecryptPassword(null, TestMasterPassword, _testUserSalt));
         
-        Assert.That(ex.ParamName, Is.EqualTo("encryptedData"));
+        Assert.That(ex.ParamName, Is.EqualTo("encryptedPasswordData"));
     }
 
     [Test]
@@ -201,14 +201,17 @@ public class PasswordCryptoServiceTests
     {
         // Arrange
         var userSalt = new byte[32];
+        var masterKey = new byte[32];
         var expectedHash = "hashed-master-password";
 
+        // Mock DeriveKey to return a master key
         _mockCryptographyService
             .Setup(x => x.DeriveKey(TestMasterPassword, userSalt, 600000, 32))
-            .Returns(new byte[32]);
+            .Returns(masterKey);
 
+        // Mock HashPassword - it's called with master key (base64), authSalt (masterKey+password), and 1 iteration
         _mockCryptographyService
-            .Setup(x => x.HashPassword(It.IsAny<string>(), userSalt, 600000))
+            .Setup(x => x.HashPassword(It.IsAny<string>(), It.IsAny<byte[]>(), 1))
             .Returns(expectedHash);
 
         // Act
@@ -217,7 +220,7 @@ public class PasswordCryptoServiceTests
         // Assert
         Assert.That(result, Is.EqualTo(expectedHash));
 
-        _mockCryptographyService.Verify(x => x.HashPassword(It.IsAny<string>(), userSalt, 600000), Times.Once);
+        _mockCryptographyService.Verify(x => x.HashPassword(It.IsAny<string>(), It.IsAny<byte[]>(), 1), Times.Once);
     }
 
     [Test]
@@ -235,11 +238,23 @@ public class PasswordCryptoServiceTests
     {
         // Arrange
         var userSalt = new byte[32];
+        var masterKey = new byte[32];
+        var authKey = new byte[32];
         var storedHash = "stored-hash";
 
+        // Mock the DeriveKey calls for both master key and auth key
         _mockCryptographyService
-            .Setup(x => x.VerifyPassword(TestMasterPassword, storedHash, userSalt, 600000))
-            .Returns(true);
+            .Setup(x => x.DeriveKey(TestMasterPassword, userSalt, 600000, 32))
+            .Returns(masterKey);
+        
+        _mockCryptographyService
+            .Setup(x => x.DeriveKey(TestMasterPassword, userSalt, 600000, 64))
+            .Returns(new byte[64]); // Combined key (masterKey + authKey)
+
+        // Mock the HashPassword call - it's called with the auth key converted to base64
+        _mockCryptographyService
+            .Setup(x => x.HashPassword(It.IsAny<string>(), userSalt, 1))
+            .Returns(storedHash);
 
         // Act
         var result = _passwordCryptoService.VerifyMasterPassword(TestMasterPassword, storedHash, userSalt);
@@ -253,11 +268,24 @@ public class PasswordCryptoServiceTests
     {
         // Arrange
         var userSalt = new byte[32];
+        var masterKey = new byte[32];
+        var authKey = new byte[32];
         var storedHash = "stored-hash";
+        var incorrectHash = "incorrect-hash";
 
+        // Mock the DeriveKey calls for both master key and auth key
         _mockCryptographyService
-            .Setup(x => x.VerifyPassword("wrong-password", storedHash, userSalt, 600000))
-            .Returns(false);
+            .Setup(x => x.DeriveKey("wrong-password", userSalt, 600000, 32))
+            .Returns(masterKey);
+        
+        _mockCryptographyService
+            .Setup(x => x.DeriveKey("wrong-password", userSalt, 600000, 64))
+            .Returns(new byte[64]);
+
+        // Mock the HashPassword call to return different hash
+        _mockCryptographyService
+            .Setup(x => x.HashPassword(It.IsAny<string>(), userSalt, 1))
+            .Returns(incorrectHash);
 
         // Act
         var result = _passwordCryptoService.VerifyMasterPassword("wrong-password", storedHash, userSalt);

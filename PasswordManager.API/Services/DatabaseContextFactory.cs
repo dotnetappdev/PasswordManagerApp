@@ -129,6 +129,7 @@ public class PasswordManagerDbContextWrapper : IPasswordManagerDbContext
     public DbSet<UserPasskey> UserPasskeys { get => _context.UserPasskeys; set => _context.UserPasskeys = value; }
     public DbSet<UserTwoFactorBackupCode> UserTwoFactorBackupCodes { get => _context.UserTwoFactorBackupCodes; set => _context.UserTwoFactorBackupCodes = value; }
     public DbSet<CustomField> CustomFields { get => _context.CustomFields; set => _context.CustomFields = value; }
+    public DbSet<UserBackupSettings> UserBackupSettings { get => _context.UserBackupSettings; set => _context.UserBackupSettings = value; }
 
     public Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade Database => _context.Database;
 
