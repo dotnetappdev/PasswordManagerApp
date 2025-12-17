@@ -1,0 +1,40 @@
+{
+  "name": "1password",
+  "displayName": "1Password Importer (CSV and 1PUX)",
+  "description": "Import passwords from 1Password export files. Supports both CSV and 1PUX (ZIP archive) formats with collections, categories, notes, custom fields, and tags.",
+  "version": "1.0.0",
+  "author": "PasswordManager Team",
+  "website": "https://1password.com",
+  "iconUrl": "🔐",
+  "mainAssembly": "PasswordManagerImports.OnePassword.dll",
+  "mainClass": "PasswordManagerImports.OnePassword.Providers.OnePasswordImportProvider",
+  "supportedFileExtensions": [".csv", ".1pux"],
+  "created": "2025-12-17T00:00:00Z",
+  "lastUpdated": "2025-12-17T00:00:00Z",
+  "tags": ["1password", "csv", "1pux", "password-manager", "import"],
+  "configuration": {
+    "encoding": "utf-8",
+    "delimiter": ",",
+    "hasHeader": true,
+    "skipEmptyRecords": true,
+    "supportedFormats": ["csv", "1pux"],
+    "expectedCsvHeaders": "Title,Url,Username,Password,OTPAuth,Favorite,Archived,Tags,Notes"
+  },
+  "requirements": {
+    "minFrameworkVersion": "net9.0",
+    "dependencies": [
+      "FileHelpers"
+    ]
+  },
+  "help": {
+    "instructions": "Export your 1Password data as CSV or 1PUX format and select the file below.",
+    "exportSteps": [
+      "1. Open 1Password desktop app",
+      "2. Select the vault you want to export",
+      "3. Go to File > Export > All Items",
+      "4. Choose either '.csv' or '.1pux' format",
+      "5. Save the export file securely",
+      "6. Select the downloaded file below"
+    ]
+  }
+}
