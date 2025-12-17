@@ -97,8 +97,17 @@ public class DatabaseResetService : IDatabaseResetService
 
                 foreach (var table in tablesToClear)
                 {
+                    // Validate table name against whitelist to prevent SQL injection
+                    if (!IsValidTableName(table))
+                    {
+                        _logger.LogWarning("Attempted to clear invalid table name: {Table}", table);
+                        result.Errors.Add($"Invalid table name: {table}");
+                        continue;
+                    }
+
                     try
                     {
+                        // Table name is validated against whitelist, safe to use in SQL
                         var count = await _dbContext.Database.ExecuteSqlRawAsync($"DELETE FROM {table}");
                         tablesCleared++;
                         recordsDeleted += count;
@@ -181,8 +190,17 @@ public class DatabaseResetService : IDatabaseResetService
 
                 foreach (var table in allTables)
                 {
+                    // Validate table name against whitelist to prevent SQL injection
+                    if (!IsValidTableName(table))
+                    {
+                        _logger.LogWarning("Attempted to clear invalid table name: {Table}", table);
+                        result.Errors.Add($"Invalid table name: {table}");
+                        continue;
+                    }
+
                     try
                     {
+                        // Table name is validated against whitelist, safe to use in SQL
                         var count = await _dbContext.Database.ExecuteSqlRawAsync($"DELETE FROM {table}");
                         tablesCleared++;
                         recordsDeleted += count;
@@ -257,15 +275,19 @@ public class DatabaseResetService : IDatabaseResetService
     {
         try
         {
+            // Use GUIDs for IDs to avoid conflicts
+            var adminRoleId = Guid.NewGuid().ToString();
+            var userRoleId = Guid.NewGuid().ToString();
+
             // Create default admin role
             await _dbContext.Database.ExecuteSqlRawAsync(
-                "INSERT INTO AspNetRoles (Id, Name, NormalizedName, ConcurrencyStamp) " +
-                "VALUES ('admin-role-id', 'Admin', 'ADMIN', 'admin-stamp')");
+                $"INSERT INTO AspNetRoles (Id, Name, NormalizedName, ConcurrencyStamp) " +
+                $"VALUES ('{adminRoleId}', 'Admin', 'ADMIN', '{Guid.NewGuid()}')");
 
             // Create default user role
             await _dbContext.Database.ExecuteSqlRawAsync(
-                "INSERT INTO AspNetRoles (Id, Name, NormalizedName, ConcurrencyStamp) " +
-                "VALUES ('user-role-id', 'User', 'USER', 'user-stamp')");
+                $"INSERT INTO AspNetRoles (Id, Name, NormalizedName, ConcurrencyStamp) " +
+                $"VALUES ('{userRoleId}', 'User', 'USER', '{Guid.NewGuid()}')");
 
             // Create default collections
             await _dbContext.Database.ExecuteSqlRawAsync(
@@ -282,5 +304,14 @@ public class DatabaseResetService : IDatabaseResetService
         {
             _logger.LogWarning(ex, "Could not reseed default data");
         }
+    }
+
+    /// <summary>
+    /// Validates that a table name is in the allowed whitelist
+    /// </summary>
+    private bool IsValidTableName(string tableName)
+    {
+        var allAllowedTables = _dataTables.Concat(_userTables).ToList();
+        return allAllowedTables.Contains(tableName, StringComparer.OrdinalIgnoreCase);
     }
 }
