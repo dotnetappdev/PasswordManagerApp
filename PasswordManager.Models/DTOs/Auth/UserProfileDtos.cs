@@ -16,9 +16,11 @@ public class CreateUserProfileDto
     [Compare("Password")]
     public string ConfirmPassword { get; set; } = string.Empty;
     
-    public string? FirstName { get; set; }
+    [Required]
+    public string FirstName { get; set; } = string.Empty;
     
-    public string? LastName { get; set; }
+    [Required]
+    public string LastName { get; set; } = string.Empty;
     
     public string? MasterPasswordHint { get; set; }
 }

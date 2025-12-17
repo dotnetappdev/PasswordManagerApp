@@ -16,7 +16,8 @@
             <div class="passcode-dots">
                 @for (int i = 0; i < 8; i++)
                 {
-                    <span class="passcode-dot @(i < currentPasscode.Length ? "filled" : "") @(isShaking ? "shake" : "")"></span>
+                    <span
+                        class="passcode-dot @(i < currentPasscode.Length ? "filled" : "") @(isShaking ? "shake" : "")"></span>
                 }
             </div>
         </div>
@@ -52,7 +53,7 @@
                     else
                     {
                         <button class="keypad-btn keypad-empty"></button>
-                        <button class="keypad-btn" @onclick="() => OnNumberPressed(@"0")" disabled="@isLocked">0</button>
+                        <button class="keypad-btn" @onclick="OnZeroPressed" disabled="@isLocked">0</button>
                         <button class="keypad-btn keypad-delete" @onclick="OnDeletePressed" disabled="@isLocked">
                             <span class="delete-icon">⌫</span>
                         </button>
@@ -87,7 +88,7 @@
         padding: 40px 30px;
         max-width: 400px;
         width: 100%;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         text-align: center;
     }
 
@@ -142,10 +143,20 @@
         animation: shake 0.5s ease-in-out;
     }
 
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-5px); }
-        75% { transform: translateX(5px); }
+    @@keyframes shake {
+
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+
+        25% {
+            transform: translateX(-5px);
+        }
+
+        75% {
+            transform: translateX(5px);
+        }
     }
 
     .error-message {
@@ -281,17 +292,17 @@
         .passcode-container {
             padding: 10px;
         }
-        
+
         .passcode-card {
             padding: 30px 20px;
         }
-        
+
         .keypad-btn {
             width: 60px;
             height: 60px;
             font-size: 20px;
         }
-        
+
         .keypad-row {
             gap: 15px;
         }
@@ -300,7 +311,7 @@
 
 @code {
     [Parameter] public EventCallback<bool> OnAuthenticationComplete { get; set; }
-    
+
     private string currentPasscode = "";
     private string errorMessage = "";
     private bool isShaking = false;
@@ -363,6 +374,11 @@
         return $"{minutes:D2}:{remainingSeconds:D2}";
     }
 
+    private async Task OnZeroPressed()
+    {
+        await OnNumberPressed("0");
+    }
+
     private async Task OnNumberPressed(string number)
     {
         if (isLocked || currentPasscode.Length >= 8) return;
@@ -392,7 +408,7 @@
     private async Task VerifyPasscode()
     {
         var isValid = await PasscodeService.VerifyPasscodeAsync(currentPasscode);
-        
+
         if (isValid)
         {
             await OnAuthenticationComplete.InvokeAsync(true);
@@ -402,17 +418,17 @@
             // Show error and shake animation
             failedAttempts = await PasscodeService.GetFailedAttemptsAsync();
             errorMessage = $"Incorrect passcode";
-            
+
             isShaking = true;
             StateHasChanged();
-            
+
             await Task.Delay(500);
             isShaking = false;
             currentPasscode = "";
-            
+
             // Check if we're now locked out
             await CheckLockoutStatus();
-            
+
             StateHasChanged();
         }
     }
@@ -433,13 +449,13 @@
         if (firstRender)
         {
             await JSRuntime.InvokeVoidAsync("eval", @"
-                // Prevent zoom on mobile when tapping input elements
-                document.addEventListener('touchstart', function(e) {
-                    if (e.target.classList.contains('keypad-btn')) {
-                        e.preventDefault();
-                    }
-                }, { passive: false });
-            ");
+// Prevent zoom on mobile when tapping input elements
+document.addEventListener('touchstart', function(e) {
+if (e.target.classList.contains('keypad-btn')) {
+e.preventDefault();
+}
+}, { passive: false });
+");
         }
     }
 }

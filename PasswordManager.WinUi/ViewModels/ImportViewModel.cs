@@ -19,19 +19,20 @@ public class ImportViewModel : BaseViewModel
     public ImportViewModel(IServiceProvider serviceProvider)
     {
         _importService = serviceProvider.GetRequiredService<IImportService>();
-        
+
         ImportResults = new ObservableCollection<ImportResultItem>();
-        AvailableImportTypes = new List<string> 
-        { 
-            "OnePassword CSV", 
-            "Bitwarden CSV", 
+        AvailableImportTypes = new List<string>
+        {
+            "1Password CSV",
+            "1Password 1PUX",
+            "Bitwarden CSV",
             "Chrome CSV",
             "Firefox CSV",
             "Safari CSV",
             "KeePass CSV",
             "LastPass CSV"
         };
-        
+
         SelectedImportType = AvailableImportTypes.FirstOrDefault() ?? string.Empty;
     }
 
@@ -94,8 +95,8 @@ public class ImportViewModel : BaseViewModel
 
     private void UpdateCanImport()
     {
-        CanImport = !string.IsNullOrWhiteSpace(SelectedFilePath) && 
-                    !string.IsNullOrWhiteSpace(SelectedImportType) && 
+        CanImport = !string.IsNullOrWhiteSpace(SelectedFilePath) &&
+                    !string.IsNullOrWhiteSpace(SelectedImportType) &&
                     File.Exists(SelectedFilePath) &&
                     !IsLoading;
     }
@@ -107,7 +108,7 @@ public class ImportViewModel : BaseViewModel
             IsLoading = true;
             CanImport = false;
             ImportStatus = "Starting import...";
-            
+
             // Clear previous results
             ImportResults.Clear();
             ImportedItemsCount = 0;
@@ -122,8 +123,9 @@ public class ImportViewModel : BaseViewModel
             // Determine import provider based on selected type
             string providerName = SelectedImportType switch
             {
-                "OnePassword CSV" => "1Password",
-                "Bitwarden CSV" => "Bitwarden", 
+                "1Password CSV" => "1Password",
+                "1Password 1PUX" => "1Password",
+                "Bitwarden CSV" => "Bitwarden",
                 "Chrome CSV" => "Chrome",
                 "Firefox CSV" => "Firefox",
                 "Safari CSV" => "Safari",
@@ -154,7 +156,7 @@ public class ImportViewModel : BaseViewModel
                     };
                     ImportResults.Add(resultItem);
                 }
-                
+
                 ImportedItemsCount = result.SuccessfulImports;
                 ErrorItemsCount = result.FailedImports;
                 SkippedItemsCount = result.TotalItemsProcessed - result.SuccessfulImports - result.FailedImports;
@@ -173,10 +175,10 @@ public class ImportViewModel : BaseViewModel
             }
 
             ImportStatus = $"Import completed. {ImportedItemsCount} imported, {SkippedItemsCount} skipped, {ErrorItemsCount} errors.";
-            
+
             OnPropertyChanged(nameof(HasResults));
             OnPropertyChanged(nameof(HasImportCompleted));
-            
+
             return ImportedItemsCount > 0;
         }
         catch (Exception ex)
@@ -199,7 +201,7 @@ public class ImportViewModel : BaseViewModel
         SkippedItemsCount = 0;
         ErrorItemsCount = 0;
         ImportStatus = string.Empty;
-        
+
         OnPropertyChanged(nameof(HasResults));
         OnPropertyChanged(nameof(HasImportCompleted));
         OnPropertyChanged(nameof(HasNoImport));

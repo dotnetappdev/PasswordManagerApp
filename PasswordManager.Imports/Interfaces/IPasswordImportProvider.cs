@@ -6,6 +6,7 @@ public interface IPasswordImportProvider
 {
     string ProviderName { get; }
     string DisplayName { get; }
+    string Version { get; }
     string[] SupportedFileExtensions { get; }
     Task<ImportResult> ImportFromFileAsync(Stream fileStream, string fileName);
 }

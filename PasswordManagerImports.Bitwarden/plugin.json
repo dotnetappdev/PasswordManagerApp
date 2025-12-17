@@ -2,7 +2,7 @@
   "name": "bitwarden",
   "displayName": "Bitwarden CSV Importer",
   "description": "Import passwords from Bitwarden CSV export files. Supports standard Bitwarden export format with folders, login credentials, and notes.",
-  "version": "1.0.0",
+  "version": "1.1.3",
   "author": "PasswordManager Team",
   "website": "https://bitwarden.com",
   "iconUrl": "🔑",

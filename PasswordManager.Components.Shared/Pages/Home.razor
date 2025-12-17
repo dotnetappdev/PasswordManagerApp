@@ -6,6 +6,7 @@
 @using PasswordManager.Services.Interfaces
 @using PasswordManager.Imports.Interfaces
 @using PasswordManager.Crypto.Interfaces
+@* @using PasswordManager.App.Components *@
 @inject IPasswordItemService PasswordItemService
 @inject ITagService TagService
 @inject ICategoryInterface CategoryService
@@ -22,7 +23,7 @@
         border: 2px solid #007bff !important;
         box-shadow: 0 0 5px rgba(0, 123, 255, 0.5) !important;
     }
-    
+
     .validation-message {
         color: #dc3545;
         font-size: 14px;
@@ -298,9 +299,14 @@
         animation: spin 1s linear infinite;
     }
 
-         &#64;keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
     }
 
     .import-results {
@@ -331,7 +337,8 @@
         margin-bottom: 8px;
     }
 
-    .success-message, .error-message {
+    .success-message,
+    .error-message {
         display: flex;
         gap: 12px;
         align-items: flex-start;
@@ -345,16 +352,19 @@
         font-size: 20px;
     }
 
-    .success-message p, .error-message p {
+    .success-message p,
+    .error-message p {
         margin: 0 0 8px 0;
     }
 
-    .success-message ul, .error-message ul {
+    .success-message ul,
+    .error-message ul {
         margin: 8px 0;
         padding-left: 20px;
     }
 
-    .success-message li, .error-message li {
+    .success-message li,
+    .error-message li {
         margin: 4px 0;
     }
 
@@ -400,7 +410,8 @@
         flex-grow: 1;
     }
 
-    .close-btn, .close-modal-btn {
+    .close-btn,
+    .close-modal-btn {
         background: none;
         border: none;
         font-size: 24px;
@@ -443,7 +454,7 @@
         .password-manager-layout {
             flex-direction: column;
         }
-        
+
         .sidebar {
             width: 100%;
             height: auto;
@@ -451,7 +462,7 @@
             border-right: none;
             border-bottom: 1px solid #e1e5e9;
         }
-        
+
         .items-list-view {
             flex: 1;
             overflow-y: auto;
@@ -466,14 +477,16 @@
     }
 
     /* Category Modal Specific Styles */
-    .icon-selection, .color-selection {
+    .icon-selection,
+    .color-selection {
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
         margin: 10px 0;
     }
 
-    .icon-option, .color-option {
+    .icon-option,
+    .color-option {
         border: 2px solid #e5e7eb;
         border-radius: 6px;
         padding: 8px;
@@ -487,12 +500,14 @@
         font-size: 18px;
     }
 
-    .icon-option:hover, .color-option:hover {
+    .icon-option:hover,
+    .color-option:hover {
         border-color: #3b82f6;
         transform: scale(1.05);
     }
 
-    .icon-option.selected, .color-option.selected {
+    .icon-option.selected,
+    .color-option.selected {
         border-color: #3b82f6;
         background-color: #eff6ff;
     }
@@ -525,16 +540,19 @@
         <div class="sidebar-navigation">
             <!-- Main Navigation Items -->
             <div class="nav-section nav-main">
-                <div class="nav-item @(selectedCategory == "all" ? "active" : "")" @onclick="@(async () => await SelectCategory("all"))">>
+                <div class="nav-item @(selectedCategory == "all" ? "active" : "")"
+                    @onclick="@(async () => await SelectCategory("all"))">>
                     <span class="nav-icon">📋</span>
                     <span class="nav-text">All Items</span>
                     <span class="item-count">@totalItems</span>
                 </div>
-                <div class="nav-item @(selectedCategory == "favorites" ? "active" : "")" @onclick="@(async () => await SelectCategory("favorites"))">>
+                <div class="nav-item @(selectedCategory == "favorites" ? "active" : "")"
+                    @onclick="@(async () => await SelectCategory("favorites"))">>
                     <span class="nav-icon">⭐</span>
                     <span class="nav-text">Favorites</span>
                 </div>
-                <div class="nav-item @(selectedCategory == "watchtower" ? "active" : "")" @onclick="@(async () => await SelectCategory("watchtower"))">>
+                <div class="nav-item @(selectedCategory == "watchtower" ? "active" : "")"
+                    @onclick="@(async () => await SelectCategory("watchtower"))">>
                     <span class="nav-icon">🛡️</span>
                     <span class="nav-text">Watchtower</span>
                 </div>
@@ -555,26 +573,26 @@
                         @foreach (var category in categories.OrderBy(c => c.Name))
                         {
                             <div class="nav-item @(selectedCategory == category.Name ? "active" : "")"
-                                 style="display:flex;align-items:center;gap:4px;"
-                                 @onclick="() => SelectCategory(category.Name)">
+                                style="display:flex;align-items:center;gap:4px;" @onclick="() => SelectCategory(category.Name)">
                                 <span class="nav-icon">@(string.IsNullOrEmpty(category.Icon) ? "📁" : category.Icon)</span>
                                 <span class="nav-text">@category.Name</span>
                                 <span class="nav-count">@filteredItems.Count(i => i.CategoryId == category.Id)</span>
                                 <div class="category-actions" style="margin-left:auto;display:flex;gap:4px;">
-                                    <button class="category-edit-btn" style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
-                                            @onclick:stopPropagation="true"
-                                            @onclick="() => ShowEditCategoryModal(category)"
-                                            title="Edit category">✏️</button>
-                                    <button class="category-delete-btn" style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
-                                            @onclick:stopPropagation="true"
-                                            @onclick="() => DeleteCategory(category)"
-                                            title="Delete category">🗑️</button>
+                                    <button class="category-edit-btn"
+                                        style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
+                                        @onclick:stopPropagation="true" @onclick="() => ShowEditCategoryModal(category)"
+                                        title="Edit category">✏️</button>
+                                    <button class="category-delete-btn"
+                                        style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
+                                        @onclick:stopPropagation="true" @onclick="() => DeleteCategory(category)"
+                                        title="Delete category">🗑️</button>
                                 </div>
                             </div>
                         }
                         @if (!categories.Any())
                         {
-                            <div class="empty-message" style="padding: 5px; font-style: italic; color: #888;">No categories</div>
+                            <div class="empty-message" style="padding: 5px; font-style: italic; color: #888;">No categories
+                            </div>
                         }
                     </div>
                 }
@@ -594,8 +612,8 @@
                     <div class="nav-items">
                         @foreach (var rootCollection in GetRootCollections())
                         {
-                            <div class="nav-item collection-item @(selectedCategory == rootCollection.Name ? "active" : "")" 
-                                 @onclick="@(async () => await SelectCategory(rootCollection.Name))">>
+                            <div class="nav-item collection-item @(selectedCategory == rootCollection.Name ? "active" : "")"
+                                @onclick="@(async () => await SelectCategory(rootCollection.Name))">>
                                 <span class="nav-icon">🏢</span>
                                 <span class="nav-text">@rootCollection.Name</span>
                             </div>
@@ -618,8 +636,8 @@
                     <div class="nav-items">
                         @foreach (var tag in tags)
                         {
-                            <div class="nav-item tag-item @(selectedTag == tag.Name ? "active" : "")" 
-                                 @onclick="() => SelectTag(tag.Name)">
+                            <div class="nav-item tag-item @(selectedTag == tag.Name ? "active" : "")"
+                                @onclick="() => SelectTag(tag.Name)">
                                 <span class="tag-color" style="background-color: @tag.Color"></span>
                                 <span class="nav-text">@tag.Name</span>
                             </div>
@@ -630,11 +648,13 @@
 
             <!-- Bottom Navigation -->
             <div class="nav-section nav-bottom">
-                <div class="nav-item @(selectedCategory == "archive" ? "active" : "")" @onclick="@(async () => await SelectCategory("archive"))">>
+                <div class="nav-item @(selectedCategory == "archive" ? "active" : "")"
+                    @onclick="@(async () => await SelectCategory("archive"))">>
                     <span class="nav-icon">📁</span>
                     <span class="nav-text">Archive</span>
                 </div>
-                <div class="nav-item @(selectedCategory == "recently-deleted" ? "active" : "")" @onclick="@(async () => await SelectCategory("recently-deleted"))">>
+                <div class="nav-item @(selectedCategory == "recently-deleted" ? "active" : "")"
+                    @onclick="@(async () => await SelectCategory("recently-deleted"))">>
                     <span class="nav-icon">🗑️</span>
                     <span class="nav-text">Recently Deleted</span>
                 </div>
@@ -647,12 +667,12 @@
         <!-- Search Section moved from sidebar -->
         <div class="search-section">
             <div class="search-box">
-                <input type="text" @bind="searchTerm" @bind:event="oninput" @onkeyup="SearchItems" 
-                       placeholder="Search your vault..." class="search-input" />
+                <input type="text" @bind="searchTerm" @bind:event="oninput" @onkeyup="SearchItems"
+                    placeholder="Search your vault..." class="search-input" />
                 <span class="search-icon">🔍</span>
             </div>
         </div>
-        
+
         <div class="items-list-header">
             <h3 class="items-list-title">Items</h3>
             <div class="items-list-category-filter">
@@ -675,15 +695,16 @@
             {
                 @foreach (var item in filteredItems.Take(50)) // Limit for performance
                 {
-                    <div class="items-list-item @(selectedItem?.Id == item.Id ? "selected" : "")" 
-                         @onclick="() => SelectItem(item)">
+                    <div class="items-list-item @(selectedItem?.Id == item.Id ? "selected" : "")"
+                        @onclick="() => SelectItem(item)">
                         <div class="item-type-icon @(item.Type.ToString().ToLower())">
                             @if (item.Type == ItemType.Login && item.LoginItem != null)
                             {
                                 var brandSlug = GetBrandSlug(item.LoginItem.Website, item.Title);
                                 if (!string.IsNullOrEmpty(brandSlug))
                                 {
-                                    <img height="18" width="18" style="border-radius:3px;" src=$"https://unpkg.com/simple-icons@v15/icons/{brandSlug}.svg" alt="brand icon" />
+                                    <img height="18" width="18" style="border-radius:3px;"
+                                        src=$"https://unpkg.com/simple-icons@v15/icons/{brandSlug}.svg" alt="brand icon" />
                                 }
                                 else
                                 {
@@ -712,8 +733,9 @@
                                 }
                                 else if (item.Type == ItemType.CreditCard && item.CreditCardItem != null)
                                 {
-                                    <span>**** **** **** @item.CreditCardItem.CardNumber?.Substring(Math.Max(0, item.CreditCardItem.CardNumber.Length - 4))</span>
-                                }
+                                    <span>**** **** **** @item.CreditCardItem.CardNumber?.Substring(Math.Max(0,
+                                                                    item.CreditCardItem.CardNumber.Length - 4))</span>
+                                                }
                                 else if (item.Type == ItemType.WiFi && item.WiFiItem != null)
                                 {
                                     <span>@item.WiFiItem.NetworkName</span>
@@ -752,52 +774,60 @@
                 <button class="import-btn" @onclick="ShowImportModal">📥 Import</button>
                 <button class="add-item-btn" @onclick="ShowAddItemModal">+ Add Item</button>
                 <div class="profile-dropdown" style="position:relative;">
-                    <button class="profile-icon-btn" @onclick="ToggleProfileMenu" style="background:none;border:none;cursor:pointer;">
+                    <button class="profile-icon-btn" @onclick="ToggleProfileMenu"
+                        style="background:none;border:none;cursor:pointer;">
                         <span class="profile-icon" style="font-size:1.7rem;">👤</span>
                     </button>
                     @if (showProfileMenu)
                     {
-                        <div class="profile-menu" style="position:absolute;right:0;top:2.5rem;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);z-index:1000;min-width:140px;">
-                            <button class="profile-menu-item" style="width:100%;background:none;border:none;padding:10px 16px;text-align:left;cursor:pointer;" @onclick="ShowProfile">Profile</button>
-                            <button class="profile-menu-item" style="width:100%;background:none;border:none;padding:10px 16px;text-align:left;cursor:pointer;" @onclick="ShowSettingsPopup">Settings</button>
+                        <div class="profile-menu"
+                            style="position:absolute;right:0;top:2.5rem;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);z-index:1000;min-width:140px;">
+                            <button class="profile-menu-item"
+                                style="width:100%;background:none;border:none;padding:10px 16px;text-align:left;cursor:pointer;"
+                                @onclick="ShowProfile">Profile</button>
+                            <button class="profile-menu-item"
+                                style="width:100%;background:none;border:none;padding:10px 16px;text-align:left;cursor:pointer;"
+                                @onclick="ShowSettingsPopup">Settings</button>
                         </div>
                     }
                 </div>
             </div>
         </div>
-@* Settings Popup Modal *@
-@if (showSettingsPopup)
-{
-    <PasswordManager.App.Components.SettingsPopup ShowSettings="showSettingsPopup" ShowSettingsChanged="OnSettingsPopupChanged" />
-}
-@code {
-    private bool showProfileMenu = false;
-    private bool showSettingsPopup = false;
+        @* Settings Popup Modal *@
+        @* Temporarily commented out due to cross-project dependency issue *@
+        @* @if (showSettingsPopup)
+        {
+            <PasswordManager.App.Components.SettingsPopup ShowSettings="showSettingsPopup"
+                ShowSettingsChanged="OnSettingsPopupChanged" />
+        } *@
+        @code {
+            private bool showProfileMenu = false;
+            private bool showSettingsPopup = false;
 
-    private void ToggleProfileMenu()
-    {
-        showProfileMenu = !showProfileMenu;
-    }
+            private void ToggleProfileMenu()
+            {
+                showProfileMenu = !showProfileMenu;
+            }
 
-    private void ShowProfile()
-    {
-        showProfileMenu = false;
-        // TODO: Show profile modal or page
-    }
+            private void ShowProfile()
+            {
+                showProfileMenu = false;
+                // TODO: Show profile modal or page
+            }
 
-    private void ShowSettingsPopup()
-    {
-        showProfileMenu = false;
-        showSettingsPopup = true;
-    }
+            private void ShowSettingsPopup()
+            {
+                showProfileMenu = false;
+                showSettingsPopup = true;
+            }
 
-    private Task OnSettingsPopupChanged(bool value)
-    {
-        showSettingsPopup = value;
-        StateHasChanged();
-        return Task.CompletedTask;
-    }
-}
+            private Task OnSettingsPopupChanged(bool value)
+            {
+                showSettingsPopup = value;
+                StateHasChanged();
+                return Task.CompletedTask;
+            }
+        }
 
         <!-- Items List -->
         <div class="items-container">
@@ -806,8 +836,8 @@
                 <div class="items-grid">
                     @foreach (var item in filteredItems)
                     {
-                        <div class="item-card @(selectedItem?.Id == item.Id ? "selected" : "")" 
-                             @onclick="() => SelectItem(item)">
+                        <div class="item-card @(selectedItem?.Id == item.Id ? "selected" : "")"
+                            @onclick="() => SelectItem(item)">
                             <div class="item-header">
                                 <div class="item-info">
                                     <div class="item-title">
@@ -816,7 +846,9 @@
                                             var brandSlug = GetBrandSlug(item.LoginItem.Website, item.Title);
                                             if (!string.IsNullOrEmpty(brandSlug))
                                             {
-                                                <img class="brand-icon" height="24" width="24" style="margin-right:4px;vertical-align:middle;" src=$"https://unpkg.com/simple-icons@v15/icons/{brandSlug}.svg" alt="brand icon" />
+                                                <img class="brand-icon" height="24" width="24"
+                                                    style="margin-right:4px;vertical-align:middle;"
+                                                    src=$"https://unpkg.com/simple-icons@v15/icons/{brandSlug}.svg" alt="brand icon" />
                                             }
                                         }
                                         @item.Title
@@ -830,10 +862,11 @@
                                         }
                                         else if (item.Type == ItemType.CreditCard && item.CreditCardItem != null)
                                         {
-                                            <span>@item.CreditCardItem.CardNumber?.Substring(Math.Max(0, item.CreditCardItem.CardNumber.Length - 4))</span>
-                                            <br />
-                                            <span class="item-url">@item.CreditCardItem.BankWebsite</span>
-                                        }
+                                            <span>@item.CreditCardItem.CardNumber?.Substring(Math.Max(0,
+                                                                                    item.CreditCardItem.CardNumber.Length - 4))</span>
+                                <br />
+                                <span class="item-url">@item.CreditCardItem.BankWebsite</span>
+                                                                }
                                         else if (item.Type == ItemType.WiFi && item.WiFiItem != null)
                                         {
                                             <span>@item.WiFiItem.NetworkName</span>
@@ -884,15 +917,17 @@
                             <label>Username</label>
                             <div class="field-value">
                                 <span>@selectedItem.LoginItem.Username</span>
-                                <button class="copy-btn" @onclick="() => CopyToClipboard(selectedItem.LoginItem.Username)">📋</button>
+                                <button class="copy-btn"
+                                    @onclick="() => CopyToClipboard(selectedItem.LoginItem.Username)">📋</button>
                             </div>
                         </div>
                         <div class="detail-field">
                             <label>Password</label>
                             <div class="field-value">
-                                <span>@(passwordVisible ? GetDisplayPassword(selectedItem.LoginItem) : "••••••••••")</span>
+                                <span>@(passwordVisible? GetDisplayPassword(selectedItem.LoginItem) : "••••••••••")</span>
                                 <button class="copy-btn" @onclick="() => CopyPasswordAsync(selectedItem.LoginItem)">📋</button>
-                                <button class="reveal-btn" @onclick="TogglePasswordVisibility">@(passwordVisible ? "🙈" : "👁️")</button>
+                                <button class="reveal-btn" @onclick="TogglePasswordVisibility">@(passwordVisible ? "🙈" :
+                                                                "👁️")</button>
                             </div>
                         </div>
                         @if (!string.IsNullOrEmpty(selectedItem.LoginItem.Website))
@@ -901,7 +936,8 @@
                                 <label>Website</label>
                                 <div class="field-value">
                                     <span>@selectedItem.LoginItem.Website</span>
-                                    <button class="copy-btn" @onclick="() => CopyToClipboard(selectedItem.LoginItem.Website)">📋</button>
+                                    <button class="copy-btn"
+                                        @onclick="() => CopyToClipboard(selectedItem.LoginItem.Website)">📋</button>
                                 </div>
                             </div>
                         }
@@ -963,7 +999,8 @@
                         var brandSlug = GetBrandSlug(loginDetails.Website, newItem.Title);
                         if (!string.IsNullOrEmpty(brandSlug))
                         {
-                            <img class="brand-icon" height="24" width="24" style="vertical-align:middle;" src=$"https://unpkg.com/simple-icons@v15/icons/{brandSlug}.svg" alt="brand icon" />
+                            <img class="brand-icon" height="24" width="24" style="vertical-align:middle;"
+                                src=$"https://unpkg.com/simple-icons@v15/icons/{brandSlug}.svg" alt="brand icon" />
                         }
                     }
                     <input type="text" @bind="newItem.Title" class="form-control" placeholder="Enter title" required />
@@ -976,25 +1013,28 @@
                     <option value="@ItemType.SecureNote">Secure Note</option>
                     <option value="@ItemType.WiFi">WiFi</option>
                 </select>
-                
+
                 <label>Collection <span style="color:red;">*</span></label>
-                <select value="@newItem.CollectionId" class="form-control @(collectionValidationError ? "validation-error" : "")" @onchange="OnCollectionChanged">
+                <select value="@newItem.CollectionId"
+                    class="form-control @(collectionValidationError ? "validation-error" : "")"
+                    @onchange="OnCollectionChanged">
                     <option value="0">-- Select Collection --</option>
                     @foreach (var collection in collections)
                     {
                         <option value="@collection.Id">@collection.Name @(collection.IsDefault ? "(Default)" : "")</option>
                     }
                 </select>
-                
+
                 <label>Category <span style="color:red;">*</span></label>
-                <select @bind="newItem.CategoryId" class="form-control @(categoryValidationError ? "validation-error" : "")">
+                <select @bind="newItem.CategoryId"
+                    class="form-control @(categoryValidationError ? "validation-error" : "")">
                     <option value="0">-- Select Category --</option>
                     @foreach (var category in GetCategoriesForCollection(newItem.CollectionId ?? 0))
                     {
                         <option value="@category.Id">@category.Name</option>
                     }
                 </select>
-                
+
                 @if (!string.IsNullOrEmpty(validationMessage))
                 {
                     <div class="validation-message" style="color: red; margin-top: 5px; font-size: 14px;">
@@ -1008,44 +1048,57 @@
                         <h4>Login Details</h4>
                         <label>Website/URL</label>
                         <input type="url" @bind="loginDetails.Website" class="form-control" placeholder="https://example.com" />
-                        
+
                         <label>Username</label>
                         <input type="text" @bind="loginDetails.Username" class="form-control" placeholder="Enter username" />
-                        
+
                         <label>Password</label>
                         <div class="password-input-group">
-                            <input type="@(showNewPassword ? "text" : "password")" @bind="loginDetails.Password" class="form-control" placeholder="Enter password" />
+                            <input type="@(showNewPassword ? "text" : "password")" @bind="loginDetails.Password"
+                                class="form-control" placeholder="Enter password" />
                             <button type="button" class="password-toggle-btn" @onclick="ToggleNewPasswordVisibility">
                                 @(showNewPassword ? "👁️" : "👁️‍🗨️")
                             </button>
                             <span style="position:relative;">
                                 <button type="button" class="generate-btn" @onclick="ShowPasswordGenerator">Generate</button>
-                                <div class="password-generator-popup center-popup" style="@(showPasswordGenerator ? "display:flex;align-items:center;justify-content:center;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2000;background:rgba(0,0,0,0.25);" : "display:none;")">
-                                    <div class="generator-content" style="background:#fff;padding:2rem 2.5rem;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,0.18);width:420px;max-width:90vw;height:380px;max-height:90vh;display:flex;flex-direction:column;justify-content:center;">
+                                <div class="password-generator-popup center-popup"
+                                    style="@(showPasswordGenerator ? "display:flex;align-items:center;justify-content:center;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2000;background:rgba(0,0,0,0.25);" : "display:none;")">
+                                    <div class="generator-content"
+                                        style="background:#fff;padding:2rem 2.5rem;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,0.18);width:420px;max-width:90vw;height:380px;max-height:90vh;display:flex;flex-direction:column;justify-content:center;">
                                         <div class="generator-row">
                                             <label>Password Length: <b>@passwordGenLength</b></label>
-                                            <input type="range" min="8" max="32" @bind="passwordGenLength" @oninput="OnLengthChanged" />
+                                            <input type="range" min="8" max="32" @bind="passwordGenLength"
+                                                @oninput="OnLengthChanged" />
                                         </div>
                                         <div class="generator-row">
-                                            <label><input type="checkbox" @bind="passwordGenIncludeSymbols" @bind:event="onchange" /> Include Symbols</label>
-                                            <label><input type="checkbox" @bind="passwordGenExcludeSimilar" @bind:event="onchange" /> Exclude Similar Characters</label>
-                                            <label><input type="checkbox" @bind="passwordGenExcludeAmbiguous" @bind:event="onchange" /> Exclude Ambiguous Symbols</label>
+                                            <label><input type="checkbox" @bind="passwordGenIncludeSymbols"
+                                                    @bind:event="onchange" /> Include Symbols</label>
+                                            <label><input type="checkbox" @bind="passwordGenExcludeSimilar"
+                                                    @bind:event="onchange" /> Exclude Similar Characters</label>
+                                            <label><input type="checkbox" @bind="passwordGenExcludeAmbiguous"
+                                                    @bind:event="onchange" /> Exclude Ambiguous Symbols</label>
                                         </div>
                                         <div class="generator-row">
-                                            <input type="text" class="form-control" readonly value="@generatedPassword" style="width:70%" />
-                                            <button type="button" class="btn btn-secondary" @onclick="CopyGeneratedPassword">Copy</button>
-                                            <button type="button" class="btn btn-primary" @onclick="UseGeneratedPassword">Use</button>
+                                            <input type="text" class="form-control" readonly value="@generatedPassword"
+                                                style="width:70%" />
+                                            <button type="button" class="btn btn-secondary"
+                                                @onclick="CopyGeneratedPassword">Copy</button>
+                                            <button type="button" class="btn btn-primary"
+                                                @onclick="UseGeneratedPassword">Use</button>
                                         </div>
                                         <div class="generator-row">
-                                            <button type="button" class="btn btn-secondary" @onclick="GeneratePassword">Regenerate</button>
-                                            <button type="button" class="btn btn-link" @onclick="HidePasswordGenerator">Close</button>
+                                            <button type="button" class="btn btn-secondary"
+                                                @onclick="GeneratePassword">Regenerate</button>
+                                            <button type="button" class="btn btn-link"
+                                                @onclick="HidePasswordGenerator">Close</button>
                                         </div>
                                     </div>
                                 </div>
                             </span>
                         </div>
                         <label>Notes</label>
-                        <textarea @bind="loginDetails.Notes" class="form-control" rows="3" placeholder="Additional notes"></textarea>
+                        <textarea @bind="loginDetails.Notes" class="form-control" rows="3"
+                            placeholder="Additional notes"></textarea>
                     </div>
                 }
                 else if (newItem.Type == ItemType.CreditCard)
@@ -1053,27 +1106,33 @@
                     <div class="form-section">
                         <h4>Credit Card Details</h4>
                         <label>Cardholder Name</label>
-                        <input type="text" @bind="creditCardDetails.CardholderName" class="form-control" placeholder="Enter cardholder name" />
-                        
+                        <input type="text" @bind="creditCardDetails.CardholderName" class="form-control"
+                            placeholder="Enter cardholder name" />
+
                         <label>Card Number</label>
-                        <input type="text" @bind="creditCardDetails.CardNumber" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19" />
-                        
+                        <input type="text" @bind="creditCardDetails.CardNumber" class="form-control"
+                            placeholder="1234 5678 9012 3456" maxlength="19" />
+
                         <div class="form-row">
                             <div class="form-col">
                                 <label>Expiry Date</label>
-                                <input type="text" @bind="creditCardDetails.ExpiryDate" class="form-control" placeholder="MM/YY" maxlength="5" />
+                                <input type="text" @bind="creditCardDetails.ExpiryDate" class="form-control" placeholder="MM/YY"
+                                    maxlength="5" />
                             </div>
                             <div class="form-col">
                                 <label>CVV</label>
-                                <input type="@(showNewPassword ? "text" : "password")" @bind="creditCardDetails.CVV" class="form-control" placeholder="123" maxlength="4" />
+                                <input type="@(showNewPassword ? "text" : "password")" @bind="creditCardDetails.CVV"
+                                    class="form-control" placeholder="123" maxlength="4" />
                             </div>
                         </div>
-                        
+
                         <label>Bank Website</label>
-                        <input type="url" @bind="creditCardDetails.BankWebsite" class="form-control" placeholder="https://bank.com" />
-                        
+                        <input type="url" @bind="creditCardDetails.BankWebsite" class="form-control"
+                            placeholder="https://bank.com" />
+
                         <label>Notes</label>
-                        <textarea @bind="creditCardDetails.Notes" class="form-control" rows="3" placeholder="Additional notes"></textarea>
+                        <textarea @bind="creditCardDetails.Notes" class="form-control" rows="3"
+                            placeholder="Additional notes"></textarea>
                     </div>
                 }
                 else if (newItem.Type == ItemType.SecureNote)
@@ -1081,7 +1140,8 @@
                     <div class="form-section">
                         <h4>Secure Note</h4>
                         <label>Content</label>
-                        <textarea @bind="secureNoteDetails.Content" class="form-control" rows="8" placeholder="Enter your secure note content"></textarea>
+                        <textarea @bind="secureNoteDetails.Content" class="form-control" rows="8"
+                            placeholder="Enter your secure note content"></textarea>
                     </div>
                 }
                 else if (newItem.Type == ItemType.WiFi)
@@ -1089,16 +1149,18 @@
                     <div class="form-section">
                         <h4>WiFi Details</h4>
                         <label>Network Name (SSID)</label>
-                        <input type="text" @bind="wifiDetails.NetworkName" class="form-control" placeholder="Enter network name" />
-                        
+                        <input type="text" @bind="wifiDetails.NetworkName" class="form-control"
+                            placeholder="Enter network name" />
+
                         <label>Password</label>
                         <div class="password-input-group">
-                            <input type="@(showNewPassword ? "text" : "password")" @bind="wifiDetails.Password" class="form-control" placeholder="Enter WiFi password" />
+                            <input type="@(showNewPassword ? "text" : "password")" @bind="wifiDetails.Password"
+                                class="form-control" placeholder="Enter WiFi password" />
                             <button type="button" class="password-toggle-btn" @onclick="ToggleNewPasswordVisibility">
                                 @(showNewPassword ? "👁️" : "👁️‍🗨️")
                             </button>
                         </div>
-                        
+
                         <label>Security Type</label>
                         <select @bind="wifiDetails.SecurityType" class="form-control">
                             <option value="WPA2">WPA2</option>
@@ -1106,9 +1168,10 @@
                             <option value="WEP">WEP</option>
                             <option value="Open">Open</option>
                         </select>
-                        
+
                         <label>Notes</label>
-                        <textarea @bind="wifiDetails.Notes" class="form-control" rows="3" placeholder="Additional notes"></textarea>
+                        <textarea @bind="wifiDetails.Notes" class="form-control" rows="3"
+                            placeholder="Additional notes"></textarea>
                     </div>
                 }
 
@@ -1126,7 +1189,8 @@
                 </div>
 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" @onclick="async () => await HideAddItemModal()">Cancel</button>
+                    <button type="button" class="btn btn-secondary"
+                        @onclick="async () => await HideAddItemModal()">Cancel</button>
                     <button type="button" class="btn btn-primary" @onclick="SaveItem">
                         @(editingItem != null ? "Update" : "Save")
                     </button>
@@ -1153,19 +1217,18 @@
                 <div class="color-selection">
                     @foreach (var color in predefinedColors)
                     {
-                        <button type="button" 
-                                class="color-option @(newTag.Color == color ? "selected" : "")" 
-                                style="background-color: @color" 
-                                @onclick="() => SelectTagColor(color)">
+                        <button type="button" class="color-option @(newTag.Color == color ? "selected" : "")"
+                            style="background-color: @color" @onclick="() => SelectTagColor(color)">
                         </button>
                     }
                 </div>
-                
+
                 <label>Custom Color</label>
                 <input type="color" @bind="newTag.Color" class="form-control color-picker" />
 
                 <div class="tag-preview">
-                    <span class="tag" style="background-color: @newTag.Color">@(string.IsNullOrWhiteSpace(newTag.Name) ? "Preview" : newTag.Name)</span>
+                    <span class="tag" style="background-color: @newTag.Color">@(string.IsNullOrWhiteSpace(newTag.Name) ?
+                                            "Preview" : newTag.Name)</span>
                 </div>
 
                 <div class="modal-actions">
@@ -1190,9 +1253,11 @@
             </div>
             <div class="modal-body">
                 <label>Category Name</label>
-                <input type="text" @bind="newCategory.Name" class="form-control" placeholder="Enter category name" required />
+                <input type="text" @bind="newCategory.Name" class="form-control" placeholder="Enter category name"
+                    required />
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" @onclick="async () => await HideAddCategoryModal()">Cancel</button>
+                    <button type="button" class="btn btn-secondary"
+                        @onclick="async () => await HideAddCategoryModal()">Cancel</button>
                     <button type="button" class="btn btn-primary" @onclick="SaveCategory">
                         @(editingCategory != null ? "Update" : "Save")
                     </button>
@@ -1222,7 +1287,8 @@
                 </div>
                 <div class="form-group">
                     <label for="collectionIcon">Icon (Optional)</label>
-                    <input id="collectionIcon" class="form-control" @bind="newCollection.Icon" placeholder="Emoji or icon name" />
+                    <input id="collectionIcon" class="form-control" @bind="newCollection.Icon"
+                        placeholder="Emoji or icon name" />
                 </div>
                 <div class="form-group">
                     <label for="collectionColor">Color (Optional)</label>
@@ -1269,11 +1335,13 @@
                 </div>
                 <div class="form-group">
                     <label for="editCollectionDescription">Description (Optional)</label>
-                    <textarea id="editCollectionDescription" class="form-control" @bind="editingCollection.Description"></textarea>
+                    <textarea id="editCollectionDescription" class="form-control"
+                        @bind="editingCollection.Description"></textarea>
                 </div>
                 <div class="form-group">
                     <label for="editCollectionIcon">Icon (Optional)</label>
-                    <input id="editCollectionIcon" class="form-control" @bind="editingCollection.Icon" placeholder="Emoji or icon name" />
+                    <input id="editCollectionIcon" class="form-control" @bind="editingCollection.Icon"
+                        placeholder="Emoji or icon name" />
                 </div>
                 <div class="form-group">
                     <label for="editCollectionColor">Color (Optional)</label>
@@ -1314,7 +1382,8 @@
                 <button class="close-modal-btn" @onclick="HideDeleteCollectionModal">×</button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete this collection? All passwords in this collection will be moved to the default collection.</p>
+                <p>Are you sure you want to delete this collection? All passwords in this collection will be moved to the
+                    default collection.</p>
                 <div class="modal-actions">
                     <button class="cancel-btn" @onclick="HideDeleteCollectionModal">Cancel</button>
                     <button class="delete-btn" @onclick="ConfirmDeleteCollectionAsync">Delete</button>
@@ -1338,7 +1407,7 @@
                 {
                     <div class="import-step">
                         <h4>Select Import Provider</h4>
-                        
+
                         @if (!availableProviders.Any())
                         {
                             <div class="alert alert-warning">
@@ -1352,7 +1421,7 @@
                                 @foreach (var provider in availableProviders)
                                 {
                                     <div class="provider-option @(selectedProvider?.ProviderName == provider.ProviderName ? "selected" : "")"
-                                         @onclick="() => SelectProvider(provider)">
+                                        @onclick="() => SelectProvider(provider)">
                                         <div class="provider-info">
                                             @if (provider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin plugin)
                                             {
@@ -1380,8 +1449,9 @@
                                                         <span class="plugin-tag">@tag</span>
                                                     }
                                                 </div>
-                                                <p class="plugin-formats">Supported formats: @string.Join(", ", provider.SupportedFileExtensions)</p>
-                                            }
+                                                <p class="plugin-formats">Supported formats: @string.Join(", ",
+                                                                                    provider.SupportedFileExtensions)</p>
+                                                        }
                                             else
                                             {
                                                 <h5>@provider.DisplayName</h5>
@@ -1398,7 +1468,8 @@
                     {
                         <div class="import-step">
                             <h4>Select File</h4>
-                            @if (selectedProvider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin plugin && !string.IsNullOrEmpty(plugin.Metadata.Website))
+                            @if (selectedProvider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin plugin &&
+                                            !string.IsNullOrEmpty(plugin.Metadata.Website))
                             {
                                 <div class="import-help">
                                     <p><strong>How to export from @plugin.Metadata.DisplayName:</strong></p>
@@ -1412,8 +1483,10 @@
                                 </div>
                             }
                             <div class="file-upload-area">
-                                <InputFile OnChange="OnFileSelected" accept="@string.Join(",", selectedProvider.SupportedFileExtensions)" />
-                                <p class="file-help">Supported files: @string.Join(", ", selectedProvider.SupportedFileExtensions)</p>
+                                <InputFile OnChange="OnFileSelected"
+                                    accept="@string.Join(",", selectedProvider.SupportedFileExtensions)" />
+                                <p class="file-help">Supported files: @string.Join(", ", selectedProvider.SupportedFileExtensions)
+                                </p>
                                 @if (selectedFile != null)
                                 {
                                     <div class="selected-file">
@@ -1500,9 +1573,8 @@
                     @if (!importInProgress && importResult == null)
                     {
                         <button type="button" class="btn btn-secondary" @onclick="HideImportModal">Cancel</button>
-                        <button type="button" class="btn btn-primary" 
-                                @onclick="StartImport" 
-                                disabled="@(selectedProvider == null || selectedFile == null)">
+                        <button type="button" class="btn btn-primary" @onclick="StartImport"
+                            disabled="@(selectedProvider == null || selectedFile == null)">
                             Start Import
                         </button>
                     }
@@ -1521,13 +1593,13 @@
     private List<Collection> collections = new();
     private int? selectedCollectionId = null;
     private int collectionToDeleteId = 0;
-    
+
     // Expand/collapse state
     private bool isCollectionsExpanded = true;
     private bool isCategoriesExpanded = true;
     private bool isTagsExpanded = true;
     private Dictionary<int, bool> expandedCollections = new();
-    
+
     // Toggle methods for expand/collapse
     private void ToggleCollectionsExpanded()
     {
@@ -1540,23 +1612,23 @@
         isCategoriesExpanded = !isCategoriesExpanded;
         StateHasChanged();
     }
-    
+
     private void ToggleCollectionCategories(int collectionId)
     {
         if (!expandedCollections.ContainsKey(collectionId))
             expandedCollections[collectionId] = true;
         else
             expandedCollections[collectionId] = !expandedCollections[collectionId];
-            
+
         StateHasChanged();
     }
-    
+
     private void ToggleTagsExpanded()
     {
         isTagsExpanded = !isTagsExpanded;
         StateHasChanged();
     }
-    
+
     private void ShowAddCategoryForCollection(int collectionId)
     {
         editingCategory = null;
@@ -1564,7 +1636,7 @@
         showAddCategoryModal = true;
         StateHasChanged();
     }
-    
+
     // Returns the SimpleIcons slug for a brand based on the website or title, or null if not found
     private string? GetBrandSlug(string? website, string? title)
     {
@@ -1636,8 +1708,8 @@
     // New tag form data
     private Tag newTag = new() { Color = "#3b82f6" };
     private readonly string[] predefinedColors = {
-        "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6",
-        "#ec4899", "#6b7280", "#06b6d4", "#84cc16", "#f97316"
+"#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6",
+"#ec4899", "#6b7280", "#06b6d4", "#84cc16", "#f97316"
     };
 
     // New category form data
@@ -1667,14 +1739,14 @@
     private bool _passwordGenExcludeAmbiguous = false;
 
 
-private void OnLengthChanged(ChangeEventArgs e)
-{
-    var str = e.Value?.ToString() ?? string.Empty;
-    if (int.TryParse(str, out var len))
-        passwordGenLength = len;
-    GeneratePassword();
-}
-    
+    private void OnLengthChanged(ChangeEventArgs e)
+    {
+        var str = e.Value?.ToString() ?? string.Empty;
+        if (int.TryParse(str, out var len))
+            passwordGenLength = len;
+        GeneratePassword();
+    }
+
     private int passwordGenLength
     {
         get => _passwordGenLength;
@@ -1710,7 +1782,7 @@ private void OnLengthChanged(ChangeEventArgs e)
         await LoadCategories();
         await LoadCollections();
         await LoadImportProviders();
-        
+
         // Set default collection if none selected
         if (selectedCollectionId == null)
         {
@@ -1724,7 +1796,7 @@ private void OnLengthChanged(ChangeEventArgs e)
                 selectedCollectionId = collections.First().Id;
             }
         }
-        
+
         // Create sample data if this is a new installation
         await CreateSampleDataIfNeeded();
     }
@@ -1734,9 +1806,9 @@ private void OnLengthChanged(ChangeEventArgs e)
         var allItems = await PasswordItemService.GetAllAsync();
         items = allItems.AsQueryable();
         filteredItems = allItems.ToList();
-        
+
         tags = (await TagService.GetAllAsync()).ToList();
-        
+
         UpdateCounts();
         FilterItems();
     }
@@ -1781,12 +1853,13 @@ private void OnLengthChanged(ChangeEventArgs e)
     {
         selectedCategory = category;
         selectedTag = null;
-        
+
         var selectedCat = categories.FirstOrDefault(c => c.Name == category);
         if (selectedCat != null)
         {
             // Custom category: filter items by Login type and category name
-            filteredItems = (await PasswordItemService.GetByTypeAsync(ItemType.Login)).Where(i => i.LoginItem != null && i.CategoryId == selectedCat.Id).ToList();
+            filteredItems = (await PasswordItemService.GetByTypeAsync(ItemType.Login)).Where(i => i.LoginItem != null &&
+            i.CategoryId == selectedCat.Id).ToList();
         }
         else
         {
@@ -1809,7 +1882,7 @@ private void OnLengthChanged(ChangeEventArgs e)
                     break;
             }
         }
-        
+
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             await SearchItems();
@@ -1839,7 +1912,7 @@ private void OnLengthChanged(ChangeEventArgs e)
         {
             query = query.Where(i => i.CollectionId == selectedCollectionId.Value);
         }
-        
+
         // Then apply other filters
         if (!string.IsNullOrEmpty(selectedCategory))
         {
@@ -1892,9 +1965,9 @@ private void OnLengthChanged(ChangeEventArgs e)
         if (!string.IsNullOrEmpty(searchTerm))
         {
             var loweredSearchTerm = searchTerm.ToLowerInvariant();
-            query = query.Where(i => 
-                i.Title.ToLowerInvariant().Contains(loweredSearchTerm) || 
-                (i.Description != null && i.Description.ToLowerInvariant().Contains(loweredSearchTerm)));
+            query = query.Where(i =>
+            i.Title.ToLowerInvariant().Contains(loweredSearchTerm) ||
+            (i.Description != null && i.Description.ToLowerInvariant().Contains(loweredSearchTerm)));
         }
 
         // Apply sorting (add more sort options as needed)
@@ -1916,7 +1989,7 @@ private void OnLengthChanged(ChangeEventArgs e)
         {
             "all" => "All Items",
             "logins" => "Logins",
-            "cards" => "Credit Cards", 
+            "cards" => "Credit Cards",
             "notes" => "Secure Notes",
             "wifi" => "WiFi",
             "favorites" => "Favorites",
@@ -1926,7 +1999,7 @@ private void OnLengthChanged(ChangeEventArgs e)
             _ when !string.IsNullOrEmpty(selectedTag) => $"Tagged: {selectedTag}",
             _ => selectedCategory ?? "All Items"
         };
-        
+
         // Add collection name if a collection is selected
         if (selectedCollectionId.HasValue)
         {
@@ -1936,7 +2009,7 @@ private void OnLengthChanged(ChangeEventArgs e)
                 return $"{title} - {collection.Name}";
             }
         }
-        
+
         return title;
     }
 
@@ -1946,23 +2019,23 @@ private void OnLengthChanged(ChangeEventArgs e)
         collectionValidationError = false;
         categoryValidationError = false;
         validationMessage = string.Empty;
-        
+
         newItem = new PasswordItem { Type = ItemType.Login };
-        
+
         // Set default collection ID
         if (collections.Any())
         {
             var defaultCollection = collections.FirstOrDefault(c => c.IsDefault);
             newItem.CollectionId = defaultCollection?.Id ?? collections.First().Id;
         }
-        
+
         // Set default category ID based on collection
         var availableCategories = GetCategoriesForCollection(newItem.CollectionId ?? 0);
         if (availableCategories.Any())
         {
             newItem.CategoryId = availableCategories.First().Id;
         }
-        
+
         loginDetails = new LoginItem();
         creditCardDetails = new CreditCardItem();
         secureNoteDetails = new SecureNoteItem();
@@ -1978,8 +2051,8 @@ private void OnLengthChanged(ChangeEventArgs e)
         collectionValidationError = false;
         categoryValidationError = false;
         validationMessage = string.Empty;
-        
-        newItem = new PasswordItem 
+
+        newItem = new PasswordItem
         {
             Id = item.Id,
             Title = item.Title,
@@ -1998,7 +2071,7 @@ private void OnLengthChanged(ChangeEventArgs e)
 
         // Set selected tags
         selectedTagIds = tags.ToDictionary(t => t.Id, t => item.Tags.Any(tag => tag.Id == t.Id));
-        
+
         showAddItemModal = true;
         StateHasChanged();
     }
@@ -2074,13 +2147,13 @@ private void OnLengthChanged(ChangeEventArgs e)
             return;
 
         await CollectionService.CreateAsync(newCollection);
-        
+
         // If this was set as default, update UI for other collections
         if (newCollection.IsDefault)
         {
             await LoadCollections();
         }
-        
+
         HideAddCollectionModal();
         await LoadCollections();
         StateHasChanged();
@@ -2092,13 +2165,13 @@ private void OnLengthChanged(ChangeEventArgs e)
             return;
 
         await CollectionService.UpdateAsync(editingCollection);
-        
+
         // If this was set as default, ensure other collections are not default
         if (editingCollection.IsDefault)
         {
             await CollectionService.SetAsDefaultAsync(editingCollection.Id);
         }
-        
+
         HideEditCollectionModal();
         await LoadCollections();
         StateHasChanged();
@@ -2138,7 +2211,7 @@ private void OnLengthChanged(ChangeEventArgs e)
             await CollectionService.DeleteAsync(collectionToDeleteId);
             HideDeleteCollectionModal();
             await LoadCollections();
-            
+
             // If the currently selected collection was deleted, select the default one
             if (selectedCollectionId == collectionToDeleteId)
             {
@@ -2147,7 +2220,7 @@ private void OnLengthChanged(ChangeEventArgs e)
                 await LoadData();
                 FilterItems();
             }
-            
+
             StateHasChanged();
         }
     }
@@ -2210,12 +2283,12 @@ private void OnLengthChanged(ChangeEventArgs e)
         {
             if (loginItem?.EncryptedPassword == null)
                 return "";
-            
+
             // Use the PasswordRevealService to decrypt the password
             var sessionId = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "sessionId");
             if (string.IsNullOrEmpty(sessionId))
                 return "Session expired";
-            
+
             var result = await PasswordRevealService.RevealPasswordAsync(loginItem, sessionId);
             return result ?? "Error decrypting password";
         }
@@ -2233,11 +2306,11 @@ private void OnLengthChanged(ChangeEventArgs e)
         {
             if (loginItem?.EncryptedPassword == null)
                 return;
-                
+
             var sessionId = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "sessionId");
             if (string.IsNullOrEmpty(sessionId))
                 return;
-                
+
             var decryptedPassword = await PasswordRevealService.RevealPasswordAsync(loginItem, sessionId);
             if (!string.IsNullOrEmpty(decryptedPassword))
             {
@@ -2271,23 +2344,23 @@ private void OnLengthChanged(ChangeEventArgs e)
     {
         var random = new Random();
         var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        
+
         if (passwordGenIncludeSymbols)
             chars += "!@#$%^&*()-_=+[]{}|;:,.<>?";
-            
+
         if (passwordGenExcludeSimilar)
             chars = chars.Replace("O", "").Replace("0", "").Replace("I", "").Replace("l", "").Replace("1", "");
-            
+
         if (passwordGenExcludeAmbiguous)
             chars = chars.Replace("`", "").Replace("~", "").Replace("\\", "").Replace("/", "").Replace("\"", "").Replace("'", "");
-        
+
         var result = new char[passwordGenLength];
-        
+
         for (int i = 0; i < passwordGenLength; i++)
         {
             result[i] = chars[random.Next(chars.Length)];
         }
-        
+
         generatedPassword = new string(result);
         StateHasChanged();
     }
@@ -2317,7 +2390,7 @@ private void OnLengthChanged(ChangeEventArgs e)
     {
         if (selectedCollectionId == null)
             return categories;
-            
+
         return categories.Where(c => c.CollectionId == selectedCollectionId).ToList();
     }
 
@@ -2325,7 +2398,7 @@ private void OnLengthChanged(ChangeEventArgs e)
     {
         return categories.Where(c => c.CollectionId == collectionId).ToList();
     }
-    
+
     // Collection-related methods
 
     private void SelectTagColor(string color)
@@ -2349,7 +2422,7 @@ private void OnLengthChanged(ChangeEventArgs e)
         {
             await TagService.CreateAsync(newTag);
         }
-        
+
         HideAddTagModal();
         await LoadData();
         StateHasChanged();
@@ -2374,7 +2447,7 @@ private void OnLengthChanged(ChangeEventArgs e)
         {
             await CategoryService.CreateAsync(newCategory);
         }
-        
+
         await HideAddCategoryModal();
         await LoadCategories();
         StateHasChanged();
@@ -2430,7 +2503,7 @@ private void OnLengthChanged(ChangeEventArgs e)
         // Verify the collection and category exist and are valid
         var selectedCollection = collections.FirstOrDefault(c => c.Id == newItem.CollectionId);
         var selectedCategory = categories.FirstOrDefault(c => c.Id == newItem.CategoryId);
-        
+
         if (selectedCollection == null)
         {
             collectionValidationError = true;
@@ -2492,10 +2565,10 @@ private void OnLengthChanged(ChangeEventArgs e)
                 newItem.Id = editingItem.Id;
                 newItem.CreatedAt = editingItem.CreatedAt;
                 newItem.LastModified = DateTime.UtcNow;
-                
+
                 // Set the selected tags directly on the item
                 newItem.Tags = selectedTagsList;
-                
+
                 // Update the item with new values
                 await PasswordItemService.UpdateAsync(newItem);
             }
@@ -2504,14 +2577,14 @@ private void OnLengthChanged(ChangeEventArgs e)
                 // Create new item
                 newItem.CreatedAt = DateTime.UtcNow;
                 newItem.LastModified = DateTime.UtcNow;
-                
+
                 // Set the selected tags directly on the item
                 newItem.Tags = selectedTagsList;
-                
+
                 // Create the item with tags already attached
                 await PasswordItemService.CreateAsync(newItem);
             }
-            
+
             await HideAddItemModal();
             await LoadData();
         }
@@ -2523,13 +2596,14 @@ private void OnLengthChanged(ChangeEventArgs e)
     }
 
     private IEnumerable<Collection> GetRootCollections() => collections.Where(c => c.ParentCollectionId == null);
-    private IEnumerable<Collection> GetChildCollections(int parentId) => collections.Where(c => c.ParentCollectionId == parentId);
+    private IEnumerable<Collection> GetChildCollections(int parentId) => collections.Where(c => c.ParentCollectionId ==
+    parentId);
     private RenderFragment RenderCollectionTree(Collection collection) => __builder =>
     {
         <div class="nav-item @(selectedCollectionId == collection.Id ? "active" : "")"
-             style="display:flex;align-items:center;gap:4px;position:relative;"
-             @onclick="() => SelectCollection(collection.Id)">
-            <span class="section-toggle" @onclick:stopPropagation="true" @onclick="() => ToggleCollectionCategories(collection.Id)" style="cursor:pointer;margin-right:2px;">
+            style="display:flex;align-items:center;gap:4px;position:relative;" @onclick="() => SelectCollection(collection.Id)">
+            <span class="section-toggle" @onclick:stopPropagation="true"
+                @onclick="() => ToggleCollectionCategories(collection.Id)" style="cursor:pointer;margin-right:2px;">
                 @(expandedCollections.ContainsKey(collection.Id) && expandedCollections[collection.Id] ? "▼" : "►")
             </span>
             <span class="nav-icon">@(string.IsNullOrEmpty(collection.Icon) ? "📚" : collection.Icon)</span>
@@ -2537,25 +2611,20 @@ private void OnLengthChanged(ChangeEventArgs e)
             <span class="nav-count">@filteredItems.Count(i => i.CollectionId == collection.Id)</span>
             @if (collection.IsDefault)
             {
-                <span class="default-badge" title="Default Collection" style="font-size:10px;background:#007bff;color:white;padding:2px 4px;border-radius:3px;margin-left:3px;">Default</span>
+                <span class="default-badge" title="Default Collection"
+                    style="font-size:10px;background:#007bff;color:white;padding:2px 4px;border-radius:3px;margin-left:3px;">Default</span>
             }
             <div class="collection-actions" style="margin-left:auto;display:flex;gap:2px;">
                 @if (!collection.IsDefault)
                 {
-                    <button class="set-default-btn" style="border:none;background:transparent;"
-                            @onclick:stopPropagation="true"
-                            @onclick="() => SetDefaultCollection(collection.Id)"
-                            title="Set as default">⭐</button>
+                    <button class="set-default-btn" style="border:none;background:transparent;" @onclick:stopPropagation="true"
+                        @onclick="() => SetDefaultCollection(collection.Id)" title="Set as default">⭐</button>
                 }
-                <button class="collection-edit-btn" style="border:none;background:transparent;"
-                        @onclick:stopPropagation="true"
-                        @onclick="() => ShowEditCollectionModal(collection)"
-                        title="Edit">✏️</button>
+                <button class="collection-edit-btn" style="border:none;background:transparent;" @onclick:stopPropagation="true"
+                    @onclick="() => ShowEditCollectionModal(collection)" title="Edit">✏️</button>
                 <button class="collection-delete-btn" style="border:none;background:transparent;"
-                        @onclick:stopPropagation="true"
-                        @onclick="() => DeleteCollection(collection.Id)"
-                        title="Delete"
-                        disabled="@(collection.IsDefault)">🗑️</button>
+                    @onclick:stopPropagation="true" @onclick="() => DeleteCollection(collection.Id)" title="Delete"
+                    disabled="@(collection.IsDefault)">🗑️</button>
             </div>
         </div>
         @if (expandedCollections.ContainsKey(collection.Id) && expandedCollections[collection.Id])
@@ -2573,20 +2642,19 @@ private void OnLengthChanged(ChangeEventArgs e)
                     foreach (var category in collectionCategories)
                     {
                         <div class="nav-item @(selectedCategory == category.Name ? "active" : "")"
-                             style="display:flex;align-items:center;gap:4px;"
-                             @onclick="() => SelectCategory(category.Name)">
+                            style="display:flex;align-items:center;gap:4px;" @onclick="() => SelectCategory(category.Name)">
                             <span class="nav-icon">@(string.IsNullOrEmpty(category.Icon) ? "📁" : category.Icon)</span>
                             <span class="nav-text">@category.Name</span>
                             <span class="nav-count">@filteredItems.Count(i => i.CategoryId == category.Id)</span>
                             <div class="category-actions" style="margin-left:auto;display:flex;gap:4px;">
-                                <button class="category-edit-btn" style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
-                                        @onclick:stopPropagation="true"
-                                        @onclick="() => ShowEditCategoryModal(category)"
-                                        title="Edit category">✏️</button>
-                                <button class="category-delete-btn" style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
-                                        @onclick:stopPropagation="true"
-                                        @onclick="() => DeleteCategory(category)"
-                                        title="Delete category">🗑️</button>
+                                <button class="category-edit-btn"
+                                    style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
+                                    @onclick:stopPropagation="true" @onclick="() => ShowEditCategoryModal(category)"
+                                    title="Edit category">✏️</button>
+                                <button class="category-delete-btn"
+                                    style="border:none;background:transparent;font-size:12px;padding:2px;cursor:pointer;"
+                                    @onclick:stopPropagation="true" @onclick="() => DeleteCategory(category)"
+                                    title="Delete category">🗑️</button>
                             </div>
                         </div>
                     }
@@ -2596,33 +2664,32 @@ private void OnLengthChanged(ChangeEventArgs e)
                     <div class="empty-message" style="padding: 5px; font-style: italic; color: #888;">No categories</div>
                 }
                 <button class="add-category-btn"
-                        style="background:none;border:none;font-size:12px;padding:5px 0;cursor:pointer;color:#007bff;width:100%;text-align:left;"
-                        @onclick:stopPropagation="true"
-                        @onclick="() => ShowAddCategoryForCollection(collection.Id)"
-                        title="Add new category">+ Add Category</button>
+                    style="background:none;border:none;font-size:12px;padding:5px 0;cursor:pointer;color:#007bff;width:100%;text-align:left;"
+                    @onclick:stopPropagation="true" @onclick="() => ShowAddCategoryForCollection(collection.Id)"
+                    title="Add new category">+ Add Category</button>
             </div>
         }
     };
 
-private void OnCollectionChanged(ChangeEventArgs e)
+    private void OnCollectionChanged(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out var collectionId))
         {
             newItem.CollectionId = collectionId;
-            
+
             // Reset category validation error when collection changes
             categoryValidationError = false;
-            
+
             // Reset category selection when collection changes
             newItem.CategoryId = 0;
-            
+
             // Set default category if available
             var availableCategories = GetCategoriesForCollection(collectionId);
             if (availableCategories.Any())
             {
                 newItem.CategoryId = availableCategories.First().Id;
             }
-            
+
             StateHasChanged();
         }
     }
@@ -2630,23 +2697,23 @@ private void OnCollectionChanged(ChangeEventArgs e)
     // Import methods
     private async Task LoadImportProviders()
     {
-        try 
+        try
         {
             availableProviders = (await ImportService.GetAvailableProvidersAsync()).ToList();
-            
-            #if DEBUG
-            System.Diagnostics.Debug.WriteLine($"Loaded {availableProviders.Count} import providers");
-            foreach (var provider in availableProviders)
-            {
-                System.Diagnostics.Debug.WriteLine($"Provider: {provider.ProviderName} - {provider.DisplayName}");
-            }
-            #endif
+
+#if DEBUG
+System.Diagnostics.Debug.WriteLine($"Loaded {availableProviders.Count} import providers");
+foreach (var provider in availableProviders)
+{
+System.Diagnostics.Debug.WriteLine($"Provider: {provider.ProviderName} - {provider.DisplayName}");
+}
+#endif
         }
         catch (Exception ex)
         {
-            #if DEBUG
-            System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message}");
-            #endif
+#if DEBUG
+System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message}");
+#endif
         }
     }
 
@@ -2707,7 +2774,7 @@ private void OnCollectionChanged(ChangeEventArgs e)
             await Task.Delay(500); // Small delay to show progress
 
             using var stream = selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
-            
+
             // Step 2: Processing file
             importProgress = 50;
             importProgressText = "Processing data...";
@@ -2715,7 +2782,7 @@ private void OnCollectionChanged(ChangeEventArgs e)
             await Task.Delay(500);
 
             importResult = await ImportService.ImportPasswordsAsync(selectedProvider.ProviderName, stream, selectedFile.Name);
-            
+
             // Step 3: Finalizing
             importProgress = 100;
             importProgressText = "Import completed!";
@@ -2739,21 +2806,21 @@ private void OnCollectionChanged(ChangeEventArgs e)
     private async Task FinishImport()
     {
         HideImportModal();
-        
+
         // Refresh the data to show imported items
         await LoadData();
         await LoadCategories();
         await LoadCollections();
-        
+
         StateHasChanged();
     }
-    
+
     private async Task CreateSampleDataIfNeeded()
     {
         // Check if there are any items in the database
         var allItems = await PasswordItemService.GetAllAsync();
         if (allItems.Any()) return; // Data already exists
-        
+
         try
         {
             // Create sample categories if none exist
@@ -2761,29 +2828,29 @@ private void OnCollectionChanged(ChangeEventArgs e)
             {
                 var sampleCategories = new[]
                 {
-                    new Category { Name = "Social Media", Icon = "📱", Color = "#3b82f6" },
-                    new Category { Name = "Banking", Icon = "🏦", Color = "#10b981" },
-                    new Category { Name = "Email", Icon = "📧", Color = "#f59e0b" },
-                    new Category { Name = "Work", Icon = "💼", Color = "#8b5cf6" },
-                    new Category { Name = "Shopping", Icon = "🛒", Color = "#ef4444" }
-                };
-                
+new Category { Name = "Social Media", Icon = "📱", Color = "#3b82f6" },
+new Category { Name = "Banking", Icon = "🏦", Color = "#10b981" },
+new Category { Name = "Email", Icon = "📧", Color = "#f59e0b" },
+new Category { Name = "Work", Icon = "💼", Color = "#8b5cf6" },
+new Category { Name = "Shopping", Icon = "🛒", Color = "#ef4444" }
+};
+
                 foreach (var category in sampleCategories)
                 {
                     if (selectedCollectionId.HasValue)
                         category.CollectionId = selectedCollectionId.Value;
                     await CategoryService.CreateAsync(category);
                 }
-                
+
                 // Reload categories
                 await LoadCategories();
             }
-            
+
             // Create sample password items
             var socialMediaCategory = categories.FirstOrDefault(c => c.Name == "Social Media");
             var bankingCategory = categories.FirstOrDefault(c => c.Name == "Banking");
             var emailCategory = categories.FirstOrDefault(c => c.Name == "Email");
-            
+
             if (socialMediaCategory != null)
             {
                 var sampleItem = new PasswordItem
@@ -2795,12 +2862,12 @@ private void OnCollectionChanged(ChangeEventArgs e)
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow
                 };
-                
+
                 // Note: In a real application, you wouldn't create sample passwords like this
                 // This is just for demonstration purposes
                 await PasswordItemService.CreateAsync(sampleItem);
             }
-            
+
             // Reload data to show sample items
             await LoadData();
         }
@@ -2811,4 +2878,3 @@ private void OnCollectionChanged(ChangeEventArgs e)
         }
     }
 }
-

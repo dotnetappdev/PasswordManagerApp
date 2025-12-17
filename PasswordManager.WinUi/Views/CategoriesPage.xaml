@@ -113,7 +113,7 @@
                                                Width="40"
                                                Height="40"
                                                HorizontalAlignment="Left">
-                                            <FontIcon Glyph="&#xE8FD;" 
+                                            <FontIcon Glyph="{Binding Icon}"
                                                      FontSize="18"
                                                      Foreground="White"
                                                      HorizontalAlignment="Center"
@@ -182,7 +182,7 @@
                                Width="80"
                                Height="80"
                                HorizontalAlignment="Center">
-                            <FontIcon Glyph="&#xE8FD;" 
+                            <FontIcon Glyph="&#xE8B7;" 
                                      FontSize="36"
                                      Foreground="White"
                                      HorizontalAlignment="Center"

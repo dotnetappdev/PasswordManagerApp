@@ -14,6 +14,7 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
 
     public string ProviderName => "bitwarden";
     public string DisplayName => "Bitwarden";
+    public string Version => Metadata?.Version ?? "1.0.0";
     public string[] SupportedFileExtensions => new[] { ".csv" };
 
     public BitwardenImportPlugin()
@@ -59,18 +60,18 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
         {
             using var reader = new StreamReader(stream);
             var csvContent = await reader.ReadToEndAsync();
-            
+
             var engine = new FileHelperEngine<BitwardenCsvRecord>();
             var records = engine.ReadString(csvContent);
-            
+
             var passwordItems = new List<PasswordItem>();
             var collections = new HashSet<string>();
             var categories = new HashSet<string>();
-            
+
             foreach (var record in records)
             {
                 if (string.IsNullOrWhiteSpace(record.Name)) continue;
-                
+
                 var passwordItem = new PasswordItem
                 {
                     Title = record.Name,
@@ -86,7 +87,7 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
                     },
                     Tags = new List<Tag>()
                 };
-                
+
                 // Track collections and categories for creation
                 if (!string.IsNullOrWhiteSpace(record.Folder))
                 {
@@ -96,24 +97,24 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
                 {
                     categories.Add(record.Type);
                 }
-                
+
                 passwordItems.Add(passwordItem);
             }
-            
+
             // Create required collections and categories
-            var requiredCollections = collections.Select(name => new Collection 
-            { 
+            var requiredCollections = collections.Select(name => new Collection
+            {
                 Name = name,
                 Description = $"Imported from Bitwarden folder: {name}",
                 Color = "#ffffff"
             }).ToList();
-            
-            var requiredCategories = categories.Select(name => new Category 
-            { 
+
+            var requiredCategories = categories.Select(name => new Category
+            {
                 Name = name,
                 CollectionId = 1 // Will be updated during import
             }).ToList();
-            
+
             return new ImportResult
             {
                 Success = true,
@@ -145,14 +146,14 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
     {
         if (!SupportedFileExtensions.Contains(Path.GetExtension(fileName).ToLowerInvariant()))
             return false;
-            
+
         try
         {
             stream.Position = 0;
             using var reader = new StreamReader(stream);
             var firstLine = await reader.ReadLineAsync();
             stream.Position = 0;
-            
+
             // Check if it looks like a Bitwarden CSV export
             return firstLine?.Contains("folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp") == true;
         }
@@ -169,16 +170,16 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
             stream.Position = 0;
             using var reader = new StreamReader(stream);
             var csvContent = await reader.ReadToEndAsync();
-            
+
             var engine = new FileHelperEngine<BitwardenCsvRecord>();
             var records = engine.ReadString(csvContent).Take(5); // Preview first 5 items
-            
+
             var previewItems = new List<PasswordItem>();
-            
+
             foreach (var record in records)
             {
                 if (string.IsNullOrWhiteSpace(record.Name)) continue;
-                
+
                 var passwordItem = new PasswordItem
                 {
                     Title = record.Name,
@@ -191,10 +192,10 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
                         Notes = record.Notes
                     }
                 };
-                
+
                 previewItems.Add(passwordItem);
             }
-            
+
             return previewItems;
         }
         catch
@@ -212,34 +213,34 @@ public class BitwardenCsvRecord
 {
     [FieldOrder(1)]
     public string? Folder { get; set; }
-    
+
     [FieldOrder(2)]
     public string? Favorite { get; set; }
-    
+
     [FieldOrder(3)]
     public string? Type { get; set; }
-    
+
     [FieldOrder(4)]
     public string? Name { get; set; }
-    
+
     [FieldOrder(5)]
     public string? Notes { get; set; }
-    
+
     [FieldOrder(6)]
     public string? Fields { get; set; }
-    
+
     [FieldOrder(7)]
     public string? Reprompt { get; set; }
-    
+
     [FieldOrder(8)]
     public string? Url { get; set; }
-    
+
     [FieldOrder(9)]
     public string? Username { get; set; }
-    
+
     [FieldOrder(10)]
     public string? Password { get; set; }
-    
+
     [FieldOrder(11)]
     public string? Totp { get; set; }
 }

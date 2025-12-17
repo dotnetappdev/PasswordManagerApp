@@ -1199,12 +1199,6 @@
                 Value="Center"/>
         <Setter Property="Margin"
                 Value="40"/>
-        <!-- Add shadow effect for better visual separation -->
-        <Setter Property="Shadow">
-            <Setter.Value>
-                <ThemeShadow/>
-            </Setter.Value>
-        </Setter>
         <!-- Override template for better centering control -->
         <Setter Property="Template">
             <Setter.Value>
@@ -1220,7 +1214,6 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="{TemplateBinding CornerRadius}"
-                                Shadow="{TemplateBinding Shadow}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 MaxWidth="{TemplateBinding MaxWidth}"
@@ -1259,7 +1252,6 @@
                                                         HorizontalAlignment="Left"
                                                         VerticalAlignment="Top"
                                                         IsTabStop="False"
-                                                        MaxLines="2"
                                                         Margin="0,0,0,20"/>
                                         
                                         <!-- Content -->
@@ -1275,7 +1267,7 @@
                                 <!-- Button area -->
                                 <Border x:Name="CommandSpace"
                                         Grid.Row="1"
-                                        Background="{ThemeResource ContentDialogBottomAreaBackground}"
+                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
                                         BorderBrush="{TemplateBinding BorderBrush}"
                                         BorderThickness="0,1,0,0"
                                         Padding="24,16">
@@ -1291,21 +1283,18 @@
                                                 Grid.Column="1"
                                                 Content="{TemplateBinding PrimaryButtonText}"
                                                 Style="{TemplateBinding PrimaryButtonStyle}"
-                                                Margin="0,0,8,0"
-                                                IsEnabled="{TemplateBinding IsPrimaryButtonEnabled}"/>
+                                                Margin="0,0,8,0"/>
                                         
                                         <Button x:Name="SecondaryButton"
                                                 Grid.Column="2"
                                                 Content="{TemplateBinding SecondaryButtonText}"
                                                 Style="{TemplateBinding SecondaryButtonStyle}"
-                                                Margin="0,0,8,0"
-                                                IsEnabled="{TemplateBinding IsSecondaryButtonEnabled}"/>
+                                                Margin="0,0,8,0"/>
                                         
                                         <Button x:Name="CloseButton"
                                                 Grid.Column="3"
                                                 Content="{TemplateBinding CloseButtonText}"
-                                                Style="{TemplateBinding CloseButtonStyle}"
-                                                IsEnabled="{TemplateBinding IsCloseButtonEnabled}"/>
+                                                Style="{TemplateBinding CloseButtonStyle}"/>
                                     </Grid>
                                 </Border>
                             </Grid>

@@ -27,8 +27,14 @@
                           RequiredError="Please confirm password"
                           Validation="@(new Func<string, IEnumerable<string>>(ValidateConfirmPassword))" />
 
-            <MudTextField T="string" @bind-value="_model.FirstName" Label="First Name" />
-            <MudTextField T="string" @bind-value="_model.LastName" Label="Last Name" />
+            <MudTextField T="string" @bind-value="_model.FirstName" 
+                          Label="First Name" 
+                          Required="true"
+                          RequiredError="First name is required" />
+            <MudTextField T="string" @bind-value="_model.LastName" 
+                          Label="Last Name" 
+                          Required="true"
+                          RequiredError="Last name is required" />
             <MudTextField T="string" @bind-value="_model.MasterPasswordHint" Label="Password Hint" />
         </MudForm>
     </DialogContent>

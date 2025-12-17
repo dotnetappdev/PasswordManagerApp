@@ -43,7 +43,7 @@
                     else
                     {
                         <button class="keypad-btn keypad-empty"></button>
-                        <button class="keypad-btn" @onclick="() => OnNumberPressed(@"0")">0</button>
+                        <button class="keypad-btn" @onclick="OnZeroPressed">0</button>
                         <button class="keypad-btn keypad-delete" @onclick="OnDeletePressed">
                             <span class="delete-icon">⌫</span>
                         </button>
@@ -82,7 +82,7 @@
         padding: 40px 30px;
         max-width: 400px;
         width: 100%;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         text-align: center;
     }
 
@@ -204,7 +204,8 @@
         gap: 20px;
     }
 
-    .cancel-btn, .back-btn {
+    .cancel-btn,
+    .back-btn {
         padding: 12px 24px;
         border: 1px solid #e0e0e0;
         background: white;
@@ -215,7 +216,8 @@
         transition: all 0.2s ease;
     }
 
-    .cancel-btn:hover, .back-btn:hover {
+    .cancel-btn:hover,
+    .back-btn:hover {
         background: #f7f7f7;
         border-color: #ccc;
     }
@@ -224,17 +226,17 @@
         .passcode-container {
             padding: 10px;
         }
-        
+
         .passcode-card {
             padding: 30px 20px;
         }
-        
+
         .keypad-btn {
             width: 60px;
             height: 60px;
             font-size: 20px;
         }
-        
+
         .keypad-row {
             gap: 15px;
         }
@@ -243,7 +245,7 @@
 
 @code {
     [Parameter] public EventCallback<bool> OnSetupComplete { get; set; }
-    
+
     private string currentPasscode = "";
     private string firstPasscode = "";
     private bool isConfirmStep = false;
@@ -259,6 +261,11 @@
         {
             return "Confirm your passcode";
         }
+    }
+
+    private async Task OnZeroPressed()
+    {
+        await OnNumberPressed("0");
     }
 
     private async Task OnNumberPressed(string number)
@@ -349,13 +356,13 @@
         if (firstRender)
         {
             await JSRuntime.InvokeVoidAsync("eval", @"
-                // Prevent zoom on mobile when tapping input elements
-                document.addEventListener('touchstart', function(e) {
-                    if (e.target.classList.contains('keypad-btn')) {
-                        e.preventDefault();
-                    }
-                }, { passive: false });
-            ");
+// Prevent zoom on mobile when tapping input elements
+document.addEventListener('touchstart', function(e) {
+if (e.target.classList.contains('keypad-btn')) {
+e.preventDefault();
+}
+}, { passive: false });
+");
         }
     }
 }

@@ -64,6 +64,36 @@ public sealed partial class AddPasswordDialog : ContentDialog
             // Hide all editable textboxes and show text displays where added
             ToggleReadOnlyUI(true);
         }
+
+        // Ensure the dialog is centered on the main window
+        TryConfigureCentering();
+    }
+
+    private void TryConfigureCentering()
+    {
+        try
+        {
+            var mainXamlRoot = (App.Current as App)?.MainWindow?.Content?.XamlRoot;
+            if (mainXamlRoot != null)
+            {
+                this.XamlRoot = mainXamlRoot;
+            }
+            else if (this.XamlRoot == null)
+            {
+                // Fallback to current page/root if available
+                this.XamlRoot = (Application.Current as App)?.MainWindow?.Content?.XamlRoot ?? this.XamlRoot;
+            }
+
+            // Apply modern dialog style if none is set
+            if (this.Style == null && Application.Current.Resources.ContainsKey("Modern1PasswordDialogStyle"))
+            {
+                this.Style = Application.Current.Resources["Modern1PasswordDialogStyle"] as Style;
+            }
+        }
+        catch (Exception)
+        {
+            // Silently ignore; dialog will still show with default behavior
+        }
     }
 
     private void ToggleReadOnlyUI(bool readOnly)

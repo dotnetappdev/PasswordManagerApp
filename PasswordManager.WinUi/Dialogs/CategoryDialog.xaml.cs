@@ -67,17 +67,17 @@ public sealed partial class CategoryDialog : ContentDialog
         };
         CategoryColorComboBox.SelectedIndex = colorIndex;
 
-        // Set icon based on existing value
+        // Set icon based on existing glyph value
         var iconIndex = _category.Icon switch
         {
-            "folder" => 0, // Folder
-            "key" => 1, // Key
-            "creditcard" => 2, // Credit Card
-            "note" => 3, // Note
-            "wifi" => 4, // WiFi
-            "security" => 5, // Security
-            "star" => 6, // Star
-            "list" => 7, // List
+            "\uE8B7" => 0, // Folder
+            "\uE72E" => 1, // Key
+            "\uE8C7" => 2, // Credit Card
+            "\uE70B" => 3, // Note
+            "\uE701" => 4, // WiFi
+            "\uE72F" => 5, // Security (Lock)
+            "\uE734" => 6, // Star
+            "\uE8A5" => 7, // List
             _ => 0     // Default to folder
         };
         CategoryIconComboBox.SelectedIndex = iconIndex;
@@ -122,7 +122,7 @@ public sealed partial class CategoryDialog : ContentDialog
                 _category.Icon = GetSelectedIcon();
                 _category.UpdatedAt = DateTime.UtcNow;
                 _category.LastModified = DateTime.UtcNow;
-                
+
                 // Set user ID from current authenticated user
                 if (_authService.CurrentUser != null)
                 {
@@ -145,7 +145,7 @@ public sealed partial class CategoryDialog : ContentDialog
                     UpdatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow,
                     UserId = _authService.CurrentUser?.Id
-                    
+
                 };
                 var TEST = newCategory;
                 await _categoryService.CreateAsync(newCategory);
@@ -169,7 +169,7 @@ public sealed partial class CategoryDialog : ContentDialog
     {
         ErrorMessageText.Text = message;
         ErrorMessageBorder.Visibility = Visibility.Visible;
-        
+
         // Auto-hide error after 5 seconds
         await Task.Delay(5000);
         ErrorMessageBorder.Visibility = Visibility.Collapsed;
@@ -194,17 +194,18 @@ public sealed partial class CategoryDialog : ContentDialog
     private string GetSelectedIcon()
     {
         var selectedIndex = CategoryIconComboBox.SelectedIndex;
+        // Return Segoe MDL2 glyph character string
         return selectedIndex switch
         {
-            0 => "folder", // Folder
-            1 => "key", // Key
-            2 => "creditcard", // Credit Card
-            3 => "note", // Note
-            4 => "wifi", // WiFi
-            5 => "security", // Security
-            6 => "star", // Star
-            7 => "list", // List
-            _ => "folder"  // Default to folder
+            0 => "\uE8B7", // Folder
+            1 => "\uE72E", // Key
+            2 => "\uE8C7", // Credit Card
+            3 => "\uE70B", // Note
+            4 => "\uE701", // WiFi
+            5 => "\uE72F", // Security (Lock)
+            6 => "\uE734", // Star
+            7 => "\uE8A5", // List
+            _ => "\uE8B7"  // Default to folder
         };
     }
 }

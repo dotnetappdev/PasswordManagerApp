@@ -24,19 +24,19 @@ public sealed partial class MainWindow : Window
     public MainWindow(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
-    this.InitializeComponent();
+        this.InitializeComponent();
         this.Title = "Password Manager - WinUI";
 
         // Set window size
         this.AppWindow.Resize(new Windows.Graphics.SizeInt32(1200, 800));
 
-    // Cache style early (after resources loaded by InitializeComponent)
-    _navItemStyle = TryGetNavItemStyle();
+        // Cache style early (after resources loaded by InitializeComponent)
+        _navItemStyle = TryGetNavItemStyle();
 
         // Initialize navigation - start with Login if not authenticated, otherwise Home
         InitializeNavigation();
-    // Load dynamic categories for navigation
-    _ = RefreshCategoriesAsync();
+        // Load dynamic categories for navigation
+        _ = RefreshCategoriesAsync();
     }
 
     private void InitializeNavigation()
@@ -221,12 +221,12 @@ public sealed partial class MainWindow : Window
         if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
         {
             var query = sender.Text?.ToLower() ?? "";
-            
+
             if (!string.IsNullOrWhiteSpace(query) && query.Length >= 2)
             {
                 // Provide basic search suggestions
                 var suggestions = new List<string>();
-                
+
                 // Add common search categories as suggestions
                 var commonSearches = new[] { "logins", "passwords", "credit cards", "secure notes", "wifi", "favorites" };
                 foreach (var category in commonSearches)
@@ -236,20 +236,20 @@ public sealed partial class MainWindow : Window
                         suggestions.Add(category);
                     }
                 }
-                
+
                 // Add "search for" prefix for better UX
                 if (suggestions.Count == 0)
                 {
                     suggestions.Add($"Search for '{query}'");
                 }
-                
+
                 sender.ItemsSource = suggestions;
-                
+
                 // Auto-filter: Navigate to passwords page and apply search immediately
                 try
                 {
                     NavigateToPage("AllItems");
-                    
+
                     // Apply auto-filter with slight delay to ensure page is loaded
                     Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
                     {
@@ -264,7 +264,7 @@ public sealed partial class MainWindow : Window
             else
             {
                 sender.ItemsSource = null;
-                
+
                 // Clear filters when search is empty
                 if (string.IsNullOrWhiteSpace(query))
                 {
@@ -301,10 +301,10 @@ public sealed partial class MainWindow : Window
                 {
                     PassSearchQueryToPage(searchQuery);
                 });
-                
+
                 // Provide visual feedback
                 sender.PlaceholderText = $"Searching for '{searchQuery}'...";
-                
+
                 // Reset placeholder after a delay
                 Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(
                     Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
@@ -831,13 +831,10 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            // Check window resources first
-            if (this.Resources.TryGetValue("ModernNavigationViewItemStyle", out var styleObj) && styleObj is Style s1)
-                return s1;
-            // Then current content tree
+            // Check current content tree
             if (this.Content is FrameworkElement fe && fe.Resources.TryGetValue("ModernNavigationViewItemStyle", out var styleObj2) && styleObj2 is Style s2)
                 return s2;
-            // Finally application resources
+            // Check application resources
             if (Application.Current.Resources.TryGetValue("ModernNavigationViewItemStyle", out var appStyle) && appStyle is Style s3)
                 return s3;
         }
