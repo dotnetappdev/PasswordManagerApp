@@ -597,49 +597,92 @@
                 </StackPanel>
             </Border>
             
-            <!-- Data Management -->
-            <Border Style="{StaticResource ModernCardStyle}" 
-                   BorderBrush="{StaticResource ModernErrorBrush}">
+            <!-- Database Management -->
+            <Border Style="{StaticResource ModernCardStyle}">
                 <StackPanel Spacing="20">
                     <StackPanel Orientation="Horizontal" Spacing="12">
-                        <Border Background="{StaticResource ModernErrorBrush}"
+                        <Border Background="{StaticResource ModernWarningBrush}"
                                CornerRadius="10"
                                Width="24"
                                Height="24">
-                            <FontIcon Glyph="&#xE74D;" 
+                            <FontIcon Glyph="&#xE8F7;" 
                                      FontSize="12"
                                      Foreground="White"
                                      HorizontalAlignment="Center"
                                      VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="Data Management" 
+                        <TextBlock Text="Database Management" 
                                   Style="{StaticResource ModernHeading3Style}"
                                   VerticalAlignment="Center"/>
                     </StackPanel>
                     
-                    <StackPanel Spacing="12">
-                        <TextBlock Text="⚠️ Danger Zone" 
-                                  Foreground="{StaticResource ModernErrorBrush}"
-                                  FontWeight="SemiBold"
-                                  FontSize="16"/>
-                        <TextBlock Text="This will permanently delete all your stored passwords and settings. This action cannot be undone." 
-                                  Style="{StaticResource ModernCaptionStyle}"
-                                  Foreground="{StaticResource ModernErrorBrush}"
-                                  TextWrapping="Wrap"/>
-                        
-                        <Button x:Name="ClearDataButton"
-                               Background="{StaticResource ModernErrorBrush}"
-                               Foreground="White"
-                               BorderThickness="0"
-                               CornerRadius="8"
-                               Padding="16,12"
-                               HorizontalAlignment="Left"
-                               Click="ClearDataButton_Click">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE74D;" FontSize="14"/>
-                                <TextBlock Text="Clear All Data"/>
+                    <StackPanel Spacing="16">
+                        <!-- Reset Password Data -->
+                        <Border Style="{StaticResource ModernCardStyle}"
+                               Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                               BorderBrush="{StaticResource ModernWarningBrush}">
+                            <StackPanel Spacing="12">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE7A7;" 
+                                             FontSize="16"
+                                             Foreground="{StaticResource ModernWarningBrush}"/>
+                                    <TextBlock Text="Reset Password Data" 
+                                              FontWeight="SemiBold"
+                                              FontSize="14"/>
+                                </StackPanel>
+                                <TextBlock Text="Clears all password items, collections, categories, and tags while preserving your user account and login credentials." 
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          TextWrapping="Wrap"
+                                          Opacity="0.8"/>
+                                
+                                <Button x:Name="ResetDataButton"
+                                       Style="{StaticResource ModernSecondaryButtonStyle}"
+                                       Background="{StaticResource ModernWarningBrush}"
+                                       Foreground="White"
+                                       HorizontalAlignment="Left"
+                                       Click="ResetDataButton_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE7A7;" FontSize="14"/>
+                                        <TextBlock Text="Reset Password Data"/>
+                                    </StackPanel>
+                                </Button>
                             </StackPanel>
-                        </Button>
+                        </Border>
+                        
+                        <!-- Reset All Data -->
+                        <Border Style="{StaticResource ModernCardStyle}"
+                               Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                               BorderBrush="{StaticResource ModernErrorBrush}">
+                            <StackPanel Spacing="12">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE74D;" 
+                                             FontSize="16"
+                                             Foreground="{StaticResource ModernErrorBrush}"/>
+                                    <TextBlock Text="Reset All Database Tables" 
+                                              FontWeight="SemiBold"
+                                              FontSize="14"/>
+                                </StackPanel>
+                                <TextBlock Text="⚠️ DANGER: Clears ALL database tables including user accounts. This will log you out and reset the database to default state." 
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          Foreground="{StaticResource ModernErrorBrush}"
+                                          TextWrapping="Wrap"
+                                          FontWeight="SemiBold"/>
+                                
+                                <Button x:Name="ResetAllButton"
+                                       Background="{StaticResource ModernErrorBrush}"
+                                       Foreground="White"
+                                       BorderThickness="0"
+                                       CornerRadius="8"
+                                       Padding="16,12"
+                                       HorizontalAlignment="Left"
+                                       Click="ResetAllButton_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE74D;" FontSize="14"/>
+                                        <TextBlock Text="Reset All Tables"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </StackPanel>
             </Border>

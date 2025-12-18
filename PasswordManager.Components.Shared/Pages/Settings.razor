@@ -7,6 +7,7 @@
 @inject IUserProfileService UserProfileService
 @inject IApiKeyService ApiKeyService
 @inject IDatabaseConfigurationService DatabaseConfigurationService
+@inject IDatabaseResetService DatabaseResetService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
@@ -234,6 +235,58 @@
             }
         </MudPaper>
 
+        <!-- Database Management -->
+        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white; border: 2px solid #f59e0b;">
+            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">
+                <MudIcon Icon="@Icons.Material.Filled.Storage" Size="Size.Medium" Style="vertical-align: middle; margin-right: 8px;" />
+                Database Management
+            </MudText>
+
+            <MudStack Spacing="3">
+                <!-- Reset Password Data -->
+                <MudPaper Class="pa-3" Style="background-color: #2a2a2a; border: 1px solid #f59e0b;">
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.subtitle1" Style="color: #fbbf24; font-weight: 600;">
+                            <MudIcon Icon="@Icons.Material.Filled.RestartAlt" Size="Size.Small" Style="vertical-align: middle; margin-right: 4px;" />
+                            Reset Password Data
+                        </MudText>
+                        <MudText Typo="Typo.body2" Style="color: #d1d5db;">
+                            Clears all password items, collections, categories, and tags while preserving your user account and login credentials.
+                        </MudText>
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Warning"
+                                  OnClick="ShowResetDataDialog"
+                                  StartIcon="@Icons.Material.Filled.RestartAlt"
+                                  Size="Size.Small"
+                                  Style="margin-top: 8px; width: fit-content;">
+                            Reset Password Data
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+
+                <!-- Reset All Data -->
+                <MudPaper Class="pa-3" Style="background-color: #2a2a2a; border: 1px solid #ef4444;">
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.subtitle1" Style="color: #f87171; font-weight: 600;">
+                            <MudIcon Icon="@Icons.Material.Filled.DeleteForever" Size="Size.Small" Style="vertical-align: middle; margin-right: 4px;" />
+                            Reset All Database Tables
+                        </MudText>
+                        <MudText Typo="Typo.body2" Style="color: #f87171; font-weight: 600;">
+                            ⚠️ DANGER: Clears ALL database tables including user accounts. This will log you out and reset the database to default state.
+                        </MudText>
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Error"
+                                  OnClick="ShowResetAllDialog"
+                                  StartIcon="@Icons.Material.Filled.DeleteForever"
+                                  Size="Size.Small"
+                                  Style="margin-top: 8px; width: fit-content;">
+                            Reset All Tables
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudStack>
+        </MudPaper>
+
         <!-- Save Button -->
         <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
             <MudButton Variant="Variant.Filled" 
@@ -433,43 +486,32 @@
                 FirstName = userProfile.FirstName,
                 LastName = userProfile.LastName
             };
-            await UserProfileService.UpdateAsync(updateDto);
+            await UserProfileService.UpdateUserProfileAsync(updateDto);
             
-            // Save database and API configuration
-            var dbConfig = await DatabaseConfigurationService.GetConfigurationAsync();
-            
-            // Update API configuration
-            dbConfig.ApiUrl = apiUrl;
-            dbConfig.ApiKey = apiKey;
-            
-            // Update database provider if changed
-            if (Enum.TryParse<DatabaseProvider>(databaseProvider, out var provider))
+            // Save database configuration
+            var config = new DatabaseConfiguration
             {
-                dbConfig.Provider = provider;
-            }
+                Provider = databaseProvider switch
+                {
+                    "SqlServer" => DatabaseProvider.SqlServer,
+                    "MySql" => DatabaseProvider.MySql,
+                    "PostgreSql" => DatabaseProvider.PostgreSql,
+                    "Supabase" => DatabaseProvider.Supabase,
+                    _ => DatabaseProvider.SqlServer
+                }
+            };
 
-            // Update authentication mode if changed
-            if (Enum.TryParse<AuthenticationMode>(authenticationMode, out var authMode))
+            // Set Supabase configuration if selected
+            if (databaseProvider == "Supabase")
             {
-                dbConfig.AuthenticationMode = authMode;
+                config.Supabase = new SupabaseConfig
+                {
+                    Url = supabaseUrl,
+                    ServiceKey = supabaseApiKey
+                };
             }
             
-            // Update provider-specific settings
-            switch (provider)
-            {
-                case DatabaseProvider.Supabase:
-                    if (dbConfig.Supabase == null)
-                        dbConfig.Supabase = new SupabaseConfig();
-                    dbConfig.Supabase.Url = supabaseUrl;
-                    dbConfig.Supabase.ServiceKey = supabaseApiKey;
-                    dbConfig.Supabase.ApiUrl = apiUrl;
-                    dbConfig.Supabase.ApiKey = apiKey;
-                    break;
-            }
-            
-            await DatabaseConfigurationService.SaveConfigurationAsync(dbConfig);
-            
-            // Show success notification
+            await DatabaseConfigurationService.SaveConfigurationAsync(config);
         }
         catch (Exception ex)
         {
@@ -478,6 +520,99 @@
         finally
         {
             isSaving = false;
+        }
+    }
+
+    private async Task ShowResetDataDialog()
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+            "Reset Password Data\n\n" +
+            "This action will clear the following data:\n\n" +
+            "• All password items and login credentials\n" +
+            "• All collections and categories\n" +
+            "• All tags and custom fields\n" +
+            "• Password history and audit logs\n" +
+            "• Shared passwords and permissions\n\n" +
+            "Your user account and login credentials will be preserved.\n\n" +
+            "This action cannot be undone. Are you sure?");
+
+        if (confirmed)
+        {
+            await PerformDatabaseReset(preserveUsers: true);
+        }
+    }
+
+    private async Task ShowResetAllDialog()
+    {
+        // First confirmation
+        var firstConfirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+            "⚠️ DANGER: Reset All Database Tables\n\n" +
+            "⚠️ EXTREME CAUTION REQUIRED\n\n" +
+            "This will completely reset the database by clearing ALL tables including:\n\n" +
+            "• ALL password items and login credentials\n" +
+            "• ALL user accounts and authentication data\n" +
+            "• ALL collections, categories, and tags\n" +
+            "• ALL settings and configurations\n" +
+            "• ALL history and audit logs\n\n" +
+            "You will be logged out immediately and will need to create a new account.\n\n" +
+            "Do you want to continue?");
+
+        if (!firstConfirmed)
+            return;
+
+        // Second confirmation with typed DELETE
+        var typedText = await JSRuntime.InvokeAsync<string>("prompt",
+            "Type 'DELETE' (all caps) to confirm this dangerous action:");
+
+        if (typedText != "DELETE")
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Confirmation failed. You must type 'DELETE' exactly.");
+            return;
+        }
+
+        // Ask about re-seeding
+        var reseedConfirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+            "Do you want to re-seed default data (recommended)?");
+
+        await PerformDatabaseReset(preserveUsers: false, reseedData: reseedConfirmed);
+    }
+
+    private async Task PerformDatabaseReset(bool preserveUsers, bool reseedData = false)
+    {
+        try
+        {
+            DatabaseResetResult result;
+
+            if (preserveUsers)
+            {
+                result = await DatabaseResetService.ResetDataTablesAsync();
+            }
+            else
+            {
+                result = await DatabaseResetService.ResetAllTablesAsync(reseedData);
+            }
+
+            // Show result
+            var resultMessage = result.Success 
+                ? $"✓ Reset Complete\n\n{result.Message}\n\nTables cleared: {result.TablesCleared}\nRecords deleted: {result.RecordsDeleted}"
+                : $"❌ Reset Failed\n\n{result.Message}";
+
+            if (result.Errors.Any())
+            {
+                resultMessage += $"\n\nWarnings:\n{string.Join("\n", result.Errors.Take(5))}";
+            }
+
+            await JSRuntime.InvokeVoidAsync("alert", resultMessage);
+
+            if (result.Success && !preserveUsers)
+            {
+                // Navigate to login page
+                Navigation.NavigateTo("/login", forceLoad: true);
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"❌ Reset Failed\n\nAn error occurred: {ex.Message}");
         }
     }
 }

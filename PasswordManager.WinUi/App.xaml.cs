@@ -191,6 +191,7 @@ public partial class App : Application
                 services.AddScoped<IAppStartupService, AppStartupService>();
                 services.AddScoped<IDatabaseMigrationService, DatabaseMigrationService>();
                 services.AddScoped<IDatabaseHealthService, DatabaseHealthService>();
+                services.AddScoped<IDatabaseResetService, DatabaseResetService>();
                 services.AddScoped<IUserProfileService, UserProfileService>();
                 services.AddScoped<IVaultSessionService, VaultSessionService>();
                 services.AddScoped<IPasscodeService, PasscodeService>();
