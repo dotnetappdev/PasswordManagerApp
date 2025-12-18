@@ -1,0 +1,14 @@
+{
+  "name": "safari",
+  "displayName": "Apple Safari",
+  "description": "Import passwords from Safari CSV export files",
+  "version": "1.0.0",
+  "author": "PasswordManager Team",
+  "website": "https://www.apple.com/safari",
+  "created": "2024-12-18T00:00:00Z",
+  "lastUpdated": "2024-12-18T00:00:00Z",
+  "tags": ["safari", "apple", "browser", "csv"],
+  "supportedFileExtensions": [".csv"],
+  "importFormat": "Safari Passwords CSV Export",
+  "instructions": "Export your passwords from Safari:\n1. Open Safari and go to Settings/Preferences\n2. Go to Passwords\n3. Click the three dots menu\n4. Select 'Export Passwords'\n5. Save the CSV file\n6. Import it here"
+}
