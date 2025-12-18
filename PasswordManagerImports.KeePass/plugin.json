@@ -1,0 +1,14 @@
+{
+  "name": "keepass",
+  "displayName": "KeePass",
+  "description": "Import passwords from KeePass CSV export files",
+  "version": "1.0.0",
+  "author": "PasswordManager Team",
+  "website": "https://keepass.info",
+  "created": "2024-12-18T00:00:00Z",
+  "lastUpdated": "2024-12-18T00:00:00Z",
+  "tags": ["keepass", "csv", "password-manager"],
+  "supportedFileExtensions": [".csv"],
+  "importFormat": "KeePass CSV Export",
+  "instructions": "Export your passwords from KeePass:\n1. Open KeePass\n2. Go to File > Export\n3. Select 'Generic CSV Exporter'\n4. Save the CSV file\n5. Import it here"
+}

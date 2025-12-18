@@ -27,8 +27,10 @@ public class ImportViewModel : BaseViewModel
             "1Password 1PUX",
             "Bitwarden CSV",
             "Chrome CSV",
+            "Edge CSV",
             "Firefox CSV",
             "Safari CSV",
+            "Dashlane CSV",
             "KeePass CSV",
             "LastPass CSV"
         };

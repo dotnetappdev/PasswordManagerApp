@@ -1,0 +1,14 @@
+{
+  "name": "lastpass",
+  "displayName": "LastPass",
+  "description": "Import passwords from LastPass CSV export files",
+  "version": "1.0.0",
+  "author": "PasswordManager Team",
+  "website": "https://www.lastpass.com",
+  "created": "2024-12-18T00:00:00Z",
+  "lastUpdated": "2024-12-18T00:00:00Z",
+  "tags": ["lastpass", "csv", "password-manager"],
+  "supportedFileExtensions": [".csv"],
+  "importFormat": "LastPass CSV Export",
+  "instructions": "Export your passwords from LastPass:\n1. Log into LastPass\n2. Go to Advanced Options > Export\n3. Save the CSV file\n4. Import it here"
+}

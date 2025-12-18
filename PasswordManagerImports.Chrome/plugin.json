@@ -1,0 +1,14 @@
+{
+  "name": "chrome",
+  "displayName": "Google Chrome",
+  "description": "Import passwords from Chrome CSV export files",
+  "version": "1.0.0",
+  "author": "PasswordManager Team",
+  "website": "https://www.google.com/chrome",
+  "created": "2024-12-18T00:00:00Z",
+  "lastUpdated": "2024-12-18T00:00:00Z",
+  "tags": ["chrome", "google", "browser", "csv"],
+  "supportedFileExtensions": [".csv"],
+  "importFormat": "Chrome Password CSV Export",
+  "instructions": "Export your passwords from Chrome:\n1. Open Chrome Settings\n2. Go to Passwords\n3. Click the three dots menu\n4. Select 'Export passwords'\n5. Save the CSV file\n6. Import it here"
+}

@@ -1,0 +1,14 @@
+{
+  "name": "edge",
+  "displayName": "Microsoft Edge",
+  "description": "Import passwords from Edge CSV export files",
+  "version": "1.0.0",
+  "author": "PasswordManager Team",
+  "website": "https://www.microsoft.com/edge",
+  "created": "2024-12-18T00:00:00Z",
+  "lastUpdated": "2024-12-18T00:00:00Z",
+  "tags": ["edge", "microsoft", "browser", "csv"],
+  "supportedFileExtensions": [".csv"],
+  "importFormat": "Edge Password CSV Export",
+  "instructions": "Export your passwords from Edge:\n1. Open Edge Settings\n2. Go to Profiles > Passwords\n3. Click the three dots menu next to 'Saved passwords'\n4. Select 'Export passwords'\n5. Save the CSV file\n6. Import it here"
+}

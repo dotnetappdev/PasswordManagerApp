@@ -1,0 +1,14 @@
+{
+  "name": "dashlane",
+  "displayName": "Dashlane",
+  "description": "Import passwords from Dashlane CSV export files",
+  "version": "1.0.0",
+  "author": "PasswordManager Team",
+  "website": "https://www.dashlane.com",
+  "created": "2024-12-18T00:00:00Z",
+  "lastUpdated": "2024-12-18T00:00:00Z",
+  "tags": ["dashlane", "csv", "password-manager"],
+  "supportedFileExtensions": [".csv"],
+  "importFormat": "Dashlane CSV Export",
+  "instructions": "Export your passwords from Dashlane:\n1. Log into Dashlane\n2. Go to Settings > Export Data\n3. Choose 'Unsecured archive (readable) in CSV'\n4. Save the CSV file\n5. Import it here"
+}

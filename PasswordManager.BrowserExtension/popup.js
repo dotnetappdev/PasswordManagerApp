@@ -29,14 +29,51 @@ class PasswordManagerPopup {
 
   setupEventListeners() {
     // Navigation
-    document.getElementById('settingsLink').addEventListener('click', () => this.showScreen('settings'));
+    document.getElementById('settingsLink').addEventListener('click', () => this.showSettings());
     document.getElementById('backBtn').addEventListener('click', () => this.showScreen('main'));
     document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
+
+    // About and Help - Main Screen
+    document.getElementById('aboutBtn').addEventListener('click', () => this.showAbout());
+    document.getElementById('helpBtn').addEventListener('click', () => this.showHelp());
+    
+    // About and Help - Login Screen
+    document.getElementById('aboutLinkLogin').addEventListener('click', (e) => {
+      e.preventDefault();
+      this.showAbout();
+    });
+    document.getElementById('helpLinkLogin').addEventListener('click', (e) => {
+      e.preventDefault();
+      this.showHelp();
+    });
+    
+    // Modal close buttons
+    document.getElementById('aboutClose').addEventListener('click', () => this.closeModal('aboutModal'));
+    document.getElementById('helpClose').addEventListener('click', () => this.closeModal('helpModal'));
+    
+    // Click outside modal to close
+    document.getElementById('aboutModal').addEventListener('click', (e) => {
+      if (e.target.id === 'aboutModal') this.closeModal('aboutModal');
+    });
+    document.getElementById('helpModal').addEventListener('click', (e) => {
+      if (e.target.id === 'helpModal') this.closeModal('helpModal');
+    });
+    
+    // Open full help
+    const openFullHelpLink = document.getElementById('openFullHelp');
+    if (openFullHelpLink) {
+      openFullHelpLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url: chrome.runtime.getURL('HELP.md') });
+      });
+    }
 
     // Login form
     document.getElementById('loginForm').addEventListener('submit', (e) => this.handleLogin(e));
 
     // Settings
+    document.getElementById('connectionMode').addEventListener('change', (e) => this.handleConnectionModeChange(e));
+    document.getElementById('saveSettingsBtn').addEventListener('click', () => this.saveSettings());
     document.getElementById('testConnectionBtn').addEventListener('click', () => this.testConnection());
 
     // Tabs
@@ -45,7 +82,7 @@ class PasswordManagerPopup {
     });
 
     // Search
-    document.getElementById('searchInput').addEventListener('input', (e) => this.filterCredentials(e.target.value));
+    document.getElementById('searchInput').addEventListener('click', (e) => this.filterCredentials(e.target.value));
 
     // View all credentials
     document.getElementById('viewAllBtn').addEventListener('click', () => this.loadAllCredentials());
@@ -158,6 +195,58 @@ class PasswordManagerPopup {
     }
   }
 
+  async showSettings() {
+    // Load current settings before showing settings screen
+    const settings = await chrome.storage.sync.get(['connectionMode', 'apiUrl']);
+    
+    const connectionModeSelect = document.getElementById('connectionMode');
+    const apiUrlInput = document.getElementById('apiUrl');
+    
+    connectionModeSelect.value = settings.connectionMode || 'auto';
+    apiUrlInput.value = settings.apiUrl || 'http://localhost:5000';
+    
+    // Show/hide API URL field based on connection mode
+    this.handleConnectionModeChange({ target: connectionModeSelect });
+    
+    this.showScreen('settings');
+  }
+
+  handleConnectionModeChange(e) {
+    const connectionMode = e.target.value;
+    const apiUrlGroup = document.getElementById('apiUrlGroup');
+    
+    // Show API URL input only when API mode is selected
+    if (connectionMode === 'api') {
+      apiUrlGroup.style.display = 'block';
+    } else {
+      apiUrlGroup.style.display = 'none';
+    }
+  }
+
+  async saveSettings() {
+    const connectionMode = document.getElementById('connectionMode').value;
+    const apiUrl = document.getElementById('apiUrl').value;
+    const messageDiv = document.getElementById('settingsMessage');
+    
+    try {
+      await chrome.storage.sync.set({
+        connectionMode: connectionMode,
+        apiUrl: apiUrl
+      });
+      
+      messageDiv.textContent = 'Settings saved successfully!';
+      messageDiv.className = 'message success';
+      messageDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        messageDiv.style.display = 'none';
+      }, 2000);
+    } catch (error) {
+      messageDiv.textContent = 'Failed to save settings: ' + error.message;
+      messageDiv.className = 'message error';
+      messageDiv.style.display = 'block';
+    }
+  }
 
   async testConnection() {
     const testBtn = document.getElementById('testConnectionBtn');
@@ -375,6 +464,23 @@ class PasswordManagerPopup {
 }
 
 // Initialize popup when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  new PasswordManagerPopup();
+});
+  showAbout() {
+    document.getElementById('aboutModal').style.display = 'flex';
+  }
+
+  showHelp() {
+    document.getElementById('helpModal').style.display = 'flex';
+  }
+
+  closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+  }
+}
+
+// Initialize popup when DOM is loaded  
 document.addEventListener('DOMContentLoaded', () => {
   new PasswordManagerPopup();
 });

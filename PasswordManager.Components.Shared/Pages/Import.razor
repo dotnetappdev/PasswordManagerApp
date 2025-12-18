@@ -1,0 +1,273 @@
+@page "/import"
+@using PasswordManager.Models
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<PageTitle>Import Passwords</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h4" GutterBottom="true">Import Passwords</MudText>
+        <MudText Typo="Typo.body1" Class="mb-4">
+            Import your passwords from other password managers or browsers.
+        </MudText>
+
+        @if (currentStep == 1)
+        {
+            <MudText Typo="Typo.h6" Class="mb-3">Step 1: Select Source</MudText>
+            <MudSelect T="PluginInfo" @bind-Value="selectedPlugin" Label="Import Source" Variant="Variant.Outlined" Class="mb-4">
+                @foreach (var plugin in availablePlugins)
+                {
+                    <MudSelectItem Value="@plugin">
+                        @plugin.DisplayName
+                    </MudSelectItem>
+                }
+            </MudSelect>
+
+            @if (selectedPlugin != null)
+            {
+                <MudAlert Severity="Severity.Info" Class="mb-4">
+                    <strong>@selectedPlugin.DisplayName</strong> (Version: @selectedPlugin.Version)<br/>
+                    Supported formats: @string.Join(", ", selectedPlugin.SupportedExtensions)
+                </MudAlert>
+            }
+
+            <InputFile id="fileInput" OnChange="@HandleFileSelected" accept=".csv,.1pux" style="display: none;" />
+            <MudButton HtmlTag="label"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.CloudUpload"
+                       for="fileInput">
+                Choose File
+            </MudButton>
+
+            @if (selectedFile != null)
+            {
+                <MudText Typo="Typo.body2" Class="mt-2">
+                    Selected: <strong>@selectedFile.Name</strong>
+                </MudText>
+            }
+
+            <div class="d-flex justify-end mt-4">
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           OnClick="@(() => currentStep = 2)"
+                           Disabled="@(selectedFile == null || selectedPlugin == null)">
+                    Next
+                </MudButton>
+            </div>
+        }
+        else if (currentStep == 2)
+        {
+            <MudText Typo="Typo.h6" Class="mb-3">Step 2: Confirm Import</MudText>
+            
+            @if (selectedFile != null && selectedPlugin != null)
+            {
+                <MudAlert Severity="Severity.Warning" Class="mb-4">
+                    You are about to import passwords from <strong>@selectedFile.Name</strong> using the <strong>@selectedPlugin.DisplayName</strong> plugin.
+                    This will add the passwords to your vault.
+                </MudAlert>
+            }
+
+            <div class="d-flex justify-space-between mt-4">
+                <MudButton OnClick="@(() => currentStep = 1)">Back</MudButton>
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           OnClick="@PerformImport"
+                           Disabled="@isImporting">
+                    @(isImporting ? "Importing..." : "Import Now")
+                </MudButton>
+            </div>
+        }
+        else if (currentStep == 3)
+        {
+            <MudText Typo="Typo.h6" Class="mb-3">Import Complete</MudText>
+            
+            @if (importResult != null)
+            {
+                <MudAlert Severity="@(importResult.Success ? Severity.Success : Severity.Error)" Class="mb-4">
+                    @importResult.Message
+                </MudAlert>
+
+                @if (importResult.Success)
+                {
+                    <MudSimpleTable Dense="true" Class="mb-4">
+                        <tbody>
+                            <tr>
+                                <td><strong>Total Processed:</strong></td>
+                                <td>@importResult.TotalProcessed</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Successfully Imported:</strong></td>
+                                <td>@importResult.SuccessfulImports</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Failed:</strong></td>
+                                <td>@importResult.FailedImports</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Collections Created:</strong></td>
+                                <td>@importResult.CollectionsCreated</td>
+                            </tr>
+                        </tbody>
+                    </MudSimpleTable>
+
+                    @if (importResult.Warnings?.Any() == true)
+                    {
+                        <MudExpansionPanels Class="mt-3">
+                            <MudExpansionPanel Text="View Warnings">
+                                @foreach (var warning in importResult.Warnings)
+                                {
+                                    <MudText Typo="Typo.body2">• @warning</MudText>
+                                }
+                            </MudExpansionPanel>
+                        </MudExpansionPanels>
+                    }
+                }
+            }
+
+            <div class="d-flex justify-end mt-4">
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           OnClick="@ResetImport">
+                    Import Another File
+                </MudButton>
+            </div>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private int currentStep = 1;
+    private List<PluginInfo> availablePlugins = new();
+    private PluginInfo? selectedPlugin;
+    private IBrowserFile? selectedFile;
+    private ImportResultInfo? importResult;
+    private bool isImporting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPlugins();
+    }
+
+    private async Task LoadPlugins()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<PluginsResponse>("/api/importexport/plugins");
+            if (response?.Success == true && response.Plugins != null)
+            {
+                availablePlugins = response.Plugins;
+                selectedPlugin = availablePlugins.FirstOrDefault();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load plugins: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+    }
+
+    private async Task PerformImport()
+    {
+        if (selectedFile == null || selectedPlugin == null)
+            return;
+
+        isImporting = true;
+        importResult = null;
+
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024));
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            content.Add(fileContent, "File", selectedFile.Name);
+            content.Add(new StringContent(selectedPlugin.Name), "PluginName");
+
+            var response = await Http.PostAsync("/api/importexport/import", content);
+            var result = await response.Content.ReadFromJsonAsync<ImportResponse>();
+            
+            if (result != null)
+            {
+                importResult = new ImportResultInfo
+                {
+                    Success = result.Success,
+                    Message = result.Success ? result.Message : result.Error,
+                    TotalProcessed = result.TotalProcessed,
+                    SuccessfulImports = result.SuccessfulImports,
+                    FailedImports = result.FailedImports,
+                    CollectionsCreated = result.CollectionsCreated,
+                    Warnings = result.Warnings
+                };
+
+                if (result.Success)
+                {
+                    Snackbar.Add($"Successfully imported {result.SuccessfulImports} items!", Severity.Success);
+                    currentStep = 3;
+                }
+                else
+                {
+                    Snackbar.Add(result.Error ?? "Import failed", Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Import error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isImporting = false;
+        }
+    }
+
+    private void ResetImport()
+    {
+        currentStep = 1;
+        selectedFile = null;
+        importResult = null;
+    }
+
+    private class PluginInfo
+    {
+        public string Name { get; set; } = "";
+        public string DisplayName { get; set; } = "";
+        public string Version { get; set; } = "";
+        public string[] SupportedExtensions { get; set; } = Array.Empty<string>();
+    }
+
+    private class PluginsResponse
+    {
+        public bool Success { get; set; }
+        public List<PluginInfo> Plugins { get; set; } = new();
+    }
+
+    private class ImportResponse
+    {
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+        public string? Error { get; set; }
+        public int TotalProcessed { get; set; }
+        public int SuccessfulImports { get; set; }
+        public int FailedImports { get; set; }
+        public int CollectionsCreated { get; set; }
+        public List<string>? Warnings { get; set; }
+    }
+
+    private class ImportResultInfo
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = "";
+        public int TotalProcessed { get; set; }
+        public int SuccessfulImports { get; set; }
+        public int FailedImports { get; set; }
+        public int CollectionsCreated { get; set; }
+        public List<string>? Warnings { get; set; }
+    }
+}

@@ -24,7 +24,7 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 |-----------|-------------|---------------|
 | **Blazor Web App** | Web application with dark theme | [PasswordManager.Web](PasswordManager.Web/README.md) |
 | **WinUI Desktop App** | Native Windows application | [PasswordManager.WinUi](PasswordManager.WinUi/README.md) |
-| **Browser Extension** | Chrome/Edge/Firefox extension with native messaging | [PasswordManager.BrowserExtension](PasswordManager.BrowserExtension/README.md) |
+| **Browser Extension** | Chrome/Edge/Firefox extension with multiple connection modes | [PasswordManager.BrowserExtension](PasswordManager.BrowserExtension/README.md) |
 | **Shared Components** | Cross-platform UI components | [PasswordManager.Components.Shared](PasswordManager.Components.Shared/README.md) |
 | **Cryptography** | Security and encryption details | [PasswordManager.Crypto](PasswordManager.Crypto/README.md) |
 
@@ -80,10 +80,22 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 - **Offline Support** - Full functionality without internet connection
 
 ### 📊 Import & Export
-- **1Password Import** - Native support for 1Password CSV exports
-- **Plugin Architecture** - Extensible system for other password managers
-- **Bulk Operations** - Import hundreds of items efficiently
-- **Progress Tracking** - Real-time feedback during operations
+- **Multiple Password Manager Support**:
+  - **1Password** - Import from CSV and 1PUX export files
+  - **Bitwarden** - Import from CSV exports
+  - **LastPass** - Import from CSV exports with folder support
+  - **Dashlane** - Import from CSV exports with categories
+  - **KeePass** - Import from CSV exports with groups
+- **Browser Password Import**:
+  - **Google Chrome** - Import from Chrome password CSV exports
+  - **Microsoft Edge** - Import from Edge password CSV exports
+  - **Mozilla Firefox** - Import from Firefox Logins CSV with timestamps
+  - **Apple Safari** - Import from Safari password CSV exports
+- **Plugin Architecture** - Extensible system for adding new import sources
+- **Bulk Operations** - Import hundreds of items efficiently with progress tracking
+- **Smart Detection** - Auto-detects file format and validates compatibility
+- **Preview Before Import** - See first 5 items before committing to full import
+- **Collection & Category Creation** - Automatically creates folders/categories during import
 
 ## 📱 SMS Two-Factor Authentication
 
@@ -153,12 +165,31 @@ PasswordManagerApp/
 │   ├── PasswordManager.Tests.OTP/        # OTP & SMS Authentication Tests
 │   └── PasswordManager.Tests.QrLogin/    # QR Login Tests
 └── 📥 Import System
-    ├── PasswordManager.Imports/          # Import Framework
-    ├── PasswordManagerImports.1Password/ # 1Password Plugin
-    └── PasswordManagerImports.Bitwarden/ # Bitwarden Plugin
+    ├── PasswordManager.Imports/             # Import Framework
+    ├── PasswordManagerImports.1Password/    # 1Password Plugin
+    ├── PasswordManagerImports.Bitwarden/    # Bitwarden Plugin
+    ├── PasswordManagerImports.LastPass/     # LastPass Plugin
+    ├── PasswordManagerImports.Dashlane/     # Dashlane Plugin
+    ├── PasswordManagerImports.KeePass/      # KeePass Plugin
+    ├── PasswordManagerImports.Chrome/       # Chrome Browser Plugin
+    ├── PasswordManagerImports.Edge/         # Edge Browser Plugin
+    ├── PasswordManagerImports.Firefox/      # Firefox Browser Plugin
+    └── PasswordManagerImports.Safari/       # Safari Browser Plugin
 ```
 
 ## 📱 Applications
+
+### Browser Extension
+- **Multiple Connection Modes**:
+  - **Native Messaging** - Direct local database access (most secure, offline capable)
+  - **Web API** - Connect to your API server for remote access
+  - **localStorage** - Offline mode with cached credentials
+  - **Auto Mode** - Tries all methods automatically for best experience
+- **Smart Form Detection** - Automatically detects login and registration forms
+- **Password Autofill** - One-click credential filling
+- **Password Generator** - Generate strong passwords directly in the browser
+- **Cross-browser Support** - Chrome, Edge, Firefox, and other Chromium browsers
+- **Settings Persistence** - Remembers your preferred connection method
 
 ### Web Application
 - **Modern Blazor UI** with MudBlazor components
@@ -172,6 +203,7 @@ PasswordManagerApp/
 - **Windows 11 Fluent Design** integration
 - **XAML-powered interface** with smooth animations
 - **DPAPI secure storage** for Windows
+- **Theme System** - Light, Dark, and System theme support with persistence
 - **Professional desktop experience**
 - **📸 [View Screenshots](screenshots.md)** of the interface
 
