@@ -103,13 +103,34 @@ public partial class App : Application
     {
         try
         {
+            // First, try to load from ApplicationData (persisted settings)
+            var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+            if (localSettings.Values.ContainsKey("SelectedTheme"))
+            {
+                var savedTheme = localSettings.Values["SelectedTheme"]?.ToString();
+                if (!string.IsNullOrEmpty(savedTheme))
+                {
+                    var theme = savedTheme switch
+                    {
+                        "Light" => PasswordManager.WinUi.Services.AppTheme.Light,
+                        "Dark" => PasswordManager.WinUi.Services.AppTheme.Dark,
+                        "System" => PasswordManager.WinUi.Services.AppTheme.System,
+                        _ => PasswordManager.WinUi.Services.AppTheme.System
+                    };
+
+                    PasswordManager.WinUi.Services.ThemeHelper.SetTheme(theme);
+                    return;
+                }
+            }
+
+            // Fallback to secure storage (legacy)
             using var scope = _host.Services.CreateScope();
             var secureStorage = scope.ServiceProvider.GetRequiredService<ISecureStorageService>();
-            var savedTheme = await secureStorage.GetAsync("SelectedTheme");
+            var savedThemeFromSecure = await secureStorage.GetAsync("SelectedTheme");
 
-            if (!string.IsNullOrEmpty(savedTheme))
+            if (!string.IsNullOrEmpty(savedThemeFromSecure))
             {
-                var theme = savedTheme switch
+                var theme = savedThemeFromSecure switch
                 {
                     "Light" => PasswordManager.WinUi.Services.AppTheme.Light,
                     "Dark" => PasswordManager.WinUi.Services.AppTheme.Dark,
@@ -118,11 +139,16 @@ public partial class App : Application
                 };
 
                 PasswordManager.WinUi.Services.ThemeHelper.SetTheme(theme);
+                
+                // Migrate to ApplicationData for future use
+                localSettings.Values["SelectedTheme"] = savedThemeFromSecure;
             }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error loading saved theme: {ex.Message}");
+            // Apply default system theme on error
+            PasswordManager.WinUi.Services.ThemeHelper.SetTheme(PasswordManager.WinUi.Services.AppTheme.System);
         }
     }
 

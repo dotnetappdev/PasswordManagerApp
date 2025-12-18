@@ -29,7 +29,7 @@ class PasswordManagerPopup {
 
   setupEventListeners() {
     // Navigation
-    document.getElementById('settingsLink').addEventListener('click', () => this.showScreen('settings'));
+    document.getElementById('settingsLink').addEventListener('click', () => this.showSettings());
     document.getElementById('backBtn').addEventListener('click', () => this.showScreen('main'));
     document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
 
@@ -37,6 +37,8 @@ class PasswordManagerPopup {
     document.getElementById('loginForm').addEventListener('submit', (e) => this.handleLogin(e));
 
     // Settings
+    document.getElementById('connectionMode').addEventListener('change', (e) => this.handleConnectionModeChange(e));
+    document.getElementById('saveSettingsBtn').addEventListener('click', () => this.saveSettings());
     document.getElementById('testConnectionBtn').addEventListener('click', () => this.testConnection());
 
     // Tabs
@@ -158,6 +160,58 @@ class PasswordManagerPopup {
     }
   }
 
+  async showSettings() {
+    // Load current settings before showing settings screen
+    const settings = await chrome.storage.sync.get(['connectionMode', 'apiUrl']);
+    
+    const connectionModeSelect = document.getElementById('connectionMode');
+    const apiUrlInput = document.getElementById('apiUrl');
+    
+    connectionModeSelect.value = settings.connectionMode || 'auto';
+    apiUrlInput.value = settings.apiUrl || 'http://localhost:5000';
+    
+    // Show/hide API URL field based on connection mode
+    this.handleConnectionModeChange({ target: connectionModeSelect });
+    
+    this.showScreen('settings');
+  }
+
+  handleConnectionModeChange(e) {
+    const connectionMode = e.target.value;
+    const apiUrlGroup = document.getElementById('apiUrlGroup');
+    
+    // Show API URL input only when API mode is selected
+    if (connectionMode === 'api') {
+      apiUrlGroup.style.display = 'block';
+    } else {
+      apiUrlGroup.style.display = 'none';
+    }
+  }
+
+  async saveSettings() {
+    const connectionMode = document.getElementById('connectionMode').value;
+    const apiUrl = document.getElementById('apiUrl').value;
+    const messageDiv = document.getElementById('settingsMessage');
+    
+    try {
+      await chrome.storage.sync.set({
+        connectionMode: connectionMode,
+        apiUrl: apiUrl
+      });
+      
+      messageDiv.textContent = 'Settings saved successfully!';
+      messageDiv.className = 'message success';
+      messageDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        messageDiv.style.display = 'none';
+      }, 2000);
+    } catch (error) {
+      messageDiv.textContent = 'Failed to save settings: ' + error.message;
+      messageDiv.className = 'message error';
+      messageDiv.style.display = 'block';
+    }
+  }
 
   async testConnection() {
     const testBtn = document.getElementById('testConnectionBtn');

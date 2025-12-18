@@ -123,19 +123,51 @@ public class SettingsViewModel : BaseViewModel
         {
             IsLoading = true;
 
-            // Load basic settings - simplified for now
-            SelectedTheme = "System";
-            SessionTimeoutMinutes = 30;
-            AuthenticationMode = "Local Database";
-            ApiBaseUrl = "https://localhost:7001/api";
-            DatabaseProvider = "SQLite";
-            ExportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport");
+            // Load theme setting from application data
+            var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+            if (localSettings.Values.ContainsKey("SelectedTheme"))
+            {
+                SelectedTheme = localSettings.Values["SelectedTheme"]?.ToString() ?? "System";
+            }
+            else
+            {
+                SelectedTheme = "System";
+            }
+
+            // Load other settings
+            SessionTimeoutMinutes = localSettings.Values.ContainsKey("SessionTimeout")
+                ? Convert.ToInt32(localSettings.Values["SessionTimeout"])
+                : 30;
+
+            AuthenticationMode = localSettings.Values.ContainsKey("AuthMode")
+                ? localSettings.Values["AuthMode"]?.ToString() ?? "Local Database"
+                : "Local Database";
+
+            ApiBaseUrl = localSettings.Values.ContainsKey("ApiBaseUrl")
+                ? localSettings.Values["ApiBaseUrl"]?.ToString() ?? "https://localhost:7001/api"
+                : "https://localhost:7001/api";
+
+            DatabaseProvider = localSettings.Values.ContainsKey("DatabaseProvider")
+                ? localSettings.Values["DatabaseProvider"]?.ToString() ?? "SQLite"
+                : "SQLite";
+
+            ExportPath = localSettings.Values.ContainsKey("ExportPath")
+                ? localSettings.Values["ExportPath"]?.ToString() ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport")
+                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport");
 
             ApplyTheme();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error loading settings: {ex.Message}");
+            // Use defaults on error
+            SelectedTheme = "System";
+            SessionTimeoutMinutes = 30;
+            AuthenticationMode = "Local Database";
+            ApiBaseUrl = "https://localhost:7001/api";
+            DatabaseProvider = "SQLite";
+            ExportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport");
+            ApplyTheme();
         }
         finally
         {
@@ -149,8 +181,18 @@ public class SettingsViewModel : BaseViewModel
         {
             IsLoading = true;
 
-            // Save settings - simplified for now
+            // Save settings to application data
+            var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+            localSettings.Values["SelectedTheme"] = SelectedTheme;
+            localSettings.Values["SessionTimeout"] = SessionTimeoutMinutes;
+            localSettings.Values["AuthMode"] = AuthenticationMode;
+            localSettings.Values["ApiBaseUrl"] = ApiBaseUrl;
+            localSettings.Values["DatabaseProvider"] = DatabaseProvider;
+            localSettings.Values["ExportPath"] = ExportPath;
+
+            // Apply theme immediately
             ApplyTheme();
+            
             return true;
         }
         catch (Exception ex)

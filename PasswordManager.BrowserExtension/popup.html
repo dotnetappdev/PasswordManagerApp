@@ -132,17 +132,40 @@
       </div>
       
       <div class="settings-info">
-        <h3>Database Connection</h3>
-        <p>This extension connects directly to your local SQLite database through a native messaging host.</p>
+        <h3>Connection Mode</h3>
+        <div class="form-group">
+          <label for="connectionMode">Connection Method:</label>
+          <select id="connectionMode" class="form-control">
+            <option value="auto">Auto (Try all methods)</option>
+            <option value="native">Native Messaging (Recommended)</option>
+            <option value="api">Web API</option>
+            <option value="localStorage">Offline (localStorage)</option>
+          </select>
+          <small>Auto mode tries Native → API → localStorage in order</small>
+        </div>
+
+        <div class="form-group" id="apiUrlGroup" style="display: none;">
+          <label for="apiUrl">API URL:</label>
+          <input type="text" id="apiUrl" placeholder="http://localhost:5000" class="form-control">
+          <small>URL of your Password Manager API server</small>
+        </div>
+
+        <button type="button" id="saveSettingsBtn" class="btn btn-primary">Save Settings</button>
         
-        <button type="button" id="testConnectionBtn" class="btn btn-primary">Test Database Connection</button>
+        <h3 style="margin-top: 20px;">Database Connection</h3>
+        <p>This extension can connect to your password manager using multiple methods.</p>
+        
+        <button type="button" id="testConnectionBtn" class="btn btn-primary">Test Connection</button>
         
         <div id="settingsMessage" class="message" style="display: none;"></div>
         
         <div class="help-section">
-          <h4>Installation Status</h4>
-          <p>The native messaging host enables secure communication between the browser extension and your local password database.</p>
-          <p><strong>Note:</strong> Make sure the native messaging host is properly installed and registered for your browser.</p>
+          <h4>Connection Methods</h4>
+          <ul>
+            <li><strong>Native Messaging:</strong> Direct local database access (most secure)</li>
+            <li><strong>Web API:</strong> Connect to API server (requires running API)</li>
+            <li><strong>Offline (localStorage):</strong> Use cached credentials (limited functionality)</li>
+          </ul>
         </div>
       </div>
     </div>

@@ -1,0 +1,14 @@
+{
+  "name": "firefox",
+  "displayName": "Mozilla Firefox",
+  "description": "Import passwords from Firefox CSV export files",
+  "version": "1.0.0",
+  "author": "PasswordManager Team",
+  "website": "https://www.mozilla.org/firefox",
+  "created": "2024-12-18T00:00:00Z",
+  "lastUpdated": "2024-12-18T00:00:00Z",
+  "tags": ["firefox", "mozilla", "browser", "csv"],
+  "supportedFileExtensions": [".csv"],
+  "importFormat": "Firefox Logins CSV Export",
+  "instructions": "Export your passwords from Firefox:\n1. Open Firefox and go to about:logins\n2. Click the three dots menu\n3. Select 'Export Logins'\n4. Save the CSV file\n5. Import it here"
+}

@@ -77,14 +77,42 @@ class PasswordManagerBackground {
     // Fallback to web API if native host is not available
     try {
       const apiUrl = await this.getApiUrl();
-      const response = await fetch(`${apiUrl}/api/browserextension/${endpoint}`, {
-        method: 'POST',
+      
+      // Map actions to proper API endpoints
+      let apiEndpoint = endpoint;
+      let method = 'POST';
+      
+      if (endpoint === 'getCredentials') {
+        apiEndpoint = 'credentials';
+        method = 'GET';
+      } else if (endpoint === 'getCreditCards') {
+        apiEndpoint = 'creditcards';
+        method = 'GET';
+      } else if (endpoint === 'login') {
+        apiEndpoint = 'auth/login';
+      } else if (endpoint === 'generatePassword') {
+        apiEndpoint = 'password/generate';
+      } else if (endpoint === 'testConnection') {
+        apiEndpoint = 'health';
+        method = 'GET';
+      }
+
+      const fetchOptions = {
+        method: method,
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.authToken}`
-        },
-        body: JSON.stringify(data)
-      });
+          'Content-Type': 'application/json'
+        }
+      };
+
+      if (this.authToken) {
+        fetchOptions.headers['Authorization'] = `Bearer ${this.authToken}`;
+      }
+
+      if (method === 'POST' && data) {
+        fetchOptions.body = JSON.stringify(data);
+      }
+
+      const response = await fetch(`${apiUrl}/api/${apiEndpoint}`, fetchOptions);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -103,20 +131,127 @@ class PasswordManagerBackground {
   }
 
   async sendMessageWithFallback(action, data) {
-    // Try native host first, then fallback to web API
-    try {
-      return await this.sendNativeMessage({
-        action: action,
-        ...data
-      });
-    } catch (nativeError) {
-      console.log('Password Manager: Native host failed, trying web API...');
+    // Check connection preference
+    const settings = await chrome.storage.sync.get(['connectionMode']);
+    const connectionMode = settings.connectionMode || 'auto'; // auto, native, api, localStorage
+
+    // Try localStorage first if preferred or if it's the only option
+    if (connectionMode === 'localStorage') {
+      try {
+        return await this.sendLocalStorageMessage(action, data);
+      } catch (localError) {
+        console.log('Password Manager: localStorage failed:', localError.message);
+        // Don't fallback if user explicitly chose localStorage
+        throw localError;
+      }
+    }
+
+    // Try native host if preferred or in auto mode
+    if (connectionMode === 'native' || connectionMode === 'auto') {
+      try {
+        return await this.sendNativeMessage({
+          action: action,
+          ...data
+        });
+      } catch (nativeError) {
+        console.log('Password Manager: Native host failed:', nativeError.message);
+        
+        // If native was explicitly chosen, don't fallback
+        if (connectionMode === 'native') {
+          throw nativeError;
+        }
+      }
+    }
+
+    // Try web API
+    if (connectionMode === 'api' || connectionMode === 'auto') {
       try {
         return await this.sendWebApiMessage(action, data);
       } catch (apiError) {
-        throw new Error(`Both native host and web API failed. Native: ${nativeError.message}, API: ${apiError.message}`);
+        console.log('Password Manager: Web API failed:', apiError.message);
+        
+        // If API was explicitly chosen, don't fallback
+        if (connectionMode === 'api') {
+          throw apiError;
+        }
       }
     }
+
+    // Last resort: try localStorage in auto mode
+    if (connectionMode === 'auto') {
+      try {
+        return await this.sendLocalStorageMessage(action, data);
+      } catch (localError) {
+        throw new Error(`All connection methods failed. Check your settings and try again.`);
+      }
+    }
+
+    throw new Error(`Connection failed using ${connectionMode} mode`);
+  }
+
+  async sendLocalStorageMessage(action, data) {
+    // Handle actions using chrome.storage.local for offline support
+    try {
+      switch (action) {
+        case 'getCredentials':
+          return await this.getCredentialsFromLocalStorage(data.domain);
+        case 'generatePassword':
+          return await this.generatePasswordLocally(data.options);
+        default:
+          throw new Error(`Action ${action} not supported in localStorage mode`);
+      }
+    } catch (error) {
+      throw new Error(`localStorage error: ${error.message}`);
+    }
+  }
+
+  async getCredentialsFromLocalStorage(domain) {
+    const result = await chrome.storage.local.get(['cachedCredentials']);
+    const allCredentials = result.cachedCredentials || [];
+    
+    // Filter by domain if specified
+    let credentials = allCredentials;
+    if (domain) {
+      credentials = allCredentials.filter(cred => 
+        this.domainMatches(cred.websiteUrl || '', domain)
+      );
+    }
+
+    return {
+      success: true,
+      credentials: credentials
+    };
+  }
+
+  async generatePasswordLocally(options) {
+    const length = options?.length || 16;
+    const includeUppercase = options?.includeUppercase !== false;
+    const includeLowercase = options?.includeLowercase !== false;
+    const includeNumbers = options?.includeNumbers !== false;
+    const includeSymbols = options?.includeSymbols !== false;
+
+    let charset = '';
+    if (includeLowercase) charset += 'abcdefghijklmnopqrstuvwxyz';
+    if (includeUppercase) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    if (includeNumbers) charset += '0123456789';
+    if (includeSymbols) charset += '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+    if (charset.length === 0) {
+      throw new Error('At least one character type must be selected');
+    }
+
+    let password = '';
+    const array = new Uint8Array(length);
+    crypto.getRandomValues(array);
+    
+    for (let i = 0; i < length; i++) {
+      password += charset[array[i] % charset.length];
+    }
+
+    return {
+      success: true,
+      password: password
+    };
   }
 
   async getCredentials(request, sendResponse) {
