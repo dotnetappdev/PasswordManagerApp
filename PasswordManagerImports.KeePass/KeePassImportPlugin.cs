@@ -178,7 +178,7 @@ public class KeePassImportPlugin : IPasswordImportPlugin
                         Password = "••••••••",
                         Website = record.Url,
                         Notes = record.Notes != null && record.Notes.Length > 100 
-                            ? record.Notes.Substring(0, 100) + "..." 
+                            ? record.Notes[..100] + "..." 
                             : record.Notes
                     }
                 };

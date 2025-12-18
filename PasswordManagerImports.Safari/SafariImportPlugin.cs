@@ -180,7 +180,7 @@ public class SafariImportPlugin : IPasswordImportPlugin
                         Password = "••••••••",
                         Website = record.Url,
                         Notes = record.Notes != null && record.Notes.Length > 100 
-                            ? record.Notes.Substring(0, 100) + "..." 
+                            ? record.Notes[..100] + "..." 
                             : record.Notes
                     }
                 };
@@ -207,7 +207,7 @@ public class SafariImportPlugin : IPasswordImportPlugin
             var host = uri.Host.Replace("www.", "");
             
             // Capitalize first letter
-            return char.ToUpper(host[0]) + host.Substring(1);
+            return char.ToUpper(host[0]) + host[1..];
         }
         catch
         {

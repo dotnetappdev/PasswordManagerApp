@@ -180,7 +180,7 @@ public class DashlaneImportPlugin : IPasswordImportPlugin
                         Password = "••••••••",
                         Website = record.Url,
                         Notes = record.Note != null && record.Note.Length > 100 
-                            ? record.Note.Substring(0, 100) + "..." 
+                            ? record.Note[..100] + "..." 
                             : record.Note
                     }
                 };

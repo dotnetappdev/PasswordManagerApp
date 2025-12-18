@@ -200,7 +200,7 @@ public class ChromeImportPlugin : IPasswordImportPlugin
             var host = uri.Host.Replace("www.", "");
             
             // Capitalize first letter
-            return char.ToUpper(host[0]) + host.Substring(1);
+            return char.ToUpper(host[0]) + host[1..];
         }
         catch
         {

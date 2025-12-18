@@ -178,7 +178,7 @@ public class LastPassImportPlugin : IPasswordImportPlugin
                         Password = "••••••••",
                         Website = record.Url,
                         Notes = record.Extra != null && record.Extra.Length > 100 
-                            ? record.Extra.Substring(0, 100) + "..." 
+                            ? record.Extra[..100] + "..." 
                             : record.Extra
                     }
                 };
