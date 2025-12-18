@@ -45,6 +45,10 @@
       
       <div class="footer-links">
         <a href="#" id="settingsLink">Settings</a>
+        <span>|</span>
+        <a href="#" id="helpLinkLogin">Help</a>
+        <span>|</span>
+        <a href="#" id="aboutLinkLogin">About</a>
       </div>
     </div>
 
@@ -53,7 +57,11 @@
       <div class="header">
         <img src="icons/icon32.svg" alt="Password Manager" class="logo">
         <h1>Password Manager</h1>
-        <button id="logoutBtn" class="btn btn-secondary btn-small">Logout</button>
+        <div class="header-actions">
+          <button id="helpBtn" class="btn btn-icon" title="Help">❓</button>
+          <button id="aboutBtn" class="btn btn-icon" title="About">ℹ️</button>
+          <button id="logoutBtn" class="btn btn-secondary btn-small">Logout</button>
+        </div>
       </div>
       
       <div class="tabs">
@@ -166,6 +174,115 @@
             <li><strong>Web API:</strong> Connect to API server (requires running API)</li>
             <li><strong>Offline (localStorage):</strong> Use cached credentials (limited functionality)</li>
           </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- About Modal -->
+    <div id="aboutModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="modal-close" id="aboutClose">&times;</span>
+        <h2>About Password Manager Extension</h2>
+        <div class="about-info">
+          <p><strong>Version:</strong> 1.0.0</p>
+          <p><strong>Build Date:</strong> December 2024</p>
+          <p><strong>Author:</strong> Password Manager Team</p>
+          
+          <h3>Features</h3>
+          <ul>
+            <li>🔐 Secure password autofill</li>
+            <li>🎲 Strong password generation</li>
+            <li>🔄 Multiple connection modes (Native/API/localStorage)</li>
+            <li>🌐 Cross-browser support (Chrome, Edge, Firefox)</li>
+            <li>📱 Sync across devices via API</li>
+          </ul>
+          
+          <h3>Security</h3>
+          <p>This extension uses industry-standard encryption to protect your passwords. Your master password never leaves your device.</p>
+          
+          <h3>Privacy</h3>
+          <p>We respect your privacy. No data is collected or transmitted to third parties. All data remains under your control.</p>
+          
+          <h3>Support</h3>
+          <p>For help, click the Help button or visit our documentation.</p>
+          
+          <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e6ed; text-align: center;">
+            <p style="color: #6c757d; font-size: 12px;">
+              © 2024 Password Manager. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal" style="display: none;">
+      <div class="modal-content modal-large">
+        <span class="modal-close" id="helpClose">&times;</span>
+        <h2>Password Manager Extension - Help</h2>
+        <div class="help-content">
+          <h3>Quick Start</h3>
+          <ol>
+            <li>Log in with your master password</li>
+            <li>Configure your connection mode in Settings</li>
+            <li>Use the extension on any website with a login form</li>
+          </ol>
+          
+          <h3>Connection Modes</h3>
+          <div class="help-section-item">
+            <h4>🔗 Auto Mode (Recommended)</h4>
+            <p>Automatically tries all connection methods in order: Native → API → localStorage</p>
+          </div>
+          
+          <div class="help-section-item">
+            <h4>💻 Native Messaging</h4>
+            <p>Direct local database access. Most secure and works offline. Requires desktop app installed.</p>
+          </div>
+          
+          <div class="help-section-item">
+            <h4>🌐 Web API</h4>
+            <p>Connect to your API server for remote access. Requires API server running and configured.</p>
+          </div>
+          
+          <div class="help-section-item">
+            <h4>📦 localStorage</h4>
+            <p>Offline mode using cached credentials. Limited functionality, use for temporary access only.</p>
+          </div>
+          
+          <h3>Using the Extension</h3>
+          <div class="help-section-item">
+            <h4>Autofill Passwords</h4>
+            <p>1. Click the extension icon on a login page<br>
+               2. Select the credential you want to use<br>
+               3. Click "Fill" to autofill the form</p>
+          </div>
+          
+          <div class="help-section-item">
+            <h4>Generate Password</h4>
+            <p>1. Go to the "Generate" tab<br>
+               2. Adjust length and character options<br>
+               3. Click "Generate Password"<br>
+               4. Copy or fill directly into the page</p>
+          </div>
+          
+          <h3>Troubleshooting</h3>
+          <div class="help-section-item">
+            <h4>Can't Connect</h4>
+            <p>• Try "Auto" mode in Settings<br>
+               • For Native mode: ensure desktop app is running<br>
+               • For API mode: check API URL and server status</p>
+          </div>
+          
+          <div class="help-section-item">
+            <h4>Autofill Not Working</h4>
+            <p>• Refresh the page and try again<br>
+               • Some sites use non-standard forms<br>
+               • Try manually copying the password</p>
+          </div>
+          
+          <p style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <strong>Need more help?</strong> Check the <a href="#" id="openFullHelp">full documentation</a> for detailed instructions.
+          </p>
         </div>
       </div>
     </div>

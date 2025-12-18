@@ -33,6 +33,41 @@ class PasswordManagerPopup {
     document.getElementById('backBtn').addEventListener('click', () => this.showScreen('main'));
     document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
 
+    // About and Help - Main Screen
+    document.getElementById('aboutBtn').addEventListener('click', () => this.showAbout());
+    document.getElementById('helpBtn').addEventListener('click', () => this.showHelp());
+    
+    // About and Help - Login Screen
+    document.getElementById('aboutLinkLogin').addEventListener('click', (e) => {
+      e.preventDefault();
+      this.showAbout();
+    });
+    document.getElementById('helpLinkLogin').addEventListener('click', (e) => {
+      e.preventDefault();
+      this.showHelp();
+    });
+    
+    // Modal close buttons
+    document.getElementById('aboutClose').addEventListener('click', () => this.closeModal('aboutModal'));
+    document.getElementById('helpClose').addEventListener('click', () => this.closeModal('helpModal'));
+    
+    // Click outside modal to close
+    document.getElementById('aboutModal').addEventListener('click', (e) => {
+      if (e.target.id === 'aboutModal') this.closeModal('aboutModal');
+    });
+    document.getElementById('helpModal').addEventListener('click', (e) => {
+      if (e.target.id === 'helpModal') this.closeModal('helpModal');
+    });
+    
+    // Open full help
+    const openFullHelpLink = document.getElementById('openFullHelp');
+    if (openFullHelpLink) {
+      openFullHelpLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url: chrome.runtime.getURL('HELP.md') });
+      });
+    }
+
     // Login form
     document.getElementById('loginForm').addEventListener('submit', (e) => this.handleLogin(e));
 
@@ -47,7 +82,7 @@ class PasswordManagerPopup {
     });
 
     // Search
-    document.getElementById('searchInput').addEventListener('input', (e) => this.filterCredentials(e.target.value));
+    document.getElementById('searchInput').addEventListener('click', (e) => this.filterCredentials(e.target.value));
 
     // View all credentials
     document.getElementById('viewAllBtn').addEventListener('click', () => this.loadAllCredentials());
@@ -429,6 +464,23 @@ class PasswordManagerPopup {
 }
 
 // Initialize popup when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  new PasswordManagerPopup();
+});
+  showAbout() {
+    document.getElementById('aboutModal').style.display = 'flex';
+  }
+
+  showHelp() {
+    document.getElementById('helpModal').style.display = 'flex';
+  }
+
+  closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+  }
+}
+
+// Initialize popup when DOM is loaded  
 document.addEventListener('DOMContentLoaded', () => {
   new PasswordManagerPopup();
 });
