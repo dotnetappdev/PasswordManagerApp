@@ -5,6 +5,7 @@ using PasswordManager.Services.Interfaces;
 using PasswordManager.Models.DTOs;
 using PasswordManager.WinUi.ViewModels;
 using System.Linq;
+using System;
 
 namespace PasswordManager.WinUi.Views;
 
@@ -483,6 +484,344 @@ public sealed partial class SettingsPage : Page
 
             await resultDialog.ShowAsync();
         }
+    }
+
+    private async void ResetDataButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Create confirmation dialog with detailed information
+        var confirmDialog = new ContentDialog
+        {
+            Title = "⚠️ Reset Password Data",
+            Content = CreateResetDataDialogContent(),
+            PrimaryButtonText = "Reset Password Data",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot
+        };
+
+        var result = await confirmDialog.ShowAsync();
+        if (result == ContentDialogResult.Primary && _serviceProvider != null)
+        {
+            await PerformDatabaseResetAsync(preserveUsers: true);
+        }
+    }
+
+    private async void ResetAllButton_Click(object sender, RoutedEventArgs e)
+    {
+        // First confirmation dialog
+        var firstConfirmDialog = new ContentDialog
+        {
+            Title = "⚠️ DANGER: Reset All Database Tables",
+            Content = CreateResetAllDialogContent(),
+            PrimaryButtonText = "I Understand, Continue",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot
+        };
+
+        var firstResult = await firstConfirmDialog.ShowAsync();
+        if (firstResult != ContentDialogResult.Primary)
+            return;
+
+        // Second confirmation with re-seed option
+        var reseedCheckBox = new CheckBox
+        {
+            Content = "Re-seed default data (recommended)",
+            IsChecked = true,
+            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
+        };
+
+        var stackPanel = new StackPanel
+        {
+            Spacing = 12
+        };
+        stackPanel.Children.Add(new TextBlock
+        {
+            Text = "This will delete ALL data including your user account. You will be logged out immediately.",
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+        });
+        stackPanel.Children.Add(new TextBlock
+        {
+            Text = "Type 'DELETE' to confirm:",
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
+        });
+
+        var confirmTextBox = new TextBox
+        {
+            PlaceholderText = "Type DELETE here",
+            Margin = new Microsoft.UI.Xaml.Thickness(0, 8, 0, 0)
+        };
+        stackPanel.Children.Add(confirmTextBox);
+        stackPanel.Children.Add(reseedCheckBox);
+
+        var finalConfirmDialog = new ContentDialog
+        {
+            Title = "⚠️ Final Confirmation",
+            Content = stackPanel,
+            PrimaryButtonText = "Reset All Tables",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot
+        };
+
+        var finalResult = await finalConfirmDialog.ShowAsync();
+        if (finalResult == ContentDialogResult.Primary && 
+            confirmTextBox.Text.Equals("DELETE", StringComparison.Ordinal) &&
+            _serviceProvider != null)
+        {
+            await PerformDatabaseResetAsync(preserveUsers: false, reseedData: reseedCheckBox.IsChecked == true);
+        }
+        else if (finalResult == ContentDialogResult.Primary)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = "Confirmation Failed",
+                Content = "You must type 'DELETE' exactly to confirm this action.",
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot
+            };
+            await errorDialog.ShowAsync();
+        }
+    }
+
+    private StackPanel CreateResetDataDialogContent()
+    {
+        var stackPanel = new StackPanel { Spacing = 12 };
+        
+        stackPanel.Children.Add(new TextBlock
+        {
+            Text = "This action will clear the following data:",
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
+        });
+
+        var itemsList = new TextBlock
+        {
+            Text = "• All password items and login credentials\n" +
+                   "• All collections and categories\n" +
+                   "• All tags and custom fields\n" +
+                   "• Password history and audit logs\n" +
+                   "• Shared passwords and permissions",
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Margin = new Microsoft.UI.Xaml.Thickness(12, 0, 0, 0)
+        };
+        stackPanel.Children.Add(itemsList);
+
+        stackPanel.Children.Add(new TextBlock
+        {
+            Text = "Your user account and login credentials will be preserved.",
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Green),
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
+        });
+
+        stackPanel.Children.Add(new TextBlock
+        {
+            Text = "This action cannot be undone. Are you sure?",
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
+        });
+
+        return stackPanel;
+    }
+
+    private StackPanel CreateResetAllDialogContent()
+    {
+        var stackPanel = new StackPanel { Spacing = 12 };
+        
+        stackPanel.Children.Add(new TextBlock
+        {
+            Text = "⚠️ EXTREME CAUTION REQUIRED",
+            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
+            FontSize = 16,
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
+        });
+
+        stackPanel.Children.Add(new TextBlock
+        {
+            Text = "This will completely reset the database by clearing ALL tables including:",
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
+        });
+
+        var itemsList = new TextBlock
+        {
+            Text = "• ALL password items and login credentials\n" +
+                   "• ALL user accounts and authentication data\n" +
+                   "• ALL collections, categories, and tags\n" +
+                   "• ALL settings and configurations\n" +
+                   "• ALL history and audit logs",
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
+            Margin = new Microsoft.UI.Xaml.Thickness(12, 0, 0, 0)
+        };
+        stackPanel.Children.Add(itemsList);
+
+        stackPanel.Children.Add(new TextBlock
+        {
+            Text = "You will be logged out immediately and will need to create a new account.",
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
+        });
+
+        return stackPanel;
+    }
+
+    private async Task PerformDatabaseResetAsync(bool preserveUsers, bool reseedData = false)
+    {
+        // Show progress dialog
+        var progressDialog = new ContentDialog
+        {
+            Title = preserveUsers ? "Resetting Password Data..." : "Resetting All Tables...",
+            Content = new StackPanel
+            {
+                Spacing = 16,
+                Children =
+                {
+                    new ProgressRing { IsActive = true, Width = 48, Height = 48 },
+                    new TextBlock 
+                    { 
+                        Text = "Please wait while the database is being reset...",
+                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                        HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Center
+                    }
+                }
+            },
+            XamlRoot = XamlRoot
+        };
+
+        // Show the progress dialog without awaiting it
+        _ = progressDialog.ShowAsync();
+
+        try
+        {
+            var resetService = _serviceProvider!.GetRequiredService<IDatabaseResetService>();
+            var result = preserveUsers 
+                ? await resetService.ResetDataTablesAsync()
+                : await resetService.ResetAllTablesAsync(reseedData);
+
+            // Hide progress dialog
+            progressDialog.Hide();
+
+            // Show result dialog
+            var resultDialog = new ContentDialog
+            {
+                Title = result.Success ? "✓ Reset Complete" : "❌ Reset Failed",
+                Content = CreateResultDialogContent(result),
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot
+            };
+
+            await resultDialog.ShowAsync();
+
+            if (result.Success && !preserveUsers)
+            {
+                // For full reset, navigate back to login
+                Frame.Navigate(typeof(LoginPage), _serviceProvider);
+            }
+        }
+        catch (Exception ex)
+        {
+            progressDialog.Hide();
+
+            var errorDialog = new ContentDialog
+            {
+                Title = "❌ Reset Failed",
+                Content = $"An error occurred during the reset operation:\n\n{ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot
+            };
+
+            await errorDialog.ShowAsync();
+        }
+    }
+
+    private StackPanel CreateResultDialogContent(DatabaseResetResult result)
+    {
+        var stackPanel = new StackPanel { Spacing = 12 };
+
+        if (result.Success)
+        {
+            stackPanel.Children.Add(new TextBlock
+            {
+                Text = result.Message,
+                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+            });
+
+            stackPanel.Children.Add(new TextBlock
+            {
+                Text = $"Tables cleared: {result.TablesCleared}",
+                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
+            });
+
+            stackPanel.Children.Add(new TextBlock
+            {
+                Text = $"Records deleted: {result.RecordsDeleted}",
+                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
+            });
+
+            if (result.Errors.Any())
+            {
+                stackPanel.Children.Add(new TextBlock
+                {
+                    Text = $"\nWarnings ({result.Errors.Count}):",
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Margin = new Microsoft.UI.Xaml.Thickness(0, 8, 0, 0)
+                });
+
+                foreach (var error in result.Errors.Take(5))
+                {
+                    stackPanel.Children.Add(new TextBlock
+                    {
+                        Text = $"• {error}",
+                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                        FontSize = 12,
+                        Opacity = 0.8
+                    });
+                }
+            }
+        }
+        else
+        {
+            stackPanel.Children.Add(new TextBlock
+            {
+                Text = result.Message ?? "The reset operation failed.",
+                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red)
+            });
+
+            if (result.Errors.Any())
+            {
+                stackPanel.Children.Add(new TextBlock
+                {
+                    Text = "\nErrors:",
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Margin = new Microsoft.UI.Xaml.Thickness(0, 8, 0, 0)
+                });
+
+                foreach (var error in result.Errors.Take(5))
+                {
+                    stackPanel.Children.Add(new TextBlock
+                    {
+                        Text = $"• {error}",
+                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                        FontSize = 12
+                    });
+                }
+            }
+        }
+
+        return stackPanel;
     }
 
     private async void ClearDataButton_Click(object sender, RoutedEventArgs e)
