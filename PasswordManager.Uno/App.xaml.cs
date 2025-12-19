@@ -101,6 +101,12 @@ public partial class App : Application
                             sp.GetRequiredService<ILogger<PasswordManager.Uno.Services.Backup.BackupService>>(),
                             dbPath));
                     
+                    // Register AutoFill service
+                    services.AddSingleton<PasswordManager.Uno.Services.AutoFill.IAutoFillService, PasswordManager.Uno.Services.AutoFill.AutoFillService>();
+                    
+                    // Register QR Code service
+                    services.AddSingleton<PasswordManager.Uno.Services.QRCode.IQRCodeService, PasswordManager.Uno.Services.QRCode.QRCodeService>();
+                    
                     // Register ViewModels
                     services.AddTransient<PasswordManager.Mobile.Presentation.Pages.Login.LoginModel>();
                     services.AddTransient<PasswordManager.Mobile.Presentation.Pages.Passwords.PasswordsModel>();

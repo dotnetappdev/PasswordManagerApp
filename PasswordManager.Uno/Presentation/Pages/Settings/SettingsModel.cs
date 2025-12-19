@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using PasswordManager.Uno.Services.Theme;
 using PasswordManager.Uno.Services.Backup;
 using PasswordManager.Uno.Services.Biometric;
+using PasswordManager.Uno.Services.AutoFill;
 
 namespace PasswordManager.Mobile.Presentation.Pages.Settings;
 
@@ -11,6 +12,7 @@ public partial class SettingsModel : ObservableObject
     private readonly IThemeService _themeService;
     private readonly IBackupService _backupService;
     private readonly IBiometricAuthService _biometricService;
+    private readonly IAutoFillService _autoFillService;
     private readonly ILogger<SettingsModel> _logger;
 
     [ObservableProperty]
@@ -26,6 +28,12 @@ public partial class SettingsModel : ObservableObject
     private bool autoBackupEnabled;
 
     [ObservableProperty]
+    private bool autoFillEnabled;
+
+    [ObservableProperty]
+    private bool isAutoFillAvailable;
+
+    [ObservableProperty]
     private string? lastBackupDate;
 
     [ObservableProperty]
@@ -37,15 +45,23 @@ public partial class SettingsModel : ObservableObject
     [ObservableProperty]
     private bool isLoading;
 
+    [ObservableProperty]
+    private string apiBaseUrl = "https://localhost:5001";
+
+    [ObservableProperty]
+    private bool useLocalDatabase = true;
+
     public SettingsModel(
         IThemeService themeService,
         IBackupService backupService,
         IBiometricAuthService biometricService,
+        IAutoFillService autoFillService,
         ILogger<SettingsModel> logger)
     {
         _themeService = themeService;
         _backupService = backupService;
         _biometricService = biometricService;
+        _autoFillService = autoFillService;
         _logger = logger;
 
         _ = InitializeAsync();
@@ -62,9 +78,17 @@ public partial class SettingsModel : ObservableObject
             AutoBackupEnabled = _backupService.IsAutoBackupEnabled();
             IsBackupAvailable = await _backupService.IsBackupAvailableAsync();
 
+            // Load AutoFill status
+            IsAutoFillAvailable = await _autoFillService.IsAutoFillAvailableAsync();
+            AutoFillEnabled = await _autoFillService.IsAutoFillEnabledAsync();
+
             // Load last backup date
             var lastBackup = await _backupService.GetLastBackupDateAsync();
             LastBackupDate = lastBackup?.ToString("g") ?? "Never";
+
+            // Load API URL from preferences
+            ApiBaseUrl = Biometric.Preferences.Get("ApiBaseUrl", "https://localhost:5001");
+            UseLocalDatabase = Biometric.Preferences.Get("UseLocalDatabase", true);
         }
         catch (Exception ex)
         {
@@ -210,6 +234,48 @@ public partial class SettingsModel : ObservableObject
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task EnableAutoFillAsync()
+    {
+        try
+        {
+            var enabled = await _autoFillService.RequestEnableAutoFillAsync();
+            if (enabled)
+            {
+                StatusMessage = "Please enable Password Manager in system settings";
+                // Recheck status after a delay
+                await Task.Delay(2000);
+                AutoFillEnabled = await _autoFillService.IsAutoFillEnabledAsync();
+            }
+            else
+            {
+                StatusMessage = "Could not open AutoFill settings";
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error enabling AutoFill");
+            StatusMessage = "Failed to enable AutoFill";
+        }
+    }
+
+    [RelayCommand]
+    private async Task SaveApiSettingsAsync()
+    {
+        try
+        {
+            Biometric.Preferences.Set("ApiBaseUrl", ApiBaseUrl);
+            Biometric.Preferences.Set("UseLocalDatabase", UseLocalDatabase);
+            StatusMessage = "API settings saved successfully";
+            _logger.LogInformation("API settings updated: {ApiUrl}", ApiBaseUrl);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error saving API settings");
+            StatusMessage = "Failed to save API settings";
         }
     }
 }

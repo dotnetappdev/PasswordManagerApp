@@ -29,5 +29,6 @@
     <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.8" />
     <PackageVersion Include="System.Text.Json" Version="9.0.8" />
     <PackageVersion Include="Xamarin.AndroidX.Biometric" Version="1.2.0-alpha05" />
+    <PackageVersion Include="ZXing.Net" Version="0.16.9" />
   </ItemGroup>
 </Project>
