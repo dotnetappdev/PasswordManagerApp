@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>LSRequiresIPhoneOS</key>
+		<true/>
+		<key>UIDeviceFamily</key>
+		<array>
+			<integer>1</integer>
+			<integer>2</integer>
+		</array>
+		<key>UIRequiredDeviceCapabilities</key>
+		<array>
+			<string>armv7</string>
+			<string>arm64</string>
+		</array>
+		<key>UISupportedInterfaceOrientations</key>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+			<string>UIInterfaceOrientationLandscapeLeft</string>
+			<string>UIInterfaceOrientationLandscapeRight</string>
+		</array>
+		<key>UISupportedInterfaceOrientations~ipad</key>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+			<string>UIInterfaceOrientationPortraitUpsideDown</string>
+			<string>UIInterfaceOrientationLandscapeLeft</string>
+			<string>UIInterfaceOrientationLandscapeRight</string>
+		</array>
+		<key>UIViewControllerBasedStatusBarAppearance</key>
+		<false/>
+		<key>XSAppIconAssets</key>
+		<string>Assets.xcassets/icon.appiconset</string>
+		<key>UIApplicationSupportsIndirectInputEvents</key>
+		<true/>
+
+		<!-- Face ID Usage Description -->
+		<key>NSFaceIDUsageDescription</key>
+		<string>Use Face ID to quickly and securely sign in to your password manager</string>
+
+		<!-- Camera Usage Description for QR Code Scanning -->
+		<key>NSCameraUsageDescription</key>
+		<string>Camera access is needed to scan QR codes for quick login</string>
+
+		<!--
+		Adjust this to your application's encryption usage.
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
+		-->
+	</dict>
+</plist>
