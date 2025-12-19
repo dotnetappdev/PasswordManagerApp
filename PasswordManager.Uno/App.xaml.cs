@@ -78,10 +78,11 @@ public partial class App : Application
                     services.AddSingleton(new PasswordManager.Uno.Services.LocalDatabase.LocalDatabaseService(dbPath));
                     
                     // Register HTTP client for API
-                    services.AddHttpClient("PasswordManagerApi", client =>
+                    services.AddHttpClient("PasswordManagerApi", (sp, client) =>
                     {
-                        // TODO: Configure API base URL from configuration
-                        client.BaseAddress = new Uri("https://localhost:5001");
+                        var config = sp.GetService<IConfiguration>();
+                        var apiBaseUrl = config?["ApiBaseUrl"] ?? "https://localhost:5001";
+                        client.BaseAddress = new Uri(apiBaseUrl);
                         client.Timeout = TimeSpan.FromSeconds(30);
                     });
                     

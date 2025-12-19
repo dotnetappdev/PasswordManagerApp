@@ -8,11 +8,12 @@ namespace PasswordManager.Uno.Services.LocalDatabase;
 public class LocalDatabaseService
 {
     private readonly SQLiteAsyncConnection _database;
+    private readonly Task _initializationTask;
 
     public LocalDatabaseService(string databasePath)
     {
         _database = new SQLiteAsyncConnection(databasePath);
-        InitializeDatabaseAsync().Wait();
+        _initializationTask = InitializeDatabaseAsync();
     }
 
     private async Task InitializeDatabaseAsync()
@@ -21,10 +22,16 @@ public class LocalDatabaseService
         await _database.CreateTableAsync<LocalCategory>();
     }
 
+    private async Task EnsureInitializedAsync()
+    {
+        await _initializationTask;
+    }
+
     #region Password Items
 
     public async Task<List<LocalPasswordItem>> GetAllPasswordItemsAsync()
     {
+        await EnsureInitializedAsync();
         return await _database.Table<LocalPasswordItem>()
             .Where(item => !item.IsDeleted)
             .OrderByDescending(item => item.LastModified)
@@ -33,6 +40,7 @@ public class LocalDatabaseService
 
     public async Task<LocalPasswordItem?> GetPasswordItemAsync(int localId)
     {
+        await EnsureInitializedAsync();
         return await _database.Table<LocalPasswordItem>()
             .Where(item => item.LocalId == localId)
             .FirstOrDefaultAsync();
@@ -75,6 +83,7 @@ public class LocalDatabaseService
 
     public async Task<int> SavePasswordItemAsync(LocalPasswordItem item)
     {
+        await EnsureInitializedAsync();
         item.LastModified = DateTime.UtcNow;
         item.NeedsSyncToServer = true;
 
@@ -111,6 +120,7 @@ public class LocalDatabaseService
 
     public async Task<List<LocalCategory>> GetAllCategoriesAsync()
     {
+        await EnsureInitializedAsync();
         return await _database.Table<LocalCategory>()
             .OrderBy(category => category.Name)
             .ToListAsync();
