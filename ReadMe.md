@@ -24,6 +24,7 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 |-----------|-------------|---------------|
 | **Blazor Web App** | Web application with dark theme | [PasswordManager.Web](PasswordManager.Web/README.md) |
 | **WinUI Desktop App** | Native Windows application | [PasswordManager.WinUi](PasswordManager.WinUi/README.md) |
+| **Uno Platform Mobile App** | Cross-platform iOS, Android, and WebAssembly app with 1Password-inspired design | [UNO_PLATFORM_GUIDE.md](UNO_PLATFORM_GUIDE.md) |
 | **Browser Extension** | Chrome/Edge/Firefox extension with multiple connection modes | [PasswordManager.BrowserExtension](PasswordManager.BrowserExtension/README.md) |
 | **Shared Components** | Cross-platform UI components | [PasswordManager.Components.Shared](PasswordManager.Components.Shared/README.md) |
 | **Cryptography** | Security and encryption details | [PasswordManager.Crypto](PasswordManager.Crypto/README.md) |
@@ -39,6 +40,8 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 ### 📋 Additional Documentation
 | Document | Description |
 |----------|-------------|
+| **Uno Platform Guide** | Complete guide for mobile iOS/Android app development | [UNO_PLATFORM_GUIDE.md](UNO_PLATFORM_GUIDE.md) |
+| **Mobile Screenshots Guide** | Instructions for capturing iOS and Android screenshots | [MOBILE_SCREENSHOTS.md](MOBILE_SCREENSHOTS.md) |
 | **Entity Framework Identity Setup** | Complete guide for EF Identity and migration management | [EF_IDENTITY_SETUP_GUIDE.md](EF_IDENTITY_SETUP_GUIDE.md) |
 | **WinUI Screenshots** | Visual interface documentation for Windows app | [screenshots.md](screenshots.md) |
 | **Complete Setup Guide** | Full setup and configuration guide | [SETUP.md](SETUP.md) |
@@ -63,8 +66,9 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 
 ### 💻 Cross-Platform Support
 - **Blazor Web App** - Modern web interface with dark theme
-- **MAUI Mobile App** - Native iOS and Android applications
-- **Desktop Support** - Windows, macOS, and Linux compatibility
+- **Uno Platform Mobile App** - Native iOS and Android applications with 1Password-inspired design
+- **Desktop Support** - Windows (WinUI), macOS, and Linux compatibility
+- **Browser Extension** - Chrome, Edge, Firefox with multiple connection modes
 - **Shared Components** - Consistent UI across all platforms
 
 ### 🗂️ Advanced Organization
@@ -147,8 +151,13 @@ The solution is organized into focused, maintainable projects:
 PasswordManagerApp/
 ├── 🌐 Web & Mobile Apps
 │   ├── PasswordManager.Web/              # Blazor Server Web App
-│   ├── PasswordManager.App/              # .NET MAUI Mobile App
+│   ├── PasswordManager.Uno/              # Uno Platform Mobile App (iOS/Android/WebAssembly)
 │   └── PasswordManager.Components.Shared/ # Shared Blazor Components
+├── 🪟 Desktop Apps
+│   └── PasswordManager.WinUi/            # WinUI 3 Desktop App (Windows)
+├── 🌍 Browser Extension
+│   ├── PasswordManager.BrowserExtension/ # Cross-browser extension
+│   └── PasswordManager.BrowserExtension.NativeHost/ # Native messaging host
 ├── 🔧 Backend Services
 │   ├── PasswordManager.API/              # ASP.NET Core Web API
 │   ├── PasswordManager.Services/         # Business Logic Services
@@ -207,12 +216,14 @@ PasswordManagerApp/
 - **Professional desktop experience**
 - **📸 [View Screenshots](screenshots.md)** of the interface
 
-### Mobile Application
-- **Cross-platform** iOS, Android, Windows, macOS
-- **Native performance** with .NET MAUI
-- **Offline-first** design
-- **Biometric authentication** support
-- **Shared UI components** with web app
+### Mobile Application (Uno Platform)
+- **Cross-platform** iOS, Android, WebAssembly, Desktop
+- **Native performance** with Uno Platform
+- **Offline-first** design with SQLite local storage
+- **Biometric authentication** - Face ID (iOS) and Fingerprint (Android)
+- **1Password-inspired UI** with Material Design 3
+- **Two-way sync** with cloud API
+- **📱 [View Mobile App Guide](UNO_PLATFORM_GUIDE.md)** for detailed documentation
 
 ### API Service
 - **RESTful design** with OpenAPI documentation

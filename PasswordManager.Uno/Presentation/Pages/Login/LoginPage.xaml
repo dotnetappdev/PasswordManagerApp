@@ -6,7 +6,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:utu="using:Uno.Toolkit.UI"
       mc:Ignorable="d"
-      Background="{ThemeResource BackgroundBrush}">
+      Background="{ThemeResource LayerFillColorDefaultBrush}">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -14,167 +14,229 @@
         </Grid.RowDefinitions>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Padding="24" 
-                        MaxWidth="400" 
+            <StackPanel Padding="32,48" 
+                        MaxWidth="440" 
                         VerticalAlignment="Center"
                         HorizontalAlignment="Center"
-                        Spacing="16">
+                        Spacing="20">
 
-                <!-- Logo/Header -->
-                <TextBlock Text="🔐" 
-                           FontSize="72" 
-                           HorizontalAlignment="Center"
-                           Margin="0,0,0,16"/>
+                <!-- Logo/Header with 1Password-style branding -->
+                <Border Width="80" Height="80"
+                        Background="#0066FF"
+                        CornerRadius="20"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,24">
+                    <TextBlock Text="🔐" 
+                               FontSize="48" 
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Border>
 
                 <TextBlock Text="Password Manager"
-                           Style="{StaticResource TitleTextBlockStyle}"
+                           FontSize="32"
+                           FontWeight="SemiBold"
                            HorizontalAlignment="Center"
-                           Margin="0,0,0,8"/>
+                           Margin="0,0,0,4"/>
 
-                <TextBlock Text="Secure your digital life"
-                           Style="{StaticResource SubtitleTextBlockStyle}"
+                <TextBlock Text="Secure your digital life with enterprise-grade encryption"
+                           FontSize="15"
                            HorizontalAlignment="Center"
+                           TextAlignment="Center"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                           Margin="0,0,0,32"/>
+                           TextWrapping="Wrap"
+                           MaxWidth="380"
+                           Margin="0,0,0,40"/>
 
-                <!-- Error Message -->
-                <Border Background="{ThemeResource ErrorBackgroundColor}"
-                        BorderBrush="{ThemeResource ErrorBorderBrush}"
+                <!-- Error Message - 1Password style -->
+                <Border Background="#FEF0F0"
+                        BorderBrush="#E85C5C"
                         BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="12"
-                        Visibility="{Binding ErrorMessage, Converter={StaticResource NullToVisibilityConverter}}">
+                        CornerRadius="12"
+                        Padding="16"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource NullToVisibilityConverter}}"
+                        Margin="0,0,0,8">
                     <Grid>
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding ErrorMessage}"
-                                   Foreground="{ThemeResource ErrorTextColor}"
-                                   TextWrapping="Wrap"/>
-                        <Button Grid.Column="1"
+                        <FontIcon Grid.Column="0"
+                                  Glyph="&#xE814;"
+                                  FontSize="16"
+                                  Foreground="#E85C5C"
+                                  Margin="0,0,12,0"
+                                  VerticalAlignment="Top"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding ErrorMessage}"
+                                   Foreground="#C53030"
+                                   TextWrapping="Wrap"
+                                   VerticalAlignment="Center"/>
+                        <Button Grid.Column="2"
                                 Content="&#xE711;"
                                 FontFamily="Segoe MDL2 Assets"
                                 Command="{Binding ClearErrorCommand}"
                                 Background="Transparent"
-                                BorderThickness="0"/>
+                                BorderThickness="0"
+                                Padding="8"
+                                Foreground="#E85C5C"/>
                     </Grid>
                 </Border>
 
-                <!-- Email Field -->
-                <TextBox PlaceholderText="Email"
-                         Text="{Binding Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         InputScope="EmailSmtpAddress"
-                         IsEnabled="{Binding IsLoading, Converter={StaticResource InvertBoolConverter}}">
-                    <TextBox.Header>
-                        <TextBlock Text="Email" FontWeight="SemiBold"/>
-                    </TextBox.Header>
-                </TextBox>
+                <!-- Email Field - 1Password style -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Email Address" 
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                    <TextBox PlaceholderText="Enter your email"
+                             Text="{Binding Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             InputScope="EmailSmtpAddress"
+                             IsEnabled="{Binding IsLoading, Converter={StaticResource InvertBoolConverter}}"
+                             Height="48"
+                             CornerRadius="8"
+                             FontSize="15"
+                             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                             BorderThickness="1"/>
+                </StackPanel>
 
-                <!-- Password Field -->
-                <PasswordBox PlaceholderText="Password"
-                             Password="{Binding Password, Mode=TwoWay}"
-                             IsEnabled="{Binding IsLoading, Converter={StaticResource InvertBoolConverter}}">
-                    <PasswordBox.Header>
-                        <TextBlock Text="Password" FontWeight="SemiBold"/>
-                    </PasswordBox.Header>
-                </PasswordBox>
+                <!-- Password Field - 1Password style -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Master Password" 
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                    <PasswordBox PlaceholderText="Enter your master password"
+                                 Password="{Binding Password, Mode=TwoWay}"
+                                 IsEnabled="{Binding IsLoading, Converter={StaticResource InvertBoolConverter}}"
+                                 Height="48"
+                                 CornerRadius="8"
+                                 FontSize="15"
+                                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                 BorderThickness="1"/>
+                </StackPanel>
 
-                <!-- Biometric Login Option -->
-                <CheckBox Content="{Binding BiometricType, StringFormat='Enable {} login'}"
-                          IsChecked="{Binding EnableBiometricLogin, Mode=TwoWay}"
+                <!-- Biometric Login Option - 1Password style -->
+                <CheckBox IsChecked="{Binding EnableBiometricLogin, Mode=TwoWay}"
                           Visibility="{Binding ShowBiometricOption, Converter={StaticResource BoolToVisibilityConverter}}"
-                          Margin="0,8,0,0">
-                    <CheckBox.ContentTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE1C0;" FontSize="16"/>
-                                <TextBlock>
-                                    <Run Text="Enable "/>
-                                    <Run Text="{Binding BiometricType}"/>
-                                    <Run Text=" login"/>
-                                </TextBlock>
-                            </StackPanel>
-                        </DataTemplate>
-                    </CheckBox.ContentTemplate>
+                          Margin="0,4,0,0">
+                    <CheckBox.Content>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE1C0;" FontSize="16"/>
+                            <TextBlock FontSize="14">
+                                <Run Text="Enable "/>
+                                <Run Text="{Binding BiometricType}"/>
+                                <Run Text=" login for quick access"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </CheckBox.Content>
                 </CheckBox>
 
-                <!-- Biometric Quick Login Button -->
+                <!-- Login Button - 1Password style primary button -->
+                <Button Command="{Binding LoginCommand}"
+                        HorizontalAlignment="Stretch"
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource InvertBoolConverter}}"
+                        Height="52"
+                        CornerRadius="12"
+                        Background="#0066FF"
+                        BorderThickness="0"
+                        Margin="0,24,0,0">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Spacing="12">
+                            <TextBlock Text="Sign In" 
+                                       FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Foreground="White"/>
+                            <ProgressRing Width="20" 
+                                          Height="20" 
+                                          Foreground="White"
+                                          IsActive="{Binding IsLoading}"
+                                          Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
+
+                <!-- Biometric Quick Login Button - Secondary style -->
                 <Button Command="{Binding TryBiometricLoginCommand}"
                         HorizontalAlignment="Stretch"
-                        Background="{ThemeResource AccentFillColorDefaultBrush}"
                         Visibility="{Binding ShowBiometricOption, Converter={StaticResource BoolToVisibilityConverter}}"
-                        Height="48"
-                        Margin="0,8,0,0">
+                        Height="52"
+                        CornerRadius="12"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        Margin="0,12,0,0">
                     <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
                         <FontIcon Glyph="&#xE1C0;" FontSize="20"/>
-                        <TextBlock>
+                        <TextBlock FontSize="16" FontWeight="SemiBold">
                             <Run Text="Sign in with "/>
                             <Run Text="{Binding BiometricType}"/>
                         </TextBlock>
                     </StackPanel>
                 </Button>
-                </PasswordBox>
 
-                <!-- Login Button -->
-                <Button Content="Sign In"
-                        Command="{Binding LoginCommand}"
-                        HorizontalAlignment="Stretch"
-                        Style="{StaticResource AccentButtonStyle}"
-                        IsEnabled="{Binding IsLoading, Converter={StaticResource InvertBoolConverter}}"
-                        Height="48"
-                        Margin="0,16,0,0">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Grid>
-                                <Border Background="{TemplateBinding Background}"
-                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                        CornerRadius="8"
-                                        Padding="{TemplateBinding Padding}">
-                                    <StackPanel Orientation="Horizontal"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Spacing="8">
-                                        <ContentPresenter />
-                                        <ProgressRing Width="20" 
-                                                      Height="20" 
-                                                      IsActive="{Binding IsLoading}"
-                                                      Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
+                <!-- Divider -->
+                <Grid Margin="0,32,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" 
+                            Height="1" 
+                            Background="{ThemeResource DividerStrokeColorDefaultBrush}"
+                            VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" 
+                               Text="OR" 
+                               FontSize="12"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Margin="16,0"/>
+                    <Border Grid.Column="2" 
+                            Height="1" 
+                            Background="{ThemeResource DividerStrokeColorDefaultBrush}"
+                            VerticalAlignment="Center"/>
+                </Grid>
 
-                <!-- Additional Info -->
-                <TextBlock Text="New to Password Manager?"
-                           HorizontalAlignment="Center"
-                           Margin="0,24,0,4"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-
-                <HyperlinkButton Content="Create an account"
-                                 HorizontalAlignment="Center"/>
-
-                <HyperlinkButton Content="Forgot password?"
-                                 HorizontalAlignment="Center"
-                                 Margin="0,8,0,0"/>
+                <!-- Additional Options -->
+                <StackPanel Spacing="12" HorizontalAlignment="Center">
+                    <HyperlinkButton Content="Create an account"
+                                     FontSize="15"
+                                     Foreground="#0066FF"/>
+                    <HyperlinkButton Content="Forgot your password?"
+                                     FontSize="15"
+                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                </StackPanel>
             </StackPanel>
         </ScrollViewer>
 
-        <!-- Loading Overlay -->
+        <!-- Loading Overlay - 1Password style -->
         <Border Background="{ThemeResource SystemControlAcrylicWindowBrush}"
                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
                 Grid.Row="0">
             <StackPanel HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Spacing="16">
-                <ProgressRing IsActive="True" 
-                              Width="60" 
-                              Height="60"/>
-                <TextBlock Text="Signing in..."
-                           Style="{StaticResource SubtitleTextBlockStyle}"
+                        Spacing="20">
+                <Border Width="80" Height="80"
+                        Background="#0066FF"
+                        CornerRadius="20"
+                        HorizontalAlignment="Center">
+                    <ProgressRing IsActive="True" 
+                                  Width="40" 
+                                  Height="40"
+                                  Foreground="White"/>
+                </Border>
+                <TextBlock Text="Signing you in..."
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Verifying your credentials"
+                           FontSize="14"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                            HorizontalAlignment="Center"/>
             </StackPanel>
         </Border>
