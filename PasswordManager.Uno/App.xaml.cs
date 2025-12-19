@@ -92,10 +92,20 @@ public partial class App : Application
                     // Register biometric authentication service
                     services.AddSingleton<PasswordManager.Uno.Services.Biometric.IBiometricAuthService, PasswordManager.Uno.Services.Biometric.BiometricAuthService>();
                     
+                    // Register theme service
+                    services.AddSingleton<PasswordManager.Uno.Services.Theme.IThemeService, PasswordManager.Uno.Services.Theme.ThemeService>();
+                    
+                    // Register backup service
+                    services.AddSingleton<PasswordManager.Uno.Services.Backup.IBackupService>(sp => 
+                        new PasswordManager.Uno.Services.Backup.BackupService(
+                            sp.GetRequiredService<ILogger<PasswordManager.Uno.Services.Backup.BackupService>>(),
+                            dbPath));
+                    
                     // Register ViewModels
                     services.AddTransient<PasswordManager.Mobile.Presentation.Pages.Login.LoginModel>();
                     services.AddTransient<PasswordManager.Mobile.Presentation.Pages.Passwords.PasswordsModel>();
                     services.AddTransient<PasswordManager.Mobile.Presentation.Pages.Categories.CategoriesModel>();
+                    services.AddTransient<PasswordManager.Mobile.Presentation.Pages.Settings.SettingsModel>();
                 })
                 .UseNavigation(RegisterRoutes)
             );
@@ -116,7 +126,8 @@ public partial class App : Application
             new DataViewMap<SecondPage, SecondModel, Entity>(),
             new ViewMap<PasswordManager.Mobile.Presentation.Pages.Login.LoginPage, PasswordManager.Mobile.Presentation.Pages.Login.LoginModel>(),
             new ViewMap<PasswordManager.Mobile.Presentation.Pages.Passwords.PasswordsPage, PasswordManager.Mobile.Presentation.Pages.Passwords.PasswordsModel>(),
-            new ViewMap<PasswordManager.Mobile.Presentation.Pages.Categories.CategoriesPage, PasswordManager.Mobile.Presentation.Pages.Categories.CategoriesModel>()
+            new ViewMap<PasswordManager.Mobile.Presentation.Pages.Categories.CategoriesPage, PasswordManager.Mobile.Presentation.Pages.Categories.CategoriesModel>(),
+            new ViewMap<PasswordManager.Mobile.Presentation.Pages.Settings.SettingsPage, PasswordManager.Mobile.Presentation.Pages.Settings.SettingsModel>()
         );
 
         routes.Register(
@@ -126,6 +137,7 @@ public partial class App : Application
                     new ("Login", View: views.FindByViewModel<PasswordManager.Mobile.Presentation.Pages.Login.LoginModel>(), IsDefault:true),
                     new ("Passwords", View: views.FindByViewModel<PasswordManager.Mobile.Presentation.Pages.Passwords.PasswordsModel>()),
                     new ("Categories", View: views.FindByViewModel<PasswordManager.Mobile.Presentation.Pages.Categories.CategoriesModel>()),
+                    new ("Settings", View: views.FindByViewModel<PasswordManager.Mobile.Presentation.Pages.Settings.SettingsModel>()),
                     new ("Main", View: views.FindByViewModel<MainModel>()),
                     new ("Second", View: views.FindByViewModel<SecondModel>()),
                 ]

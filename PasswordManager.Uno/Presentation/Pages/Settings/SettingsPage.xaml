@@ -1,0 +1,236 @@
+<Page x:Class="PasswordManager.Mobile.Presentation.Pages.Settings.SettingsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:local="using:PasswordManager.Mobile.Presentation.Pages.Settings"
+      xmlns:theme="using:PasswordManager.Uno.Services.Theme"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      mc:Ignorable="d"
+      Background="{ThemeResource BackgroundBrush}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Padding="16,24,16,16" Background="{ThemeResource SystemControlAcrylicElementBrush}">
+            <TextBlock Text="Settings" 
+                       Style="{StaticResource TitleTextBlockStyle}"/>
+        </Grid>
+
+        <!-- Settings Content -->
+        <ScrollViewer Grid.Row="1" Padding="0,0,0,80">
+            <StackPanel Spacing="8" Padding="16">
+
+                <!-- Status Message -->
+                <Border Background="{ThemeResource SystemControlAcrylicElementBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16,12"
+                        Margin="0,0,0,8"
+                        Visibility="{Binding StatusMessage, Converter={StaticResource NullToVisibilityConverter}}">
+                    <TextBlock Text="{Binding StatusMessage}"
+                               TextWrapping="Wrap"
+                               Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                </Border>
+
+                <!-- Appearance Section -->
+                <TextBlock Text="Appearance" 
+                           Style="{StaticResource SubtitleTextBlockStyle}"
+                           Margin="0,16,0,8"/>
+
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16">
+                    <StackPanel Spacing="16">
+                        
+                        <!-- Theme Selection -->
+                        <StackPanel>
+                            <TextBlock Text="Theme" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <RadioButtons ItemsSource="{x:Bind ThemeOptions}" 
+                                          SelectedIndex="{x:Bind ThemeSelectedIndex, Mode=TwoWay}">
+                                <RadioButtons.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <RadioButton Content="{x:Bind}" GroupName="Theme"/>
+                                    </DataTemplate>
+                                </RadioButtons.ItemTemplate>
+                            </RadioButtons>
+                        </StackPanel>
+
+                        <!-- Color Palette Selection -->
+                        <StackPanel>
+                            <TextBlock Text="Color Palette" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <GridView ItemsSource="{x:Bind ColorPaletteOptions}"
+                                      SelectionMode="Single"
+                                      IsItemClickEnabled="True"
+                                      ItemClick="OnColorPaletteClick">
+                                <GridView.ItemTemplate>
+                                    <DataTemplate x:DataType="local:ColorPaletteOption">
+                                        <Border Width="60" Height="60" 
+                                                CornerRadius="30"
+                                                Background="{x:Bind ColorBrush}"
+                                                BorderThickness="3"
+                                                BorderBrush="{x:Bind IsSelected, Converter={StaticResource BoolToAccentBorderConverter}}">
+                                            <TextBlock Text="{x:Bind Name}" 
+                                                       Foreground="White"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="10"
+                                                       FontWeight="SemiBold"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </GridView.ItemTemplate>
+                            </GridView>
+                        </StackPanel>
+
+                    </StackPanel>
+                </Border>
+
+                <!-- Security Section -->
+                <TextBlock Text="Security" 
+                           Style="{StaticResource SubtitleTextBlockStyle}"
+                           Margin="0,16,0,8"/>
+
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16">
+                    <StackPanel Spacing="16">
+                        
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Biometric Login" FontWeight="SemiBold"/>
+                                <TextBlock Text="Use Face ID or fingerprint to sign in" 
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                            
+                            <ToggleSwitch Grid.Column="1"
+                                          IsOn="{Binding BiometricEnabled, Mode=TwoWay}"
+                                          OnContent=""
+                                          OffContent=""
+                                          Command="{Binding ToggleBiometricCommand}"/>
+                        </Grid>
+
+                    </StackPanel>
+                </Border>
+
+                <!-- Backup Section -->
+                <TextBlock Text="Backup & Restore" 
+                           Style="{StaticResource SubtitleTextBlockStyle}"
+                           Margin="0,16,0,8"/>
+
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16"
+                        Visibility="{Binding IsBackupAvailable, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel Spacing="16">
+                        
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Auto Backup" FontWeight="SemiBold"/>
+                                <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                    <Run Text="Automatically backup to"/>
+#if __IOS__
+                                    <Run Text="iCloud"/>
+#elif __ANDROID__
+                                    <Run Text="Google Drive"/>
+#endif
+                                </TextBlock>
+                            </StackPanel>
+                            
+                            <ToggleSwitch Grid.Column="1"
+                                          IsOn="{Binding AutoBackupEnabled, Mode=TwoWay}"
+                                          OnContent=""
+                                          OffContent=""
+                                          Command="{Binding ToggleAutoBackupCommand}"/>
+                        </Grid>
+
+                        <StackPanel Spacing="8">
+                            <TextBlock FontWeight="SemiBold">
+                                <Run Text="Last Backup:"/>
+                                <Run Text="{Binding LastBackupDate}"/>
+                            </TextBlock>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Button Grid.Column="0"
+                                        Content="Backup Now"
+                                        Command="{Binding BackupNowCommand}"
+                                        IsEnabled="{Binding IsLoading, Converter={StaticResource InvertBoolConverter}}"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,0,4,0"/>
+
+                                <Button Grid.Column="1"
+                                        Content="Restore"
+                                        Command="{Binding RestoreBackupCommand}"
+                                        IsEnabled="{Binding IsLoading, Converter={StaticResource InvertBoolConverter}}"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="4,0,0,0"/>
+                            </Grid>
+                        </StackPanel>
+
+                    </StackPanel>
+                </Border>
+
+                <!-- About Section -->
+                <TextBlock Text="About" 
+                           Style="{StaticResource SubtitleTextBlockStyle}"
+                           Margin="0,16,0,8"/>
+
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Password Manager Mobile" FontWeight="SemiBold"/>
+                        <TextBlock Text="Version 1.0.0" 
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Loading Overlay -->
+        <Border Grid.Row="1"
+                Background="{ThemeResource SystemControlAcrylicWindowBrush}"
+                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="16">
+                <ProgressRing IsActive="True" 
+                              Width="60" 
+                              Height="60"/>
+                <TextBlock Text="Processing..."
+                           Style="{StaticResource SubtitleTextBlockStyle}"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Page>
