@@ -34,6 +34,10 @@
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 
+		<!-- Face ID Usage Description -->
+		<key>NSFaceIDUsageDescription</key>
+		<string>Use Face ID to quickly and securely sign in to your password manager</string>
+
 		<!--
 		Adjust this to your application's encryption usage.
 		<key>ITSAppUsesNonExemptEncryption</key>

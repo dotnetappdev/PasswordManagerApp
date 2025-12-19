@@ -80,6 +80,42 @@
                     </PasswordBox.Header>
                 </PasswordBox>
 
+                <!-- Biometric Login Option -->
+                <CheckBox Content="{Binding BiometricType, StringFormat='Enable {} login'}"
+                          IsChecked="{Binding EnableBiometricLogin, Mode=TwoWay}"
+                          Visibility="{Binding ShowBiometricOption, Converter={StaticResource BoolToVisibilityConverter}}"
+                          Margin="0,8,0,0">
+                    <CheckBox.ContentTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE1C0;" FontSize="16"/>
+                                <TextBlock>
+                                    <Run Text="Enable "/>
+                                    <Run Text="{Binding BiometricType}"/>
+                                    <Run Text=" login"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </DataTemplate>
+                    </CheckBox.ContentTemplate>
+                </CheckBox>
+
+                <!-- Biometric Quick Login Button -->
+                <Button Command="{Binding TryBiometricLoginCommand}"
+                        HorizontalAlignment="Stretch"
+                        Background="{ThemeResource AccentFillColorDefaultBrush}"
+                        Visibility="{Binding ShowBiometricOption, Converter={StaticResource BoolToVisibilityConverter}}"
+                        Height="48"
+                        Margin="0,8,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
+                        <FontIcon Glyph="&#xE1C0;" FontSize="20"/>
+                        <TextBlock>
+                            <Run Text="Sign in with "/>
+                            <Run Text="{Binding BiometricType}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Button>
+                </PasswordBox>
+
                 <!-- Login Button -->
                 <Button Content="Sign In"
                         Command="{Binding LoginCommand}"

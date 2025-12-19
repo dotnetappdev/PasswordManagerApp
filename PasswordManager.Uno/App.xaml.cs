@@ -89,6 +89,9 @@ public partial class App : Application
                     // Register sync service
                     services.AddSingleton<PasswordManager.Uno.Services.Sync.SyncService>();
                     
+                    // Register biometric authentication service
+                    services.AddSingleton<PasswordManager.Uno.Services.Biometric.IBiometricAuthService, PasswordManager.Uno.Services.Biometric.BiometricAuthService>();
+                    
                     // Register ViewModels
                     services.AddTransient<PasswordManager.Mobile.Presentation.Pages.Login.LoginModel>();
                     services.AddTransient<PasswordManager.Mobile.Presentation.Pages.Passwords.PasswordsModel>();
