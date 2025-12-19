@@ -2,9 +2,17 @@
 
 ## Overview
 
-This is a cross-platform mobile application built with Uno Platform that provides secure password management with offline-first capabilities. The app synchronizes with the Password Manager API to keep passwords available across devices.
+This is a cross-platform mobile application built with Uno Platform that provides secure password management with offline-first capabilities and a **1Password-inspired design**. The app synchronizes with the Password Manager API to keep passwords available across devices while maintaining a beautiful, professional user interface.
 
-## Features
+## ✨ Key Features
+
+### 🎨 1Password-Inspired Design
+- **Modern Material Design 3** - Clean, professional interface with refined colors and typography
+- **Polished UI Components** - Rounded cards (12px radius), smooth animations, and intuitive interactions
+- **Professional Color Palette** - Blue accent (#0066FF) with carefully selected supporting colors
+- **Consistent Spacing** - 20px padding, 12-20px spacing for visual harmony
+- **Card-Based Layout** - Elevated cards with subtle borders and shadows
+- **Smooth Animations** - Subtle transitions and micro-interactions for delightful UX
 
 ### Core Functionality
 - ✅ **Secure Authentication** - Login with email and password
@@ -119,18 +127,69 @@ Configure the API base URL in `appsettings.json`:
 
 ## UI Design
 
-### Modern Material Design
-- Material Design 3 components via Uno.Toolkit
-- Card-based layouts for list items
-- Swipe gestures for quick actions
-- Pull-to-refresh for sync
-- Floating action buttons
-- Bottom navigation bar
+### 1Password-Inspired Interface
 
-### Responsive Layouts
-- Optimized for phones and tablets
-- Adaptive layouts using Material Design spacing
-- Support for different screen sizes and orientations
+The app features a polished, professional design inspired by 1Password:
+
+#### Visual Elements
+- **Brand Color**: `#0066FF` (Primary blue for accents, buttons, and highlights)
+- **Card Backgrounds**: White cards with 12px corner radius and 1px borders
+- **Typography**: 
+  - Headings: 32px bold for page titles
+  - Body: 15-16px regular/semi-bold
+  - Captions: 13-14px for secondary text
+- **Spacing**: Consistent 20px padding and 12-20px spacing between elements
+- **Icons**: 48x56px circular/rounded square with colored backgrounds
+- **Buttons**: 48-52px height with 12px corner radius
+
+#### Page Designs
+
+**Login Page**:
+- Centered layout with 80x80px branded icon
+- Clean input fields (48px height)
+- Primary blue button with white text
+- Optional biometric login toggle
+- Professional error messages with icons
+
+**Passwords Page**:
+- 32px bold page title with item count
+- Search bar with rounded 12px corners
+- Card-based password list with 48px icons
+- Swipe-to-delete gestures
+- Floating action button (56x56px) in brand blue
+- Empty states with friendly messaging
+
+**Categories Page**:
+- Card-based layout with colored category icons
+- Item count badges in brand blue
+- Professional spacing and typography
+
+**Settings Page**:
+- Grouped settings with section headers (18px semi-bold)
+- Toggle switches for preferences
+- Card-based layout with 20px padding
+- Primary blue buttons for actions
+- Branded app icon in About section
+
+### Color Scheme
+
+#### Light Theme
+- **Background**: `#F7F8FA` (Light gray)
+- **Card Background**: `#FFFFFF` (White)
+- **Primary**: `#0066FF` (Brand blue)
+- **Text Primary**: `#1A1A1A` (Near black)
+- **Text Secondary**: `#6B6B6B` (Gray)
+- **Border**: `#E0E0E0` (Light gray)
+- **Success**: `#34C759` (Green)
+- **Error**: `#E85C5C` (Red)
+
+#### Dark Theme
+- **Background**: `#1A1A1A` (Dark gray)
+- **Card Background**: `#2A2A2A` (Elevated surface)
+- **Primary**: `#0066FF` (Brand blue - unchanged)
+- **Text Primary**: `#FFFFFF` (White)
+- **Text Secondary**: `#B0B0B0` (Light gray)
+- **Border**: `#3A3A3A` (Dark border)
 
 ## Building the App
 

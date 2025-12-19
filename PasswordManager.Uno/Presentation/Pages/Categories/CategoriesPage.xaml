@@ -5,7 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       mc:Ignorable="d"
-      Background="{ThemeResource BackgroundBrush}">
+      Background="{ThemeResource LayerFillColorDefaultBrush}">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -13,79 +13,143 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <Grid Grid.Row="0" Padding="16,24,16,16" Background="{ThemeResource SystemControlAcrylicElementBrush}">
-            <StackPanel Grid.Column="0">
+        <!-- Header - 1Password style -->
+        <Grid Grid.Row="0" Padding="20,32,20,20">
+            <StackPanel>
                 <TextBlock Text="Categories" 
-                           Style="{StaticResource TitleTextBlockStyle}"
-                           Margin="0,0,0,4"/>
-                <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                           FontSize="32"
+                           FontWeight="Bold"
+                           Margin="0,0,0,6"/>
+                <TextBlock FontSize="15"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                     <Run Text="{Binding Categories.Count}"/>
-                    <Run Text=" categories"/>
+                    <Run Text=" categories • Organize your passwords"/>
                 </TextBlock>
             </StackPanel>
         </Grid>
 
-        <!-- Categories List -->
+        <!-- Categories List - 1Password card style -->
         <ListView Grid.Row="1"
                   ItemsSource="{Binding Categories}"
                   SelectionMode="None"
-                  Padding="8">
+                  Padding="20,0,20,24"
+                  Background="Transparent">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="Margin" Value="0,0,0,12"/>
+                </Style>
+            </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="16,12"
-                            Margin="8,4">
+                            CornerRadius="12"
+                            Padding="16">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- Icon -->
+                            <!-- Icon - 1Password style with colored backgrounds -->
                             <Border Grid.Column="0"
-                                    Width="40" Height="40"
-                                    Background="{ThemeResource AccentFillColorDefaultBrush}"
-                                    CornerRadius="8"
-                                    Margin="0,0,12,0">
+                                    Width="48" Height="48"
+                                    Background="#E6F2FF"
+                                    CornerRadius="12"
+                                    Margin="0,0,16,0">
                                 <TextBlock Text="{Binding IconName, Converter={StaticResource IconToEmojiConverter}, FallbackValue='📁'}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
-                                           FontSize="20"/>
+                                           FontSize="24"/>
                             </Border>
 
                             <!-- Name and Description -->
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
                                 <TextBlock Text="{Binding Name}"
-                                           Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                           FontSize="16"
+                                           FontWeight="SemiBold"/>
                                 <TextBlock Text="{Binding Description}"
-                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           FontSize="13"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                            TextWrapping="Wrap"
+                                           MaxLines="2"
+                                           TextTrimming="CharacterEllipsis"
                                            Visibility="{Binding Description, Converter={StaticResource NullToVisibilityConverter}}"/>
                             </StackPanel>
+
+                            <!-- Item count badge -->
+                            <Border Grid.Column="2"
+                                    Background="#E6F2FF"
+                                    CornerRadius="12"
+                                    Padding="12,6"
+                                    VerticalAlignment="Center">
+                                <TextBlock Text="{Binding PasswordCount}"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="#0066FF"/>
+                            </Border>
                         </Grid>
                     </Border>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
 
-        <!-- Loading Overlay -->
+        <!-- Empty State - 1Password style -->
+        <StackPanel Grid.Row="1"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="16"
+                    Visibility="{Binding Categories.Count, Converter={StaticResource ZeroToVisibilityConverter}}"
+                    Padding="40">
+            <Border Width="80" Height="80"
+                    Background="#E6F2FF"
+                    CornerRadius="20"
+                    HorizontalAlignment="Center">
+                <TextBlock Text="📁" 
+                           FontSize="40" 
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+            </Border>
+            <TextBlock Text="No Categories Yet"
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="Categories help you organize your passwords"
+                       FontSize="14"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       MaxWidth="280"/>
+        </StackPanel>
+
+        <!-- Loading Overlay - 1Password style -->
         <Border Grid.Row="1"
                 Background="{ThemeResource SystemControlAcrylicWindowBrush}"
                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
             <StackPanel HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Spacing="16">
-                <ProgressRing IsActive="True" 
-                              Width="60" 
-                              Height="60"/>
+                        Spacing="20">
+                <Border Width="80" Height="80"
+                        Background="#0066FF"
+                        CornerRadius="20"
+                        HorizontalAlignment="Center">
+                    <ProgressRing IsActive="True" 
+                                  Width="40" 
+                                  Height="40"
+                                  Foreground="White"/>
+                </Border>
                 <TextBlock Text="Loading categories..."
-                           Style="{StaticResource SubtitleTextBlockStyle}"
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Organizing your passwords"
+                           FontSize="14"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                            HorizontalAlignment="Center"/>
             </StackPanel>
         </Border>
