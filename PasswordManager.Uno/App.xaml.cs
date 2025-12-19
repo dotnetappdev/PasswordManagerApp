@@ -58,7 +58,6 @@ public partial class App : Application
                 }, enableUnoLogging: true)
                 .UseConfiguration(configure: configBuilder =>
                     configBuilder
-                        .EmbeddedSource<App>()
                         .Section<AppConfig>()
                 )
                 // Enable localization (see appsettings.json for supported languages)
@@ -73,7 +72,7 @@ public partial class App : Application
                 .ConfigureServices((context, services) =>
                 {
                     // Register database service
-                    var dbPath = Path.Combine(
+                    var dbPath = System.IO.Path.Combine(
                         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                         "passwordmanager.db3");
                     services.AddSingleton(new PasswordManager.Uno.Services.LocalDatabase.LocalDatabaseService(dbPath));
@@ -82,7 +81,7 @@ public partial class App : Application
                     services.AddHttpClient("PasswordManagerApi", client =>
                     {
                         // TODO: Configure API base URL from configuration
-                        client.BaseAddress = new Uri(context.Configuration["ApiBaseUrl"] ?? "https://localhost:5001");
+                        client.BaseAddress = new Uri("https://localhost:5001");
                         client.Timeout = TimeSpan.FromSeconds(30);
                     });
                     
@@ -94,14 +93,13 @@ public partial class App : Application
                     services.AddTransient<PasswordManager.Mobile.Presentation.Pages.Passwords.PasswordsModel>();
                     services.AddTransient<PasswordManager.Mobile.Presentation.Pages.Categories.CategoriesModel>();
                 })
-                .UseNavigation(ReactiveViewModelMappings.ViewModelMappings, RegisterRoutes)
+                .UseNavigation(RegisterRoutes)
             );
         MainWindow = builder.Window;
 
         #if DEBUG
         MainWindow.UseStudio();
 #endif
-                MainWindow.SetWindowIcon();
 
         Host = await builder.NavigateAsync<Shell>();
     }

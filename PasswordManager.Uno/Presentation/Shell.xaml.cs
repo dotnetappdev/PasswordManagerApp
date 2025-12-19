@@ -1,10 +1,9 @@
-﻿namespace PasswordManager.Mobile.Presentation;
+namespace PasswordManager.Mobile.Presentation;
 
-public sealed partial class Shell : UserControl, IContentControlProvider
+public sealed partial class Shell : UserControl
 {
     public Shell()
     {
         this.InitializeComponent();
     }
-    public ContentControl ContentControl => Splash;
 }

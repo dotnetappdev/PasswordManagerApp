@@ -32,5 +32,3 @@ global using Uno.Extensions.Navigation;
 global using Uno.Resizetizer;
 
 global using ApplicationExecutionState = Windows.ApplicationModel.Activation.ApplicationExecutionState;
-
-[assembly: Uno.Extensions.Reactive.Config.BindableGenerationTool(3)]

@@ -5,42 +5,15 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:utu="using:Uno.Toolkit.UI"
-      xmlns:uen="using:Uno.Extensions.Navigation.UI"
       mc:Ignorable="d">
   <Grid Background="{ThemeResource BackgroundBrush}">
-    <Grid.RowDefinitions>
-      <RowDefinition Height="*" />
-      <RowDefinition Height="Auto" />
-    </Grid.RowDefinitions>
-
-    <!-- Main content area with navigation -->
-    <uen:NavigationView Grid.Row="0"
-                        x:Name="NavigationView"
-                        IsSettingsVisible="True"
-                        PaneDisplayMode="BottomCompact"
-                        BackgroundColor="{ThemeResource SystemChromeLowColor}">
-      <uen:NavigationView.MenuItems>
-        <NavigationViewItem Content="Passwords" Tag="Passwords">
-          <NavigationViewItem.Icon>
-            <FontIcon Glyph="&#xE8AC;" />
-          </NavigationViewItem.Icon>
-        </NavigationViewItem>
-        <NavigationViewItem Content="Categories" Tag="Categories">
-          <NavigationViewItem.Icon>
-            <FontIcon Glyph="&#xE8FD;" />
-          </NavigationViewItem.Icon>
-        </NavigationViewItem>
-        <NavigationViewItem Content="Profile" Tag="Profile">
-          <NavigationViewItem.Icon>
-            <FontIcon Glyph="&#xE77B;" />
-          </NavigationViewItem.Icon>
-        </NavigationViewItem>
-      </uen:NavigationView.MenuItems>
-    </uen:NavigationView>
+    <!-- Main content area for navigation -->
+    <ContentControl x:Name="MainContent" 
+                   HorizontalContentAlignment="Stretch" 
+                   VerticalContentAlignment="Stretch"/>
 
     <!-- Loading indicator -->
     <utu:ExtendedSplashScreen x:Name="Splash"
-                Grid.Row="0"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
                 HorizontalContentAlignment="Stretch"
