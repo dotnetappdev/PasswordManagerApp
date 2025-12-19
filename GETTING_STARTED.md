@@ -38,9 +38,17 @@
    cd PasswordManager.Web
    dotnet run
 
-   # Run the MAUI app (in a new terminal)
-   cd PasswordManager.App
-   dotnet run
+   # Run the Uno Platform Mobile App (in a new terminal)
+   cd PasswordManager.Uno
+   
+   # For Android
+   dotnet run -f net9.0-android
+   
+   # For iOS (macOS only)
+   dotnet run -f net9.0-ios
+   
+   # For WebAssembly
+   dotnet run -f net9.0-browserwasm
    ```
 
 ## Quick Start
@@ -48,6 +56,11 @@
 ### Web App Access
 - **URL**: `https://localhost:5001` (or the URL shown in the terminal)
 - **Features**: Full password management, API key generation, settings
+
+### Mobile App Access (Uno Platform)
+- **Platforms**: iOS, Android, WebAssembly
+- **Features**: Offline-first password management, biometric authentication, 1Password-inspired UI
+- **Build Guide**: See [UNO_PLATFORM_GUIDE.md](UNO_PLATFORM_GUIDE.md) for detailed instructions
 - **Authentication**: Master password (same as mobile app)
 - **Theme**: Dark mode only for professional appearance
 

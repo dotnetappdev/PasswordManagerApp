@@ -6,6 +6,10 @@
 - .NET 9 SDK
 - Visual Studio 2024 or JetBrains Rider
 - Git
+- For Uno Platform mobile development:
+  - Android SDK (for Android development)
+  - Xcode 15+ (for iOS development on macOS)
+  - Uno Platform workload: `dotnet workload install android ios`
 
 ### Build Commands
 ```bash
@@ -14,8 +18,15 @@ dotnet build
 
 # Build specific projects
 dotnet build PasswordManager.Web          # Web application
-dotnet build PasswordManager.App          # MAUI application
+dotnet build PasswordManager.Uno          # Uno Platform mobile app
 dotnet build PasswordManager.Components.Shared  # Shared components
+
+# Build Uno Platform for specific platforms
+cd PasswordManager.Uno
+dotnet build -f net9.0-android           # Android
+dotnet build -f net9.0-ios               # iOS (macOS only)
+dotnet build -f net9.0-browserwasm       # WebAssembly
+dotnet build -f net9.0-desktop           # Desktop (Windows/macOS/Linux)
 
 # Run tests
 dotnet test
@@ -31,9 +42,11 @@ dotnet run
 cd PasswordManager.Web
 dotnet run
 
-# Run the MAUI app (new terminal)
-cd PasswordManager.App
-dotnet run
+# Run the Uno Platform mobile app (new terminal)
+cd PasswordManager.Uno
+dotnet run -f net9.0-android    # For Android emulator
+dotnet run -f net9.0-ios         # For iOS simulator (macOS)
+dotnet run -f net9.0-browserwasm # For WebAssembly in browser
 ```
 
 ## Project Structure
@@ -42,8 +55,10 @@ dotnet run
 PasswordManagerApp/
 ├── PasswordManager.API/              # ASP.NET Core Web API
 ├── PasswordManager.Web/              # Blazor Server Web Application
+├── PasswordManager.WinUi/            # WinUI 3 Desktop Application
+├── PasswordManager.Uno/              # Uno Platform Mobile App (iOS/Android/WASM)
 ├── PasswordManager.Components.Shared/ # Shared Blazor Component Library
-├── PasswordManager.App/              # .NET MAUI Blazor App
+├── PasswordManager.BrowserExtension/ # Cross-browser extension
 ├── PasswordManager.Crypto/           # Cryptography library
 ├── PasswordManager.DAL/              # Data Access Layer
 ├── PasswordManager.DAL.SqlServer/    # SQL Server provider
