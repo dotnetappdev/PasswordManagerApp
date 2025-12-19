@@ -4,6 +4,23 @@
 
 The Password Manager provides secure storage for your passwords, credit cards, secure notes, and WiFi credentials across multiple platforms. This guide covers how to use all the features effectively.
 
+## Platforms
+
+### Web Application
+Access via browser at `https://localhost:5001` with full desktop features and dark theme.
+
+### WinUI Desktop App
+Native Windows application with Fluent Design and theme support.
+
+### Uno Platform Mobile App
+Cross-platform mobile app for iOS and Android with:
+- 1Password-inspired design
+- Offline-first architecture
+- Biometric authentication (Face ID / Fingerprint)
+- Two-way sync with cloud API
+
+For detailed mobile app usage, see [UNO_PLATFORM_GUIDE.md](UNO_PLATFORM_GUIDE.md).
+
 ## Getting Started
 
 ### First Launch

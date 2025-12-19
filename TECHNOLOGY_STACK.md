@@ -8,11 +8,13 @@
 - **C# 12**: Modern language features and syntax improvements
 - **Performance**: Improved startup time and memory usage
 
-### .NET MAUI
-- **Cross-Platform**: Single codebase for iOS, Android, Windows, macOS
-- **Native UI**: Platform-specific native controls
-- **Blazor Hybrid**: Web UI technology in native apps
-- **Hot Reload**: Fast development cycle with live updates
+### Uno Platform
+- **Cross-Platform**: Single codebase for iOS, Android, WebAssembly, Windows, macOS, Linux
+- **WinUI 3 API**: Use WinUI 3 XAML on all platforms
+- **Native Performance**: Compiled to native code for each platform
+- **Material Design 3**: Modern Material Design components via Uno.Toolkit
+- **Hot Reload**: Fast development with XAML and C# hot reload
+- **Pixel-Perfect**: Consistent UI across all platforms
 
 ### ASP.NET Core Web API
 - **RESTful Services**: Modern API design patterns
@@ -33,6 +35,18 @@
 - **Rich Components**: Comprehensive set of UI controls
 - **Theming**: Dark theme with customization options
 - **Accessibility**: Built-in accessibility features
+
+### Uno.Toolkit
+- **Material Design 3**: Modern Material Design components for Uno Platform
+- **Cross-Platform**: Consistent UI across iOS, Android, WebAssembly, and Desktop
+- **Responsive**: Adaptive layouts for different screen sizes
+- **Themed**: Support for light and dark themes
+
+### WinUI 3
+- **Modern Windows UI**: Microsoft's latest UI framework
+- **Fluent Design**: Windows 11 design language
+- **Performance**: Hardware-accelerated rendering
+- **XAML**: Declarative UI markup language
 
 ### Blazor Components
 - **Reusable**: Shared components across web and mobile
