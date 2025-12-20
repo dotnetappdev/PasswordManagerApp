@@ -16,16 +16,16 @@
 <MudContainer MaxWidth="MaxWidth.Medium" Style="padding: 20px;">
     <MudStack Spacing="4">
         <!-- Header -->
-        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
-            <MudText Typo="Typo.h4" Style="color: white;">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h4">
                 <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Large" Style="vertical-align: middle; margin-right: 8px;" />
                 Settings
             </MudText>
         </MudPaper>
 
         <!-- Appearance Section -->
-        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
-            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Style="margin-bottom: 16px;">
                 <MudIcon Icon="@Icons.Material.Filled.Palette" Style="vertical-align: middle; margin-right: 8px;" />
                 Appearance
             </MudText>
@@ -34,7 +34,6 @@
                     <MudSelect T="AppThemeMode" @bind-Value="SelectedTheme" 
                               Label="Theme" 
                               Variant="Variant.Outlined"
-                              Style="background-color: #2a2a2a;"
                               AnchorOrigin="Origin.BottomCenter">
                         <MudSelectItem Value="@AppThemeMode.Light">
                             <MudStack Row="true" AlignItems="AlignItems.Center">
@@ -60,41 +59,41 @@
         </MudPaper>
 
         <!-- Profile Section -->
-        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
-            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Profile</MudText>
+        <MudPaper Class="pa-4" >
+            <MudText Typo="Typo.h6" Style="margin-bottom: 16px;">Profile</MudText>
             <MudGrid>
                 <MudItem xs="12" md="6">
                     <MudTextField T="string" @bind-value="userProfile.FirstName" 
                                  Label="First Name" 
                                  Variant="Variant.Outlined"
-                                 Style="background-color: #2a2a2a;" />
+                                 />
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudTextField T="string" @bind-value="userProfile.Email" 
                                  Label="Email" 
                                  Variant="Variant.Outlined"
-                                 Style="background-color: #2a2a2a;" />
+                                 />
                 </MudItem>
             </MudGrid>
         </MudPaper>
 
         <!-- API Key Management -->
-        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
-            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">API Key Management</MudText>
+        <MudPaper Class="pa-4" >
+            <MudText Typo="Typo.h6" Style="margin-bottom: 16px;">API Key Management</MudText>
             
             <MudGrid>
                 <MudItem xs="12" md="4">
                     <MudTextField T="string" @bind-value="newApiKeyName" 
                                  Label="API Key Name" 
                                  Variant="Variant.Outlined"
-                                 Style="background-color: #2a2a2a;"
+                                
                                  HelperText="Enter a descriptive name for your API key" />
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <MudSelect T="string" @bind-value="selectedProviderForApiKey" 
                               Label="Database Provider (Optional)" 
                               Variant="Variant.Outlined"
-                              Style="background-color: #2a2a2a;"
+                             
                               HelperText="Select provider to use existing config">
                         <MudSelectItem Value="@("")">General (No Provider)</MudSelectItem>
                         <MudSelectItem Value="@("Sqlite")">SQLite</MudSelectItem>
@@ -130,7 +129,7 @@
                     <MudTextField T="string" Value="@generatedApiKey" 
                                  Label="Your API Key" 
                                  Variant="Variant.Outlined"
-                                 Style="background-color: #2a2a2a; margin-top: 8px;"
+                                 Style="margin-top: 8px;"
                                  ReadOnly="true"
                                  Adornment="Adornment.End"
                                  AdornmentIcon="@Icons.Material.Filled.ContentCopy"
@@ -140,7 +139,7 @@
                         <MudTextField T="string" Value="@generatedApiUrl" 
                                      Label="Associated API URL" 
                                      Variant="Variant.Outlined"
-                                     Style="background-color: #2a2a2a; margin-top: 8px;"
+                                     Style="margin-top: 8px;"
                                      ReadOnly="true" />
                     }
                     <MudText Typo="Typo.caption" Style="color: #cccccc; margin-top: 8px;">
@@ -201,15 +200,15 @@
         </MudPaper>
 
         <!-- API Configuration -->
-        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
-            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">API Configuration</MudText>
+        <MudPaper Class="pa-4" >
+            <MudText Typo="Typo.h6" Style="margin-bottom: 16px;">API Configuration</MudText>
             
             <MudGrid>
                 <MudItem xs="12" md="6">
                     <MudTextField T="string" @bind-value="apiUrl" 
                                  Label="API URL" 
                                  Variant="Variant.Outlined"
-                                 Style="background-color: #2a2a2a;"
+                                
                                  HelperText="URL of the Password Manager API for sync operations" />
                 </MudItem>
                 <MudItem xs="12" md="6">
@@ -217,15 +216,15 @@
                                  Label="API Key" 
                                  Variant="Variant.Outlined"
                                  InputType="InputType.Password"
-                                 Style="background-color: #2a2a2a;"
+                                
                                  HelperText="API key for authentication with the sync API" />
                 </MudItem>
             </MudGrid>
         </MudPaper>
 
         <!-- Authentication Mode Selection -->
-        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
-            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Authentication Mode</MudText>
+        <MudPaper Class="pa-4" >
+            <MudText Typo="Typo.h6" Style="margin-bottom: 16px;">Authentication Mode</MudText>
             
             <MudRadioGroup T="string" @bind-value="authenticationMode" Row="false">
                 <MudRadio T="string" Value="@("LocalDatabase")" Style="color: white;">
@@ -240,13 +239,13 @@
         </MudPaper>
 
         <!-- Database Settings -->
-        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
-            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">Database Settings</MudText>
+        <MudPaper Class="pa-4" >
+            <MudText Typo="Typo.h6" Style="margin-bottom: 16px;">Database Settings</MudText>
             
             <MudSelect T="string" @bind-value="databaseProvider" 
                       Label="Database Provider" 
                       Variant="Variant.Outlined"
-                      Style="background-color: #2a2a2a;">
+                     >
                 <MudSelectItem Value="@("SqlServer")">SQL Server</MudSelectItem>
                 <MudSelectItem Value="@("MySql")">MySQL</MudSelectItem>
                 <MudSelectItem Value="@("PostgreSql")">PostgreSQL</MudSelectItem>
@@ -260,22 +259,22 @@
                         <MudTextField T="string" @bind-value="supabaseUrl" 
                                      Label="Supabase URL" 
                                      Variant="Variant.Outlined"
-                                     Style="background-color: #2a2a2a;" />
+                                     />
                     </MudItem>
                     <MudItem xs="12" md="6">
                         <MudTextField T="string" @bind-value="supabaseApiKey" 
                                      Label="Supabase API Key" 
                                      Variant="Variant.Outlined"
                                      InputType="InputType.Password"
-                                     Style="background-color: #2a2a2a;" />
+                                     />
                     </MudItem>
                 </MudGrid>
             }
         </MudPaper>
 
         <!-- Database Management -->
-        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white; border: 2px solid #f59e0b;">
-            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 16px;">
+        <MudPaper Class="pa-4" Style="border: 2px solid orange;">
+            <MudText Typo="Typo.h6" Style="margin-bottom: 16px;">
                 <MudIcon Icon="@Icons.Material.Filled.Storage" Size="Size.Medium" Style="vertical-align: middle; margin-right: 8px;" />
                 Database Management
             </MudText>
@@ -326,7 +325,7 @@
         </MudPaper>
 
         <!-- Save Button -->
-        <MudPaper Class="pa-4" Style="background-color: #1e1e1e; color: white;">
+        <MudPaper Class="pa-4" >
             <MudButton Variant="Variant.Filled" 
                       Color="Color.Primary" 
                       OnClick="SaveSettings"
