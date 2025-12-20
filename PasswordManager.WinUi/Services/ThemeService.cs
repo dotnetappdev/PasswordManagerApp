@@ -153,6 +153,13 @@ namespace PasswordManager.WinUi.Services
         {
             try
             {
+                // Validate hex color format
+                if (string.IsNullOrEmpty(colorString) || !colorString.StartsWith("#") || colorString.Length != 7)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Invalid color format for {key}: {colorString}");
+                    return;
+                }
+
                 var color = Microsoft.UI.ColorHelper.FromArgb(
                     255,
                     Convert.ToByte(colorString.Substring(1, 2), 16),

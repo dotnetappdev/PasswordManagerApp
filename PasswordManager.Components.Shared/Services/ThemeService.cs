@@ -56,7 +56,7 @@ namespace PasswordManager.Components.Shared.Services
             {
                 try
                 {
-                    var isDark = await jsRuntime.InvokeAsync<bool>("eval", "window.matchMedia('(prefers-color-scheme: dark)').matches");
+                    var isDark = await jsRuntime.InvokeAsync<bool>("matchMedia('(prefers-color-scheme: dark)').matches");
                     if (_isDarkMode != isDark)
                     {
                         _isDarkMode = isDark;
