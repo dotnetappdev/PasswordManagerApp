@@ -23,6 +23,9 @@ builder.Services.AddRazorComponents()
 // Add MudBlazor services
 builder.Services.AddMudServices();
 
+// Add theme service for light/dark mode support
+builder.Services.AddScoped<PasswordManager.Components.Shared.Services.ThemeService>();
+
 // Configure Entity Framework based on database provider
 var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
 string? connectionString = null;
