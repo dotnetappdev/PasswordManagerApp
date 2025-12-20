@@ -1,4 +1,4 @@
-# 🔐 Password Manager
+# Password Manager
 
 [![API Build](https://github.com/dotnetappdev/PasswordManagerApp/workflows/API%20Build/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-api.yml)
 [![Web App Build](https://github.com/dotnetappdev/PasswordManagerApp/workflows/Web%20App%20Build/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml)
@@ -8,28 +8,28 @@
 [![Open Source](https://img.shields.io/badge/Open%20Source-MIT-green?style=for-the-badge)](LICENSE)
 [![Blazor](https://img.shields.io/badge/Blazor-Web%20UI-512BD4?style=for-the-badge&logo=blazor)](https://blazor.net/)
 
-## 🚀 Quick Start
+## Quick Start
 
 - **[Setup Guide](SETUP.md)** - Complete setup and configuration guide
 - **[Getting Started](GETTING_STARTED.md)** - Installation and setup guide
 - **[User Guide](USER_GUIDE.md)** - Complete user documentation
 - **[Development Guide](DEVELOPMENT.md)** - Developer setup and contributing
 
-A modern, secure, and cross-platform password manager built with **.NET 9**, **.NET MAUI**, **Blazor Server**, and **ASP.NET Core Web API**. Keep your passwords, credit cards, secure notes, and WiFi credentials safe and organized across all your devices with cloud synchronization capabilities.
+A modern, secure, and cross-platform password manager built with .NET 9, .NET MAUI, Blazor Server, and ASP.NET Core Web API. Keep your passwords, credit cards, secure notes, and WiFi credentials safe and organized across all your devices with cloud synchronization capabilities.
 
-## �📚 Documentation
+## Documentation
 
-### 🏗️ Project Components
+### Project Components
 | Component | Description | Documentation |
 |-----------|-------------|---------------|
-| **Blazor Web App** | Web application with dark theme | [PasswordManager.Web](PasswordManager.Web/README.md) |
+| **Blazor Web App** | Web application with theme support | [PasswordManager.Web](PasswordManager.Web/README.md) |
 | **WinUI Desktop App** | Native Windows application | [PasswordManager.WinUi](PasswordManager.WinUi/README.md) |
-| **Uno Platform Mobile App** | Cross-platform iOS, Android, and WebAssembly app with 1Password-inspired design | [UNO_PLATFORM_GUIDE.md](UNO_PLATFORM_GUIDE.md) |
+| **Uno Platform Mobile App** | Cross-platform iOS, Android, and WebAssembly app | [UNO_PLATFORM_GUIDE.md](UNO_PLATFORM_GUIDE.md) |
 | **Browser Extension** | Chrome/Edge/Firefox extension with multiple connection modes | [PasswordManager.BrowserExtension](PasswordManager.BrowserExtension/README.md) |
 | **Shared Components** | Cross-platform UI components | [PasswordManager.Components.Shared](PasswordManager.Components.Shared/README.md) |
 | **Cryptography** | Security and encryption details | [PasswordManager.Crypto](PasswordManager.Crypto/README.md) |
 
-### 🗃️ Database Providers
+### Database Providers
 | Provider | Description | Documentation |
 |----------|-------------|---------------|
 | **SQL Server** | Microsoft SQL Server support | [PasswordManager.DAL.SqlServer](PasswordManager.DAL.SqlServer/README.md) |
@@ -37,7 +37,7 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 | **PostgreSQL** | PostgreSQL database support | [PasswordManager.DAL.Postgres](PasswordManager.DAL.Postgres/README.md) |
 | **Supabase** | Supabase cloud database support | [PasswordManager.DAL.SupaBase](PasswordManager.DAL.SupaBase/README.md) |
 
-### 📋 Additional Documentation
+### Additional Documentation
 | Document | Description |
 |----------|-------------|
 | **Uno Platform Guide** | Complete guide for mobile iOS/Android app development | [UNO_PLATFORM_GUIDE.md](UNO_PLATFORM_GUIDE.md) |
@@ -54,9 +54,9 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 | **Bitwarden Flow** | Bitwarden compatibility details | [BITWARDEN_FLOW_IMPLEMENTATION.md](BITWARDEN_FLOW_IMPLEMENTATION.md) |
 | **PBKDF2 Upgrade** | Security upgrade summary | [OWASP_PBKDF2_UPGRADE_SUMMARY.md](OWASP_PBKDF2_UPGRADE_SUMMARY.md) |
 
-## ✨ Key Features
+## Key Features
 
-### 🔒 Secure Password Management
+### Secure Password Management
 - **Enterprise-grade encryption** with AES-256-GCM and PBKDF2 (600,000 iterations)
 - **Zero-knowledge architecture** - your data stays private
 - **SMS-based Two-Factor Authentication (2FA)** - OTP codes via SMS for enhanced security
@@ -64,26 +64,26 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 - **Password generator** with customizable strength settings
 - **Bitwarden-compatible** encryption flow for familiar experience
 
-### 💻 Cross-Platform Support
-- **Blazor Web App** - Modern web interface with dark theme
-- **Uno Platform Mobile App** - Native iOS and Android applications with 1Password-inspired design
+### Cross-Platform Support
+- **Blazor Web App** - Modern web interface with light/dark theme support
+- **Uno Platform Mobile App** - Native iOS and Android applications
 - **Desktop Support** - Windows (WinUI), macOS, and Linux compatibility
 - **Browser Extension** - Chrome, Edge, Firefox with multiple connection modes
 - **Shared Components** - Consistent UI across all platforms
 
-### 🗂️ Advanced Organization
+### Advanced Organization
 - **Collections** - Group related items with custom icons
 - **Categories** - Organize within collections for better structure
 - **Tags** - Flexible tagging system with color coding
 - **Smart Search** - Real-time search across all your data
 
-### 🔄 Cloud Synchronization
+### Cloud Synchronization
 - **RESTful API** - Secure data synchronization across devices
 - **Multiple Databases** - SQLite, SQL Server, MySQL, PostgreSQL, Supabase
 - **JWT Authentication** - Secure API access with Bearer tokens
 - **Offline Support** - Full functionality without internet connection
 
-### 📊 Import & Export
+### Import & Export
 - **Multiple Password Manager Support**:
   - **1Password** - Import from CSV and 1PUX export files
   - **Bitwarden** - Import from CSV exports
@@ -101,24 +101,24 @@ A modern, secure, and cross-platform password manager built with **.NET 9**, **.
 - **Preview Before Import** - See first 5 items before committing to full import
 - **Collection & Category Creation** - Automatically creates folders/categories during import
 
-## 📱 SMS Two-Factor Authentication
+## SMS Two-Factor Authentication
 
 Enhanced security with SMS-based Two-Factor Authentication (2FA):
 
-### 🔐 OTP Features
+### OTP Features
 - **Six-digit OTP codes** sent via SMS with configurable expiration (default: 5 minutes)
 - **Platform-specific support** - Available on web browsers, Android, and iOS (desktop excluded)
 - **Multiple SMS providers** - Twilio, AWS SNS, and Azure Communication Services
 - **Rate limiting** - Configurable SMS limits to prevent abuse
 - **Backup codes** - Eight-digit recovery codes for emergency access
 
-### 🗄️ Database-Managed SMS Settings
+### Database-Managed SMS Settings
 - **API-managed configuration** - Complete REST API for SMS settings management
 - **Encrypted credential storage** - SMS provider credentials encrypted with user's master key
 - **Multi-provider support** - Configure and switch between multiple SMS providers
 - **Platform detection** - Automatic restriction to supported platforms
 
-### 📋 SMS Configuration API
+### SMS Configuration API
 - `GET /api/smssettings` - Retrieve all SMS configurations
 - `POST /api/smssettings` - Create new SMS settings with encrypted credentials
 - `PUT /api/smssettings/{id}` - Update existing SMS configuration
@@ -126,9 +126,9 @@ Enhanced security with SMS-based Two-Factor Authentication (2FA):
 - `POST /api/smssettings/{id}/activate` - Switch active SMS configuration
 - `POST /api/smssettings/{id}/test` - Test SMS settings with sample message
 
-📋 **[View Complete OTP Implementation Guide](OTP_IMPLEMENTATION_GUIDE.md)**
+[View Complete OTP Implementation Guide](OTP_IMPLEMENTATION_GUIDE.md)
 
-## �️ Security First
+## Security First
 
 This password manager implements enterprise-grade security with a zero-knowledge architecture:
 
@@ -141,39 +141,39 @@ This password manager implements enterprise-grade security with a zero-knowledge
 - **Session-based vault management** - cryptographic keys cached securely
 - **Memory safety** - encryption keys immediately cleared after use
 
-📋 **[View Detailed Security Documentation](ENCRYPTION_IMPLEMENTATION.md)**
+[View Detailed Security Documentation](ENCRYPTION_IMPLEMENTATION.md)
 
-## 🏗️ Project Structure
+## Project Structure
 
 The solution is organized into focused, maintainable projects:
 
 ```
 PasswordManagerApp/
-├── 🌐 Web & Mobile Apps
+├── Web & Mobile Apps
 │   ├── PasswordManager.Web/              # Blazor Server Web App
 │   ├── PasswordManager.Uno/              # Uno Platform Mobile App (iOS/Android/WebAssembly)
 │   └── PasswordManager.Components.Shared/ # Shared Blazor Components
-├── 🪟 Desktop Apps
+├── Desktop Apps
 │   └── PasswordManager.WinUi/            # WinUI 3 Desktop App (Windows)
-├── 🌍 Browser Extension
+├── Browser Extension
 │   ├── PasswordManager.BrowserExtension/ # Cross-browser extension
 │   └── PasswordManager.BrowserExtension.NativeHost/ # Native messaging host
-├── 🔧 Backend Services
+├── Backend Services
 │   ├── PasswordManager.API/              # ASP.NET Core Web API
 │   ├── PasswordManager.Services/         # Business Logic Services
 │   └── PasswordManager.Models/           # Shared Models & DTOs
-├── 🗃️ Data Layer
+├── Data Layer
 │   ├── PasswordManager.DAL/              # Core Data Access Layer
 │   ├── PasswordManager.DAL.SqlServer/    # SQL Server Provider
 │   ├── PasswordManager.DAL.MySql/        # MySQL Provider
 │   ├── PasswordManager.DAL.Postgres/     # PostgreSQL Provider
 │   └── PasswordManager.DAL.SupaBase/     # Supabase Provider
-├── 🔐 Security & Crypto
+├── Security & Crypto
 │   └── PasswordManager.Crypto/           # Encryption & Security
-├── 🧪 Testing
+├── Testing
 │   ├── PasswordManager.Tests.OTP/        # OTP & SMS Authentication Tests
 │   └── PasswordManager.Tests.QrLogin/    # QR Login Tests
-└── 📥 Import System
+└── Import System
     ├── PasswordManager.Imports/             # Import Framework
     ├── PasswordManagerImports.1Password/    # 1Password Plugin
     ├── PasswordManagerImports.Bitwarden/    # Bitwarden Plugin
@@ -186,7 +186,7 @@ PasswordManagerApp/
     └── PasswordManagerImports.Safari/       # Safari Browser Plugin
 ```
 
-## 📱 Applications
+## Applications
 
 ### Browser Extension
 - **Multiple Connection Modes**:
@@ -202,7 +202,7 @@ PasswordManagerApp/
 
 ### Web Application
 - **Modern Blazor UI** with MudBlazor components
-- **Dark theme** optimized for professional use
+- **Theme Support** - Light, Dark, and System theme options
 - **Responsive design** works on all devices
 - **API key management** built-in
 - **Real-time search** and filtering
@@ -214,16 +214,16 @@ PasswordManagerApp/
 - **DPAPI secure storage** for Windows
 - **Theme System** - Light, Dark, and System theme support with persistence
 - **Professional desktop experience**
-- **📸 [View Screenshots](screenshots.md)** of the interface
+- [View Screenshots](screenshots.md) of the interface
 
 ### Mobile Application (Uno Platform)
 - **Cross-platform** iOS, Android, WebAssembly, Desktop
 - **Native performance** with Uno Platform
 - **Offline-first** design with SQLite local storage
 - **Biometric authentication** - Face ID (iOS) and Fingerprint (Android)
-- **1Password-inspired UI** with Material Design 3
+- **Modern UI** with Material Design 3
 - **Two-way sync** with cloud API
-- **📱 [View Mobile App Guide](UNO_PLATFORM_GUIDE.md)** for detailed documentation
+- [View Mobile App Guide](UNO_PLATFORM_GUIDE.md) for detailed documentation
 
 ### API Service
 - **RESTful design** with OpenAPI documentation
@@ -232,11 +232,11 @@ PasswordManagerApp/
 - **Health checks** and monitoring
 - **Cross-platform deployment**
 
-For detailed information, see the **[Technology Stack](TECHNOLOGY_STACK.md)** documentation.
+For detailed information, see the [Technology Stack](TECHNOLOGY_STACK.md) documentation.
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions to make this password manager even better! Here's how you can help:
+We welcome contributions to make this password manager even better. Here's how you can help:
 
 ### Ways to Contribute
 - **Bug Reports**: Found an issue? Let us know through GitHub Issues
@@ -246,12 +246,12 @@ We welcome contributions to make this password manager even better! Here's how y
 - **Testing**: Test on different platforms and report feedback
 
 ### Development Setup
-1. **Fork the repository** on GitHub
-2. **Clone your fork** locally
-3. **Follow the [Development Guide](DEVELOPMENT.md)** for setup instructions
-4. **Make your changes** in a feature branch
-5. **Test your changes** thoroughly
-6. **Submit a pull request** with a clear description
+1. Fork the repository on GitHub
+2. Clone your fork locally
+3. Follow the [Development Guide](DEVELOPMENT.md) for setup instructions
+4. Make your changes in a feature branch
+5. Test your changes thoroughly
+6. Submit a pull request with a clear description
 
 ### Code Standards
 - Follow C# coding conventions
@@ -259,35 +259,34 @@ We welcome contributions to make this password manager even better! Here's how y
 - Update documentation for API changes
 - Use meaningful commit messages
 
-For detailed contribution guidelines, see our **[Development Guide](DEVELOPMENT.md)**.
+For detailed contribution guidelines, see our [Development Guide](DEVELOPMENT.md).
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Special thanks to:
-- **Microsoft** for the excellent .NET ecosystem
-- **MudBlazor Team** for the beautiful UI components
-- **Entity Framework Team** for the robust ORM
-- **Open Source Community** for continuous inspiration and feedback
+- Microsoft for the excellent .NET ecosystem
+- MudBlazor Team for the beautiful UI components
+- Entity Framework Team for the robust ORM
+- Open Source Community for continuous inspiration and feedback
 
-## 📞 Support & Community
+## Support & Community
 
 ### Get Help
-- **� Documentation**: Check our comprehensive guides above
-- **🐛 Issues**: Report bugs on [GitHub Issues](https://github.com/dotnetappdev/PasswordManagerApp/issues)
-- **💬 Discussions**: Join conversations on [GitHub Discussions](https://github.com/dotnetappdev/PasswordManagerApp/discussions)
-- **📧 Email**: Reach out to support@passwordmanager.dev
+- **Documentation**: Check our comprehensive guides above
+- **Issues**: Report bugs on [GitHub Issues](https://github.com/dotnetappdev/PasswordManagerApp/issues)
+- **Discussions**: Join conversations on [GitHub Discussions](https://github.com/dotnetappdev/PasswordManagerApp/discussions)
 
 ### Stay Connected
-- **⭐ Star this repository** if you find it useful
-- **👁️ Watch releases** to stay updated with new features
-- **🔄 Fork and contribute** to help improve the project
+- Star this repository if you find it useful
+- Watch releases to stay updated with new features
+- Fork and contribute to help improve the project
 
 ---
 
-**Built with ❤️ using .NET 9, MAUI, Blazor Server, and MudBlazor**
+Built with .NET 9, MAUI, Blazor Server, and MudBlazor
 
-*Secure your digital life with enterprise-grade encryption and cross-platform convenience.*
+Secure your digital life with enterprise-grade encryption and cross-platform convenience.
