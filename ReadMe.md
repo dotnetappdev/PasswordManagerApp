@@ -14,6 +14,7 @@
 - **[Getting Started](GETTING_STARTED.md)** - Installation and setup guide
 - **[User Guide](USER_GUIDE.md)** - Complete user documentation
 - **[Development Guide](DEVELOPMENT.md)** - Developer setup and contributing
+- **[UI Design System](UI_DESIGN_SYSTEM.md)** - Consistent styling guide for all platforms
 
 A modern, secure, and cross-platform password manager built with .NET 9, .NET MAUI, Blazor Server, and ASP.NET Core Web API. Keep your passwords, credit cards, secure notes, and WiFi credentials safe and organized across all your devices with cloud synchronization capabilities.
 
@@ -194,10 +195,12 @@ PasswordManagerApp/
   - **Web API** - Connect to your API server for remote access
   - **localStorage** - Offline mode with cached credentials
   - **Auto Mode** - Tries all methods automatically for best experience
-- **Smart Form Detection** - Automatically detects login and registration forms
-- **Password Autofill** - One-click credential filling
+- **1Password-Style Inline Autofill** - Click on login fields to see a dropdown list of saved passwords for that website
+- **Smart Form Detection** - Automatically detects login, registration, and payment forms
+- **Password Autofill** - One-click credential filling with domain-based filtering
 - **Password Generator** - Generate strong passwords directly in the browser
 - **Cross-browser Support** - Chrome, Edge, Firefox, and other Chromium browsers
+- **Consistent UI** - Matches main app styling using shared design system
 - **Settings Persistence** - Remembers your preferred connection method
 
 ### Web Application
