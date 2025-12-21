@@ -5,7 +5,7 @@ using PasswordManager.Web.Components.Pages;
 namespace PasswordManager.Web.Tests.Components;
 
 [TestFixture]
-public class CounterComponentTests : TestContext
+public class CounterComponentTests : Bunit.TestContext
 {
     [Test]
     public void Counter_InitialState_ShouldBeZero()
