@@ -61,7 +61,7 @@ class PasswordManagerContentScript {
     });
   }
 
-  handleFieldFocus(field) {
+  async handleFieldFocus(field) {
     // Determine field type and context for 1Password-like behavior
     const form = field.closest('form');
     const formContext = form ? form.dataset.pmFormContext || 'unknown' : 'unknown';
@@ -70,16 +70,21 @@ class PasswordManagerContentScript {
     this.lastFocusedField = field;
     this.lastFocusedContext = formContext;
     
-    // Add visual indicator that field is ready for autofill
-    this.addFocusIndicator(field);
+    // Get field type to determine what to show
+    const fieldType = this.getFieldType(field);
     
     // Log for debugging
     console.log('Password Manager: Field focused', {
-      fieldType: this.getFieldType(field),
+      fieldType: fieldType,
       formContext: formContext,
       fieldName: field.name,
       fieldId: field.id
     });
+    
+    // Show inline password list for password or username fields (1Password-like behavior)
+    if ((fieldType === 'password' || fieldType === 'username') && this.authToken) {
+      await this.showInlinePasswordList(field, formContext);
+    }
   }
 
   getFieldType(field) {
@@ -890,6 +895,116 @@ class PasswordManagerContentScript {
         }
       }, { once: true });
     }, 100);
+  }
+
+  async showInlinePasswordList(field, formContext = 'unknown') {
+    // Remove any existing inline dropdown
+    const existingDropdown = document.querySelector('.pm-inline-dropdown');
+    if (existingDropdown) {
+      existingDropdown.remove();
+    }
+    
+    try {
+      // Get current domain for filtering
+      const domain = window.location.hostname;
+      
+      // Request credentials from background script
+      const response = await chrome.runtime.sendMessage({
+        action: 'getCredentials',
+        domain: domain
+      });
+      
+      if (!response.success || !response.credentials || response.credentials.length === 0) {
+        // No credentials found - don't show dropdown
+        return;
+      }
+      
+      // Create the inline dropdown
+      const dropdown = document.createElement('div');
+      dropdown.className = 'pm-inline-dropdown';
+      
+      // Style the dropdown with consistent design
+      Object.assign(dropdown.style, {
+        position: 'absolute',
+        backgroundColor: '#ffffff',
+        border: '1px solid #e0e6ed',
+        borderRadius: '6px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        zIndex: '10001',
+        minWidth: '250px',
+        maxWidth: '350px',
+        maxHeight: '250px',
+        overflowY: 'auto',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        fontSize: '14px'
+      });
+      
+      // Add header
+      const header = document.createElement('div');
+      header.style.cssText = 'padding: 12px; background: #f8f9fa; border-bottom: 1px solid #e0e6ed; font-weight: 600; font-size: 13px; color: #333;';
+      header.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span>🔑 ${response.credentials.length} saved for ${domain}</span>
+        </div>
+      `;
+      dropdown.appendChild(header);
+      
+      // Add credentials list
+      response.credentials.forEach((cred, index) => {
+        const item = document.createElement('div');
+        item.className = 'pm-dropdown-item';
+        item.style.cssText = 'padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background-color 0.2s;';
+        
+        item.innerHTML = `
+          <div style="font-weight: 500; color: #1a1a1a; margin-bottom: 4px;">${this.escapeHtml(cred.title)}</div>
+          <div style="font-size: 12px; color: #6c757d;">${this.escapeHtml(cred.username)}</div>
+        `;
+        
+        // Add click handler to fill credentials
+        item.addEventListener('click', () => {
+          this.fillCredentials(field, cred);
+          dropdown.remove();
+        });
+        
+        // Add hover effect
+        item.addEventListener('mouseenter', () => {
+          item.style.backgroundColor = '#f8f9ff';
+          item.style.borderLeftColor = '#007acc';
+          item.style.borderLeftWidth = '3px';
+          item.style.borderLeftStyle = 'solid';
+          item.style.paddingLeft = '9px';
+        });
+        
+        item.addEventListener('mouseleave', () => {
+          item.style.backgroundColor = 'white';
+          item.style.borderLeft = 'none';
+          item.style.paddingLeft = '12px';
+        });
+        
+        dropdown.appendChild(item);
+      });
+      
+      // Position the dropdown below the field
+      this.positionPopup(dropdown, field);
+      document.body.appendChild(dropdown);
+      
+      // Close dropdown when clicking outside or when field loses focus
+      const closeDropdown = (e) => {
+        if (!dropdown.contains(e.target) && e.target !== field) {
+          dropdown.remove();
+          document.removeEventListener('click', closeDropdown);
+          field.removeEventListener('blur', closeDropdown);
+        }
+      };
+      
+      setTimeout(() => {
+        document.addEventListener('click', closeDropdown);
+        field.addEventListener('blur', closeDropdown);
+      }, 100);
+      
+    } catch (error) {
+      console.error('Password Manager: Error showing inline password list:', error);
+    }
   }
 
   showCreditCardPopup(field, creditCards) {
