@@ -27,6 +27,7 @@ public class AuthController : ControllerBase
     private readonly IPasskeyService _passkeyService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly PasswordManagerDbContext _dbContext;
     private readonly SmsConfiguration _smsConfig;
     private readonly ILogger<AuthController> _logger;
 
@@ -41,6 +42,7 @@ public class AuthController : ControllerBase
  
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
+        PasswordManagerDbContext dbContext,
         IOptions<SmsConfiguration> smsConfig,
         ILogger<AuthController> logger)
     {
@@ -54,6 +56,7 @@ public class AuthController : ControllerBase
         _passkeyService = passkeyService;
         _userManager = userManager;
         _signInManager = signInManager;
+        _dbContext = dbContext;
         _smsConfig = smsConfig.Value;
         _logger = logger;
     }
@@ -757,12 +760,39 @@ public class AuthController : ControllerBase
                 return BadRequest(new { error = "Invalid password" });
             }
 
-            // Delete the user account and all associated data
+            // Explicitly delete all user's passwords
+            var userPasswordItems = await _dbContext.PasswordItems
+                .Where(p => p.UserId == userId)
+                .ToListAsync();
+            _dbContext.PasswordItems.RemoveRange(userPasswordItems);
+            
+            // Explicitly delete all user's categories
+            var userCategories = await _dbContext.Categories
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
+            _dbContext.Categories.RemoveRange(userCategories);
+            
+            // Delete all user's collections
+            var userCollections = await _dbContext.Collections
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
+            _dbContext.Collections.RemoveRange(userCollections);
+            
+            // Delete all user's tags
+            var userTags = await _dbContext.Tags
+                .Where(t => t.UserId == userId)
+                .ToListAsync();
+            _dbContext.Tags.RemoveRange(userTags);
+            
+            // Save changes to ensure all related data is deleted first
+            await _dbContext.SaveChangesAsync();
+
+            // Delete the user account
             var result = await _userManager.DeleteAsync(user);
             
             if (result.Succeeded)
             {
-                _logger.LogInformation("User {UserId} deleted their account", userId);
+                _logger.LogInformation("User {UserId} deleted their account and all associated data (passwords, categories, collections, tags)", userId);
                 
                 // Sign out the user
                 await _signInManager.SignOutAsync();

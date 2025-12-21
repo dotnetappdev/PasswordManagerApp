@@ -584,6 +584,37 @@ public class IdentityAuthService : IAuthService
                 return (false, "Invalid password");
             }
 
+            // Explicitly delete all user's passwords
+            var userPasswordItems = await _dbContext.Users
+                .Where(u => u.Id == userId)
+                .SelectMany(u => u.PasswordItems)
+                .ToListAsync();
+            _dbContext.PasswordItems.RemoveRange(userPasswordItems);
+            
+            // Explicitly delete all user's categories
+            var userCategories = await _dbContext.Users
+                .Where(u => u.Id == userId)
+                .SelectMany(u => u.Categories)
+                .ToListAsync();
+            _dbContext.Categories.RemoveRange(userCategories);
+            
+            // Explicitly delete all user's collections
+            var userCollections = await _dbContext.Users
+                .Where(u => u.Id == userId)
+                .SelectMany(u => u.Collections)
+                .ToListAsync();
+            _dbContext.Collections.RemoveRange(userCollections);
+            
+            // Explicitly delete all user's tags
+            var userTags = await _dbContext.Users
+                .Where(u => u.Id == userId)
+                .SelectMany(u => u.Tags)
+                .ToListAsync();
+            _dbContext.Tags.RemoveRange(userTags);
+            
+            // Save changes to ensure all related data is deleted first
+            await _dbContext.SaveChangesAsync();
+
             // Delete the user
             var result = await _userManager.DeleteAsync(user);
             if (result.Succeeded)
@@ -603,7 +634,7 @@ public class IdentityAuthService : IAuthService
                     // Ignore JS errors during cleanup
                 }
                 
-                _logger.LogInformation("User {UserId} deleted their account", userId);
+                _logger.LogInformation("User {UserId} deleted their account and all associated data (passwords, categories, collections, tags)", userId);
                 return (true, null);
             }
 

@@ -664,7 +664,31 @@ public class AuthService : IAuthService
                 return (false, "Invalid password");
             }
 
-            // Delete the user (this will cascade delete related data based on DB configuration)
+            // Explicitly delete all user's passwords
+            var userPasswordItems = await _dbContext.PasswordItems
+                .Where(p => p.UserId == userId)
+                .ToListAsync();
+            _dbContext.PasswordItems.RemoveRange(userPasswordItems);
+            
+            // Explicitly delete all user's categories
+            var userCategories = await _dbContext.Categories
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
+            _dbContext.Categories.RemoveRange(userCategories);
+            
+            // Delete all user's collections
+            var userCollections = await _dbContext.Collections
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
+            _dbContext.Collections.RemoveRange(userCollections);
+            
+            // Delete all user's tags
+            var userTags = await _dbContext.Tags
+                .Where(t => t.UserId == userId)
+                .ToListAsync();
+            _dbContext.Tags.RemoveRange(userTags);
+            
+            // Delete the user account
             _dbContext.Users.Remove(user);
             await _dbContext.SaveChangesAsync();
             
@@ -672,7 +696,7 @@ public class AuthService : IAuthService
             _isAuthenticated = false;
             _currentUser = null;
             
-            _logger.LogInformation("User {UserId} deleted their account", userId);
+            _logger.LogInformation("User {UserId} deleted their account and all associated data (passwords, categories, collections, tags)", userId);
             return (true, null);
         }
         catch (Exception ex)
