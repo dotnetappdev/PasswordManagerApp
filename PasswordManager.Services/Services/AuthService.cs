@@ -634,4 +634,51 @@ public class AuthService : IAuthService
             return null;
         }
     }
+
+    public async Task<(bool Success, string? ErrorMessage)> DeleteAccountAsync(string password)
+    {
+        try
+        {
+            var userId = await GetCurrentUserIdAsync();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return (false, "User not authenticated");
+            }
+
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return (false, "User not found");
+            }
+
+            // Verify the password using the crypto service
+            var userSalt = Convert.FromBase64String(user.UserSalt ?? "");
+            var passwordValid = _passwordCryptoService.VerifyMasterPassword(
+                password, 
+                user.MasterPasswordHash ?? "", 
+                userSalt, 
+                user.MasterPasswordIterations);
+            
+            if (!passwordValid)
+            {
+                return (false, "Invalid password");
+            }
+
+            // Delete the user (this will cascade delete related data based on DB configuration)
+            _dbContext.Users.Remove(user);
+            await _dbContext.SaveChangesAsync();
+            
+            // Clear authentication state
+            _isAuthenticated = false;
+            _currentUser = null;
+            
+            _logger.LogInformation("User {UserId} deleted their account", userId);
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting account");
+            return (false, "An error occurred while deleting the account");
+        }
+    }
 }

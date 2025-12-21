@@ -728,4 +728,58 @@ public class AuthController : ControllerBase
             return StatusCode(500, "An error occurred while disabling two-factor authentication");
         }
     }
+
+    /// <summary>
+    /// Delete current user's account - requires password confirmation
+    /// </summary>
+    [Authorize]
+    [HttpDelete("account")]
+    public async Task<ActionResult> DeleteAccount([FromBody] DeleteAccountRequestDto request)
+    {
+        try
+        {
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            // Verify the password before deleting
+            var passwordValid = await _userManager.CheckPasswordAsync(user, request.Password);
+            if (!passwordValid)
+            {
+                return BadRequest(new { error = "Invalid password" });
+            }
+
+            // Delete the user account and all associated data
+            var result = await _userManager.DeleteAsync(user);
+            
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("User {UserId} deleted their account", userId);
+                
+                // Sign out the user
+                await _signInManager.SignOutAsync();
+                
+                return Ok(new { message = "Account deleted successfully" });
+            }
+            
+            _logger.LogError("Failed to delete user {UserId}: {Errors}", 
+                userId, 
+                string.Join(", ", result.Errors.Select(e => e.Description)));
+            
+            return StatusCode(500, new { error = "Failed to delete account" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting account for user");
+            return StatusCode(500, "An error occurred while deleting the account");
+        }
+    }
 }

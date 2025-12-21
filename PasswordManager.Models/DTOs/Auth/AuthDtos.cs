@@ -143,3 +143,9 @@ public class DisableOtpRequestDto
     public string? OtpCode { get; set; }
     public string? BackupCode { get; set; }
 }
+
+public class DeleteAccountRequestDto
+{
+    [Required]
+    public string Password { get; set; } = string.Empty;
+}

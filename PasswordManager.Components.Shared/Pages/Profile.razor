@@ -125,6 +125,61 @@
     </MudStack>
 </MudContainer>
 
+<!-- Delete Account Confirmation Dialog -->
+@if (showDeleteDialog)
+{
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+        <div style="background: #1e1e1e; padding: 24px; border-radius: 8px; max-width: 500px; width: 90%;">
+            <MudText Typo="Typo.h5" Style="color: white; margin-bottom: 16px;">
+                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Style="vertical-align: middle;" />
+                Delete Account
+            </MudText>
+            
+            <MudText Typo="Typo.body1" Style="color: #cccccc; margin-bottom: 16px;">
+                Are you sure you want to delete your account? This action cannot be undone and will permanently delete:
+            </MudText>
+            
+            <ul style="color: #cccccc; margin-bottom: 16px;">
+                <li>All your passwords</li>
+                <li>All your collections and categories</li>
+                <li>All your settings and preferences</li>
+                <li>Your account information</li>
+            </ul>
+            
+            <MudText Typo="Typo.body2" Style="color: #ff4444; margin-bottom: 16px; font-weight: bold;">
+                ⚠️ WARNING: This action is PERMANENT and IRREVERSIBLE!
+            </MudText>
+            
+            <MudTextField T="string" 
+                         @bind-Value="deletePasswordConfirm" 
+                         Label="Enter your master password to confirm" 
+                         Variant="Variant.Outlined"
+                         InputType="InputType.Password"
+                         Style="background-color: #2a2a2a; margin-bottom: 16px;" />
+            
+            @if (!string.IsNullOrEmpty(deleteErrorMessage))
+            {
+                <MudText Typo="Typo.body2" Style="color: #ff4444; margin-bottom: 16px;">
+                    @deleteErrorMessage
+                </MudText>
+            }
+            
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Secondary"
+                          OnClick="CancelDeleteAccount">
+                    Cancel
+                </MudButton>
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Error"
+                          OnClick="ConfirmDeleteAccount">
+                    Delete My Account
+                </MudButton>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private UserDto userProfile = new();
     private bool isSaving = false;
@@ -205,9 +260,49 @@
         Navigation.NavigateTo("/change-password");
     }
 
+    private bool showDeleteDialog = false;
+    private string deletePasswordConfirm = string.Empty;
+    private string deleteErrorMessage = string.Empty;
+
     private void ShowDeleteAccountDialog()
     {
-        // This would show a confirmation dialog before deleting the account
-        // Implementation would depend on your specific requirements
+        showDeleteDialog = true;
+        deletePasswordConfirm = string.Empty;
+        deleteErrorMessage = string.Empty;
+    }
+
+    private async Task ConfirmDeleteAccount()
+    {
+        if (string.IsNullOrWhiteSpace(deletePasswordConfirm))
+        {
+            deleteErrorMessage = "Please enter your password to confirm";
+            return;
+        }
+
+        try
+        {
+            var response = await AuthService.DeleteAccountAsync(deletePasswordConfirm);
+            if (response.Success)
+            {
+                showDeleteDialog = false;
+                // Account deleted, redirect to login
+                Navigation.NavigateTo("/login");
+            }
+            else
+            {
+                deleteErrorMessage = response.ErrorMessage ?? "Failed to delete account";
+            }
+        }
+        catch (Exception ex)
+        {
+            deleteErrorMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    private void CancelDeleteAccount()
+    {
+        showDeleteDialog = false;
+        deletePasswordConfirm = string.Empty;
+        deleteErrorMessage = string.Empty;
     }
 }

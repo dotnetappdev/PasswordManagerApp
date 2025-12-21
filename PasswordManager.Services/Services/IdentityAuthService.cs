@@ -560,4 +560,60 @@ public class IdentityAuthService : IAuthService
             return null;
         }
     }
+
+    public async Task<(bool Success, string? ErrorMessage)> DeleteAccountAsync(string password)
+    {
+        try
+        {
+            var userId = await GetCurrentUserIdAsync();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return (false, "User not authenticated");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return (false, "User not found");
+            }
+
+            // Verify the password
+            var passwordValid = await _userManager.CheckPasswordAsync(user, password);
+            if (!passwordValid)
+            {
+                return (false, "Invalid password");
+            }
+
+            // Delete the user
+            var result = await _userManager.DeleteAsync(user);
+            if (result.Succeeded)
+            {
+                // Clear authentication state
+                _isAuthenticated = false;
+                _currentUser = null;
+                
+                // Clear session storage
+                try
+                {
+                    await _jsRuntime.InvokeVoidAsync("sessionStorage.clear");
+                    await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "userId");
+                }
+                catch
+                {
+                    // Ignore JS errors during cleanup
+                }
+                
+                _logger.LogInformation("User {UserId} deleted their account", userId);
+                return (true, null);
+            }
+
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            return (false, $"Failed to delete account: {errors}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting account");
+            return (false, "An error occurred while deleting the account");
+        }
+    }
 }

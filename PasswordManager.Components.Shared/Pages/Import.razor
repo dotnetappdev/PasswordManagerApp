@@ -4,15 +4,26 @@
 @using System.Net.Http.Json
 @inject HttpClient Http
 @inject ISnackbar Snackbar
+@inject NavigationManager Navigation
 
 <PageTitle>Import Passwords</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <MudPaper Class="pa-4">
-        <MudText Typo="Typo.h4" GutterBottom="true">Import Passwords</MudText>
-        <MudText Typo="Typo.body1" Class="mb-4">
-            Import your passwords from other password managers or browsers.
-        </MudText>
+        <div class="d-flex justify-space-between align-center mb-4">
+            <div>
+                <MudText Typo="Typo.h4" GutterBottom="true">Import Passwords</MudText>
+                <MudText Typo="Typo.body1">
+                    Import your passwords from other password managers or browsers.
+                </MudText>
+            </div>
+            <MudButton Variant="Variant.Outlined" 
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Upload"
+                       OnClick="@(() => Navigation.NavigateTo("/export"))">
+                Export Instead
+            </MudButton>
+        </div>
 
         @if (currentStep == 1)
         {
