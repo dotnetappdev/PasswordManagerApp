@@ -345,6 +345,19 @@ public class PasswordItemsController : ControllerBase
     {
         try
         {
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            // Get the item to check ownership
+            var existingItem = await _passwordItemService.GetByIdAsync(id);
+            if (existingItem == null || existingItem.UserId != userId)
+            {
+                return NotFound($"Password item with ID {id} not found");
+            }
+
             var success = await _passwordItemService.ToggleFavoriteAsync(id);
             if (!success)
                 return NotFound($"Password item with ID {id} not found");
