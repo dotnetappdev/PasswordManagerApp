@@ -403,4 +403,12 @@ public class SimpleAuthService : IAuthService
     {
         return Task.FromResult(_currentUser?.Id);
     }
+
+    public Task<(bool Success, string? ErrorMessage)> DeleteAccountAsync(string password)
+    {
+        Console.WriteLine("Account deletion attempted");
+        _isAuthenticated = false;
+        _currentUser = null;
+        return Task.FromResult<(bool, string?)>((true, null));
+    }
 }
