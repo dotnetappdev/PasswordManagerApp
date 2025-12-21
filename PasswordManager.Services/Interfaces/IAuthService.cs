@@ -91,4 +91,11 @@ public interface IAuthService
     /// </summary>
     /// <returns>The user ID if authenticated, null otherwise</returns>
     Task<string?> GetCurrentUserIdAsync();
+
+    /// <summary>
+    /// Deletes the current user's account
+    /// </summary>
+    /// <param name="password">The user's master password for confirmation</param>
+    /// <returns>Result with success status and error message if any</returns>
+    Task<(bool Success, string? ErrorMessage)> DeleteAccountAsync(string password);
 }

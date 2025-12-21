@@ -560,4 +560,91 @@ public class IdentityAuthService : IAuthService
             return null;
         }
     }
+
+    public async Task<(bool Success, string? ErrorMessage)> DeleteAccountAsync(string password)
+    {
+        try
+        {
+            var userId = await GetCurrentUserIdAsync();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return (false, "User not authenticated");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return (false, "User not found");
+            }
+
+            // Verify the password
+            var passwordValid = await _userManager.CheckPasswordAsync(user, password);
+            if (!passwordValid)
+            {
+                return (false, "Invalid password");
+            }
+
+            // Explicitly delete all user's passwords
+            var userPasswordItems = await _dbContext.Users
+                .Where(u => u.Id == userId)
+                .SelectMany(u => u.PasswordItems)
+                .ToListAsync();
+            _dbContext.PasswordItems.RemoveRange(userPasswordItems);
+            
+            // Explicitly delete all user's categories
+            var userCategories = await _dbContext.Users
+                .Where(u => u.Id == userId)
+                .SelectMany(u => u.Categories)
+                .ToListAsync();
+            _dbContext.Categories.RemoveRange(userCategories);
+            
+            // Explicitly delete all user's collections
+            var userCollections = await _dbContext.Users
+                .Where(u => u.Id == userId)
+                .SelectMany(u => u.Collections)
+                .ToListAsync();
+            _dbContext.Collections.RemoveRange(userCollections);
+            
+            // Explicitly delete all user's tags
+            var userTags = await _dbContext.Users
+                .Where(u => u.Id == userId)
+                .SelectMany(u => u.Tags)
+                .ToListAsync();
+            _dbContext.Tags.RemoveRange(userTags);
+            
+            // Save changes to ensure all related data is deleted first
+            await _dbContext.SaveChangesAsync();
+
+            // Delete the user
+            var result = await _userManager.DeleteAsync(user);
+            if (result.Succeeded)
+            {
+                // Clear authentication state
+                _isAuthenticated = false;
+                _currentUser = null;
+                
+                // Clear session storage
+                try
+                {
+                    await _jsRuntime.InvokeVoidAsync("sessionStorage.clear");
+                    await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "userId");
+                }
+                catch
+                {
+                    // Ignore JS errors during cleanup
+                }
+                
+                _logger.LogInformation("User {UserId} deleted their account and all associated data (passwords, categories, collections, tags)", userId);
+                return (true, null);
+            }
+
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            return (false, $"Failed to delete account: {errors}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting account");
+            return (false, "An error occurred while deleting the account");
+        }
+    }
 }
