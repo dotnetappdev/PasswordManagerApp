@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Media;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.WinUi.Models;
+using PasswordManager.WinUi.Services;
 
 namespace PasswordManager.WinUi;
 
@@ -32,6 +33,9 @@ public sealed partial class MainWindow : Window
 
         // Cache style early (after resources loaded by InitializeComponent)
         _navItemStyle = TryGetNavItemStyle();
+
+        // Register NavigationView with ThemeHelper so it updates correctly
+        ThemeHelper.SetNavigationView(MainNavigationView);
 
         // Initialize navigation - start with Login if not authenticated, otherwise Home
         InitializeNavigation();

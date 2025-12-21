@@ -1,16 +1,19 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
 @using MudBlazor
+@using PasswordManager.Components.Shared.Services
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
+@inject ThemeService ThemeService
 
-<MudThemeProvider Theme="@_theme" IsDarkMode="true" />
+<MudThemeProvider Theme="@_theme" @bind-IsDarkMode="@_isDarkMode" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Color="Color.Dark" Fixed="true" Dense="true">
+    <MudAppBar Color="@(_isDarkMode ? Color.Dark : Color.Default)" Fixed="true" Dense="true">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Style="color: white;">Password Manager</MudText>
+        <MudText Typo="Typo.h6" Style="@(_isDarkMode ? "color: white;" : "color: inherit;")">Password Manager</MudText>
         <MudSpacer />
         <MudMenu>
             <ActivatorContent>
@@ -34,9 +37,9 @@
         </MudMenu>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Color="Color.Dark">
+    <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Color="@(_isDarkMode ? Color.Dark : Color.Default)">
         <MudDrawerHeader>
-            <MudText Typo="Typo.h6" Style="color: white;">
+            <MudText Typo="Typo.h6" Style="@(_isDarkMode ? "color: white;" : "color: inherit;")">
                 <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Small" Style="margin-right: 8px;" />
                 Password Manager
             </MudText>
@@ -82,7 +85,7 @@
     </MudDrawer>
 
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.False" Style="background-color: #121212; min-height: 100vh; padding-top: 64px;">
+        <MudContainer MaxWidth="MaxWidth.False" Style="@($"background-color: {(_isDarkMode ? "#121212" : "#f5f5f5")}; min-height: 100vh; padding-top: 64px;")">
             @Body
         </MudContainer>
     </MudMainContent>
@@ -90,6 +93,7 @@
 
 @code {
     private bool _drawerOpen = true;
+    private bool _isDarkMode = true;
     private MudTheme _theme = new()
     {
         PaletteDark = new PaletteDark()
@@ -120,8 +124,55 @@
             Success = "#4caf50",
             Warning = "#ff9800",
             Error = "#f44336"
+        },
+        PaletteLight = new PaletteLight()
+        {
+            Black = "#272c34",
+            Background = "#f5f5f5",
+            Surface = "#ffffff",
+            DrawerBackground = "#ffffff",
+            DrawerText = "rgba(0,0,0, 0.87)",
+            DrawerIcon = "rgba(0,0,0, 0.54)",
+            AppbarBackground = "#ffffff",
+            AppbarText = "rgba(0,0,0, 0.87)",
+            TextPrimary = "rgba(0,0,0, 0.87)",
+            TextSecondary = "rgba(0,0,0, 0.54)",
+            ActionDefault = "#424242",
+            ActionDisabled = "rgba(0,0,0, 0.26)",
+            ActionDisabledBackground = "rgba(0,0,0, 0.12)",
+            Divider = "rgba(0,0,0, 0.12)",
+            DividerLight = "rgba(0,0,0, 0.06)",
+            TableLines = "rgba(0,0,0, 0.12)",
+            LinesDefault = "rgba(0,0,0, 0.12)",
+            LinesInputs = "rgba(0,0,0, 0.42)",
+            TextDisabled = "rgba(0,0,0, 0.38)",
+            Primary = "#594ae2",
+            Secondary = "#ff4081",
+            Tertiary = "#1ec8a5",
+            Info = "#2196f3",
+            Success = "#4caf50",
+            Warning = "#ff9800",
+            Error = "#f44336"
         }
     };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isDarkMode = ThemeService.IsDarkMode;
+        ThemeService.ThemeChanged += OnThemeChanged;
+        await ThemeService.DetectAndApplySystemThemeAsync(JSRuntime);
+    }
+
+    private void OnThemeChanged(object? sender, bool isDarkMode)
+    {
+        _isDarkMode = isDarkMode;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ThemeService.ThemeChanged -= OnThemeChanged;
+    }
 
     private void ToggleDrawer()
     {

@@ -1,19 +1,19 @@
 # PasswordManager.Web
 
-A modern Blazor Server web application for password management with a professional dark theme, built using .NET 9 and MudBlazor components.
+A modern Blazor Server web application for password management with full theme support (Light, Dark, System), built using .NET 9 and MudBlazor components.
 
 ## Features
 
-- **🎨 Dark Theme Only**: Professional dark theme optimized for reduced eye strain
-- **🔐 Master Password Authentication**: Secure vault unlock using Bitwarden-compatible encryption
-- **📱 Responsive Design**: Works perfectly on desktop, tablet, and mobile browsers
-- **🔑 API Key Management**: Built-in interface for generating and managing API keys
-- **⚙️ Database Provider Selection**: Support for SQL Server, MySQL, PostgreSQL, and Supabase
-- **🔍 Real-time Search**: Instant search across all password items
-- **📁 Category Filtering**: Filter by categories, collections, and tags
-- **📋 One-Click Copy**: Copy passwords to clipboard with visual feedback
-- **✏️ Full CRUD Operations**: Create, edit, delete passwords and other items
-- **🔄 Real-time Sync**: Changes sync automatically with mobile apps via API
+- **Theme Support**: Light, Dark, and System theme modes with instant switching
+- **Master Password Authentication**: Secure vault unlock using Bitwarden-compatible encryption
+- **Responsive Design**: Works perfectly on desktop, tablet, and mobile browsers
+- **API Key Management**: Built-in interface for generating and managing API keys
+- **Database Provider Selection**: Support for SQL Server, MySQL, PostgreSQL, and Supabase
+- **Real-time Search**: Instant search across all password items
+- **Category Filtering**: Filter by categories, collections, and tags
+- **One-Click Copy**: Copy passwords to clipboard with visual feedback
+- **Full CRUD Operations**: Create, edit, delete passwords and other items
+- **Real-time Sync**: Changes sync automatically with mobile apps via API
 
 ## Technology Stack
 
@@ -321,10 +321,10 @@ This project is licensed under the MIT License - see the [LICENSE](../LICENSE) f
 
 ## Support
 
-- 📧 Email: support@passwordmanager.dev
-- 🐛 Issues: [GitHub Issues](https://github.com/dotnetappdev/PasswordManagerApp/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/dotnetappdev/PasswordManagerApp/discussions)
+- Email: support@passwordmanager.dev
+- Issues: [GitHub Issues](https://github.com/dotnetappdev/PasswordManagerApp/issues)
+- Discussions: [GitHub Discussions](https://github.com/dotnetappdev/PasswordManagerApp/discussions)
 
 ---
 
-**Built with .NET 9, Blazor Server, and MudBlazor**
+Built with .NET 9, Blazor Server, and MudBlazor

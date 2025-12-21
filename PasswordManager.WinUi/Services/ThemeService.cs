@@ -19,21 +19,36 @@ namespace PasswordManager.WinUi.Services
         private static Window? _window;
         private static Application? _application;
         private static Windows.UI.ViewManagement.UISettings? _uiSettings;
+        private static NavigationView? _navigationView;
 
         public static event EventHandler<AppTheme>? ThemeChanged;
 
         public static AppTheme CurrentTheme => _currentTheme;
 
-        public static void Initialize(Window window, Application application)
+        public static void Initialize(Window window, Application application, NavigationView? navigationView = null)
         {
             _window = window;
             _application = application;
+            _navigationView = navigationView;
             
             // Set up system theme change listener
             _uiSettings = new Windows.UI.ViewManagement.UISettings();
             _uiSettings.ColorValuesChanged += OnSystemThemeChanged;
             
             ApplyTheme(_currentTheme);
+        }
+        
+        public static void SetNavigationView(NavigationView navigationView)
+        {
+            _navigationView = navigationView;
+            // Apply current theme to the newly set navigation view
+            if (_navigationView != null)
+            {
+                var actualTheme = _currentTheme == AppTheme.System ? GetSystemTheme() : _currentTheme;
+                _navigationView.RequestedTheme = actualTheme == AppTheme.Dark 
+                    ? ElementTheme.Dark 
+                    : ElementTheme.Light;
+            }
         }
         
         private static async void OnSystemThemeChanged(Windows.UI.ViewManagement.UISettings sender, object args)
@@ -64,13 +79,18 @@ namespace PasswordManager.WinUi.Services
             if (_window == null || _application == null) return;
 
             var actualTheme = theme == AppTheme.System ? GetSystemTheme() : theme;
+            var elementTheme = actualTheme == AppTheme.Dark ? ElementTheme.Dark : ElementTheme.Light;
 
             // Apply theme to window content
             if (_window?.Content is FrameworkElement rootElement)
             {
-                rootElement.RequestedTheme = actualTheme == AppTheme.Dark 
-                    ? ElementTheme.Dark 
-                    : ElementTheme.Light;
+                rootElement.RequestedTheme = elementTheme;
+            }
+
+            // Apply theme to NavigationView specifically to ensure menu updates
+            if (_navigationView != null)
+            {
+                _navigationView.RequestedTheme = elementTheme;
             }
 
             // Update resource dictionaries
@@ -133,6 +153,13 @@ namespace PasswordManager.WinUi.Services
         {
             try
             {
+                // Validate hex color format
+                if (string.IsNullOrEmpty(colorString) || !colorString.StartsWith("#") || colorString.Length != 7)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Invalid color format for {key}: {colorString}");
+                    return;
+                }
+
                 var color = Microsoft.UI.ColorHelper.FromArgb(
                     255,
                     Convert.ToByte(colorString.Substring(1, 2), 16),
