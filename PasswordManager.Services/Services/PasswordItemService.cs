@@ -160,4 +160,18 @@ public class PasswordItemService : IPasswordItemService
     {
         return await _context.PasswordItems.AnyAsync(p => p.Id == id && !p.IsDeleted);
     }
+
+    public async Task<bool> ToggleFavoriteAsync(int id)
+    {
+        var item = await _context.PasswordItems.FindAsync(id);
+        if (item == null || item.IsDeleted)
+        {
+            return false;
+        }
+
+        item.IsFavorite = !item.IsFavorite;
+        item.LastModified = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return true;
+    }
 }

@@ -16,4 +16,5 @@ public interface IPasswordItemService
     Task<IEnumerable<PasswordItem>> GetRecentlyUsedAsync(int count = 10);
     Task<IEnumerable<PasswordItem>> GetArchivedAsync();
     Task<bool> ExistsAsync(int id);
+    Task<bool> ToggleFavoriteAsync(int id);
 }
