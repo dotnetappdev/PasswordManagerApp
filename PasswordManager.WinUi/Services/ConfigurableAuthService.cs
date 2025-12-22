@@ -533,4 +533,68 @@ public class ConfigurableAuthService : IAuthService
             }
         }
     }
+
+    /// <summary>
+    /// Deletes the current user's account
+    /// </summary>
+    /// <param name="password">The user's master password for confirmation</param>
+    /// <returns>Result with success status and error message if any</returns>
+    public async Task<(bool Success, string? ErrorMessage)> DeleteAccountAsync(string password)
+    {
+        var mode = await GetAuthenticationModeAsync();
+
+        if (mode == "Local Database")
+        {
+            return await _localAuthService.DeleteAccountAsync(password);
+        }
+        else
+        {
+            // For API mode, delete account via API
+            try
+            {
+                var apiUrl = await GetApiBaseUrlAsync();
+                var token = await _secureStorageService.GetAsync("apiSessionToken");
+
+                if (string.IsNullOrEmpty(token))
+                {
+                    _logger.LogWarning("No API session token found for account deletion");
+                    return (false, "Not authenticated");
+                }
+
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                var deleteRequest = new
+                {
+                    Password = password
+                };
+
+                var response = await _httpClient.PostAsJsonAsync($"{apiUrl}/auth/delete-account", deleteRequest);
+                if (response.IsSuccessStatusCode)
+                {
+                    // Clear stored tokens after successful deletion
+                    _secureStorageService.Remove("apiSessionToken");
+                    _secureStorageService.Remove("apiTokenExpiry");
+
+                    _isAuthenticated = false;
+                    _currentUser = null;
+
+                    _logger.LogInformation("API account deletion successful");
+                    return (true, null);
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("API account deletion failed: {StatusCode} - {Error}",
+                        response.StatusCode, errorContent);
+                    return (false, $"Failed to delete account: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during API account deletion");
+                return (false, $"Error deleting account: {ex.Message}");
+            }
+        }
+    }
 }

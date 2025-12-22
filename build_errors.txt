@@ -1,0 +1,20 @@
+/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.Uno/PasswordManager.Uno.csproj : error : Could not resolve SDK "Uno.Sdk". Exactly one of the probing messages below indicates why we could not resolve the SDK. Investigate and resolve that message to correctly specify the SDK.
+/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.Uno/PasswordManager.Uno.csproj : error :   SDK resolver "Microsoft.DotNet.MSBuildWorkloadSdkResolver" returned null.
+/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.Uno/PasswordManager.Uno.csproj : error :   The NuGetSdkResolver did not resolve this SDK because there was no version specified in the project or global.json.
+/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.Uno/PasswordManager.Uno.csproj : warning NU1503: Skipping restore for project '/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.Uno/PasswordManager.Uno.csproj'. The project file may be invalid or missing targets required for restore. [/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.sln]
+  Determining projects to restore...
+/usr/share/dotnet/sdk/10.0.101/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportWorkloads.targets(38,5): error NETSDK1147: To build this project, the following workloads must be installed: maui-android [/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.App/PasswordManager.App.csproj::TargetFramework=net9.0-android]
+/usr/share/dotnet/sdk/10.0.101/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportWorkloads.targets(38,5): error NETSDK1147: To install these workloads, run the following command: dotnet workload restore [/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.App/PasswordManager.App.csproj::TargetFramework=net9.0-android]
+
+Build FAILED.
+
+/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.Uno/PasswordManager.Uno.csproj : warning NU1503: Skipping restore for project '/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.Uno/PasswordManager.Uno.csproj'. The project file may be invalid or missing targets required for restore. [/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.sln]
+/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.Uno/PasswordManager.Uno.csproj : error : Could not resolve SDK "Uno.Sdk". Exactly one of the probing messages below indicates why we could not resolve the SDK. Investigate and resolve that message to correctly specify the SDK.
+/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.Uno/PasswordManager.Uno.csproj : error :   SDK resolver "Microsoft.DotNet.MSBuildWorkloadSdkResolver" returned null.
+/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.Uno/PasswordManager.Uno.csproj : error :   The NuGetSdkResolver did not resolve this SDK because there was no version specified in the project or global.json.
+/usr/share/dotnet/sdk/10.0.101/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportWorkloads.targets(38,5): error NETSDK1147: To build this project, the following workloads must be installed: maui-android [/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.App/PasswordManager.App.csproj::TargetFramework=net9.0-android]
+/usr/share/dotnet/sdk/10.0.101/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportWorkloads.targets(38,5): error NETSDK1147: To install these workloads, run the following command: dotnet workload restore [/home/runner/work/PasswordManagerApp/PasswordManagerApp/PasswordManager.App/PasswordManager.App.csproj::TargetFramework=net9.0-android]
+    1 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:03.27

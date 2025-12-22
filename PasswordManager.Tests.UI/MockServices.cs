@@ -192,6 +192,17 @@ public class MockAuthService : IAuthService
     {
         return Task.FromResult(_currentUser?.Id);
     }
+
+    public Task<(bool Success, string? ErrorMessage)> DeleteAccountAsync(string password)
+    {
+        // Verify current password first
+        if (_masterPasswordHash == null || !BCrypt.Net.BCrypt.Verify(password, _masterPasswordHash))
+            return Task.FromResult<(bool Success, string? ErrorMessage)>((false, "Invalid password"));
+
+        // Clear all data
+        ClearMasterPassword();
+        return Task.FromResult<(bool Success, string? ErrorMessage)>((true, null));
+    }
 }
 
 /// <summary>
@@ -286,6 +297,18 @@ public class MockPasswordItemService : IPasswordItemService
     public Task<bool> ExistsAsync(int id)
     {
         return Task.FromResult(_items.Any(i => i.Id == id && !i.IsDeleted));
+    }
+
+    public Task<bool> ToggleFavoriteAsync(int id)
+    {
+        var item = _items.FirstOrDefault(i => i.Id == id && !i.IsDeleted);
+        if (item != null)
+        {
+            item.IsFavorite = !item.IsFavorite;
+            item.LastModified = DateTime.UtcNow;
+            return Task.FromResult(true);
+        }
+        return Task.FromResult(false);
     }
 }
 

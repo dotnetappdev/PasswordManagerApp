@@ -720,4 +720,73 @@ public class WinUiAuthService : IAuthService
             return false;
         }
     }
+
+    /// <summary>
+    /// Deletes the current user's account
+    /// </summary>
+    /// <param name="password">The user's master password for confirmation</param>
+    /// <returns>Result with success status and error message if any</returns>
+    public async Task<(bool Success, string? ErrorMessage)> DeleteAccountAsync(string password)
+    {
+        try
+        {
+            // Get current user from database
+            var user = await _dbContext.Users.FirstOrDefaultAsync();
+            if (user == null)
+            {
+                _logger.LogError("No user found in database for account deletion");
+                return (false, "User not found");
+            }
+
+            // Verify password before deletion
+            var userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
+            if (userSalt == null)
+            {
+                _logger.LogError("Failed to retrieve user salt from secure storage for account deletion");
+                return (false, "Failed to verify user credentials");
+            }
+
+            var isPasswordValid = _passwordCryptoService.VerifyMasterPassword(
+                password,
+                user.MasterPasswordHash!,
+                Convert.FromBase64String(user.UserSalt!)
+            );
+
+            if (!isPasswordValid)
+            {
+                _logger.LogWarning("Password verification failed during account deletion");
+                return (false, "Invalid password");
+            }
+
+            // Delete all user's password items
+            var passwordItems = await _dbContext.PasswordItems.Where(pi => pi.UserId == user.Id).ToListAsync();
+            _dbContext.PasswordItems.RemoveRange(passwordItems);
+
+            // Delete user account
+            _dbContext.Users.Remove(user);
+            await _dbContext.SaveChangesAsync();
+
+            // Clear session and secure storage
+            var sessionId = await _secureStorageService.GetAsync("sessionId");
+            if (!string.IsNullOrEmpty(sessionId))
+            {
+                _vaultSessionService.ClearSession(sessionId);
+            }
+
+            _secureStorageService.Remove("isAuthenticated");
+            _secureStorageService.Remove("sessionId");
+            _secureStorageService.Remove($"userSalt_{user.Id}");
+
+            _isAuthenticated = false;
+            _currentUser = null;
+
+            _logger.LogInformation("User account {UserId} deleted successfully", user.Id);
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete user account");
+            return (false, $"Failed to delete account: {ex.Message}");
+        }
+    }
 }
