@@ -16,6 +16,15 @@
     <ScrollViewer MaxHeight="600" VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="20" Margin="0,20,0,0">
             
+            <!-- InfoBar for validation messages -->
+            <InfoBar x:Name="ValidationInfoBar"
+                     x:FieldModifier="private"
+                     IsOpen="False"
+                     Severity="Warning"
+                     Title="Validation Error"
+                     Message=""
+                     IsClosable="True"/>
+            
             <!-- Personal Information Section -->
             <Border Background="#2D2D2D" 
                     CornerRadius="8" 
@@ -29,7 +38,9 @@
                     <!-- First Name -->
                     <StackPanel Spacing="8">
                         <TextBlock Text="First Name" Foreground="#B0B0B0" FontSize="14"/>
-                        <Border Background="#3A3A3A"
+                        <Border x:Name="FirstNameBorder"
+                                x:FieldModifier="private"
+                                Background="#3A3A3A"
                                 CornerRadius="8"
                                 BorderBrush="#4A4A4A"
                                 BorderThickness="1"
@@ -39,14 +50,17 @@
                                     Background="Transparent"
                                     BorderThickness="0"
                                     Foreground="White"
-                                    PlaceholderText="Enter first name"/>
+                                    PlaceholderText="Enter first name"
+                                    TextChanged="FirstNameTextBox_TextChanged"/>
                         </Border>
                     </StackPanel>
 
                     <!-- Last Name -->
                     <StackPanel Spacing="8">
                         <TextBlock Text="Last Name" Foreground="#B0B0B0" FontSize="14"/>
-                        <Border Background="#3A3A3A"
+                        <Border x:Name="LastNameBorder"
+                                x:FieldModifier="private"
+                                Background="#3A3A3A"
                                 CornerRadius="8"
                                 BorderBrush="#4A4A4A"
                                 BorderThickness="1"
@@ -56,14 +70,17 @@
                                     Background="Transparent"
                                     BorderThickness="0"
                                     Foreground="White"
-                                    PlaceholderText="Enter last name"/>
+                                    PlaceholderText="Enter last name"
+                                    TextChanged="LastNameTextBox_TextChanged"/>
                         </Border>
                     </StackPanel>
 
                     <!-- Email -->
                     <StackPanel Spacing="8">
                         <TextBlock Text="Email Address" Foreground="#B0B0B0" FontSize="14"/>
-                        <Border Background="#3A3A3A"
+                        <Border x:Name="EmailBorder"
+                                x:FieldModifier="private"
+                                Background="#3A3A3A"
                                 CornerRadius="8"
                                 BorderBrush="#4A4A4A"
                                 BorderThickness="1"
@@ -73,7 +90,8 @@
                                     Background="Transparent"
                                     BorderThickness="0"
                                     Foreground="White"
-                                    PlaceholderText="Enter email address"/>
+                                    PlaceholderText="Enter email address"
+                                    TextChanged="EmailTextBox_TextChanged"/>
                         </Border>
                     </StackPanel>
                 </StackPanel>
@@ -92,7 +110,9 @@
                     <!-- Master Password -->
                     <StackPanel Spacing="8">
                         <TextBlock Text="Master Password" Foreground="#B0B0B0" FontSize="14"/>
-                        <Border Background="#3A3A3A"
+                        <Border x:Name="MasterPasswordBorder"
+                                x:FieldModifier="private"
+                                Background="#3A3A3A"
                                 CornerRadius="8"
                                 BorderBrush="#4A4A4A"
                                 BorderThickness="1"
@@ -102,14 +122,33 @@
                                         Background="Transparent"
                                         BorderThickness="0"
                                         Foreground="White"
-                                        PlaceholderText="Create a strong master password"/>
+                                        PlaceholderText="Create a strong master password"
+                                        PasswordChanged="MasterPasswordBox_PasswordChanged"/>
                         </Border>
+                        <!-- Password Strength Indicator -->
+                        <StackPanel x:Name="PasswordStrengthPanel"
+                                   x:FieldModifier="private"
+                                   Spacing="4"
+                                   Visibility="Collapsed">
+                            <ProgressBar x:Name="PasswordStrengthBar"
+                                        x:FieldModifier="private"
+                                        Height="4"
+                                        Minimum="0"
+                                        Maximum="100"
+                                        Value="0"/>
+                            <TextBlock x:Name="PasswordStrengthText"
+                                      x:FieldModifier="private"
+                                      FontSize="12"
+                                      Foreground="#B0B0B0"/>
+                        </StackPanel>
                     </StackPanel>
 
                     <!-- Confirm Master Password -->
                     <StackPanel Spacing="8">
                         <TextBlock Text="Confirm Master Password" Foreground="#B0B0B0" FontSize="14"/>
-                        <Border Background="#3A3A3A"
+                        <Border x:Name="ConfirmPasswordBorder"
+                                x:FieldModifier="private"
+                                Background="#3A3A3A"
                                 CornerRadius="8"
                                 BorderBrush="#4A4A4A"
                                 BorderThickness="1"
@@ -119,7 +158,8 @@
                                         Background="Transparent"
                                         BorderThickness="0"
                                         Foreground="White"
-                                        PlaceholderText="Confirm your master password"/>
+                                        PlaceholderText="Confirm your master password"
+                                        PasswordChanged="ConfirmPasswordBox_PasswordChanged"/>
                         </Border>
                     </StackPanel>
 

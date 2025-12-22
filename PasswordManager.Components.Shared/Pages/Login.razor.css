@@ -70,6 +70,27 @@
     padding: 24px;
 }
 
+/* Input Error Styling - Red border and shake animation */
+.input-error {
+    border-color: #DC2626 !important;
+    border-width: 2px !important;
+    animation: shake 0.4s ease-in-out;
+    background-color: #FEF2F2 !important;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Focus state for error inputs */
+.input-error:focus {
+    border-color: #DC2626 !important;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
 /* Responsive adjustments */
 @media (max-width: 600px) {
     .modal-content {
