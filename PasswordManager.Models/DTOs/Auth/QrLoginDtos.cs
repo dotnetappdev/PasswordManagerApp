@@ -26,6 +26,16 @@ public class QrLoginAuthenticateRequestDto
     
     [Required]
     public string Password { get; set; } = string.Empty;
+    
+    // Device information for linking
+    [MaxLength(200)]
+    public string? DeviceName { get; set; }
+    
+    [MaxLength(50)]
+    public string? DeviceType { get; set; }
+    
+    [MaxLength(100)]
+    public string? Platform { get; set; }
 }
 
 public class QrLoginAuthenticateResponseDto
@@ -33,6 +43,8 @@ public class QrLoginAuthenticateResponseDto
     public bool Success { get; set; }
     public string Message { get; set; } = string.Empty;
     public AuthResponseDto? AuthData { get; set; }
+    public string? DeviceId { get; set; }
+    public string? DeviceName { get; set; }
 }
 
 public class QrLoginStatusResponseDto

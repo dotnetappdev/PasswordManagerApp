@@ -137,6 +137,8 @@ public class ApplicationUser : IdentityUser
 
     public virtual ICollection<UserPasskey> UserPasskeys { get; set; } = new List<UserPasskey>();
     public virtual ICollection<UserTwoFactorBackupCode> TwoFactorBackupCodes { get; set; } = new List<UserTwoFactorBackupCode>();
+    public virtual ICollection<Device> Devices { get; set; } = new List<Device>();
+    public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 
     // Parent-Child relationship navigation properties
     /// <summary>

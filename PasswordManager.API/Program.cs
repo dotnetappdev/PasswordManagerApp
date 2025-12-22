@@ -10,8 +10,24 @@ using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Identity;
 using PasswordManager.Models;
+using PasswordManager.Models.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Sentry.io
+var sentryConfig = builder.Configuration.GetSection("Sentry").Get<SentryConfiguration>();
+if (sentryConfig?.IsConfigured == true)
+{
+    builder.WebHost.UseSentry(options =>
+    {
+        options.Dsn = sentryConfig.Dsn;
+        options.Environment = sentryConfig.Environment;
+        options.TracesSampleRate = sentryConfig.TracesSampleRate;
+        options.SendDefaultPii = sentryConfig.SendDefaultPii;
+        options.AttachStacktrace = sentryConfig.AttachStacktrace;
+        options.Debug = sentryConfig.Debug;
+    });
+}
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -118,6 +134,8 @@ builder.Services.AddScoped<IDatabaseMigrationService, PasswordManager.Services.S
 builder.Services.AddScoped<ITwoFactorService, PasswordManager.Services.Services.TwoFactorService>();
 builder.Services.AddScoped<IPasskeyService, PasswordManager.Services.Services.PasskeyService>();
 builder.Services.AddScoped<IPermissionService, PasswordManager.Services.Services.PermissionService>();
+builder.Services.AddScoped<IDeviceService, PasswordManager.Services.Services.DeviceService>();
+builder.Services.AddScoped<IAuditLogService, PasswordManager.Services.Services.AuditLogService>();
 builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncService>();
 
 // Register cryptography services
@@ -137,6 +155,10 @@ builder.Services.AddScoped<IDatabaseConfigurationService, PasswordManager.Servic
 // Configure SMS settings
 builder.Services.Configure<PasswordManager.Models.Configuration.SmsConfiguration>(
     builder.Configuration.GetSection(PasswordManager.Models.Configuration.SmsConfiguration.SectionName));
+
+// Configure Sentry settings
+builder.Services.Configure<SentryConfiguration>(
+    builder.Configuration.GetSection("Sentry"));
 
 // Register SMS and OTP services
 builder.Services.AddHttpClient<PasswordManager.Services.Services.TwilioSmsService>();
