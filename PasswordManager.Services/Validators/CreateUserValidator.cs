@@ -1,6 +1,5 @@
 using FluentValidation;
 using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.Services.Helpers;
 
 namespace PasswordManager.Services.Validators;
 

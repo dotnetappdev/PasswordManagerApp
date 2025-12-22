@@ -126,10 +126,10 @@ public static class InputValidationHelper
             return (false, "Email address must be at least 3 characters long");
         }
 
-        // Basic email validation
-        if (!Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+        // Comprehensive email validation with legal characters only
+        if (!Regex.IsMatch(email, @"^[a-zA-Z0-9@.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z]{2,}$"))
         {
-            return (false, "Please enter a valid email address");
+            return (false, "Please enter a valid email address with only legal characters (letters, numbers, @, ., -, _)");
         }
 
         return (true, string.Empty);
