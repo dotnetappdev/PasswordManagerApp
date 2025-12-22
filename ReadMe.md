@@ -58,12 +58,21 @@ A modern, secure, and cross-platform password manager built with .NET 9, .NET MA
 
 ## Key Features
 
-### Secure Password Management
+### 🔒 End-to-End Encryption & Security
+- **True end-to-end encryption** - Your master key never leaves your device
+- **Zero-knowledge architecture** - Not even server admins can decrypt your data
 - **Enterprise-grade encryption** with AES-256-GCM and PBKDF2 (600,000 iterations)
-- **Zero-knowledge architecture** - your data stays private
+- **Master key stored locally only** - Exists only in device memory during sessions
+- **Cross-platform consistency** - Same encryption on all platforms (Blazor, WinUI, iOS, Android, Linux)
+- **Encrypted sync** - Only encrypted data synced to MySQL, SQL Server, PostgreSQL, or Supabase
 - **SMS-based Two-Factor Authentication (2FA)** - OTP codes via SMS for enhanced security
 - **Database-managed SMS settings** - Configure multiple SMS providers through API
+
+### Secure Password Management
 - **Password generator** with customizable strength settings
+- **Biometric authentication** - Face ID / Touch ID / Fingerprint support on mobile
+- **Vault locking** - Secure your passwords when not in use
+- **Password breach checking** - Verify password strength and safety
 - **Bitwarden-compatible** encryption flow for familiar experience
 
 ### Cross-Platform Support
@@ -80,8 +89,10 @@ A modern, secure, and cross-platform password manager built with .NET 9, .NET MA
 - **Smart Search** - Real-time search across all your data
 
 ### Cloud Synchronization
-- **RESTful API** - Secure data synchronization across devices
+- **Encrypted data sync** - Only encrypted data synchronized across devices
+- **RESTful API** - Secure data synchronization with end-to-end encryption
 - **Multiple Databases** - SQLite, SQL Server, MySQL, PostgreSQL, Supabase
+- **Master keys stay local** - Authentication on each device, no key syncing
 - **JWT Authentication** - Secure API access with Bearer tokens
 - **Offline Support** - Full functionality without internet connection
 
