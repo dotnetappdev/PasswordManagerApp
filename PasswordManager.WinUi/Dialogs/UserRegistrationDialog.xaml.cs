@@ -337,18 +337,10 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
             return false;
         }
 
-        // Enhanced email format validation
-        if (!System.Text.RegularExpressions.Regex.IsMatch(EmailTextBox.Text, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
-        {
-            ShowErrorMessage("Please enter a valid email address.");
-            EmailTextBox.Focus(FocusState.Programmatic);
-            return false;
-        }
-
-        // Check for legal characters in email (alphanumeric, @, ., -, _)
+        // Email format validation with legal characters check
         if (!System.Text.RegularExpressions.Regex.IsMatch(EmailTextBox.Text, @"^[a-zA-Z0-9@.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z]{2,}$"))
         {
-            ShowErrorMessage("Email can only contain letters, numbers, @, ., -, and _");
+            ShowErrorMessage("Please enter a valid email address with only legal characters (letters, numbers, @, ., -, _).");
             EmailTextBox.Focus(FocusState.Programmatic);
             return false;
         }

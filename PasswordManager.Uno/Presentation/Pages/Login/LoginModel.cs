@@ -93,16 +93,10 @@ public partial class LoginModel : ObservableObject
             return;
         }
 
-        if (!System.Text.RegularExpressions.Regex.IsMatch(Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
-        {
-            ErrorMessage = "Please enter a valid email address";
-            return;
-        }
-
-        // Check for legal characters in email
+        // Email format validation with legal characters check
         if (!System.Text.RegularExpressions.Regex.IsMatch(Email, @"^[a-zA-Z0-9@.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z]{2,}$"))
         {
-            ErrorMessage = "Email can only contain letters, numbers, @, ., -, and _";
+            ErrorMessage = "Please enter a valid email address with only legal characters (letters, numbers, @, ., -, _)";
             return;
         }
 

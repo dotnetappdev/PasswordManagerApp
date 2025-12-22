@@ -23,7 +23,7 @@ public class CreateUserValidator : AbstractValidator<CreateUserProfileDto>
             .WithMessage("Password is required.")
             .MinimumLength(8)
             .WithMessage("Password must be at least 8 characters long.")
-            .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]")
+            .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$")
             .WithMessage("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
 
         RuleFor(x => x.ConfirmPassword)
