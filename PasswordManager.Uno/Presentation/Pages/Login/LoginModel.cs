@@ -80,9 +80,42 @@ public partial class LoginModel : ObservableObject
     [RelayCommand]
     private async Task LoginAsync()
     {
-        if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
+        // Validate email
+        if (string.IsNullOrWhiteSpace(Email))
         {
-            ErrorMessage = "Please enter email and password";
+            ErrorMessage = "Please enter your email address";
+            return;
+        }
+
+        if (Email.Length < 3)
+        {
+            ErrorMessage = "Email address must be at least 3 characters long";
+            return;
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+        {
+            ErrorMessage = "Please enter a valid email address";
+            return;
+        }
+
+        // Check for legal characters in email
+        if (!System.Text.RegularExpressions.Regex.IsMatch(Email, @"^[a-zA-Z0-9@.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z]{2,}$"))
+        {
+            ErrorMessage = "Email can only contain letters, numbers, @, ., -, and _";
+            return;
+        }
+
+        // Validate password
+        if (string.IsNullOrWhiteSpace(Password))
+        {
+            ErrorMessage = "Please enter your password";
+            return;
+        }
+
+        if (Password.Length < 2)
+        {
+            ErrorMessage = "Password must be at least 2 characters long";
             return;
         }
 

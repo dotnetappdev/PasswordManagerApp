@@ -265,15 +265,59 @@
 
     private bool CanSetupMasterKey()
     {
-        return !string.IsNullOrEmpty(masterKey) && 
-               !string.IsNullOrEmpty(confirmKey) && 
-               masterKey == confirmKey && 
-               masterKey.Length >= 8;
+        if (string.IsNullOrEmpty(masterKey) || string.IsNullOrEmpty(confirmKey))
+            return false;
+            
+        if (masterKey != confirmKey)
+            return false;
+            
+        if (masterKey.Length < 8)
+            return false;
+
+        // Check for required complexity
+        if (!masterKey.Any(char.IsUpper) || !masterKey.Any(char.IsLower) || !masterKey.Any(char.IsDigit))
+            return false;
+
+        return true;
     }
 
     private async Task SetupMasterKey()
     {
-        if (!CanSetupMasterKey()) return;
+        if (!CanSetupMasterKey())
+        {
+            // Provide detailed error message
+            if (string.IsNullOrEmpty(masterKey))
+            {
+                errorMessage = "Please enter a master key.";
+                return;
+            }
+            if (masterKey.Length < 8)
+            {
+                errorMessage = "Master key must be at least 8 characters long.";
+                return;
+            }
+            if (!masterKey.Any(char.IsUpper))
+            {
+                errorMessage = "Master key must contain at least one uppercase letter.";
+                return;
+            }
+            if (!masterKey.Any(char.IsLower))
+            {
+                errorMessage = "Master key must contain at least one lowercase letter.";
+                return;
+            }
+            if (!masterKey.Any(char.IsDigit))
+            {
+                errorMessage = "Master key must contain at least one number.";
+                return;
+            }
+            if (masterKey != confirmKey)
+            {
+                errorMessage = "Master keys do not match.";
+                return;
+            }
+            return;
+        }
 
         try
         {
@@ -305,7 +349,17 @@
 
     private async Task AuthenticateUser()
     {
-        if (string.IsNullOrEmpty(loginKey)) return;
+        if (string.IsNullOrEmpty(loginKey))
+        {
+            errorMessage = "Please enter your password.";
+            return;
+        }
+
+        if (loginKey.Length < 2)
+        {
+            errorMessage = "Password must be at least 2 characters long.";
+            return;
+        }
 
         try
         {

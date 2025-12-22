@@ -286,10 +286,38 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
             return false;
         }
 
+        if (FirstNameTextBox.Text.Length < 2)
+        {
+            ShowErrorMessage("First name must be at least 2 characters long.");
+            FirstNameTextBox.Focus(FocusState.Programmatic);
+            return false;
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(FirstNameTextBox.Text, @"^[a-zA-Z\s'\-]+$"))
+        {
+            ShowErrorMessage("First name can only contain letters, spaces, hyphens, and apostrophes.");
+            FirstNameTextBox.Focus(FocusState.Programmatic);
+            return false;
+        }
+
         // Last Name validation
         if (string.IsNullOrWhiteSpace(LastNameTextBox.Text))
         {
             ShowErrorMessage("Please enter a last name.");
+            LastNameTextBox.Focus(FocusState.Programmatic);
+            return false;
+        }
+
+        if (LastNameTextBox.Text.Length < 2)
+        {
+            ShowErrorMessage("Last name must be at least 2 characters long.");
+            LastNameTextBox.Focus(FocusState.Programmatic);
+            return false;
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(LastNameTextBox.Text, @"^[a-zA-Z\s'\-]+$"))
+        {
+            ShowErrorMessage("Last name can only contain letters, spaces, hyphens, and apostrophes.");
             LastNameTextBox.Focus(FocusState.Programmatic);
             return false;
         }
@@ -302,10 +330,25 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
             return false;
         }
 
-        // Basic email format validation
-        if (!EmailTextBox.Text.Contains("@") || !EmailTextBox.Text.Contains("."))
+        if (EmailTextBox.Text.Length < 3)
+        {
+            ShowErrorMessage("Email address must be at least 3 characters long.");
+            EmailTextBox.Focus(FocusState.Programmatic);
+            return false;
+        }
+
+        // Enhanced email format validation
+        if (!System.Text.RegularExpressions.Regex.IsMatch(EmailTextBox.Text, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
         {
             ShowErrorMessage("Please enter a valid email address.");
+            EmailTextBox.Focus(FocusState.Programmatic);
+            return false;
+        }
+
+        // Check for legal characters in email (alphanumeric, @, ., -, _)
+        if (!System.Text.RegularExpressions.Regex.IsMatch(EmailTextBox.Text, @"^[a-zA-Z0-9@.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z]{2,}$"))
+        {
+            ShowErrorMessage("Email can only contain letters, numbers, @, ., -, and _");
             EmailTextBox.Focus(FocusState.Programmatic);
             return false;
         }
@@ -327,9 +370,23 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
             return false;
         }
 
-        if (!password.Any(char.IsUpper) || !password.Any(char.IsLower) || !password.Any(char.IsDigit))
+        if (!password.Any(char.IsUpper))
         {
-            ShowErrorMessage("Master password must contain at least one uppercase letter, one lowercase letter, and one number.");
+            ShowErrorMessage("Master password must contain at least one uppercase letter.");
+            MasterPasswordBox.Focus(FocusState.Programmatic);
+            return false;
+        }
+
+        if (!password.Any(char.IsLower))
+        {
+            ShowErrorMessage("Master password must contain at least one lowercase letter.");
+            MasterPasswordBox.Focus(FocusState.Programmatic);
+            return false;
+        }
+
+        if (!password.Any(char.IsDigit))
+        {
+            ShowErrorMessage("Master password must contain at least one number.");
             MasterPasswordBox.Focus(FocusState.Programmatic);
             return false;
         }
