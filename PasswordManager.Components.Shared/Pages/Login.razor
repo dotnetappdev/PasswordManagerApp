@@ -1,12 +1,15 @@
 @page "/login"
+@using System.Linq
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
 @using PasswordManager.Crypto.Interfaces
 @using PasswordManager.Services.Interfaces
+@using MudBlazor
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject IAuthService AuthService
 @inject IVaultSessionService VaultSessionService
+@inject ISnackbar Snackbar
 
 <div class="auth-container">
     <div class="auth-card">
@@ -33,8 +36,9 @@
                                    id="masterKey" 
                                    @bind="masterKey" 
                                    @onkeyup="ValidatePassword"
+                                   @oninput="OnMasterKeyInput"
                                    placeholder="Enter your master key"
-                                   class="form-input" />
+                                   class="form-input @(masterKeyError ? "input-error" : "")" />
                             <button type="button" class="password-toggle" @onclick="TogglePasswordVisibility">
                                 @(showPassword ? "👁️‍🗨️" : "👁️")
                             </button>
@@ -55,9 +59,10 @@
                         <label for="confirmKey">Confirm Master Key</label>
                         <input type="@(showConfirmPassword ? "text" : "password")" 
                                id="confirmKey" 
-                               @bind="confirmKey" 
+                               @bind="confirmKey"
+                               @oninput="OnConfirmKeyInput" 
                                placeholder="Confirm your master key"
-                               class="form-input" />
+                               class="form-input @(confirmKeyError ? "input-error" : "")" />
                         <button type="button" class="password-toggle" @onclick="ToggleConfirmPasswordVisibility">
                             @(showConfirmPassword ? "👁️‍🗨️" : "👁️")
                         </button>
@@ -103,10 +108,11 @@
                         <div class="password-input-group">
                             <input type="@(showPassword ? "text" : "password")" 
                                    id="loginKey" 
-                                   @bind="loginKey" 
+                                   @bind="loginKey"
+                                   @oninput="OnLoginKeyInput" 
                                    @onkeypress="HandleKeyPress"
                                    placeholder="Enter your account password"
-                                   class="form-input" />
+                                   class="form-input @(loginKeyError ? "input-error" : "")" />
                             <button type="button" class="password-toggle" @onclick="TogglePasswordVisibility">
                                 @(showPassword ? "👁️" : "👁️")
                             </button>
@@ -192,6 +198,11 @@
     private string passwordStrength = "Weak";
     private string passkeyId = string.Empty;
     private bool showQrLogin = false;
+    
+    // Error state tracking for visual feedback
+    private bool masterKeyError = false;
+    private bool confirmKeyError = false;
+    private bool loginKeyError = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -265,15 +276,94 @@
 
     private bool CanSetupMasterKey()
     {
-        return !string.IsNullOrEmpty(masterKey) && 
-               !string.IsNullOrEmpty(confirmKey) && 
-               masterKey == confirmKey && 
-               masterKey.Length >= 8;
+        if (string.IsNullOrEmpty(masterKey) || string.IsNullOrEmpty(confirmKey))
+            return false;
+            
+        if (masterKey != confirmKey)
+            return false;
+            
+        if (masterKey.Length < 8)
+            return false;
+
+        // Check for required complexity
+        if (!masterKey.Any(char.IsUpper) || !masterKey.Any(char.IsLower) || !masterKey.Any(char.IsDigit))
+            return false;
+
+        return true;
+    }
+    
+    private void OnMasterKeyInput()
+    {
+        // Clear error state when user starts typing
+        masterKeyError = false;
+    }
+    
+    private void OnConfirmKeyInput()
+    {
+        // Clear error state when user starts typing
+        confirmKeyError = false;
+    }
+    
+    private void OnLoginKeyInput()
+    {
+        // Clear error state when user starts typing
+        loginKeyError = false;
     }
 
     private async Task SetupMasterKey()
     {
-        if (!CanSetupMasterKey()) return;
+        // Reset error states
+        masterKeyError = false;
+        confirmKeyError = false;
+        
+        if (!CanSetupMasterKey())
+        {
+            // Provide detailed error message with toast notification
+            if (string.IsNullOrEmpty(masterKey))
+            {
+                errorMessage = "Please enter a master key.";
+                masterKeyError = true;
+                Snackbar.Add(errorMessage, Severity.Warning);
+                return;
+            }
+            if (masterKey.Length < 8)
+            {
+                errorMessage = "Master key must be at least 8 characters long.";
+                masterKeyError = true;
+                Snackbar.Add(errorMessage, Severity.Warning);
+                return;
+            }
+            if (!masterKey.Any(char.IsUpper))
+            {
+                errorMessage = "Master key must contain at least one uppercase letter.";
+                masterKeyError = true;
+                Snackbar.Add(errorMessage, Severity.Warning);
+                return;
+            }
+            if (!masterKey.Any(char.IsLower))
+            {
+                errorMessage = "Master key must contain at least one lowercase letter.";
+                masterKeyError = true;
+                Snackbar.Add(errorMessage, Severity.Warning);
+                return;
+            }
+            if (!masterKey.Any(char.IsDigit))
+            {
+                errorMessage = "Master key must contain at least one number.";
+                masterKeyError = true;
+                Snackbar.Add(errorMessage, Severity.Warning);
+                return;
+            }
+            if (masterKey != confirmKey)
+            {
+                errorMessage = "Master keys do not match.";
+                masterKeyError = true;
+                confirmKeyError = true;
+                Snackbar.Add(errorMessage, Severity.Warning);
+                return;
+            }
+            return;
+        }
 
         try
         {
@@ -285,17 +375,22 @@
             
             if (success)
             {
+                Snackbar.Add("Master key created successfully!", Severity.Success);
                 // Navigate to home page
                 Navigation.NavigateTo("/home");
             }
             else
             {
                 errorMessage = "Failed to setup master password. Please try again.";
+                masterKeyError = true;
+                Snackbar.Add(errorMessage, Severity.Error);
             }
         }
         catch (Exception ex)
         {
             errorMessage = "Failed to setup master password. Please try again.";
+            masterKeyError = true;
+            Snackbar.Add(errorMessage, Severity.Error);
         }
         finally
         {
@@ -305,7 +400,24 @@
 
     private async Task AuthenticateUser()
     {
-        if (string.IsNullOrEmpty(loginKey)) return;
+        // Reset error state
+        loginKeyError = false;
+        
+        if (string.IsNullOrEmpty(loginKey))
+        {
+            errorMessage = "Please enter your password.";
+            loginKeyError = true;
+            Snackbar.Add(errorMessage, Severity.Warning);
+            return;
+        }
+
+        if (loginKey.Length < 2)
+        {
+            errorMessage = "Password must be at least 2 characters long.";
+            loginKeyError = true;
+            Snackbar.Add(errorMessage, Severity.Warning);
+            return;
+        }
 
         try
         {
@@ -317,6 +429,7 @@
             
             if (success)
             {
+                Snackbar.Add("Login successful!", Severity.Success);
                 // Navigate to home page
                 Navigation.NavigateTo("/home");
             }
@@ -324,11 +437,15 @@
             {
                 errorMessage = "Incorrect master password. Please try again.";
                 loginKey = string.Empty;
+                loginKeyError = true;
+                Snackbar.Add(errorMessage, Severity.Error);
             }
         }
         catch (Exception ex)
         {
             errorMessage = "Authentication failed. Please try again.";
+            loginKeyError = true;
+            Snackbar.Add(errorMessage, Severity.Error);
         }
         finally
         {
