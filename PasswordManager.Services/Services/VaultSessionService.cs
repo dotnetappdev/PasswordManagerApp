@@ -111,6 +111,10 @@ public class VaultSessionService : IVaultSessionService
             return;
         if (_sessions.TryGetValue(sessionId, out var session))
         {
+            // Clear the master key from memory before setting to null
+            if (session.masterKey != null)
+                Array.Clear(session.masterKey, 0, session.masterKey.Length);
+            
             _sessions[sessionId] = (session.userId, null, false);
             _logger.LogInformation("Vault locked for session {SessionId}", sessionId);
         }
@@ -122,6 +126,10 @@ public class VaultSessionService : IVaultSessionService
             return false;
         if (_sessions.TryGetValue(sessionId, out var session))
         {
+            // Clear old master key from memory if it exists
+            if (session.masterKey != null)
+                Array.Clear(session.masterKey, 0, session.masterKey.Length);
+            
             _sessions[sessionId] = (session.userId, masterKey, true);
             _logger.LogInformation("Vault unlocked for session {SessionId}", sessionId);
             return true;

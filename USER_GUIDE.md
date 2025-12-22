@@ -1,5 +1,40 @@
 # User Guide
 
+## 🔒 Security & Privacy First
+
+### End-to-End Encryption
+
+Your Password Manager uses **true end-to-end encryption** to protect your data:
+
+- 🔐 **Your passwords are encrypted on your device** before syncing
+- 🔑 **Your master key never leaves your device** - it exists only in memory
+- 🛡️ **Zero-knowledge security** - not even we can decrypt your passwords
+- ✅ **Industry-standard encryption** - AES-256-GCM with 600,000 PBKDF2 iterations
+- 🌍 **Same encryption everywhere** - Windows, Mac, Linux, iOS, Android, Web
+
+**What this means for you:**
+- ✅ Your data is private - only you can decrypt it with your master password
+- ✅ Database breaches cannot expose your passwords - they're encrypted
+- ⚠️ If you forget your master password, your data cannot be recovered (no backdoor)
+- ✅ Sync safely to cloud databases - data remains encrypted end-to-end
+
+### Your Master Password
+
+Your master password is the most important secret in the system:
+
+1. **Never stored anywhere** - we only store a hash for authentication
+2. **Used to derive your master key** - which encrypts all your data
+3. **Cannot be recovered** - if forgotten, your data is permanently encrypted
+4. **Should be strong and memorable** - use a passphrase with 4+ words
+5. **Stays on your device** - never transmitted or synced
+
+**Best Practices:**
+- Use a strong, unique master password (minimum 12 characters)
+- Consider using a passphrase: `correct-horse-battery-staple` style
+- Write it down and store in a safe place if needed
+- Never share your master password with anyone
+- Lock your vault when not in use
+
 ## Overview
 
 The Password Manager provides secure storage for your passwords, credit cards, secure notes, and WiFi credentials across multiple platforms. This guide covers how to use all the features effectively.
