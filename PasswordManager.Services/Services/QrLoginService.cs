@@ -21,6 +21,7 @@ public class QrLoginService : IQrLoginService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IPasswordCryptoService _passwordCryptoService;
     private readonly IVaultSessionService _vaultSessionService;
+    private readonly IDeviceService _deviceService;
     private readonly ILogger<QrLoginService> _logger;
 
     // QR token expiration time (60 seconds)
@@ -31,12 +32,14 @@ public class QrLoginService : IQrLoginService
         UserManager<ApplicationUser> userManager,
         IPasswordCryptoService passwordCryptoService,
         IVaultSessionService vaultSessionService,
+        IDeviceService deviceService,
         ILogger<QrLoginService> logger)
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _passwordCryptoService = passwordCryptoService ?? throw new ArgumentNullException(nameof(passwordCryptoService));
         _vaultSessionService = vaultSessionService ?? throw new ArgumentNullException(nameof(vaultSessionService));
+        _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -192,6 +195,33 @@ public class QrLoginService : IQrLoginService
             await _userManager.UpdateAsync(user);
 
             await context.SaveChangesAsync();
+            
+            // Link device if device information provided
+            string? deviceId = null;
+            string? deviceName = null;
+            if (!string.IsNullOrEmpty(request.DeviceName) && !string.IsNullOrEmpty(request.DeviceType))
+            {
+                var linkDeviceRequest = new Models.DTOs.Device.LinkDeviceRequestDto
+                {
+                    DeviceName = request.DeviceName,
+                    DeviceType = request.DeviceType,
+                    Platform = request.Platform
+                };
+                
+                var deviceResponse = await _deviceService.LinkDeviceAsync(
+                    user.Id, 
+                    linkDeviceRequest, 
+                    ipAddress, 
+                    userAgent);
+                
+                if (deviceResponse.Success && deviceResponse.Device != null)
+                {
+                    deviceId = deviceResponse.Device.Id;
+                    deviceName = deviceResponse.Device.DeviceName;
+                    _logger.LogInformation("Device {DeviceId} linked during QR authentication for user {UserId}", 
+                        deviceId, user.Id);
+                }
+            }
 
             var authResponse = new AuthResponseDto
             {
@@ -217,7 +247,9 @@ public class QrLoginService : IQrLoginService
             {
                 Success = true,
                 Message = "Authentication successful",
-                AuthData = authResponse
+                AuthData = authResponse,
+                DeviceId = deviceId,
+                DeviceName = deviceName
             };
         }
         catch (Exception ex)

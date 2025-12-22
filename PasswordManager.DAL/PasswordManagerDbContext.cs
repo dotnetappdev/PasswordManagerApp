@@ -29,6 +29,9 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
     public DbSet<UserPasskey> UserPasskeys { get; set; } = null!;
     public DbSet<UserTwoFactorBackupCode> UserTwoFactorBackupCodes { get; set; } = null!;
     public DbSet<UserBackupSettings> UserBackupSettings { get; set; } = null!;
+    
+    public DbSet<Device> Devices { get; set; } = null!;
+    public DbSet<AuditLog> AuditLogs { get; set; } = null!;
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
