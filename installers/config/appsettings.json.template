@@ -1,0 +1,69 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=PasswordManagerDB;User Id=sa;Password=;TrustServerCertificate=true;MultipleActiveResultSets=true",
+    "PostgresConnection": "Host=localhost;Database=PasswordManagerDB;Username=postgres;Password=;Port=5432",
+    "MySqlConnection": "Server=localhost;Database=PasswordManagerDB;User=root;Password=;Port=3306;",
+    "SqliteConnection": "Data Source=passwordmanager.db"
+  },
+  "DatabaseProvider": "SqlServer",
+  "Sync": {
+    "EnableAutoSync": true,
+    "SyncIntervalMinutes": 30,
+    "ConflictResolution": "LastWriteWins"
+  },
+  "ApiSettings": {
+    "Title": "Password Manager API",
+    "Version": "v1",
+    "Description": "A comprehensive password management API with sync capabilities"
+  },
+  "Encryption": {
+    "MasterKeyIterations": 600000,
+    "AuthHashIterations": 600000,
+    "MinIterations": 600000,
+    "MaxIterations": 1000000
+  },
+  "Supabase": {
+    "Url": "https://your-project.supabase.co",
+    "ApiKey": "your-supabase-api-key"
+  },
+  "SmsSettings": {
+    "Provider": "Twilio",
+    "Enabled": false,
+    "DefaultCountryCode": "+1",
+    "CodeLength": 6,
+    "ExpirationMinutes": 5,
+    "MaxAttempts": 3,
+    "MaxSmsPerHour": 10,
+    "MessageTemplate": "Your Password Manager verification code is: {code}. This code will expire in {expiration} minutes.",
+    "Twilio": {
+      "AccountSid": "",
+      "AuthToken": "",
+      "FromPhoneNumber": ""
+    },
+    "AwsSns": {
+      "AccessKeyId": "",
+      "SecretAccessKey": "",
+      "Region": "us-east-1",
+      "SenderName": "Password Manager"
+    },
+    "AzureCommunication": {
+      "ConnectionString": "",
+      "FromPhoneNumber": ""
+    }
+  },
+  "Sentry": {
+    "Dsn": "",
+    "Environment": "production",
+    "TracesSampleRate": 1.0,
+    "SendDefaultPii": false,
+    "AttachStacktrace": true,
+    "Debug": false
+  }
+}

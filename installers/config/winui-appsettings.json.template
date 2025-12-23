@@ -1,0 +1,25 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AppSettings": {
+    "ApiUrl": "https://localhost:51650",
+    "UseLocalDatabase": false,
+    "DatabaseProvider": "Sqlite",
+    "Theme": "System",
+    "AutoSync": true,
+    "SyncIntervalMinutes": 30
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=passwordmanager.db"
+  },
+  "Encryption": {
+    "MasterKeyIterations": 600000,
+    "AuthHashIterations": 600000,
+    "MinIterations": 600000,
+    "MaxIterations": 1000000
+  }
+}
