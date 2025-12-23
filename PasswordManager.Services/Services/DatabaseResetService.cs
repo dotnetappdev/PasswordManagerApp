@@ -457,7 +457,7 @@ public class DatabaseResetService : IDatabaseResetService
             await ReseedDefaultDataAsync();
             recordsAdded += 4; // 2 roles + 2 collections
 
-            // Add sample categories
+            // Add sample categories using EF Core entities
             var categoryIds = new List<int>();
             var sampleCategories = new[]
             {
@@ -470,13 +470,20 @@ public class DatabaseResetService : IDatabaseResetService
 
             foreach (var (name, description, icon, color) in sampleCategories)
             {
-                await _dbContext.Database.ExecuteSqlRawAsync(
-                    $"INSERT INTO Categories (Name, Description, Icon, Color, CreatedAt) " +
-                    $"VALUES ('{name}', '{description}', '{icon}', '{color}', datetime('now'))");
+                var category = new PasswordManager.Models.Category
+                {
+                    Name = name,
+                    Description = description,
+                    Icon = icon,
+                    Color = color,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _dbContext.Categories.Add(category);
                 recordsAdded++;
             }
+            await _dbContext.SaveChangesAsync();
 
-            // Add sample password items (without actual passwords - just structure)
+            // Add sample password items using EF Core entities
             var sampleItems = new[]
             {
                 ("GitHub Account", "github.com", "github_user"),
@@ -489,11 +496,24 @@ public class DatabaseResetService : IDatabaseResetService
             {
                 // Note: Not adding actual passwords for security reasons
                 // Users can add these manually after seeing the sample structure
-                await _dbContext.Database.ExecuteSqlRawAsync(
-                    $"INSERT INTO PasswordItems (Title, Website, Username, Notes, CreatedAt, UpdatedAt) " +
-                    $"VALUES ('{title}', '{website}', '{username}', 'Sample password item - please update', datetime('now'), datetime('now'))");
+                var item = new PasswordManager.Models.PasswordItem
+                {
+                    Title = title,
+                    Website = website,
+                    Type = PasswordManager.Models.ItemType.Login,
+                    Description = "Sample password item - please update with real credentials",
+                    CreatedAt = DateTime.UtcNow,
+                    LastModified = DateTime.UtcNow,
+                    LoginItem = new PasswordManager.Models.LoginItem
+                    {
+                        Username = username,
+                        EncryptedPassword = string.Empty // No password for security
+                    }
+                };
+                _dbContext.PasswordItems.Add(item);
                 recordsAdded++;
             }
+            await _dbContext.SaveChangesAsync();
 
             result.Success = true;
             result.RecordsDeleted = 0;
@@ -589,8 +609,12 @@ public class DatabaseResetService : IDatabaseResetService
                 if (trimmed.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase) ||
                     trimmed.StartsWith("DataSource=", StringComparison.OrdinalIgnoreCase))
                 {
-                    var path = trimmed[(trimmed.IndexOf('=') + 1)..].Trim();
-                    return path;
+                    var equalsIndex = trimmed.IndexOf('=');
+                    if (equalsIndex >= 0 && equalsIndex < trimmed.Length - 1)
+                    {
+                        var path = trimmed[(equalsIndex + 1)..].Trim();
+                        return path;
+                    }
                 }
             }
         }
