@@ -7,6 +7,7 @@
 #define MyAppPublisher "Password Manager"
 #define MyAppURL "https://github.com/dotnetappdev/PasswordManagerApp"
 #define MyAppExeName "PasswordManager.WinUi.exe"
+#define DotNetRuntimeURL "https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -82,6 +83,79 @@ var
   ApiUrlEdit: String;
   ApiKeyEdit: String;
   UseLocalApiCheckBox: TNewCheckBox;
+
+function IsDotNetInstalled(): Boolean;
+var
+  ResultCode: Integer;
+begin
+  { Check if .NET 9 runtime is installed by running dotnet --list-runtimes }
+  Result := False;
+  if Exec('cmd.exe', '/C dotnet --list-runtimes | findstr "Microsoft.WindowsDesktop.App 9."', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    Result := (ResultCode = 0);
+  end;
+  
+  if not Result then
+    Log('.NET 9 Windows Desktop runtime not found, will need to download and install');
+end;
+
+function DownloadAndInstallDotNet(): Boolean;
+var
+  DotNetInstallerPath: String;
+  ResultCode: Integer;
+  DownloadPage: TDownloadWizardPage;
+begin
+  Result := True;
+  DotNetInstallerPath := ExpandConstant('{tmp}\dotnet-runtime-installer.exe');
+  
+  { Download .NET runtime installer }
+  DownloadPage := CreateDownloadPage('Downloading .NET Runtime', 'Downloading the latest .NET 9 Windows Desktop runtime from Microsoft...', nil);
+  DownloadPage.Clear;
+  DownloadPage.Add('{#DotNetRuntimeURL}', 'dotnet-runtime-installer.exe', '');
+  
+  try
+    DownloadPage.Show;
+    try
+      DownloadPage.Download;
+    except
+      if DownloadPage.AbortedByUser then
+      begin
+        Log('Download aborted by user');
+        Result := False;
+      end else
+      begin
+        SuppressibleMsgBox('Failed to download .NET runtime installer. Please check your internet connection and try again.' + #13#10 + 
+                          'You can also manually download it from: https://dotnet.microsoft.com/download/dotnet/9.0', mbError, MB_OK, IDOK);
+        Result := False;
+      end;
+    end;
+  finally
+    DownloadPage.Hide;
+  end;
+  
+  if Result then
+  begin
+    { Install .NET runtime }
+    if Exec(DotNetInstallerPath, '/install /quiet /norestart', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+    begin
+      if ResultCode = 0 then
+      begin
+        Log('.NET runtime installed successfully');
+        Result := True;
+      end else
+      begin
+        Log('Failed to install .NET runtime, exit code: ' + IntToStr(ResultCode));
+        SuppressibleMsgBox('Failed to install .NET runtime. Exit code: ' + IntToStr(ResultCode) + #13#10 + 
+                          'Please try installing .NET 9 manually from: https://dotnet.microsoft.com/download/dotnet/9.0', mbError, MB_OK, IDOK);
+        Result := False;
+      end;
+    end else
+    begin
+      Log('Failed to execute .NET runtime installer');
+      Result := False;
+    end;
+  end;
+end;
   
 procedure InitializeWizard;
 begin
@@ -178,6 +252,30 @@ begin
   begin
     { Update appsettings.json with API configuration }
     UpdateWinUIAppSettings();
+  end;
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  Result := '';
+  NeedsRestart := False;
+  
+  { Check if .NET runtime is installed }
+  if not IsDotNetInstalled() then
+  begin
+    if MsgBox('.NET 9 Windows Desktop runtime is not installed on this system.' + #13#10 + 
+              'The installer will now download and install the latest .NET 9 runtime from Microsoft.' + #13#10 + #13#10 +
+              'Do you want to continue?', mbConfirmation, MB_YESNO) = IDYES then
+    begin
+      if not DownloadAndInstallDotNet() then
+      begin
+        Result := 'Failed to install .NET runtime. The application may not run without it.' + #13#10 +
+                  'Please install .NET 9 manually from: https://dotnet.microsoft.com/download/dotnet/9.0';
+      end;
+    end else
+    begin
+      Result := 'Installation cancelled. .NET 9 runtime is required to run this application.';
+    end;
   end;
 end;
 

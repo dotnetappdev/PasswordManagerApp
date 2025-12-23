@@ -41,7 +41,8 @@ Both installers use **Inno Setup**, an open-source Windows installer creator.
 
 1. **Windows 10/11** (64-bit)
 2. **Administrator privileges**
-3. **.NET 9 Runtime** (will be bundled in self-contained mode)
+3. **.NET 9 Runtime** (automatically downloaded and installed by the installer if not present)
+4. **Internet connection** (required for automatic .NET runtime download)
 
 ## 🏗️ Building Installers
 
@@ -96,6 +97,7 @@ Installers will be created in the `installers/output/` directory:
 
 ### Web API Installer Features
 
+- ✅ **Automatic .NET Runtime Installation** - Downloads and installs latest .NET 9 runtime from Microsoft if not present
 - ✅ **Database Configuration Wizard** - Interactive setup for SQL Server, PostgreSQL, MySQL, or SQLite
 - ✅ **Windows Service Installation** - Optional installation as a Windows service
 - ✅ **Firewall Rules** - Automatic creation of Windows Firewall rules for HTTPS/HTTP
@@ -106,12 +108,24 @@ Installers will be created in the `installers/output/` directory:
 
 ### WinUI Application Installer Features
 
+- ✅ **Automatic .NET Runtime Installation** - Downloads and installs latest .NET 9 Windows Desktop runtime from Microsoft if not present
 - ✅ **API Configuration** - Configure connection to local or remote API
 - ✅ **Local Database Option** - Use SQLite for offline/standalone mode
 - ✅ **Desktop Shortcut** - Optional desktop icon creation
 - ✅ **Auto-Start** - Optional Windows startup integration
 - ✅ **Plugin Support** - Includes import plugins for 1Password, Bitwarden, etc.
 - ✅ **Clean Uninstall** - Removes application with optional data cleanup
+
+### Automatic .NET Runtime Installation
+
+Both installers include automatic .NET runtime detection and installation:
+
+1. **Runtime Check** - Installer checks if .NET 9 runtime is installed on the system
+2. **Download** - If not found, downloads the latest version from Microsoft's official CDN (`aka.ms/dotnet/9.0`)
+3. **Installation** - Installs silently in the background without user interaction
+4. **Always Latest** - Uses Microsoft's redirecting URL to always get the most recent runtime version
+
+**Note:** Internet connection is required for automatic runtime download. If download fails, the installer provides a direct link for manual installation.
 
 ## 📖 Installation Guide
 
@@ -122,32 +136,37 @@ Installers will be created in the `installers/output/` directory:
    PasswordManager-API-Setup-1.0.0.exe
    ```
 
-2. **Accept the license agreement**
+2. **.NET Runtime Check** (automatic)
+   - Installer checks for .NET 9 runtime
+   - If not found, prompts to download and install
+   - Downloads latest version from Microsoft
 
-3. **Choose installation type**
+3. **Accept the license agreement**
+
+4. **Choose installation type**
    - Full Installation (recommended)
    - Custom Installation
 
-4. **Select components**
+5. **Select components**
    - [x] Web API Service (required)
    - [ ] SQL Server Configuration (optional)
 
-5. **Configure installation options**
+6. **Configure installation options**
    - [ ] Install as Windows Service
    - [ ] Create Windows Firewall rules
    - [ ] Generate HTTPS development certificate
 
-6. **Database Configuration** (if SQL Server Configuration selected)
+7. **Database Configuration** (if SQL Server Configuration selected)
    - **Database Provider**: SqlServer / PostgreSQL / MySQL / SQLite
    - **Database Server**: localhost or remote server
    - **Database Name**: PasswordManagerDB
    - **Username**: Database user (e.g., sa)
    - **Password**: Database password
 
-7. **Choose installation directory**
+8. **Choose installation directory**
    - Default: `C:\Program Files\Password Manager Web API`
 
-8. **Complete installation**
+9. **Complete installation**
 
 ### Installing the WinUI Application
 
@@ -156,13 +175,18 @@ Installers will be created in the `installers/output/` directory:
    PasswordManager-WinUI-Setup-1.0.0.exe
    ```
 
-2. **Accept the license agreement**
+2. **.NET Runtime Check** (automatic)
+   - Installer checks for .NET 9 Windows Desktop runtime
+   - If not found, prompts to download and install
+   - Downloads latest version from Microsoft
 
-3. **Choose installation type**
+3. **Accept the license agreement**
+
+4. **Choose installation type**
    - Full Installation (recommended)
    - Custom Installation
 
-4. **Select components**
+5. **Select components**
    - [x] WinUI Application (required)
    - [x] Import Plugins (recommended)
 
