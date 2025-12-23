@@ -15,6 +15,8 @@ public class SettingsViewModel : BaseViewModel
     private string _apiBaseUrl = "https://localhost:7001/api";
     private string _databaseProvider = "SQLite";
     private string _databaseConnectionString = "";
+    private string _sqliteDatabasePath = "passwordmanager.db";
+    private int _selectedDatabaseProviderIndex = 0;
 
     // Simplified cloud backup properties
     private bool _enableCloudBackup = false;
@@ -87,6 +89,32 @@ public class SettingsViewModel : BaseViewModel
         set => SetProperty(ref _databaseConnectionString, value);
     }
 
+    public string SqliteDatabasePath
+    {
+        get => _sqliteDatabasePath;
+        set => SetProperty(ref _sqliteDatabasePath, value);
+    }
+
+    public int SelectedDatabaseProviderIndex
+    {
+        get => _selectedDatabaseProviderIndex;
+        set
+        {
+            if (SetProperty(ref _selectedDatabaseProviderIndex, value))
+            {
+                // Update database provider based on index
+                DatabaseProvider = value switch
+                {
+                    0 => "SQLite",
+                    1 => "SQL Server",
+                    2 => "MySQL",
+                    3 => "PostgreSQL",
+                    _ => "SQLite"
+                };
+            }
+        }
+    }
+
     public bool EnableCloudBackup
     {
         get => _enableCloudBackup;
@@ -150,6 +178,10 @@ public class SettingsViewModel : BaseViewModel
             DatabaseProvider = localSettings.Values.ContainsKey("DatabaseProvider")
                 ? localSettings.Values["DatabaseProvider"]?.ToString() ?? "SQLite"
                 : "SQLite";
+
+            SqliteDatabasePath = localSettings.Values.ContainsKey("SqliteDatabasePath")
+                ? localSettings.Values["SqliteDatabasePath"]?.ToString() ?? "passwordmanager.db"
+                : "passwordmanager.db";
 
             ExportPath = localSettings.Values.ContainsKey("ExportPath")
                 ? localSettings.Values["ExportPath"]?.ToString() ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport")

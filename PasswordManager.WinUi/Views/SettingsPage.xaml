@@ -144,7 +144,10 @@
                             <TextBlock Text="Database Provider (Local Mode Only)" 
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>
-                            <ComboBox IsEnabled="{Binding AuthenticationMode, Converter={StaticResource LocalModeToEnabledConverter}}"
+                            <ComboBox x:Name="DatabaseProviderComboBox"
+                                     IsEnabled="{Binding AuthenticationMode, Converter={StaticResource LocalModeToEnabledConverter}}"
+                                     SelectedIndex="{Binding SelectedDatabaseProviderIndex, Mode=TwoWay}"
+                                     SelectionChanged="DatabaseProviderComboBox_SelectionChanged"
                                      Style="{StaticResource ModernComboBoxStyle}"
                                      MinWidth="240">
                                 <ComboBoxItem Content="SQLite" IsSelected="True"/>
@@ -152,6 +155,23 @@
                                 <ComboBoxItem Content="MySQL"/>
                                 <ComboBoxItem Content="PostgreSQL"/>
                             </ComboBox>
+                        </StackPanel>
+                        
+                        <!-- SQLite Path Configuration -->
+                        <StackPanel x:Name="SqlitePathPanel"
+                                   Spacing="8"
+                                   Visibility="Visible">
+                            <TextBlock Text="SQLite Database Path" 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            <TextBox x:Name="SqlitePathTextBox"
+                                    Text="{Binding SqliteDatabasePath, Mode=TwoWay}"
+                                    PlaceholderText="passwordmanager.db"
+                                    Style="{StaticResource ModernTextBoxStyle}"
+                                    MinWidth="360"/>
+                            <TextBlock Text="Path to the SQLite database file (absolute or relative to app data folder)." 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      TextWrapping="Wrap"/>
                         </StackPanel>
                         
                         <Button Style="{StaticResource ModernSecondaryButtonStyle}"
@@ -679,6 +699,75 @@
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <FontIcon Glyph="&#xE74D;" FontSize="14"/>
                                         <TextBlock Text="Reset All Tables"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                        
+                        <!-- Secure Wipe Database -->
+                        <Border Style="{StaticResource ModernCardStyle}"
+                               Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                               BorderBrush="#dc2626"
+                               BorderThickness="2">
+                            <StackPanel Spacing="12">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE107;" 
+                                             FontSize="16"
+                                             Foreground="#dc2626"/>
+                                    <TextBlock Text="Secure Wipe Database" 
+                                              FontWeight="Bold"
+                                              Foreground="#dc2626"
+                                              FontSize="14"/>
+                                </StackPanel>
+                                <TextBlock Text="🔒 SECURE DELETE: Clears all tables and securely deletes the database file (SQLite only). For SQL Server, clears all tables. Cannot be undone!" 
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          Foreground="#dc2626"
+                                          TextWrapping="Wrap"
+                                          FontWeight="Bold"/>
+                                
+                                <Button x:Name="SecureWipeButton"
+                                       Background="#dc2626"
+                                       Foreground="White"
+                                       BorderThickness="0"
+                                       CornerRadius="8"
+                                       Padding="16,12"
+                                       HorizontalAlignment="Left"
+                                       Click="SecureWipeButton_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE107;" FontSize="14"/>
+                                        <TextBlock Text="Secure Wipe"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                        
+                        <!-- Reseed Sample Data -->
+                        <Border Style="{StaticResource ModernCardStyle}"
+                               Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                               BorderBrush="{StaticResource ModernPrimaryBrush}">
+                            <StackPanel Spacing="12">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE896;" 
+                                             FontSize="16"
+                                             Foreground="{StaticResource ModernPrimaryBrush}"/>
+                                    <TextBlock Text="Reseed Sample Data" 
+                                              FontWeight="SemiBold"
+                                              FontSize="14"/>
+                                </StackPanel>
+                                <TextBlock Text="Adds sample categories, collections, and password items to help you get started. Does not delete existing data." 
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          TextWrapping="Wrap"
+                                          Opacity="0.8"/>
+                                
+                                <Button x:Name="ReseedSampleButton"
+                                       Style="{StaticResource ModernSecondaryButtonStyle}"
+                                       Background="{StaticResource ModernPrimaryBrush}"
+                                       Foreground="White"
+                                       HorizontalAlignment="Left"
+                                       Click="ReseedSampleButton_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE896;" FontSize="14"/>
+                                        <TextBlock Text="Reseed Sample Data"/>
                                     </StackPanel>
                                 </Button>
                             </StackPanel>

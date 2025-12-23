@@ -824,6 +824,307 @@ public sealed partial class SettingsPage : Page
         return stackPanel;
     }
 
+    private async void SecureWipeButton_Click(object sender, RoutedEventArgs e)
+    {
+        // First confirmation dialog
+        var firstConfirmDialog = new ContentDialog
+        {
+            Title = "🔒 SECURE WIPE DATABASE",
+            Content = CreateSecureWipeDialogContent(),
+            PrimaryButtonText = "I Understand, Continue",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot
+        };
+
+        var firstResult = await firstConfirmDialog.ShowAsync();
+        if (firstResult != ContentDialogResult.Primary)
+            return;
+
+        // Second confirmation with text input
+        var confirmTextBox = new TextBox
+        {
+            PlaceholderText = "Type WIPE to confirm",
+            Width = 250
+        };
+
+        var stackPanel = new StackPanel
+        {
+            Spacing = 12
+        };
+        stackPanel.Children.Add(new TextBlock
+        {
+            Text = "⚠️ FINAL WARNING: This will permanently delete all data and cannot be undone!",
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
+            FontWeight = Microsoft.UI.Text.FontWeights.Bold
+        });
+        stackPanel.Children.Add(new TextBlock
+        {
+            Text = "Type 'WIPE' to confirm secure deletion:",
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
+        });
+        stackPanel.Children.Add(confirmTextBox);
+
+        var finalConfirmDialog = new ContentDialog
+        {
+            Title = "Confirm Secure Wipe",
+            Content = stackPanel,
+            PrimaryButtonText = "Secure Wipe Now",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot
+        };
+
+        var finalResult = await finalConfirmDialog.ShowAsync();
+        if (finalResult == ContentDialogResult.Primary && 
+            confirmTextBox.Text.Equals("WIPE", StringComparison.Ordinal) &&
+            _serviceProvider != null)
+        {
+            await PerformSecureWipeAsync();
+        }
+        else if (finalResult == ContentDialogResult.Primary)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = "Confirmation Failed",
+                Content = "You must type 'WIPE' exactly to confirm this action.",
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot
+            };
+            await errorDialog.ShowAsync();
+        }
+    }
+
+    private async void ReseedSampleButton_Click(object sender, RoutedEventArgs e)
+    {
+        var confirmDialog = new ContentDialog
+        {
+            Title = "Reseed Sample Data",
+            Content = CreateReseedSampleDialogContent(),
+            PrimaryButtonText = "Reseed Sample Data",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot
+        };
+
+        var result = await confirmDialog.ShowAsync();
+        if (result == ContentDialogResult.Primary && _serviceProvider != null)
+        {
+            await PerformReseedSampleDataAsync();
+        }
+    }
+
+    private void DatabaseProviderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox comboBox && SqlitePathPanel != null)
+        {
+            // Show/hide SQLite path panel based on provider selection
+            SqlitePathPanel.Visibility = comboBox.SelectedIndex == 0 
+                ? Visibility.Visible 
+                : Visibility.Collapsed;
+        }
+    }
+
+    private StackPanel CreateSecureWipeDialogContent()
+    {
+        var contentPanel = new StackPanel { Spacing = 12 };
+        
+        contentPanel.Children.Add(new TextBlock
+        {
+            Text = "🔒 SECURE DELETE OPERATION",
+            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
+            FontSize = 16,
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
+        });
+
+        contentPanel.Children.Add(new TextBlock
+        {
+            Text = "This operation will:",
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
+        });
+
+        var itemsList = new TextBlock
+        {
+            Text = "• Clear ALL database tables (including user accounts)\n" +
+                   "• Securely overwrite the database file (SQLite only, using DoD 5220.22-M standard)\n" +
+                   "• Permanently delete the database file\n" +
+                   "• Log you out immediately\n\n" +
+                   "For SQL Server databases, this will clear all tables but not delete server data files.",
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Margin = new Microsoft.UI.Xaml.Thickness(12, 0, 0, 0)
+        };
+        contentPanel.Children.Add(itemsList);
+
+        contentPanel.Children.Add(new TextBlock
+        {
+            Text = "⚠️ THIS CANNOT BE UNDONE!",
+            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
+        });
+
+        return contentPanel;
+    }
+
+    private StackPanel CreateReseedSampleDialogContent()
+    {
+        var contentPanel = new StackPanel { Spacing = 12 };
+        
+        contentPanel.Children.Add(new TextBlock
+        {
+            Text = "This will add sample data to your database:",
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
+        });
+
+        var itemsList = new TextBlock
+        {
+            Text = "• Sample categories (Social Media, Banking, Email, Shopping, Entertainment)\n" +
+                   "• Sample collections (Personal, Work)\n" +
+                   "• Sample password items (structure only, no actual passwords)\n" +
+                   "• Default roles (Admin, User)",
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Margin = new Microsoft.UI.Xaml.Thickness(12, 0, 0, 0)
+        };
+        contentPanel.Children.Add(itemsList);
+
+        contentPanel.Children.Add(new TextBlock
+        {
+            Text = "This will NOT delete your existing data.",
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Green),
+            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
+        });
+
+        return contentPanel;
+    }
+
+    private async Task PerformSecureWipeAsync()
+    {
+        var progressDialog = new ContentDialog
+        {
+            Title = "Secure Wiping Database...",
+            Content = new StackPanel
+            {
+                Spacing = 16,
+                Children =
+                {
+                    new ProgressRing { IsActive = true, Width = 48, Height = 48 },
+                    new TextBlock 
+                    { 
+                        Text = "Please wait while the database is being securely wiped...",
+                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                        HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Center
+                    }
+                }
+            },
+            XamlRoot = XamlRoot
+        };
+
+        _ = progressDialog.ShowAsync();
+
+        try
+        {
+            var resetService = _serviceProvider!.GetRequiredService<IDatabaseResetService>();
+            var result = await resetService.SecureWipeDatabaseAsync();
+
+            progressDialog.Hide();
+
+            var resultDialog = new ContentDialog
+            {
+                Title = result.Success ? "✓ Secure Wipe Complete" : "❌ Wipe Failed",
+                Content = CreateResultDialogContent(result),
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot
+            };
+
+            await resultDialog.ShowAsync();
+
+            if (result.Success)
+            {
+                // Navigate back to login
+                Frame.Navigate(typeof(LoginPage), _serviceProvider);
+            }
+        }
+        catch (Exception ex)
+        {
+            progressDialog.Hide();
+
+            var errorDialog = new ContentDialog
+            {
+                Title = "❌ Secure Wipe Failed",
+                Content = $"An error occurred during the secure wipe operation:\n\n{ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot
+            };
+
+            await errorDialog.ShowAsync();
+        }
+    }
+
+    private async Task PerformReseedSampleDataAsync()
+    {
+        var progressDialog = new ContentDialog
+        {
+            Title = "Reseeding Sample Data...",
+            Content = new StackPanel
+            {
+                Spacing = 16,
+                Children =
+                {
+                    new ProgressRing { IsActive = true, Width = 48, Height = 48 },
+                    new TextBlock 
+                    { 
+                        Text = "Please wait while sample data is being added...",
+                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                        HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Center
+                    }
+                }
+            },
+            XamlRoot = XamlRoot
+        };
+
+        _ = progressDialog.ShowAsync();
+
+        try
+        {
+            var resetService = _serviceProvider!.GetRequiredService<IDatabaseResetService>();
+            var result = await resetService.ReseedSampleDataAsync();
+
+            progressDialog.Hide();
+
+            var resultDialog = new ContentDialog
+            {
+                Title = result.Success ? "✓ Sample Data Added" : "❌ Reseed Failed",
+                Content = CreateResultDialogContent(result),
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot
+            };
+
+            await resultDialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            progressDialog.Hide();
+
+            var errorDialog = new ContentDialog
+            {
+                Title = "❌ Reseed Failed",
+                Content = $"An error occurred during the reseed operation:\n\n{ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot
+            };
+
+            await errorDialog.ShowAsync();
+        }
+    }
+
     private async void ClearDataButton_Click(object sender, RoutedEventArgs e)
     {
         var confirmDialog = new ContentDialog
