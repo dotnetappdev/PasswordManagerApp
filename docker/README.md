@@ -510,4 +510,4 @@ If you encounter issues:
 
 ---
 
-**Note:** SQL Server 2022 Developer Edition is used instead of SQL Server 2025 as it's the latest available version. SQL Server 2022 is fully featured and suitable for development and production use.
+**Note:** SQL Server 2022 Developer Edition is used as it's the latest available version from Microsoft. SQL Server 2022 is fully featured and suitable for both development and production use.
