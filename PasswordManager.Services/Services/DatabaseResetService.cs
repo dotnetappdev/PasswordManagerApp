@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PasswordManager.DAL;
 using PasswordManager.Services.Interfaces;
+using System.Security.Cryptography;
 
 namespace PasswordManager.Services.Services;
 
@@ -12,6 +13,7 @@ public class DatabaseResetService : IDatabaseResetService
 {
     private readonly PasswordManagerDbContext _dbContext;
     private readonly ILogger<DatabaseResetService> _logger;
+    private readonly IDatabaseConfigurationService? _databaseConfigurationService;
 
     // User-related tables that should be preserved when resetting data
     private readonly List<string> _userTables = new()
@@ -46,10 +48,12 @@ public class DatabaseResetService : IDatabaseResetService
 
     public DatabaseResetService(
         PasswordManagerDbContext dbContext,
-        ILogger<DatabaseResetService> logger)
+        ILogger<DatabaseResetService> logger,
+        IDatabaseConfigurationService? databaseConfigurationService = null)
     {
         _dbContext = dbContext;
         _logger = logger;
+        _databaseConfigurationService = databaseConfigurationService;
     }
 
     public async Task<DatabaseResetInfo> GetResetInfoAsync()
@@ -249,8 +253,28 @@ public class DatabaseResetService : IDatabaseResetService
     {
         try
         {
-            // SQLite syntax
-            await _dbContext.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = OFF");
+            var providerName = _dbContext.Database.ProviderName ?? string.Empty;
+            
+            if (providerName.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                await _dbContext.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = OFF");
+            }
+            else if (providerName.Contains("SqlServer", StringComparison.OrdinalIgnoreCase))
+            {
+                // SQL Server: Disable constraints for all tables
+                await _dbContext.Database.ExecuteSqlRawAsync("EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL'");
+            }
+            else if (providerName.Contains("MySql", StringComparison.OrdinalIgnoreCase))
+            {
+                // MySQL: Disable foreign key checks
+                await _dbContext.Database.ExecuteSqlRawAsync("SET FOREIGN_KEY_CHECKS = 0");
+            }
+            else if (providerName.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) || 
+                     providerName.Contains("PostgreSQL", StringComparison.OrdinalIgnoreCase))
+            {
+                // PostgreSQL: Set constraints to deferred
+                await _dbContext.Database.ExecuteSqlRawAsync("SET CONSTRAINTS ALL DEFERRED");
+            }
         }
         catch (Exception ex)
         {
@@ -262,8 +286,28 @@ public class DatabaseResetService : IDatabaseResetService
     {
         try
         {
-            // SQLite syntax
-            await _dbContext.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = ON");
+            var providerName = _dbContext.Database.ProviderName ?? string.Empty;
+            
+            if (providerName.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                await _dbContext.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = ON");
+            }
+            else if (providerName.Contains("SqlServer", StringComparison.OrdinalIgnoreCase))
+            {
+                // SQL Server: Enable constraints for all tables
+                await _dbContext.Database.ExecuteSqlRawAsync("EXEC sp_MSforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL'");
+            }
+            else if (providerName.Contains("MySql", StringComparison.OrdinalIgnoreCase))
+            {
+                // MySQL: Enable foreign key checks
+                await _dbContext.Database.ExecuteSqlRawAsync("SET FOREIGN_KEY_CHECKS = 1");
+            }
+            else if (providerName.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) || 
+                     providerName.Contains("PostgreSQL", StringComparison.OrdinalIgnoreCase))
+            {
+                // PostgreSQL: Set constraints to immediate
+                await _dbContext.Database.ExecuteSqlRawAsync("SET CONSTRAINTS ALL IMMEDIATE");
+            }
         }
         catch (Exception ex)
         {
@@ -313,5 +357,272 @@ public class DatabaseResetService : IDatabaseResetService
     {
         var allAllowedTables = _dataTables.Concat(_userTables).ToList();
         return allAllowedTables.Contains(tableName, StringComparer.OrdinalIgnoreCase);
+    }
+
+    public async Task<DatabaseResetResult> SecureWipeDatabaseAsync()
+    {
+        var result = new DatabaseResetResult();
+        
+        try
+        {
+            _logger.LogInformation("Starting secure database wipe");
+            
+            // First, reset all tables
+            var resetResult = await ResetAllTablesAsync(reseedData: false);
+            if (!resetResult.Success)
+            {
+                result.Success = false;
+                result.Message = $"Failed to reset tables before wipe: {resetResult.Message}";
+                result.Errors.AddRange(resetResult.Errors);
+                return result;
+            }
+
+            // Get database provider type
+            var providerName = _dbContext.Database.ProviderName ?? string.Empty;
+            
+            if (providerName.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                // For SQLite, close connection and securely delete the file
+                var connectionString = _dbContext.Database.GetConnectionString();
+                if (!string.IsNullOrEmpty(connectionString))
+                {
+                    // Extract database path from connection string
+                    var dbPath = ExtractSqlitePath(connectionString);
+                    
+                    if (!string.IsNullOrEmpty(dbPath) && File.Exists(dbPath))
+                    {
+                        // Close all connections
+                        await _dbContext.Database.CloseConnectionAsync();
+                        
+                        // Wait a moment for connections to fully close
+                        await Task.Delay(500);
+                        
+                        try
+                        {
+                            // Securely overwrite the file before deletion
+                            await SecureDeleteFileAsync(dbPath);
+                            
+                            result.Success = true;
+                            result.Message = $"Database securely wiped. Tables cleared: {resetResult.TablesCleared}, Records deleted: {resetResult.RecordsDeleted}, Database file deleted.";
+                            _logger.LogInformation("SQLite database file securely deleted: {DbPath}", dbPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Could not delete SQLite database file: {DbPath}", dbPath);
+                            result.Success = true; // Tables were still cleared
+                            result.Message = $"Tables cleared successfully but could not delete database file: {ex.Message}";
+                            result.Errors.Add($"File deletion failed: {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        result.Success = true;
+                        result.Message = $"Tables cleared successfully. Database file not found or in-memory database.";
+                    }
+                }
+            }
+            else
+            {
+                // For SQL Server, PostgreSQL, MySQL - tables are already cleared
+                result.Success = true;
+                result.Message = $"Database securely wiped. Tables cleared: {resetResult.TablesCleared}, Records deleted: {resetResult.RecordsDeleted}";
+                _logger.LogInformation("Server-based database wiped (all tables cleared)");
+            }
+            
+            result.TablesCleared = resetResult.TablesCleared;
+            result.RecordsDeleted = resetResult.RecordsDeleted;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during secure database wipe");
+            result.Success = false;
+            result.Message = $"Failed to securely wipe database: {ex.Message}";
+            result.Errors.Add(ex.Message);
+        }
+
+        return result;
+    }
+
+    public async Task<DatabaseResetResult> ReseedSampleDataAsync(string? userId = null)
+    {
+        var result = new DatabaseResetResult();
+        
+        try
+        {
+            _logger.LogInformation("Starting sample data reseeding");
+            
+            var recordsAdded = 0;
+
+            // First, reseed default data (roles and collections)
+            await ReseedDefaultDataAsync();
+            recordsAdded += 4; // 2 roles + 2 collections
+
+            // Add sample categories using EF Core entities
+            var categoryIds = new List<int>();
+            var sampleCategories = new[]
+            {
+                ("Social Media", "Social networking accounts", "👥", "#3b82f6"),
+                ("Banking", "Financial and banking services", "🏦", "#10b981"),
+                ("Email", "Email accounts", "📧", "#f59e0b"),
+                ("Shopping", "E-commerce accounts", "🛒", "#8b5cf6"),
+                ("Entertainment", "Streaming and gaming", "🎮", "#ec4899")
+            };
+
+            foreach (var (name, description, icon, color) in sampleCategories)
+            {
+                var category = new PasswordManager.Models.Category
+                {
+                    Name = name,
+                    Description = description,
+                    Icon = icon,
+                    Color = color,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _dbContext.Categories.Add(category);
+                recordsAdded++;
+            }
+            await _dbContext.SaveChangesAsync();
+
+            // Add sample password items using EF Core entities
+            var sampleItems = new[]
+            {
+                ("GitHub Account", "github.com", "github_user"),
+                ("Gmail Account", "gmail.com", "user@gmail.com"),
+                ("Netflix", "netflix.com", "netflix_user"),
+                ("Amazon", "amazon.com", "amazon_user")
+            };
+
+            foreach (var (title, website, username) in sampleItems)
+            {
+                // Note: Not adding actual passwords for security reasons
+                // Users can add these manually after seeing the sample structure
+                var item = new PasswordManager.Models.PasswordItem
+                {
+                    Title = title,
+                    Website = website,
+                    Type = PasswordManager.Models.ItemType.Login,
+                    Description = "Sample password item - please update with real credentials",
+                    CreatedAt = DateTime.UtcNow,
+                    LastModified = DateTime.UtcNow,
+                    LoginItem = new PasswordManager.Models.LoginItem
+                    {
+                        Username = username,
+                        EncryptedPassword = string.Empty // No password for security
+                    }
+                };
+                _dbContext.PasswordItems.Add(item);
+                recordsAdded++;
+            }
+            await _dbContext.SaveChangesAsync();
+
+            result.Success = true;
+            result.RecordsDeleted = 0;
+            result.TablesCleared = 0;
+            result.Message = $"Successfully reseeded sample data. Added {recordsAdded} sample records.";
+            
+            _logger.LogInformation("Sample data reseeded successfully: {RecordsAdded} records", recordsAdded);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during sample data reseeding");
+            result.Success = false;
+            result.Message = $"Failed to reseed sample data: {ex.Message}";
+            result.Errors.Add(ex.Message);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Securely deletes a file by overwriting it with random data before deletion
+    /// </summary>
+    private async Task SecureDeleteFileAsync(string filePath)
+    {
+        if (!File.Exists(filePath))
+            return;
+
+        try
+        {
+            var fileInfo = new FileInfo(filePath);
+            var fileLength = fileInfo.Length;
+
+            // Overwrite file with random data (DoD 5220.22-M standard - 3 passes)
+            using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Write, FileShare.None))
+            {
+                // Pass 1: Random data
+                var randomBuffer = new byte[8192];
+                RandomNumberGenerator.Fill(randomBuffer);
+                for (long pos = 0; pos < fileLength; pos += randomBuffer.Length)
+                {
+                    var bytesToWrite = (int)Math.Min(randomBuffer.Length, fileLength - pos);
+                    await fileStream.WriteAsync(randomBuffer.AsMemory(0, bytesToWrite));
+                }
+                await fileStream.FlushAsync();
+
+                // Pass 2: Complement of random data
+                fileStream.Seek(0, SeekOrigin.Begin);
+                for (int i = 0; i < randomBuffer.Length; i++)
+                    randomBuffer[i] = (byte)~randomBuffer[i];
+                for (long pos = 0; pos < fileLength; pos += randomBuffer.Length)
+                {
+                    var bytesToWrite = (int)Math.Min(randomBuffer.Length, fileLength - pos);
+                    await fileStream.WriteAsync(randomBuffer.AsMemory(0, bytesToWrite));
+                }
+                await fileStream.FlushAsync();
+
+                // Pass 3: Random data again
+                RandomNumberGenerator.Fill(randomBuffer);
+                fileStream.Seek(0, SeekOrigin.Begin);
+                for (long pos = 0; pos < fileLength; pos += randomBuffer.Length)
+                {
+                    var bytesToWrite = (int)Math.Min(randomBuffer.Length, fileLength - pos);
+                    await fileStream.WriteAsync(randomBuffer.AsMemory(0, bytesToWrite));
+                }
+                await fileStream.FlushAsync();
+            }
+
+            // Delete the file
+            File.Delete(filePath);
+            
+            _logger.LogInformation("File securely deleted: {FilePath}", filePath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during secure file deletion: {FilePath}", filePath);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Extracts the database file path from a SQLite connection string
+    /// </summary>
+    private string? ExtractSqlitePath(string connectionString)
+    {
+        try
+        {
+            // Parse common SQLite connection string formats
+            // "Data Source=path" or "DataSource=path"
+            var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var part in parts)
+            {
+                var trimmed = part.Trim();
+                if (trimmed.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase) ||
+                    trimmed.StartsWith("DataSource=", StringComparison.OrdinalIgnoreCase))
+                {
+                    var equalsIndex = trimmed.IndexOf('=');
+                    if (equalsIndex >= 0 && equalsIndex < trimmed.Length - 1)
+                    {
+                        var path = trimmed[(equalsIndex + 1)..].Trim();
+                        return path;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error extracting SQLite path from connection string");
+        }
+        
+        return null;
     }
 }

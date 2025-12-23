@@ -16,6 +16,16 @@ public interface IDatabaseResetService
     Task<DatabaseResetResult> ResetAllTablesAsync(bool reseedData = true);
     
     /// <summary>
+    /// Securely wipes the database by clearing all tables and, for SQLite, securely deleting the database file
+    /// </summary>
+    Task<DatabaseResetResult> SecureWipeDatabaseAsync();
+    
+    /// <summary>
+    /// Reseeds the database with sample data including categories, collections, and sample password items
+    /// </summary>
+    Task<DatabaseResetResult> ReseedSampleDataAsync(string? userId = null);
+    
+    /// <summary>
     /// Gets a list of tables that will be affected by each reset operation
     /// </summary>
     Task<DatabaseResetInfo> GetResetInfoAsync();

@@ -246,11 +246,25 @@
                       Label="Database Provider" 
                       Variant="Variant.Outlined"
                      >
+                <MudSelectItem Value="@("Sqlite")">SQLite</MudSelectItem>
                 <MudSelectItem Value="@("SqlServer")">SQL Server</MudSelectItem>
                 <MudSelectItem Value="@("MySql")">MySQL</MudSelectItem>
                 <MudSelectItem Value="@("PostgreSql")">PostgreSQL</MudSelectItem>
                 <MudSelectItem Value="@("Supabase")">Supabase</MudSelectItem>
             </MudSelect>
+
+            @if (databaseProvider == "Sqlite")
+            {
+                <MudGrid Style="margin-top: 16px;">
+                    <MudItem xs="12">
+                        <MudTextField T="string" @bind-value="sqliteDatabasePath" 
+                                     Label="SQLite Database Path" 
+                                     Variant="Variant.Outlined"
+                                     HelperText="Path to the SQLite database file (absolute or relative)"
+                                     />
+                    </MudItem>
+                </MudGrid>
+            }
 
             @if (databaseProvider == "Supabase")
             {
@@ -321,6 +335,48 @@
                         </MudButton>
                     </MudStack>
                 </MudPaper>
+
+                <!-- Secure Wipe Database -->
+                <MudPaper Class="pa-3" Style="background-color: #2a2a2a; border: 2px solid #dc2626;">
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.subtitle1" Style="color: #dc2626; font-weight: 700;">
+                            <MudIcon Icon="@Icons.Material.Filled.DeleteSweep" Size="Size.Small" Style="vertical-align: middle; margin-right: 4px;" />
+                            Secure Wipe Database
+                        </MudText>
+                        <MudText Typo="Typo.body2" Style="color: #dc2626; font-weight: 700;">
+                            🔒 SECURE DELETE: Clears all tables and securely deletes the database file (SQLite only). For SQL Server, clears all tables. Cannot be undone!
+                        </MudText>
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Error"
+                                  OnClick="ShowSecureWipeDialog"
+                                  StartIcon="@Icons.Material.Filled.DeleteSweep"
+                                  Size="Size.Small"
+                                  Style="margin-top: 8px; width: fit-content; background-color: #dc2626;">
+                            Secure Wipe
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+
+                <!-- Reseed Sample Data -->
+                <MudPaper Class="pa-3" Style="background-color: #2a2a2a; border: 1px solid #3b82f6;">
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.subtitle1" Style="color: #60a5fa; font-weight: 600;">
+                            <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Small" Style="vertical-align: middle; margin-right: 4px;" />
+                            Reseed Sample Data
+                        </MudText>
+                        <MudText Typo="Typo.body2" Style="color: #d1d5db;">
+                            Adds sample categories, collections, and password items to help you get started. Does not delete existing data.
+                        </MudText>
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Info"
+                                  OnClick="ShowReseedSampleDataDialog"
+                                  StartIcon="@Icons.Material.Filled.CloudUpload"
+                                  Size="Size.Small"
+                                  Style="margin-top: 8px; width: fit-content;">
+                            Reseed Sample Data
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
             </MudStack>
         </MudPaper>
 
@@ -353,6 +409,7 @@
     private string generatedApiKey = "";
     private string generatedApiUrl = "";
     private string databaseProvider = "SqlServer";
+    private string sqliteDatabasePath = "";
     private string authenticationMode = "LocalDatabase";
     private string supabaseUrl = "";
     private string supabaseApiKey = "";
@@ -426,6 +483,9 @@
             // Load provider-specific settings
             switch (dbConfig.Provider)
             {
+                case DatabaseProvider.Sqlite when dbConfig.Sqlite != null:
+                    sqliteDatabasePath = dbConfig.Sqlite.DatabasePath;
+                    break;
                 case DatabaseProvider.Supabase when dbConfig.Supabase != null:
                     supabaseUrl = dbConfig.Supabase.Url;
                     supabaseApiKey = dbConfig.Supabase.ServiceKey;
@@ -547,13 +607,25 @@
             {
                 Provider = databaseProvider switch
                 {
+                    "Sqlite" => DatabaseProvider.Sqlite,
                     "SqlServer" => DatabaseProvider.SqlServer,
                     "MySql" => DatabaseProvider.MySql,
                     "PostgreSql" => DatabaseProvider.PostgreSql,
                     "Supabase" => DatabaseProvider.Supabase,
-                    _ => DatabaseProvider.SqlServer
+                    _ => DatabaseProvider.Sqlite
                 }
             };
+
+            // Set SQLite configuration if selected
+            if (databaseProvider == "Sqlite")
+            {
+                config.Sqlite = new SqliteConfig
+                {
+                    DatabasePath = string.IsNullOrWhiteSpace(sqliteDatabasePath) 
+                        ? "passwordmanager.db" 
+                        : sqliteDatabasePath
+                };
+            }
 
             // Set Supabase configuration if selected
             if (databaseProvider == "Supabase")
@@ -631,6 +703,51 @@
         await PerformDatabaseReset(preserveUsers: false, reseedData: reseedConfirmed);
     }
 
+    private async Task ShowSecureWipeDialog()
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+            "🔒 SECURE WIPE DATABASE\n\n" +
+            "⚠️ EXTREME DANGER ⚠️\n\n" +
+            "This action will:\n" +
+            "• Clear ALL database tables\n" +
+            "• Securely delete the database file (SQLite) using DoD 5220.22-M standard\n" +
+            "• Cannot be undone or recovered\n\n" +
+            "For SQL Server databases, this will clear all tables.\n\n" +
+            "This will log you out immediately.\n\n" +
+            "Are you absolutely certain you want to continue?");
+
+        if (!confirmed) return;
+
+        // Double confirmation with text input
+        var typedText = await JSRuntime.InvokeAsync<string>("prompt",
+            "Type 'WIPE' (all caps) to confirm secure deletion:");
+
+        if (typedText != "WIPE")
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Confirmation failed. You must type 'WIPE' exactly.");
+            return;
+        }
+
+        await PerformSecureWipe();
+    }
+
+    private async Task ShowReseedSampleDataDialog()
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+            "Reseed Sample Data\n\n" +
+            "This will add the following sample data:\n\n" +
+            "• Sample categories (Social Media, Banking, Email, Shopping, Entertainment)\n" +
+            "• Sample collections (Personal, Work)\n" +
+            "• Sample password items (structure only, no actual passwords)\n" +
+            "• Default roles (Admin, User)\n\n" +
+            "This will NOT delete your existing data.\n\n" +
+            "Continue?");
+
+        if (!confirmed) return;
+
+        await PerformReseedSampleData();
+    }
+
     private async Task PerformDatabaseReset(bool preserveUsers, bool reseedData = false)
     {
         try
@@ -667,6 +784,60 @@
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("alert", $"❌ Reset Failed\n\nAn error occurred: {ex.Message}");
+        }
+    }
+
+    private async Task PerformSecureWipe()
+    {
+        try
+        {
+            var result = await DatabaseResetService.SecureWipeDatabaseAsync();
+
+            // Show result
+            var resultMessage = result.Success 
+                ? $"✓ Secure Wipe Complete\n\n{result.Message}\n\nTables cleared: {result.TablesCleared}\nRecords deleted: {result.RecordsDeleted}"
+                : $"❌ Wipe Failed\n\n{result.Message}";
+
+            if (result.Errors.Any())
+            {
+                resultMessage += $"\n\nWarnings:\n{string.Join("\n", result.Errors.Take(5))}";
+            }
+
+            await JSRuntime.InvokeVoidAsync("alert", resultMessage);
+
+            if (result.Success)
+            {
+                // Navigate to login page
+                Navigation.NavigateTo("/login", forceLoad: true);
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"❌ Secure Wipe Failed\n\nAn error occurred: {ex.Message}");
+        }
+    }
+
+    private async Task PerformReseedSampleData()
+    {
+        try
+        {
+            var result = await DatabaseResetService.ReseedSampleDataAsync();
+
+            // Show result
+            var resultMessage = result.Success 
+                ? $"✓ Sample Data Added\n\n{result.Message}"
+                : $"❌ Reseed Failed\n\n{result.Message}";
+
+            if (result.Errors.Any())
+            {
+                resultMessage += $"\n\nErrors:\n{string.Join("\n", result.Errors.Take(5))}";
+            }
+
+            await JSRuntime.InvokeVoidAsync("alert", resultMessage);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"❌ Reseed Failed\n\nAn error occurred: {ex.Message}");
         }
     }
 }
