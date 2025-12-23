@@ -1,0 +1,19 @@
+# Docker environment files
+.env
+
+# Generated certificates
+certs/
+*.pfx
+*.pem
+*.crt
+*.key
+
+# Database initialization scripts (user-specific)
+init-db/*
+
+# Logs
+*.log
+
+# Backup files
+*.bak
+backup/
