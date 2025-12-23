@@ -510,4 +510,8 @@ If you encounter issues:
 
 ---
 
-**Note:** SQL Server 2022 Developer Edition is used as it's the latest available version from Microsoft. SQL Server 2022 is fully featured and suitable for both development and production use.
+**Note:** SQL Server 2022 Developer Edition is used as it's the latest available version from Microsoft. Developer Edition is **free for development and testing** but requires proper licensing for production use. For production deployments, consider using:
+- SQL Server Express (free, limited to 10 GB database size)
+- SQL Server Standard or Enterprise (requires licensing)
+- Azure SQL Database (cloud-based, pay-as-you-go)
+- PostgreSQL or MySQL (open-source alternatives supported by this application)

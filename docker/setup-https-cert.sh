@@ -27,7 +27,7 @@ if [ -f "$CERTS_DIR/aspnetapp.pfx" ]; then
     echo "Certificate already exists at: $CERTS_DIR/aspnetapp.pfx"
     read -p "Do you want to regenerate it? (y/N): " -n 1 -r
     echo ""
-    if [[ ! $ASPNETCORE_Kestrel__Certificates__Default__Password =~ ^[Yy]$ ]]; then
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo "Using existing certificate."
         exit 0
     fi

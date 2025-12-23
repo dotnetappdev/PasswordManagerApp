@@ -1,4 +1,5 @@
 {
+  "_comment": "This is a configuration template. Replace placeholder values with your actual settings.",
   "Logging": {
     "LogLevel": {
       "Default": "Information",
@@ -30,6 +31,7 @@
     "MaxIterations": 1000000
   },
   "Supabase": {
+    "_comment": "Replace with your actual Supabase project URL and API key from https://app.supabase.com/project/_/settings/api",
     "Url": "https://your-project.supabase.co",
     "ApiKey": "your-supabase-api-key"
   },
