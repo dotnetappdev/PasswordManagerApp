@@ -90,7 +90,7 @@ var
 begin
   { Check if .NET 9 runtime is installed by running dotnet --list-runtimes }
   Result := False;
-  if Exec('cmd.exe', '/C dotnet --list-runtimes | findstr "Microsoft.WindowsDesktop.App 9"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  if Exec('cmd.exe', '/C dotnet --list-runtimes | findstr "Microsoft.WindowsDesktop.App 9."', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
   begin
     Result := (ResultCode = 0);
   end;
@@ -105,7 +105,7 @@ var
   ResultCode: Integer;
   DownloadPage: TDownloadWizardPage;
 begin
-  Result := True;
+  Result := False;
   DotNetInstallerPath := ExpandConstant('{tmp}\dotnet-runtime-installer.exe');
   
   { Download .NET runtime installer }
@@ -117,6 +117,7 @@ begin
     DownloadPage.Show;
     try
       DownloadPage.Download;
+      Result := True;
     except
       if DownloadPage.AbortedByUser then
       begin
@@ -136,7 +137,7 @@ begin
   if Result then
   begin
     { Install .NET runtime }
-    if Exec(DotNetInstallerPath, '/install /quiet /norestart', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+    if Exec(DotNetInstallerPath, '/quiet /norestart', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
     begin
       if ResultCode = 0 then
       begin
