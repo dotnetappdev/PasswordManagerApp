@@ -90,7 +90,7 @@ var
 begin
   { Check if .NET 9 runtime is installed by running dotnet --list-runtimes }
   Result := False;
-  if Exec('cmd.exe', '/C dotnet --list-runtimes | findstr "Microsoft.WindowsDesktop.App 9."', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  if Exec('cmd.exe', '/C dotnet --list-runtimes | findstr "Microsoft.WindowsDesktop.App 9"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
   begin
     Result := (ResultCode = 0);
   end;
