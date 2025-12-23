@@ -25,9 +25,9 @@ fi
 # Check if certificate already exists
 if [ -f "$CERTS_DIR/aspnetapp.pfx" ]; then
     echo "Certificate already exists at: $CERTS_DIR/aspnetapp.pfx"
-    read -p "Do you want to regenerate it? (y/N): " -n 1 -r
+    read -p "Do you want to regenerate it? (y/N): " -n 1 -r REPLY
     echo ""
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    if [[ ! "${REPLY:-n}" =~ ^[Yy]$ ]]; then
         echo "Using existing certificate."
         exit 0
     fi
@@ -43,9 +43,9 @@ echo "Generating new development certificate..."
 dotnet dev-certs https -ep "$CERTS_DIR/aspnetapp.pfx" -p ""
 
 # Trust the certificate (optional, for local development)
-read -p "Do you want to trust this certificate on your local machine? (y/N): " -n 1 -r
+read -p "Do you want to trust this certificate on your local machine? (y/N): " -n 1 -r REPLY
 echo ""
-if [[ $REPLY =~ ^[Yy]$ ]]; then
+if [[ "${REPLY:-n}" =~ ^[Yy]$ ]]; then
     echo "Trusting certificate..."
     dotnet dev-certs https --trust
 fi
