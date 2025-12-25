@@ -691,4 +691,13 @@ public class OnePasswordImportProvider : IPasswordImportProvider
 
         return CustomFieldType.Text;
     }
+
+    /// <summary>
+    /// Sets the import result statistics (success/failure counts)
+    /// </summary>
+    private void SetImportResultStatistics(ImportResult result)
+    {
+        result.SuccessfulImports = result.ImportedItems.Count;
+        result.FailedImports = result.TotalItemsProcessed - result.SuccessfulImports;
+    }
 }
