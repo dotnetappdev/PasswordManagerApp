@@ -239,21 +239,17 @@ public class PasswordCryptoServiceTests
         // Arrange
         var userSalt = new byte[32];
         var masterKey = new byte[32];
-        var authKey = new byte[32];
         var storedHash = "stored-hash";
 
-        // Mock the DeriveKey calls for both master key and auth key
+        // Mock the DeriveKey call for master key
         _mockCryptographyService
             .Setup(x => x.DeriveKey(TestMasterPassword, userSalt, 600000, 32))
             .Returns(masterKey);
-        
-        _mockCryptographyService
-            .Setup(x => x.DeriveKey(TestMasterPassword, userSalt, 600000, 64))
-            .Returns(new byte[64]); // Combined key (masterKey + authKey)
 
-        // Mock the HashPassword call - it's called with the auth key converted to base64
+        // Mock the HashPassword call - it's called with the master key as base64 and a complex authSalt
+        // The authSalt is: masterKeyBytes + masterPasswordBytes combined
         _mockCryptographyService
-            .Setup(x => x.HashPassword(It.IsAny<string>(), userSalt, 1))
+            .Setup(x => x.HashPassword(It.IsAny<string>(), It.IsAny<byte[]>(), 1))
             .Returns(storedHash);
 
         // Act
@@ -269,22 +265,17 @@ public class PasswordCryptoServiceTests
         // Arrange
         var userSalt = new byte[32];
         var masterKey = new byte[32];
-        var authKey = new byte[32];
         var storedHash = "stored-hash";
         var incorrectHash = "incorrect-hash";
 
-        // Mock the DeriveKey calls for both master key and auth key
+        // Mock the DeriveKey call for master key
         _mockCryptographyService
             .Setup(x => x.DeriveKey("wrong-password", userSalt, 600000, 32))
             .Returns(masterKey);
-        
-        _mockCryptographyService
-            .Setup(x => x.DeriveKey("wrong-password", userSalt, 600000, 64))
-            .Returns(new byte[64]);
 
         // Mock the HashPassword call to return different hash
         _mockCryptographyService
-            .Setup(x => x.HashPassword(It.IsAny<string>(), userSalt, 1))
+            .Setup(x => x.HashPassword(It.IsAny<string>(), It.IsAny<byte[]>(), 1))
             .Returns(incorrectHash);
 
         // Act

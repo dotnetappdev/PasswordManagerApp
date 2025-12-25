@@ -64,24 +64,45 @@ namespace PasswordManager.Services.Services
 
             try
             {
-                // Apply migrations for PasswordManagerDbContextApp
-                var pendingMigrationsApp = await _contextApp.Database.GetPendingMigrationsAsync();
-                if (pendingMigrationsApp.Any())
+                // Check if using InMemory database provider (which doesn't support migrations)
+                var isInMemoryApp = _contextApp.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory";
+                var isInMemoryApi = _context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory";
+                
+                if (isInMemoryApp && isInMemoryApi)
                 {
-                    _logger.LogInformation("Applying {Count} pending migrations for PasswordManagerDbContextApp", pendingMigrationsApp.Count());
-                    await _contextApp.Database.MigrateAsync();
-                    appliedMigrations.AddRange(pendingMigrationsApp);
-                    _logger.LogInformation("Successfully applied migrations for PasswordManagerDbContextApp: {Migrations}", string.Join(", ", pendingMigrationsApp));
+                    _logger.LogInformation("Using InMemory database provider - migrations not supported");
+                    return new MigrationResultDto
+                    {
+                        Success = true,
+                        Message = "InMemory database does not require migrations",
+                        AppliedMigrations = appliedMigrations
+                    };
+                }
+
+                // Apply migrations for PasswordManagerDbContextApp
+                if (!isInMemoryApp)
+                {
+                    var pendingMigrationsApp = await _contextApp.Database.GetPendingMigrationsAsync();
+                    if (pendingMigrationsApp.Any())
+                    {
+                        _logger.LogInformation("Applying {Count} pending migrations for PasswordManagerDbContextApp", pendingMigrationsApp.Count());
+                        await _contextApp.Database.MigrateAsync();
+                        appliedMigrations.AddRange(pendingMigrationsApp);
+                        _logger.LogInformation("Successfully applied migrations for PasswordManagerDbContextApp: {Migrations}", string.Join(", ", pendingMigrationsApp));
+                    }
                 }
 
                 // Apply migrations for PasswordManagerDbContext
-                var pendingMigrationsApi = await _context.Database.GetPendingMigrationsAsync();
-                if (pendingMigrationsApi.Any())
+                if (!isInMemoryApi)
                 {
-                    _logger.LogInformation("Applying {Count} pending migrations for PasswordManagerDbContext", pendingMigrationsApi.Count());
-                    await _context.Database.MigrateAsync();
-                    appliedMigrations.AddRange(pendingMigrationsApi);
-                    _logger.LogInformation("Successfully applied migrations for PasswordManagerDbContext: {Migrations}", string.Join(", ", pendingMigrationsApi));
+                    var pendingMigrationsApi = await _context.Database.GetPendingMigrationsAsync();
+                    if (pendingMigrationsApi.Any())
+                    {
+                        _logger.LogInformation("Applying {Count} pending migrations for PasswordManagerDbContext", pendingMigrationsApi.Count());
+                        await _context.Database.MigrateAsync();
+                        appliedMigrations.AddRange(pendingMigrationsApi);
+                        _logger.LogInformation("Successfully applied migrations for PasswordManagerDbContext: {Migrations}", string.Join(", ", pendingMigrationsApi));
+                    }
                 }
 
                 if (!appliedMigrations.Any())
