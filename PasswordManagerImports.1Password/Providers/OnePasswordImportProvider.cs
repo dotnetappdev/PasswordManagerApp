@@ -475,6 +475,8 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             // Track collections and categories we need to create
             var collectionsToCreate = new Dictionary<string, Collection>();
             var categoriesToCreate = new Dictionary<string, (Category Category, string CollectionName)>();
+            
+            var totalItemsAttempted = 0;
 
             // Process all accounts and vaults
             foreach (var account in puxData.Accounts)
@@ -483,6 +485,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                 {
                     foreach (var item in vault.Items)
                     {
+                        totalItemsAttempted++;
                         try
                         {
                             // Skip archived items if desired (currently importing all)
@@ -628,7 +631,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                 }
             }
 
-            result.TotalItemsProcessed = result.ImportedItems.Count;
+            result.TotalItemsProcessed = totalItemsAttempted;
 
             // Add required collections, categories, and tags to result
             result.RequiredCollections.AddRange(collectionsToCreate.Values);
