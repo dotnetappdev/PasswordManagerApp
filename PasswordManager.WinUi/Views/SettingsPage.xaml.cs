@@ -410,7 +410,12 @@ public sealed partial class SettingsPage : Page
                     else if (_authService != null)
                         targetUserId = await _authService.GetCurrentUserIdAsync();
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    // Log error but continue with null userId (will import for all users as fallback)
+                    await _logger.LogErrorAsync("SettingsPage", "Failed to get current user ID for import", ex);
+                    System.Diagnostics.Debug.WriteLine($"Failed to get current user ID for import: {ex.Message}");
+                }
             }
             // If userSelectionTag == "all", targetUserId remains null, which will make items accessible to all users
 

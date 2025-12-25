@@ -2817,7 +2817,11 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
                         targetUserId = await AuthService.GetCurrentUserIdAsync();
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    // Log error but continue with null userId (will import for all users as fallback)
+                    System.Diagnostics.Debug.WriteLine($"Failed to get current user ID for import: {ex.Message}");
+                }
             }
             // If selectedImportUserOption == "all", targetUserId remains null
 
