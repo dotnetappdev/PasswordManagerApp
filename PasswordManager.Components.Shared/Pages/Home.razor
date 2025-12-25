@@ -2812,7 +2812,7 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
                     {
                         targetUserId = AuthService.CurrentUser.Id;
                     }
-                    else
+                    else if (AuthService != null)
                     {
                         targetUserId = await AuthService.GetCurrentUserIdAsync();
                     }
