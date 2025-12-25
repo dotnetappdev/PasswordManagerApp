@@ -13,7 +13,9 @@ using PasswordManager.Crypto.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Identity;
 using PasswordManager.Models;
+using PasswordManager.Models.Configuration;
 using PasswordManager.WinUi.Services;
+using Sentry;
 
 namespace PasswordManager.WinUi;
 
@@ -32,6 +34,35 @@ public partial class App : Application
     {
         this.InitializeComponent();
         _host = CreateHostBuilder().Build();
+        
+        // Initialize Sentry.io
+        InitializeSentry();
+    }
+    
+    private void InitializeSentry()
+    {
+        try
+        {
+            var configuration = _host.Services.GetRequiredService<IConfiguration>();
+            var sentryConfig = configuration.GetSection("Sentry").Get<SentryConfiguration>();
+            
+            if (sentryConfig?.IsConfigured == true)
+            {
+                SentrySdk.Init(options =>
+                {
+                    options.Dsn = sentryConfig.Dsn;
+                    options.Environment = sentryConfig.Environment;
+                    options.TracesSampleRate = sentryConfig.TracesSampleRate;
+                    options.SendDefaultPii = sentryConfig.SendDefaultPii;
+                    options.AttachStacktrace = sentryConfig.AttachStacktrace;
+                    options.Debug = sentryConfig.Debug;
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to initialize Sentry: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -95,6 +126,7 @@ public partial class App : Application
             {
                 // Log error but don't crash the app
                 System.Diagnostics.Debug.WriteLine($"Service initialization error: {ex}");
+                SentrySdk.CaptureException(ex);
             }
         });
     }
@@ -147,6 +179,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error loading saved theme: {ex.Message}");
+            SentrySdk.CaptureException(ex);
             // Apply default system theme on error
             PasswordManager.WinUi.Services.ThemeHelper.SetTheme(PasswordManager.WinUi.Services.AppTheme.System);
         }
