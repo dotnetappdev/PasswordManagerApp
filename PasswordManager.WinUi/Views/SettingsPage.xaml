@@ -474,7 +474,26 @@
                         </Button>
                         
                         <!-- Import Section -->
+                        <!-- User Selection -->
                         <StackPanel Spacing="8" Margin="0,16,0,0">
+                            <TextBlock Text="Import For" 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            <ComboBox x:Name="ImportUserComboBox"
+                                     MinWidth="240"
+                                     Style="{StaticResource ModernComboBoxStyle}"
+                                     SelectionChanged="ImportUserComboBox_SelectionChanged">
+                                <ComboBoxItem Content="Current User (Default)" Tag="current" IsSelected="True"/>
+                                <ComboBoxItem Content="All Users" Tag="all"/>
+                            </ComboBox>
+                            <TextBlock x:Name="ImportUserHintText"
+                                      Text="Passwords will be imported to your current account"
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                      TextWrapping="Wrap"/>
+                        </StackPanel>
+                        
+                        <StackPanel Spacing="8" Margin="0,8,0,0">
                             <TextBlock Text="Import From" 
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>

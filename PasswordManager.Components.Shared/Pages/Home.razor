@@ -1467,6 +1467,24 @@
                     @if (selectedProvider != null)
                     {
                         <div class="import-step">
+                            <h4>Import For</h4>
+                            <select class="form-control" @bind="selectedImportUserOption">
+                                <option value="current">Current User (Default)</option>
+                                <option value="all">All Users</option>
+                            </select>
+                            <p class="file-help" style="margin-top: 8px;">
+                                @if (selectedImportUserOption == "all")
+                                {
+                                    <span>Passwords will be imported as accessible to all users in the system</span>
+                                }
+                                else
+                                {
+                                    <span>Passwords will be imported to your current account</span>
+                                }
+                            </p>
+                        </div>
+                        
+                        <div class="import-step">
                             <h4>Select File</h4>
                             @if (selectedProvider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin plugin &&
                                             !string.IsNullOrEmpty(plugin.Metadata.Website))
@@ -1726,6 +1744,7 @@
     private PasswordManager.Imports.Interfaces.ImportResult? importResult;
     private int importProgress = 0;
     private string importProgressText = "Processing your file, please wait...";
+    private string selectedImportUserOption = "current"; // "current" or "all"
 
     // Validation state
     private bool collectionValidationError = false;
@@ -2738,6 +2757,7 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
         importInProgress = false;
         importProgress = 0;
         importProgressText = "Processing your file, please wait...";
+        selectedImportUserOption = "current"; // Reset to default
         StateHasChanged();
     }
 
@@ -2781,7 +2801,27 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
             StateHasChanged();
             await Task.Delay(500);
 
-            importResult = await ImportService.ImportPasswordsAsync(selectedProvider.ProviderName, stream, selectedFile.Name);
+            // Determine target user ID based on selection
+            string? targetUserId = null;
+            if (selectedImportUserOption == "current")
+            {
+                // Import for current user - get current user ID
+                try
+                {
+                    if (AuthService?.CurrentUser != null)
+                    {
+                        targetUserId = AuthService.CurrentUser.Id;
+                    }
+                    else
+                    {
+                        targetUserId = await AuthService.GetCurrentUserIdAsync();
+                    }
+                }
+                catch { }
+            }
+            // If selectedImportUserOption == "all", targetUserId remains null
+
+            importResult = await ImportService.ImportPasswordsAsync(selectedProvider.ProviderName, stream, selectedFile.Name, targetUserId);
 
             // Step 3: Finalizing
             importProgress = 100;

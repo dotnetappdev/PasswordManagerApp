@@ -5,6 +5,7 @@ using PasswordManager.Services.Interfaces;
 using PasswordManager.Models.DTOs;
 using PasswordManager.WinUi.ViewModels;
 using PasswordManager.Services.Utilities;
+using PasswordManager.Imports.Interfaces;
 using System.Linq;
 
 namespace PasswordManager.WinUi.Views;
@@ -192,6 +193,24 @@ public sealed partial class SettingsPage : Page
         UpdateImportButtonState();
     }
 
+    private void ImportUserComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ImportUserHintText != null && ImportUserComboBox != null)
+        {
+            var selectedItem = ImportUserComboBox.SelectedItem as ComboBoxItem;
+            var tag = selectedItem?.Tag?.ToString() ?? "current";
+            
+            if (tag == "all")
+            {
+                ImportUserHintText.Text = "Passwords will be imported as accessible to all users in the system";
+            }
+            else
+            {
+                ImportUserHintText.Text = "Passwords will be imported to your current account";
+            }
+        }
+    }
+
     private async void BrowseImportFileButton_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -375,18 +394,27 @@ public sealed partial class SettingsPage : Page
             var fileName = System.IO.Path.GetFileName(filePath);
 
             ImportProgressText.Text = "Processing items...";
-            // Determine current user id to attach imported items to the logged-in tenant/user by default
-            string? currentUserId = null;
-            try
+            
+            // Determine user ID based on selection
+            string? targetUserId = null;
+            var userSelection = ImportUserComboBox?.SelectedItem as ComboBoxItem;
+            var userSelectionTag = userSelection?.Tag?.ToString() ?? "current";
+            
+            if (userSelectionTag == "current")
             {
-                if (_authService?.CurrentUser != null)
-                    currentUserId = _authService.CurrentUser.Id;
-                else if (_authService != null)
-                    currentUserId = await _authService.GetCurrentUserIdAsync();
+                // Import for current user - determine current user id to attach imported items
+                try
+                {
+                    if (_authService?.CurrentUser != null)
+                        targetUserId = _authService.CurrentUser.Id;
+                    else if (_authService != null)
+                        targetUserId = await _authService.GetCurrentUserIdAsync();
+                }
+                catch { }
             }
-            catch { }
+            // If userSelectionTag == "all", targetUserId remains null, which will make items accessible to all users
 
-            var result = await importService.ImportPasswordsAsync(providerName, fileStream, fileName, currentUserId);
+            var result = await importService.ImportPasswordsAsync(providerName, fileStream, fileName, targetUserId);
 
             // Show result
             ImportProgressRing.IsActive = false;
