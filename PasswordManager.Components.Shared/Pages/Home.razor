@@ -19,6 +19,19 @@
 @inject IPasswordRevealService PasswordRevealService
 
 <style>
+    /* Screen reader only class for accessibility */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
     .validation-error {
         border: 2px solid #007bff !important;
         box-shadow: 0 0 5px rgba(0, 123, 255, 0.5) !important;
@@ -1405,23 +1418,27 @@
             <div class="modal-body">
                 @if (!importInProgress)
                 {
-                    <div class="import-step">
-                        <h4>Select Import Provider</h4>
+                <div class="import-step">
+                        <h4 id="provider-label">Select Import Provider</h4>
 
                         @if (!availableProviders.Any())
                         {
-                            <div class="alert alert-warning">
+                            <div class="alert alert-warning" role="alert" aria-live="polite">
                                 <p><strong>No import providers available</strong></p>
                                 <p>Please check that import plugins are properly installed and configured.</p>
                             </div>
                         }
                         else
                         {
-                            <div class="provider-selection">
+                            <div class="provider-selection" role="radiogroup" aria-labelledby="provider-label">
                                 @foreach (var provider in availableProviders)
                                 {
                                     <div class="provider-option @(selectedProvider?.ProviderName == provider.ProviderName ? "selected" : "")"
-                                        @onclick="() => SelectProvider(provider)">
+                                        @onclick="() => SelectProvider(provider)"
+                                        role="radio"
+                                        tabindex="0"
+                                        aria-checked="@(selectedProvider?.ProviderName == provider.ProviderName ? "true" : "false")"
+                                        aria-label="@provider.DisplayName import provider">
                                         <div class="provider-info">
                                             @if (provider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin plugin)
                                             {
@@ -1467,12 +1484,15 @@
                     @if (selectedProvider != null)
                     {
                         <div class="import-step">
-                            <h4>Import For</h4>
-                            <select class="form-control" @bind="selectedImportUserOption">
+                            <h4 id="import-user-label">Import For</h4>
+                            <select class="form-control" 
+                                    @bind="selectedImportUserOption"
+                                    aria-labelledby="import-user-label"
+                                    aria-describedby="import-user-hint">
                                 <option value="current">Current User (Default)</option>
                                 <option value="all">All Users</option>
                             </select>
-                            <p class="file-help" style="margin-top: 8px;">
+                            <p id="import-user-hint" class="file-help" style="margin-top: 8px;" role="status" aria-live="polite">
                                 @if (selectedImportUserOption == "all")
                                 {
                                     <span>Passwords will be imported as accessible to all users in the system</span>
@@ -1485,7 +1505,7 @@
                         </div>
                         
                         <div class="import-step">
-                            <h4>Select File</h4>
+                            <h4 id="select-file-label">Select File</h4>
                             @if (selectedProvider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin plugin &&
                                             !string.IsNullOrEmpty(plugin.Metadata.Website))
                             {
@@ -1501,13 +1521,16 @@
                                 </div>
                             }
                             <div class="file-upload-area">
-                                <InputFile OnChange="OnFileSelected"
-                                    accept="@string.Join(",", selectedProvider.SupportedFileExtensions)" />
-                                <p class="file-help">Supported files: @string.Join(", ", selectedProvider.SupportedFileExtensions)
+                                <label for="importFileInput" class="sr-only">Select import file</label>
+                                <InputFile id="importFileInput" 
+                                    OnChange="OnFileSelected"
+                                    accept="@string.Join(",", selectedProvider.SupportedFileExtensions)"
+                                    aria-describedby="file-help-text" />
+                                <p id="file-help-text" class="file-help">Supported files: @string.Join(", ", selectedProvider.SupportedFileExtensions)
                                 </p>
                                 @if (selectedFile != null)
                                 {
-                                    <div class="selected-file">
+                                    <div class="selected-file" role="status" aria-live="polite">
                                         <span>📄 @selectedFile.Name</span>
                                         <span class="file-size">(@(selectedFile.Size / 1024) KB)</span>
                                     </div>
@@ -1531,12 +1554,18 @@
                 }
                 else
                 {
-                    <div class="import-progress">
+                    <div class="import-progress" role="status" aria-live="polite" aria-atomic="true">
                         <h4>Importing...</h4>
                         <div class="progress-indicator">
-                            <div class="spinner"></div>
+                            <div class="spinner" role="progressbar" aria-label="Import in progress"></div>
                             <div class="progress-bar-container">
-                                <div class="progress-bar" style="width: @(importProgress)%"></div>
+                                <div class="progress-bar" 
+                                     style="width: @(importProgress)%" 
+                                     role="progressbar" 
+                                     aria-valuenow="@importProgress" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100"
+                                     aria-label="Import progress"></div>
                             </div>
                             <p class="progress-text">@importProgressText</p>
                         </div>
@@ -1545,12 +1574,12 @@
 
                 @if (importResult != null)
                 {
-                    <div class="import-results">
+                    <div class="import-results" role="region" aria-label="Import results">
                         <h4>Import Results</h4>
                         @if (importResult.Success)
                         {
-                            <div class="success-message">
-                                <span>✅</span>
+                            <div class="success-message" role="status" aria-live="polite">
+                                <span aria-hidden="true">✅</span>
                                 <div>
                                     <p><strong>Import completed successfully!</strong></p>
                                     <ul>
@@ -1576,8 +1605,8 @@
                         }
                         else
                         {
-                            <div class="error-message">
-                                <span>❌</span>
+                            <div class="error-message" role="alert" aria-live="assertive">
+                                <span aria-hidden="true">❌</span>
                                 <div>
                                     <p><strong>Import failed</strong></p>
                                     <p>@importResult.ErrorMessage</p>
@@ -1590,15 +1619,25 @@
                 <div class="modal-actions">
                     @if (!importInProgress && importResult == null)
                     {
-                        <button type="button" class="btn btn-secondary" @onclick="HideImportModal">Cancel</button>
-                        <button type="button" class="btn btn-primary" @onclick="StartImport"
-                            disabled="@(selectedProvider == null || selectedFile == null)">
+                        <button type="button" 
+                                class="btn btn-secondary" 
+                                @onclick="HideImportModal"
+                                aria-label="Cancel import and close dialog">Cancel</button>
+                        <button type="button" 
+                                class="btn btn-primary" 
+                                @onclick="StartImport"
+                                disabled="@(selectedProvider == null || selectedFile == null)"
+                                aria-label="Start importing passwords from selected file"
+                                aria-disabled="@(selectedProvider == null || selectedFile == null ? "true" : "false")">
                             Start Import
                         </button>
                     }
                     else if (importResult != null)
                     {
-                        <button type="button" class="btn btn-primary" @onclick="FinishImport">Done</button>
+                        <button type="button" 
+                                class="btn btn-primary" 
+                                @onclick="FinishImport"
+                                aria-label="Close import dialog and view imported passwords">Done</button>
                     }
                 </div>
             </div>
