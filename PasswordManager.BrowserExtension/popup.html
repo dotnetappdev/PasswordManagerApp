@@ -149,7 +149,7 @@
             <option value="api">Web API</option>
             <option value="localStorage">Offline (localStorage)</option>
           </select>
-          <small>Auto mode tries Native → API → localStorage in order</small>
+          <small>Auto mode tries Native → API → localStorage in order. Configure settings below for the methods you want to use.</small>
         </div>
 
         <div class="form-group" id="apiUrlGroup" style="display: none;">
@@ -158,10 +158,17 @@
           <small>URL of your Password Manager API server</small>
         </div>
 
+        <div class="form-group" id="databasePathGroup" style="display: none;">
+          <label for="databasePath">Database Path:</label>
+          <input type="text" id="databasePath" placeholder="C:\Users\YourName\AppData\Roaming\PasswordManager\passwordmanager.db" class="form-control">
+          <small>Path to your SQLite database file (used by Native Messaging)</small>
+        </div>
+
         <button type="button" id="saveSettingsBtn" class="btn btn-primary">Save Settings</button>
         
         <h3 style="margin-top: 20px;">Database Connection</h3>
         <p>This extension can connect to your password manager using multiple methods.</p>
+        <p class="info-text">For Native Messaging, ensure the desktop app is running and the native host is installed.</p>
         
         <button type="button" id="testConnectionBtn" class="btn btn-primary">Test Connection</button>
         

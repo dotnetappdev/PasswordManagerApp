@@ -7,7 +7,8 @@ A secure browser extension that integrates directly with your local Password Man
 - **🔐 Secure Autofill**: Automatically detect and fill login forms using your stored credentials
 - **⚡ Password Generation**: Generate strong passwords with customizable options
 - **🎯 Smart Detection**: Recognizes username, email, and password fields across websites
-- **💾 Local Database Access**: Connects directly to your SQLite database - no API server required
+- **💾 Multiple Connection Modes**: Connect via Native Messaging, Web API, or localStorage
+- **🔧 Database Path Configuration**: Configure custom database path for native messaging
 - **🔒 Native Messaging**: Uses secure native messaging for database communication
 - **🎨 1Password-style UI**: Familiar icon-based interface for easy credential access  
 - **🌐 Cross-browser Support**: Works with Chrome, Firefox, and other Chromium-based browsers
@@ -38,10 +39,68 @@ A secure browser extension that integrates directly with your local Password Man
 
 ## Setup
 
-1. **Install Native Host**: Follow the installation guide in `PasswordManager.BrowserExtension.NativeHost/README.md`
-2. **Configure Database**: Ensure your Password Manager database is in a location the native host can access
-3. **Login**: Use your Password Manager email and master password to authenticate
-4. **Start Using**: Visit any website with login forms - icons will appear next to username and password fields
+### Connection Configuration
+
+The extension supports three connection modes:
+
+1. **Auto Mode (Recommended)**: Tries all connection methods automatically
+   - Tries Native Messaging first (most secure)
+   - Falls back to Web API if native host unavailable
+   - Uses localStorage as last resort
+
+2. **Native Messaging**: Direct local database access
+   - Most secure option
+   - Requires native host installation
+   - Allows custom database path configuration
+   - Works completely offline
+
+3. **Web API**: Connect to API server
+   - Requires Password Manager API running
+   - Configure API URL in settings
+   - Supports remote access
+
+4. **localStorage**: Offline cached credentials
+   - Limited functionality
+   - Use only when other methods unavailable
+
+### Initial Setup Steps
+
+1. **Install Native Host** (for Native Messaging mode):
+   - Follow the installation guide in `PasswordManager.BrowserExtension.NativeHost/README.md`
+   
+2. **Configure Connection**:
+   - Click the extension icon
+   - Go to Settings
+   - Select connection mode
+   - For Native Messaging: Configure database path if not using default location
+   - For Web API: Configure API URL
+   - Click "Save Settings"
+
+3. **Test Connection**:
+   - Click "Test Connection" in settings
+   - Verify successful connection
+
+4. **Login**:
+   - Use your Password Manager email and master password to authenticate
+   
+5. **Start Using**:
+   - Visit any website with login forms
+   - Icons will appear next to username and password fields
+
+### Database Path Configuration
+
+For Native Messaging mode, you can configure a custom database path:
+
+- **Default Paths** (automatically detected):
+  - Windows: `%APPDATA%\PasswordManager\passwordmanager.db`
+  - macOS: `~/Library/Application Support/PasswordManager/passwordmanager.db`
+  - Linux: `~/.local/share/PasswordManager/passwordmanager.db`
+
+- **Custom Path**: 
+  - Go to Settings → Database Path
+  - Enter the full path to your SQLite database
+  - This is useful if you've configured the WinUI app or Web UI to use a custom location
+  - Click "Save Settings" to apply
 
 ## How It Works
 

@@ -502,6 +502,16 @@ body {
   font-size: 12px;
 }
 
+.info-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: #f0f9ff;
+  border-left: 3px solid var(--primary-blue);
+  border-radius: var(--radius-sm);
+}
+
 /* Header Actions */
 .header-actions {
   display: flex;

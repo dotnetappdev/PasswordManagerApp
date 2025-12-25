@@ -133,6 +133,22 @@ public class Program
         }
 
         var action = actionElement.GetString();
+        
+        // Check if a custom database path was provided
+        if (message.TryGetValue("databasePath", out var dbPathObj) && dbPathObj is JsonElement dbPathElement)
+        {
+            var customDbPath = dbPathElement.GetString();
+            if (!string.IsNullOrEmpty(customDbPath) && File.Exists(customDbPath))
+            {
+                // Reinitialize database with custom path
+                var connectionString = $"Data Source={customDbPath}";
+                var options = new DbContextOptionsBuilder<PasswordManagerDbContext>()
+                    .UseSqlite(connectionString)
+                    .Options;
+                
+                _dbContext = new PasswordManagerDbContext(options);
+            }
+        }
 
         try
         {
