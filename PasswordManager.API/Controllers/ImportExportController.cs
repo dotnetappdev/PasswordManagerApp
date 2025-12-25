@@ -34,7 +34,7 @@ public class ImportExportController : ControllerBase
         try
         {
             var providers = await _importService.GetAvailableProvidersAsync();
-            
+
             return Ok(new
             {
                 success = true,
@@ -73,11 +73,15 @@ public class ImportExportController : ControllerBase
             }
 
             using var stream = request.File.OpenReadStream();
-            
+
+            // Determine authenticated user id from claims and pass to import service
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == "userid" || c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
             var result = await _importService.ImportPasswordsAsync(
                 request.PluginName,
                 stream,
-                request.File.FileName);
+                request.File.FileName,
+                userId);
 
             if (result.Success)
             {
@@ -130,7 +134,7 @@ public class ImportExportController : ControllerBase
             }
 
             using var stream = request.File.OpenReadStream();
-            
+
             // For now, return a simple success message
             // Full preview implementation would require exposing plugin details through IImportService
             return Ok(new
@@ -174,7 +178,7 @@ public class ImportExportController : ControllerBase
             var csv = GenerateCsv(items, request.Format ?? "standard");
 
             var fileName = $"passwords_export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv";
-            
+
             return File(
                 System.Text.Encoding.UTF8.GetBytes(csv),
                 "text/csv",
@@ -190,10 +194,10 @@ public class ImportExportController : ControllerBase
     private string GenerateCsv(IEnumerable<PasswordItem> items, string format)
     {
         var csv = new System.Text.StringBuilder();
-        
+
         // Standard CSV format
         csv.AppendLine("Title,URL,Username,Password,Notes,Type");
-        
+
         foreach (var item in items)
         {
             var title = EscapeCsv(item.Title);
@@ -202,10 +206,10 @@ public class ImportExportController : ControllerBase
             var password = EscapeCsv(item.LoginItem?.Password ?? "");
             var notes = EscapeCsv(item.LoginItem?.Notes ?? "");
             var type = item.Type.ToString();
-            
+
             csv.AppendLine($"{title},{url},{username},{password},{notes},{type}");
         }
-        
+
         return csv.ToString();
     }
 
@@ -213,13 +217,13 @@ public class ImportExportController : ControllerBase
     {
         if (string.IsNullOrEmpty(value))
             return "";
-            
+
         // Escape quotes and wrap in quotes if contains comma, quote, or newline
         if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
         {
             return $"\"{value.Replace("\"", "\"\"")}\"";
         }
-        
+
         return value;
     }
 }

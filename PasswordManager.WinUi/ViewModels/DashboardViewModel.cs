@@ -194,6 +194,57 @@ public class DashboardViewModel : BaseViewModel
         await LoadDashboardDataAsync();
     }
 
+    public enum SortOption
+    {
+        Title,
+        Created,
+        Modified,
+        FrequentlyUsed,
+        RecentlyUsed,
+        NewestFirst,
+        OldestFirst
+    }
+
+    public void ApplySort(SortOption option)
+    {
+        try
+        {
+            var list = AllPasswordItems.ToList();
+            switch (option)
+            {
+                case SortOption.Title:
+                    list = list.OrderBy(i => i.Title).ToList();
+                    break;
+                case SortOption.Created:
+                    list = list.OrderBy(i => i.CreatedAt).ToList();
+                    break;
+                case SortOption.Modified:
+                    list = list.OrderByDescending(i => i.LastModified).ToList();
+                    break;
+                case SortOption.FrequentlyUsed:
+                    list = list.OrderByDescending(i => i.LastAccessedAt ?? DateTime.MinValue).ToList();
+                    break;
+                case SortOption.RecentlyUsed:
+                    list = list.OrderByDescending(i => i.LastAccessedAt ?? DateTime.MinValue).ToList();
+                    break;
+                case SortOption.NewestFirst:
+                    list = list.OrderByDescending(i => i.CreatedAt).ToList();
+                    break;
+                case SortOption.OldestFirst:
+                    list = list.OrderBy(i => i.CreatedAt).ToList();
+                    break;
+            }
+
+            AllPasswordItems.Clear();
+            foreach (var item in list)
+                AllPasswordItems.Add(item);
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Sort error: {ex.Message}";
+        }
+    }
+
     public async Task LogoutAsync()
     {
         try

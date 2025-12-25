@@ -15,16 +15,16 @@ namespace PasswordManager.Models.UI
             public const string PrimaryBlue = "#005BFF";
             public const string PrimaryBlueLight = "#3B82F6";
             public const string PrimaryBlueDark = "#0041CC";
-            
+
             // Secondary/Accent Colors
             public const string AccentPink = "#EC4899";
             public const string AccentPinkLight = "#F472B6";
-            
+
             // Status Colors
             public const string SuccessGreen = "#10B981";
             public const string WarningOrange = "#F59E0B";
             public const string ErrorRed = "#EF4444";
-            
+
             // Background Colors - Dark Theme (Default)
             public const string BackgroundDark = "#1A1A1A";
             public const string SurfaceDark = "#262626";
@@ -32,28 +32,28 @@ namespace PasswordManager.Models.UI
             public const string ElevatedSurfaceDark = "#333333";
             public const string BorderDark = "#404040";
             public const string SidebarDark = "#141414";
-            
+
             // Background Colors - Light Theme
             public const string BackgroundLight = "#F8F9FA";
             public const string SurfaceLight = "#FFFFFF";
             public const string CardLight = "#FFFFFF";
             public const string ElevatedSurfaceLight = "#F6F8FA";
             public const string BorderLight = "#E0E6ED";
-            
+
             // Text Colors - Dark Theme
             public const string TextPrimaryDark = "#FFFFFF";
             public const string TextSecondaryDark = "#B0B0B0";
             public const string TextTertiaryDark = "#808080";
-            
+
             // Text Colors - Light Theme
             public const string TextPrimaryLight = "#1A1A1A";
             public const string TextSecondaryLight = "#6C757D";
             public const string TextTertiaryLight = "#94A3B8";
-            
+
             // Special Purpose Colors
-            public const string NewItemButton = "#C08FDA";
+            public const string NewItemButton = "#005BFF";
         }
-        
+
         /// <summary>
         /// Spacing constants for consistent layouts
         /// </summary>
@@ -68,7 +68,7 @@ namespace PasswordManager.Models.UI
             public const int Huge = 32;
             public const int XHuge = 48;
         }
-        
+
         /// <summary>
         /// Border radius constants for consistent rounded corners
         /// </summary>
@@ -81,7 +81,7 @@ namespace PasswordManager.Models.UI
             public const int XXLarge = 16;
             public const int Round = 20;
         }
-        
+
         /// <summary>
         /// Typography constants
         /// </summary>
@@ -98,12 +98,12 @@ namespace PasswordManager.Models.UI
             public const int FontSizeHeading3 = 28;
             public const int FontSizeHeading2 = 32;
             public const int FontSizeHeading1 = 36;
-            
+
             // Font Families
             public const string FontFamilyDefault = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
             public const string FontFamilyMonospace = "'Courier New', Courier, monospace";
         }
-        
+
         /// <summary>
         /// Button size constants
         /// </summary>
@@ -112,16 +112,16 @@ namespace PasswordManager.Models.UI
             public const int HeightSmall = 28;
             public const int HeightMedium = 36;
             public const int HeightLarge = 48;
-            
+
             public const int PaddingHorizontalSmall = 8;
             public const int PaddingHorizontalMedium = 16;
             public const int PaddingHorizontalLarge = 24;
-            
+
             public const int PaddingVerticalSmall = 4;
             public const int PaddingVerticalMedium = 8;
             public const int PaddingVerticalLarge = 12;
         }
-        
+
         /// <summary>
         /// Input field constants
         /// </summary>
@@ -132,7 +132,7 @@ namespace PasswordManager.Models.UI
             public const int PaddingHorizontal = 12;
             public const int PaddingVertical = 10;
         }
-        
+
         /// <summary>
         /// Shadow/Elevation constants (for CSS)
         /// </summary>
@@ -142,7 +142,7 @@ namespace PasswordManager.Models.UI
             public const string Medium = "0 4px 12px rgba(0,0,0,0.15)";
             public const string Large = "0 8px 24px rgba(0,0,0,0.2)";
         }
-        
+
         /// <summary>
         /// Icon sizes
         /// </summary>
@@ -155,7 +155,7 @@ namespace PasswordManager.Models.UI
             public const int XXLarge = 48;
             public const int Huge = 60;
         }
-        
+
         /// <summary>
         /// Animation/Transition durations (in milliseconds)
         /// </summary>
@@ -165,7 +165,7 @@ namespace PasswordManager.Models.UI
             public const int Normal = 200;
             public const int Slow = 300;
         }
-        
+
         /// <summary>
         /// Z-Index layering constants
         /// </summary>
@@ -180,7 +180,7 @@ namespace PasswordManager.Models.UI
             public const int Popover = 1060;
             public const int Tooltip = 1070;
         }
-        
+
         /// <summary>
         /// Browser extension specific constants
         /// </summary>

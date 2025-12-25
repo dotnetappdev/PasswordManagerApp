@@ -4,8 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Models.DTOs;
 using PasswordManager.WinUi.ViewModels;
+using PasswordManager.Services.Utilities;
 using System.Linq;
-using System;
 
 namespace PasswordManager.WinUi.Views;
 
@@ -14,10 +14,12 @@ public sealed partial class SettingsPage : Page
     private SettingsViewModel? _viewModel;
     private IServiceProvider? _serviceProvider;
     private IAuthService? _authService;
+    private readonly FileLogger _logger;
 
     public SettingsPage()
     {
         InitializeComponent();
+        _logger = new FileLogger();
     }
 
     protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
@@ -37,12 +39,14 @@ public sealed partial class SettingsPage : Page
             // Preload import providers to ensure they're available when needed
             try
             {
+                await _logger.LogAsync("SettingsPage", "Starting provider preload");
                 var importService = serviceProvider.GetService<PasswordManager.Imports.Interfaces.IImportService>();
                 if (importService != null)
                 {
                     // Force load all PasswordManagerImports.* assemblies and register providers
                     var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
                     var importDlls = System.IO.Directory.GetFiles(baseDirectory, "PasswordManagerImports.*.dll");
+                    await _logger.LogAsync("SettingsPage", $"Found {importDlls.Length} import DLLs");
 
                     foreach (var dllPath in importDlls)
                     {
@@ -59,13 +63,16 @@ public sealed partial class SettingsPage : Page
                                 if (provider != null)
                                 {
                                     importService.RegisterProvider(provider);
+                                    await _logger.LogAsync("SettingsPage", $"Registered {provider.DisplayName} v{provider.Version}");
                                     System.Diagnostics.Debug.WriteLine($"Successfully registered {provider.DisplayName} v{provider.Version}");
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine($"Failed to load provider from {System.IO.Path.GetFileName(dllPath)}: {ex.Message}");
+                            var fileName = System.IO.Path.GetFileName(dllPath);
+                            await _logger.LogErrorAsync("SettingsPage", $"Failed to load provider from {fileName}", ex);
+                            System.Diagnostics.Debug.WriteLine($"Failed to load provider from {fileName}: {ex.Message}");
                         }
                     }
 
@@ -78,6 +85,7 @@ public sealed partial class SettingsPage : Page
             }
             catch (Exception ex)
             {
+                await _logger.LogErrorAsync("SettingsPage", "Error during provider preload", ex);
                 System.Diagnostics.Debug.WriteLine($"Error during provider preload: {ex.Message}");
             }
         }
@@ -236,11 +244,59 @@ public sealed partial class SettingsPage : Page
             StartImportButton.IsEnabled = false;
 
             // Force load providers asynchronously first
+            // Ensure any import plugin assemblies in the app folder are loaded and registered (fallback)
+            try
+            {
+                var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                var importDlls = System.IO.Directory.GetFiles(baseDirectory, "PasswordManagerImports.*.dll");
+                foreach (var dllPath in importDlls)
+                {
+                    try
+                    {
+                        var asm = System.Reflection.Assembly.LoadFrom(dllPath);
+                        var providerTypes = asm.GetTypes()
+                            .Where(t => typeof(PasswordManager.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
+                                     && !t.IsInterface && !t.IsAbstract);
+
+                        foreach (var providerType in providerTypes)
+                        {
+                            try
+                            {
+                                var providerInstance = Activator.CreateInstance(providerType) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
+                                if (providerInstance != null)
+                                {
+                                    importService.RegisterProvider(providerInstance);
+                                    await _logger.LogAsync("SettingsPage", $"Fallback registered provider {providerInstance.DisplayName} v{providerInstance.Version}");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                await _logger.LogErrorAsync("SettingsPage", $"Failed to instantiate provider type {providerType.FullName}", ex);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        await _logger.LogErrorAsync("SettingsPage", $"Failed to load plugin assembly {dllPath}", ex);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("SettingsPage", "Error while fallback-loading import plugins", ex);
+            }
+
             await importService.GetAvailableProvidersAsync();
 
             // Verify provider exists
-            var providers = await importService.GetAvailableProvidersAsync();
-            System.Diagnostics.Debug.WriteLine($"Available providers: {string.Join(", ", providers.Select(p => p.ProviderName))}");
+            var providers = (await importService.GetAvailableProvidersAsync()).ToList();
+
+            // Log available providers to help diagnose provider discovery issues
+            try
+            {
+                await _logger.LogAsync("SettingsPage", $"Available providers: {string.Join(", ", providers.Select(p => p.ProviderName + " (" + p.DisplayName + ")"))}");
+            }
+            catch { }
 
             // Get provider name from ComboBoxItem Tag
             string providerName = selectedItem.Tag?.ToString() ?? "";
@@ -256,16 +312,36 @@ public sealed partial class SettingsPage : Page
                 return;
             }
 
-            var provider = providers.FirstOrDefault(p => p.ProviderName.Equals(providerName, StringComparison.OrdinalIgnoreCase));
+            // Try several tolerant resolution strategies: exact provider name, display name contains, normalized match
+            IPasswordImportProvider? provider = providers.FirstOrDefault(p => string.Equals(p.ProviderName, providerName, StringComparison.OrdinalIgnoreCase));
+
+            if (provider == null)
+            {
+                provider = providers.FirstOrDefault(p => !string.IsNullOrEmpty(p.DisplayName) && p.DisplayName.IndexOf(providerName, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+
+            if (provider == null)
+            {
+                // Normalize names (remove non-alphanumeric) and compare
+                static string Normalize(string s) => new string(s?.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+                var target = Normalize(providerName);
+                provider = providers.FirstOrDefault(p => Normalize(p.ProviderName) == target || (!string.IsNullOrEmpty(p.DisplayName) && Normalize(p.DisplayName) == target));
+            }
+
             if (provider == null)
             {
                 ImportProgressRing.IsActive = false;
                 ImportProgressPanel.Visibility = Visibility.Collapsed;
                 ImportStatusText.Text = "Import failed";
                 ImportResultText.Text = $"Import provider '{providerName}' not found. Available providers: {string.Join(", ", providers.Select(p => p.ProviderName))}";
+                // Also log the failure for diagnostics
+                try { await _logger.LogAsync("SettingsPage", $"Provider resolution failed for '{providerName}'. Available: {string.Join(",", providers.Select(p => p.ProviderName))}"); } catch { }
                 StartImportButton.IsEnabled = true;
                 return;
             }
+
+            // Log the chosen provider
+            try { await _logger.LogAsync("SettingsPage", $"Resolved provider '{providerName}' to '{provider.ProviderName}' ({provider.DisplayName})"); } catch { }
 
             // Update progress
             ImportStatusText.Text = $"Importing from {selectedType}...";
@@ -299,7 +375,18 @@ public sealed partial class SettingsPage : Page
             var fileName = System.IO.Path.GetFileName(filePath);
 
             ImportProgressText.Text = "Processing items...";
-            var result = await importService.ImportPasswordsAsync(providerName, fileStream, fileName);
+            // Determine current user id to attach imported items to the logged-in tenant/user by default
+            string? currentUserId = null;
+            try
+            {
+                if (_authService?.CurrentUser != null)
+                    currentUserId = _authService.CurrentUser.Id;
+                else if (_authService != null)
+                    currentUserId = await _authService.GetCurrentUserIdAsync();
+            }
+            catch { }
+
+            var result = await importService.ImportPasswordsAsync(providerName, fileStream, fileName, currentUserId);
 
             // Show result
             ImportProgressRing.IsActive = false;
@@ -483,645 +570,6 @@ public sealed partial class SettingsPage : Page
             };
 
             await resultDialog.ShowAsync();
-        }
-    }
-
-    private async void ResetDataButton_Click(object sender, RoutedEventArgs e)
-    {
-        // Create confirmation dialog with detailed information
-        var confirmDialog = new ContentDialog
-        {
-            Title = "⚠️ Reset Password Data",
-            Content = CreateResetDataDialogContent(),
-            PrimaryButtonText = "Reset Password Data",
-            CloseButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = XamlRoot
-        };
-
-        var result = await confirmDialog.ShowAsync();
-        if (result == ContentDialogResult.Primary && _serviceProvider != null)
-        {
-            await PerformDatabaseResetAsync(preserveUsers: true);
-        }
-    }
-
-    private async void ResetAllButton_Click(object sender, RoutedEventArgs e)
-    {
-        // First confirmation dialog
-        var firstConfirmDialog = new ContentDialog
-        {
-            Title = "⚠️ DANGER: Reset All Database Tables",
-            Content = CreateResetAllDialogContent(),
-            PrimaryButtonText = "I Understand, Continue",
-            CloseButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = XamlRoot
-        };
-
-        var firstResult = await firstConfirmDialog.ShowAsync();
-        if (firstResult != ContentDialogResult.Primary)
-            return;
-
-        // Second confirmation with re-seed option
-        var reseedCheckBox = new CheckBox
-        {
-            Content = "Re-seed default data (recommended)",
-            IsChecked = true,
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
-        };
-
-        var stackPanel = new StackPanel
-        {
-            Spacing = 12
-        };
-        stackPanel.Children.Add(new TextBlock
-        {
-            Text = "This will delete ALL data including your user account. You will be logged out immediately.",
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
-        });
-        stackPanel.Children.Add(new TextBlock
-        {
-            Text = "Type 'DELETE' to confirm:",
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
-        });
-
-        var confirmTextBox = new TextBox
-        {
-            PlaceholderText = "Type DELETE here",
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 8, 0, 0)
-        };
-        stackPanel.Children.Add(confirmTextBox);
-        stackPanel.Children.Add(reseedCheckBox);
-
-        var finalConfirmDialog = new ContentDialog
-        {
-            Title = "⚠️ Final Confirmation",
-            Content = stackPanel,
-            PrimaryButtonText = "Reset All Tables",
-            CloseButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = XamlRoot
-        };
-
-        var finalResult = await finalConfirmDialog.ShowAsync();
-        if (finalResult == ContentDialogResult.Primary && 
-            confirmTextBox.Text.Equals("DELETE", StringComparison.Ordinal) &&
-            _serviceProvider != null)
-        {
-            await PerformDatabaseResetAsync(preserveUsers: false, reseedData: reseedCheckBox.IsChecked == true);
-        }
-        else if (finalResult == ContentDialogResult.Primary)
-        {
-            var errorDialog = new ContentDialog
-            {
-                Title = "Confirmation Failed",
-                Content = "You must type 'DELETE' exactly to confirm this action.",
-                CloseButtonText = "OK",
-                XamlRoot = XamlRoot
-            };
-            await errorDialog.ShowAsync();
-        }
-    }
-
-    private StackPanel CreateResetDataDialogContent()
-    {
-        var stackPanel = new StackPanel { Spacing = 12 };
-        
-        stackPanel.Children.Add(new TextBlock
-        {
-            Text = "This action will clear the following data:",
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
-        });
-
-        var itemsList = new TextBlock
-        {
-            Text = "• All password items and login credentials\n" +
-                   "• All collections and categories\n" +
-                   "• All tags and custom fields\n" +
-                   "• Password history and audit logs\n" +
-                   "• Shared passwords and permissions",
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Margin = new Microsoft.UI.Xaml.Thickness(12, 0, 0, 0)
-        };
-        stackPanel.Children.Add(itemsList);
-
-        stackPanel.Children.Add(new TextBlock
-        {
-            Text = "Your user account and login credentials will be preserved.",
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Green),
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
-        });
-
-        stackPanel.Children.Add(new TextBlock
-        {
-            Text = "This action cannot be undone. Are you sure?",
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
-        });
-
-        return stackPanel;
-    }
-
-    private StackPanel CreateResetAllDialogContent()
-    {
-        var stackPanel = new StackPanel { Spacing = 12 };
-        
-        stackPanel.Children.Add(new TextBlock
-        {
-            Text = "⚠️ EXTREME CAUTION REQUIRED",
-            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
-            FontSize = 16,
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
-        });
-
-        stackPanel.Children.Add(new TextBlock
-        {
-            Text = "This will completely reset the database by clearing ALL tables including:",
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
-        });
-
-        var itemsList = new TextBlock
-        {
-            Text = "• ALL password items and login credentials\n" +
-                   "• ALL user accounts and authentication data\n" +
-                   "• ALL collections, categories, and tags\n" +
-                   "• ALL settings and configurations\n" +
-                   "• ALL history and audit logs",
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
-            Margin = new Microsoft.UI.Xaml.Thickness(12, 0, 0, 0)
-        };
-        stackPanel.Children.Add(itemsList);
-
-        stackPanel.Children.Add(new TextBlock
-        {
-            Text = "You will be logged out immediately and will need to create a new account.",
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
-        });
-
-        return stackPanel;
-    }
-
-    private async Task PerformDatabaseResetAsync(bool preserveUsers, bool reseedData = false)
-    {
-        // Show progress dialog
-        var progressDialog = new ContentDialog
-        {
-            Title = preserveUsers ? "Resetting Password Data..." : "Resetting All Tables...",
-            Content = new StackPanel
-            {
-                Spacing = 16,
-                Children =
-                {
-                    new ProgressRing { IsActive = true, Width = 48, Height = 48 },
-                    new TextBlock 
-                    { 
-                        Text = "Please wait while the database is being reset...",
-                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                        HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Center
-                    }
-                }
-            },
-            XamlRoot = XamlRoot
-        };
-
-        // Show the progress dialog without awaiting it
-        _ = progressDialog.ShowAsync();
-
-        try
-        {
-            var resetService = _serviceProvider!.GetRequiredService<IDatabaseResetService>();
-            var result = preserveUsers 
-                ? await resetService.ResetDataTablesAsync()
-                : await resetService.ResetAllTablesAsync(reseedData);
-
-            // Hide progress dialog
-            progressDialog.Hide();
-
-            // Show result dialog
-            var resultDialog = new ContentDialog
-            {
-                Title = result.Success ? "✓ Reset Complete" : "❌ Reset Failed",
-                Content = CreateResultDialogContent(result),
-                CloseButtonText = "OK",
-                XamlRoot = XamlRoot
-            };
-
-            await resultDialog.ShowAsync();
-
-            if (result.Success && !preserveUsers)
-            {
-                // For full reset, navigate back to login
-                Frame.Navigate(typeof(LoginPage), _serviceProvider);
-            }
-        }
-        catch (Exception ex)
-        {
-            progressDialog.Hide();
-
-            var errorDialog = new ContentDialog
-            {
-                Title = "❌ Reset Failed",
-                Content = $"An error occurred during the reset operation:\n\n{ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = XamlRoot
-            };
-
-            await errorDialog.ShowAsync();
-        }
-    }
-
-    private StackPanel CreateResultDialogContent(DatabaseResetResult result)
-    {
-        var stackPanel = new StackPanel { Spacing = 12 };
-
-        if (result.Success)
-        {
-            stackPanel.Children.Add(new TextBlock
-            {
-                Text = result.Message,
-                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
-            });
-
-            stackPanel.Children.Add(new TextBlock
-            {
-                Text = $"Tables cleared: {result.TablesCleared}",
-                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
-            });
-
-            stackPanel.Children.Add(new TextBlock
-            {
-                Text = $"Records deleted: {result.RecordsDeleted}",
-                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
-            });
-
-            if (result.Errors.Any())
-            {
-                stackPanel.Children.Add(new TextBlock
-                {
-                    Text = $"\nWarnings ({result.Errors.Count}):",
-                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                    Margin = new Microsoft.UI.Xaml.Thickness(0, 8, 0, 0)
-                });
-
-                foreach (var error in result.Errors.Take(5))
-                {
-                    stackPanel.Children.Add(new TextBlock
-                    {
-                        Text = $"• {error}",
-                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                        FontSize = 12,
-                        Opacity = 0.8
-                    });
-                }
-            }
-        }
-        else
-        {
-            stackPanel.Children.Add(new TextBlock
-            {
-                Text = result.Message ?? "The reset operation failed.",
-                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red)
-            });
-
-            if (result.Errors.Any())
-            {
-                stackPanel.Children.Add(new TextBlock
-                {
-                    Text = "\nErrors:",
-                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                    Margin = new Microsoft.UI.Xaml.Thickness(0, 8, 0, 0)
-                });
-
-                foreach (var error in result.Errors.Take(5))
-                {
-                    stackPanel.Children.Add(new TextBlock
-                    {
-                        Text = $"• {error}",
-                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                        FontSize = 12
-                    });
-                }
-            }
-        }
-
-        return stackPanel;
-    }
-
-    private async void SecureWipeButton_Click(object sender, RoutedEventArgs e)
-    {
-        // First confirmation dialog
-        var firstConfirmDialog = new ContentDialog
-        {
-            Title = "🔒 SECURE WIPE DATABASE",
-            Content = CreateSecureWipeDialogContent(),
-            PrimaryButtonText = "I Understand, Continue",
-            CloseButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = XamlRoot
-        };
-
-        var firstResult = await firstConfirmDialog.ShowAsync();
-        if (firstResult != ContentDialogResult.Primary)
-            return;
-
-        // Second confirmation with text input
-        var confirmTextBox = new TextBox
-        {
-            PlaceholderText = "Type WIPE to confirm",
-            Width = 250
-        };
-
-        var stackPanel = new StackPanel
-        {
-            Spacing = 12
-        };
-        stackPanel.Children.Add(new TextBlock
-        {
-            Text = "⚠️ FINAL WARNING: This will permanently delete all data and cannot be undone!",
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
-            FontWeight = Microsoft.UI.Text.FontWeights.Bold
-        });
-        stackPanel.Children.Add(new TextBlock
-        {
-            Text = "Type 'WIPE' to confirm secure deletion:",
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
-        });
-        stackPanel.Children.Add(confirmTextBox);
-
-        var finalConfirmDialog = new ContentDialog
-        {
-            Title = "Confirm Secure Wipe",
-            Content = stackPanel,
-            PrimaryButtonText = "Secure Wipe Now",
-            CloseButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = XamlRoot
-        };
-
-        var finalResult = await finalConfirmDialog.ShowAsync();
-        if (finalResult == ContentDialogResult.Primary && 
-            confirmTextBox.Text.Equals("WIPE", StringComparison.Ordinal) &&
-            _serviceProvider != null)
-        {
-            await PerformSecureWipeAsync();
-        }
-        else if (finalResult == ContentDialogResult.Primary)
-        {
-            var errorDialog = new ContentDialog
-            {
-                Title = "Confirmation Failed",
-                Content = "You must type 'WIPE' exactly to confirm this action.",
-                CloseButtonText = "OK",
-                XamlRoot = XamlRoot
-            };
-            await errorDialog.ShowAsync();
-        }
-    }
-
-    private async void ReseedSampleButton_Click(object sender, RoutedEventArgs e)
-    {
-        var confirmDialog = new ContentDialog
-        {
-            Title = "Reseed Sample Data",
-            Content = CreateReseedSampleDialogContent(),
-            PrimaryButtonText = "Reseed Sample Data",
-            CloseButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = XamlRoot
-        };
-
-        var result = await confirmDialog.ShowAsync();
-        if (result == ContentDialogResult.Primary && _serviceProvider != null)
-        {
-            await PerformReseedSampleDataAsync();
-        }
-    }
-
-    private void DatabaseProviderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (sender is ComboBox comboBox && SqlitePathPanel != null)
-        {
-            // Show/hide SQLite path panel based on provider selection
-            SqlitePathPanel.Visibility = comboBox.SelectedIndex == 0 
-                ? Visibility.Visible 
-                : Visibility.Collapsed;
-        }
-    }
-
-    private StackPanel CreateSecureWipeDialogContent()
-    {
-        var contentPanel = new StackPanel { Spacing = 12 };
-        
-        contentPanel.Children.Add(new TextBlock
-        {
-            Text = "🔒 SECURE DELETE OPERATION",
-            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
-            FontSize = 16,
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
-        });
-
-        contentPanel.Children.Add(new TextBlock
-        {
-            Text = "This operation will:",
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
-        });
-
-        var itemsList = new TextBlock
-        {
-            Text = "• Clear ALL database tables (including user accounts)\n" +
-                   "• Securely overwrite the database file (SQLite only, using DoD 5220.22-M standard)\n" +
-                   "• Permanently delete the database file\n" +
-                   "• Log you out immediately\n\n" +
-                   "For SQL Server databases, this will clear all tables but not delete server data files.",
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Margin = new Microsoft.UI.Xaml.Thickness(12, 0, 0, 0)
-        };
-        contentPanel.Children.Add(itemsList);
-
-        contentPanel.Children.Add(new TextBlock
-        {
-            Text = "⚠️ THIS CANNOT BE UNDONE!",
-            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
-        });
-
-        return contentPanel;
-    }
-
-    private StackPanel CreateReseedSampleDialogContent()
-    {
-        var contentPanel = new StackPanel { Spacing = 12 };
-        
-        contentPanel.Children.Add(new TextBlock
-        {
-            Text = "This will add sample data to your database:",
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
-        });
-
-        var itemsList = new TextBlock
-        {
-            Text = "• Sample categories (Social Media, Banking, Email, Shopping, Entertainment)\n" +
-                   "• Sample collections (Personal, Work)\n" +
-                   "• Sample password items (structure only, no actual passwords)\n" +
-                   "• Default roles (Admin, User)",
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Margin = new Microsoft.UI.Xaml.Thickness(12, 0, 0, 0)
-        };
-        contentPanel.Children.Add(itemsList);
-
-        contentPanel.Children.Add(new TextBlock
-        {
-            Text = "This will NOT delete your existing data.",
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Green),
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0)
-        });
-
-        return contentPanel;
-    }
-
-    private async Task PerformSecureWipeAsync()
-    {
-        var progressDialog = new ContentDialog
-        {
-            Title = "Secure Wiping Database...",
-            Content = new StackPanel
-            {
-                Spacing = 16,
-                Children =
-                {
-                    new ProgressRing { IsActive = true, Width = 48, Height = 48 },
-                    new TextBlock 
-                    { 
-                        Text = "Please wait while the database is being securely wiped...",
-                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                        HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Center
-                    }
-                }
-            },
-            XamlRoot = XamlRoot
-        };
-
-        _ = progressDialog.ShowAsync();
-
-        try
-        {
-            var resetService = _serviceProvider!.GetRequiredService<IDatabaseResetService>();
-            var result = await resetService.SecureWipeDatabaseAsync();
-
-            progressDialog.Hide();
-
-            var resultDialog = new ContentDialog
-            {
-                Title = result.Success ? "✓ Secure Wipe Complete" : "❌ Wipe Failed",
-                Content = CreateResultDialogContent(result),
-                CloseButtonText = "OK",
-                XamlRoot = XamlRoot
-            };
-
-            await resultDialog.ShowAsync();
-
-            if (result.Success)
-            {
-                // Navigate back to login
-                Frame.Navigate(typeof(LoginPage), _serviceProvider);
-            }
-        }
-        catch (Exception ex)
-        {
-            progressDialog.Hide();
-
-            var errorDialog = new ContentDialog
-            {
-                Title = "❌ Secure Wipe Failed",
-                Content = $"An error occurred during the secure wipe operation:\n\n{ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = XamlRoot
-            };
-
-            await errorDialog.ShowAsync();
-        }
-    }
-
-    private async Task PerformReseedSampleDataAsync()
-    {
-        var progressDialog = new ContentDialog
-        {
-            Title = "Reseeding Sample Data...",
-            Content = new StackPanel
-            {
-                Spacing = 16,
-                Children =
-                {
-                    new ProgressRing { IsActive = true, Width = 48, Height = 48 },
-                    new TextBlock 
-                    { 
-                        Text = "Please wait while sample data is being added...",
-                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                        HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Center
-                    }
-                }
-            },
-            XamlRoot = XamlRoot
-        };
-
-        _ = progressDialog.ShowAsync();
-
-        try
-        {
-            var resetService = _serviceProvider!.GetRequiredService<IDatabaseResetService>();
-            var result = await resetService.ReseedSampleDataAsync();
-
-            progressDialog.Hide();
-
-            var resultDialog = new ContentDialog
-            {
-                Title = result.Success ? "✓ Sample Data Added" : "❌ Reseed Failed",
-                Content = CreateResultDialogContent(result),
-                CloseButtonText = "OK",
-                XamlRoot = XamlRoot
-            };
-
-            await resultDialog.ShowAsync();
-        }
-        catch (Exception ex)
-        {
-            progressDialog.Hide();
-
-            var errorDialog = new ContentDialog
-            {
-                Title = "❌ Reseed Failed",
-                Content = $"An error occurred during the reseed operation:\n\n{ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = XamlRoot
-            };
-
-            await errorDialog.ShowAsync();
         }
     }
 
@@ -1527,5 +975,170 @@ public sealed partial class SettingsPage : Page
         stackPanel.Children.Add(passwordBox);
 
         return passwordBox;
+    }
+
+    // Handle changes to the selected database provider (show/hide sqlite path)
+    private void DatabaseProviderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        try
+        {
+            var combo = sender as ComboBox;
+            var selected = combo?.SelectedItem as ComboBoxItem;
+            var provider = selected?.Content?.ToString() ?? combo?.SelectedItem?.ToString() ?? string.Empty;
+
+            if (SqlitePathPanel != null)
+            {
+                SqlitePathPanel.Visibility = string.Equals(provider, "SQLite", StringComparison.OrdinalIgnoreCase)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
+        }
+        catch { }
+    }
+
+    private async void SecureWipeButton_Click(object sender, RoutedEventArgs e)
+    {
+        var confirm = new ContentDialog
+        {
+            Title = "Secure Wipe",
+            Content = "This will securely delete your database (SQLite) or clear all tables (SQL Server). This cannot be undone. Continue?",
+            PrimaryButtonText = "Yes, Wipe",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot
+        };
+
+        if (await confirm.ShowAsync() == ContentDialogResult.Primary)
+        {
+            try
+            {
+                var resetService = _serviceProvider?.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+                if (resetService == null)
+                {
+                    await ShowErrorDialog("Database reset service is not available.");
+                    return;
+                }
+
+                var result = await resetService.SecureWipeDatabaseAsync();
+                await ShowErrorDialog(result.Success ? "Secure wipe completed." : $"Secure wipe failed: {result.Message}");
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorDialog($"Secure wipe failed: {ex.Message}");
+            }
+        }
+    }
+
+    private async void ResetDataButton_Click(object sender, RoutedEventArgs e)
+    {
+        var confirm = new ContentDialog
+        {
+            Title = "Reset Password Data",
+            Content = "This will clear all password items, collections, categories and tags but keep your user account. Continue?",
+            PrimaryButtonText = "Yes, Reset",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot
+        };
+
+        if (await confirm.ShowAsync() == ContentDialogResult.Primary)
+        {
+            try
+            {
+                var resetService = _serviceProvider?.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+                if (resetService == null)
+                {
+                    await ShowErrorDialog("Database reset service is not available.");
+                    return;
+                }
+
+                var result = await resetService.ResetDataTablesAsync();
+                var dlg = new ContentDialog
+                {
+                    Title = result.Success ? "Reset Complete" : "Reset Failed",
+                    Content = result.Success ? "Password data has been reset." : $"Failed to reset password data: {result.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = XamlRoot
+                };
+                await dlg.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorDialog($"Reset failed: {ex.Message}");
+            }
+        }
+    }
+
+    private async void ResetAllButton_Click(object sender, RoutedEventArgs e)
+    {
+        var confirm = new ContentDialog
+        {
+            Title = "Reset All Database Tables",
+            Content = "DANGER: This will clear all database tables including user accounts and log you out. Continue?",
+            PrimaryButtonText = "Yes, Reset All",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot
+        };
+
+        if (await confirm.ShowAsync() == ContentDialogResult.Primary)
+        {
+            try
+            {
+                var resetService = _serviceProvider?.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+                if (resetService == null)
+                {
+                    await ShowErrorDialog("Database reset service is not available.");
+                    return;
+                }
+
+                var result = await resetService.ResetAllTablesAsync(reseedData: false);
+                var dlg = new ContentDialog
+                {
+                    Title = result.Success ? "Reset Complete" : "Reset Failed",
+                    Content = result.Success ? "All database tables have been reset." : $"Failed to reset database: {result.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = XamlRoot
+                };
+
+                await dlg.ShowAsync();
+
+                if (result.Success)
+                {
+                    Frame.Navigate(typeof(LoginPage), _serviceProvider);
+                }
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorDialog($"Reset failed: {ex.Message}");
+            }
+        }
+    }
+
+    private async void ReseedSampleButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var resetService = _serviceProvider?.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+            if (resetService == null)
+            {
+                await ShowErrorDialog("Database reset service is not available.");
+                return;
+            }
+
+            var result = await resetService.ReseedSampleDataAsync();
+            var dlg = new ContentDialog
+            {
+                Title = result.Success ? "Reseeded" : "Reseed Failed",
+                Content = result.Success ? "Sample data has been reseeded." : $"Failed to reseed sample data: {result.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot
+            };
+            await dlg.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog($"Reseed failed: {ex.Message}");
+        }
     }
 }

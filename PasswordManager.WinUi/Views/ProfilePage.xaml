@@ -119,14 +119,15 @@
                                 Click="CloseProfileManagementButton_Click"/>
                     </Grid>
 
-                    <!-- Profile List -->
+                    <!-- Profile List (horizontal switcher) -->
                     <ScrollViewer MaxHeight="300"
-                                  HorizontalScrollBarVisibility="Disabled"
-                                  VerticalScrollBarVisibility="Auto">
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Disabled"
+                                  Padding="0">
                         <ItemsControl ItemsSource="{Binding AllProfiles}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <StackPanel Spacing="12"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="12"/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
@@ -135,45 +136,40 @@
                                             BorderBrush="#4A4A4A"
                                             BorderThickness="1"
                                             CornerRadius="8"
-                                            HorizontalAlignment="Stretch"
-                                            Padding="16,12"
-                                            MinHeight="64"
+                                            HorizontalAlignment="Left"
+                                            Padding="12,10"
+                                            MinWidth="180"
+                                            Height="72"
+                                            Margin="0,0,8,0"
                                             Click="ProfileSwitchButton_Click">
                                         <Button.Tag>
                                             <Binding/>
                                         </Button.Tag>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
 
-                                            <!-- Profile Avatar -->
-                                            <Border Grid.Column="0"
-                                                    Background="#8B7355"
-                                                    CornerRadius="24"
-                                                    Width="48"
-                                                    Height="48"
-                                                    Margin="0,0,12,0">
-                                                <TextBlock Text="👤"
-                                                           FontSize="20"
-                                                           Foreground="White"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"/>
-                                            </Border>
-
-                                            <!-- Profile Info -->
-                                            <StackPanel Grid.Column="1"
-                                                        VerticalAlignment="Center">
+                                        <!-- Compact horizontal content: Name + Admin badge -->
+                                        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Vertical" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding FirstName}"
-                                                           FontSize="16"
+                                                           FontSize="14"
                                                            FontWeight="SemiBold"
                                                            Foreground="White"/>
                                                 <TextBlock Text="{Binding Email}"
-                                                           FontSize="13"
+                                                           FontSize="12"
                                                            Foreground="#B0B0B0"/>
                                             </StackPanel>
-                                        </Grid>
+
+                                            <!-- Admin badge (visible when IsAdmin == true) -->
+                                            <Border Background="#FFB020"
+                                                    CornerRadius="8"
+                                                    Padding="8,4"
+                                                    VerticalAlignment="Center"
+                                                    Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <TextBlock Text="Admin"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="Black"/>
+                                            </Border>
+                                        </StackPanel>
                                     </Button>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

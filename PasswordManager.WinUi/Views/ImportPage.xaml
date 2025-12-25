@@ -304,35 +304,7 @@
                     
                 </StackPanel>
                 
-                <!-- Empty State -->
-                <Border Style="{StaticResource ModernElevatedCardStyle}"
-                       HorizontalAlignment="Center" 
-                       VerticalAlignment="Center"
-                       Padding="48"
-                       Visibility="{Binding HasNoImport, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <StackPanel Spacing="20" HorizontalAlignment="Center">
-                        <Border Background="{StaticResource ModernWarningBrush}"
-                               CornerRadius="24"
-                               Width="80"
-                               Height="80"
-                               HorizontalAlignment="Center">
-                            <FontIcon Glyph="&#xE8B5;" 
-                                     FontSize="36"
-                                     Foreground="White"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center"/>
-                        </Border>
-                        
-                        <StackPanel Spacing="8" HorizontalAlignment="Center">
-                            <TextBlock Text="Ready to import" 
-                                      Style="{StaticResource ModernHeading3Style}"
-                                      HorizontalAlignment="Center"/>
-                            <TextBlock Text="Select an import source and file to get started" 
-                                      Style="{StaticResource ModernCaptionStyle}"
-                                      HorizontalAlignment="Center"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
+                <!-- Empty State removed per UX request -->
                 
             </Grid>
         </StackPanel>

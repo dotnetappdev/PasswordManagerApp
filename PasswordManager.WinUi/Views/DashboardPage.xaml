@@ -6,8 +6,9 @@
       Background="{StaticResource ModernBackgroundBrush}">
 
     <Page.Resources>
-    <converters:WebsiteToColorConverter x:Key="WebsiteToColorConverter"/>
-    <converters:WebsiteToLetterConverter x:Key="WebsiteToLetterConverter"/>
+        <converters:WebsiteToColorConverter x:Key="WebsiteToColorConverter"/>
+        <converters:WebsiteToLetterConverter x:Key="WebsiteToLetterConverter"/>
+        <converters:WebsiteToFaviconConverter x:Key="WebsiteToFaviconConverter"/>
     </Page.Resources>
 
     <!-- Top Toolbar -->
@@ -51,9 +52,9 @@
                            Margin="16,0">
                     
               <Button x:Name="NewItemButton"
-        Content="New Item"
-        Style="{StaticResource NewItemButtonStyle}"
-        Command="{Binding BeginCreateCommand}">
+          Content="New Item"
+          Style="{StaticResource NewItemButtonStyle}"
+          Command="{Binding BeginCreateCommand}">
     <Button.Template>
         <ControlTemplate TargetType="Button">
             <Border x:Name="Border"
@@ -72,6 +73,30 @@
     </Button.Template>
 </Button>
                     
+              
+
+              <Button x:Name="SortButton"
+                      Style="{StaticResource ModernSecondaryButtonStyle}"
+                      Click="SortButton_Click"
+                      IsEnabled="{Binding AllPasswordItems.Count, Converter={StaticResource NotZeroToBoolConverter}}">
+                  <Button.Flyout>
+                      <MenuFlyout Placement="Bottom" x:Name="SortFlyout">
+                          <MenuFlyoutItem Text="Title" Click="SortBy_Title_Click"/>
+                          <MenuFlyoutItem Text="Date Created" Click="SortBy_Created_Click"/>
+                          <MenuFlyoutItem Text="Date Modified" Click="SortBy_Modified_Click"/>
+                          <MenuFlyoutItem Text="Frequently Used" Click="SortBy_FrequentlyUsed_Click"/>
+                          <MenuFlyoutItem Text="Recently Used" Click="SortBy_RecentlyUsed_Click"/>
+                          <MenuFlyoutSeparator />
+                          <MenuFlyoutItem Text="Newest First" Click="SortBy_NewestFirst_Click"/>
+                          <MenuFlyoutItem Text="Oldest First" Click="SortBy_OldestFirst_Click"/>
+                      </MenuFlyout>
+                  </Button.Flyout>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                      <FontIcon Glyph="&#xE71D;" FontSize="14" Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                      <TextBlock Text="Sort" Foreground="{StaticResource ModernTextPrimaryBrush}" />
+                  </StackPanel>
+              </Button>
+
               <Button x:Name="EditButton"
         Style="{StaticResource ModernSecondaryButtonStyle}"
         Command="{Binding BeginEditCommand}"
@@ -151,20 +176,26 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         
-                                        <!-- Website Favicon/Icon -->
-                                        <Border Grid.Column="0" 
-                                               Width="32" 
-                                               Height="32"
-                                               CornerRadius="6"
-                                               Background="{Binding Website, Converter={StaticResource WebsiteToColorConverter}}"
-                                               VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Website, Converter={StaticResource WebsiteToLetterConverter}}" 
-                                                      FontWeight="Bold" 
+                                             <!-- Website Favicon/Icon: try favicon, else show two-letter initials -->
+                                             <Grid Grid.Column="0" Width="40" Height="40" VerticalAlignment="Center">
+                                              <Border x:Name="IconBackground" 
+                                                   Width="40" Height="40" CornerRadius="8"
+                                                   Background="{Binding Website, Converter={StaticResource WebsiteToColorConverter}}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                              <Image Width="32" Height="32" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                  Source="{Binding Website, Converter={StaticResource WebsiteToFaviconConverter}}"
+                                                  Stretch="UniformToFill"
+                                                  Margin="0"/>
+
+                                              <TextBlock x:Name="IconLetters"
+                                                      Text="{Binding Website, Converter={StaticResource WebsiteToLetterConverter}}"
+                                                      FontWeight="Bold"
                                                       FontSize="14"
                                                       Foreground="White"
                                                       HorizontalAlignment="Center"
                                                       VerticalAlignment="Center"/>
-                                        </Border>
+                                             </Grid>
                                         
                                         <!-- Title and Username -->
                                         <StackPanel Grid.Column="1" 

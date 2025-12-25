@@ -129,7 +129,7 @@ public class ImportService : IImportService
         }
     }
 
-    public async Task<ImportResult> ImportPasswordsAsync(string providerName, Stream fileStream, string fileName)
+    public async Task<ImportResult> ImportPasswordsAsync(string providerName, Stream fileStream, string fileName, string? userId = null)
     {
         if (!_importProviders.TryGetValue(providerName, out var provider))
         {
@@ -140,19 +140,19 @@ public class ImportService : IImportService
             };
         }
 
-        try
-        {
-            var result = await provider.ImportFromFileAsync(fileStream, fileName);
+            try
+            {
+                var result = await provider.ImportFromFileAsync(fileStream, fileName);
 
             if (result.Success)
             {
-                // Create required collections first
-                var collectionMapping = await EnsureCollectionsExistAsync(result.RequiredCollections);
+                // Create required collections first (attach to user if provided)
+                var collectionMapping = await EnsureCollectionsExistAsync(result.RequiredCollections, userId);
 
-                // Create required categories and link them to collections
-                var categoryMapping = await EnsureCategoriesExistAsync(result.RequiredCategories, collectionMapping);
+                // Create required categories and link them to collections (attach to user if provided)
+                var categoryMapping = await EnsureCategoriesExistAsync(result.RequiredCategories, collectionMapping, userId);
 
-                // Create required tags
+                // Create required tags (tags currently global - create as-is)
                 await EnsureTagsExistAsync(result.RequiredTags);
 
                 // Import the password items and map them to the actual created collections/categories
@@ -170,6 +170,12 @@ public class ImportService : IImportService
                         {
                             item.CategoryId = actualCategoryId;
                         }
+                        // Ensure item is assigned to the requesting user/tenant if provided
+                        if (!string.IsNullOrEmpty(userId))
+                        {
+                            item.UserId = userId;
+                        }
+
                         await _passwordItemService.CreateAsync(item);
                         result.SuccessfulImports++;
                     }
@@ -193,7 +199,7 @@ public class ImportService : IImportService
         }
     }
 
-    private async Task<Dictionary<int, int>> EnsureCollectionsExistAsync(List<Collection> requiredCollections)
+    private async Task<Dictionary<int, int>> EnsureCollectionsExistAsync(List<Collection> requiredCollections, string? userId = null)
     {
         var mapping = new Dictionary<int, int>();
         var existingCollections = await _collectionService.GetAllAsync();
@@ -211,7 +217,11 @@ public class ImportService : IImportService
             }
             else
             {
-                var created = await _collectionService.CreateAsync(collection);
+                // Attach to user if provided
+                if (!string.IsNullOrEmpty(userId))
+                    collection.UserId = userId;
+
+                var created = await _collection_service_CreateAsync_with_fallback(collection);
                 if (created != null)
                 {
                     mapping[tempId] = created.Id;
@@ -222,7 +232,29 @@ public class ImportService : IImportService
         return mapping;
     }
 
-    private async Task<Dictionary<int, int>> EnsureCategoriesExistAsync(List<Category> requiredCategories, Dictionary<int, int> collectionMapping)
+    // Helper to call collection create and handle any differences in implementations
+    private async Task<Collection?> _collection_service_CreateAsync_with_fallback(Collection collection)
+    {
+        try
+        {
+            return await _collectionService.CreateAsync(collection);
+        }
+        catch
+        {
+            // Fallback: try to set CreatedAt and call again
+            try
+            {
+                collection.CreatedAt = DateTime.UtcNow;
+                return await _collectionService.CreateAsync(collection);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
+
+    private async Task<Dictionary<int, int>> EnsureCategoriesExistAsync(List<Category> requiredCategories, Dictionary<int, int> collectionMapping, string? userId = null)
     {
         var mapping = new Dictionary<int, int>();
         var existingCategories = await _categoryService.GetAllAsync();
@@ -248,6 +280,10 @@ public class ImportService : IImportService
             }
             else
             {
+                // Attach to user if provided
+                if (!string.IsNullOrEmpty(userId))
+                    category.UserId = userId;
+
                 var created = await _categoryService.CreateAsync(category);
                 if (created != null)
                 {

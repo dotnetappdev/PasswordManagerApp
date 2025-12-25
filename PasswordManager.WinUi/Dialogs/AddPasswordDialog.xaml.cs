@@ -89,6 +89,11 @@ public sealed partial class AddPasswordDialog : ContentDialog
             {
                 this.Style = Application.Current.Resources["Modern1PasswordDialogStyle"] as Style;
             }
+
+            // Ensure alignment is explicitly centered
+            this.HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Center;
+            this.VerticalAlignment = Microsoft.UI.Xaml.VerticalAlignment.Center;
+            this.Margin = new Microsoft.UI.Xaml.Thickness(0);
         }
         catch (Exception)
         {
@@ -482,11 +487,11 @@ public sealed partial class AddPasswordDialog : ContentDialog
 
             // Validate required fields with inline feedback
             bool isValid = true;
-            
+
             // Clear previous validation messages
             TitleValidationMessage.Visibility = Visibility.Collapsed;
             TypeValidationMessage.Visibility = Visibility.Collapsed;
-            
+
             if (string.IsNullOrWhiteSpace(TitleTextBox.Text))
             {
                 TitleValidationMessage.Text = "Title is required";
@@ -500,7 +505,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 TypeValidationMessage.Visibility = Visibility.Visible;
                 isValid = false;
             }
-            
+
             // Show additional validation for login items
             if (TypeComboBox.SelectedIndex == 0 && LoginFieldsPanel.Visibility == Visibility.Visible)
             {
@@ -511,7 +516,7 @@ public sealed partial class AddPasswordDialog : ContentDialog
                     isValid = false;
                 }
             }
-            
+
             if (!isValid)
             {
                 return;
@@ -606,10 +611,10 @@ public sealed partial class AddPasswordDialog : ContentDialog
         {
             // Hide loading indicator and show error
             ShowLoadingIndicator(false);
-            
+
             var errorMessage = ex.InnerException?.Message ?? ex.Message;
             System.Diagnostics.Debug.WriteLine($"Error saving password item: {errorMessage}");
-            
+
             await ShowErrorDialog($"Error saving item: {errorMessage}");
         }
     }
@@ -715,12 +720,12 @@ public sealed partial class AddPasswordDialog : ContentDialog
             {
                 LoadingIndicator.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
             }
-            
+
             if (LoadingText != null && show)
             {
                 LoadingText.Text = message;
             }
-            
+
             // Disable primary button during loading
             this.IsPrimaryButtonEnabled = !show;
         }

@@ -23,8 +23,8 @@
     <!-- Sidebar specific colors -->
     <Color x:Key="LightModernSidebarBackgroundColor">#F8FAFC</Color>
 
-    <!-- New item button color -->
-    <Color x:Key="LightModernNewItemButtonColor">#C08FDA</Color>
+        <!-- New item button color (match primary color) -->
+        <Color x:Key="LightModernNewItemButtonColor">#005BFF</Color>
 
     <!-- Enhanced Light Text Colors -->
     <Color x:Key="LightModernTextPrimaryColor">#1E293B</Color>
@@ -67,6 +67,10 @@
             Color="{StaticResource LightModernSidebarBackgroundColor}"/>
     <SolidColorBrush x:Key="LightModernNewItemButtonBrush"
             Color="{StaticResource LightModernNewItemButtonColor}"/>
+
+    <!-- Button state brushes (light theme) -->
+    <SolidColorBrush x:Key="LightModernButtonPointerOverBrush" Color="#E6F2FF" />
+    <SolidColorBrush x:Key="LightModernButtonPressedBrush" Color="#DCEFFC" />
 
     <SolidColorBrush x:Key="LightModernTextPrimaryBrush"
             Color="{StaticResource LightModernTextPrimaryColor}"/>

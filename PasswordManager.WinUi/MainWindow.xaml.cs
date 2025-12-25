@@ -559,10 +559,25 @@ public sealed partial class MainWindow : Window
 
                 foreach (var cat in categories)
                 {
+                    var catName = (cat.Name ?? string.Empty).Trim();
+                    if (string.IsNullOrEmpty(catName)) continue;
+
+                    // Skip if a static nav item already exists with the same content
+                    bool existsInMenu = MainNavigationView.MenuItems
+                        .OfType<NavigationViewItem>()
+                        .Any(i => string.Equals(i.Content?.ToString(), catName, StringComparison.OrdinalIgnoreCase));
+
+                    bool existsInDynamic = dynamicPanel.Children
+                        .OfType<NavigationViewItem>()
+                        .Any(i => string.Equals(i.Content?.ToString(), catName, StringComparison.OrdinalIgnoreCase));
+
+                    if (existsInMenu || existsInDynamic)
+                        continue; // avoid duplicate entries (e.g., built-in "Logins")
+
                     var navItem = new NavigationViewItem
                     {
-                        Content = cat.Name,
-                        Tag = $"{cat.Name}Category",
+                        Content = catName,
+                        Tag = $"{catName}Category",
                         Style = _navItemStyle // may be null; safe
                     };
 

@@ -69,6 +69,19 @@ public sealed partial class PasswordItemsPage : Page
 
             // Load categories from database
             await LoadCategoriesAsync();
+
+            // Reload view model items after seeding to ensure UI shows newly created items
+            try
+            {
+                if (_viewModel != null)
+                {
+                    await _viewModel.RefreshAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error refreshing view model after seeding: {ex.Message}");
+            }
         }
     }
 
@@ -736,7 +749,7 @@ public sealed partial class PasswordItemsPage : Page
         {
             // Try to get the main window for proper centering
             var mainWindow = GetMainWindow();
-            
+
             // Set XamlRoot to the main window's content for proper centering
             if (mainWindow?.Content?.XamlRoot != null)
             {
@@ -746,7 +759,7 @@ public sealed partial class PasswordItemsPage : Page
             {
                 dialog.XamlRoot = this.XamlRoot;
             }
-            
+
             // Ensure the dialog uses the proper style for centering if it doesn't have one already
             if (dialog.Style == null)
             {

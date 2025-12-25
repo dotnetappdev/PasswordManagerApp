@@ -32,8 +32,8 @@
     <!-- Sidebar specific colors as per requirements -->
     <Color x:Key="ModernSidebarBackgroundColor">#141414</Color>
 
-    <!-- New item button color as per requirements -->
-    <Color x:Key="ModernNewItemButtonColor">#C08FDA</Color>
+        <!-- New item button color (use primary color for consistency) -->
+        <Color x:Key="ModernNewItemButtonColor">#005BFF</Color>
 
     <!-- Light theme variants (for future use) -->
     <Color x:Key="ModernLightBackgroundColor">#F8F9FA</Color>
@@ -82,6 +82,10 @@
                      Color="{StaticResource ModernSidebarBackgroundColor}"/>
     <SolidColorBrush x:Key="ModernNewItemButtonBrush"
                      Color="{StaticResource ModernNewItemButtonColor}"/>
+
+        <!-- Button state brushes (dark theme friendly) -->
+        <SolidColorBrush x:Key="ModernButtonPointerOverBrush" Color="#2A2A2A" />
+        <SolidColorBrush x:Key="ModernButtonPressedBrush" Color="#222222" />
 
     <SolidColorBrush x:Key="ModernTextPrimaryBrush"
                      Color="{StaticResource ModernTextPrimaryColor}"/>
@@ -568,22 +572,22 @@
                                                 Value="{StaticResource ModernBorderBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="#F5F8FF"/>
-                                        <Setter Target="RootBorder.BorderBrush"
-                                                Value="{StaticResource ModernPrimaryLightBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Pressed">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="#E6F2FF"/>
-                                        <Setter Target="RootBorder.BorderBrush"
-                                                Value="{StaticResource ModernPrimaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
+                                                                <VisualState x:Name="PointerOver">
+                                                                        <VisualState.Setters>
+                                                                                <Setter Target="RootBorder.Background"
+                                                                                                Value="{StaticResource ModernButtonPointerOverBrush}"/>
+                                                                                <Setter Target="RootBorder.BorderBrush"
+                                                                                                Value="{StaticResource ModernPrimaryLightBrush}"/>
+                                                                        </VisualState.Setters>
+                                                                </VisualState>
+                                                                <VisualState x:Name="Pressed">
+                                                                        <VisualState.Setters>
+                                                                                <Setter Target="RootBorder.Background"
+                                                                                                Value="{StaticResource ModernButtonPressedBrush}"/>
+                                                                                <Setter Target="RootBorder.BorderBrush"
+                                                                                                Value="{StaticResource ModernPrimaryBrush}"/>
+                                                                        </VisualState.Setters>
+                                                                </VisualState>
                                 <VisualState x:Name="Disabled">
                                     <VisualState.Setters>
                                         <Setter Target="RootBorder.Background"
@@ -860,38 +864,38 @@
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="CommonStates">
                                 <VisualState x:Name="Normal"/>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background"
-                                                Value="#F5F8FF"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Pressed">
-                                    <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background"
-                                                Value="#EBF3FF"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Selected">
-                                    <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background"
-                                                Value="#E6F2FF"/>
-                                        <Setter Target="SelectionIndicator.Opacity"
-                                                Value="1"/>
-                                        <Setter Target="ContentPresenter.Foreground"
-                                                Value="{StaticResource ModernPrimaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="PointerOverSelected">
-                                    <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background"
-                                                Value="#D6EAFF"/>
-                                        <Setter Target="SelectionIndicator.Opacity"
-                                                Value="1"/>
-                                        <Setter Target="ContentPresenter.Foreground"
-                                                Value="{StaticResource ModernPrimaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
+                                                                <VisualState x:Name="PointerOver">
+                                                                        <VisualState.Setters>
+                                                                                <Setter Target="LayoutRoot.Background"
+                                                                                                Value="{StaticResource ModernSurfaceBrush}"/>
+                                                                        </VisualState.Setters>
+                                                                </VisualState>
+                                                                <VisualState x:Name="Pressed">
+                                                                        <VisualState.Setters>
+                                                                                <Setter Target="LayoutRoot.Background"
+                                                                                                Value="{StaticResource ModernElevatedSurfaceBrush}"/>
+                                                                        </VisualState.Setters>
+                                                                </VisualState>
+                                                                <VisualState x:Name="Selected">
+                                                                        <VisualState.Setters>
+                                                                                <Setter Target="LayoutRoot.Background"
+                                                                                                Value="{StaticResource ModernSidebarBackgroundBrush}"/>
+                                                                                <Setter Target="SelectionIndicator.Opacity"
+                                                                                                Value="1"/>
+                                                                                <Setter Target="ContentPresenter.Foreground"
+                                                                                                Value="{StaticResource ModernTextPrimaryBrush}"/>
+                                                                        </VisualState.Setters>
+                                                                </VisualState>
+                                                                <VisualState x:Name="PointerOverSelected">
+                                                                        <VisualState.Setters>
+                                                                                <Setter Target="LayoutRoot.Background"
+                                                                                                Value="{StaticResource ModernSidebarBackgroundBrush}"/>
+                                                                                <Setter Target="SelectionIndicator.Opacity"
+                                                                                                Value="1"/>
+                                                                                <Setter Target="ContentPresenter.Foreground"
+                                                                                                Value="{StaticResource ModernTextPrimaryBrush}"/>
+                                                                        </VisualState.Setters>
+                                                                </VisualState>
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>
                     </Border>
@@ -932,18 +936,18 @@
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="CommonStates">
                                 <VisualState x:Name="Normal"/>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="#F5F8FF"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Pressed">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="#EBF3FF"/>
-                                    </VisualState.Setters>
-                                </VisualState>
+                                                        <VisualState x:Name="PointerOver">
+                                                                        <VisualState.Setters>
+                                                                                <Setter Target="RootBorder.Background"
+                                                                                                Value="{StaticResource ModernSurfaceBrush}"/>
+                                                                        </VisualState.Setters>
+                                                                </VisualState>
+                                                                <VisualState x:Name="Pressed">
+                                                                        <VisualState.Setters>
+                                                                                <Setter Target="RootBorder.Background"
+                                                                                                Value="{StaticResource ModernElevatedSurfaceBrush}"/>
+                                                                        </VisualState.Setters>
+                                                                </VisualState>
                                 <VisualState x:Name="Disabled">
                                     <VisualState.Setters>
                                         <Setter Target="ContentPresenter.Foreground"

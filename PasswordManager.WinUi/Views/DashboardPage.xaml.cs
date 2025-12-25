@@ -37,8 +37,8 @@ public sealed partial class DashboardPage : Page
 
     private async void AddPasswordButton_Click(object sender, RoutedEventArgs e)
     {
-    // Switch to inline create mode
-    _viewModel?.BeginCreate();
+        // Switch to inline create mode
+        _viewModel?.BeginCreate();
     }
 
 
@@ -64,14 +64,14 @@ public sealed partial class DashboardPage : Page
     }
 
     // New event handlers for 3-column layout
-    
+
     private async void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
     {
         if (_viewModel != null)
         {
             // Debounce search to avoid too many calls
             await Task.Delay(300);
-            
+
             // Check if the search text is still the same (user might have continued typing)
             if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
@@ -79,7 +79,7 @@ public sealed partial class DashboardPage : Page
             }
         }
     }
-    
+
     private async void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
     {
         if (_viewModel != null)
@@ -87,7 +87,7 @@ public sealed partial class DashboardPage : Page
             await _viewModel.FilterPasswordItemsAsync(args.QueryText);
         }
     }
-    
+
     private async void EditButton_Click(object sender, RoutedEventArgs e)
     {
         if (_viewModel == null) return;
@@ -96,8 +96,8 @@ public sealed partial class DashboardPage : Page
             _viewModel.BeginEdit();
         }
     }
-    
-    
+
+
     private void PasswordItemsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is ListView listView)
@@ -109,9 +109,50 @@ public sealed partial class DashboardPage : Page
             }
         }
     }
-    
+
+    // Sort menu handlers - invoke ViewModel.ApplySort
+    private void SortButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Show flyout is handled by Button.Flyout
+    }
+
+    private void SortBy_Title_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is DashboardViewModel vm) vm.ApplySort(DashboardViewModel.SortOption.Title);
+    }
+
+    private void SortBy_Created_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is DashboardViewModel vm) vm.ApplySort(DashboardViewModel.SortOption.Created);
+    }
+
+    private void SortBy_Modified_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is DashboardViewModel vm) vm.ApplySort(DashboardViewModel.SortOption.Modified);
+    }
+
+    private void SortBy_FrequentlyUsed_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is DashboardViewModel vm) vm.ApplySort(DashboardViewModel.SortOption.FrequentlyUsed);
+    }
+
+    private void SortBy_RecentlyUsed_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is DashboardViewModel vm) vm.ApplySort(DashboardViewModel.SortOption.RecentlyUsed);
+    }
+
+    private void SortBy_NewestFirst_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is DashboardViewModel vm) vm.ApplySort(DashboardViewModel.SortOption.NewestFirst);
+    }
+
+    private void SortBy_OldestFirst_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is DashboardViewModel vm) vm.ApplySort(DashboardViewModel.SortOption.OldestFirst);
+    }
+
     // Action buttons for password detail form
-    
+
     private void CopyUsernameButton_Click(object sender, RoutedEventArgs e)
     {
         if (_viewModel?.SelectedPasswordItem?.Username is string username)
@@ -119,7 +160,7 @@ public sealed partial class DashboardPage : Page
             CopyToClipboard(username);
         }
     }
-    
+
     private void CopyPasswordButton_Click(object sender, RoutedEventArgs e)
     {
         if (_viewModel?.SelectedPasswordItem?.Password is string password)
@@ -127,7 +168,7 @@ public sealed partial class DashboardPage : Page
             CopyToClipboard(password);
         }
     }
-    
+
     private void TogglePasswordVisibilityButton_Click(object sender, RoutedEventArgs e)
     {
         // Find the PasswordBox in the detail form
@@ -143,22 +184,22 @@ public sealed partial class DashboardPage : Page
                 {
                     // Check current state by button content
                     bool isCurrentlyVisible = button.Content?.ToString() == "🙈";
-                    
+
                     if (isCurrentlyVisible)
                     {
                         // Hide password - switch back to PasswordBox
                         button.Content = "👁";
-                     }
+                    }
                     else
                     {
                         // Show password
                         button.Content = "🙈";
-                     }
+                    }
                 }
             }
         }
     }
-    
+
     private void OpenWebsiteButton_Click(object sender, RoutedEventArgs e)
     {
         if (_viewModel?.SelectedPasswordItem?.Website is string website)
@@ -183,7 +224,7 @@ public sealed partial class DashboardPage : Page
             }
         }
     }
-    
+
     private void CopyToClipboard(string text)
     {
         try

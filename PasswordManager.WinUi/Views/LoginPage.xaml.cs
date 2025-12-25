@@ -235,7 +235,15 @@ public sealed partial class LoginPage : Page
             }
 
             // Create and show the registration dialog
+            if (_serviceProvider == null)
+            {
+                System.Diagnostics.Debug.WriteLine("ShowCreateProfileDialog - service provider is null");
+                return;
+            }
+
             var registrationDialog = new Dialogs.UserRegistrationDialog(_serviceProvider!, currentUser);
+            // Ensure the dialog has the XamlRoot set so it can be shown correctly
+            registrationDialog.XamlRoot = this.XamlRoot;
             var result = await registrationDialog.ShowAsync();
 
             if (result == ContentDialogResult.Primary && registrationDialog.Result != null)

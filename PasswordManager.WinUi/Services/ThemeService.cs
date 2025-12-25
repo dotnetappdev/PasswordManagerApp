@@ -3,6 +3,7 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using WinRT.Interop;
 using System;
+using Microsoft.UI.Xaml.Controls;
 
 namespace PasswordManager.WinUi.Services
 {
@@ -30,14 +31,14 @@ namespace PasswordManager.WinUi.Services
             _window = window;
             _application = application;
             _navigationView = navigationView;
-            
+
             // Set up system theme change listener
             _uiSettings = new Windows.UI.ViewManagement.UISettings();
             _uiSettings.ColorValuesChanged += OnSystemThemeChanged;
-            
+
             ApplyTheme(_currentTheme);
         }
-        
+
         public static void SetNavigationView(NavigationView navigationView)
         {
             _navigationView = navigationView;
@@ -45,12 +46,12 @@ namespace PasswordManager.WinUi.Services
             if (_navigationView != null)
             {
                 var actualTheme = _currentTheme == AppTheme.System ? GetSystemTheme() : _currentTheme;
-                _navigationView.RequestedTheme = actualTheme == AppTheme.Dark 
-                    ? ElementTheme.Dark 
+                _navigationView.RequestedTheme = actualTheme == AppTheme.Dark
+                    ? ElementTheme.Dark
                     : ElementTheme.Light;
             }
         }
-        
+
         private static async void OnSystemThemeChanged(Windows.UI.ViewManagement.UISettings sender, object args)
         {
             // Only respond if we're in System theme mode
@@ -106,7 +107,7 @@ namespace PasswordManager.WinUi.Services
             {
                 var resources = _application?.Resources;
                 if (resources == null) return;
-                
+
                 // Update brush resources based on theme
                 if (actualTheme == AppTheme.Dark)
                 {
@@ -119,7 +120,7 @@ namespace PasswordManager.WinUi.Services
                     UpdateResourceIfExists(resources, "ModernTextPrimaryBrush", "#FFFFFF");
                     UpdateResourceIfExists(resources, "ModernTextSecondaryBrush", "#B0B0B0");
                     UpdateResourceIfExists(resources, "ModernTextTertiaryBrush", "#808080");
-                    
+
                     // NavigationView overrides - sidebar should be #141414
                     UpdateResourceIfExists(resources, "NavigationViewDefaultPaneBackground", "#141414");
                     UpdateResourceIfExists(resources, "NavigationViewExpandedPaneBackground", "#141414");
@@ -136,7 +137,7 @@ namespace PasswordManager.WinUi.Services
                     UpdateResourceIfExists(resources, "ModernTextPrimaryBrush", "#1E293B");
                     UpdateResourceIfExists(resources, "ModernTextSecondaryBrush", "#64748B");
                     UpdateResourceIfExists(resources, "ModernTextTertiaryBrush", "#94A3B8");
-                    
+
                     // NavigationView overrides
                     UpdateResourceIfExists(resources, "NavigationViewDefaultPaneBackground", "#F8FAFC");
                     UpdateResourceIfExists(resources, "NavigationViewExpandedPaneBackground", "#F8FAFC");
@@ -166,7 +167,7 @@ namespace PasswordManager.WinUi.Services
                     Convert.ToByte(colorString.Substring(3, 2), 16),
                     Convert.ToByte(colorString.Substring(5, 2), 16)
                 );
-                
+
                 if (resources.ContainsKey(key))
                 {
                     resources[key] = new Microsoft.UI.Xaml.Media.SolidColorBrush(color);
@@ -185,10 +186,10 @@ namespace PasswordManager.WinUi.Services
                 // Check Windows system theme
                 var uiSettings = new Windows.UI.ViewManagement.UISettings();
                 var backgroundColor = uiSettings.GetColorValue(Windows.UI.ViewManagement.UIColorType.Background);
-                
+
                 // If the background color is close to black, it's dark mode
-                return (backgroundColor.R + backgroundColor.G + backgroundColor.B) < 384 
-                    ? AppTheme.Dark 
+                return (backgroundColor.R + backgroundColor.G + backgroundColor.B) < 384
+                    ? AppTheme.Dark
                     : AppTheme.Light;
             }
             catch

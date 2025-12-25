@@ -9,6 +9,7 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.UI;
 
 namespace PasswordManager.WinUi.Dialogs;
 
@@ -30,20 +31,39 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
     public UserRegistrationDialog(IServiceProvider serviceProvider, ApplicationUser? currentUser = null)
     {
         this.InitializeComponent();
+
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         _userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        _role_manager_null_check: ;
         _roleManager = serviceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         _cryptoService = serviceProvider.GetRequiredService<IPasswordCryptoService>();
         _currentUser = currentUser;
 
-        // Determine if current user can create admin accounts
-        DeterminePermissions();
+        // Defensive startup: wrap permission and UI initialization so the dialog won't crash
+        try
+        {
+            // Determine if current user can create admin accounts
+            DeterminePermissions();
 
-        // Set up initial UI state
-        UpdateRoleDescription();
-        
-        // Wire up events
-        this.PrimaryButtonClick += UserRegistrationDialog_PrimaryButtonClick;
+            // Set up initial UI state
+            UpdateRoleDescription();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"UserRegistrationDialog init error: {ex.Message}");
+            // Disable primary action so user cannot proceed when dialog is in an invalid state
+            try { this.IsPrimaryButtonEnabled = false; } catch { }
+        }
+
+        // Wire up events (guard against null subscription)
+        try
+        {
+            this.PrimaryButtonClick += UserRegistrationDialog_PrimaryButtonClick;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to attach PrimaryButtonClick: {ex.Message}");
+        }
     }
 
     public bool CanCreateAdminAccount
@@ -115,36 +135,71 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
 
     private void AdminToggleSwitch_Toggled(object sender, RoutedEventArgs e)
     {
-        var isAdmin = AdminToggleSwitch.IsOn;
-        ShowRoleSelection = !isAdmin;
-        
-        if (isAdmin)
+        try
         {
-            RoleDescriptionTextBlock.Text = "Administrators have full access to all features and can manage other users.";
+            if (AdminToggleSwitch == null)
+            {
+                return;
+            }
+
+            var isAdmin = AdminToggleSwitch.IsOn;
+            ShowRoleSelection = !isAdmin;
+
+            if (isAdmin)
+            {
+                if (RoleDescriptionTextBlock != null)
+                    RoleDescriptionTextBlock.Text = "Administrators have full access to all features and can manage other users.";
+            }
+            else
+            {
+                UpdateRoleDescription();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            UpdateRoleDescription();
+            System.Diagnostics.Debug.WriteLine($"AdminToggleSwitch_Toggled error: {ex.Message}");
         }
     }
 
     private void RoleComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        UpdateRoleDescription();
+        try
+        {
+            if (RoleComboBox == null) return;
+            UpdateRoleDescription();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"RoleComboBox_SelectionChanged error: {ex.Message}");
+        }
     }
 
     private void UpdateRoleDescription()
     {
-        if (RoleComboBox.SelectedItem is ComboBoxItem selectedItem)
+        try
         {
-            var roleTag = selectedItem.Tag?.ToString();
-            RoleDescriptionTextBlock.Text = roleTag switch
+            if (RoleComboBox == null || RoleDescriptionTextBlock == null) return;
+
+            if (RoleComboBox.SelectedItem is ComboBoxItem selectedItem)
             {
-                ApplicationRoles.Parent => "Parent users can manage child accounts and have full access to their own passwords.",
-                ApplicationRoles.User => "Standard users can manage their own passwords and access all features.",
-                ApplicationRoles.Child => "Child users have restricted access and are managed by parent users.",
-                _ => "Standard users can manage their own passwords and access all features."
-            };
+                var roleTag = selectedItem.Tag?.ToString();
+                RoleDescriptionTextBlock.Text = roleTag switch
+                {
+                    ApplicationRoles.Parent => "Parent users can manage child accounts and have full access to their own passwords.",
+                    ApplicationRoles.User => "Standard users can manage their own passwords and access all features.",
+                    ApplicationRoles.Child => "Child users have restricted access and are managed by parent users.",
+                    _ => "Standard users can manage their own passwords and access all features."
+                };
+            }
+            else
+            {
+                // Fallback
+                RoleDescriptionTextBlock.Text = "Standard users can manage their own passwords and access all features.";
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"UpdateRoleDescription error: {ex.Message}");
         }
     }
 
@@ -152,11 +207,11 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
     {
         // Get a deferral to allow async operations
         var deferral = args.GetDeferral();
-        
+
         try
         {
             args.Cancel = true; // Cancel the default close behavior
-            
+
             if (await CreateUserAsync())
             {
                 // Success - close the dialog
@@ -203,7 +258,7 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
             {
                 var currentUserRoles = await _userManager.GetRolesAsync(_currentUser);
                 var isCurrentUserAdmin = currentUserRoles.Contains(ApplicationRoles.Admin);
-                
+
                 if (!isCurrentUserAdmin)
                 {
                     ShowErrorMessage("Only administrators can create admin accounts. Access denied.");
@@ -413,7 +468,7 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
     {
         ErrorMessageTextBlock.Text = message;
         ErrorMessageBorder.Visibility = Visibility.Visible;
-        
+
         // Also show in InfoBar for modern toast-like notification
         ValidationInfoBar.Message = message;
         ValidationInfoBar.Severity = InfoBarSeverity.Error;
@@ -425,7 +480,7 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
         ErrorMessageBorder.Visibility = Visibility.Collapsed;
         ValidationInfoBar.IsOpen = false;
     }
-    
+
     private void SetFieldError(Border border, bool hasError)
     {
         if (hasError)
@@ -437,34 +492,34 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
         else
         {
             border.BorderBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                Microsoft.UI.Color.FromArgb(255, 74, 74, 74)); // #4A4A4A
+                Color.FromArgb(255, 74, 74, 74)); // #4A4A4A
             border.BorderThickness = new Thickness(1);
         }
     }
-    
+
     private void FirstNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         SetFieldError(FirstNameBorder, false);
         ValidationInfoBar.IsOpen = false;
     }
-    
+
     private void LastNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         SetFieldError(LastNameBorder, false);
         ValidationInfoBar.IsOpen = false;
     }
-    
+
     private void EmailTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         SetFieldError(EmailBorder, false);
         ValidationInfoBar.IsOpen = false;
     }
-    
+
     private void MasterPasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
     {
         SetFieldError(MasterPasswordBorder, false);
         ValidationInfoBar.IsOpen = false;
-        
+
         // Update password strength indicator
         var password = MasterPasswordBox.Password;
         if (string.IsNullOrEmpty(password))
@@ -472,12 +527,12 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
             PasswordStrengthPanel.Visibility = Visibility.Collapsed;
             return;
         }
-        
+
         PasswordStrengthPanel.Visibility = Visibility.Visible;
-        
+
         var score = CalculatePasswordStrength(password);
         PasswordStrengthBar.Value = score * 20; // Convert 0-5 to 0-100
-        
+
         var (strength, color) = score switch
         {
             5 => ("Very Strong", Microsoft.UI.Colors.Green),
@@ -486,11 +541,11 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
             2 => ("Weak", Microsoft.UI.Colors.OrangeRed),
             _ => ("Very Weak", Microsoft.UI.Colors.Red)
         };
-        
+
         PasswordStrengthText.Text = $"Password strength: {strength}";
         PasswordStrengthBar.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(color);
     }
-    
+
     private int CalculatePasswordStrength(string password)
     {
         var score = 0;
@@ -502,7 +557,7 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
         if (password.Any(ch => !char.IsLetterOrDigit(ch))) score++;
         return Math.Min(score, 5);
     }
-    
+
     private void ConfirmPasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
     {
         SetFieldError(ConfirmPasswordBorder, false);
