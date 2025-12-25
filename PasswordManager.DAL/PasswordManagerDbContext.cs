@@ -48,18 +48,18 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.LastModified).IsRequired();
 
-            // Configure Category relationship
-            entity.Property(e => e.CategoryId).IsRequired();
+            // Configure Category relationship (optional)
             entity.HasOne(e => e.Category)
                   .WithMany(c => c.PasswordItems)
                   .HasForeignKey(e => e.CategoryId)
+                  .IsRequired(false)
                   .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure Collection relationship
-            entity.Property(e => e.CollectionId).IsRequired();
+            // Configure Collection relationship (optional)
             entity.HasOne(e => e.Collection)
                   .WithMany(c => c.PasswordItems)
                   .HasForeignKey(e => e.CollectionId)
+                  .IsRequired(false)
                   .OnDelete(DeleteBehavior.Restrict);
 
             // Configure Tags (many-to-many)
@@ -219,8 +219,8 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Description).HasMaxLength(500);
-            entity.Property(e => e.Icon).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Color).IsRequired().HasMaxLength(7);
+            entity.Property(e => e.Icon).HasMaxLength(100); // Optional - removed IsRequired()
+            entity.Property(e => e.Color).HasMaxLength(7); // Optional - removed IsRequired()
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
 

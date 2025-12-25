@@ -226,6 +226,10 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             result.RequiredTags.Add(new Tag { Name = "Favorite", Color = "#fbbf24" });
             result.RequiredTags.Add(new Tag { Name = "Archived", Color = "#6b7280" });
 
+            // Set success and failure counts
+            result.SuccessfulImports = result.ImportedItems.Count;
+            result.FailedImports = result.TotalItemsProcessed - result.SuccessfulImports;
+
             result.Success = true;
         }
         catch (Exception ex)
@@ -471,6 +475,8 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             // Track collections and categories we need to create
             var collectionsToCreate = new Dictionary<string, Collection>();
             var categoriesToCreate = new Dictionary<string, (Category Category, string CollectionName)>();
+            
+            var totalItemsAttempted = 0;
 
             // Process all accounts and vaults
             foreach (var account in puxData.Accounts)
@@ -479,6 +485,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                 {
                     foreach (var item in vault.Items)
                     {
+                        totalItemsAttempted++;
                         try
                         {
                             // Skip archived items if desired (currently importing all)
@@ -624,7 +631,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                 }
             }
 
-            result.TotalItemsProcessed = result.ImportedItems.Count;
+            result.TotalItemsProcessed = totalItemsAttempted;
 
             // Add required collections, categories, and tags to result
             result.RequiredCollections.AddRange(collectionsToCreate.Values);
@@ -635,6 +642,10 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             result.RequiredTags.Add(new Tag { Name = "High Priority", Color = "#ef4444" });
             result.RequiredTags.Add(new Tag { Name = "Favorite", Color = "#fbbf24" });
             result.RequiredTags.Add(new Tag { Name = "Archived", Color = "#6b7280" });
+
+            // Set success and failure counts
+            result.SuccessfulImports = result.ImportedItems.Count;
+            result.FailedImports = result.TotalItemsProcessed - result.SuccessfulImports;
 
             result.Success = true;
         }
@@ -679,5 +690,14 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             return CustomFieldType.Date;
 
         return CustomFieldType.Text;
+    }
+
+    /// <summary>
+    /// Sets the import result statistics (success/failure counts)
+    /// </summary>
+    private void SetImportResultStatistics(ImportResult result)
+    {
+        result.SuccessfulImports = result.ImportedItems.Count;
+        result.FailedImports = result.TotalItemsProcessed - result.SuccessfulImports;
     }
 }
