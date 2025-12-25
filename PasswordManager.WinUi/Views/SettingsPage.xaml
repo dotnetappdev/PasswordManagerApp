@@ -480,12 +480,12 @@
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"
                                       AutomationProperties.HeadingLevel="Level3"/>
-                            <ComboBox x:Name="ImportUserComboBox"
+                            <ComboBox x:Name="ImportUserModeComboBox"
                                      MinWidth="240"
                                      Style="{StaticResource ModernComboBoxStyle}"
-                                     SelectionChanged="ImportUserComboBox_SelectionChanged"
-                                     AutomationProperties.Name="Select import target user"
-                                     AutomationProperties.HelpText="Choose whether to import passwords for the current user only or for all users in the system">
+                                     SelectionChanged="ImportUserModeComboBox_SelectionChanged"
+                                     AutomationProperties.Name="Select import target mode"
+                                     AutomationProperties.HelpText="Choose how to distribute imported passwords to users">
                                 <ComboBoxItem Content="Current User (Default)" 
                                             Tag="current" 
                                             IsSelected="True"
@@ -493,7 +493,29 @@
                                 <ComboBoxItem Content="All Users" 
                                             Tag="all"
                                             AutomationProperties.Name="All Users - Import passwords accessible to all system users"/>
+                                <ComboBoxItem Content="Select Multiple Users" 
+                                            Tag="multiple"
+                                            AutomationProperties.Name="Select Multiple Users - Choose specific users to import passwords for"/>
                             </ComboBox>
+                            
+                            <!-- Multi-user selection panel -->
+                            <StackPanel x:Name="MultiUserSelectionPanel" Visibility="Collapsed" Margin="0,8,0,0">
+                                <TextBlock Text="Select Users" 
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          FontWeight="SemiBold"
+                                          Margin="0,0,0,4"/>
+                                <Border BorderBrush="{StaticResource ModernBorderBrush}"
+                                       BorderThickness="1"
+                                       CornerRadius="4"
+                                       MaxHeight="200">
+                                    <ListView x:Name="UserSelectionListView"
+                                             SelectionMode="Multiple"
+                                             AutomationProperties.Name="Select users for import">
+                                        <!-- Users will be populated dynamically -->
+                                    </ListView>
+                                </Border>
+                            </StackPanel>
+                            
                             <TextBlock x:Name="ImportUserHintText"
                                       Text="Passwords will be imported to your current account"
                                       Style="{StaticResource ModernCaptionStyle}"

@@ -13,6 +13,7 @@
 @inject ICollectionService CollectionService
 @inject IJSRuntime JSRuntime
 @inject IAuthService AuthService
+@inject IUserProfileService UserProfileService
 @inject NavigationManager Navigation
 @inject PasswordManager.Imports.Interfaces.IImportService ImportService
 @inject IVaultSessionService VaultSessionService
@@ -1487,15 +1488,41 @@
                             <h4 id="import-user-label">Import For</h4>
                             <select class="form-control" 
                                     @bind="selectedImportUserOption"
+                                    @bind:after="OnUserSelectionChanged"
                                     aria-labelledby="import-user-label"
                                     aria-describedby="import-user-hint">
                                 <option value="current">Current User (Default)</option>
                                 <option value="all">All Users</option>
+                                <option value="multiple">Select Multiple Users</option>
                             </select>
+                            
+                            @if (selectedImportUserOption == "multiple")
+                            {
+                                <div class="multi-user-selection" style="margin-top: 12px; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px;">
+                                    <p style="font-weight: 600; margin-bottom: 8px;">Select Users:</p>
+                                    @foreach (var user in availableUsers)
+                                    {
+                                        <div style="margin-bottom: 4px;">
+                                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                                <input type="checkbox" 
+                                                       value="@user.Id"
+                                                       @onchange="@((e) => OnUserCheckboxChanged(user.Id, (bool)e.Value!))"
+                                                       style="margin-right: 8px;" />
+                                                <span>@user.Email (@user.FirstName @user.LastName)</span>
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            
                             <p id="import-user-hint" class="file-help" style="margin-top: 8px;" role="status" aria-live="polite">
                                 @if (selectedImportUserOption == "all")
                                 {
                                     <span>Passwords will be imported as accessible to all users in the system</span>
+                                }
+                                else if (selectedImportUserOption == "multiple")
+                                {
+                                    <span>Passwords will be imported for each selected user (@selectedUserIds.Count selected)</span>
                                 }
                                 else
                                 {
@@ -1783,7 +1810,9 @@
     private PasswordManager.Imports.Interfaces.ImportResult? importResult;
     private int importProgress = 0;
     private string importProgressText = "Processing your file, please wait...";
-    private string selectedImportUserOption = "current"; // "current" or "all"
+    private string selectedImportUserOption = "current"; // "current", "all", or "multiple"
+    private List<PasswordManager.Models.DTOs.Auth.UserDto> availableUsers = new();
+    private HashSet<string> selectedUserIds = new();
 
     // Validation state
     private bool collectionValidationError = false;
@@ -2775,7 +2804,7 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
         }
     }
 
-    private void ShowImportModal()
+    private async void ShowImportModal()
     {
         showImportModal = true;
         selectedProvider = null;
@@ -2784,6 +2813,50 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
         importInProgress = false;
         importProgress = 0;
         importProgressText = "Processing your file, please wait...";
+        
+        // Load available users
+        await LoadAvailableUsersAsync();
+        
+        StateHasChanged();
+    }
+    
+    private async Task LoadAvailableUsersAsync()
+    {
+        try
+        {
+            var userService = UserProfileService;
+            if (userService != null)
+            {
+                availableUsers = await userService.GetAllUsersAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+#if DEBUG
+            System.Diagnostics.Debug.WriteLine($"Error loading users: {ex.Message}");
+#endif
+        }
+    }
+    
+    private void OnUserSelectionChanged()
+    {
+        if (selectedImportUserOption != "multiple")
+        {
+            selectedUserIds.Clear();
+        }
+        StateHasChanged();
+    }
+    
+    private void OnUserCheckboxChanged(string userId, bool isChecked)
+    {
+        if (isChecked)
+        {
+            selectedUserIds.Add(userId);
+        }
+        else
+        {
+            selectedUserIds.Remove(userId);
+        }
         StateHasChanged();
     }
 
@@ -2797,6 +2870,7 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
         importProgress = 0;
         importProgressText = "Processing your file, please wait...";
         selectedImportUserOption = "current"; // Reset to default
+        selectedUserIds.Clear(); // Clear selected users
         StateHasChanged();
     }
 
@@ -2840,35 +2914,98 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
             StateHasChanged();
             await Task.Delay(500);
 
-            // Determine target user ID based on selection
-            string? targetUserId = null;
+            // Determine target user ID(s) based on selection
+            List<string?> targetUserIds = new();
+            
             if (selectedImportUserOption == "current")
             {
                 // Import for current user - get current user ID
                 try
                 {
+                    string? currentUserId = null;
                     if (AuthService?.CurrentUser != null)
                     {
-                        targetUserId = AuthService.CurrentUser.Id;
+                        currentUserId = AuthService.CurrentUser.Id;
                     }
                     else if (AuthService != null)
                     {
-                        targetUserId = await AuthService.GetCurrentUserIdAsync();
+                        currentUserId = await AuthService.GetCurrentUserIdAsync();
                     }
+                    targetUserIds.Add(currentUserId);
                 }
                 catch (Exception ex)
                 {
                     // Log error but continue with null userId (will import for all users as fallback)
                     System.Diagnostics.Debug.WriteLine($"Failed to get current user ID for import: {ex.Message}");
+                    targetUserIds.Add(null);
                 }
             }
-            // If selectedImportUserOption == "all", targetUserId remains null
+            else if (selectedImportUserOption == "multiple")
+            {
+                // Import for multiple selected users
+                if (selectedUserIds.Count == 0)
+                {
+                    importResult = new PasswordManager.Imports.Interfaces.ImportResult
+                    {
+                        Success = false,
+                        ErrorMessage = "Please select at least one user"
+                    };
+                    importInProgress = false;
+                    StateHasChanged();
+                    return;
+                }
+                
+                targetUserIds.AddRange(selectedUserIds.Select(id => (string?)id));
+            }
+            else // "all"
+            {
+                // If selectedImportUserOption == "all", targetUserId remains null
+                targetUserIds.Add(null);
+            }
 
-            importResult = await ImportService.ImportPasswordsAsync(selectedProvider.ProviderName, stream, selectedFile.Name, targetUserId);
+            // Perform import for each target user
+            int totalSuccessful = 0;
+            int totalFailed = 0;
+            int totalProcessed = 0;
+            
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            
+            for (int i = 0; i < targetUserIds.Count; i++)
+            {
+                var targetUserId = targetUserIds[i];
+                
+                // Reset stream position for each import
+                memoryStream.Position = 0;
+                
+                importProgressText = $"Processing items for user {i + 1} of {targetUserIds.Count}...";
+                StateHasChanged();
+                
+                var result = await ImportService.ImportPasswordsAsync(selectedProvider.ProviderName, memoryStream, selectedFile.Name, targetUserId);
+                
+                if (result.Success)
+                {
+                    totalSuccessful += result.SuccessfulImports;
+                    totalFailed += result.FailedImports;
+                    totalProcessed += result.TotalItemsProcessed;
+                }
+            }
+            
+            // Create combined result
+            importResult = new PasswordManager.Imports.Interfaces.ImportResult
+            {
+                Success = totalProcessed > 0,
+                SuccessfulImports = totalSuccessful,
+                FailedImports = totalFailed,
+                TotalItemsProcessed = totalProcessed,
+                ErrorMessage = totalProcessed == 0 ? "No items were successfully imported" : null
+            };
 
             // Step 3: Finalizing
             importProgress = 100;
-            importProgressText = "Import completed!";
+            importProgressText = targetUserIds.Count > 1 
+                ? $"Import completed for {targetUserIds.Count} user(s)!" 
+                : "Import completed!";
             StateHasChanged();
         }
         catch (Exception ex)
