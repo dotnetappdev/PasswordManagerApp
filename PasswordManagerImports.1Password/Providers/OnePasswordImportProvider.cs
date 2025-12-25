@@ -226,6 +226,10 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             result.RequiredTags.Add(new Tag { Name = "Favorite", Color = "#fbbf24" });
             result.RequiredTags.Add(new Tag { Name = "Archived", Color = "#6b7280" });
 
+            // Set success and failure counts
+            result.SuccessfulImports = result.ImportedItems.Count;
+            result.FailedImports = result.TotalItemsProcessed - result.SuccessfulImports;
+
             result.Success = true;
         }
         catch (Exception ex)
@@ -635,6 +639,10 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             result.RequiredTags.Add(new Tag { Name = "High Priority", Color = "#ef4444" });
             result.RequiredTags.Add(new Tag { Name = "Favorite", Color = "#fbbf24" });
             result.RequiredTags.Add(new Tag { Name = "Archived", Color = "#6b7280" });
+
+            // Set success and failure counts
+            result.SuccessfulImports = result.ImportedItems.Count;
+            result.FailedImports = result.TotalItemsProcessed - result.SuccessfulImports;
 
             result.Success = true;
         }
