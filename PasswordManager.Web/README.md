@@ -4,16 +4,19 @@ A modern Blazor Server web application for password management with full theme s
 
 ## Features
 
-- **Theme Support**: Light, Dark, and System theme modes with instant switching
-- **Master Password Authentication**: Secure vault unlock using Bitwarden-compatible encryption
-- **Responsive Design**: Works perfectly on desktop, tablet, and mobile browsers
-- **API Key Management**: Built-in interface for generating and managing API keys
-- **Database Provider Selection**: Support for SQL Server, MySQL, PostgreSQL, and Supabase
-- **Real-time Search**: Instant search across all password items
-- **Category Filtering**: Filter by categories, collections, and tags
-- **One-Click Copy**: Copy passwords to clipboard with visual feedback
-- **Full CRUD Operations**: Create, edit, delete passwords and other items
-- **Real-time Sync**: Changes sync automatically with mobile apps via API
+- **🔧 Setup Wizard**: First-run setup page for easy database configuration
+- **🗄️ Database Provider Selection**: Support for SQLite, SQL Server, MySQL, PostgreSQL, and Supabase
+- **⚙️ Configuration Management**: Update appsettings.json through UI
+- **🔌 Connection Testing**: Test database connections before saving
+- **🎨 Theme Support**: Light, Dark, and System theme modes with instant switching
+- **🔐 Master Password Authentication**: Secure vault unlock using Bitwarden-compatible encryption
+- **📱 Responsive Design**: Works perfectly on desktop, tablet, and mobile browsers
+- **🔑 API Key Management**: Built-in interface for generating and managing API keys
+- **🔍 Real-time Search**: Instant search across all password items
+- **📂 Category Filtering**: Filter by categories, collections, and tags
+- **📋 One-Click Copy**: Copy passwords to clipboard with visual feedback
+- **✏️ Full CRUD Operations**: Create, edit, delete passwords and other items
+- **🔄 Real-time Sync**: Changes sync automatically with mobile apps via API
 
 ## Technology Stack
 
@@ -75,32 +78,63 @@ Supports multiple database providers through Entity Framework Core:
    cd PasswordManagerApp/PasswordManager.Web
    ```
 
-2. **Configure database**
-   
-   Edit `appsettings.json` to configure your database provider:
-   
-   ```json
-   {
-     "DatabaseProvider": "sqlserver",
-     "ConnectionStrings": {
-       "DefaultConnection": "Server=localhost;Database=PasswordManager;Trusted_Connection=true;TrustServerCertificate=true;"
-     }
-   }
-   ```
-
-3. **Run database migrations**
-   ```bash
-   dotnet ef database update --startup-project ../PasswordManager.API
-   ```
-
-4. **Run the application**
+2. **Run the application**
    ```bash
    dotnet run
    ```
 
-5. **Access the web app**
-   - Open your browser and navigate to `https://localhost:5001`
+3. **Complete Setup Wizard**
+   - On first run, you'll be redirected to `/setup`
+   - Select your database provider (SQLite, SQL Server, MySQL, PostgreSQL, or Supabase)
+   - Configure connection settings
+   - Click "Test Connection" to verify settings
+   - Click "Save & Continue" to save configuration
+   - The app will restart and create the database schema
+
+4. **Access the web app**
+   - After setup, you'll be redirected to the home page
+   - Register a new account or login with existing credentials
    - Enter your master password to unlock the vault
+
+### Setup Wizard
+
+The setup wizard (`/setup`) provides an easy configuration experience:
+
+#### Database Provider Options:
+
+1. **SQLite** (Recommended for single user)
+   - File-based database
+   - No server required
+   - Perfect for personal use
+   - Configure database file path
+
+2. **SQL Server**
+   - Enterprise-grade database
+   - Supports Windows Authentication
+   - Configure host, port, database name, credentials
+   - Optional SSL/TLS encryption
+
+3. **MySQL**
+   - Popular open-source database
+   - Configure host, port, database name, credentials
+   - Optional SSL connection
+
+4. **PostgreSQL**
+   - Advanced open-source database
+   - Configure host, port, database name, credentials
+   - Optional SSL connection
+
+5. **Supabase**
+   - Cloud PostgreSQL database
+   - Built-in authentication
+   - Configure project URL and service key
+
+#### Configuration Features:
+
+- **Connection Testing**: Test your database connection before saving
+- **Password Encryption**: Database passwords are encrypted before storage
+- **appsettings.json Update**: Configuration automatically updates application settings
+- **First-Run Detection**: Setup wizard only shows on initial run
 
 ## Configuration
 
