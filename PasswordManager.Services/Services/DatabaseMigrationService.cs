@@ -14,6 +14,8 @@ namespace PasswordManager.Services.Services
         private readonly PasswordManagerDbContextApp _contextApp;
         private readonly PasswordManagerDbContext _context;
         private readonly ILogger<DatabaseMigrationService> _logger;
+        
+        private const string InMemoryProviderName = "Microsoft.EntityFrameworkCore.InMemory";
 
         public DatabaseMigrationService(
             PasswordManagerDbContextApp contextApp,
@@ -65,8 +67,8 @@ namespace PasswordManager.Services.Services
             try
             {
                 // Check if using InMemory database provider (which doesn't support migrations)
-                var isInMemoryApp = _contextApp.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory";
-                var isInMemoryApi = _context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory";
+                var isInMemoryApp = _contextApp.Database.ProviderName == InMemoryProviderName;
+                var isInMemoryApi = _context.Database.ProviderName == InMemoryProviderName;
                 
                 if (isInMemoryApp && isInMemoryApi)
                 {
