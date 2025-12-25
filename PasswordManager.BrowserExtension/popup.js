@@ -197,15 +197,17 @@ class PasswordManagerPopup {
 
   async showSettings() {
     // Load current settings before showing settings screen
-    const settings = await chrome.storage.sync.get(['connectionMode', 'apiUrl']);
+    const settings = await chrome.storage.sync.get(['connectionMode', 'apiUrl', 'databasePath']);
     
     const connectionModeSelect = document.getElementById('connectionMode');
     const apiUrlInput = document.getElementById('apiUrl');
+    const databasePathInput = document.getElementById('databasePath');
     
     connectionModeSelect.value = settings.connectionMode || 'auto';
     apiUrlInput.value = settings.apiUrl || 'http://localhost:5000';
+    databasePathInput.value = settings.databasePath || '';
     
-    // Show/hide API URL field based on connection mode
+    // Show/hide fields based on connection mode
     this.handleConnectionModeChange({ target: connectionModeSelect });
     
     this.showScreen('settings');
@@ -214,24 +216,34 @@ class PasswordManagerPopup {
   handleConnectionModeChange(e) {
     const connectionMode = e.target.value;
     const apiUrlGroup = document.getElementById('apiUrlGroup');
+    const databasePathGroup = document.getElementById('databasePathGroup');
     
-    // Show API URL input only when API mode is selected
-    if (connectionMode === 'api') {
+    // Show API URL input when API mode is selected
+    if (connectionMode === 'api' || connectionMode === 'auto') {
       apiUrlGroup.style.display = 'block';
     } else {
       apiUrlGroup.style.display = 'none';
+    }
+    
+    // Show database path input when native mode is selected
+    if (connectionMode === 'native' || connectionMode === 'auto') {
+      databasePathGroup.style.display = 'block';
+    } else {
+      databasePathGroup.style.display = 'none';
     }
   }
 
   async saveSettings() {
     const connectionMode = document.getElementById('connectionMode').value;
     const apiUrl = document.getElementById('apiUrl').value;
+    const databasePath = document.getElementById('databasePath').value;
     const messageDiv = document.getElementById('settingsMessage');
     
     try {
       await chrome.storage.sync.set({
         connectionMode: connectionMode,
-        apiUrl: apiUrl
+        apiUrl: apiUrl,
+        databasePath: databasePath
       });
       
       messageDiv.textContent = 'Settings saved successfully!';

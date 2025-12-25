@@ -62,14 +62,24 @@ class PasswordManagerBackground {
   }
 
   async sendNativeMessage(message) {
-    return new Promise((resolve, reject) => {
-      chrome.runtime.sendNativeMessage(this.nativeHostName, message, (response) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-        } else {
-          resolve(response);
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Get database path from settings if available
+        const settings = await chrome.storage.sync.get(['databasePath']);
+        if (settings.databasePath) {
+          message.databasePath = settings.databasePath;
         }
-      });
+        
+        chrome.runtime.sendNativeMessage(this.nativeHostName, message, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            resolve(response);
+          }
+        });
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 

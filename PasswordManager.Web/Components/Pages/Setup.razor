@@ -1,0 +1,628 @@
+@page "/setup"
+@using PasswordManager.Models.Configuration
+@using PasswordManager.Services.Interfaces
+@using Microsoft.Extensions.Configuration
+@inject IDatabaseConfigurationService DatabaseConfigService
+@inject NavigationManager NavigationManager
+@inject IConfiguration Configuration
+
+<PageTitle>Setup - Password Manager</PageTitle>
+
+<div class="setup-container">
+    <div class="setup-card">
+        <h1>🔧 Password Manager Setup</h1>
+        <p class="subtitle">Configure your database connection to get started</p>
+
+        @if (!string.IsNullOrEmpty(_message))
+        {
+            <div class="alert @(_isError ? "alert-danger" : "alert-success")">
+                @_message
+            </div>
+        }
+
+        <div class="setup-form">
+            <div class="form-section">
+                <h3>Database Provider</h3>
+                <div class="form-group">
+                    <label for="dbProvider">Select Database Provider:</label>
+                    <select id="dbProvider" class="form-control" @bind="_selectedProvider">
+                        <option value="@DatabaseProvider.Sqlite">SQLite (Recommended for single user)</option>
+                        <option value="@DatabaseProvider.SqlServer">SQL Server</option>
+                        <option value="@DatabaseProvider.MySql">MySQL</option>
+                        <option value="@DatabaseProvider.PostgreSql">PostgreSQL</option>
+                        <option value="@DatabaseProvider.Supabase">Supabase</option>
+                    </select>
+                </div>
+            </div>
+
+            @if (_selectedProvider == DatabaseProvider.Sqlite)
+            {
+                <div class="form-section">
+                    <h3>SQLite Configuration</h3>
+                    <div class="form-group">
+                        <label for="dbPath">Database File Path:</label>
+                        <input type="text" id="dbPath" class="form-control" @bind="_sqlitePath" 
+                               placeholder="passwordmanager.db" />
+                        <small class="form-text">Leave as default or specify a custom path</small>
+                    </div>
+                </div>
+            }
+            else if (_selectedProvider == DatabaseProvider.SqlServer)
+            {
+                <div class="form-section">
+                    <h3>SQL Server Configuration</h3>
+                    <div class="form-group">
+                        <label for="sqlHost">Server Host:</label>
+                        <input type="text" id="sqlHost" class="form-control" @bind="_sqlServerHost" 
+                               placeholder="localhost" />
+                    </div>
+                    <div class="form-group">
+                        <label for="sqlPort">Port:</label>
+                        <input type="number" id="sqlPort" class="form-control" @bind="_sqlServerPort" />
+                    </div>
+                    <div class="form-group">
+                        <label for="sqlDatabase">Database Name:</label>
+                        <input type="text" id="sqlDatabase" class="form-control" @bind="_sqlServerDatabase" 
+                               placeholder="PasswordManager" />
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" @bind="_sqlServerUseWindowsAuth" />
+                            Use Windows Authentication
+                        </label>
+                    </div>
+                    @if (!_sqlServerUseWindowsAuth)
+                    {
+                        <div class="form-group">
+                            <label for="sqlUsername">Username:</label>
+                            <input type="text" id="sqlUsername" class="form-control" @bind="_sqlServerUsername" />
+                        </div>
+                        <div class="form-group">
+                            <label for="sqlPassword">Password:</label>
+                            <input type="password" id="sqlPassword" class="form-control" @bind="_sqlServerPassword" />
+                        </div>
+                    }
+                </div>
+            }
+            else if (_selectedProvider == DatabaseProvider.MySql)
+            {
+                <div class="form-section">
+                    <h3>MySQL Configuration</h3>
+                    <div class="form-group">
+                        <label for="mysqlHost">Server Host:</label>
+                        <input type="text" id="mysqlHost" class="form-control" @bind="_mysqlHost" 
+                               placeholder="localhost" />
+                    </div>
+                    <div class="form-group">
+                        <label for="mysqlPort">Port:</label>
+                        <input type="number" id="mysqlPort" class="form-control" @bind="_mysqlPort" />
+                    </div>
+                    <div class="form-group">
+                        <label for="mysqlDatabase">Database Name:</label>
+                        <input type="text" id="mysqlDatabase" class="form-control" @bind="_mysqlDatabase" 
+                               placeholder="PasswordManager" />
+                    </div>
+                    <div class="form-group">
+                        <label for="mysqlUsername">Username:</label>
+                        <input type="text" id="mysqlUsername" class="form-control" @bind="_mysqlUsername" />
+                    </div>
+                    <div class="form-group">
+                        <label for="mysqlPassword">Password:</label>
+                        <input type="password" id="mysqlPassword" class="form-control" @bind="_mysqlPassword" />
+                    </div>
+                </div>
+            }
+            else if (_selectedProvider == DatabaseProvider.PostgreSql)
+            {
+                <div class="form-section">
+                    <h3>PostgreSQL Configuration</h3>
+                    <div class="form-group">
+                        <label for="pgHost">Server Host:</label>
+                        <input type="text" id="pgHost" class="form-control" @bind="_postgresHost" 
+                               placeholder="localhost" />
+                    </div>
+                    <div class="form-group">
+                        <label for="pgPort">Port:</label>
+                        <input type="number" id="pgPort" class="form-control" @bind="_postgresPort" />
+                    </div>
+                    <div class="form-group">
+                        <label for="pgDatabase">Database Name:</label>
+                        <input type="text" id="pgDatabase" class="form-control" @bind="_postgresDatabase" 
+                               placeholder="PasswordManager" />
+                    </div>
+                    <div class="form-group">
+                        <label for="pgUsername">Username:</label>
+                        <input type="text" id="pgUsername" class="form-control" @bind="_postgresUsername" />
+                    </div>
+                    <div class="form-group">
+                        <label for="pgPassword">Password:</label>
+                        <input type="password" id="pgPassword" class="form-control" @bind="_postgresPassword" />
+                    </div>
+                </div>
+            }
+            else if (_selectedProvider == DatabaseProvider.Supabase)
+            {
+                <div class="form-section">
+                    <h3>Supabase Configuration</h3>
+                    <div class="form-group">
+                        <label for="supaUrl">Supabase Project URL:</label>
+                        <input type="text" id="supaUrl" class="form-control" @bind="_supabaseUrl" 
+                               placeholder="https://your-project.supabase.co" />
+                    </div>
+                    <div class="form-group">
+                        <label for="supaKey">Service Key:</label>
+                        <input type="password" id="supaKey" class="form-control" @bind="_supabaseKey" />
+                        <small class="form-text">Use your service role key for full access</small>
+                    </div>
+                </div>
+            }
+
+            <div class="button-group">
+                <button class="btn btn-secondary" @onclick="TestConnection" disabled="@_isTesting">
+                    @if (_isTesting)
+                    {
+                        <span>Testing...</span>
+                    }
+                    else
+                    {
+                        <span>🔌 Test Connection</span>
+                    }
+                </button>
+                <button class="btn btn-primary" @onclick="SaveConfiguration" disabled="@_isSaving">
+                    @if (_isSaving)
+                    {
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span>💾 Save & Continue</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .setup-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+    }
+
+    .setup-card {
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        max-width: 600px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .setup-card h1 {
+        margin: 0 0 10px 0;
+        color: #333;
+        font-size: 28px;
+    }
+
+    .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+    }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+
+    .form-section {
+        margin-bottom: 30px;
+    }
+
+    .form-section h3 {
+        font-size: 18px;
+        margin-bottom: 15px;
+        color: #444;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 8px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #555;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-text {
+        display: block;
+        margin-top: 5px;
+        font-size: 12px;
+        color: #888;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 12px;
+        margin-top: 30px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background: #5a6268;
+    }
+</style>
+
+@code {
+    private DatabaseProvider _selectedProvider = DatabaseProvider.Sqlite;
+    private string _message = string.Empty;
+    private bool _isError = false;
+    private bool _isTesting = false;
+    private bool _isSaving = false;
+
+    // SQLite
+    private string _sqlitePath = "passwordmanager.db";
+
+    // SQL Server
+    private string _sqlServerHost = "localhost";
+    private int _sqlServerPort = 1433;
+    private string _sqlServerDatabase = "PasswordManager";
+    private string _sqlServerUsername = "";
+    private string _sqlServerPassword = "";
+    private bool _sqlServerUseWindowsAuth = false;
+
+    // MySQL
+    private string _mysqlHost = "localhost";
+    private int _mysqlPort = 3306;
+    private string _mysqlDatabase = "PasswordManager";
+    private string _mysqlUsername = "";
+    private string _mysqlPassword = "";
+
+    // PostgreSQL
+    private string _postgresHost = "localhost";
+    private int _postgresPort = 5432;
+    private string _postgresDatabase = "PasswordManager";
+    private string _postgresUsername = "";
+    private string _postgresPassword = "";
+
+    // Supabase
+    private string _supabaseUrl = "";
+    private string _supabaseKey = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load existing configuration if available
+        try
+        {
+            var config = await DatabaseConfigService.GetConfigurationAsync();
+            if (config != null && !config.IsFirstRun)
+            {
+                _selectedProvider = config.Provider;
+                LoadConfigurationValues(config);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading configuration: {ex.Message}");
+        }
+    }
+
+    private void LoadConfigurationValues(DatabaseConfiguration config)
+    {
+        switch (config.Provider)
+        {
+            case DatabaseProvider.Sqlite:
+                _sqlitePath = config.Sqlite?.DatabasePath ?? "passwordmanager.db";
+                break;
+            case DatabaseProvider.SqlServer:
+                if (config.SqlServer != null)
+                {
+                    _sqlServerHost = config.SqlServer.Host;
+                    _sqlServerPort = config.SqlServer.Port;
+                    _sqlServerDatabase = config.SqlServer.Database;
+                    _sqlServerUsername = config.SqlServer.Username ?? "";
+                    _sqlServerUseWindowsAuth = config.SqlServer.UseWindowsAuthentication;
+                }
+                break;
+            case DatabaseProvider.MySql:
+                if (config.MySql != null)
+                {
+                    _mysqlHost = config.MySql.Host;
+                    _mysqlPort = config.MySql.Port;
+                    _mysqlDatabase = config.MySql.Database;
+                    _mysqlUsername = config.MySql.Username;
+                }
+                break;
+            case DatabaseProvider.PostgreSql:
+                if (config.PostgreSql != null)
+                {
+                    _postgresHost = config.PostgreSql.Host;
+                    _postgresPort = config.PostgreSql.Port;
+                    _postgresDatabase = config.PostgreSql.Database;
+                    _postgresUsername = config.PostgreSql.Username;
+                }
+                break;
+            case DatabaseProvider.Supabase:
+                if (config.Supabase != null)
+                {
+                    _supabaseUrl = config.Supabase.Url;
+                    _supabaseKey = config.Supabase.ServiceKey;
+                }
+                break;
+        }
+    }
+
+    private DatabaseConfiguration BuildConfiguration()
+    {
+        var config = new DatabaseConfiguration
+        {
+            Provider = _selectedProvider,
+            IsFirstRun = false
+        };
+
+        switch (_selectedProvider)
+        {
+            case DatabaseProvider.Sqlite:
+                config.Sqlite = new SqliteConfig
+                {
+                    DatabasePath = _sqlitePath
+                };
+                break;
+
+            case DatabaseProvider.SqlServer:
+                config.SqlServer = new SqlServerConfig
+                {
+                    Host = _sqlServerHost,
+                    Port = _sqlServerPort,
+                    Database = _sqlServerDatabase,
+                    Username = _sqlServerUsername,
+                    UseWindowsAuthentication = _sqlServerUseWindowsAuth
+                };
+                if (!string.IsNullOrEmpty(_sqlServerPassword))
+                {
+                    config.SqlServer.EncryptedPassword = DatabaseConfigService.EncryptPasswordAsync(_sqlServerPassword).Result;
+                }
+                break;
+
+            case DatabaseProvider.MySql:
+                config.MySql = new MySqlConfig
+                {
+                    Host = _mysqlHost,
+                    Port = _mysqlPort,
+                    Database = _mysqlDatabase,
+                    Username = _mysqlUsername
+                };
+                if (!string.IsNullOrEmpty(_mysqlPassword))
+                {
+                    config.MySql.EncryptedPassword = DatabaseConfigService.EncryptPasswordAsync(_mysqlPassword).Result;
+                }
+                break;
+
+            case DatabaseProvider.PostgreSql:
+                config.PostgreSql = new PostgreSqlConfig
+                {
+                    Host = _postgresHost,
+                    Port = _postgresPort,
+                    Database = _postgresDatabase,
+                    Username = _postgresUsername
+                };
+                if (!string.IsNullOrEmpty(_postgresPassword))
+                {
+                    config.PostgreSql.EncryptedPassword = DatabaseConfigService.EncryptPasswordAsync(_postgresPassword).Result;
+                }
+                break;
+
+            case DatabaseProvider.Supabase:
+                config.Supabase = new SupabaseConfig
+                {
+                    Url = _supabaseUrl,
+                    ServiceKey = _supabaseKey
+                };
+                break;
+        }
+
+        return config;
+    }
+
+    private async Task TestConnection()
+    {
+        _isTesting = true;
+        _message = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var config = BuildConfiguration();
+            var result = await DatabaseConfigService.TestConnectionAsync(config);
+
+            if (result.Success)
+            {
+                _message = "✅ Connection successful!";
+                _isError = false;
+            }
+            else
+            {
+                _message = $"❌ Connection failed: {result.ErrorMessage}";
+                _isError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _message = $"❌ Error testing connection: {ex.Message}";
+            _isError = true;
+        }
+        finally
+        {
+            _isTesting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveConfiguration()
+    {
+        _isSaving = true;
+        _message = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var config = BuildConfiguration();
+            
+            // Save configuration to file
+            await DatabaseConfigService.SaveConfigurationAsync(config);
+            
+            // Also update appsettings.json
+            await UpdateAppSettings(config);
+
+            _message = "✅ Configuration saved successfully! Redirecting...";
+            _isError = false;
+            StateHasChanged();
+
+            // Wait a moment for user to see the message
+            await Task.Delay(2000);
+            
+            // Redirect to home or login page
+            NavigationManager.NavigateTo("/", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            _message = $"❌ Error saving configuration: {ex.Message}";
+            _isError = true;
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task UpdateAppSettings(DatabaseConfiguration config)
+    {
+        try
+        {
+            var appSettingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+            
+            if (File.Exists(appSettingsPath))
+            {
+                var json = await File.ReadAllTextAsync(appSettingsPath);
+                var settings = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+                
+                if (settings == null)
+                    settings = new Dictionary<string, object>();
+
+                // Update DatabaseProvider
+                settings["DatabaseProvider"] = config.Provider.ToString();
+
+                // Update connection strings
+                if (!settings.ContainsKey("ConnectionStrings"))
+                {
+                    settings["ConnectionStrings"] = new Dictionary<string, string>();
+                }
+
+                var connectionStrings = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(
+                    settings["ConnectionStrings"].ToString() ?? "{}");
+
+                if (connectionStrings == null)
+                    connectionStrings = new Dictionary<string, string>();
+
+                var connectionString = await DatabaseConfigService.BuildConnectionStringAsync(config);
+                
+                switch (config.Provider)
+                {
+                    case DatabaseProvider.Sqlite:
+                        connectionStrings["SqliteConnection"] = connectionString;
+                        connectionStrings["DefaultConnection"] = connectionString;
+                        break;
+                    case DatabaseProvider.SqlServer:
+                        connectionStrings["DefaultConnection"] = connectionString;
+                        break;
+                    case DatabaseProvider.MySql:
+                        connectionStrings["MySqlConnection"] = connectionString;
+                        break;
+                    case DatabaseProvider.PostgreSql:
+                        connectionStrings["PostgresConnection"] = connectionString;
+                        break;
+                }
+
+                settings["ConnectionStrings"] = connectionStrings;
+
+                var options = new System.Text.Json.JsonSerializerOptions
+                {
+                    WriteIndented = true
+                };
+                var updatedJson = System.Text.Json.JsonSerializer.Serialize(settings, options);
+                await File.WriteAllTextAsync(appSettingsPath, updatedJson);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Warning: Could not update appsettings.json: {ex.Message}");
+            // Don't throw - configuration is already saved in the app data directory
+        }
+    }
+}

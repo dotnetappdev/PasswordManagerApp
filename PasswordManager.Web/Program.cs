@@ -1,4 +1,5 @@
 using PasswordManager.Web.Components;
+using PasswordManager.Web.Middleware;
 using Microsoft.EntityFrameworkCore;
 using PasswordManager.DAL;
 using PasswordManager.DAL.SqlServer;
@@ -179,6 +180,9 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+// Add setup redirect middleware before authentication
+app.UseSetupRedirect();
 
 app.UseAuthentication();
 app.UseAuthorization();
