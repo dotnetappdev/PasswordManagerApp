@@ -1,4 +1,6 @@
 using Uno.Resizetizer;
+using Sentry;
+using PasswordManager.Models.Configuration;
 
 namespace PasswordManager.Mobile;
 
@@ -71,6 +73,9 @@ public partial class App : Application
 })
                 .ConfigureServices((context, services) =>
                 {
+                    // Initialize Sentry.io
+                    InitializeSentry(context.Configuration);
+                    
                     // Register database service
                     var dbPath = System.IO.Path.Combine(
                         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -149,5 +154,31 @@ public partial class App : Application
                 ]
             )
         );
+    }
+    
+    private void InitializeSentry(IConfiguration configuration)
+    {
+        try
+        {
+            var sentryConfig = configuration.GetSection("Sentry").Get<SentryConfiguration>();
+            
+            if (sentryConfig?.IsConfigured == true)
+            {
+                SentrySdk.Init(options =>
+                {
+                    options.Dsn = sentryConfig.Dsn;
+                    options.Environment = sentryConfig.Environment;
+                    options.TracesSampleRate = sentryConfig.TracesSampleRate;
+                    options.SendDefaultPii = sentryConfig.SendDefaultPii;
+                    options.AttachStacktrace = sentryConfig.AttachStacktrace;
+                    options.Debug = sentryConfig.Debug;
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't crash the app
+            System.Diagnostics.Debug.WriteLine($"Failed to initialize Sentry: {ex.Message}");
+        }
     }
 }

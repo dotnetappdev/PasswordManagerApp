@@ -11,10 +11,30 @@ using PasswordManager.Crypto.Extensions;
 using MudBlazor.Services;
 using Microsoft.AspNetCore.Identity;
 using PasswordManager.Models;
+using PasswordManager.Models.Configuration;
 using Pomelo.EntityFrameworkCore.MySql;
 using PasswordManager.DAL.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Sentry.io
+var sentryConfig = builder.Configuration.GetSection("Sentry").Get<SentryConfiguration>();
+if (sentryConfig?.IsConfigured == true)
+{
+    builder.WebHost.UseSentry(options =>
+    {
+        options.Dsn = sentryConfig.Dsn;
+        options.Environment = sentryConfig.Environment;
+        options.TracesSampleRate = sentryConfig.TracesSampleRate;
+        options.SendDefaultPii = sentryConfig.SendDefaultPii;
+        options.AttachStacktrace = sentryConfig.AttachStacktrace;
+        options.Debug = sentryConfig.Debug;
+    });
+}
+
+// Configure Sentry settings
+builder.Services.Configure<SentryConfiguration>(
+    builder.Configuration.GetSection("Sentry"));
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
