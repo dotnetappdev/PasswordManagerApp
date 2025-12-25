@@ -3,9 +3,12 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Models.DTOs;
+using PasswordManager.Models.DTOs.Auth;
 using PasswordManager.WinUi.ViewModels;
 using PasswordManager.Services.Utilities;
+using PasswordManager.Imports.Interfaces;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace PasswordManager.WinUi.Views;
 
@@ -14,7 +17,9 @@ public sealed partial class SettingsPage : Page
     private SettingsViewModel? _viewModel;
     private IServiceProvider? _serviceProvider;
     private IAuthService? _authService;
+    private IUserProfileService? _userProfileService;
     private readonly FileLogger _logger;
+    private List<UserDto> _availableUsers = new();
 
     public SettingsPage()
     {
@@ -30,8 +35,12 @@ public sealed partial class SettingsPage : Page
         {
             _serviceProvider = serviceProvider;
             _authService = serviceProvider.GetRequiredService<IAuthService>();
+            _userProfileService = serviceProvider.GetService<IUserProfileService>();
             _viewModel = new SettingsViewModel(serviceProvider);
             DataContext = _viewModel;
+
+            // Load all users for multi-user selection
+            await LoadUsersAsync();
 
             // Update network location visibility based on initial provider selection
             UpdateNetworkLocationVisibility();
@@ -190,6 +199,62 @@ public sealed partial class SettingsPage : Page
     private void ImportTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         UpdateImportButtonState();
+    }
+
+    private async System.Threading.Tasks.Task LoadUsersAsync()
+    {
+        try
+        {
+            if (_userProfileService != null)
+            {
+                _availableUsers = await _userProfileService.GetAllUsersAsync();
+                
+                // Populate the ListView with users
+                UserSelectionListView.Items.Clear();
+                foreach (var user in _availableUsers)
+                {
+                    var checkBox = new CheckBox
+                    {
+                        Content = $"{user.Email} ({user.FirstName} {user.LastName})".Trim(),
+                        Tag = user.Id,
+                        Margin = new Microsoft.UI.Xaml.Thickness(4)
+                    };
+                    UserSelectionListView.Items.Add(checkBox);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Failed to load users for multi-select", ex);
+        }
+    }
+
+    private void ImportUserModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ImportUserHintText != null && ImportUserModeComboBox != null)
+        {
+            var selectedItem = ImportUserModeComboBox.SelectedItem as ComboBoxItem;
+            var tag = selectedItem?.Tag?.ToString() ?? "current";
+            
+            // Show/hide multi-user selection panel
+            if (MultiUserSelectionPanel != null)
+            {
+                MultiUserSelectionPanel.Visibility = tag == "multiple" ? Visibility.Visible : Visibility.Collapsed;
+            }
+            
+            if (tag == "all")
+            {
+                ImportUserHintText.Text = "Passwords will be imported as accessible to all users in the system";
+            }
+            else if (tag == "multiple")
+            {
+                ImportUserHintText.Text = "Passwords will be imported for each selected user";
+            }
+            else
+            {
+                ImportUserHintText.Text = "Passwords will be imported to your current account";
+            }
+        }
     }
 
     private async void BrowseImportFileButton_Click(object sender, RoutedEventArgs e)
@@ -375,34 +440,110 @@ public sealed partial class SettingsPage : Page
             var fileName = System.IO.Path.GetFileName(filePath);
 
             ImportProgressText.Text = "Processing items...";
-            // Determine current user id to attach imported items to the logged-in tenant/user by default
-            string? currentUserId = null;
-            try
+            
+            // Determine user ID(s) based on selection
+            var userSelection = ImportUserModeComboBox?.SelectedItem as ComboBoxItem;
+            var userSelectionTag = userSelection?.Tag?.ToString() ?? "current";
+            
+            List<string?> targetUserIds = new();
+            
+            if (userSelectionTag == "current")
             {
-                if (_authService?.CurrentUser != null)
-                    currentUserId = _authService.CurrentUser.Id;
-                else if (_authService != null)
-                    currentUserId = await _authService.GetCurrentUserIdAsync();
+                // Import for current user - determine current user id to attach imported items
+                try
+                {
+                    string? currentUserId = null;
+                    if (_authService?.CurrentUser != null)
+                        currentUserId = _authService.CurrentUser.Id;
+                    else if (_authService != null)
+                        currentUserId = await _authService.GetCurrentUserIdAsync();
+                    targetUserIds.Add(currentUserId);
+                }
+                catch (Exception ex)
+                {
+                    // Log error but continue with null userId (will import for all users as fallback)
+                    await _logger.LogErrorAsync("SettingsPage", "Failed to get current user ID for import", ex);
+                    System.Diagnostics.Debug.WriteLine($"Failed to get current user ID for import: {ex.Message}");
+                    targetUserIds.Add(null);
+                }
             }
-            catch { }
+            else if (userSelectionTag == "multiple")
+            {
+                // Import for multiple selected users
+                foreach (var item in UserSelectionListView.Items)
+                {
+                    if (item is CheckBox checkBox && checkBox.IsChecked == true)
+                    {
+                        targetUserIds.Add(checkBox.Tag?.ToString());
+                    }
+                }
+                
+                if (targetUserIds.Count == 0)
+                {
+                    ImportProgressRing.IsActive = false;
+                    ImportProgressPanel.Visibility = Visibility.Collapsed;
+                    ImportStatusText.Text = "✗ Import failed";
+                    ImportResultText.Text = "Please select at least one user";
+                    StartImportButton.IsEnabled = true;
+                    return;
+                }
+            }
+            else // "all"
+            {
+                // If userSelectionTag == "all", targetUserId remains null, which will make items accessible to all users
+                targetUserIds.Add(null);
+            }
 
-            var result = await importService.ImportPasswordsAsync(providerName, fileStream, fileName, currentUserId);
+            // Perform import for each target user
+            int totalSuccessful = 0;
+            int totalFailed = 0;
+            int totalProcessed = 0;
+            
+            for (int i = 0; i < targetUserIds.Count; i++)
+            {
+                var targetUserId = targetUserIds[i];
+                
+                // Reset stream position for each import
+                fileStream.Position = 0;
+                
+                ImportProgressText.Text = $"Processing items for user {i + 1} of {targetUserIds.Count}...";
+                
+                var result = await importService.ImportPasswordsAsync(providerName, fileStream, fileName, targetUserId);
+                
+                if (result.Success)
+                {
+                    totalSuccessful += result.SuccessfulImports;
+                    totalFailed += result.FailedImports;
+                    totalProcessed += result.TotalItemsProcessed;
+                }
+                else
+                {
+                    await _logger.LogErrorAsync("SettingsPage", $"Import failed for user {targetUserId}: {result.ErrorMessage}", null);
+                }
+            }
 
-            // Show result
+            // Show combined result
             ImportProgressRing.IsActive = false;
             ImportProgressBar.IsIndeterminate = false;
             ImportProgressBar.Value = 100;
             ImportProgressPanel.Visibility = Visibility.Collapsed;
 
-            if (result.Success)
+            if (totalSuccessful > 0 || totalProcessed > 0)
             {
                 ImportStatusText.Text = "✓ Import completed successfully!";
-                ImportResultText.Text = $"Imported: {result.SuccessfulImports} items, Failed: {result.FailedImports}, Total processed: {result.TotalItemsProcessed}";
+                if (targetUserIds.Count > 1)
+                {
+                    ImportResultText.Text = $"Imported for {targetUserIds.Count} user(s): {totalSuccessful} items successful, {totalFailed} failed, Total processed: {totalProcessed}";
+                }
+                else
+                {
+                    ImportResultText.Text = $"Imported: {totalSuccessful} items, Failed: {totalFailed}, Total processed: {totalProcessed}";
+                }
             }
             else
             {
                 ImportStatusText.Text = "✗ Import failed";
-                ImportResultText.Text = result.ErrorMessage ?? "Unknown error occurred";
+                ImportResultText.Text = "No items were successfully imported";
             }
         }
         catch (Exception ex)

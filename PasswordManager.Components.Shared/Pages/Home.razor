@@ -13,12 +13,26 @@
 @inject ICollectionService CollectionService
 @inject IJSRuntime JSRuntime
 @inject IAuthService AuthService
+@inject IUserProfileService UserProfileService
 @inject NavigationManager Navigation
 @inject PasswordManager.Imports.Interfaces.IImportService ImportService
 @inject IVaultSessionService VaultSessionService
 @inject IPasswordRevealService PasswordRevealService
 
 <style>
+    /* Screen reader only class for accessibility */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
     .validation-error {
         border: 2px solid #007bff !important;
         box-shadow: 0 0 5px rgba(0, 123, 255, 0.5) !important;
@@ -1405,23 +1419,27 @@
             <div class="modal-body">
                 @if (!importInProgress)
                 {
-                    <div class="import-step">
-                        <h4>Select Import Provider</h4>
+                <div class="import-step">
+                        <h4 id="provider-label">Select Import Provider</h4>
 
                         @if (!availableProviders.Any())
                         {
-                            <div class="alert alert-warning">
+                            <div class="alert alert-warning" role="alert" aria-live="polite">
                                 <p><strong>No import providers available</strong></p>
                                 <p>Please check that import plugins are properly installed and configured.</p>
                             </div>
                         }
                         else
                         {
-                            <div class="provider-selection">
+                            <div class="provider-selection" role="radiogroup" aria-labelledby="provider-label">
                                 @foreach (var provider in availableProviders)
                                 {
                                     <div class="provider-option @(selectedProvider?.ProviderName == provider.ProviderName ? "selected" : "")"
-                                        @onclick="() => SelectProvider(provider)">
+                                        @onclick="() => SelectProvider(provider)"
+                                        role="radio"
+                                        tabindex="0"
+                                        aria-checked="@(selectedProvider?.ProviderName == provider.ProviderName ? "true" : "false")"
+                                        aria-label="@provider.DisplayName import provider">
                                         <div class="provider-info">
                                             @if (provider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin plugin)
                                             {
@@ -1467,7 +1485,54 @@
                     @if (selectedProvider != null)
                     {
                         <div class="import-step">
-                            <h4>Select File</h4>
+                            <h4 id="import-user-label">Import For</h4>
+                            <select class="form-control" 
+                                    @bind="selectedImportUserOption"
+                                    @bind:after="OnUserSelectionChanged"
+                                    aria-labelledby="import-user-label"
+                                    aria-describedby="import-user-hint">
+                                <option value="current">Current User (Default)</option>
+                                <option value="all">All Users</option>
+                                <option value="multiple">Select Multiple Users</option>
+                            </select>
+                            
+                            @if (selectedImportUserOption == "multiple")
+                            {
+                                <div class="multi-user-selection" style="margin-top: 12px; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px;">
+                                    <p style="font-weight: 600; margin-bottom: 8px;">Select Users:</p>
+                                    @foreach (var user in availableUsers)
+                                    {
+                                        <div style="margin-bottom: 4px;">
+                                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                                <input type="checkbox" 
+                                                       value="@user.Id"
+                                                       @onchange="@((e) => OnUserCheckboxChanged(user.Id, (bool)e.Value!))"
+                                                       style="margin-right: 8px;" />
+                                                <span>@user.Email (@user.FirstName @user.LastName)</span>
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            
+                            <p id="import-user-hint" class="file-help" style="margin-top: 8px;" role="status" aria-live="polite">
+                                @if (selectedImportUserOption == "all")
+                                {
+                                    <span>Passwords will be imported as accessible to all users in the system</span>
+                                }
+                                else if (selectedImportUserOption == "multiple")
+                                {
+                                    <span>Passwords will be imported for each selected user (@selectedUserIds.Count selected)</span>
+                                }
+                                else
+                                {
+                                    <span>Passwords will be imported to your current account</span>
+                                }
+                            </p>
+                        </div>
+                        
+                        <div class="import-step">
+                            <h4 id="select-file-label">Select File</h4>
                             @if (selectedProvider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin plugin &&
                                             !string.IsNullOrEmpty(plugin.Metadata.Website))
                             {
@@ -1483,13 +1548,16 @@
                                 </div>
                             }
                             <div class="file-upload-area">
-                                <InputFile OnChange="OnFileSelected"
-                                    accept="@string.Join(",", selectedProvider.SupportedFileExtensions)" />
-                                <p class="file-help">Supported files: @string.Join(", ", selectedProvider.SupportedFileExtensions)
+                                <label for="importFileInput" class="sr-only">Select import file</label>
+                                <InputFile id="importFileInput" 
+                                    OnChange="OnFileSelected"
+                                    accept="@string.Join(",", selectedProvider.SupportedFileExtensions)"
+                                    aria-describedby="file-help-text" />
+                                <p id="file-help-text" class="file-help">Supported files: @string.Join(", ", selectedProvider.SupportedFileExtensions)
                                 </p>
                                 @if (selectedFile != null)
                                 {
-                                    <div class="selected-file">
+                                    <div class="selected-file" role="status" aria-live="polite">
                                         <span>📄 @selectedFile.Name</span>
                                         <span class="file-size">(@(selectedFile.Size / 1024) KB)</span>
                                     </div>
@@ -1513,12 +1581,18 @@
                 }
                 else
                 {
-                    <div class="import-progress">
+                    <div class="import-progress" role="status" aria-live="polite" aria-atomic="true">
                         <h4>Importing...</h4>
                         <div class="progress-indicator">
-                            <div class="spinner"></div>
+                            <div class="spinner" role="progressbar" aria-label="Import in progress"></div>
                             <div class="progress-bar-container">
-                                <div class="progress-bar" style="width: @(importProgress)%"></div>
+                                <div class="progress-bar" 
+                                     style="width: @(importProgress)%" 
+                                     role="progressbar" 
+                                     aria-valuenow="@importProgress" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100"
+                                     aria-label="Import progress"></div>
                             </div>
                             <p class="progress-text">@importProgressText</p>
                         </div>
@@ -1527,12 +1601,12 @@
 
                 @if (importResult != null)
                 {
-                    <div class="import-results">
+                    <div class="import-results" role="region" aria-label="Import results">
                         <h4>Import Results</h4>
                         @if (importResult.Success)
                         {
-                            <div class="success-message">
-                                <span>✅</span>
+                            <div class="success-message" role="status" aria-live="polite">
+                                <span aria-hidden="true">✅</span>
                                 <div>
                                     <p><strong>Import completed successfully!</strong></p>
                                     <ul>
@@ -1558,8 +1632,8 @@
                         }
                         else
                         {
-                            <div class="error-message">
-                                <span>❌</span>
+                            <div class="error-message" role="alert" aria-live="assertive">
+                                <span aria-hidden="true">❌</span>
                                 <div>
                                     <p><strong>Import failed</strong></p>
                                     <p>@importResult.ErrorMessage</p>
@@ -1572,15 +1646,25 @@
                 <div class="modal-actions">
                     @if (!importInProgress && importResult == null)
                     {
-                        <button type="button" class="btn btn-secondary" @onclick="HideImportModal">Cancel</button>
-                        <button type="button" class="btn btn-primary" @onclick="StartImport"
-                            disabled="@(selectedProvider == null || selectedFile == null)">
+                        <button type="button" 
+                                class="btn btn-secondary" 
+                                @onclick="HideImportModal"
+                                aria-label="Cancel import and close dialog">Cancel</button>
+                        <button type="button" 
+                                class="btn btn-primary" 
+                                @onclick="StartImport"
+                                disabled="@(selectedProvider == null || selectedFile == null)"
+                                aria-label="Start importing passwords from selected file"
+                                aria-disabled="@(selectedProvider == null || selectedFile == null ? "true" : "false")">
                             Start Import
                         </button>
                     }
                     else if (importResult != null)
                     {
-                        <button type="button" class="btn btn-primary" @onclick="FinishImport">Done</button>
+                        <button type="button" 
+                                class="btn btn-primary" 
+                                @onclick="FinishImport"
+                                aria-label="Close import dialog and view imported passwords">Done</button>
                     }
                 </div>
             </div>
@@ -1726,6 +1810,9 @@
     private PasswordManager.Imports.Interfaces.ImportResult? importResult;
     private int importProgress = 0;
     private string importProgressText = "Processing your file, please wait...";
+    private string selectedImportUserOption = "current"; // "current", "all", or "multiple"
+    private List<PasswordManager.Models.DTOs.Auth.UserDto> availableUsers = new();
+    private HashSet<string> selectedUserIds = new();
 
     // Validation state
     private bool collectionValidationError = false;
@@ -2717,7 +2804,7 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
         }
     }
 
-    private void ShowImportModal()
+    private async void ShowImportModal()
     {
         showImportModal = true;
         selectedProvider = null;
@@ -2726,6 +2813,50 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
         importInProgress = false;
         importProgress = 0;
         importProgressText = "Processing your file, please wait...";
+        
+        // Load available users
+        await LoadAvailableUsersAsync();
+        
+        StateHasChanged();
+    }
+    
+    private async Task LoadAvailableUsersAsync()
+    {
+        try
+        {
+            var userService = UserProfileService;
+            if (userService != null)
+            {
+                availableUsers = await userService.GetAllUsersAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+#if DEBUG
+            System.Diagnostics.Debug.WriteLine($"Error loading users: {ex.Message}");
+#endif
+        }
+    }
+    
+    private void OnUserSelectionChanged()
+    {
+        if (selectedImportUserOption != "multiple")
+        {
+            selectedUserIds.Clear();
+        }
+        StateHasChanged();
+    }
+    
+    private void OnUserCheckboxChanged(string userId, bool isChecked)
+    {
+        if (isChecked)
+        {
+            selectedUserIds.Add(userId);
+        }
+        else
+        {
+            selectedUserIds.Remove(userId);
+        }
         StateHasChanged();
     }
 
@@ -2738,6 +2869,8 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
         importInProgress = false;
         importProgress = 0;
         importProgressText = "Processing your file, please wait...";
+        selectedImportUserOption = "current"; // Reset to default
+        selectedUserIds.Clear(); // Clear selected users
         StateHasChanged();
     }
 
@@ -2781,11 +2914,98 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
             StateHasChanged();
             await Task.Delay(500);
 
-            importResult = await ImportService.ImportPasswordsAsync(selectedProvider.ProviderName, stream, selectedFile.Name);
+            // Determine target user ID(s) based on selection
+            List<string?> targetUserIds = new();
+            
+            if (selectedImportUserOption == "current")
+            {
+                // Import for current user - get current user ID
+                try
+                {
+                    string? currentUserId = null;
+                    if (AuthService?.CurrentUser != null)
+                    {
+                        currentUserId = AuthService.CurrentUser.Id;
+                    }
+                    else if (AuthService != null)
+                    {
+                        currentUserId = await AuthService.GetCurrentUserIdAsync();
+                    }
+                    targetUserIds.Add(currentUserId);
+                }
+                catch (Exception ex)
+                {
+                    // Log error but continue with null userId (will import for all users as fallback)
+                    System.Diagnostics.Debug.WriteLine($"Failed to get current user ID for import: {ex.Message}");
+                    targetUserIds.Add(null);
+                }
+            }
+            else if (selectedImportUserOption == "multiple")
+            {
+                // Import for multiple selected users
+                if (selectedUserIds.Count == 0)
+                {
+                    importResult = new PasswordManager.Imports.Interfaces.ImportResult
+                    {
+                        Success = false,
+                        ErrorMessage = "Please select at least one user"
+                    };
+                    importInProgress = false;
+                    StateHasChanged();
+                    return;
+                }
+                
+                targetUserIds.AddRange(selectedUserIds.Select(id => (string?)id));
+            }
+            else // "all"
+            {
+                // If selectedImportUserOption == "all", targetUserId remains null
+                targetUserIds.Add(null);
+            }
+
+            // Perform import for each target user
+            int totalSuccessful = 0;
+            int totalFailed = 0;
+            int totalProcessed = 0;
+            
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            
+            for (int i = 0; i < targetUserIds.Count; i++)
+            {
+                var targetUserId = targetUserIds[i];
+                
+                // Reset stream position for each import
+                memoryStream.Position = 0;
+                
+                importProgressText = $"Processing items for user {i + 1} of {targetUserIds.Count}...";
+                StateHasChanged();
+                
+                var result = await ImportService.ImportPasswordsAsync(selectedProvider.ProviderName, memoryStream, selectedFile.Name, targetUserId);
+                
+                if (result.Success)
+                {
+                    totalSuccessful += result.SuccessfulImports;
+                    totalFailed += result.FailedImports;
+                    totalProcessed += result.TotalItemsProcessed;
+                }
+            }
+            
+            // Create combined result
+            importResult = new PasswordManager.Imports.Interfaces.ImportResult
+            {
+                Success = totalProcessed > 0,
+                SuccessfulImports = totalSuccessful,
+                FailedImports = totalFailed,
+                TotalItemsProcessed = totalProcessed,
+                ErrorMessage = totalProcessed == 0 ? "No items were successfully imported" : null
+            };
 
             // Step 3: Finalizing
             importProgress = 100;
-            importProgressText = "Import completed!";
+            importProgressText = targetUserIds.Count > 1 
+                ? $"Import completed for {targetUserIds.Count} user(s)!" 
+                : "Import completed!";
             StateHasChanged();
         }
         catch (Exception ex)

@@ -474,21 +474,75 @@
                         </Button>
                         
                         <!-- Import Section -->
+                        <!-- User Selection -->
                         <StackPanel Spacing="8" Margin="0,16,0,0">
+                            <TextBlock Text="Import For" 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"
+                                      AutomationProperties.HeadingLevel="Level3"/>
+                            <ComboBox x:Name="ImportUserModeComboBox"
+                                     MinWidth="240"
+                                     Style="{StaticResource ModernComboBoxStyle}"
+                                     SelectionChanged="ImportUserModeComboBox_SelectionChanged"
+                                     AutomationProperties.Name="Select import target mode"
+                                     AutomationProperties.HelpText="Choose how to distribute imported passwords to users">
+                                <ComboBoxItem Content="Current User (Default)" 
+                                            Tag="current" 
+                                            IsSelected="True"
+                                            AutomationProperties.Name="Current User - Import passwords only for your account"/>
+                                <ComboBoxItem Content="All Users" 
+                                            Tag="all"
+                                            AutomationProperties.Name="All Users - Import passwords accessible to all system users"/>
+                                <ComboBoxItem Content="Select Multiple Users" 
+                                            Tag="multiple"
+                                            AutomationProperties.Name="Select Multiple Users - Choose specific users to import passwords for"/>
+                            </ComboBox>
+                            
+                            <!-- Multi-user selection panel -->
+                            <StackPanel x:Name="MultiUserSelectionPanel" Visibility="Collapsed" Margin="0,8,0,0">
+                                <TextBlock Text="Select Users" 
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          FontWeight="SemiBold"
+                                          Margin="0,0,0,4"/>
+                                <Border BorderBrush="{StaticResource ModernBorderBrush}"
+                                       BorderThickness="1"
+                                       CornerRadius="4"
+                                       MaxHeight="200">
+                                    <ListView x:Name="UserSelectionListView"
+                                             SelectionMode="Multiple"
+                                             AutomationProperties.Name="Select users for import">
+                                        <!-- Users will be populated dynamically -->
+                                    </ListView>
+                                </Border>
+                            </StackPanel>
+                            
+                            <TextBlock x:Name="ImportUserHintText"
+                                      Text="Passwords will be imported to your current account"
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                      TextWrapping="Wrap"
+                                      AutomationProperties.LiveSetting="Polite"/>
+                        </StackPanel>
+                        
+                        <StackPanel Spacing="8" Margin="0,8,0,0">
                             <TextBlock Text="Import From" 
                                       Style="{StaticResource ModernCaptionStyle}"
-                                      FontWeight="SemiBold"/>
+                                      FontWeight="SemiBold"
+                                      AutomationProperties.HeadingLevel="Level3"/>
                             <ComboBox x:Name="ImportTypeComboBox"
                                      MinWidth="240"
                                      Style="{StaticResource ModernComboBoxStyle}"
-                                     SelectionChanged="ImportTypeComboBox_SelectionChanged">
+                                     SelectionChanged="ImportTypeComboBox_SelectionChanged"
+                                     AutomationProperties.Name="Select password manager import source"
+                                     AutomationProperties.HelpText="Choose the password manager format you want to import from, such as 1Password, Bitwarden, Chrome, or other supported formats">
                             </ComboBox>
                         </StackPanel>
                         
                         <StackPanel Spacing="8">
                             <TextBlock Text="Select File" 
                                       Style="{StaticResource ModernCaptionStyle}"
-                                      FontWeight="SemiBold"/>
+                                      FontWeight="SemiBold"
+                                      AutomationProperties.HeadingLevel="Level3"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -499,13 +553,16 @@
                                         IsReadOnly="True"
                                         PlaceholderText="Choose a file to import..."
                                         Style="{StaticResource ModernTextBoxStyle}"
+                                        AutomationProperties.Name="Selected import file path"
                                         Margin="0,0,8,0"/>
                                 <Button x:Name="BrowseImportFileButton"
                                        Grid.Column="1" 
                                        Style="{StaticResource ModernSecondaryButtonStyle}"
-                                       Click="BrowseImportFileButton_Click">
+                                       Click="BrowseImportFileButton_Click"
+                                       AutomationProperties.Name="Browse for import file"
+                                       AutomationProperties.HelpText="Open file picker to select a password export file to import">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <FontIcon Glyph="&#xE8DA;" FontSize="14"/>
+                                        <FontIcon Glyph="&#xE8DA;" FontSize="14" AutomationProperties.AccessibilityView="Raw"/>
                                         <TextBlock Text="Browse"/>
                                     </StackPanel>
                                 </Button>
@@ -518,9 +575,11 @@
                                    Click="StartImportButton_Click"
                                    IsEnabled="False"
                                    MinWidth="140"
-                                   Height="40">
+                                   Height="40"
+                                   AutomationProperties.Name="Start password import"
+                                   AutomationProperties.HelpText="Begin importing passwords from the selected file">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <FontIcon Glyph="&#xE8B5;" FontSize="16"/>
+                                    <FontIcon Glyph="&#xE8B5;" FontSize="16" AutomationProperties.AccessibilityView="Raw"/>
                                     <TextBlock Text="Start Import" FontSize="14" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </Button>
@@ -529,9 +588,11 @@
                                    Style="{StaticResource ModernSecondaryButtonStyle}"
                                    Click="ClearImportButton_Click"
                                    MinWidth="120"
-                                   Height="40">
+                                   Height="40"
+                                   AutomationProperties.Name="Clear import selections"
+                                   AutomationProperties.HelpText="Reset all import selections and start over">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <FontIcon Glyph="&#xE711;" FontSize="16"/>
+                                    <FontIcon Glyph="&#xE711;" FontSize="16" AutomationProperties.AccessibilityView="Raw"/>
                                     <TextBlock Text="Clear" FontSize="14" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </Button>
@@ -545,17 +606,21 @@
                                CornerRadius="8"
                                Padding="16"
                                Margin="0,12,0,0"
-                               Visibility="Collapsed">
+                               Visibility="Collapsed"
+                               AutomationProperties.Name="Import status panel"
+                               AutomationProperties.LiveSetting="Assertive">
                             <StackPanel Spacing="12">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <ProgressRing x:Name="ImportProgressRing" 
                                                  IsActive="False" 
                                                  Width="20" 
-                                                 Height="20"/>
+                                                 Height="20"
+                                                 AutomationProperties.Name="Import progress indicator"/>
                                     <TextBlock x:Name="ImportStatusText"
                                               Text="Ready to import"
                                               Style="{StaticResource ModernBodyStyle}"
-                                              FontWeight="SemiBold"/>
+                                              FontWeight="SemiBold"
+                                              AutomationProperties.LiveSetting="Assertive"/>
                                 </StackPanel>
                                 
                                 <!-- Progress Bar -->
@@ -571,13 +636,15 @@
                                     <TextBlock x:Name="ImportProgressText"
                                               Text="Processing..."
                                               Style="{StaticResource ModernCaptionStyle}"
-                                              Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                              Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                              AutomationProperties.LiveSetting="Polite"/>
                                 </StackPanel>
                                 
                                 <TextBlock x:Name="ImportResultText"
                                           Text=""
                                           Style="{StaticResource ModernCaptionStyle}"
-                                          TextWrapping="Wrap"/>
+                                          TextWrapping="Wrap"
+                                          AutomationProperties.LiveSetting="Assertive"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
