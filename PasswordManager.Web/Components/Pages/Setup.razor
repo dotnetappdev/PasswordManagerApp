@@ -82,6 +82,20 @@
                             <input type="password" id="sqlPassword" class="form-control" @bind="_sqlServerPassword" />
                         </div>
                     }
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" @bind="_sqlServerTrustServerCertificate" />
+                            Trust Server Certificate
+                        </label>
+                        <small class="form-text">Enable this if using self-signed certificates</small>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" @bind="_sqlServerEncrypt" />
+                            Encrypt Connection
+                        </label>
+                        <small class="form-text">Recommended for production environments</small>
+                    </div>
                 </div>
             }
             else if (_selectedProvider == DatabaseProvider.MySql)
@@ -110,6 +124,13 @@
                         <label for="mysqlPassword">Password:</label>
                         <input type="password" id="mysqlPassword" class="form-control" @bind="_mysqlPassword" />
                     </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" @bind="_mysqlUseSsl" />
+                            Use SSL/TLS Connection
+                        </label>
+                        <small class="form-text">Recommended for secure connections</small>
+                    </div>
                 </div>
             }
             else if (_selectedProvider == DatabaseProvider.PostgreSql)
@@ -137,6 +158,13 @@
                     <div class="form-group">
                         <label for="pgPassword">Password:</label>
                         <input type="password" id="pgPassword" class="form-control" @bind="_postgresPassword" />
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" @bind="_postgresUseSsl" />
+                            Use SSL/TLS Connection
+                        </label>
+                        <small class="form-text">Recommended for secure connections</small>
                     </div>
                 </div>
             }
@@ -335,6 +363,8 @@
     private string _sqlServerUsername = "";
     private string _sqlServerPassword = "";
     private bool _sqlServerUseWindowsAuth = false;
+    private bool _sqlServerTrustServerCertificate = false;
+    private bool _sqlServerEncrypt = true;
 
     // MySQL
     private string _mysqlHost = "localhost";
@@ -342,6 +372,7 @@
     private string _mysqlDatabase = "PasswordManager";
     private string _mysqlUsername = "";
     private string _mysqlPassword = "";
+    private bool _mysqlUseSsl = true;
 
     // PostgreSQL
     private string _postgresHost = "localhost";
@@ -349,6 +380,7 @@
     private string _postgresDatabase = "PasswordManager";
     private string _postgresUsername = "";
     private string _postgresPassword = "";
+    private bool _postgresUseSsl = true;
 
     // Supabase
     private string _supabaseUrl = "";
@@ -387,6 +419,7 @@
                     _sqlServerDatabase = config.SqlServer.Database;
                     _sqlServerUsername = config.SqlServer.Username ?? "";
                     _sqlServerUseWindowsAuth = config.SqlServer.UseWindowsAuthentication;
+                    _sqlServerTrustServerCertificate = config.SqlServer.TrustServerCertificate;
                 }
                 break;
             case DatabaseProvider.MySql:
@@ -396,6 +429,7 @@
                     _mysqlPort = config.MySql.Port;
                     _mysqlDatabase = config.MySql.Database;
                     _mysqlUsername = config.MySql.Username;
+                    _mysqlUseSsl = config.MySql.UseSsl;
                 }
                 break;
             case DatabaseProvider.PostgreSql:
@@ -405,6 +439,7 @@
                     _postgresPort = config.PostgreSql.Port;
                     _postgresDatabase = config.PostgreSql.Database;
                     _postgresUsername = config.PostgreSql.Username;
+                    _postgresUseSsl = config.PostgreSql.UseSsl;
                 }
                 break;
             case DatabaseProvider.Supabase:
@@ -441,7 +476,8 @@
                     Port = _sqlServerPort,
                     Database = _sqlServerDatabase,
                     Username = _sqlServerUsername,
-                    UseWindowsAuthentication = _sqlServerUseWindowsAuth
+                    UseWindowsAuthentication = _sqlServerUseWindowsAuth,
+                    TrustServerCertificate = _sqlServerTrustServerCertificate
                 };
                 if (!string.IsNullOrEmpty(_sqlServerPassword))
                 {
@@ -455,7 +491,8 @@
                     Host = _mysqlHost,
                     Port = _mysqlPort,
                     Database = _mysqlDatabase,
-                    Username = _mysqlUsername
+                    Username = _mysqlUsername,
+                    UseSsl = _mysqlUseSsl
                 };
                 if (!string.IsNullOrEmpty(_mysqlPassword))
                 {
@@ -469,7 +506,8 @@
                     Host = _postgresHost,
                     Port = _postgresPort,
                     Database = _postgresDatabase,
-                    Username = _postgresUsername
+                    Username = _postgresUsername,
+                    UseSsl = _postgresUseSsl
                 };
                 if (!string.IsNullOrEmpty(_postgresPassword))
                 {
