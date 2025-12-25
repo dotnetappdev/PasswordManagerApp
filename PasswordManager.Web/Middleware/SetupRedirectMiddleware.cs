@@ -41,9 +41,16 @@ public class SetupRedirectMiddleware
                 return;
             }
         }
-        catch (Exception)
+        catch (OperationCanceledException)
         {
-            // If we can't check, allow the request to continue
+            // Timeout checking configuration - allow request to continue
+            // This prevents hanging on slow file systems
+        }
+        catch (Exception ex)
+        {
+            // Log the error but allow the request to continue
+            // Configuration check failures shouldn't block access
+            Console.WriteLine($"Setup redirect middleware error: {ex.Message}");
         }
 
         await _next(context);

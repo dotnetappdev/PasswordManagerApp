@@ -417,7 +417,7 @@
         }
     }
 
-    private DatabaseConfiguration BuildConfiguration()
+    private async Task<DatabaseConfiguration> BuildConfigurationAsync()
     {
         var config = new DatabaseConfiguration
         {
@@ -445,7 +445,7 @@
                 };
                 if (!string.IsNullOrEmpty(_sqlServerPassword))
                 {
-                    config.SqlServer.EncryptedPassword = DatabaseConfigService.EncryptPasswordAsync(_sqlServerPassword).Result;
+                    config.SqlServer.EncryptedPassword = await DatabaseConfigService.EncryptPasswordAsync(_sqlServerPassword);
                 }
                 break;
 
@@ -459,7 +459,7 @@
                 };
                 if (!string.IsNullOrEmpty(_mysqlPassword))
                 {
-                    config.MySql.EncryptedPassword = DatabaseConfigService.EncryptPasswordAsync(_mysqlPassword).Result;
+                    config.MySql.EncryptedPassword = await DatabaseConfigService.EncryptPasswordAsync(_mysqlPassword);
                 }
                 break;
 
@@ -473,7 +473,7 @@
                 };
                 if (!string.IsNullOrEmpty(_postgresPassword))
                 {
-                    config.PostgreSql.EncryptedPassword = DatabaseConfigService.EncryptPasswordAsync(_postgresPassword).Result;
+                    config.PostgreSql.EncryptedPassword = await DatabaseConfigService.EncryptPasswordAsync(_postgresPassword);
                 }
                 break;
 
@@ -497,7 +497,7 @@
 
         try
         {
-            var config = BuildConfiguration();
+            var config = await BuildConfigurationAsync();
             var result = await DatabaseConfigService.TestConnectionAsync(config);
 
             if (result.Success)
@@ -531,7 +531,7 @@
 
         try
         {
-            var config = BuildConfiguration();
+            var config = await BuildConfigurationAsync();
             
             // Save configuration to file
             await DatabaseConfigService.SaveConfigurationAsync(config);
@@ -570,25 +570,30 @@
             if (File.Exists(appSettingsPath))
             {
                 var json = await File.ReadAllTextAsync(appSettingsPath);
-                var settings = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+                using var jsonDoc = System.Text.Json.JsonDocument.Parse(json);
+                var settings = new Dictionary<string, object>();
                 
-                if (settings == null)
-                    settings = new Dictionary<string, object>();
+                // Copy existing settings
+                foreach (var property in jsonDoc.RootElement.EnumerateObject())
+                {
+                    settings[property.Name] = property.Value.Clone();
+                }
 
                 // Update DatabaseProvider
                 settings["DatabaseProvider"] = config.Provider.ToString();
 
                 // Update connection strings
-                if (!settings.ContainsKey("ConnectionStrings"))
+                var connectionStrings = new Dictionary<string, string>();
+                
+                // Copy existing connection strings if they exist
+                if (settings.ContainsKey("ConnectionStrings") && 
+                    settings["ConnectionStrings"] is System.Text.Json.JsonElement connectionStringsElement)
                 {
-                    settings["ConnectionStrings"] = new Dictionary<string, string>();
+                    foreach (var property in connectionStringsElement.EnumerateObject())
+                    {
+                        connectionStrings[property.Name] = property.Value.GetString() ?? "";
+                    }
                 }
-
-                var connectionStrings = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(
-                    settings["ConnectionStrings"].ToString() ?? "{}");
-
-                if (connectionStrings == null)
-                    connectionStrings = new Dictionary<string, string>();
 
                 var connectionString = await DatabaseConfigService.BuildConnectionStringAsync(config);
                 

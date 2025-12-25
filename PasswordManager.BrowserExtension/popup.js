@@ -218,17 +218,20 @@ class PasswordManagerPopup {
     const apiUrlGroup = document.getElementById('apiUrlGroup');
     const databasePathGroup = document.getElementById('databasePathGroup');
     
-    // Show API URL input when API mode is selected
-    if (connectionMode === 'api' || connectionMode === 'auto') {
+    // Show appropriate fields based on connection mode
+    // Auto mode shows all options since it tries all methods
+    if (connectionMode === 'auto') {
       apiUrlGroup.style.display = 'block';
-    } else {
+      databasePathGroup.style.display = 'block';
+    } else if (connectionMode === 'api') {
+      apiUrlGroup.style.display = 'block';
+      databasePathGroup.style.display = 'none';
+    } else if (connectionMode === 'native') {
       apiUrlGroup.style.display = 'none';
-    }
-    
-    // Show database path input when native mode is selected
-    if (connectionMode === 'native' || connectionMode === 'auto') {
       databasePathGroup.style.display = 'block';
     } else {
+      // localStorage mode
+      apiUrlGroup.style.display = 'none';
       databasePathGroup.style.display = 'none';
     }
   }
