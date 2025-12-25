@@ -1,0 +1,15 @@
+# Installer output files
+output/
+*.exe
+
+# Inno Setup temporary files
+*.tmp
+*.bak
+Setup.exe
+
+# Build artifacts
+bin/
+obj/
+
+# Logs
+*.log

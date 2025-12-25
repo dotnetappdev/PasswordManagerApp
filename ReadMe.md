@@ -19,6 +19,32 @@
 
 A modern, secure, and cross-platform password manager built with .NET 9, .NET MAUI, Blazor Server, and ASP.NET Core Web API. Keep your passwords, credit cards, secure notes, and WiFi credentials safe and organized across all your devices with cloud synchronization capabilities.
 
+## 🚀 Deployment Options
+
+### Docker Deployment
+Run the entire stack with Docker for easy deployment and scalability:
+- **[Docker Setup Guide](docker/README.md)** - Complete Docker deployment guide
+- Pre-configured with SQL Server 2022 Developer Edition
+- HTTPS certificate support with automated setup
+- Health checks and automatic restart policies
+- One-command deployment: `docker-compose up -d`
+
+### Windows Installers
+Professional installers for Windows using open-source Inno Setup:
+- **[Installer Documentation](installers/README.md)** - Complete installer guide
+- **Web API Installer** - Windows service with database configuration wizard
+- **WinUI App Installer** - Desktop application with API setup wizard
+- Automated certificate generation and firewall configuration
+- Interactive database connection setup
+
+### MSIX Packages
+Modern Windows app packages for Microsoft Store and enterprise distribution:
+- **[MSIX Packaging Guide](installers/MSIX_PACKAGING_GUIDE.md)** - Complete MSIX guide
+- Clean installation and uninstallation
+- Automatic updates support
+- Microsoft Store ready
+- Enterprise deployment compatible
+
 ## Documentation
 
 ### Project Components
@@ -42,6 +68,9 @@ A modern, secure, and cross-platform password manager built with .NET 9, .NET MA
 ### Additional Documentation
 | Document | Description |
 |----------|-------------|
+| **Docker Setup** | Complete Docker deployment guide with SQL Server | [docker/README.md](docker/README.md) |
+| **Installers Guide** | Windows installers for Web API and WinUI app | [installers/README.md](installers/README.md) |
+| **MSIX Packaging** | Modern Windows app packaging guide | [installers/MSIX_PACKAGING_GUIDE.md](installers/MSIX_PACKAGING_GUIDE.md) |
 | **Uno Platform Guide** | Complete guide for mobile iOS/Android app development | [UNO_PLATFORM_GUIDE.md](UNO_PLATFORM_GUIDE.md) |
 | **Mobile Screenshots Guide** | Instructions for capturing iOS and Android screenshots | [MOBILE_SCREENSHOTS.md](MOBILE_SCREENSHOTS.md) |
 | **Entity Framework Identity Setup** | Complete guide for EF Identity and migration management | [EF_IDENTITY_SETUP_GUIDE.md](EF_IDENTITY_SETUP_GUIDE.md) |
