@@ -52,12 +52,14 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.HasOne(e => e.Category)
                   .WithMany(c => c.PasswordItems)
                   .HasForeignKey(e => e.CategoryId)
+                  .IsRequired(false)
                   .OnDelete(DeleteBehavior.Restrict);
 
             // Configure Collection relationship (optional)
             entity.HasOne(e => e.Collection)
                   .WithMany(c => c.PasswordItems)
                   .HasForeignKey(e => e.CollectionId)
+                  .IsRequired(false)
                   .OnDelete(DeleteBehavior.Restrict);
 
             // Configure Tags (many-to-many)
