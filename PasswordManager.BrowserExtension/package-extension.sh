@@ -65,22 +65,25 @@ done
 echo ""
 echo "Step 2: Creating ZIP package for distribution..."
 cd "$TEMP_DIR"
-zip -r "$OUTPUT_DIR/password-manager-extension-$VERSION.zip" . -x "*.git*" "*.DS_Store" > /dev/null
-echo "  ✓ Created: password-manager-extension-$VERSION.zip"
 
-echo ""
-echo "Step 3: Package information..."
-echo "  Output directory: $OUTPUT_DIR"
-echo "  Package size: $(du -h "$OUTPUT_DIR/password-manager-extension-$VERSION.zip" | cut -f1)"
-echo ""
+# Create ZIP with suppressed verbose output but show errors
+if zip -r "$OUTPUT_DIR/password-manager-extension-$VERSION.zip" . -x "*.git*" "*.DS_Store" -q; then
+    echo "  ✓ Created: password-manager-extension-$VERSION.zip"
+    
+    echo ""
+    echo "================================================"
+    echo "Packaging Complete!"
+    echo "================================================"
+    echo ""
+    echo "📦 Distribution Package:"
+    echo "   $OUTPUT_DIR/password-manager-extension-$VERSION.zip"
+    echo "   Package size: $(du -h "$OUTPUT_DIR/password-manager-extension-$VERSION.zip" | cut -f1)"
+    echo ""
+else
+    echo "  ✗ Error: Failed to create ZIP package"
+    exit 1
+fi
 
-echo "================================================"
-echo "Packaging Complete!"
-echo "================================================"
-echo ""
-echo "📦 Distribution Package:"
-echo "   $OUTPUT_DIR/password-manager-extension-$VERSION.zip"
-echo ""
 echo "📝 Next Steps:"
 echo ""
 echo "For Chrome Web Store:"

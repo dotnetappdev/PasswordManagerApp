@@ -21,6 +21,9 @@ for /f "tokens=2 delims=:, " %%a in ('findstr /C:"version" "%SCRIPT_DIR%manifest
 )
 
 :version_found
+REM Remove quotes from version string
+set "VERSION=%VERSION:"=%"
+
 REM Verify version was extracted
 if "%VERSION%"=="" (
     echo Error: Could not extract version from manifest.json
@@ -73,12 +76,15 @@ echo   * Copied: icons/
 echo.
 echo Step 2: Creating ZIP package for distribution...
 
+set "ZIP_SUCCESS=0"
+
 REM Check if PowerShell is available
 where powershell >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
     powershell -Command "Compress-Archive -Path '%TEMP_DIR%\*' -DestinationPath '%OUTPUT_DIR%\password-manager-extension-%VERSION%.zip' -Force"
     if %ERRORLEVEL% EQU 0 (
         echo   * Created: password-manager-extension-%VERSION%.zip
+        set "ZIP_SUCCESS=1"
         REM Clean up temp directory after successful ZIP creation
         rmdir /s /q "%TEMP_DIR%"
     ) else (
@@ -94,44 +100,59 @@ if %ERRORLEVEL% EQU 0 (
 )
 
 echo.
-echo Step 3: Package information...
-echo   Output directory: %OUTPUT_DIR%
-echo.
 
-echo ================================================
-echo Packaging Complete!
-echo ================================================
-echo.
-echo Package created:
-echo    %OUTPUT_DIR%\password-manager-extension-%VERSION%.zip
-echo.
-echo Next Steps:
-echo.
-echo For Chrome Web Store:
-echo   1. Go to: https://chrome.google.com/webstore/devconsole
-echo   2. Upload: password-manager-extension-%VERSION%.zip
-echo   3. Fill in store listing details
-echo   4. Submit for review
-echo.
-echo For Microsoft Edge Add-ons:
-echo   1. Go to: https://partner.microsoft.com/dashboard/microsoftedge/overview
-echo   2. Upload: password-manager-extension-%VERSION%.zip
-echo   3. Fill in store listing details
-echo   4. Submit for review
-echo.
-echo For Private Distribution (.crx):
-echo   Note: Chrome no longer supports installing .crx files directly
-echo   Users must either:
-echo   - Install from Chrome Web Store
-echo   - Use Developer Mode and load unpacked extension
-echo   - Use Enterprise Policy for force-installed extensions
-echo.
-echo For Development/Testing:
-echo   1. Open chrome://extensions/ or edge://extensions/
-echo   2. Enable 'Developer mode'
-echo   3. Click 'Load unpacked'
-echo   4. Select this directory: %SCRIPT_DIR%
-echo.
+if "%ZIP_SUCCESS%"=="1" (
+    echo ================================================
+    echo Packaging Complete!
+    echo ================================================
+    echo.
+    echo Package created:
+    echo    %OUTPUT_DIR%\password-manager-extension-%VERSION%.zip
+    echo.
+    echo Next Steps:
+    echo.
+    echo For Chrome Web Store:
+    echo   1. Go to: https://chrome.google.com/webstore/devconsole
+    echo   2. Upload: password-manager-extension-%VERSION%.zip
+    echo   3. Fill in store listing details
+    echo   4. Submit for review
+    echo.
+    echo For Microsoft Edge Add-ons:
+    echo   1. Go to: https://partner.microsoft.com/dashboard/microsoftedge/overview
+    echo   2. Upload: password-manager-extension-%VERSION%.zip
+    echo   3. Fill in store listing details
+    echo   4. Submit for review
+    echo.
+    echo For Private Distribution (.crx):
+    echo   Note: Chrome no longer supports installing .crx files directly
+    echo   Users must either:
+    echo   - Install from Chrome Web Store
+    echo   - Use Developer Mode and load unpacked extension
+    echo   - Use Enterprise Policy for force-installed extensions
+    echo.
+    echo For Development/Testing:
+    echo   1. Open chrome://extensions/ or edge://extensions/
+    echo   2. Enable 'Developer mode'
+    echo   3. Click 'Load unpacked'
+    echo   4. Select this directory: %SCRIPT_DIR%
+    echo.
+) else (
+    echo ================================================
+    echo Packaging Failed
+    echo ================================================
+    echo.
+    echo ZIP package could not be created automatically.
+    echo Temporary files are available at: %TEMP_DIR%
+    echo.
+    echo Please create the ZIP manually:
+    echo   1. Open Windows Explorer
+    echo   2. Navigate to: %TEMP_DIR%
+    echo   3. Select all files
+    echo   4. Right-click and choose "Send to" ^> "Compressed (zipped) folder"
+    echo   5. Move the ZIP to: %OUTPUT_DIR%
+    echo   6. Rename to: password-manager-extension-%VERSION%.zip
+    echo.
+)
 
 endlocal
 pause
