@@ -364,3 +364,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Browser Extension packaging output
+PasswordManager.BrowserExtension/dist/
+*.crx
+*.pem

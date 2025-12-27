@@ -2,6 +2,13 @@
 
 A secure browser extension that integrates directly with your local Password Manager SQLite database to provide seamless autofill functionality for login and registration forms.
 
+## Documentation
+
+- **[INSTALLATION.md](INSTALLATION.md)** - Complete installation guide for end users
+- **[PACKAGING.md](PACKAGING.md)** - Extension packaging and distribution guide
+- **[HELP.md](HELP.md)** - Usage guide and troubleshooting
+- **[CONTEXT_DETECTION.md](CONTEXT_DETECTION.md)** - Form detection details
+
 ## Features
 
 - **🔐 Secure Autofill**: Automatically detect and fill login forms using your stored credentials
@@ -13,6 +20,37 @@ A secure browser extension that integrates directly with your local Password Man
 - **🎨 1Password-style UI**: Familiar icon-based interface for easy credential access  
 - **🌐 Cross-browser Support**: Works with Chrome, Firefox, and other Chromium-based browsers
 - **🔌 Offline Support**: Works completely offline once configured
+
+## Quick Start
+
+### For End Users
+
+**Installation:**
+- See [INSTALLATION.md](INSTALLATION.md) for complete installation instructions
+- Install from Chrome Web Store or Microsoft Edge Add-ons (when published)
+- Or load as unpacked extension for testing
+
+### For Developers
+
+**Development Setup:**
+
+1. Clone the repository
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable "Developer mode" in the top right
+4. Click "Load unpacked" and select the `PasswordManager.BrowserExtension` folder
+5. The extension will appear in your browser toolbar
+
+**Package for Distribution:**
+
+```bash
+# Linux/macOS
+./package-extension.sh
+
+# Windows
+package-extension.bat
+```
+
+See [PACKAGING.md](PACKAGING.md) for detailed packaging and distribution instructions.
 
 ## Installation
 
@@ -36,6 +74,10 @@ A secure browser extension that integrates directly with your local Password Man
 1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
 2. Click "Load Temporary Add-on"
 3. Select the `manifest.json` file from the extension folder
+
+#### For Production
+
+See [INSTALLATION.md](INSTALLATION.md) for end-user installation instructions and [PACKAGING.md](PACKAGING.md) for creating distributable packages.
 
 ## Setup
 

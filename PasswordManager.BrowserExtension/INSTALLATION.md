@@ -2,6 +2,8 @@
 
 This guide will help you install and set up the Password Manager browser extension to work with your Password Manager App, including configuration for both API mode and local SQLite database mode.
 
+> **Note:** For information about packaging the extension for distribution, see [PACKAGING.md](PACKAGING.md).
+
 ## Prerequisites
 
 Before installing the extension, ensure you have:
@@ -33,9 +35,27 @@ You can use the extension in two modes:
 - Requires network connection
 - Suitable for remote access
 
-## Installation Steps
+## Installation Options
 
-### Step 1: Install the Browser Extension
+### Option A: From Chrome Web Store / Edge Add-ons (Recommended)
+
+> **Note:** The extension is not yet published to the Chrome Web Store or Microsoft Edge Add-ons. This option will be available once the extension is published. See [PACKAGING.md](PACKAGING.md) for information about publishing.
+
+**For Chrome:**
+1. Visit the Chrome Web Store
+2. Search for "Password Manager Extension"
+3. Click "Add to Chrome"
+4. Extension installs automatically
+
+**For Edge:**
+1. Visit Microsoft Edge Add-ons
+2. Search for "Password Manager Extension"
+3. Click "Get"
+4. Extension installs automatically
+
+### Option B: Load Unpacked (Development/Testing)
+
+This method is for developers and testers who want to use the extension directly from the source code.
 
 #### For Chrome/Edge
 
@@ -45,6 +65,7 @@ You can use the extension in two modes:
 
 2. **Enable Developer Mode**
    - Open Chrome and go to `chrome://extensions/`
+   - Or for Edge, go to `edge://extensions/`
    - Toggle "Developer mode" on in the top-right corner
 
 3. **Load the Extension**
@@ -67,7 +88,22 @@ You can use the extension in two modes:
    - Click "Load Temporary Add-on..."
    - Select the `manifest.json` file from the extension folder
 
-3. **Note**: Firefox temporary add-ons are removed when Firefox closes. For permanent installation, you'll need to package the extension.
+3. **Note**: Firefox temporary add-ons are removed when Firefox closes. For permanent installation, you'll need to package the extension and publish it to Firefox Add-ons or sign it. See [PACKAGING.md](PACKAGING.md) for more information.
+
+### Important Notes About Extension Distribution
+
+> **About .crx Files:** Chrome and Edge no longer support manually installing `.crx` (Chrome Extension) files due to security policies implemented in 2021. Extensions can only be installed through:
+> - Official stores (Chrome Web Store, Microsoft Edge Add-ons)
+> - Developer Mode with unpacked extensions (for testing)
+> - Enterprise policies (for corporate deployments)
+>
+> If you need to distribute this extension, see [PACKAGING.md](PACKAGING.md) for detailed packaging and distribution instructions.
+
+## Installation Steps
+
+### Step 1: Install the Browser Extension
+
+Choose one of the installation options above (Chrome Web Store, Edge Add-ons, or Load Unpacked).
 
 ### Step 2: Install Native Messaging Host (For Native Host Mode)
 
