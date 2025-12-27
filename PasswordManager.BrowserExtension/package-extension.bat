@@ -6,13 +6,27 @@ setlocal enabledelayedexpansion
 
 set "SCRIPT_DIR=%~dp0"
 set "OUTPUT_DIR=%SCRIPT_DIR%dist"
+set "VERSION="
 
-REM Extract version from manifest.json
-for /f "tokens=2 delims=:, " %%a in ('findstr /C:"version" "%SCRIPT_DIR%manifest.json"') do (
+REM Check if manifest.json exists
+if not exist "%SCRIPT_DIR%manifest.json" (
+    echo Error: manifest.json not found in %SCRIPT_DIR%
+    exit /b 1
+)
+
+REM Extract version from manifest.json with error handling
+for /f "tokens=2 delims=:, " %%a in ('findstr /C:"version" "%SCRIPT_DIR%manifest.json" 2^>nul') do (
     set "VERSION=%%~a"
     goto :version_found
 )
+
 :version_found
+REM Verify version was extracted
+if "%VERSION%"=="" (
+    echo Error: Could not extract version from manifest.json
+    echo Please ensure manifest.json contains a "version" field
+    exit /b 1
+)
 
 echo ================================================
 echo Password Manager Extension Packaging
@@ -63,14 +77,21 @@ REM Check if PowerShell is available
 where powershell >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
     powershell -Command "Compress-Archive -Path '%TEMP_DIR%\*' -DestinationPath '%OUTPUT_DIR%\password-manager-extension-%VERSION%.zip' -Force"
-    echo   * Created: password-manager-extension-%VERSION%.zip
+    if %ERRORLEVEL% EQU 0 (
+        echo   * Created: password-manager-extension-%VERSION%.zip
+        REM Clean up temp directory after successful ZIP creation
+        rmdir /s /q "%TEMP_DIR%"
+    ) else (
+        echo   ! Error creating ZIP file
+        echo   ! Temporary files preserved at: %TEMP_DIR%
+        echo   ! You can manually create ZIP from this directory
+    )
 ) else (
-    echo   ! PowerShell not found. Please create ZIP manually from: %TEMP_DIR%
-    echo   ! Or install 7-Zip and use: 7z a "%OUTPUT_DIR%\password-manager-extension-%VERSION%.zip" "%TEMP_DIR%\*"
+    echo   ! PowerShell not found. Cannot create ZIP automatically.
+    echo   ! Temporary files preserved at: %TEMP_DIR%
+    echo   ! Please create ZIP manually from this directory, or:
+    echo   ! Install 7-Zip and use: 7z a "%OUTPUT_DIR%\password-manager-extension-%VERSION%.zip" "%TEMP_DIR%\*"
 )
-
-REM Clean up temp directory
-rmdir /s /q "%TEMP_DIR%"
 
 echo.
 echo Step 3: Package information...

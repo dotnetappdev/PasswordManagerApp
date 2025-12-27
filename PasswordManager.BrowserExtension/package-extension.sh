@@ -7,7 +7,21 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTPUT_DIR="$SCRIPT_DIR/dist"
+
+# Check if manifest.json exists
+if [ ! -f "$SCRIPT_DIR/manifest.json" ]; then
+    echo "Error: manifest.json not found in $SCRIPT_DIR"
+    exit 1
+fi
+
+# Extract version from manifest.json
 VERSION=$(grep '"version"' "$SCRIPT_DIR/manifest.json" | sed 's/.*"version": "\(.*\)".*/\1/')
+
+# Verify version was extracted
+if [ -z "$VERSION" ]; then
+    echo "Error: Could not extract version from manifest.json"
+    exit 1
+fi
 
 echo "================================================"
 echo "Password Manager Extension Packaging"
