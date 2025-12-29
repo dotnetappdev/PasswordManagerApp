@@ -210,6 +210,73 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Import/Export Section -->
+                <TextBlock Text="Import/Export" 
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           Margin="0,16,0,12"/>
+
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="20">
+                    <StackPanel Spacing="20">
+                        
+                        <!-- Import Button -->
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Import Passwords" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="Import passwords from other password managers" 
+                                       FontSize="13"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       TextWrapping="Wrap"/>
+                            <Button Content="Import Passwords"
+                                    Command="{Binding NavigateToImportCommand}"
+                                    HorizontalAlignment="Stretch"
+                                    Height="48"
+                                    CornerRadius="10"
+                                    Background="#0066FF"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    FontSize="15"
+                                    FontWeight="SemiBold"
+                                    Margin="0,8,0,0">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE8B5;" FontSize="16"/>
+                                    <TextBlock Text="Import" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Export Button -->
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Export Passwords" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="Export passwords to a secure file" 
+                                       FontSize="13"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       TextWrapping="Wrap"/>
+                            <Button Content="Export Passwords"
+                                    Command="{Binding ExportPasswordsCommand}"
+                                    HorizontalAlignment="Stretch"
+                                    Height="48"
+                                    CornerRadius="10"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                    BorderBrush="#0066FF"
+                                    BorderThickness="1"
+                                    FontSize="15"
+                                    FontWeight="SemiBold"
+                                    Margin="0,8,0,0">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE8C5;" FontSize="16"/>
+                                    <TextBlock Text="Export" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                    </StackPanel>
+                </Border>
+
                 <!-- About Section -->
                 <TextBlock Text="About" 
                            FontSize="18"
