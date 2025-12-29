@@ -311,6 +311,13 @@ using (var scope = app.Services.CreateScope())
         {
             try
             {
+                // Only load DLLs that match our import provider naming pattern
+                var fileName = Path.GetFileName(dllPath);
+                if (!fileName.StartsWith("PasswordManagerImports.", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+                
                 var assembly = System.Reflection.Assembly.LoadFrom(dllPath);
                 var providerTypes = assembly.GetTypes()
                     .Where(t => typeof(PasswordManager.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
@@ -321,6 +328,13 @@ using (var scope = app.Services.CreateScope())
                 {
                     foreach (var providerType in providerTypes)
                     {
+                        // Validate the type has a parameterless constructor
+                        if (providerType.GetConstructor(Type.EmptyTypes) == null)
+                        {
+                            Log.Warning("Skipping provider {TypeName} - no parameterless constructor found", providerType.Name);
+                            continue;
+                        }
+                        
                         var provider = Activator.CreateInstance(providerType) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
                         if (provider != null)
                         {

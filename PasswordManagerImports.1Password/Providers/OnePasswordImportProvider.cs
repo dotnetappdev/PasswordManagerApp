@@ -58,12 +58,25 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                 return result;
             }
 
-            // Detect which CSV format by checking the header
-            var firstLine = csvContent.Split('\n')[0].Trim();
-            bool isNewFormat = firstLine.Contains("URL,") && !firstLine.Contains("OTPAuth");
+            // Detect which CSV format by checking the header more robustly
+            var lines = csvContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            if (lines.Length == 0)
+            {
+                result.Success = false;
+                result.ErrorMessage = "The CSV file is empty.";
+                return result;
+            }
             
-            OnePasswordCsvRecord[] records = null;
-            OnePasswordCsvRecordNew[] recordsNew = null;
+            var headerLine = lines[0].Trim();
+            var headers = headerLine.Split(',').Select(h => h.Trim().Trim('"')).ToArray();
+            
+            // New format has "URL" (capital) and "Type" columns, no "OTPAuth"
+            bool isNewFormat = headers.Contains("URL") && 
+                              headers.Contains("Type") && 
+                              !headers.Contains("OTPAuth");
+            
+            OnePasswordCsvRecord[]? records = null;
+            OnePasswordCsvRecordNew[]? recordsNew = null;
 
             try
             {
