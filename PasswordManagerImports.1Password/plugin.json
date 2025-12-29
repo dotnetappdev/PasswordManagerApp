@@ -1,8 +1,8 @@
 {
   "name": "1password",
   "displayName": "1Password Importer (CSV and 1PUX)",
-  "description": "Import passwords from 1Password export files. Supports both CSV (old and new formats) and 1PUX (ZIP archive) formats with collections, categories, notes, custom fields, and tags.",
-  "version": "1.1.0",
+  "description": "Import passwords from 1Password export files. Supports both CSV (old and new formats) and 1PUX (ZIP archive) formats. 1Password vaults are mapped to categories.",
+  "version": "1.2.0",
   "author": "PasswordManager Team",
   "website": "https://1password.com",
   "iconUrl": "🔐",
@@ -19,7 +19,8 @@
     "skipEmptyRecords": true,
     "supportedFormats": ["csv-legacy", "csv-new", "1pux"],
     "legacyCsvHeaders": "Title,Url,Username,Password,OTPAuth,Favorite,Archived,Tags,Notes",
-    "newCsvHeaders": "Title,URL,Username,Password,Notes,Type"
+    "newCsvHeaders": "Title,URL,Username,Password,Notes,Type",
+    "vaultMapping": "1Password vaults are mapped to categories in the Password Manager"
   },
   "requirements": {
     "minFrameworkVersion": "net9.0",
@@ -28,15 +29,16 @@
     ]
   },
   "help": {
-    "instructions": "Export your 1Password data as CSV or 1PUX format and select the file below. Both old (pre-2023) and new (2023+) CSV formats are supported.",
+    "instructions": "Export your 1Password data as CSV or 1PUX format. For 1PUX imports, vault names will be mapped to categories. Both old (pre-2023) and new (2023+) CSV formats are supported.",
     "exportSteps": [
       "1. Open 1Password desktop app",
       "2. Select the vault you want to export",
       "3. Go to File > Export > All Items",
       "4. Choose either '.csv' or '.1pux' format",
       "5. For CSV: Both old and new export formats are supported automatically",
-      "6. Save the export file securely",
-      "7. Select the downloaded file below"
+      "6. For 1PUX: Vault names will become categories in Password Manager",
+      "7. Save the export file securely",
+      "8. Select the downloaded file below"
     ]
   }
 }

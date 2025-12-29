@@ -552,6 +552,41 @@ public class OnePasswordImportProvider : IPasswordImportProvider
         };
     }
 
+    private string GetVaultIcon(string vaultName)
+    {
+        // Use vault-specific icons or fallback to folder icon
+        // Common vault names: Personal, Work, Shared, Family, etc.
+        var vaultLower = vaultName.ToLowerInvariant();
+        
+        if (vaultLower.Contains("personal") || vaultLower.Contains("private"))
+            return "\uE77B"; // People/Person
+        if (vaultLower.Contains("work") || vaultLower.Contains("business"))
+            return "\uE821"; // Briefcase
+        if (vaultLower.Contains("family") || vaultLower.Contains("shared"))
+            return "\uE716"; // People (group)
+        if (vaultLower.Contains("finance") || vaultLower.Contains("bank"))
+            return "\uE8C7"; // CreditCard
+        
+        return "\uE8B7"; // Folder (default)
+    }
+
+    private string GetVaultColor(string vaultName)
+    {
+        // Use vault-specific colors or fallback to neutral color
+        var vaultLower = vaultName.ToLowerInvariant();
+        
+        if (vaultLower.Contains("personal") || vaultLower.Contains("private"))
+            return "#3b82f6"; // Blue
+        if (vaultLower.Contains("work") || vaultLower.Contains("business"))
+            return "#8b5cf6"; // Purple
+        if (vaultLower.Contains("family") || vaultLower.Contains("shared"))
+            return "#10b981"; // Green
+        if (vaultLower.Contains("finance") || vaultLower.Contains("bank"))
+            return "#f59e0b"; // Orange
+        
+        return "#6b7280"; // Gray (default)
+    }
+
     private async Task<ImportResult> ImportFrom1PuxAsync(Stream fileStream, string fileName)
     {
         var result = new ImportResult();
@@ -601,6 +636,11 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             {
                 foreach (var vault in account.Vaults)
                 {
+                    // Use vault name as category (as per user requirement: vaults are categories)
+                    var vaultName = !string.IsNullOrWhiteSpace(vault.Attrs.Name) 
+                        ? vault.Attrs.Name 
+                        : "Default";
+                    
                     foreach (var item in vault.Items)
                     {
                         totalItemsAttempted++;
@@ -609,9 +649,11 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                             // Skip archived items if desired (currently importing all)
                             // if (item.State == "archived") continue;
 
-                            // Determine collection and category
+                            // Determine collection based on URL/title analysis
                             var collectionName = DetermineCollection(item.Overview.Url, item.Overview.Title);
-                            var categoryName = DetermineCategory(item.Overview.Url, item.Overview.Title);
+                            
+                            // Use vault name as the category (1Password vaults map to categories)
+                            var categoryName = vaultName;
 
                             // Ensure collection exists
                             if (!collectionsToCreate.ContainsKey(collectionName))
@@ -627,15 +669,15 @@ public class OnePasswordImportProvider : IPasswordImportProvider
 
                             var collection = collectionsToCreate[collectionName];
 
-                            // Ensure category exists
+                            // Ensure category exists (using vault name)
                             var categoryKey = $"{collectionName}:{categoryName}";
                             if (!categoriesToCreate.ContainsKey(categoryKey))
                             {
                                 var newCategory = new Category
                                 {
                                     Name = categoryName,
-                                    Icon = GetCategoryIcon(categoryName),
-                                    Color = GetCategoryColor(categoryName)
+                                    Icon = GetVaultIcon(categoryName),
+                                    Color = GetVaultColor(categoryName)
                                 };
                                 categoriesToCreate[categoryKey] = (newCategory, collectionName);
                             }
