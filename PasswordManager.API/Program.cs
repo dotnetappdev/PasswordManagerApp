@@ -138,6 +138,10 @@ builder.Services.AddScoped<IDeviceService, PasswordManager.Services.Services.Dev
 builder.Services.AddScoped<IAuditLogService, PasswordManager.Services.Services.AuditLogService>();
 builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncService>();
 
+// Register import/export services
+builder.Services.AddSingleton<PasswordManager.Imports.Services.PluginDiscoveryService>();
+builder.Services.AddScoped<PasswordManager.Imports.Interfaces.IImportService, PasswordManager.Imports.Services.ImportService>();
+
 // Register cryptography services
 builder.Services.AddCryptographyServices();
 
@@ -308,6 +312,66 @@ using (var scope = app.Services.CreateScope())
         Log.Warning("1. Delete the migration files and recreate them, or");
         Log.Warning("2. Reset the database, or");
         Log.Warning("3. Manually apply the migrations using 'dotnet ef database update'");
+    }
+}
+
+// Preload import provider assemblies
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        Log.Information("Preloading import provider assemblies...");
+        var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        var importDlls = Directory.GetFiles(baseDirectory, "PasswordManagerImports.*.dll");
+        Log.Information("Found {Count} import provider DLLs", importDlls.Length);
+        
+        foreach (var dllPath in importDlls)
+        {
+            try
+            {
+                // Only load DLLs that match our import provider naming pattern
+                var fileName = Path.GetFileName(dllPath);
+                if (!fileName.StartsWith("PasswordManagerImports.", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+                
+                var assembly = System.Reflection.Assembly.LoadFrom(dllPath);
+                var providerTypes = assembly.GetTypes()
+                    .Where(t => typeof(PasswordManager.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
+                             && !t.IsInterface && !t.IsAbstract);
+                
+                var importService = scope.ServiceProvider.GetService<PasswordManager.Imports.Interfaces.IImportService>();
+                if (importService != null)
+                {
+                    foreach (var providerType in providerTypes)
+                    {
+                        // Validate the type has a parameterless constructor
+                        if (providerType.GetConstructor(Type.EmptyTypes) == null)
+                        {
+                            Log.Warning("Skipping provider {TypeName} - no parameterless constructor found", providerType.Name);
+                            continue;
+                        }
+                        
+                        var provider = Activator.CreateInstance(providerType) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
+                        if (provider != null)
+                        {
+                            importService.RegisterProvider(provider);
+                            Log.Information("Registered import provider: {ProviderName} v{Version}", provider.DisplayName, provider.Version);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                var fileName = Path.GetFileName(dllPath);
+                Log.Warning(ex, "Failed to load import provider from {FileName}", fileName);
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Error during import provider preload");
     }
 }
 
