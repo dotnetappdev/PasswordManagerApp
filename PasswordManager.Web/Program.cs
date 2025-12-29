@@ -195,33 +195,29 @@ app.MapRazorPages();
 // Initialize database with migration handling
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
     try
     {
-        // Check for pending migrations before applying
-        var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
-
-        if (pendingMigrations.Any())
+        // Use the centralized migration service to apply pending migrations for both contexts
+        var migrationService = scope.ServiceProvider.GetService<IDatabaseMigrationService>();
+        if (migrationService != null)
         {
-            // Log pending migrations but don't block startup
-            Console.WriteLine($"⚠️  Warning: Pending migrations found: {string.Join(", ", pendingMigrations)}");
-            Console.WriteLine("🔄 Applying pending migrations...");
-            await dbContext.Database.MigrateAsync();
-            Console.WriteLine("✅ Migrations applied successfully");
+            var result = await migrationService.ApplyPendingMigrationsAsync();
+            Console.WriteLine($"Database migration service result: Success={result.Success}, Message={result.Message}");
+
+            // Always attempt to ensure the PasswordItemTags junction table exists as a final safety net
+            try
+            {
+                await migrationService.EnsurePasswordItemTagsTableExistsAsync();
+                Console.WriteLine("Ensured PasswordItemTags junction table exists (fallback)");
+            }
+            catch (Exception ensureEx)
+            {
+                Console.WriteLine($"Warning: could not ensure PasswordItemTags table: {ensureEx.Message}");
+            }
         }
         else
         {
-            // Only use EnsureCreated if no migrations exist
-            var appliedMigrations = await dbContext.Database.GetAppliedMigrationsAsync();
-            if (!appliedMigrations.Any())
-            {
-                await dbContext.Database.EnsureCreatedAsync();
-                Console.WriteLine("📁 Database created using EnsureCreated");
-            }
-            else
-            {
-                Console.WriteLine("✅ Database already exists and is up to date");
-            }
+            Console.WriteLine("Warning: IDatabaseMigrationService not registered - skipping automatic migrations");
         }
 
         // Seed Identity data (roles and default users)

@@ -34,18 +34,18 @@ public partial class App : Application
     {
         this.InitializeComponent();
         _host = CreateHostBuilder().Build();
-        
+
         // Initialize Sentry.io
         InitializeSentry();
     }
-    
+
     private void InitializeSentry()
     {
         try
         {
             var configuration = _host.Services.GetRequiredService<IConfiguration>();
             var sentryConfig = configuration.GetSection("Sentry").Get<SentryConfiguration>();
-            
+
             if (sentryConfig?.IsConfigured == true)
             {
                 SentrySdk.Init(options =>
@@ -107,6 +107,26 @@ public partial class App : Application
 
                 var startupService = scope.ServiceProvider.GetRequiredService<IAppStartupService>();
                 await startupService.InitializeAsync();
+
+                // Ensure junction table exists as a final safety net for WinUI/SQLite scenarios
+                try
+                {
+                    var migrationService = scope.ServiceProvider.GetService<IDatabaseMigrationService>();
+                    if (migrationService != null)
+                    {
+                        await migrationService.EnsurePasswordItemTagsTableExistsAsync();
+                        System.Diagnostics.Debug.WriteLine("Ensured PasswordItemTags table exists via migration service fallback (WinUI)");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("IDatabaseMigrationService not registered in WinUI host - cannot ensure PasswordItemTags table");
+                    }
+                }
+                catch (Exception exEnsure)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Warning ensuring PasswordItemTags table in WinUI: {exEnsure.Message}");
+                    SentrySdk.CaptureException(exEnsure);
+                }
 
                 // Test the identity seeder with common master key (DEBUG only)
 #if DEBUG
@@ -171,7 +191,7 @@ public partial class App : Application
                 };
 
                 PasswordManager.WinUi.Services.ThemeHelper.SetTheme(theme);
-                
+
                 // Migrate to ApplicationData for future use
                 localSettings.Values["SelectedTheme"] = savedThemeFromSecure;
             }
@@ -288,8 +308,16 @@ public partial class App : Application
                 services.AddSingleton<IScheduledBackupService, ScheduledBackupService>();
                 services.AddHostedService<ScheduledBackupService>();
 
-                // Add logging
-                services.AddLogging(builder => builder.AddDebug());
+                // Add logging (Debug + file logger)
+                var tempLogPlatform = new WinUiPlatformService();
+                var logBase = Path.Combine(tempLogPlatform.GetAppDataDirectory(), "log");
+
+                services.AddLogging(builder =>
+                {
+                    builder.AddDebug();
+                    // Register file logger provider that appends logs into \log\{year}\{month}\{day}.txt
+                    builder.AddProvider(new PasswordManager.WinUi.Services.FileLogging.FileLoggerProvider(logBase, LogLevel.Debug));
+                });
             });
     }
 

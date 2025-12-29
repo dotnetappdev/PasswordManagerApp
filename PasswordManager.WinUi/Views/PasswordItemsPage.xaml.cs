@@ -21,6 +21,9 @@ public sealed partial class PasswordItemsPage : Page
     private PasswordItem? _selectedItem;
     private ICategoryInterface? _categoryService;
     private List<Category> _categories = new();
+    private ITagService? _tagService;
+    private IPasswordItemService? _passwordItemService;
+    private List<Tag> _allTags = new();
 
     public PasswordItemsPage()
     {
@@ -69,6 +72,21 @@ public sealed partial class PasswordItemsPage : Page
 
             // Load categories from database
             await LoadCategoriesAsync();
+
+            // Load tags and services
+            try
+            {
+                _tagService = _serviceProvider.GetService<ITagService>();
+                _passwordItemService = _serviceProvider.GetService<IPasswordItemService>();
+                if (_tagService != null)
+                {
+                    _allTags = (await _tagService.GetAllAsync()).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading tags: {ex.Message}");
+            }
 
             // Reload view model items after seeding to ensure UI shows newly created items
             try
@@ -527,6 +545,28 @@ public sealed partial class PasswordItemsPage : Page
         // Category
         var cat = item.Category;
         if (detailCategory != null) detailCategory.Text = cat != null ? cat.Name : "Uncategorized";
+
+        // Populate tags UI
+        try
+        {
+            var detailTags = GetElement<ItemsControl>("DetailTagsPanel");
+            if (detailTags != null)
+            {
+                detailTags.ItemsSource = item.Tags ?? new List<Tag>();
+            }
+
+            var editTagsPanel = GetElement<ItemsControl>("EditTagsPanel");
+            var editTagsSection = GetElement<StackPanel>("EditTagsSection");
+            if (editTagsPanel != null && editTagsSection != null)
+            {
+                // Populate edit tags panel with current tags
+                editTagsPanel.ItemsSource = item.Tags ?? new List<Tag>();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error populating tag UI: {ex.Message}");
+        }
     }
 
     private string GetTypeIcon(string type)
@@ -709,6 +749,140 @@ public sealed partial class PasswordItemsPage : Page
                 XamlRoot = this.XamlRoot
             };
             await errorDialog.ShowAsync();
+        }
+    }
+
+    // Tag suggest box handlers
+    private void TagSuggestBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+    {
+        try
+        {
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+            {
+                var query = sender.Text ?? string.Empty;
+                var suggestions = _allTags?
+                    .Where(t => t.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                    .Select(t => t.Name)
+                    .Distinct()
+                    .ToList() ?? new List<string>();
+
+                sender.ItemsSource = suggestions;
+            }
+        }
+        catch { }
+    }
+
+    private async void TagSuggestBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+    {
+        try
+        {
+            var chosen = args.SelectedItem as string;
+            if (string.IsNullOrEmpty(chosen)) return;
+            await AddTagByNameToSelectedItemAsync(chosen);
+            sender.Text = string.Empty;
+            sender.ItemsSource = null;
+        }
+        catch { }
+    }
+
+    private async void TagSuggestBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+    {
+        try
+        {
+            var text = args.QueryText?.Trim();
+            if (string.IsNullOrEmpty(text)) return;
+            await AddTagByNameToSelectedItemAsync(text!);
+            sender.Text = string.Empty;
+            sender.ItemsSource = null;
+        }
+        catch { }
+    }
+
+    private async Task AddTagByNameToSelectedItemAsync(string tagName)
+    {
+        if (_selectedItem == null || _serviceProvider == null) return;
+
+        try
+        {
+            // Find existing tag or create
+            Tag? tag = null;
+            if (_tagService != null)
+            {
+                tag = await _tagService.GetByNameAsync(tagName);
+            }
+
+            if (tag == null)
+            {
+                // create a new tag
+                if (_tagService != null)
+                {
+                    tag = await _tagService.CreateAsync(new Tag { Name = tagName, UserId = _selectedItem.UserId });
+                    // update local cache
+                    _allTags.Add(tag);
+                }
+                else
+                {
+                    // fallback: create in-memory tag object
+                    tag = new Tag { Id = 0, Name = tagName };
+                }
+            }
+
+            // Add to item if not present
+            if (!_selectedItem.Tags.Any(t => string.Equals(t.Name, tag.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                _selectedItem.Tags.Add(tag);
+                if (_passwordItemService != null)
+                {
+                    await _passwordItemService.UpdateAsync(_selectedItem);
+                }
+
+                // Refresh UI panels
+                var editTagsPanel = GetElement<ItemsControl>("EditTagsPanel");
+                var detailTags = GetElement<ItemsControl>("DetailTagsPanel");
+                if (editTagsPanel != null) editTagsPanel.ItemsSource = null; // force refresh
+                if (detailTags != null) detailTags.ItemsSource = null;
+                if (editTagsPanel != null) editTagsPanel.ItemsSource = _selectedItem.Tags;
+                if (detailTags != null) detailTags.ItemsSource = _selectedItem.Tags;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error adding tag: {ex.Message}");
+        }
+    }
+
+    private async void RemoveTagButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (sender is Button btn && _selectedItem != null)
+            {
+                var tagIdObj = btn.Tag;
+                if (tagIdObj == null) return;
+
+                int tagId = 0;
+                if (tagIdObj is int i) tagId = i;
+                else if (!int.TryParse(tagIdObj.ToString(), out tagId)) return;
+
+                var existing = _selectedItem.Tags.FirstOrDefault(t => t.Id == tagId || string.Equals(t.Id.ToString(), tagIdObj.ToString(), StringComparison.OrdinalIgnoreCase));
+                if (existing != null)
+                {
+                    _selectedItem.Tags.Remove(existing);
+                    if (_passwordItemService != null)
+                    {
+                        await _passwordItemService.UpdateAsync(_selectedItem);
+                    }
+
+                    var editTagsPanel = GetElement<ItemsControl>("EditTagsPanel");
+                    var detailTags = GetElement<ItemsControl>("DetailTagsPanel");
+                    if (editTagsPanel != null) editTagsPanel.ItemsSource = _selectedItem.Tags;
+                    if (detailTags != null) detailTags.ItemsSource = _selectedItem.Tags;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error removing tag: {ex.Message}");
         }
     }
 

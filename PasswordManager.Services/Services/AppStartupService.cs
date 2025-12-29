@@ -16,17 +16,20 @@ public class AppStartupService : IAppStartupService
     private readonly IDatabaseConfigurationService _databaseConfigService;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<AppStartupService> _logger;
+    private readonly IDatabaseMigrationService _migrationService;
 
     public AppStartupService(
         IAppSyncService? syncService,
         IDatabaseConfigurationService databaseConfigService,
         IServiceScopeFactory scopeFactory,
-        ILogger<AppStartupService> logger)
+        ILogger<AppStartupService> logger,
+        IDatabaseMigrationService migrationService)
     {
         _syncService = syncService;
         _databaseConfigService = databaseConfigService;
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _migrationService = migrationService;
     }
 
     public async Task InitializeAsync()
@@ -63,15 +66,25 @@ public class AppStartupService : IAppStartupService
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
                     var dbContextApp = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
-                    
+
+                    // Attempt to apply any pending migrations via migration service first
+                    try
+                    {
+                        await _migrationService.ApplyPendingMigrationsAsync();
+                    }
+                    catch (Exception migEx)
+                    {
+                        _logger.LogWarning(migEx, "Failed to apply migrations via migration service during startup (continuing)");
+                    }
+
                     // Check if the database exists and can connect
                     var canConnect = await dbContext.Database.CanConnectAsync();
                     var canConnectApp = await dbContextApp.Database.CanConnectAsync();
-                    
+
                     if (!canConnect || !canConnectApp)
                     {
                         _logger.LogInformation("Database not found, creating initial database structure");
-                        
+
                         // For new databases, use migrations to ensure proper Identity table creation
                         try
                         {
@@ -85,10 +98,10 @@ public class AppStartupService : IAppStartupService
                             await dbContext.Database.EnsureCreatedAsync();
                             await dbContextApp.Database.EnsureCreatedAsync();
                         }
-                        
+
                         // Seed Identity data for new installations
                         await SeedIdentityDataIfNeeded(scope);
-                        return; 
+                        return;
                     }
 
                     // Check if Identity tables exist - this is crucial for the reported issue
@@ -100,7 +113,7 @@ public class AppStartupService : IAppStartupService
                         {
                             await dbContextApp.Database.MigrateAsync();
                             _logger.LogInformation("Identity tables created successfully via migration");
-                            
+
                             // Verify tables were created successfully
                             var tablesExistAfterMigration = await CheckIdentityTablesExistAsync(dbContextApp);
                             if (!tablesExistAfterMigration)
@@ -123,7 +136,7 @@ public class AppStartupService : IAppStartupService
                                 throw new InvalidOperationException("Could not initialize database: both migration and EnsureCreated failed", ensureEx);
                             }
                         }
-                        
+
                         // Seed Identity data after creating tables
                         await SeedIdentityDataIfNeeded(scope);
                     }
@@ -146,7 +159,7 @@ public class AppStartupService : IAppStartupService
                             await dbContext.Database.MigrateAsync();
                             await dbContextApp.Database.MigrateAsync();
                         }
-                        
+
                         // Seed Identity data for new installations
                         await SeedIdentityDataIfNeeded(scope);
                         return;
@@ -155,19 +168,19 @@ public class AppStartupService : IAppStartupService
                     // Check for pending migrations
                     var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
                     var pendingMigrationsApp = await dbContextApp.Database.GetPendingMigrationsAsync();
-                    
+
                     // For desktop applications (WinUI), automatically apply pending migrations
                     // to ensure the database schema is up to date
-                    var isDesktopApp = Environment.OSVersion.Platform == PlatformID.Win32NT && 
+                    var isDesktopApp = Environment.OSVersion.Platform == PlatformID.Win32NT &&
                                       !Environment.GetCommandLineArgs().Any(arg => arg.Contains("server") || arg.Contains("web"));
-                    
+
                     if (pendingMigrations.Any() || pendingMigrationsApp.Any())
                     {
                         if (isDesktopApp)
                         {
-                            _logger.LogInformation("Desktop app detected with pending migrations (API: {ApiMigrations}, App: {AppMigrations}). Applying automatically.", 
+                            _logger.LogInformation("Desktop app detected with pending migrations (API: {ApiMigrations}, App: {AppMigrations}). Applying automatically.",
                                 pendingMigrations.Count(), pendingMigrationsApp.Count());
-                            
+
                             try
                             {
                                 // Apply pending migrations for both contexts
@@ -176,13 +189,13 @@ public class AppStartupService : IAppStartupService
                                     _logger.LogInformation("Applying {Count} pending API migrations", pendingMigrations.Count());
                                     await dbContext.Database.MigrateAsync();
                                 }
-                                
+
                                 if (pendingMigrationsApp.Any())
                                 {
                                     _logger.LogInformation("Applying {Count} pending App migrations", pendingMigrationsApp.Count());
                                     await dbContextApp.Database.MigrateAsync();
                                 }
-                                
+
                                 _logger.LogInformation("All pending migrations applied successfully");
                             }
                             catch (Exception migrationEx)
@@ -193,7 +206,7 @@ public class AppStartupService : IAppStartupService
                         }
                         else
                         {
-                            _logger.LogInformation("Web/server app detected with pending migrations (API: {ApiMigrations}, App: {AppMigrations}). User will need to apply them manually.", 
+                            _logger.LogInformation("Web/server app detected with pending migrations (API: {ApiMigrations}, App: {AppMigrations}). User will need to apply them manually.",
                                 pendingMigrations.Count(), pendingMigrationsApp.Count());
                         }
                     }
@@ -201,10 +214,10 @@ public class AppStartupService : IAppStartupService
                     {
                         _logger.LogInformation("Database is up to date");
                     }
-                    
+
                     // Seed Identity data and test data regardless of migration status
                     await SeedIdentityDataIfNeeded(scope);
-                    
+
                     // Seed test data if database is empty
                     await SeedTestDataIfNeeded(dbContext);
                 }
@@ -330,7 +343,7 @@ public class AppStartupService : IAppStartupService
             // Don't throw - seeding failure shouldn't prevent app startup
         }
     }
-    
+
     /// <summary>
     /// Checks if ASP.NET Core Identity tables exist in the database
     /// This is crucial for ensuring the reported issue is resolved
@@ -350,7 +363,7 @@ public class AppStartupService : IAppStartupService
             // Query sqlite_master to check if AspNetUsers table exists
             using var connection = dbContext.Database.GetDbConnection();
             await connection.OpenAsync();
-            
+
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='AspNetUsers'";
             var result = await command.ExecuteScalarAsync();
@@ -364,7 +377,7 @@ public class AppStartupService : IAppStartupService
 
             // Double-check by querying the Users table (this will throw if table doesn't exist)
             var userCount = await dbContext.Users.CountAsync();
-            
+
             _logger.LogInformation("Identity tables check passed: AspNetUsers table exists (user count: {UserCount})", userCount);
             return true;
         }

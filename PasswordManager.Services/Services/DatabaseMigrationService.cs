@@ -14,7 +14,7 @@ namespace PasswordManager.Services.Services
         private readonly PasswordManagerDbContextApp _contextApp;
         private readonly PasswordManagerDbContext _context;
         private readonly ILogger<DatabaseMigrationService> _logger;
-        
+
         private const string InMemoryProviderName = "Microsoft.EntityFrameworkCore.InMemory";
 
         public DatabaseMigrationService(
@@ -69,7 +69,7 @@ namespace PasswordManager.Services.Services
                 // Check if using InMemory database provider (which doesn't support migrations)
                 var isInMemoryApp = _contextApp.Database.ProviderName == InMemoryProviderName;
                 var isInMemoryApi = _context.Database.ProviderName == InMemoryProviderName;
-                
+
                 if (isInMemoryApp && isInMemoryApi)
                 {
                     _logger.LogInformation("Using InMemory database provider - migrations not supported");
@@ -109,6 +109,15 @@ namespace PasswordManager.Services.Services
 
                 if (!appliedMigrations.Any())
                 {
+                    // Ensure critical junction tables exist even if there were no migrations applied
+                    try
+                    {
+                        await EnsurePasswordItemTagsTableExistsAsync();
+                    }
+                    catch (Exception exEnsure)
+                    {
+                        _logger.LogWarning(exEnsure, "Failed to ensure PasswordItemTags table exists");
+                    }
                     return new MigrationResultDto
                     {
                         Success = true,
@@ -134,6 +143,29 @@ namespace PasswordManager.Services.Services
                     AppliedMigrations = appliedMigrations,
                     Exception = ex
                 };
+            }
+        }
+
+        public async Task EnsurePasswordItemTagsTableExistsAsync()
+        {
+            // Use a safe CREATE TABLE IF NOT EXISTS fallback for SQLite
+            try
+            {
+                var sql = @"CREATE TABLE IF NOT EXISTS PasswordItemTags (
+    PasswordItemsId INTEGER NOT NULL,
+    TagsId INTEGER NOT NULL,
+    PRIMARY KEY (PasswordItemsId, TagsId),
+    FOREIGN KEY (PasswordItemsId) REFERENCES PasswordItems (Id) ON DELETE CASCADE,
+    FOREIGN KEY (TagsId) REFERENCES Tags (Id) ON DELETE CASCADE
+);";
+
+                await _context.Database.ExecuteSqlRawAsync(sql);
+                _logger.LogInformation("Ensured PasswordItemTags table exists (SQL fallback executed)");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not ensure PasswordItemTags table via SQL fallback");
+                throw;
             }
         }
 

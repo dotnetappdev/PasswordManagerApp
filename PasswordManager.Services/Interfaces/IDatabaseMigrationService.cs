@@ -31,5 +31,10 @@ namespace PasswordManager.Services.Interfaces
         /// Get a list of pending migrations
         /// </summary>
         Task<IEnumerable<string>> GetPendingMigrationsAsync();
+
+        /// <summary>
+        /// Ensure critical junction tables exist (fallback for environments where migrations didn't run)
+        /// </summary>
+        Task EnsurePasswordItemTagsTableExistsAsync();
     }
 }

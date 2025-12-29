@@ -282,6 +282,24 @@ using (var scope = app.Services.CreateScope())
         }
 
         Log.Information("Database initialization completed for provider: {Provider}", databaseProvider);
+        // Invoke centralized migration service to ensure junction tables exist even if migration application skipped
+        try
+        {
+            var migrationService = scope.ServiceProvider.GetService<IDatabaseMigrationService>();
+            if (migrationService != null)
+            {
+                await migrationService.EnsurePasswordItemTagsTableExistsAsync();
+                Log.Information("Ensured PasswordItemTags junction table exists via migration service fallback");
+            }
+            else
+            {
+                Log.Warning("IDatabaseMigrationService not available - cannot ensure junction tables");
+            }
+        }
+        catch (Exception exEnsure)
+        {
+            Log.Warning(exEnsure, "Failed to ensure PasswordItemTags table via migration service");
+        }
     }
     catch (Exception ex)
     {
