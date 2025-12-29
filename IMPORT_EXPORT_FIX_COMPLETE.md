@@ -18,13 +18,21 @@ This document summarizes the fixes applied to resolve 1Password import issues an
 - **New (2023+)**: `Title,URL,Username,Password,Notes,Type`
 
 ### 2. 1Password 1PUX Import Support ✅
-**Status**: Already implemented and verified through code review
+**Status**: Implemented with vault-to-category mapping
 
 **Features**:
 - Reads ZIP archive structure
 - Extracts and parses export.data JSON
+- **Maps 1Password vaults to categories** (per user requirement)
 - Handles login fields, sections, custom fields, TOTP
-- Maps to collections, categories, and tags
+- Preserves tags and metadata
+- Vault-specific icons and colors
+
+**Vault Mapping**:
+- 1Password vaults are mapped to categories in the Password Manager
+- Vault names like "Personal", "Work", "Family" get appropriate icons and colors
+- Collections are auto-determined from URL/title analysis for organization
+- Example: "Personal" vault → Personal category (blue, person icon)
 
 ### 3. Import Providers Not Listed in Settings ✅
 **Problem**: Import providers weren't being discovered and registered, especially in API/Blazor scenarios.
@@ -182,10 +190,15 @@ Build logs show 0 errors, only nullable reference warnings (expected).
 
 All requested issues have been addressed:
 - ✅ 1Password CSV imports now work with both old and new formats
-- ✅ 1Password 1PUX imports verified working (through code review)
+- ✅ 1Password 1PUX imports now map vaults to categories (v1.2.0)
 - ✅ Import providers properly registered and discovered
 - ✅ Uno Platform settings page has import/export functionality
 - ✅ Code review feedback addressed
+- ✅ All other import providers verified working correctly
+
+**Key Enhancement**: 1Password vaults are now mapped to categories as requested, with vault-specific icons and colors for better visual organization.
+
+The application is now ready for manual testing with actual 1Password export files.
 - ✅ Build verification complete
 
 The application is now ready for manual testing with actual 1Password export files.
