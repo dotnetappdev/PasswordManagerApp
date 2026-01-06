@@ -21,6 +21,15 @@ public sealed partial class MainWindow : Window
     private bool _isAuthenticated = false;
     private string? _currentUserId = null;
     private Style? _navItemStyle; // cache for dynamic nav items
+    
+    // Protected default categories that cannot be deleted
+    private static readonly string[] ProtectedCategoryTags = new[] 
+    { 
+        "LoginCategory", 
+        "CreditCardCategory", 
+        "SecureNotesCategory", 
+        "WiFiCategory" 
+    };
 
     public MainWindow(IServiceProvider serviceProvider)
     {
@@ -855,9 +864,8 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
-            // Hardcoded categories that should not be deleted
-            var protectedCategories = new[] { "LoginCategory", "CreditCardCategory", "SecureNotesCategory", "WiFiCategory" };
-            if (protectedCategories.Contains(tag))
+            // Check if this is a protected default category
+            if (ProtectedCategoryTags.Contains(tag))
             {
                 await ShowErrorMessage("Cannot Delete", "This is a default category and cannot be deleted.");
                 return;
@@ -883,7 +891,13 @@ public sealed partial class MainWindow : Window
                     
                     // Get all categories and find the one matching the tag
                     var categories = await categoryService.GetAllAsync();
-                    var categoryToDelete = categories.FirstOrDefault(c => c.Name == tag || $"{c.Name}Category" == tag);
+                    
+                    // Try to match by various patterns: exact name match or tag without "Category" suffix
+                    var tagWithoutSuffix = tag.EndsWith("Category") ? tag.Substring(0, tag.Length - 8) : tag;
+                    var categoryToDelete = categories.FirstOrDefault(c => 
+                        string.Equals(c.Name, tag, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(c.Name, tagWithoutSuffix, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals($"{c.Name}Category", tag, StringComparison.OrdinalIgnoreCase));
                     
                     if (categoryToDelete != null)
                     {
