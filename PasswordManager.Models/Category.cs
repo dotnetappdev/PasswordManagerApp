@@ -10,6 +10,7 @@ namespace PasswordManager.Models
         public string? Description { get; set; } // Added for mapping
         public string? Icon { get; set; } // Optional: emoji or icon name
         public string? Color { get; set; } // Optional: for UI
+        public bool IsFavorite { get; set; } // Whether this category appears in navigation
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

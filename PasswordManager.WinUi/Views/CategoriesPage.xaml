@@ -139,9 +139,21 @@
                                                Orientation="Horizontal" 
                                                HorizontalAlignment="Right"
                                                Spacing="8">
+                                        <Button x:Name="ToggleFavoriteButton"
+                                               Background="Transparent"
+                                               BorderBrush="{StaticResource ModernWarningBrush}"
+                                               BorderThickness="1.5"
+                                               Foreground="{StaticResource ModernWarningBrush}"
+                                               CornerRadius="8"
+                                               Padding="12,8"
+                                               Click="ToggleFavoriteButton_Click"
+                                               ToolTipService.ToolTip="Toggle Favorite">
+                                            <FontIcon Glyph="&#xE734;" FontSize="14"/>
+                                        </Button>
                                         <Button Style="{StaticResource ModernSecondaryButtonStyle}"
                                                Padding="12,8"
-                                               Click="EditCategoryButton_Click">
+                                               Click="EditCategoryButton_Click"
+                                               ToolTipService.ToolTip="Edit">
                                             <FontIcon Glyph="&#xE70F;" FontSize="14"/>
                                         </Button>
                                         <Button Background="Transparent"
@@ -150,7 +162,8 @@
                                                Foreground="{StaticResource ModernErrorBrush}"
                                                CornerRadius="8"
                                                Padding="12,8"
-                                               Click="DeleteCategoryButton_Click">
+                                               Click="DeleteCategoryButton_Click"
+                                               ToolTipService.ToolTip="Delete">
                                             <FontIcon Glyph="&#xE74D;" FontSize="14"/>
                                         </Button>
                                     </StackPanel>

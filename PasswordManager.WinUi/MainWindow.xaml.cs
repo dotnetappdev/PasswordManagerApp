@@ -203,7 +203,17 @@ public sealed partial class MainWindow : Window
                     filterData.FilterName = "Recently Deleted";
                     break;
                 default:
-                    filterData.FilterName = "All Items";
+                    // Handle dynamic categories - filter by category name
+                    if (pageTag.EndsWith("Category"))
+                    {
+                        var categoryName = pageTag.Substring(0, pageTag.Length - 8); // Remove "Category" suffix
+                        filterData.FilterCategoryName = categoryName;
+                        filterData.FilterName = categoryName;
+                    }
+                    else
+                    {
+                        filterData.FilterName = "All Items";
+                    }
                     break;
             }
 
@@ -546,11 +556,85 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            // Dynamic categories are currently hidden to avoid duplicate or unclear sidebar entries.
-            // If you want dynamic categories visible again, re-enable population and ensure
-            // they are added to MainNavigationView.MenuItems (not a separate StackPanel) to
-            // avoid rendering issues.
-            await Task.CompletedTask;
+            using var scope = _serviceProvider.CreateScope();
+            var categoryService = scope.ServiceProvider.GetRequiredService<ICategoryInterface>();
+            
+            // Get all favorite categories
+            var categories = await categoryService.GetAllAsync();
+            var favoriteCategories = categories.Where(c => c.IsFavorite).ToList();
+            
+            // Update UI on dispatcher thread
+            Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+            {
+                var favPanel = this.Content as FrameworkElement;
+                var categoriesPanel = favPanel?.FindName("FavoriteCategoriesPanel") as StackPanel;
+                if (categoriesPanel == null) return;
+                
+                categoriesPanel.Children.Clear();
+                
+                foreach (var category in favoriteCategories)
+                {
+                    var navItem = new NavigationViewItem
+                    {
+                        Content = category.Name,
+                        Tag = $"{category.Name}Category",
+                        Style = _navItemStyle
+                    };
+                    
+                    // Set icon if available
+                    if (!string.IsNullOrWhiteSpace(category.Icon))
+                    {
+                        var icon = new FontIcon
+                        {
+                            Glyph = category.Icon,
+                            FontSize = 16
+                        };
+                        
+                        // Set color if available
+                        if (!string.IsNullOrWhiteSpace(category.Color))
+                        {
+                            try
+                            {
+                                var hex = category.Color.TrimStart('#');
+                                if (hex.Length == 6)
+                                {
+                                    var r = Convert.ToByte(hex.Substring(0, 2), 16);
+                                    var g = Convert.ToByte(hex.Substring(2, 2), 16);
+                                    var b = Convert.ToByte(hex.Substring(4, 2), 16);
+                                    icon.Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, r, g, b));
+                                }
+                            }
+                            catch { }
+                        }
+                        
+                        navItem.Icon = icon;
+                    }
+                    
+                    // Add context menu
+                    var contextMenu = new MenuFlyout();
+                    var toggleFavoriteItem = new MenuFlyoutItem
+                    {
+                        Text = "Remove from Favorites",
+                        Icon = new SymbolIcon(Symbol.UnFavorite),
+                        Tag = category.Id.ToString()
+                    };
+                    toggleFavoriteItem.Click += ToggleCategoryFavorite_Click;
+                    
+                    var deleteItem = new MenuFlyoutItem
+                    {
+                        Text = "Delete Category",
+                        Icon = new SymbolIcon(Symbol.Delete),
+                        Tag = category.Name
+                    };
+                    deleteItem.Click += DeleteCategoryItem_Click;
+                    
+                    contextMenu.Items.Add(toggleFavoriteItem);
+                    contextMenu.Items.Add(deleteItem);
+                    navItem.ContextFlyout = contextMenu;
+                    
+                    categoriesPanel.Children.Add(navItem);
+                }
+            });
         }
         catch (Exception ex)
         {
@@ -965,5 +1049,50 @@ public sealed partial class MainWindow : Window
         }
         catch { }
         return null; // fallback - style optional
+    }
+    
+    private async void ConfigureCategoriesButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Navigate to categories page for configuration
+            NavigateToPage("Categories");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error navigating to categories: {ex.Message}");
+            await ShowErrorMessage("Error", $"Failed to open categories page: {ex.Message}");
+        }
+    }
+    
+    private async void ToggleCategoryFavorite_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var menuItem = sender as MenuFlyoutItem;
+            var categoryIdStr = menuItem?.Tag?.ToString();
+            
+            if (string.IsNullOrEmpty(categoryIdStr) || !int.TryParse(categoryIdStr, out int categoryId))
+            {
+                await ShowErrorMessage("Error", "Unable to identify the category.");
+                return;
+            }
+            
+            using var scope = _serviceProvider.CreateScope();
+            var categoryService = scope.ServiceProvider.GetRequiredService<ICategoryInterface>();
+            
+            var category = await categoryService.GetByIdAsync(categoryId);
+            if (category != null)
+            {
+                category.IsFavorite = !category.IsFavorite;
+                await categoryService.UpdateAsync(category);
+                await RefreshCategoriesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error toggling category favorite: {ex.Message}");
+            await ShowErrorMessage("Error", $"Failed to update category: {ex.Message}");
+        }
     }
 }

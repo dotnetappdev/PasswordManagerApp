@@ -181,6 +181,42 @@ public sealed partial class CategoriesPage : Page
             }
         }
     }
+    
+    private async void ToggleFavoriteButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is Category category && _serviceProvider != null)
+        {
+            try
+            {
+                var categoryService = _serviceProvider.GetRequiredService<PasswordManager.Services.Interfaces.ICategoryInterface>();
+                category.IsFavorite = !category.IsFavorite;
+                await categoryService.UpdateAsync(category);
+                
+                if (_viewModel != null)
+                {
+                    await _viewModel.RefreshAsync();
+                }
+                
+                // Show toast notification
+                var message = category.IsFavorite 
+                    ? $"'{category.Name}' added to favorites" 
+                    : $"'{category.Name}' removed from favorites";
+                    
+                var infoDialog = new ContentDialog
+                {
+                    Title = "Success",
+                    Content = message,
+                    CloseButtonText = "OK"
+                };
+                ConfigureDialogForCentering(infoDialog);
+                await infoDialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorDialog($"Error updating category: {ex.Message}");
+            }
+        }
+    }
 
     private async Task ShowErrorDialog(string message)
     {
