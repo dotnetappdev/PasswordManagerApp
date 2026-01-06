@@ -185,10 +185,6 @@ public sealed partial class MainWindow : Window
                     filterData.FilterType = ItemType.SecureNote;
                     filterData.FilterName = "Secure Notes";
                     break;
-                case "IdentityCategory":
-                    filterData.FilterType = ItemType.Identity;
-                    filterData.FilterName = "Identity";
-                    break;
                 case "WiFiCategory":
                     filterData.FilterType = ItemType.WiFi;
                     filterData.FilterName = "WiFi";
@@ -893,7 +889,9 @@ public sealed partial class MainWindow : Window
                     var categories = await categoryService.GetAllAsync();
                     
                     // Try to match by various patterns: exact name match or tag without "Category" suffix
-                    var tagWithoutSuffix = tag.EndsWith("Category") ? tag.Substring(0, tag.Length - 8) : tag;
+                    var tagWithoutSuffix = tag.EndsWith("Category", StringComparison.OrdinalIgnoreCase) 
+                        ? tag[..^8] 
+                        : tag;
                     var categoryToDelete = categories.FirstOrDefault(c => 
                         string.Equals(c.Name, tag, StringComparison.OrdinalIgnoreCase) ||
                         string.Equals(c.Name, tagWithoutSuffix, StringComparison.OrdinalIgnoreCase) ||
