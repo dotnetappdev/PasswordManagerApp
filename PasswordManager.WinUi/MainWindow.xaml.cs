@@ -890,13 +890,14 @@ public sealed partial class MainWindow : Window
                     var categories = await categoryService.GetAllAsync();
                     
                     // Try to match by various patterns: exact name match or tag without "Category" suffix
-                    var tagWithoutSuffix = tag.EndsWith("Category", StringComparison.OrdinalIgnoreCase) 
-                        ? tag[..^8] 
+                    const string categorySuffix = "Category";
+                    var tagWithoutSuffix = tag.EndsWith(categorySuffix, StringComparison.OrdinalIgnoreCase) 
+                        ? tag[..^categorySuffix.Length] 
                         : tag;
                     var categoryToDelete = categories.FirstOrDefault(c => 
                         string.Equals(c.Name, tag, StringComparison.OrdinalIgnoreCase) ||
                         string.Equals(c.Name, tagWithoutSuffix, StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals($"{c.Name}Category", tag, StringComparison.OrdinalIgnoreCase));
+                        string.Equals($"{c.Name}{categorySuffix}", tag, StringComparison.OrdinalIgnoreCase));
                     
                     if (categoryToDelete != null)
                     {
