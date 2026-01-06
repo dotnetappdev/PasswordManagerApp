@@ -112,7 +112,7 @@ public partial class App : Application
                     if (platformService != null)
                     {
                         var appDataDir = platformService.GetAppDataDirectory();
-                        var dbPath = System.IO.Path.Combine(appDataDir, "data", "passwordmanager.db");
+                        var dbPath = System.IO.Path.Combine(appDataDir, "passwordmanager.db");
                         var dbDirectory = System.IO.Path.GetDirectoryName(dbPath);
 
                         // ALWAYS ensure directory exists before any DB operations
@@ -270,7 +270,7 @@ public partial class App : Application
                 // Configure database context with default SQLite
                 var tempPlatformService = new WinUiPlatformService();
                 var appDataDir = tempPlatformService.GetAppDataDirectory();
-                var defaultDbPath = Path.Combine(appDataDir, "data", "passwordmanager.db");
+                var defaultDbPath = Path.Combine(appDataDir, "passwordmanager.db");
                 var defaultDirectory = Path.GetDirectoryName(defaultDbPath);
 
                 System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] LocalAppData: {Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}");

@@ -855,10 +855,18 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
+            // Hardcoded categories that should not be deleted
+            var protectedCategories = new[] { "LoginCategory", "CreditCardCategory", "SecureNotesCategory", "WiFiCategory" };
+            if (protectedCategories.Contains(tag))
+            {
+                await ShowErrorMessage("Cannot Delete", "This is a default category and cannot be deleted.");
+                return;
+            }
+
             var confirmDialog = new ContentDialog
             {
                 Title = "Delete Category",
-                Content = $"Are you sure you want to delete the category '{tag}'? This action cannot be undone.",
+                Content = $"Are you sure you want to delete this category? Items in this category will not be deleted, but they will lose their category assignment.",
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Close,
@@ -868,8 +876,34 @@ public sealed partial class MainWindow : Window
             var result = await confirmDialog.ShowAsync();
             if (result == ContentDialogResult.Primary)
             {
-                // TODO: Implement deletion logic using category service
-                await ShowInfoMessage("Category Deleted", $"Category '{tag}' was deleted (not actually implemented).");
+                try
+                {
+                    using var scope = _serviceProvider.CreateScope();
+                    var categoryService = scope.ServiceProvider.GetRequiredService<ICategoryInterface>();
+                    
+                    // Get all categories and find the one matching the tag
+                    var categories = await categoryService.GetAllAsync();
+                    var categoryToDelete = categories.FirstOrDefault(c => c.Name == tag || $"{c.Name}Category" == tag);
+                    
+                    if (categoryToDelete != null)
+                    {
+                        await categoryService.DeleteAsync(categoryToDelete.Id);
+                        
+                        // Refresh categories in the navigation
+                        await RefreshCategoriesAsync();
+                        
+                        await ShowInfoMessage("Category Deleted", $"Category was successfully deleted.");
+                    }
+                    else
+                    {
+                        await ShowErrorMessage("Error", "Category not found in database.");
+                    }
+                }
+                catch (Exception deleteEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error deleting category from database: {deleteEx.Message}");
+                    await ShowErrorMessage("Error", $"Failed to delete category: {deleteEx.Message}");
+                }
             }
         }
         catch (Exception ex)

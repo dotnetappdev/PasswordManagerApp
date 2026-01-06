@@ -26,11 +26,9 @@
                             Height="40"
                             FontSize="16"/>
 
-            <!-- Main Category Grid - 3 columns layout like 1Password -->
+            <!-- Main Category Grid - 3 columns, 2 rows layout -->
             <Grid x:Name="MainCategoryGrid">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
@@ -40,7 +38,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Top row - Main categories -->
+                <!-- Top row - Main categories matching navigation menu -->
                 <Button x:Name="LoginButton"
                         Grid.Row="0"
                         Grid.Column="0"
@@ -68,43 +66,16 @@
                     </StackPanel>
                 </Button>
 
-                <Button x:Name="SecureNoteButton"
-                        Grid.Row="0"
-                        Grid.Column="1"
-                        Click="CategoryButton_Click"
-                        Tag="Secure Note"
-                        Style="{StaticResource CardButtonStyle}"
-                        Margin="8"
-                        MinHeight="100">
-                    <StackPanel Spacing="8">
-                        <Border Background="#f39c12"
-                                CornerRadius="12"
-                                Width="48"
-                                Height="48">
-                            <FontIcon Glyph="&#xE70F;"
-                                      FontSize="24"
-                                      Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                      HorizontalAlignment="Center"
-                                      VerticalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="Secure Note"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                   HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
-
                 <Button x:Name="CreditCardButton"
                         Grid.Row="0"
-                        Grid.Column="2"
+                        Grid.Column="1"
                         Click="CategoryButton_Click"
                         Tag="Credit Card"
                         Style="{StaticResource CardButtonStyle}"
                         Margin="8"
                         MinHeight="100">
                     <StackPanel Spacing="8">
-                        <Border Background="#3498db"
+                        <Border Background="#10b981"
                                 CornerRadius="12"
                                 Width="48"
                                 Height="48">
@@ -122,27 +93,54 @@
                     </StackPanel>
                 </Button>
 
-                <!-- Second row -->
-                <Button x:Name="IdentityButton"
-                        Grid.Row="1"
-                        Grid.Column="0"
+                <Button x:Name="SecureNoteButton"
+                        Grid.Row="0"
+                        Grid.Column="2"
                         Click="CategoryButton_Click"
-                        Tag="Identity"
+                        Tag="Secure Note"
                         Style="{StaticResource CardButtonStyle}"
                         Margin="8"
                         MinHeight="100">
                     <StackPanel Spacing="8">
-                        <Border Background="#27ae60"
+                        <Border Background="#f59e0b"
                                 CornerRadius="12"
                                 Width="48"
                                 Height="48">
-                            <FontIcon Glyph="&#xE77B;"
+                            <FontIcon Glyph="&#xE70F;"
                                       FontSize="24"
                                       Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="Identity"
+                        <TextBlock Text="Secure Note"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Second row -->
+                <Button x:Name="WiFiButton"
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Click="CategoryButton_Click"
+                        Tag="WiFi"
+                        Style="{StaticResource CardButtonStyle}"
+                        Margin="8"
+                        MinHeight="100">
+                    <StackPanel Spacing="8">
+                        <Border Background="#8b5cf6"
+                                CornerRadius="12"
+                                Width="48"
+                                Height="48">
+                            <FontIcon Glyph="&#xE701;"
+                                      FontSize="24"
+                                      Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="WiFi Password"
                                    FontSize="16"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource ModernTextPrimaryBrush}"
@@ -159,11 +157,11 @@
                         Margin="8"
                         MinHeight="100">
                     <StackPanel Spacing="8">
-                        <Border Background="#8e44ad"
+                        <Border Background="#ef4444"
                                 CornerRadius="12"
                                 Width="48"
                                 Height="48">
-                            <FontIcon Glyph="&#xE8D7;"
+                            <FontIcon Glyph="&#xE1F5;"
                                       FontSize="24"
                                       Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
@@ -177,298 +175,32 @@
                     </StackPanel>
                 </Button>
 
-                <Button x:Name="DocumentButton"
+                <Button x:Name="PasskeyButton"
                         Grid.Row="1"
                         Grid.Column="2"
                         Click="CategoryButton_Click"
-                        Tag="Document"
+                        Tag="Passkey"
                         Style="{StaticResource CardButtonStyle}"
                         Margin="8"
                         MinHeight="100">
                     <StackPanel Spacing="8">
-                        <Border Background="#2c3e50"
+                        <Border Background="#ec4899"
                                 CornerRadius="12"
                                 Width="48"
                                 Height="48">
-                            <FontIcon Glyph="&#xE8A5;"
+                            <FontIcon Glyph="&#xE8D7;"
                                       FontSize="24"
                                       Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="Document"
+                        <TextBlock Text="Passkey"
                                    FontSize="16"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource ModernTextPrimaryBrush}"
                                    HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
-
-                <!-- Extended categories (initially visible like 1Password) -->
-                <StackPanel x:Name="ExtendedCategoriesPanel"
-                            Grid.Row="2"
-                            Grid.Column="0"
-                            Grid.ColumnSpan="3">
-                    <Grid Margin="0,12,0,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Row 1 -->
-                        <Button x:Name="SSHKeyButton"
-                                Grid.Row="0"
-                                Grid.Column="0"
-                                Click="CategoryButton_Click"
-                                Tag="SSH Key"
-                                Style="{StaticResource CardButtonStyle}"
-                                Margin="8"
-                                MinHeight="100">
-                            <StackPanel Spacing="8">
-                                <Border Background="#e67e22"
-                                        CornerRadius="12"
-                                        Width="48"
-                                        Height="48">
-                                    <FontIcon Glyph="&#xE8AC;"
-                                              FontSize="24"
-                                              Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Text="SSH Key"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-
-                        <Button x:Name="APICredentialsButton"
-                                Grid.Row="0"
-                                Grid.Column="1"
-                                Click="CategoryButton_Click"
-                                Tag="API Credentials"
-                                Style="{StaticResource CardButtonStyle}"
-                                Margin="8"
-                                MinHeight="100">
-                            <StackPanel Spacing="8">
-                                <Border Background="#16a085"
-                                        CornerRadius="12"
-                                        Width="48"
-                                        Height="48">
-                                    <TextBlock Text="&#x3C;&#x2F;&#x3E;"
-                                               FontSize="20"
-                                               FontWeight="Bold"
-                                               Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Text="API Credentials"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-
-                        <Button x:Name="BankAccountButton"
-                                Grid.Row="0"
-                                Grid.Column="2"
-                                Click="CategoryButton_Click"
-                                Tag="Bank Account"
-                                Style="{StaticResource CardButtonStyle}"
-                                Margin="8"
-                                MinHeight="100">
-                            <StackPanel Spacing="8">
-                                <Border Background="#2980b9"
-                                        CornerRadius="12"
-                                        Width="48"
-                                        Height="48">
-                                    <FontIcon Glyph="&#xE8BC;"
-                                              FontSize="24"
-                                              Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Text="Bank Account"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-
-                        <!-- Row 2 -->
-                        <Button x:Name="CryptoWalletButton"
-                                Grid.Row="1"
-                                Grid.Column="0"
-                                Click="CategoryButton_Click"
-                                Tag="Crypto Wallet"
-                                Style="{StaticResource CardButtonStyle}"
-                                Margin="8"
-                                MinHeight="100">
-                            <StackPanel Spacing="8">
-                                <Border Background="#9b59b6"
-                                        CornerRadius="12"
-                                        Width="48"
-                                        Height="48">
-                                    <FontIcon Glyph="&#xE9E2;"
-                                              FontSize="24"
-                                              Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Text="Crypto Wallet"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-
-                        <Button x:Name="DatabaseButton"
-                                Grid.Row="1"
-                                Grid.Column="1"
-                                Click="CategoryButton_Click"
-                                Tag="Database"
-                                Style="{StaticResource CardButtonStyle}"
-                                Margin="8"
-                                MinHeight="100">
-                            <StackPanel Spacing="8">
-                                <Border Background="#34495e"
-                                        CornerRadius="12"
-                                        Width="48"
-                                        Height="48">
-                                    <FontIcon Glyph="&#xE968;"
-                                              FontSize="24"
-                                              Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Text="Database"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-
-                        <Button x:Name="DriverLicenseButton"
-                                Grid.Row="1"
-                                Grid.Column="2"
-                                Click="CategoryButton_Click"
-                                Tag="Driver License"
-                                Style="{StaticResource CardButtonStyle}"
-                                Margin="8"
-                                MinHeight="100">
-                            <StackPanel Spacing="8">
-                                <Border Background="#e74c3c"
-                                        CornerRadius="12"
-                                        Width="48"
-                                        Height="48">
-                                    <FontIcon Glyph="&#xE8D4;"
-                                              FontSize="24"
-                                              Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Text="Driver License"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-
-                        <!-- Row 3 -->
-                        <Button x:Name="EmailButton"
-                                Grid.Row="2"
-                                Grid.Column="0"
-                                Click="CategoryButton_Click"
-                                Tag="Email"
-                                Style="{StaticResource CardButtonStyle}"
-                                Margin="8"
-                                MinHeight="100">
-                            <StackPanel Spacing="8">
-                                <Border Background="#1abc9c"
-                                        CornerRadius="12"
-                                        Width="48"
-                                        Height="48">
-                                    <FontIcon Glyph="&#xE715;"
-                                              FontSize="24"
-                                              Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Text="Email"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-
-                        <Button x:Name="MedicalRecordButton"
-                                Grid.Row="2"
-                                Grid.Column="1"
-                                Click="CategoryButton_Click"
-                                Tag="Medical Record"
-                                Style="{StaticResource CardButtonStyle}"
-                                Margin="8"
-                                MinHeight="100">
-                            <StackPanel Spacing="8">
-                                <Border Background="#e91e63"
-                                        CornerRadius="12"
-                                        Width="48"
-                                        Height="48">
-                                    <FontIcon Glyph="&#xE95E;"
-                                              FontSize="24"
-                                              Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Text="Medical Record"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-
-                        <Button x:Name="MembershipButton"
-                                Grid.Row="2"
-                                Grid.Column="2"
-                                Click="CategoryButton_Click"
-                                Tag="Membership"
-                                Style="{StaticResource CardButtonStyle}"
-                                Margin="8"
-                                MinHeight="100">
-                            <StackPanel Spacing="8">
-                                <Border Background="#795548"
-                                        CornerRadius="12"
-                                        Width="48"
-                                        Height="48">
-                                    <FontIcon Glyph="&#xE8D8;"
-                                              FontSize="24"
-                                              Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Text="Membership"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                    </Grid>
-                </StackPanel>
             </Grid>
 
         </StackPanel>
