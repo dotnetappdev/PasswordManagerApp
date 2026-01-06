@@ -26,18 +26,9 @@ public sealed partial class ItemTypeSelectionDialog : ContentDialog
                 "Login" => ItemType.Login,
                 "Credit Card" => ItemType.CreditCard,
                 "Secure Note" => ItemType.SecureNote,
-                "Identity" => ItemType.SecureNote, // Use SecureNote for identity items
+                "WiFi" => ItemType.WiFi,
                 "Password" => ItemType.Password,
-                "Document" => ItemType.SecureNote, // Use SecureNote for documents
-                "SSH Key" => ItemType.SecureNote,
-                "API Credentials" => ItemType.SecureNote,
-                "Bank Account" => ItemType.SecureNote,
-                "Crypto Wallet" => ItemType.SecureNote,
-                "Database" => ItemType.SecureNote,
-                "Driver License" => ItemType.SecureNote,
-                "Email" => ItemType.SecureNote,
-                "Medical Record" => ItemType.SecureNote,
-                "Membership" => ItemType.SecureNote,
+                "Passkey" => ItemType.Passkey,
                 _ => ItemType.Login // Default fallback
             };
 

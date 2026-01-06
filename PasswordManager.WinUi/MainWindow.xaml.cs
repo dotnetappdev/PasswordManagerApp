@@ -21,6 +21,16 @@ public sealed partial class MainWindow : Window
     private bool _isAuthenticated = false;
     private string? _currentUserId = null;
     private Style? _navItemStyle; // cache for dynamic nav items
+    
+    // Protected default categories that cannot be deleted
+    private static readonly string[] ProtectedCategoryTags = new[] 
+    { 
+        "LoginCategory", 
+        "CreditCardCategory", 
+        "SecureNotesCategory", 
+        "WiFiCategory",
+        "PasskeysCategory"
+    };
 
     public MainWindow(IServiceProvider serviceProvider)
     {
@@ -176,10 +186,6 @@ public sealed partial class MainWindow : Window
                     filterData.FilterType = ItemType.SecureNote;
                     filterData.FilterName = "Secure Notes";
                     break;
-                case "IdentityCategory":
-                    filterData.FilterType = ItemType.Identity;
-                    filterData.FilterName = "Identity";
-                    break;
                 case "WiFiCategory":
                     filterData.FilterType = ItemType.WiFi;
                     filterData.FilterName = "WiFi";
@@ -197,7 +203,17 @@ public sealed partial class MainWindow : Window
                     filterData.FilterName = "Recently Deleted";
                     break;
                 default:
-                    filterData.FilterName = "All Items";
+                    // Handle dynamic categories - filter by category name
+                    if (pageTag.EndsWith("Category"))
+                    {
+                        var categoryName = pageTag.Substring(0, pageTag.Length - 8); // Remove "Category" suffix
+                        filterData.FilterCategoryName = categoryName;
+                        filterData.FilterName = categoryName;
+                    }
+                    else
+                    {
+                        filterData.FilterName = "All Items";
+                    }
                     break;
             }
 
@@ -540,11 +556,89 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            // Dynamic categories are currently hidden to avoid duplicate or unclear sidebar entries.
-            // If you want dynamic categories visible again, re-enable population and ensure
-            // they are added to MainNavigationView.MenuItems (not a separate StackPanel) to
-            // avoid rendering issues.
-            await Task.CompletedTask;
+            using var scope = _serviceProvider.CreateScope();
+            var categoryService = scope.ServiceProvider.GetRequiredService<ICategoryInterface>();
+            
+            // Get all favorite categories
+            var categories = await categoryService.GetAllAsync();
+            var favoriteCategories = categories.Where(c => c.IsFavorite).ToList();
+            
+            // Update UI on dispatcher thread
+            Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+            {
+                var favPanel = this.Content as FrameworkElement;
+                var categoriesPanel = favPanel?.FindName("FavoriteCategoriesPanel") as StackPanel;
+                if (categoriesPanel == null) return;
+                
+                categoriesPanel.Children.Clear();
+                
+                foreach (var category in favoriteCategories)
+                {
+                    var navItem = new NavigationViewItem
+                    {
+                        Content = category.Name,
+                        Tag = $"{category.Name}Category",
+                        Style = _navItemStyle
+                    };
+                    
+                    // Set icon if available
+                    if (!string.IsNullOrWhiteSpace(category.Icon))
+                    {
+                        var icon = new FontIcon
+                        {
+                            Glyph = category.Icon,
+                            FontSize = 16
+                        };
+                        
+                        // Set color if available
+                        if (!string.IsNullOrWhiteSpace(category.Color))
+                        {
+                            try
+                            {
+                                var hex = category.Color.TrimStart('#');
+                                if (hex.Length == 6)
+                                {
+                                    var r = Convert.ToByte(hex.Substring(0, 2), 16);
+                                    var g = Convert.ToByte(hex.Substring(2, 2), 16);
+                                    var b = Convert.ToByte(hex.Substring(4, 2), 16);
+                                    icon.Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, r, g, b));
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Error parsing category color '{category.Color}': {ex.Message}");
+                                // Use default color on parse error
+                            }
+                        }
+                        
+                        navItem.Icon = icon;
+                    }
+                    
+                    // Add context menu
+                    var contextMenu = new MenuFlyout();
+                    var toggleFavoriteItem = new MenuFlyoutItem
+                    {
+                        Text = "Remove from Favorites",
+                        Icon = new SymbolIcon(Symbol.UnFavorite),
+                        Tag = category.Id.ToString()
+                    };
+                    toggleFavoriteItem.Click += ToggleCategoryFavorite_Click;
+                    
+                    var deleteItem = new MenuFlyoutItem
+                    {
+                        Text = "Delete Category",
+                        Icon = new SymbolIcon(Symbol.Delete),
+                        Tag = category.Id.ToString() // Use ID for deletion
+                    };
+                    deleteItem.Click += DeleteCategoryItem_Click;
+                    
+                    contextMenu.Items.Add(toggleFavoriteItem);
+                    contextMenu.Items.Add(deleteItem);
+                    navItem.ContextFlyout = contextMenu;
+                    
+                    categoriesPanel.Children.Add(navItem);
+                }
+            });
         }
         catch (Exception ex)
         {
@@ -855,10 +949,17 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
+            // Check if this is a protected default category
+            if (ProtectedCategoryTags.Contains(tag))
+            {
+                await ShowErrorMessage("Cannot Delete", "This is a default category and cannot be deleted.");
+                return;
+            }
+
             var confirmDialog = new ContentDialog
             {
                 Title = "Delete Category",
-                Content = $"Are you sure you want to delete the category '{tag}'? This action cannot be undone.",
+                Content = $"Are you sure you want to delete this category? Items in this category will not be deleted, but they will lose their category assignment.",
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Close,
@@ -868,8 +969,51 @@ public sealed partial class MainWindow : Window
             var result = await confirmDialog.ShowAsync();
             if (result == ContentDialogResult.Primary)
             {
-                // TODO: Implement deletion logic using category service
-                await ShowInfoMessage("Category Deleted", $"Category '{tag}' was deleted (not actually implemented).");
+                try
+                {
+                    using var scope = _serviceProvider.CreateScope();
+                    var categoryService = scope.ServiceProvider.GetRequiredService<ICategoryInterface>();
+                    
+                    // Try to parse as category ID first (for dynamic categories from navigation)
+                    if (int.TryParse(tag, out int categoryId))
+                    {
+                        var category = await categoryService.GetByIdAsync(categoryId);
+                        if (category != null)
+                        {
+                            await categoryService.DeleteAsync(category.Id);
+                            await RefreshCategoriesAsync();
+                            await ShowInfoMessage("Category Deleted", $"Category '{category.Name}' was successfully deleted.");
+                            return;
+                        }
+                    }
+                    
+                    // Fallback: Try to match by category name patterns (for legacy hardcoded categories)
+                    var categories = await categoryService.GetAllAsync();
+                    const string categorySuffix = "Category";
+                    var tagWithoutSuffix = tag.EndsWith(categorySuffix, StringComparison.OrdinalIgnoreCase) 
+                        ? tag[..^categorySuffix.Length] 
+                        : tag;
+                    var categoryToDelete = categories.FirstOrDefault(c => 
+                        string.Equals(c.Name, tag, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(c.Name, tagWithoutSuffix, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals($"{c.Name}{categorySuffix}", tag, StringComparison.OrdinalIgnoreCase));
+                    
+                    if (categoryToDelete != null)
+                    {
+                        await categoryService.DeleteAsync(categoryToDelete.Id);
+                        await RefreshCategoriesAsync();
+                        await ShowInfoMessage("Category Deleted", $"Category '{categoryToDelete.Name}' was successfully deleted.");
+                    }
+                    else
+                    {
+                        await ShowErrorMessage("Error", "Category not found in database.");
+                    }
+                }
+                catch (Exception deleteEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error deleting category from database: {deleteEx.Message}");
+                    await ShowErrorMessage("Error", $"Failed to delete category: {deleteEx.Message}");
+                }
             }
         }
         catch (Exception ex)
@@ -917,5 +1061,50 @@ public sealed partial class MainWindow : Window
         }
         catch { }
         return null; // fallback - style optional
+    }
+    
+    private async void ConfigureCategoriesButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Navigate to categories page for configuration
+            NavigateToPage("Categories");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error navigating to categories: {ex.Message}");
+            await ShowErrorMessage("Error", $"Failed to open categories page: {ex.Message}");
+        }
+    }
+    
+    private async void ToggleCategoryFavorite_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var menuItem = sender as MenuFlyoutItem;
+            var categoryIdStr = menuItem?.Tag?.ToString();
+            
+            if (string.IsNullOrEmpty(categoryIdStr) || !int.TryParse(categoryIdStr, out int categoryId))
+            {
+                await ShowErrorMessage("Error", "Unable to identify the category.");
+                return;
+            }
+            
+            using var scope = _serviceProvider.CreateScope();
+            var categoryService = scope.ServiceProvider.GetRequiredService<ICategoryInterface>();
+            
+            var category = await categoryService.GetByIdAsync(categoryId);
+            if (category != null)
+            {
+                category.IsFavorite = !category.IsFavorite;
+                await categoryService.UpdateAsync(category);
+                await RefreshCategoriesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error toggling category favorite: {ex.Message}");
+            await ShowErrorMessage("Error", $"Failed to update category: {ex.Message}");
+        }
     }
 }

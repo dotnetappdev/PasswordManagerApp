@@ -210,88 +210,30 @@
                                   VerticalAlignment="Center"
                                   HorizontalAlignment="Center"/>
                     </Button>
+                    
+                    <!-- Configure Categories Button -->
+                    <Button Grid.Column="2"
+                            x:Name="ConfigureCategoriesButton"
+                            Width="28"
+                            Height="28"
+                            Margin="4,0"
+                            Background="Transparent"
+                            Foreground="{StaticResource ModernTextSecondaryBrush}"
+                            BorderThickness="1"
+                            BorderBrush="{StaticResource ModernBorderBrush}"
+                            CornerRadius="14"
+                            ToolTipService.ToolTip="Configure Favorite Categories"
+                            Click="ConfigureCategoriesButton_Click">
+                        <FontIcon Glyph="&#xE713;"
+                                  FontSize="14"
+                                  VerticalAlignment="Center"
+                                  HorizontalAlignment="Center"/>
+                    </Button>
                 </Grid>
 
-                <!-- Category Items - Auto-expanded -->
-                <NavigationViewItem x:Name="CreditCardCategoryNavItem"
-                                    Content="Credit Cards"
-                                    Tag="CreditCardCategory"
-                                    Style="{StaticResource ModernNavigationViewItemStyle}">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8C7;"
-                                  FontSize="16"
-                                  Foreground="#10b981"/>
-                    </NavigationViewItem.Icon>
-                    <NavigationViewItem.ContextFlyout>
-                        <MenuFlyout>
-                            <MenuFlyoutItem Text="Delete Category"
-                                            Icon="Delete"
-                                            Click="DeleteCategoryItem_Click"
-                                            Tag="CreditCardCategory"/>
-                        </MenuFlyout>
-                    </NavigationViewItem.ContextFlyout>
-                </NavigationViewItem>
-
-                <NavigationViewItem x:Name="SecureNotesCategoryNavItem"
-                                    Content="Secure Notes"
-                                    Tag="SecureNotesCategory"
-                                    Style="{StaticResource ModernNavigationViewItemStyle}">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE70F;"
-                                  FontSize="16"
-                                  Foreground="#f59e0b"/>
-                    </NavigationViewItem.Icon>
-                    <NavigationViewItem.ContextFlyout>
-                        <MenuFlyout>
-                            <MenuFlyoutItem Text="Delete Category"
-                                            Icon="Delete"
-                                            Click="DeleteCategoryItem_Click"
-                                            Tag="SecureNotesCategory"/>
-                        </MenuFlyout>
-                    </NavigationViewItem.ContextFlyout>
-                </NavigationViewItem>
-
-                <NavigationViewItem x:Name="WiFiPasswordsCategoryNavItem"
-                                    Content="WiFi Passwords"
-                                    Tag="WiFiCategory"
-                                    Style="{StaticResource ModernNavigationViewItemStyle}">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE701;"
-                                  FontSize="16"
-                                  Foreground="#8b5cf6"/>
-                    </NavigationViewItem.Icon>
-                    <NavigationViewItem.ContextFlyout>
-                        <MenuFlyout>
-                            <MenuFlyoutItem Text="Delete Category"
-                                            Icon="Delete"
-                                            Click="DeleteCategoryItem_Click"
-                                            Tag="WiFiCategory"/>
-                        </MenuFlyout>
-                    </NavigationViewItem.ContextFlyout>
-                </NavigationViewItem>
-
-                <NavigationViewItem x:Name="WorkAccountsCategoryNavItem"
-                                    Content="Work Accounts"
-                                    Tag="WorkAccountsCategory"
-                                    Style="{StaticResource ModernNavigationViewItemStyle}">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8FC;"
-                                  FontSize="16"
-                                  Foreground="#f97316"/>
-                    </NavigationViewItem.Icon>
-                    <NavigationViewItem.ContextFlyout>
-                        <MenuFlyout>
-                            <MenuFlyoutItem Text="Delete Category"
-                                            Icon="Delete"
-                                            Click="DeleteCategoryItem_Click"
-                                            Tag="WorkAccountsCategory"/>
-                        </MenuFlyout>
-                    </NavigationViewItem.ContextFlyout>
-                </NavigationViewItem>
-
-                <!-- Dynamic Categories (hidden to avoid confusing duplicates) -->
-                <StackPanel x:Name="DynamicCategoriesPanel" Visibility="Collapsed">
-                    <!-- Categories loaded from database will be added here (hidden) -->
+                <!-- Dynamic Favorite Categories -->
+                <StackPanel x:Name="FavoriteCategoriesPanel">
+                    <!-- Favorite categories will be loaded here dynamically -->
                 </StackPanel>
 
                 <NavigationViewItemSeparator Margin="12,8"/>

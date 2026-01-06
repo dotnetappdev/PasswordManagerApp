@@ -139,6 +139,12 @@ public sealed partial class PasswordItemsPage : Page
         {
             _viewModel.FilterType = "RecentlyDeleted";
         }
+        
+        // Apply category name filter
+        if (!string.IsNullOrEmpty(filterData.FilterCategoryName))
+        {
+            _viewModel.FilterCategoryName = filterData.FilterCategoryName;
+        }
     }
 
     private async Task LoadCategoriesAsync()

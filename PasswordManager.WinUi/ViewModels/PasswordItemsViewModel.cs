@@ -12,6 +12,7 @@ public class PasswordItemsViewModel : BaseViewModel
     private string _searchText = string.Empty;
     private string _filterType = "All";
     private string? _filterTagName = null;
+    private string? _filterCategoryName = null;
     private int? _selectedCategoryId = null;
     private ObservableCollection<PasswordItem> _allItems = new();
 
@@ -55,6 +56,18 @@ public class PasswordItemsViewModel : BaseViewModel
         set
         {
             if (SetProperty(ref _filterTagName, value))
+            {
+                _ = ApplyFiltersAsync();
+            }
+        }
+    }
+    
+    public string? FilterCategoryName
+    {
+        get => _filterCategoryName;
+        set
+        {
+            if (SetProperty(ref _filterCategoryName, value))
             {
                 _ = ApplyFiltersAsync();
             }
@@ -170,6 +183,14 @@ public class PasswordItemsViewModel : BaseViewModel
                 if (SelectedCategoryId.HasValue)
                 {
                     items = items.Where(item => item.CategoryId == SelectedCategoryId.Value);
+                }
+                
+                // Apply category name filter
+                if (!string.IsNullOrWhiteSpace(FilterCategoryName))
+                {
+                    items = items.Where(item => 
+                        item.Category != null && 
+                        string.Equals(item.Category.Name, FilterCategoryName, StringComparison.OrdinalIgnoreCase));
                 }
 
                 // Apply tag filter
