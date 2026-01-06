@@ -8,19 +8,19 @@ public sealed partial class SettingsPage : Page
     public SettingsPage()
     {
         this.InitializeComponent();
-        
+
         // Initialize theme options
         ThemeOptions = new List<string> { "Light", "Dark", "System" };
-        
+
         // Initialize color palette options
         ColorPaletteOptions = new List<ColorPaletteOption>
         {
-            new ColorPaletteOption("Blue", Windows.UI.Color.FromArgb(255, 0, 120, 215)),
-            new ColorPaletteOption("Purple", Windows.UI.Color.FromArgb(255, 136, 23, 152)),
-            new ColorPaletteOption("Green", Windows.UI.Color.FromArgb(255, 16, 124, 16)),
-            new ColorPaletteOption("Orange", Windows.UI.Color.FromArgb(255, 202, 80, 16)),
-            new ColorPaletteOption("Red", Windows.UI.Color.FromArgb(255, 232, 17, 35)),
-            new ColorPaletteOption("Pink", Windows.UI.Color.FromArgb(255, 230, 0, 126))
+            new ColorPaletteOption("Blue", Microsoft.UI.ColorHelper.FromArgb(255, 0, 120, 215)),
+            new ColorPaletteOption("Purple", Microsoft.UI.ColorHelper.FromArgb(255, 136, 23, 152)),
+            new ColorPaletteOption("Green", Microsoft.UI.ColorHelper.FromArgb(255, 16, 124, 16)),
+            new ColorPaletteOption("Orange", Microsoft.UI.ColorHelper.FromArgb(255, 202, 80, 16)),
+            new ColorPaletteOption("Red", Microsoft.UI.ColorHelper.FromArgb(255, 232, 17, 35)),
+            new ColorPaletteOption("Pink", Microsoft.UI.ColorHelper.FromArgb(255, 230, 0, 126))
         };
     }
 
@@ -84,7 +84,7 @@ public class ColorPaletteOption
     public SolidColorBrush ColorBrush { get; set; }
     public bool IsSelected { get; set; }
 
-    public ColorPaletteOption(string name, Windows.UI.Color color)
+    public ColorPaletteOption(string name, Microsoft.UI.Color color)
     {
         Name = name;
         ColorBrush = new SolidColorBrush(color);

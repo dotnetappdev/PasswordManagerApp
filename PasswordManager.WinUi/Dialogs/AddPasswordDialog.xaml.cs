@@ -529,7 +529,9 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 return;
             }
 
-            if (_authService?.CurrentUser == null)
+            // Prefer asking the auth service for the current user id (works for configurable/auth modes)
+            var currentUserId = await _authService.GetCurrentUserIdAsync();
+            if (string.IsNullOrWhiteSpace(currentUserId))
             {
                 await ShowErrorDialog("No authenticated user found. Please log in again.");
                 return;
@@ -549,8 +551,8 @@ public sealed partial class AddPasswordDialog : ContentDialog
             item.IsFavorite = IsFavoriteCheckBox.IsOn;
             item.LastModified = DateTime.UtcNow;
 
-            // Set user ID from current authenticated user
-            item.UserId = _authService.CurrentUser.Id;
+            // Set user ID from current authenticated user (use GetCurrentUserIdAsync result)
+            item.UserId = currentUserId;
 
             // Set category
             if (CategoryComboBox.SelectedItem is ComboBoxItem categoryItem && categoryItem.Tag is Category category)

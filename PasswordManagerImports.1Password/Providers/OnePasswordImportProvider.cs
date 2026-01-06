@@ -12,7 +12,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
     public string ProviderName => "1Password";
     public string DisplayName => "1Password Import (CSV or 1PUX)";
     public string Version => "1.0.0";
-    public string[] SupportedFileExtensions => new[] { ".csv", ".1pux" };
+    public string[] SupportedFileExtensions => new[] { ".csv", ".1pux", ".1pu" };
 
     public async Task<ImportResult> ImportFromFileAsync(Stream fileStream, string fileName)
     {
@@ -66,15 +66,15 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                 result.ErrorMessage = "The CSV file is empty.";
                 return result;
             }
-            
+
             var headerLine = lines[0].Trim();
             var headers = headerLine.Split(',').Select(h => h.Trim().Trim('"')).ToArray();
-            
+
             // New format has "URL" (capital) and "Type" columns, no "OTPAuth"
-            bool isNewFormat = headers.Contains("URL") && 
-                              headers.Contains("Type") && 
+            bool isNewFormat = headers.Contains("URL") &&
+                              headers.Contains("Type") &&
                               !headers.Contains("OTPAuth");
-            
+
             OnePasswordCsvRecord[]? records = null;
             OnePasswordCsvRecordNew[]? recordsNew = null;
 
@@ -195,143 +195,143 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             }
             else if (records != null)
             {
-            foreach (var record in records)
-            {
-                try
+                foreach (var record in records)
                 {
-                    // Skip empty records
-                    if (string.IsNullOrWhiteSpace(record.Title) &&
-                        string.IsNullOrWhiteSpace(record.Username) &&
-                        string.IsNullOrWhiteSpace(record.Password))
+                    try
                     {
-                        continue;
-                    }
-
-                    // Determine collection based on URL/title analysis (no folder in new format)
-                    var collectionName = DetermineCollection(record.Url, record.Title);
-                    var categoryName = DetermineCategory(record.Url, record.Title);
-
-                    // Ensure collection exists
-                    if (!collectionsToCreate.ContainsKey(collectionName))
-                    {
-                        collectionsToCreate[collectionName] = new Collection
+                        // Skip empty records
+                        if (string.IsNullOrWhiteSpace(record.Title) &&
+                            string.IsNullOrWhiteSpace(record.Username) &&
+                            string.IsNullOrWhiteSpace(record.Password))
                         {
-                            Name = collectionName,
-                            Icon = GetCollectionIcon(collectionName),
-                            Color = GetCollectionColor(collectionName),
-                            IsDefault = collectionName == "Banking"
-                        };
-                    }
-
-                    var collection = collectionsToCreate[collectionName];
-
-                    // Ensure category exists
-                    var categoryKey = $"{collectionName}:{categoryName}";
-                    if (!categoriesToCreate.ContainsKey(categoryKey))
-                    {
-                        var newCategory = new Category
-                        {
-                            Name = categoryName,
-                            Icon = GetCategoryIcon(categoryName),
-                            Color = GetCategoryColor(categoryName)
-                            // CollectionId will be set after collection is created by ImportService
-                        };
-                        categoriesToCreate[categoryKey] = (newCategory, collectionName);
-                    }
-
-                    var category = categoriesToCreate[categoryKey].Category;
-
-                    // Create the password item with notes properly set
-                    var passwordItem = new PasswordItem
-                    {
-                        Title = record.Title?.Trim() ?? string.Empty,
-                        Type = ItemType.Login,
-                        CollectionId = collection.Id, // Will be updated after collection creation
-                        CategoryId = category.Id, // Will be updated after category creation
-                        CreatedAt = DateTime.UtcNow,
-                        LastModified = DateTime.UtcNow,
-                        LoginItem = new LoginItem
-                        {
-                            Website = record.Url?.Trim() ?? string.Empty,
-                            WebsiteUrl = record.Url?.Trim() ?? string.Empty,
-                            Username = record.Username?.Trim() ?? string.Empty,
-                            Password = record.Password?.Trim() ?? string.Empty, // NotMapped - will be encrypted by service
-                            Email = IsEmail(record.Username?.Trim() ?? string.Empty) ? record.Username.Trim() : null,
-                            Notes = !string.IsNullOrWhiteSpace(record.Notes) ? record.Notes.Trim() : null, // NotMapped - will be encrypted by service
-                            TotpSecret = !string.IsNullOrWhiteSpace(record.OTPAuth) ? record.OTPAuth.Trim() : null // NotMapped - will be encrypted by service
-                        },
-                        Tags = new List<Tag>()
-                    };
-
-                    // Add import tag
-                    var importTag = new Tag
-                    {
-                        Name = "Imported",
-                        Color = "#8b5cf6"
-                    };
-
-                    passwordItem.Tags.Add(importTag);
-
-                    // Handle favorite items
-                    if (!string.IsNullOrWhiteSpace(record.Favorite) &&
-                        (record.Favorite.Equals("true", StringComparison.OrdinalIgnoreCase) || record.Favorite == "1"))
-                    {
-                        var favoriteTag = new Tag
-                        {
-                            Name = "Favorite",
-                            Color = "#fbbf24"
-                        };
-                        passwordItem.Tags.Add(favoriteTag);
-                    }
-
-                    // Handle archived items
-                    if (!string.IsNullOrWhiteSpace(record.Archived) &&
-                        (record.Archived.Equals("true", StringComparison.OrdinalIgnoreCase) || record.Archived == "1"))
-                    {
-                        var archivedTag = new Tag
-                        {
-                            Name = "Archived",
-                            Color = "#6b7280"
-                        };
-                        passwordItem.Tags.Add(archivedTag);
-                    }
-
-                    // Handle custom tags from 1Password
-                    if (!string.IsNullOrWhiteSpace(record.Tags))
-                    {
-                        var tags = record.Tags.Split(',', ';')
-                            .Where(t => !string.IsNullOrWhiteSpace(t))
-                            .Select(t => t.Trim());
-
-                        foreach (var tagName in tags)
-                        {
-                            var customTag = new Tag
-                            {
-                                Name = tagName,
-                                Color = "#a855f7" // Purple for custom tags
-                            };
-                            passwordItem.Tags.Add(customTag);
+                            continue;
                         }
-                    }
 
-                    // Add high priority tag if it looks important
-                    if (IsHighPriority(record.Title, record.Url))
-                    {
-                        var highPriorityTag = new Tag
+                        // Determine collection based on URL/title analysis (no folder in new format)
+                        var collectionName = DetermineCollection(record.Url, record.Title);
+                        var categoryName = DetermineCategory(record.Url, record.Title);
+
+                        // Ensure collection exists
+                        if (!collectionsToCreate.ContainsKey(collectionName))
                         {
-                            Name = "High Priority",
-                            Color = "#ef4444"
-                        };
-                        passwordItem.Tags.Add(highPriorityTag);
-                    }
+                            collectionsToCreate[collectionName] = new Collection
+                            {
+                                Name = collectionName,
+                                Icon = GetCollectionIcon(collectionName),
+                                Color = GetCollectionColor(collectionName),
+                                IsDefault = collectionName == "Banking"
+                            };
+                        }
 
-                    result.ImportedItems.Add(passwordItem);
+                        var collection = collectionsToCreate[collectionName];
+
+                        // Ensure category exists
+                        var categoryKey = $"{collectionName}:{categoryName}";
+                        if (!categoriesToCreate.ContainsKey(categoryKey))
+                        {
+                            var newCategory = new Category
+                            {
+                                Name = categoryName,
+                                Icon = GetCategoryIcon(categoryName),
+                                Color = GetCategoryColor(categoryName)
+                                // CollectionId will be set after collection is created by ImportService
+                            };
+                            categoriesToCreate[categoryKey] = (newCategory, collectionName);
+                        }
+
+                        var category = categoriesToCreate[categoryKey].Category;
+
+                        // Create the password item with notes properly set
+                        var passwordItem = new PasswordItem
+                        {
+                            Title = record.Title?.Trim() ?? string.Empty,
+                            Type = ItemType.Login,
+                            CollectionId = collection.Id, // Will be updated after collection creation
+                            CategoryId = category.Id, // Will be updated after category creation
+                            CreatedAt = DateTime.UtcNow,
+                            LastModified = DateTime.UtcNow,
+                            LoginItem = new LoginItem
+                            {
+                                Website = record.Url?.Trim() ?? string.Empty,
+                                WebsiteUrl = record.Url?.Trim() ?? string.Empty,
+                                Username = record.Username?.Trim() ?? string.Empty,
+                                Password = record.Password?.Trim() ?? string.Empty, // NotMapped - will be encrypted by service
+                                Email = IsEmail(record.Username?.Trim() ?? string.Empty) ? record.Username.Trim() : null,
+                                Notes = !string.IsNullOrWhiteSpace(record.Notes) ? record.Notes.Trim() : null, // NotMapped - will be encrypted by service
+                                TotpSecret = !string.IsNullOrWhiteSpace(record.OTPAuth) ? record.OTPAuth.Trim() : null // NotMapped - will be encrypted by service
+                            },
+                            Tags = new List<Tag>()
+                        };
+
+                        // Add import tag
+                        var importTag = new Tag
+                        {
+                            Name = "Imported",
+                            Color = "#8b5cf6"
+                        };
+
+                        passwordItem.Tags.Add(importTag);
+
+                        // Handle favorite items
+                        if (!string.IsNullOrWhiteSpace(record.Favorite) &&
+                            (record.Favorite.Equals("true", StringComparison.OrdinalIgnoreCase) || record.Favorite == "1"))
+                        {
+                            var favoriteTag = new Tag
+                            {
+                                Name = "Favorite",
+                                Color = "#fbbf24"
+                            };
+                            passwordItem.Tags.Add(favoriteTag);
+                        }
+
+                        // Handle archived items
+                        if (!string.IsNullOrWhiteSpace(record.Archived) &&
+                            (record.Archived.Equals("true", StringComparison.OrdinalIgnoreCase) || record.Archived == "1"))
+                        {
+                            var archivedTag = new Tag
+                            {
+                                Name = "Archived",
+                                Color = "#6b7280"
+                            };
+                            passwordItem.Tags.Add(archivedTag);
+                        }
+
+                        // Handle custom tags from 1Password
+                        if (!string.IsNullOrWhiteSpace(record.Tags))
+                        {
+                            var tags = record.Tags.Split(',', ';')
+                                .Where(t => !string.IsNullOrWhiteSpace(t))
+                                .Select(t => t.Trim());
+
+                            foreach (var tagName in tags)
+                            {
+                                var customTag = new Tag
+                                {
+                                    Name = tagName,
+                                    Color = "#a855f7" // Purple for custom tags
+                                };
+                                passwordItem.Tags.Add(customTag);
+                            }
+                        }
+
+                        // Add high priority tag if it looks important
+                        if (IsHighPriority(record.Title, record.Url))
+                        {
+                            var highPriorityTag = new Tag
+                            {
+                                Name = "High Priority",
+                                Color = "#ef4444"
+                            };
+                            passwordItem.Tags.Add(highPriorityTag);
+                        }
+
+                        result.ImportedItems.Add(passwordItem);
+                    }
+                    catch (Exception ex)
+                    {
+                        result.Warnings.Add($"Failed to process record '{record.Title}': {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    result.Warnings.Add($"Failed to process record '{record.Title}': {ex.Message}");
-                }
-            }
             }
 
             // Add required collections, categories, and tags to result
@@ -557,7 +557,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
         // Use vault-specific icons or fallback to folder icon
         // Common vault names: Personal, Work, Shared, Family, etc.
         var vaultLower = vaultName.ToLowerInvariant();
-        
+
         if (vaultLower.Contains("personal") || vaultLower.Contains("private"))
             return "\uE77B"; // People/Person
         if (vaultLower.Contains("work") || vaultLower.Contains("business"))
@@ -566,7 +566,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             return "\uE716"; // People (group)
         if (vaultLower.Contains("finance") || vaultLower.Contains("bank"))
             return "\uE8C7"; // CreditCard
-        
+
         return "\uE8B7"; // Folder (default)
     }
 
@@ -574,7 +574,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
     {
         // Use vault-specific colors or fallback to neutral color
         var vaultLower = vaultName.ToLowerInvariant();
-        
+
         if (vaultLower.Contains("personal") || vaultLower.Contains("private"))
             return "#3b82f6"; // Blue
         if (vaultLower.Contains("work") || vaultLower.Contains("business"))
@@ -583,7 +583,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             return "#10b981"; // Green
         if (vaultLower.Contains("finance") || vaultLower.Contains("bank"))
             return "#f59e0b"; // Orange
-        
+
         return "#6b7280"; // Gray (default)
     }
 
@@ -628,7 +628,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             // Track collections and categories we need to create
             var collectionsToCreate = new Dictionary<string, Collection>();
             var categoriesToCreate = new Dictionary<string, (Category Category, string CollectionName)>();
-            
+
             var totalItemsAttempted = 0;
 
             // Process all accounts and vaults
@@ -637,10 +637,10 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                 foreach (var vault in account.Vaults)
                 {
                     // Use vault name as category (as per user requirement: vaults are categories)
-                    var vaultName = !string.IsNullOrWhiteSpace(vault.Attrs.Name) 
-                        ? vault.Attrs.Name 
+                    var vaultName = !string.IsNullOrWhiteSpace(vault.Attrs.Name)
+                        ? vault.Attrs.Name
                         : "Default";
-                    
+
                     foreach (var item in vault.Items)
                     {
                         totalItemsAttempted++;
@@ -651,7 +651,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
 
                             // Determine collection based on URL/title analysis
                             var collectionName = DetermineCollection(item.Overview.Url, item.Overview.Title);
-                            
+
                             // Use vault name as the category (1Password vaults map to categories)
                             var categoryName = vaultName;
 

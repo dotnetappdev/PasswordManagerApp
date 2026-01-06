@@ -10,6 +10,7 @@ namespace PasswordManager.WinUi.Models
         public bool? ShowFavorites { get; set; }
         public bool? ShowArchived { get; set; }
         public bool? ShowDeleted { get; set; }
+        public string? TagName { get; set; }
 
         public NavigationFilterData(IServiceProvider serviceProvider)
         {

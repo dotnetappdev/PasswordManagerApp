@@ -315,64 +315,69 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Preload import provider assemblies
-using (var scope = app.Services.CreateScope())
+// Preload import provider assemblies - disabled by default for API builds
+// The WinUI client is responsible for loading UI import plugins. To enable API-side preload
+// (not recommended for UI plugins), set `Imports:PreloadInApi` to true in configuration.
+if (app.Configuration.GetValue<bool>("Imports:PreloadInApi", false))
 {
-    try
+    using (var scope = app.Services.CreateScope())
     {
-        Log.Information("Preloading import provider assemblies...");
-        var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        var importDlls = Directory.GetFiles(baseDirectory, "PasswordManagerImports.*.dll");
-        Log.Information("Found {Count} import provider DLLs", importDlls.Length);
-        
-        foreach (var dllPath in importDlls)
+        try
         {
-            try
+            Log.Information("Preloading import provider assemblies (API mode)...");
+            var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            var importDlls = Directory.GetFiles(baseDirectory, "PasswordManagerImports.*.dll");
+            Log.Information("Found {Count} import provider DLLs", importDlls.Length);
+
+            foreach (var dllPath in importDlls)
             {
-                // Only load DLLs that match our import provider naming pattern
-                var fileName = Path.GetFileName(dllPath);
-                if (!fileName.StartsWith("PasswordManagerImports.", StringComparison.OrdinalIgnoreCase))
+                try
                 {
-                    continue;
-                }
-                
-                var assembly = System.Reflection.Assembly.LoadFrom(dllPath);
-                var providerTypes = assembly.GetTypes()
-                    .Where(t => typeof(PasswordManager.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
-                             && !t.IsInterface && !t.IsAbstract);
-                
-                var importService = scope.ServiceProvider.GetService<PasswordManager.Imports.Interfaces.IImportService>();
-                if (importService != null)
-                {
-                    foreach (var providerType in providerTypes)
+                    var fileName = Path.GetFileName(dllPath);
+                    if (!fileName.StartsWith("PasswordManagerImports.", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    var assembly = System.Reflection.Assembly.LoadFrom(dllPath);
+                    var providerTypes = assembly.GetTypes()
+                        .Where(t => typeof(PasswordManager.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
+                                 && !t.IsInterface && !t.IsAbstract);
+
+                    var importService = scope.ServiceProvider.GetService<PasswordManager.Imports.Interfaces.IImportService>();
+                    if (importService != null)
                     {
-                        // Validate the type has a parameterless constructor
-                        if (providerType.GetConstructor(Type.EmptyTypes) == null)
+                        foreach (var providerType in providerTypes)
                         {
-                            Log.Warning("Skipping provider {TypeName} - no parameterless constructor found", providerType.Name);
-                            continue;
-                        }
-                        
-                        var provider = Activator.CreateInstance(providerType) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
-                        if (provider != null)
-                        {
-                            importService.RegisterProvider(provider);
-                            Log.Information("Registered import provider: {ProviderName} v{Version}", provider.DisplayName, provider.Version);
+                            if (providerType.GetConstructor(Type.EmptyTypes) == null)
+                            {
+                                Log.Warning("Skipping provider {TypeName} - no parameterless constructor found", providerType.Name);
+                                continue;
+                            }
+
+                            var provider = Activator.CreateInstance(providerType) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
+                            if (provider != null)
+                            {
+                                importService.RegisterProvider(provider);
+                                Log.Information("Registered import provider: {ProviderName} v{Version}", provider.DisplayName, provider.Version);
+                            }
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                var fileName = Path.GetFileName(dllPath);
-                Log.Warning(ex, "Failed to load import provider from {FileName}", fileName);
+                catch (Exception ex)
+                {
+                    var fileName = Path.GetFileName(dllPath);
+                    Log.Warning(ex, "Failed to load import provider from {FileName}", fileName);
+                }
             }
         }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error during import provider preload");
+        }
     }
-    catch (Exception ex)
-    {
-        Log.Error(ex, "Error during import provider preload");
-    }
+}
+else
+{
+    Log.Information("API import provider preload disabled (Imports:PreloadInApi=false). WinUI client should load UI plugins.");
 }
 
 Log.Information("Password Manager API starting up...");

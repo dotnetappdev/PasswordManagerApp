@@ -120,38 +120,38 @@ public class ThemeService : IThemeService
             {
                 ColorPalette.Blue => new
                 {
-                    Primary = Windows.UI.Color.FromArgb(255, 0, 120, 215),
-                    Secondary = Windows.UI.Color.FromArgb(255, 0, 99, 177)
+                    Primary = Microsoft.UI.ColorHelper.FromArgb(255, 0, 120, 215),
+                    Secondary = Microsoft.UI.ColorHelper.FromArgb(255, 0, 99, 177)
                 },
                 ColorPalette.Purple => new
                 {
-                    Primary = Windows.UI.Color.FromArgb(255, 136, 23, 152),
-                    Secondary = Windows.UI.Color.FromArgb(255, 106, 18, 119)
+                    Primary = Microsoft.UI.ColorHelper.FromArgb(255, 136, 23, 152),
+                    Secondary = Microsoft.UI.ColorHelper.FromArgb(255, 106, 18, 119)
                 },
                 ColorPalette.Green => new
                 {
-                    Primary = Windows.UI.Color.FromArgb(255, 16, 124, 16),
-                    Secondary = Windows.UI.Color.FromArgb(255, 12, 97, 12)
+                    Primary = Microsoft.UI.ColorHelper.FromArgb(255, 16, 124, 16),
+                    Secondary = Microsoft.UI.ColorHelper.FromArgb(255, 12, 97, 12)
                 },
                 ColorPalette.Orange => new
                 {
-                    Primary = Windows.UI.Color.FromArgb(255, 202, 80, 16),
-                    Secondary = Windows.UI.Color.FromArgb(255, 157, 62, 12)
+                    Primary = Microsoft.UI.ColorHelper.FromArgb(255, 202, 80, 16),
+                    Secondary = Microsoft.UI.ColorHelper.FromArgb(255, 157, 62, 12)
                 },
                 ColorPalette.Red => new
                 {
-                    Primary = Windows.UI.Color.FromArgb(255, 232, 17, 35),
-                    Secondary = Windows.UI.Color.FromArgb(255, 180, 13, 27)
+                    Primary = Microsoft.UI.ColorHelper.FromArgb(255, 232, 17, 35),
+                    Secondary = Microsoft.UI.ColorHelper.FromArgb(255, 180, 13, 27)
                 },
                 ColorPalette.Pink => new
                 {
-                    Primary = Windows.UI.Color.FromArgb(255, 230, 0, 126),
-                    Secondary = Windows.UI.Color.FromArgb(255, 179, 0, 98)
+                    Primary = Microsoft.UI.ColorHelper.FromArgb(255, 230, 0, 126),
+                    Secondary = Microsoft.UI.ColorHelper.FromArgb(255, 179, 0, 98)
                 },
                 _ => new
                 {
-                    Primary = Windows.UI.Color.FromArgb(255, 0, 120, 215),
-                    Secondary = Windows.UI.Color.FromArgb(255, 0, 99, 177)
+                    Primary = Microsoft.UI.ColorHelper.FromArgb(255, 0, 120, 215),
+                    Secondary = Microsoft.UI.ColorHelper.FromArgb(255, 0, 99, 177)
                 }
             };
 

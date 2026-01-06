@@ -8,13 +8,27 @@ public class WinUiPlatformService : IPlatformService
     {
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var appDir = Path.Combine(localAppData, "PasswordManager");
-        
-        // Ensure directory exists
-        if (!Directory.Exists(appDir))
+
+        // FORCE directory creation with explicit verification
+        try
         {
-            Directory.CreateDirectory(appDir);
+            if (!Directory.Exists(appDir))
+            {
+                var dirInfo = Directory.CreateDirectory(appDir);
+                System.Diagnostics.Debug.WriteLine($"[WinUiPlatformService] Created directory: {dirInfo.FullName}");
+                System.Diagnostics.Debug.WriteLine($"[WinUiPlatformService] Directory exists after creation: {Directory.Exists(appDir)}");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[WinUiPlatformService] Directory already exists: {appDir}");
+            }
         }
-        
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[WinUiPlatformService] ERROR creating directory: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[WinUiPlatformService] Stack trace: {ex.StackTrace}");
+        }
+
         return appDir;
     }
 

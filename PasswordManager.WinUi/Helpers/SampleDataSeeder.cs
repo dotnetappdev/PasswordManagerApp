@@ -29,13 +29,13 @@ namespace PasswordManager.WinUi.Helpers
                     {
                         // Create demo user with proper cryptographic setup
                         const string demoMasterPassword = "DemoPassword123!";
-                        
+
                         // Generate user salt for cryptographic operations
                         var userSalt = cryptoService.GenerateUserSalt();
-                        
+
                         // Create master password hash for authentication
                         var masterPasswordHash = cryptoService.CreateMasterPasswordHash(demoMasterPassword, userSalt);
-                        
+
                         // Create master key identifier for lookup during master key login
                         var masterKeyIdentifier = cryptoService.CreateMasterKeyIdentifier(demoMasterPassword, userSalt);
 
@@ -59,7 +59,7 @@ namespace PasswordManager.WinUi.Helpers
                         db.Users.Add(demoUser);
                         await db.SaveChangesAsync();
                         seedUserId = demoUser.Id;
-                        
+
                         System.Diagnostics.Debug.WriteLine($"Created demo user with proper cryptographic setup: {demoUser.Email}");
                         System.Diagnostics.Debug.WriteLine($"Demo master password: {demoMasterPassword}");
                     }
@@ -106,7 +106,7 @@ namespace PasswordManager.WinUi.Helpers
                 };
                 workCollection = await collectionService.CreateAsync(workCollection);
 
-                // Create sample categories
+                // Create sample categories - only Logins and Credit Cards
                 var loginCategory = new Category
                 {
                     Name = "Logins",
@@ -132,45 +132,6 @@ namespace PasswordManager.WinUi.Helpers
                     LastModified = DateTime.UtcNow
                 };
                 creditCardCategory = await categoryService.CreateAsync(creditCardCategory);
-
-                var secureNotesCategory = new Category
-                {
-                    Name = "Secure Notes",
-                    Description = "Private notes and documents",
-                    Icon = "note",
-                    Color = "#10b981",
-                    CollectionId = personalCollection.Id,
-                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
-                    CreatedAt = DateTime.UtcNow,
-                    LastModified = DateTime.UtcNow
-                };
-                secureNotesCategory = await categoryService.CreateAsync(secureNotesCategory);
-
-                var wifiCategory = new Category
-                {
-                    Name = "WiFi Passwords",
-                    Description = "Wireless network credentials",
-                    Icon = "wifi",
-                    Color = "#8b5cf6",
-                    CollectionId = personalCollection.Id,
-                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
-                    CreatedAt = DateTime.UtcNow,
-                    LastModified = DateTime.UtcNow
-                };
-                wifiCategory = await categoryService.CreateAsync(wifiCategory);
-
-                var workCategory = new Category
-                {
-                    Name = "Work Accounts",
-                    Description = "Professional accounts and services",
-                    Icon = "security",
-                    Color = "#f59e0b",
-                    CollectionId = workCollection.Id,
-                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
-                    CreatedAt = DateTime.UtcNow,
-                    LastModified = DateTime.UtcNow
-                };
-                workCategory = await categoryService.CreateAsync(workCategory);
 
                 // Create sample password items
                 var sampleLogins = new[]
@@ -199,8 +160,8 @@ namespace PasswordManager.WinUi.Helpers
                         Title = "GitHub",
                         Description = "Development platform account",
                         Type = ItemType.Login,
-                        CategoryId = workCategory.Id,
-                        CollectionId = workCollection.Id,
+                        CategoryId = loginCategory.Id,
+                        CollectionId = personalCollection.Id,
                         UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
                         Website = "https://github.com",
                         CreatedAt = DateTime.UtcNow,
@@ -260,45 +221,6 @@ namespace PasswordManager.WinUi.Helpers
                     }
                 };
                 await passwordItemService.CreateAsync(sampleCreditCard);
-
-                // Create sample secure note
-                var sampleNote = new PasswordItem
-                {
-                    Title = "Important Documents",
-                    Description = "List of important document locations",
-                    Type = ItemType.SecureNote,
-                    CategoryId = secureNotesCategory.Id,
-                    CollectionId = personalCollection.Id,
-                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
-                    CreatedAt = DateTime.UtcNow,
-                    LastModified = DateTime.UtcNow,
-                    SecureNoteItem = new SecureNoteItem
-                    {
-                        Content = "Passport: Safe deposit box #123\nSSN Card: Home safe\nBirth Certificate: File cabinet"
-                    }
-                };
-                await passwordItemService.CreateAsync(sampleNote);
-
-                // Create sample WiFi password
-                var sampleWifi = new PasswordItem
-                {
-                    Title = "Home WiFi",
-                    Description = "Main home wireless network",
-                    Type = ItemType.WiFi,
-                    CategoryId = wifiCategory.Id,
-                    CollectionId = personalCollection.Id,
-                    UserId = string.IsNullOrWhiteSpace(seedUserId) ? null : seedUserId,
-                    CreatedAt = DateTime.UtcNow,
-                    LastModified = DateTime.UtcNow,
-                    WiFiItem = new WiFiItem
-                    {
-                        NetworkName = "HomeNetwork_5G",
-                        Password = "WifiPassword123!",
-                        SecurityType = SecurityType.WPA2,
-                        Notes = "Located in living room"
-                    }
-                };
-                await passwordItemService.CreateAsync(sampleWifi);
 
                 System.Diagnostics.Debug.WriteLine("Sample data seeded successfully!");
             }

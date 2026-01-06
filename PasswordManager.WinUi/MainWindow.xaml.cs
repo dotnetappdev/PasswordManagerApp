@@ -41,6 +41,8 @@ public sealed partial class MainWindow : Window
         InitializeNavigation();
         // Load dynamic categories for navigation
         _ = RefreshCategoriesAsync();
+        // Load sidebar tags as chips
+        _ = RefreshTagsAsync();
     }
 
     private void InitializeNavigation()
@@ -538,57 +540,113 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            var categoryService = _serviceProvider.GetService<ICategoryInterface>();
-            if (categoryService == null) return;
+            // Dynamic categories are currently hidden to avoid duplicate or unclear sidebar entries.
+            // If you want dynamic categories visible again, re-enable population and ensure
+            // they are added to MainNavigationView.MenuItems (not a separate StackPanel) to
+            // avoid rendering issues.
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error refreshing categories: {ex.Message}");
+        }
+    }
 
-            var categories = await categoryService.GetAllAsync();
+    // Populate the SidebarTagsPanel with tag chips
+    public async Task RefreshTagsAsync()
+    {
+        try
+        {
+            var tagService = _serviceProvider.GetService<ITagService>();
+            if (tagService == null) return;
 
-            // Update UI on dispatcher
+            var tags = (await tagService.GetAllAsync()).ToList();
+
             Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
             {
                 var fe = this.Content as FrameworkElement;
-                var dynamicPanel = fe?.FindName("DynamicCategoriesPanel") as StackPanel;
-                if (dynamicPanel == null)
+                var tagsPanel = fe?.FindName("SidebarTagsPanel") as StackPanel;
+                if (tagsPanel == null) return;
+
+                tagsPanel.Children.Clear();
+
+                foreach (var tag in tags)
                 {
-                    return; // panel not available (e.g., XAML not loaded yet)
-                }
-                dynamicPanel.Children.Clear();
-
-                // ensure cached style (attempt again if previously null)
-                _navItemStyle ??= TryGetNavItemStyle();
-
-                foreach (var cat in categories)
-                {
-                    var catName = (cat.Name ?? string.Empty).Trim();
-                    if (string.IsNullOrEmpty(catName)) continue;
-
-                    // Skip if a static nav item already exists with the same content
-                    bool existsInMenu = MainNavigationView.MenuItems
-                        .OfType<NavigationViewItem>()
-                        .Any(i => string.Equals(i.Content?.ToString(), catName, StringComparison.OrdinalIgnoreCase));
-
-                    bool existsInDynamic = dynamicPanel.Children
-                        .OfType<NavigationViewItem>()
-                        .Any(i => string.Equals(i.Content?.ToString(), catName, StringComparison.OrdinalIgnoreCase));
-
-                    if (existsInMenu || existsInDynamic)
-                        continue; // avoid duplicate entries (e.g., built-in "Logins")
-
-                    var navItem = new NavigationViewItem
+                    var border = new Border
                     {
-                        Content = catName,
-                        Tag = $"{catName}Category",
-                        Style = _navItemStyle // may be null; safe
+                        CornerRadius = new CornerRadius(12),
+                        Padding = new Thickness(8, 4, 8, 4),
+                        Margin = new Thickness(8, 4, 8, 0),
+                        Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 48, 50, 52)),
                     };
 
-                    navItem.RightTapped += NavigationItem_RightTapped;
-                    dynamicPanel.Children.Add(navItem);
+                    // Try to use tag color if available
+                    try
+                    {
+                        if (!string.IsNullOrWhiteSpace(tag.Color))
+                        {
+                            var color = Microsoft.UI.Colors.Transparent;
+                            // Expecting hex like #rrggbb
+                            if (tag.Color.StartsWith("#"))
+                            {
+                                var hex = tag.Color.TrimStart('#');
+                                if (hex.Length == 6)
+                                {
+                                    var r = Convert.ToByte(hex.Substring(0, 2), 16);
+                                    var g = Convert.ToByte(hex.Substring(2, 2), 16);
+                                    var b = Convert.ToByte(hex.Substring(4, 2), 16);
+                                    color = Microsoft.UI.ColorHelper.FromArgb(255, r, g, b);
+                                }
+                            }
+
+                            if (color != Microsoft.UI.Colors.Transparent)
+                                border.Background = new SolidColorBrush(color);
+                        }
+                    }
+                    catch { }
+
+                    var txt = new TextBlock
+                    {
+                        Text = tag.Name,
+                        Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
+                        FontSize = 13,
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+
+                    border.Child = txt;
+
+                    // Make chip clickable to filter by tag
+                    var btn = new Button
+                    {
+                        Content = border,
+                        Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                        BorderThickness = new Thickness(0),
+                        Padding = new Thickness(0),
+                        HorizontalAlignment = HorizontalAlignment.Left
+                    };
+
+                    btn.Click += (s, e) =>
+                    {
+                        try
+                        {
+                            // Navigate to PasswordItemsPage with a NavigationFilterData that includes the tag filter
+                            var filterData = new Models.NavigationFilterData(_serviceProvider)
+                            {
+                                FilterName = tag.Name,
+                                TagName = tag.Name
+                            };
+                            ContentFrame.Navigate(typeof(Views.PasswordItemsPage), filterData);
+                        }
+                        catch { }
+                    };
+
+                    tagsPanel.Children.Add(btn);
                 }
             });
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error refreshing categories: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Error refreshing tags: {ex.Message}");
         }
     }
 

@@ -45,6 +45,9 @@ public sealed partial class SettingsPage : Page
             // Update network location visibility based on initial provider selection
             UpdateNetworkLocationVisibility();
 
+            // Display current database path
+            await DisplayCurrentDatabasePathAsync();
+
             // Preload import providers to ensure they're available when needed
             try
             {
@@ -53,8 +56,51 @@ public sealed partial class SettingsPage : Page
                 if (importService != null)
                 {
                     // Force load all PasswordManagerImports.* assemblies and register providers
-                    var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                    var importDlls = System.IO.Directory.GetFiles(baseDirectory, "PasswordManagerImports.*.dll");
+                    var importDllsList = new List<string>();
+
+                    // Common candidate directories to search for import provider assemblies. This covers
+                    // both per-user and machine-wide install locations so the provider is found when
+                    // running as a normal user or as an elevated/admin process.
+                    var candidateDirs = new List<string>();
+
+                    // App base and AppContext
+                    try { candidateDirs.Add(AppDomain.CurrentDomain.BaseDirectory); } catch { }
+                    try { candidateDirs.Add(AppContext.BaseDirectory); } catch { }
+
+                    // Executing assembly location
+                    try
+                    {
+                        var execPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                        if (!string.IsNullOrEmpty(execPath)) candidateDirs.Add(System.IO.Path.GetDirectoryName(execPath)!);
+                    }
+                    catch { }
+
+                    // Current directory
+                    try { candidateDirs.Add(Environment.CurrentDirectory); } catch { }
+
+                    // Per-user imports folder (LocalAppData)
+                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PasswordManager", "imports")); } catch { }
+
+                    // Machine-wide imports folder (ProgramData)
+                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "PasswordManager", "imports")); } catch { }
+
+                    // Standard plugin discovery folder used by PluginDiscoveryService
+                    try { candidateDirs.Add(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "imports", "otherpasswordmanagers")); } catch { }
+
+                    // Collect DLLs from all candidate directories
+                    foreach (var dir in candidateDirs.Where(d => !string.IsNullOrEmpty(d)).Distinct())
+                    {
+                        try
+                        {
+                            if (Directory.Exists(dir))
+                            {
+                                importDllsList.AddRange(Directory.GetFiles(dir, "PasswordManagerImports.*.dll", SearchOption.AllDirectories));
+                                importDllsList.AddRange(Directory.GetFiles(dir, "PasswordManagerImports.*.dll", SearchOption.TopDirectoryOnly));
+                            }
+                        }
+                        catch { }
+                    }
+                    var importDlls = importDllsList.ToArray();
                     await _logger.LogAsync("SettingsPage", $"Found {importDlls.Length} import DLLs");
 
                     foreach (var dllPath in importDlls)
@@ -97,6 +143,151 @@ public sealed partial class SettingsPage : Page
                 await _logger.LogErrorAsync("SettingsPage", "Error during provider preload", ex);
                 System.Diagnostics.Debug.WriteLine($"Error during provider preload: {ex.Message}");
             }
+        }
+    }
+
+    private async System.Threading.Tasks.Task DisplayCurrentDatabasePathAsync()
+    {
+        try
+        {
+            if (_serviceProvider != null)
+            {
+                var platformService = _serviceProvider.GetService<IPlatformService>();
+                if (platformService != null)
+                {
+                    var appDataDir = platformService.GetAppDataDirectory();
+                    var dbPath = System.IO.Path.Combine(appDataDir, "data", "passwordmanager.db");
+                    CurrentDbPathTextBox.Text = dbPath;
+
+                    // Ensure the directory exists
+                    var dbDirectory = System.IO.Path.GetDirectoryName(dbPath);
+                    if (!string.IsNullOrEmpty(dbDirectory) && !System.IO.Directory.Exists(dbDirectory))
+                    {
+                        System.IO.Directory.CreateDirectory(dbDirectory);
+                        await _logger.LogAsync("SettingsPage", $"Created database directory: {dbDirectory}");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Error displaying database path", ex);
+            System.Diagnostics.Debug.WriteLine($"Error displaying database path: {ex.Message}");
+        }
+    }
+
+    private async void OpenDatabaseFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_serviceProvider != null)
+            {
+                var platformService = _serviceProvider.GetService<IPlatformService>();
+                if (platformService != null)
+                {
+                    var appDataDir = platformService.GetAppDataDirectory();
+                    var dataFolder = System.IO.Path.Combine(appDataDir, "data");
+
+                    // Ensure directory exists before opening
+                    if (!System.IO.Directory.Exists(dataFolder))
+                    {
+                        System.IO.Directory.CreateDirectory(dataFolder);
+                    }
+
+                    // Open in File Explorer
+                    System.Diagnostics.Process.Start("explorer.exe", dataFolder);
+                    await _logger.LogAsync("SettingsPage", $"Opened database folder: {dataFolder}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Error opening database folder", ex);
+            await ShowErrorDialog("Failed to open database folder: " + ex.Message);
+        }
+    }
+
+    private async void CopyDatabasePathButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var path = CurrentDbPathTextBox.Text;
+            if (!string.IsNullOrEmpty(path))
+            {
+                var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+                dataPackage.SetText(path);
+                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+
+                // Show success notification
+                var dialog = new ContentDialog
+                {
+                    Title = "Success",
+                    Content = "Database path copied to clipboard",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                _ = dialog.ShowAsync(); // Fire and forget
+
+                await _logger.LogAsync("SettingsPage", "Copied database path to clipboard");
+            }
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Error copying database path", ex);
+            await ShowErrorDialog("Failed to copy path: " + ex.Message);
+        }
+    }
+
+    private async System.Threading.Tasks.Task CleanupUnwantedCategoriesAsync()
+    {
+        try
+        {
+            if (_serviceProvider != null)
+            {
+                var categoryService = _serviceProvider.GetService<ICategoryInterface>();
+                if (categoryService != null)
+                {
+                    var allCategories = await categoryService.GetAllAsync();
+
+                    // Keep only Logins and Credit Cards
+                    var allowedCategories = new[] { "Logins", "Credit Cards" };
+                    var categoriesToDelete = allCategories
+                        .Where(c => !allowedCategories.Contains(c.Name))
+                        .ToList();
+
+                    if (categoriesToDelete.Any())
+                    {
+                        await _logger.LogAsync("SettingsPage", $"Cleaning up {categoriesToDelete.Count} unwanted categories");
+
+                        foreach (var category in categoriesToDelete)
+                        {
+                            try
+                            {
+                                // Check if category has password items before deleting
+                                var hasItems = await categoryService.HasPasswordItemsAsync(category.Id);
+                                if (!hasItems)
+                                {
+                                    await categoryService.DeleteAsync(category.Id);
+                                    await _logger.LogAsync("SettingsPage", $"Deleted category: {category.Name}");
+                                }
+                                else
+                                {
+                                    await _logger.LogAsync("SettingsPage", $"Skipped category {category.Name} (has password items)");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                await _logger.LogErrorAsync("SettingsPage", $"Error deleting category {category.Name}", ex);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Error cleaning up categories", ex);
+            System.Diagnostics.Debug.WriteLine($"Error cleaning up categories: {ex.Message}");
         }
     }
 
@@ -208,7 +399,7 @@ public sealed partial class SettingsPage : Page
             if (_userProfileService != null)
             {
                 _availableUsers = await _userProfileService.GetAllUsersAsync();
-                
+
                 // Populate the ListView with users
                 UserSelectionListView.Items.Clear();
                 foreach (var user in _availableUsers)
@@ -235,13 +426,13 @@ public sealed partial class SettingsPage : Page
         {
             var selectedItem = ImportUserModeComboBox.SelectedItem as ComboBoxItem;
             var tag = selectedItem?.Tag?.ToString() ?? "current";
-            
+
             // Show/hide multi-user selection panel
             if (MultiUserSelectionPanel != null)
             {
                 MultiUserSelectionPanel.Visibility = tag == "multiple" ? Visibility.Visible : Visibility.Collapsed;
             }
-            
+
             if (tag == "all")
             {
                 ImportUserHintText.Text = "Passwords will be imported as accessible to all users in the system";
@@ -269,6 +460,8 @@ public sealed partial class SettingsPage : Page
             filePicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
             filePicker.FileTypeFilter.Add(".csv");
             filePicker.FileTypeFilter.Add(".1pux");
+            // Some 1Password exports use the .1pu extension — include it so files are selectable
+            filePicker.FileTypeFilter.Add(".1pu");
             filePicker.FileTypeFilter.Add(".json");
             filePicker.FileTypeFilter.Add(".txt");
 
@@ -313,8 +506,14 @@ public sealed partial class SettingsPage : Page
             try
             {
                 var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                var importDlls = System.IO.Directory.GetFiles(baseDirectory, "PasswordManagerImports.*.dll");
-                foreach (var dllPath in importDlls)
+                var importDllsList = new List<string>();
+                importDllsList.AddRange(System.IO.Directory.GetFiles(baseDirectory, "PasswordManagerImports.*.dll"));
+                var importsFolder = System.IO.Path.Combine(baseDirectory, "imports", "otherpasswordmanagers");
+                if (System.IO.Directory.Exists(importsFolder))
+                {
+                    importDllsList.AddRange(System.IO.Directory.GetFiles(importsFolder, "PasswordManagerImports.*.dll", System.IO.SearchOption.AllDirectories));
+                }
+                foreach (var dllPath in importDllsList)
                 {
                     try
                     {
@@ -412,20 +611,66 @@ public sealed partial class SettingsPage : Page
             ImportStatusText.Text = $"Importing from {selectedType}...";
             ImportProgressText.Text = "Reading file...";
 
-            // Explicit fallback: if provider still not found, try to instantiate it directly
+            // Explicit fallback: if provider still not found, try multiple resolution strategies
             if (provider == null && providerName == "1Password")
             {
                 try
                 {
-                    var onePasswordProviderType = Type.GetType("PasswordManagerImports.OnePassword.Providers.OnePasswordImportProvider, PasswordManagerImports.OnePassword");
-                    if (onePasswordProviderType != null)
+                    // Try common assembly name variants
+                    var assemblyNames = new[] { "PasswordManagerImports.OnePassword", "PasswordManagerImports.1Password", "PasswordManagerImports.OnePassword.dll" };
+                    foreach (var asmName in assemblyNames)
                     {
-                        var instance = Activator.CreateInstance(onePasswordProviderType) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
-                        if (instance != null)
+                        var typeName = $"PasswordManagerImports.OnePassword.Providers.OnePasswordImportProvider, {asmName}";
+                        var onePasswordProviderType = Type.GetType(typeName, false);
+                        if (onePasswordProviderType != null)
                         {
-                            importService.RegisterProvider(instance);
-                            provider = instance;
-                            System.Diagnostics.Debug.WriteLine("Registered 1Password provider via direct instantiation");
+                            var instance = Activator.CreateInstance(onePasswordProviderType) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
+                            if (instance != null)
+                            {
+                                importService.RegisterProvider(instance);
+                                provider = instance;
+                                System.Diagnostics.Debug.WriteLine($"Registered 1Password provider via direct instantiation from {asmName}");
+                                break;
+                            }
+                        }
+                    }
+
+                    // As a last resort, scan already loaded assemblies for a matching provider type
+                    if (provider == null)
+                    {
+                        var loaded = AppDomain.CurrentDomain.GetAssemblies()
+                            .Where(a => !a.IsDynamic)
+                            .ToList();
+
+                        foreach (var asm in loaded)
+                        {
+                            try
+                            {
+                                var candidateTypes = asm.GetTypes()
+                                    .Where(t => typeof(PasswordManager.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
+                                                && !t.IsInterface && !t.IsAbstract)
+                                    .ToList();
+
+                                foreach (var ct in candidateTypes)
+                                {
+                                    // Try to instantiate and check ProviderName
+                                    try
+                                    {
+                                        var inst = Activator.CreateInstance(ct) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
+                                        if (inst != null && string.Equals(inst.ProviderName, "1Password", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            importService.RegisterProvider(inst);
+                                            provider = inst;
+                                            System.Diagnostics.Debug.WriteLine($"Registered 1Password provider by scanning assembly {asm.FullName}");
+                                            break;
+                                        }
+                                    }
+                                    catch { }
+                                }
+
+                                if (provider != null) break;
+                            }
+                            catch { }
                         }
                     }
                 }
@@ -440,13 +685,13 @@ public sealed partial class SettingsPage : Page
             var fileName = System.IO.Path.GetFileName(filePath);
 
             ImportProgressText.Text = "Processing items...";
-            
+
             // Determine user ID(s) based on selection
             var userSelection = ImportUserModeComboBox?.SelectedItem as ComboBoxItem;
             var userSelectionTag = userSelection?.Tag?.ToString() ?? "current";
-            
+
             List<string?> targetUserIds = new();
-            
+
             if (userSelectionTag == "current")
             {
                 // Import for current user - determine current user id to attach imported items
@@ -477,7 +722,7 @@ public sealed partial class SettingsPage : Page
                         targetUserIds.Add(checkBox.Tag?.ToString());
                     }
                 }
-                
+
                 if (targetUserIds.Count == 0)
                 {
                     ImportProgressRing.IsActive = false;
@@ -498,18 +743,18 @@ public sealed partial class SettingsPage : Page
             int totalSuccessful = 0;
             int totalFailed = 0;
             int totalProcessed = 0;
-            
+
             for (int i = 0; i < targetUserIds.Count; i++)
             {
                 var targetUserId = targetUserIds[i];
-                
+
                 // Reset stream position for each import
                 fileStream.Position = 0;
-                
+
                 ImportProgressText.Text = $"Processing items for user {i + 1} of {targetUserIds.Count}...";
-                
+
                 var result = await importService.ImportPasswordsAsync(providerName, fileStream, fileName, targetUserId);
-                
+
                 if (result.Success)
                 {
                     totalSuccessful += result.SuccessfulImports;

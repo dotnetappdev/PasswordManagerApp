@@ -123,10 +123,18 @@ public sealed partial class CategoryDialog : ContentDialog
                 _category.UpdatedAt = DateTime.UtcNow;
                 _category.LastModified = DateTime.UtcNow;
 
-                // Set user ID from current authenticated user
-                if (_authService.CurrentUser != null)
+                // Set user ID from auth service (use GetCurrentUserIdAsync to support API/local modes)
+                try
                 {
-                    _category.UserId = _authService.CurrentUser.Id;
+                    var uid = await _authService.GetCurrentUserIdAsync();
+                    if (!string.IsNullOrWhiteSpace(uid))
+                    {
+                        _category.UserId = uid;
+                    }
+                }
+                catch
+                {
+                    // Ignore - leave UserId as-is if we cannot resolve it
                 }
 
                 await _categoryService.UpdateAsync(_category);
@@ -144,10 +152,18 @@ public sealed partial class CategoryDialog : ContentDialog
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow,
-                    UserId = _authService.CurrentUser?.Id
+                    UserId = null
 
                 };
-                var TEST = newCategory;
+                // Attempt to set the UserId via auth service if available
+                try
+                {
+                    var uid = await _authService.GetCurrentUserIdAsync();
+                    if (!string.IsNullOrWhiteSpace(uid))
+                        newCategory.UserId = uid;
+                }
+                catch { }
+
                 await _categoryService.CreateAsync(newCategory);
                 Result = newCategory;
                 // Notify listeners that a category was created

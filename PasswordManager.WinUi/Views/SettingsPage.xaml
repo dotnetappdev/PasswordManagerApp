@@ -161,9 +161,42 @@
                         <StackPanel x:Name="SqlitePathPanel"
                                    Spacing="8"
                                    Visibility="Visible">
-                            <TextBlock Text="SQLite Database Path" 
+                            <TextBlock Text="Current SQLite Database Location" 
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>
+                            <TextBox x:Name="CurrentDbPathTextBox"
+                                    IsReadOnly="True"
+                                    Style="{StaticResource ModernTextBoxStyle}"
+                                    MinWidth="360"
+                                    FontFamily="Consolas"
+                                    FontSize="11"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Style="{StaticResource ModernSecondaryButtonStyle}"
+                                       Click="OpenDatabaseFolderButton_Click"
+                                       ToolTipService.ToolTip="Open the database folder in File Explorer">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE8B7;" FontSize="14"/>
+                                        <TextBlock Text="Open Folder"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource ModernSecondaryButtonStyle}"
+                                       Click="CopyDatabasePathButton_Click"
+                                       ToolTipService.ToolTip="Copy database path to clipboard">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE8C8;" FontSize="14"/>
+                                        <TextBlock Text="Copy Path"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                            <TextBlock Text="This is the active database file location. To change it, configure the database provider below." 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      TextWrapping="Wrap"
+                                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            
+                            <TextBlock Text="Custom SQLite Database Path" 
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"
+                                      Margin="0,12,0,0"/>
                             <TextBox x:Name="SqlitePathTextBox"
                                     Text="{Binding SqliteDatabasePath, Mode=TwoWay}"
                                     PlaceholderText="passwordmanager.db"

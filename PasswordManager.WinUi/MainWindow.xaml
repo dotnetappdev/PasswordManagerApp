@@ -289,9 +289,9 @@
                     </NavigationViewItem.ContextFlyout>
                 </NavigationViewItem>
 
-                <!-- Dynamic Categories (loaded from database) will be inserted here programmatically -->
-                <StackPanel x:Name="DynamicCategoriesPanel">
-                    <!-- Categories loaded from database will be added here -->
+                <!-- Dynamic Categories (hidden to avoid confusing duplicates) -->
+                <StackPanel x:Name="DynamicCategoriesPanel" Visibility="Collapsed">
+                    <!-- Categories loaded from database will be added here (hidden) -->
                 </StackPanel>
 
                 <NavigationViewItemSeparator Margin="12,8"/>
@@ -315,16 +315,13 @@
                     <!-- Add/Delete tag buttons removed for a cleaner UI -->
                 </Grid>
 
-                <!-- Sample tags -->
-                <NavigationViewItem Content="Starter Kit"
-                                    Tag="StarterKitTag"
-                                    Style="{StaticResource ModernNavigationViewItemStyle}">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8EC;"
-                                  FontSize="16"
-                                  Foreground="#10b981"/>
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
+                <!-- Tags list rendered as chips -->
+                <StackPanel x:Name="SidebarTagsPanel"
+                            Orientation="Vertical"
+                            Margin="12,4"
+                            Spacing="6">
+                    <!-- Tags will be populated at runtime as rounded chips -->
+                </StackPanel>
 
                 <NavigationViewItemSeparator Margin="12,8"/>
 

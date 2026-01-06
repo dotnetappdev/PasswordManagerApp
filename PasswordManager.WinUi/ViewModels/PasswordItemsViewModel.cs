@@ -11,6 +11,7 @@ public class PasswordItemsViewModel : BaseViewModel
     private readonly IPasswordItemService _passwordItemService;
     private string _searchText = string.Empty;
     private string _filterType = "All";
+    private string? _filterTagName = null;
     private int? _selectedCategoryId = null;
     private ObservableCollection<PasswordItem> _allItems = new();
 
@@ -48,6 +49,18 @@ public class PasswordItemsViewModel : BaseViewModel
         }
     }
 
+    public string? FilterTagName
+    {
+        get => _filterTagName;
+        set
+        {
+            if (SetProperty(ref _filterTagName, value))
+            {
+                _ = ApplyFiltersAsync();
+            }
+        }
+    }
+
     public int? SelectedCategoryId
     {
         get => _selectedCategoryId;
@@ -78,13 +91,13 @@ public class PasswordItemsViewModel : BaseViewModel
         {
             IsLoading = true;
             var items = await _passwordItemService.GetAllAsync();
-            
+
             _allItems.Clear();
             foreach (var item in items)
             {
                 _allItems.Add(item);
             }
-            
+
             await ApplyFiltersAsync();
         }
         catch (Exception ex)
@@ -146,7 +159,7 @@ public class PasswordItemsViewModel : BaseViewModel
                             // Check if it's a valid ItemType
                             if (Enum.TryParse<ItemType>(FilterType, true, out var itemType))
                             {
-                                items = items.Where(item => 
+                                items = items.Where(item =>
                                     item.Type == itemType && !item.IsDeleted && !item.IsArchived);
                             }
                             break;
@@ -157,6 +170,12 @@ public class PasswordItemsViewModel : BaseViewModel
                 if (SelectedCategoryId.HasValue)
                 {
                     items = items.Where(item => item.CategoryId == SelectedCategoryId.Value);
+                }
+
+                // Apply tag filter
+                if (!string.IsNullOrWhiteSpace(FilterTagName))
+                {
+                    items = items.Where(item => item.Tags != null && item.Tags.Any(t => string.Equals(t.Name, FilterTagName, StringComparison.OrdinalIgnoreCase)));
                 }
 
                 return items.ToList();

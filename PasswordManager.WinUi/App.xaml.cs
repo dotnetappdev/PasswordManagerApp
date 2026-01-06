@@ -105,8 +105,50 @@ public partial class App : Application
                 }
 #endif
 
+                // CRITICAL: Create database directories BEFORE initializing services
+                try
+                {
+                    var platformService = scope.ServiceProvider.GetService<IPlatformService>();
+                    if (platformService != null)
+                    {
+                        var appDataDir = platformService.GetAppDataDirectory();
+                        var dbPath = System.IO.Path.Combine(appDataDir, "data", "passwordmanager.db");
+                        var dbDirectory = System.IO.Path.GetDirectoryName(dbPath);
+
+                        // ALWAYS ensure directory exists before any DB operations
+                        if (!string.IsNullOrEmpty(dbDirectory))
+                        {
+                            System.IO.Directory.CreateDirectory(dbDirectory);
+                            System.Diagnostics.Debug.WriteLine($"=== DATABASE PATH ===");
+                            System.Diagnostics.Debug.WriteLine($"App Data Directory: {appDataDir}");
+                            System.Diagnostics.Debug.WriteLine($"Database Directory: {dbDirectory}");
+                            System.Diagnostics.Debug.WriteLine($"Database Path: {dbPath}");
+                            System.Diagnostics.Debug.WriteLine($"Database Exists: {System.IO.File.Exists(dbPath)}");
+                        }
+                    }
+                }
+                catch (Exception exPath)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error creating database directory: {exPath.Message}");
+                }
+
                 var startupService = scope.ServiceProvider.GetRequiredService<IAppStartupService>();
                 await startupService.InitializeAsync();
+
+                // Ensure database is created
+                try
+                {
+                    var dbContext = scope.ServiceProvider.GetService<PasswordManagerDbContext>();
+                    if (dbContext != null)
+                    {
+                        await dbContext.Database.EnsureCreatedAsync();
+                        System.Diagnostics.Debug.WriteLine("Database ensured to exist");
+                    }
+                }
+                catch (Exception exDb)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Warning ensuring database creation: {exDb.Message}");
+                }
 
                 // Ensure junction table exists as a final safety net for WinUI/SQLite scenarios
                 try
@@ -227,13 +269,46 @@ public partial class App : Application
 
                 // Configure database context with default SQLite
                 var tempPlatformService = new WinUiPlatformService();
-                var defaultDbPath = Path.Combine(tempPlatformService.GetAppDataDirectory(), "data", "passwordmanager.db");
+                var appDataDir = tempPlatformService.GetAppDataDirectory();
+                var defaultDbPath = Path.Combine(appDataDir, "data", "passwordmanager.db");
                 var defaultDirectory = Path.GetDirectoryName(defaultDbPath);
-                if (!Directory.Exists(defaultDirectory))
+
+                System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] LocalAppData: {Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}");
+                System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] AppData Directory: {appDataDir}");
+                System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Database Directory: {defaultDirectory}");
+                System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Database Path: {defaultDbPath}");
+
+                // ALWAYS create directories - this runs at host build time
+                try
                 {
-                    Directory.CreateDirectory(defaultDirectory!);
+                    if (!string.IsNullOrEmpty(defaultDirectory))
+                    {
+                        var dirInfo = Directory.CreateDirectory(defaultDirectory);
+                        System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] CreateDirectory returned: {dirInfo.FullName}");
+                        System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Directory exists: {Directory.Exists(defaultDirectory)}");
+                        System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Directory exists (returned path): {Directory.Exists(dirInfo.FullName)}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] CRITICAL ERROR creating directory: {ex.GetType().Name}: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Stack: {ex.StackTrace}");
                 }
 
+                // Write a startup marker so it's easy to verify the app data directory used by the running WinUI app.
+                try
+                {
+                    var markerPath = Path.Combine(defaultDirectory!, "winui_startup_marker.txt");
+                    File.WriteAllText(markerPath, $"WinUI startup: {DateTime.UtcNow:O} - AppData: {appDataDir}");
+                    System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Wrote marker file: {markerPath}");
+                    System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Marker file exists: {File.Exists(markerPath)}");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Failed to write marker: {ex.GetType().Name}: {ex.Message}");
+                }
+
+                // Configure DbContext and services (MUST be outside catch block!)
                 services.AddDbContext<PasswordManagerDbContextApp>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
 

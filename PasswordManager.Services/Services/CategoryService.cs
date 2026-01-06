@@ -18,7 +18,20 @@ namespace PasswordManager.Services.Services
 
         public async Task<List<Category>> GetAllAsync()
         {
-            return await _db.Categories.ToListAsync();
+            try
+            {
+                // Return all non-empty categories without user filtering
+                // This allows categories to be shared across users or show default categories
+                return await _db.Categories
+                    .Where(c => !string.IsNullOrWhiteSpace(c.Name))
+                    .OrderBy(c => c.Name)
+                    .ToListAsync();
+            }
+            catch
+            {
+                // On any error, return an empty list rather than throwing to keep UI responsive
+                return new List<Category>();
+            }
         }
 
         public async Task<Category?> GetByIdAsync(int id)
@@ -41,15 +54,43 @@ namespace PasswordManager.Services.Services
                 }
             }
 
-            // Ensure the category has defaults and UserId (required by EF model)
+            // Ensure required defaults
             if (string.IsNullOrWhiteSpace(category.Icon))
                 category.Icon = "📁";
             if (string.IsNullOrWhiteSpace(category.Color))
                 category.Color = "#3b82f6";
 
+            // Ensure a UserId is present (use auth fallback or create demo user)
             if (string.IsNullOrWhiteSpace(category.UserId))
             {
                 category.UserId = await EnsureUserIdAsync();
+            }
+
+            // Normalize and validate name
+            if (string.IsNullOrWhiteSpace(category.Name))
+                throw new InvalidOperationException("Category name is required");
+
+            var normalized = System.Text.RegularExpressions.Regex.Replace(category.Name.Trim(), "\\\\s+", " ");
+            // Title-case the name for consistency
+            try
+            {
+                normalized = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(normalized.ToLower());
+            }
+            catch { }
+
+            category.Name = normalized;
+
+            // Avoid duplicates for the same user (case-insensitive)
+            var exists = await _db.Categories
+                .FirstOrDefaultAsync(c => c.UserId == category.UserId && c.Name.ToLower() == category.Name.ToLower());
+            if (exists != null)
+            {
+                // Update timestamps and return existing record rather than creating a duplicate
+                exists.LastModified = DateTime.UtcNow;
+                exists.UpdatedAt = DateTime.UtcNow;
+                _db.Categories.Update(exists);
+                await _db.SaveChangesAsync();
+                return exists;
             }
 
             _db.Categories.Add(category);
@@ -59,7 +100,6 @@ namespace PasswordManager.Services.Services
             }
             catch (Exception ex)
             {
-                // Re-throw with additional context to help debugging
                 throw new InvalidOperationException($"Failed to save Category: {ex.Message}", ex);
             }
 
