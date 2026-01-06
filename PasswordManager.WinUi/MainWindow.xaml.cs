@@ -28,7 +28,8 @@ public sealed partial class MainWindow : Window
         "LoginCategory", 
         "CreditCardCategory", 
         "SecureNotesCategory", 
-        "WiFiCategory" 
+        "WiFiCategory",
+        "PasskeysCategory"
     };
 
     public MainWindow(IServiceProvider serviceProvider)
