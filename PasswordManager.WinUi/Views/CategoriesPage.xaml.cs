@@ -197,19 +197,11 @@ public sealed partial class CategoriesPage : Page
                     await _viewModel.RefreshAsync();
                 }
                 
-                // Show toast notification
+                // Log success to debug output
                 var message = category.IsFavorite 
                     ? $"'{category.Name}' added to favorites" 
                     : $"'{category.Name}' removed from favorites";
-                    
-                var infoDialog = new ContentDialog
-                {
-                    Title = "Success",
-                    Content = message,
-                    CloseButtonText = "OK"
-                };
-                ConfigureDialogForCentering(infoDialog);
-                await infoDialog.ShowAsync();
+                System.Diagnostics.Debug.WriteLine(message);
             }
             catch (Exception ex)
             {

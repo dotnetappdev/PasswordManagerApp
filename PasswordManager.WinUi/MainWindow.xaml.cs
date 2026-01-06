@@ -604,7 +604,11 @@ public sealed partial class MainWindow : Window
                                     icon.Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, r, g, b));
                                 }
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Error parsing category color '{category.Color}': {ex.Message}");
+                                // Use default color on parse error
+                            }
                         }
                         
                         navItem.Icon = icon;
@@ -624,7 +628,7 @@ public sealed partial class MainWindow : Window
                     {
                         Text = "Delete Category",
                         Icon = new SymbolIcon(Symbol.Delete),
-                        Tag = category.Name
+                        Tag = category.Id.ToString() // Use ID for deletion
                     };
                     deleteItem.Click += DeleteCategoryItem_Click;
                     
@@ -970,10 +974,21 @@ public sealed partial class MainWindow : Window
                     using var scope = _serviceProvider.CreateScope();
                     var categoryService = scope.ServiceProvider.GetRequiredService<ICategoryInterface>();
                     
-                    // Get all categories and find the one matching the tag
-                    var categories = await categoryService.GetAllAsync();
+                    // Try to parse as category ID first (for dynamic categories from navigation)
+                    if (int.TryParse(tag, out int categoryId))
+                    {
+                        var category = await categoryService.GetByIdAsync(categoryId);
+                        if (category != null)
+                        {
+                            await categoryService.DeleteAsync(category.Id);
+                            await RefreshCategoriesAsync();
+                            await ShowInfoMessage("Category Deleted", $"Category '{category.Name}' was successfully deleted.");
+                            return;
+                        }
+                    }
                     
-                    // Try to match by various patterns: exact name match or tag without "Category" suffix
+                    // Fallback: Try to match by category name patterns (for legacy hardcoded categories)
+                    var categories = await categoryService.GetAllAsync();
                     const string categorySuffix = "Category";
                     var tagWithoutSuffix = tag.EndsWith(categorySuffix, StringComparison.OrdinalIgnoreCase) 
                         ? tag[..^categorySuffix.Length] 
@@ -986,11 +1001,8 @@ public sealed partial class MainWindow : Window
                     if (categoryToDelete != null)
                     {
                         await categoryService.DeleteAsync(categoryToDelete.Id);
-                        
-                        // Refresh categories in the navigation
                         await RefreshCategoriesAsync();
-                        
-                        await ShowInfoMessage("Category Deleted", $"Category was successfully deleted.");
+                        await ShowInfoMessage("Category Deleted", $"Category '{categoryToDelete.Name}' was successfully deleted.");
                     }
                     else
                     {
