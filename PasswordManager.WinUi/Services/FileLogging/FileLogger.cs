@@ -18,7 +18,7 @@ namespace PasswordManager.WinUi.Services.FileLogging
             _minLevel = minLevel;
         }
 
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => NoOpDisposable.Instance;
 
         public bool IsEnabled(LogLevel logLevel) => logLevel >= _minLevel;
 
@@ -54,6 +54,13 @@ namespace PasswordManager.WinUi.Services.FileLogging
             {
                 // Swallow logging exceptions - don't crash the app for logging errors
             }
+        }
+
+        private sealed class NoOpDisposable : IDisposable
+        {
+            public static readonly NoOpDisposable Instance = new();
+            private NoOpDisposable() { }
+            public void Dispose() { }
         }
     }
 }
