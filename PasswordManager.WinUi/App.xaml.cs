@@ -3,16 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using PasswordManager.DAL;
-using PasswordManager.Services;
 using PasswordManager.Services.Interfaces;
-using PasswordManager.Services.Services;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Imports.Services;
 using Microsoft.Extensions.Configuration;
-using PasswordManager.Crypto.Extensions;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Identity;
-using PasswordManager.Models;
 using PasswordManager.Models.Configuration;
 using PasswordManager.WinUi.Services;
 using Sentry;
@@ -27,15 +19,12 @@ public partial class App : Application
     private IHost _host;
 
     /// <summary>
-    /// Initializes the singleton application object.  This is the first line of authored code
-    /// executed, and as such is the logical equivalent of main() or WinMain().
+    /// Initializes the singleton application object.
     /// </summary>
     public App()
     {
         this.InitializeComponent();
         _host = CreateHostBuilder().Build();
-
-        // Initialize Sentry.io
         InitializeSentry();
     }
 
@@ -66,127 +55,29 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Invoked when the application is launched normally by the end user.  Other entry points
-    /// will be used such as when the application is launched to open a specific file.
+    /// Invoked when the application is launched normally by the end user.
     /// </summary>
-    /// <param name="args">Details about the launch request and process.</param>
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         m_window = new MainWindow(_host.Services);
 
-        // Initialize theme system
         ThemeHelper.Initialize(m_window, this);
-
-        // Load saved theme setting
         _ = LoadSavedTheme();
 
         m_window.Activate();
 
-        // Initialize services
         _ = Task.Run(async () =>
         {
             try
             {
                 await _host.StartAsync();
-                // Initialize database and services
+
                 using var scope = _host.Services.CreateScope();
-
-                // DEBUG: quick DI self-check to confirm Identity/UserManager and UserProfileService are registered
-#if DEBUG
-                try
-                {
-                    var dbgUserManager = scope.ServiceProvider.GetService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
-                    var dbgUserProfile = scope.ServiceProvider.GetService<IUserProfileService>();
-                    System.Diagnostics.Debug.WriteLine($"DEBUG DI check: UserManager {(dbgUserManager != null ? "RESOLVED" : "MISSING")}, UserProfileService {(dbgUserProfile != null ? "RESOLVED" : "MISSING")} ");
-                }
-                catch (Exception dbgEx)
-                {
-                    System.Diagnostics.Debug.WriteLine($"DEBUG DI check exception: {dbgEx}");
-                }
-#endif
-
-                // CRITICAL: Create database directories BEFORE initializing services
-                try
-                {
-                    var platformService = scope.ServiceProvider.GetService<IPlatformService>();
-                    if (platformService != null)
-                    {
-                        var appDataDir = platformService.GetAppDataDirectory();
-                        var dbPath = System.IO.Path.Combine(appDataDir, "passwordmanager.db");
-                        var dbDirectory = System.IO.Path.GetDirectoryName(dbPath);
-
-                        // ALWAYS ensure directory exists before any DB operations
-                        if (!string.IsNullOrEmpty(dbDirectory))
-                        {
-                            System.IO.Directory.CreateDirectory(dbDirectory);
-                            System.Diagnostics.Debug.WriteLine($"=== DATABASE PATH ===");
-                            System.Diagnostics.Debug.WriteLine($"App Data Directory: {appDataDir}");
-                            System.Diagnostics.Debug.WriteLine($"Database Directory: {dbDirectory}");
-                            System.Diagnostics.Debug.WriteLine($"Database Path: {dbPath}");
-                            System.Diagnostics.Debug.WriteLine($"Database Exists: {System.IO.File.Exists(dbPath)}");
-                        }
-                    }
-                }
-                catch (Exception exPath)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error creating database directory: {exPath.Message}");
-                }
-
                 var startupService = scope.ServiceProvider.GetRequiredService<IAppStartupService>();
                 await startupService.InitializeAsync();
-
-                // Ensure database is created
-                try
-                {
-                    var dbContext = scope.ServiceProvider.GetService<PasswordManagerDbContext>();
-                    if (dbContext != null)
-                    {
-                        await dbContext.Database.EnsureCreatedAsync();
-                        System.Diagnostics.Debug.WriteLine("Database ensured to exist");
-                    }
-                }
-                catch (Exception exDb)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Warning ensuring database creation: {exDb.Message}");
-                }
-
-                // Ensure junction table exists as a final safety net for WinUI/SQLite scenarios
-                try
-                {
-                    var migrationService = scope.ServiceProvider.GetService<IDatabaseMigrationService>();
-                    if (migrationService != null)
-                    {
-                        await migrationService.EnsurePasswordItemTagsTableExistsAsync();
-                        System.Diagnostics.Debug.WriteLine("Ensured PasswordItemTags table exists via migration service fallback (WinUI)");
-                    }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine("IDatabaseMigrationService not registered in WinUI host - cannot ensure PasswordItemTags table");
-                    }
-                }
-                catch (Exception exEnsure)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Warning ensuring PasswordItemTags table in WinUI: {exEnsure.Message}");
-                    SentrySdk.CaptureException(exEnsure);
-                }
-
-                // Test the identity seeder with common master key (DEBUG only)
-#if DEBUG
-                try
-                {
-                    System.Diagnostics.Debug.WriteLine("Running Identity Seeder test...");
-                    var testResult = await Tests.IdentitySeederTests.TestCommonMasterKeySetupAsync(_host.Services);
-                    System.Diagnostics.Debug.WriteLine($"Identity Seeder test result: {(testResult ? "PASSED" : "FAILED")}");
-                }
-                catch (Exception testEx)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Identity Seeder test exception: {testEx.Message}");
-                }
-#endif
             }
             catch (Exception ex)
             {
-                // Log error but don't crash the app
                 System.Diagnostics.Debug.WriteLine($"Service initialization error: {ex}");
                 SentrySdk.CaptureException(ex);
             }
@@ -197,7 +88,6 @@ public partial class App : Application
     {
         try
         {
-            // First, try to load from ApplicationData (persisted settings)
             var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
             if (localSettings.Values.ContainsKey("SelectedTheme"))
             {
@@ -217,7 +107,6 @@ public partial class App : Application
                 }
             }
 
-            // Fallback to secure storage (legacy)
             using var scope = _host.Services.CreateScope();
             var secureStorage = scope.ServiceProvider.GetRequiredService<ISecureStorageService>();
             var savedThemeFromSecure = await secureStorage.GetAsync("SelectedTheme");
@@ -234,7 +123,6 @@ public partial class App : Application
 
                 PasswordManager.WinUi.Services.ThemeHelper.SetTheme(theme);
 
-                // Migrate to ApplicationData for future use
                 localSettings.Values["SelectedTheme"] = savedThemeFromSecure;
             }
         }
@@ -242,7 +130,6 @@ public partial class App : Application
         {
             System.Diagnostics.Debug.WriteLine($"Error loading saved theme: {ex.Message}");
             SentrySdk.CaptureException(ex);
-            // Apply default system theme on error
             PasswordManager.WinUi.Services.ThemeHelper.SetTheme(PasswordManager.WinUi.Services.AppTheme.System);
         }
     }
@@ -256,143 +143,7 @@ public partial class App : Application
             })
             .ConfigureServices((context, services) =>
             {
-                // Register crypto services (needed for database configuration)
-                services.AddCryptographyServices();
-
-                // Register platform service
-                services.AddSingleton<IPlatformService, WinUiPlatformService>();
-                services.AddSingleton<ISecureStorageService, WinUiSecureStorageService>();
-
-                // Register database configuration service
-                services.AddScoped<IDatabaseConfigurationService, DatabaseConfigurationService>();
-                services.AddScoped<DynamicDatabaseContextFactory>();
-
-                // Configure database context with default SQLite
-                var tempPlatformService = new WinUiPlatformService();
-                var appDataDir = tempPlatformService.GetAppDataDirectory();
-                var defaultDbPath = Path.Combine(appDataDir, "passwordmanager.db");
-                var defaultDirectory = Path.GetDirectoryName(defaultDbPath);
-
-                System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] LocalAppData: {Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}");
-                System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] AppData Directory: {appDataDir}");
-                System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Database Directory: {defaultDirectory}");
-                System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Database Path: {defaultDbPath}");
-
-                // ALWAYS create directories - this runs at host build time
-                try
-                {
-                    if (!string.IsNullOrEmpty(defaultDirectory))
-                    {
-                        var dirInfo = Directory.CreateDirectory(defaultDirectory);
-                        System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] CreateDirectory returned: {dirInfo.FullName}");
-                        System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Directory exists: {Directory.Exists(defaultDirectory)}");
-                        System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Directory exists (returned path): {Directory.Exists(dirInfo.FullName)}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] CRITICAL ERROR creating directory: {ex.GetType().Name}: {ex.Message}");
-                    System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Stack: {ex.StackTrace}");
-                }
-
-                // Write a startup marker so it's easy to verify the app data directory used by the running WinUI app.
-                try
-                {
-                    var markerPath = Path.Combine(defaultDirectory!, "winui_startup_marker.txt");
-                    File.WriteAllText(markerPath, $"WinUI startup: {DateTime.UtcNow:O} - AppData: {appDataDir}");
-                    System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Wrote marker file: {markerPath}");
-                    System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Marker file exists: {File.Exists(markerPath)}");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[CreateHostBuilder] Failed to write marker: {ex.GetType().Name}: {ex.Message}");
-                }
-
-                // Configure DbContext and services (MUST be outside catch block!)
-                services.AddDbContext<PasswordManagerDbContextApp>(options =>
-                    options.UseSqlite($"Data Source={defaultDbPath}"));
-
-                services.AddDbContext<PasswordManagerDbContext>(options =>
-                    options.UseSqlite($"Data Source={defaultDbPath}"));
-
-                // Add Identity services with roles so all Identity tables are created
-                services.AddIdentityCore<ApplicationUser>(options =>
-                {
-                    options.SignIn.RequireConfirmedAccount = false;
-                    options.Password.RequireDigit = true;
-                    options.Password.RequireUppercase = true;
-                    options.Password.RequireLowercase = true;
-                })
-                .AddRoles<ApplicationRole>()
-                .AddEntityFrameworkStores<PasswordManagerDbContextApp>();
-
-                // Register the interface mapping for dependency injection
-                services.AddScoped<DAL.Interfaces.IPasswordManagerDbContext>(provider =>
-                    provider.GetRequiredService<PasswordManagerDbContext>());
-
-                // Register business services
-                services.AddScoped<IPasswordItemService, PasswordItemService>();
-                services.AddScoped<ITagService, TagService>();
-                services.AddScoped<ICategoryInterface, CategoryService>();
-                services.AddScoped<ICollectionService, CollectionService>();
-                services.AddScoped<ICustomFieldService, CustomFieldService>();
-                services.AddScoped<IPasswordEncryptionService, PasswordEncryptionService>(); // Fix: Add missing PasswordEncryptionService registration
-                services.AddScoped<IPasskeyService, PasskeyService>(); // Fix: Add missing PasskeyService registration
-                services.AddScoped<WinUiAuthService>(); // Register the local auth service
-                services.AddScoped<IAuthService, ConfigurableAuthService>(); // Use configurable auth service
-                services.AddScoped<IPasswordRevealService, PasswordRevealService>();
-                services.AddScoped<IAppSyncService, AppSyncService>();
-                services.AddScoped<IAppStartupService, AppStartupService>();
-                services.AddScoped<IDatabaseMigrationService, DatabaseMigrationService>();
-                services.AddScoped<IDatabaseHealthService, DatabaseHealthService>();
-                services.AddScoped<IDatabaseResetService, DatabaseResetService>();
-                services.AddScoped<IUserProfileService, UserProfileService>();
-                services.AddScoped<IVaultSessionService, VaultSessionService>();
-                services.AddScoped<IPasscodeService, PasscodeService>();
-
-                // Register Identity data seeder for proper Identity table initialization
-                services.AddScoped<PasswordManager.DAL.Seed.IdentityDataSeeder>();
-
-                // Register Fido2 service for passkeys
-                services.AddScoped<Fido2NetLib.IFido2>(provider =>
-                {
-                    var config = new Fido2NetLib.Fido2Configuration
-                    {
-                        ServerDomain = "localhost",
-                        ServerName = "PasswordManager WinUI",
-                        Origins = new HashSet<string> { "https://localhost", "http://localhost" },
-                        TimestampDriftTolerance = 300000
-                    };
-                    return new Fido2NetLib.Fido2(config);
-                });
-
-                // Register HTTP client
-                services.AddHttpClient();
-
-                // Register import services
-                services.AddSingleton<PluginDiscoveryService>();
-                services.AddScoped<IImportService, ImportService>();
-
-                // Register cloud backup services
-                services.AddScoped<IDatabaseBackupService, DatabaseBackupService>();
-                services.AddScoped<IOneDriveBackupService, OneDriveBackupService>();
-                services.AddScoped<IiCloudBackupService, iCloudBackupService>();
-                services.AddScoped<INetworkLocationBackupService, NetworkLocationBackupService>();
-                services.AddScoped<CloudBackupManager>();
-                services.AddScoped<IBackupSettingsService, BackupSettingsService>();
-                services.AddSingleton<IScheduledBackupService, ScheduledBackupService>();
-                services.AddHostedService<ScheduledBackupService>();
-
-                // Add logging (Debug + file logger)
-                var tempLogPlatform = new WinUiPlatformService();
-                var logBase = Path.Combine(tempLogPlatform.GetAppDataDirectory(), "log");
-
-                services.AddLogging(builder =>
-                {
-                    builder.AddDebug();
-                    // Register file logger provider that appends logs into \log\{year}\{month}\{day}.txt
-                    builder.AddProvider(new PasswordManager.WinUi.Services.FileLogging.FileLoggerProvider(logBase, LogLevel.Debug));
-                });
+                services.ConfigureServices(context.Configuration);
             });
     }
 
