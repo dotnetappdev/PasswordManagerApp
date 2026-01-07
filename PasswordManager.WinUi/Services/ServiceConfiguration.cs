@@ -66,8 +66,10 @@ public static class ServiceConfiguration
         services.AddScoped<DynamicDatabaseContextFactory>();
 
         var platformService = new WinUiPlatformService();
-        var appDataDir = platformService.GetAppDataDirectory();
+        var appDataDir = platformService.GetAppDataDirectory(); // This already creates the directory
         var defaultDbPath = Path.Combine(appDataDir, "passwordmanager.db");
+
+        System.Diagnostics.Debug.WriteLine($"[ServiceConfiguration] Database will be created at: {defaultDbPath}");
 
         services.AddDbContext<PasswordManagerDbContextApp>(options =>
             options.UseSqlite($"Data Source={defaultDbPath}"));

@@ -71,8 +71,14 @@ public class Program
                 services.AddScoped<DynamicDatabaseContextFactory>();
 
                 var platformService = new CrossPlatformService();
-                var defaultDbPath = Path.Combine(platformService.GetAppDataDirectory(), "data", "passwordmanager.db");
-                Directory.CreateDirectory(Path.GetDirectoryName(defaultDbPath)!);
+                var appDataDir = platformService.GetAppDataDirectory();
+                var defaultDbPath = Path.Combine(appDataDir, "passwordmanager.db");
+                
+                // Ensure directory exists before creating database context
+                if (!Directory.Exists(appDataDir))
+                {
+                    Directory.CreateDirectory(appDataDir);
+                }
 
                 services.AddDbContext<PasswordManagerDbContextApp>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));

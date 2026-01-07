@@ -264,7 +264,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
             IsFirstRun = true,
             Sqlite = new SqliteConfig
             {
-                DatabasePath = Path.Combine(_platformService.GetAppDataDirectory(), "data", "passwordmanager.db")
+                DatabasePath = Path.Combine(_platformService.GetAppDataDirectory(), "passwordmanager.db")
             }
         };
 
@@ -296,12 +296,33 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
             var defaultConfig = GetDefaultConfiguration();
             var dbPath = defaultConfig.Sqlite!.DatabasePath;
             
-            // Ensure directory exists
+            // Ensure directory exists - this is the critical fix
             var directory = Path.GetDirectoryName(dbPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            if (!string.IsNullOrEmpty(directory))
             {
-                Directory.CreateDirectory(directory);
-                _logger.LogInformation("Created database directory: {Directory}", directory);
+                if (!Directory.Exists(directory))
+                {
+                    try
+                    {
+                        var dirInfo = Directory.CreateDirectory(directory);
+                        _logger.LogInformation("Created database directory: {Directory}", dirInfo.FullName);
+                        
+                        // Verify the directory was actually created
+                        if (!Directory.Exists(directory))
+                        {
+                            throw new InvalidOperationException($"Directory creation reported success but directory does not exist: {directory}");
+                        }
+                    }
+                    catch (Exception dirEx)
+                    {
+                        _logger.LogError(dirEx, "Failed to create database directory: {Directory}", directory);
+                        throw;
+                    }
+                }
+                else
+                {
+                    _logger.LogDebug("Database directory already exists: {Directory}", directory);
+                }
             }
 
             // Check if database file exists and has proper schema
@@ -329,7 +350,17 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
                         _logger.LogInformation("Created PasswordManagerDbContextApp database schema");
                     }
                     
-                    _logger.LogInformation("Basic SQLite database with schema created successfully");
+                    // Verify the database file was created
+                    if (File.Exists(dbPath))
+                    {
+                        var fileInfo = new FileInfo(dbPath);
+                        _logger.LogInformation("Basic SQLite database created successfully at {DbPath} (size: {Size} bytes)", 
+                            dbPath, fileInfo.Length);
+                    }
+                    else
+                    {
+                        _logger.LogError("Database file was not created after EnsureCreatedAsync");
+                    }
                 }
                 catch (Exception contextEx)
                 {
@@ -337,12 +368,15 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
                     // Fall back to creating an empty database file
                     using var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbPath}");
                     await connection.OpenAsync();
-                    _logger.LogInformation("Empty SQLite database created as fallback");
+                    // Connection will be automatically closed when disposed by the using statement
+                    _logger.LogInformation("Empty SQLite database created as fallback at: {DbPath}", dbPath);
                 }
             }
             else
             {
-                _logger.LogDebug("SQLite database already exists at: {DbPath}", dbPath);
+                var fileInfo = new FileInfo(dbPath);
+                _logger.LogDebug("SQLite database already exists at: {DbPath} (size: {Size} bytes)", 
+                    dbPath, fileInfo.Length);
             }
         }
         catch (Exception ex)

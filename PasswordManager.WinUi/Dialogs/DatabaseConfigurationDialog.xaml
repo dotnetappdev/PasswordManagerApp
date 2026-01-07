@@ -1,0 +1,85 @@
+<ContentDialog
+    x:Class="PasswordManager.WinUi.Dialogs.DatabaseConfigurationDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Database Configuration"
+    PrimaryButtonText="Save"
+    CloseButtonText="Use Default"
+    DefaultButton="Primary"
+    PrimaryButtonClick="OnPrimaryButtonClick"
+    CloseButtonClick="OnCloseButtonClick">
+
+    <ScrollViewer MaxHeight="500">
+        <StackPanel Spacing="16" Padding="4">
+            <!-- Header -->
+            <TextBlock TextWrapping="Wrap" FontSize="14">
+                Choose where to store your password database. The database will be created at the location you specify.
+            </TextBlock>
+
+            <!-- Default Location Info -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    CornerRadius="8"
+                    Padding="12">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Default Location" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="DefaultPathTextBlock" 
+                               TextWrapping="Wrap"
+                               FontFamily="Consolas"
+                               FontSize="12"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Custom Path Section -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Custom Database Path (Optional)" FontWeight="SemiBold"/>
+                <TextBox x:Name="CustomPathTextBox"
+                         PlaceholderText="Leave empty to use default location"
+                         TextChanged="CustomPathTextBox_TextChanged"/>
+                <Button x:Name="BrowseButton"
+                        Content="Browse..."
+                        Click="BrowseButton_Click"/>
+            </StackPanel>
+
+            <!-- Warning for custom path -->
+            <InfoBar x:Name="CustomPathWarning"
+                     Severity="Warning"
+                     IsOpen="False"
+                     Title="Custom Path Selected"
+                     Message="Make sure the folder exists and you have write permissions. The database file will be created automatically."/>
+
+            <!-- Preview -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    CornerRadius="8"
+                    Padding="12"
+                    x:Name="PreviewBorder">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Database will be created at:" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="PreviewPathTextBlock"
+                               TextWrapping="Wrap"
+                               FontFamily="Consolas"
+                               FontSize="12"
+                               Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Important Notes -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    CornerRadius="8"
+                    Padding="12">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Important Notes:" FontWeight="SemiBold"/>
+                    <TextBlock TextWrapping="Wrap">
+                        • The database file contains all your encrypted passwords
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap">
+                        • Make sure to backup this file regularly
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap">
+                        • You can change this location later in Settings
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</ContentDialog>
