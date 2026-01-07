@@ -217,6 +217,19 @@
                             </StackPanel>
                         </Button>
                         
+                        <!-- Seed Data Button -->
+                        <Button x:Name="SeedDataButton"
+                               Style="{StaticResource ModernSecondaryButtonStyle}"
+                               HorizontalAlignment="Left"
+                               IsEnabled="{Binding AuthenticationMode, Converter={StaticResource LocalModeToEnabledConverter}}"
+                               Click="SeedDataButton_Click"
+                               ToolTipService.ToolTip="Manually seed categories, collections, and tags into the database">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8A1;" FontSize="14"/>
+                                <TextBlock Text="Seed Essential Data"/>
+                            </StackPanel>
+                        </Button>
+                        
                         <ToggleSwitch x:Name="SyncToggle"
                                      Header="Enable Cloud Sync" 
                                      IsOn="{Binding EnableSync, Mode=TwoWay}"
