@@ -244,7 +244,89 @@ namespace PasswordManager.Services.Services
             _db.Vaults.Add(newVault);
             await _db.SaveChangesAsync();
 
+            // Seed default categories for this vault
+            await SeedDefaultCategoriesAsync(newVault.Id, userId);
+
             return newVault;
+        }
+
+        /// <summary>
+        /// Seeds default categories for a vault (Login, Credit Card, Secure Notes, WiFi, Passkeys, Identity)
+        /// </summary>
+        private async Task SeedDefaultCategoriesAsync(int vaultId, string userId)
+        {
+            var defaultCategories = new[]
+            {
+                new Category 
+                { 
+                    Name = "Logins", 
+                    Description = "Login credentials for websites and apps",
+                    Icon = "🔑",
+                    Color = "#4A90E2",
+                    VaultId = vaultId,
+                    UserId = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new Category 
+                { 
+                    Name = "Credit Cards", 
+                    Description = "Credit and debit card information",
+                    Icon = "💳",
+                    Color = "#E94B3C",
+                    VaultId = vaultId,
+                    UserId = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new Category 
+                { 
+                    Name = "Secure Notes", 
+                    Description = "Encrypted notes and documents",
+                    Icon = "📝",
+                    Color = "#F5A623",
+                    VaultId = vaultId,
+                    UserId = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new Category 
+                { 
+                    Name = "WiFi Networks", 
+                    Description = "WiFi network passwords",
+                    Icon = "📶",
+                    Color = "#7ED321",
+                    VaultId = vaultId,
+                    UserId = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new Category 
+                { 
+                    Name = "Passkeys", 
+                    Description = "Passkey credentials for passwordless authentication",
+                    Icon = "🔐",
+                    Color = "#9013FE",
+                    VaultId = vaultId,
+                    UserId = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new Category 
+                { 
+                    Name = "Identities", 
+                    Description = "Personal identification information",
+                    Icon = "👤",
+                    Color = "#50E3C2",
+                    VaultId = vaultId,
+                    UserId = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                }
+            };
+
+            _db.Categories.AddRange(defaultCategories);
+            await _db.SaveChangesAsync();
         }
     }
 }

@@ -11,15 +11,18 @@ public class UserProfileService : IUserProfileService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IPasswordCryptoService _passwordCryptoService;
+    private readonly IVaultService _vaultService;
     private readonly ILogger<UserProfileService> _logger;
 
     public UserProfileService(
         UserManager<ApplicationUser> userManager,
         IPasswordCryptoService passwordCryptoService,
+        IVaultService vaultService,
         ILogger<UserProfileService> logger)
     {
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _passwordCryptoService = passwordCryptoService ?? throw new ArgumentNullException(nameof(passwordCryptoService));
+        _vaultService = vaultService ?? throw new ArgumentNullException(nameof(vaultService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -130,6 +133,18 @@ public class UserProfileService : IUserProfileService
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
                 _logger.LogError("Failed to create user {Email}: {Errors}", createUserDto.Email, errors);
                 return (result, null, errors);
+            }
+
+            // Seed default vault with categories for the new user
+            try
+            {
+                await _vaultService.GetOrCreateDefaultVaultAsync(newUser.Id);
+                _logger.LogInformation("Seeded default vault and categories for user {Email}", newUser.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to seed default vault for user {Email}", newUser.Email);
+                // Continue even if seeding fails - user is created successfully
             }
 
             _logger.LogInformation("Created user {Email} successfully", newUser.Email);
