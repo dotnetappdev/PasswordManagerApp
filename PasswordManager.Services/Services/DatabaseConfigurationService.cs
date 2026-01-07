@@ -368,7 +368,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
                     // Fall back to creating an empty database file
                     using var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbPath}");
                     await connection.OpenAsync();
-                    await connection.CloseAsync();
+                    // Connection will be automatically closed when disposed by the using statement
                     _logger.LogInformation("Empty SQLite database created as fallback at: {DbPath}", dbPath);
                 }
             }

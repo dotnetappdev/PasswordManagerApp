@@ -66,32 +66,10 @@ public static class ServiceConfiguration
         services.AddScoped<DynamicDatabaseContextFactory>();
 
         var platformService = new WinUiPlatformService();
-        var appDataDir = platformService.GetAppDataDirectory();
+        var appDataDir = platformService.GetAppDataDirectory(); // This already creates the directory
         var defaultDbPath = Path.Combine(appDataDir, "passwordmanager.db");
 
-        // Ensure the directory exists before creating connection strings
-        // This is critical for SQLite to work properly
-        try
-        {
-            if (!Directory.Exists(appDataDir))
-            {
-                Directory.CreateDirectory(appDataDir);
-                System.Diagnostics.Debug.WriteLine($"[ServiceConfiguration] Created database directory: {appDataDir}");
-            }
-
-            // Verify directory was created successfully
-            if (!Directory.Exists(appDataDir))
-            {
-                throw new InvalidOperationException($"Failed to create database directory: {appDataDir}");
-            }
-
-            System.Diagnostics.Debug.WriteLine($"[ServiceConfiguration] Database will be created at: {defaultDbPath}");
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[ServiceConfiguration] ERROR ensuring database directory: {ex.Message}");
-            throw;
-        }
+        System.Diagnostics.Debug.WriteLine($"[ServiceConfiguration] Database will be created at: {defaultDbPath}");
 
         services.AddDbContext<PasswordManagerDbContextApp>(options =>
             options.UseSqlite($"Data Source={defaultDbPath}"));
