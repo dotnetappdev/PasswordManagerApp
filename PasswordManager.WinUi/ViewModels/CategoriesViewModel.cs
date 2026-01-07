@@ -64,7 +64,6 @@ public class CategoriesViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading categories: {ex.Message}");
         }
         finally
         {
@@ -119,7 +118,6 @@ public class CategoriesViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error creating category: {ex.Message}");
             return false;
         }
         finally
@@ -151,7 +149,6 @@ public class CategoriesViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error updating category: {ex.Message}");
             return false;
         }
         finally
@@ -173,7 +170,6 @@ public class CategoriesViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error deleting category: {ex.Message}");
             return false;
         }
         finally

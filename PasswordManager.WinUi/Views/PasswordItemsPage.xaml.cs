@@ -85,7 +85,6 @@ public sealed partial class PasswordItemsPage : Page
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading tags: {ex.Message}");
             }
 
             // Reload view model items after seeding to ensure UI shows newly created items
@@ -98,7 +97,6 @@ public sealed partial class PasswordItemsPage : Page
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error refreshing view model after seeding: {ex.Message}");
             }
         }
     }
@@ -159,7 +157,6 @@ public sealed partial class PasswordItemsPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading categories: {ex.Message}");
         }
     }
 
@@ -427,7 +424,6 @@ public sealed partial class PasswordItemsPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error copying password: {ex.Message}");
         }
     }
 
@@ -449,7 +445,6 @@ public sealed partial class PasswordItemsPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error opening website: {ex.Message}");
         }
     }
 
@@ -486,7 +481,6 @@ public sealed partial class PasswordItemsPage : Page
         catch
         {
             // Fallback to debug output if UI updates fail
-            System.Diagnostics.Debug.WriteLine($"Notification: {message}");
         }
     }
 
@@ -571,7 +565,6 @@ public sealed partial class PasswordItemsPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error populating tag UI: {ex.Message}");
         }
     }
 
@@ -853,7 +846,6 @@ public sealed partial class PasswordItemsPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error adding tag: {ex.Message}");
         }
     }
 
@@ -888,7 +880,6 @@ public sealed partial class PasswordItemsPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error removing tag: {ex.Message}");
         }
     }
 
@@ -910,7 +901,6 @@ public sealed partial class PasswordItemsPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error navigating to Categories page: {ex.Message}");
         }
     }
 
@@ -952,7 +942,6 @@ public sealed partial class PasswordItemsPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error configuring dialog centering: {ex.Message}");
             // Fallback to page XamlRoot
             if (this.XamlRoot != null)
             {
@@ -1090,7 +1079,6 @@ public sealed partial class PasswordItemsPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error applying filters: {ex.Message}");
         }
     }
 
@@ -1226,7 +1214,6 @@ public sealed partial class PasswordItemsPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error copying username: {ex.Message}");
         }
     }
 
@@ -1249,7 +1236,6 @@ public sealed partial class PasswordItemsPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error generating password: {ex.Message}");
         }
     }
 
@@ -1324,7 +1310,6 @@ public sealed partial class PasswordItemsPage : Page
         {
             autoSuggestBox.Text = selectedCategory;
             // Apply category filter logic here if needed
-            System.Diagnostics.Debug.WriteLine($"Category filter selected: {selectedCategory}");
         }
     }
 
@@ -1375,7 +1360,6 @@ public sealed partial class PasswordItemsPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error adding custom field: {ex.Message}");
         }
     }
 }

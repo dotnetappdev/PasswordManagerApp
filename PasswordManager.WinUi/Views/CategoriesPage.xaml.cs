@@ -55,7 +55,6 @@ public sealed partial class CategoriesPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error configuring dialog centering: {ex.Message}");
             // Fallback to page XamlRoot
             if (this.XamlRoot != null)
             {
@@ -201,7 +200,6 @@ public sealed partial class CategoriesPage : Page
                 var message = category.IsFavorite 
                     ? $"'{category.Name}' added to favorites" 
                     : $"'{category.Name}' removed from favorites";
-                System.Diagnostics.Debug.WriteLine(message);
             }
             catch (Exception ex)
             {

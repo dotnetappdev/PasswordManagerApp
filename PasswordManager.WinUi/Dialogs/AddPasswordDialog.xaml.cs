@@ -300,7 +300,6 @@ public sealed partial class AddPasswordDialog : ContentDialog
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading data: {ex.Message}");
         }
     }
 
@@ -580,7 +579,6 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Warning: Could not get default collection: {ex.Message}");
                     // Continue without collection ID - let the service handle it
                 }
             }
@@ -617,7 +615,6 @@ public sealed partial class AddPasswordDialog : ContentDialog
             ShowLoadingIndicator(false);
 
             var errorMessage = ex.InnerException?.Message ?? ex.Message;
-            System.Diagnostics.Debug.WriteLine($"Error saving password item: {errorMessage}");
 
             await ShowErrorDialog($"Error saving item: {errorMessage}");
         }

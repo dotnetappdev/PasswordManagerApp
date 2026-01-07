@@ -119,7 +119,6 @@ public sealed partial class SettingsPage : Page
                                 {
                                     importService.RegisterProvider(provider);
                                     await _logger.LogAsync("SettingsPage", $"Registered {provider.DisplayName} v{provider.Version}");
-                                    System.Diagnostics.Debug.WriteLine($"Successfully registered {provider.DisplayName} v{provider.Version}");
                                 }
                             }
                         }
@@ -127,7 +126,6 @@ public sealed partial class SettingsPage : Page
                         {
                             var fileName = System.IO.Path.GetFileName(dllPath);
                             await _logger.LogErrorAsync("SettingsPage", $"Failed to load provider from {fileName}", ex);
-                            System.Diagnostics.Debug.WriteLine($"Failed to load provider from {fileName}: {ex.Message}");
                         }
                     }
 
@@ -141,7 +139,6 @@ public sealed partial class SettingsPage : Page
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("SettingsPage", "Error during provider preload", ex);
-                System.Diagnostics.Debug.WriteLine($"Error during provider preload: {ex.Message}");
             }
         }
     }
@@ -183,7 +180,6 @@ public sealed partial class SettingsPage : Page
         catch (Exception ex)
         {
             await _logger.LogErrorAsync("SettingsPage", "Error displaying database path", ex);
-            System.Diagnostics.Debug.WriteLine($"Error displaying database path: {ex.Message}");
         }
     }
 
@@ -299,7 +295,6 @@ public sealed partial class SettingsPage : Page
         catch (Exception ex)
         {
             await _logger.LogErrorAsync("SettingsPage", "Error cleaning up categories", ex);
-            System.Diagnostics.Debug.WriteLine($"Error cleaning up categories: {ex.Message}");
         }
     }
 
@@ -323,7 +318,6 @@ public sealed partial class SettingsPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to populate import types: {ex.Message}");
         }
     }
 
@@ -641,7 +635,6 @@ public sealed partial class SettingsPage : Page
                             {
                                 importService.RegisterProvider(instance);
                                 provider = instance;
-                                System.Diagnostics.Debug.WriteLine($"Registered 1Password provider via direct instantiation from {asmName}");
                                 break;
                             }
                         }
@@ -673,7 +666,6 @@ public sealed partial class SettingsPage : Page
                                         {
                                             importService.RegisterProvider(inst);
                                             provider = inst;
-                                            System.Diagnostics.Debug.WriteLine($"Registered 1Password provider by scanning assembly {asm.FullName}");
                                             break;
                                         }
                                     }
@@ -688,7 +680,6 @@ public sealed partial class SettingsPage : Page
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Failed to directly instantiate 1Password provider: {ex.Message}");
                 }
             }
 
@@ -720,7 +711,6 @@ public sealed partial class SettingsPage : Page
                 {
                     // Log error but continue with null userId (will import for all users as fallback)
                     await _logger.LogErrorAsync("SettingsPage", "Failed to get current user ID for import", ex);
-                    System.Diagnostics.Debug.WriteLine($"Failed to get current user ID for import: {ex.Message}");
                     targetUserIds.Add(null);
                 }
             }
@@ -809,7 +799,6 @@ public sealed partial class SettingsPage : Page
             ImportProgressPanel.Visibility = Visibility.Collapsed;
             ImportStatusText.Text = "✗ Import failed";
             ImportResultText.Text = $"Error: {ex.Message}";
-            System.Diagnostics.Debug.WriteLine($"Import error: {ex}");
         }
         finally
         {

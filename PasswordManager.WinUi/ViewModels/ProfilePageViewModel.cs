@@ -114,7 +114,6 @@ public class ProfilePageViewModel : BaseViewModel
         catch (Exception ex)
         {
             ErrorMessage = $"Error loading profile: {ex.Message}";
-            System.Diagnostics.Debug.WriteLine($"Error loading profile data: {ex.Message}");
         }
         finally
         {
@@ -194,7 +193,6 @@ public class ProfilePageViewModel : BaseViewModel
         catch (Exception ex)
         {
             ErrorMessage = $"Error saving profile: {ex.Message}";
-            System.Diagnostics.Debug.WriteLine($"Error saving profile: {ex.Message}");
             return false;
         }
         finally
@@ -234,7 +232,6 @@ public class ProfilePageViewModel : BaseViewModel
         catch (Exception ex)
         {
             ErrorMessage = $"Error switching profile: {ex.Message}";
-            System.Diagnostics.Debug.WriteLine($"Error switching profile: {ex.Message}");
             return false;
         }
     }

@@ -51,9 +51,9 @@ public partial class App : Application
                 });
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to initialize Sentry: {ex.Message}");
+            // Silently fail if Sentry initialization fails
         }
     }
 
@@ -84,7 +84,6 @@ public partial class App : Application
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Service initialization error: {ex}");
                 SentrySdk.CaptureException(ex);
             }
         });
@@ -103,8 +102,6 @@ public partial class App : Application
             
             if (isFirstRun)
             {
-                System.Diagnostics.Debug.WriteLine("First run detected - showing database configuration dialog");
-                
                 // Show the database configuration dialog on UI thread
                 await m_window.DispatcherQueue.EnqueueAsync(async () =>
                 {
@@ -117,14 +114,13 @@ public partial class App : Application
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine("XamlRoot not available, skipping database configuration dialog");
+                        // XamlRoot not available, skip dialog
                     }
                 });
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            System.Diagnostics.Debug.WriteLine($"Error checking/showing database configuration: {ex.Message}");
             // Continue with startup even if dialog fails
         }
     }
@@ -173,7 +169,6 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading saved theme: {ex.Message}");
             SentrySdk.CaptureException(ex);
             PasswordManager.WinUi.Services.ThemeHelper.SetTheme(PasswordManager.WinUi.Services.AppTheme.System);
         }

@@ -38,7 +38,6 @@ public sealed partial class LoginPage : Page
     {
         if (e.Key == Windows.System.VirtualKey.Enter)
         {
-            System.Diagnostics.Debug.WriteLine("MasterPasswordBox_KeyDown - Enter key pressed");
             await DoPrimaryActionAsync();
         }
     }
@@ -61,15 +60,12 @@ public sealed partial class LoginPage : Page
                 userProfilesList.ItemsSource = _profileSelectionViewModel.UserProfiles;
             }
 
-            System.Diagnostics.Debug.WriteLine($"LoginPage DataContext set - ViewModel created");
-            System.Diagnostics.Debug.WriteLine($"Initial ViewModel state - PageTitle: {_viewModel.PageTitle}, PrimaryButtonText: {_viewModel.PrimaryButtonText}");
 
             // Check if already authenticated after a brief delay for initialization
             _ = CheckAuthenticationStatusAsync();
         }
         else
         {
-            System.Diagnostics.Debug.WriteLine("LoginPage OnNavigatedTo - No service provider passed as parameter");
         }
     }
 
@@ -91,7 +87,6 @@ public sealed partial class LoginPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error checking authentication status: {ex.Message}");
         }
     }
 
@@ -99,11 +94,9 @@ public sealed partial class LoginPage : Page
     {
         if (_viewModel == null)
         {
-            System.Diagnostics.Debug.WriteLine("DoPrimaryActionAsync - ViewModel is null");
             return;
         }
 
-        System.Diagnostics.Debug.WriteLine("DoPrimaryActionAsync - Starting authentication");
 
         // Resolve UI elements once for this handler
         var primaryActionButton = this.FindName("PrimaryActionButton") as Button;
@@ -122,13 +115,10 @@ public sealed partial class LoginPage : Page
             _viewModel.ConfirmMasterPassword = confirmPasswordBox?.Password ?? string.Empty;
             _viewModel.PasswordHint = passwordHintBox?.Text ?? string.Empty;
 
-            System.Diagnostics.Debug.WriteLine($"DoPrimaryActionAsync - Password length: {_viewModel.MasterPassword.Length}");
-            System.Diagnostics.Debug.WriteLine($"DoPrimaryActionAsync - IsFirstTimeSetup: {_viewModel.IsFirstTimeSetup}");
 
             // Attempt authentication (handles both setup and login)
             var success = await _viewModel.AuthenticateAsync();
 
-            System.Diagnostics.Debug.WriteLine($"DoPrimaryActionAsync - Authentication result: {success}");
 
             if (success)
             {
@@ -140,13 +130,11 @@ public sealed partial class LoginPage : Page
                 // Navigate to main dashboard via MainWindow
                 if (GetMainWindow() is MainWindow mainWindow)
                 {
-                    System.Diagnostics.Debug.WriteLine("DoPrimaryActionAsync - Navigating to home via MainWindow");
                     mainWindow.NavigateToHome();
                 }
                 else
                 {
                     // Fallback navigation
-                    System.Diagnostics.Debug.WriteLine("DoPrimaryActionAsync - Using fallback navigation");
                     this.Frame?.Navigate(typeof(DashboardPage), _serviceProvider);
                 }
             }
@@ -154,7 +142,6 @@ public sealed partial class LoginPage : Page
         catch (Exception ex)
         {
             // Error handling is done in ViewModel
-            System.Diagnostics.Debug.WriteLine($"Authentication error in UI: {ex.Message}");
         }
         finally
         {
@@ -166,7 +153,6 @@ public sealed partial class LoginPage : Page
     // Event handler remains async void for XAML Click binding
     private async void PrimaryActionButton_Click(object sender, RoutedEventArgs e)
     {
-        System.Diagnostics.Debug.WriteLine("PrimaryActionButton_Click - Button clicked");
         await DoPrimaryActionAsync();
     }
 
@@ -231,13 +217,11 @@ public sealed partial class LoginPage : Page
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Could not get current user for permissions check: {ex.Message}");
             }
 
             // Create and show the registration dialog
             if (_serviceProvider == null)
             {
-                System.Diagnostics.Debug.WriteLine("ShowCreateProfileDialog - service provider is null");
                 return;
             }
 
@@ -250,7 +234,6 @@ public sealed partial class LoginPage : Page
             {
                 // User was created successfully
                 var userResult = registrationDialog.Result;
-                System.Diagnostics.Debug.WriteLine($"User created successfully: {userResult.User.Email} with role: {userResult.Role}");
 
                 // Optionally auto-login the new user
                 if (_viewModel != null)
@@ -280,7 +263,6 @@ public sealed partial class LoginPage : Page
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error showing create profile dialog: {ex.Message}");
         }
     }
 
