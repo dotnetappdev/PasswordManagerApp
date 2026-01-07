@@ -12,7 +12,10 @@ using PasswordManager.Models;
 using PasswordManager.Services;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
+
+#if WINDOWS
 using PasswordManager.WinUi.Services.FileLogging;
+#endif
 
 namespace PasswordManager.WinUi.Services;
 
@@ -26,6 +29,7 @@ public static class ServiceConfiguration
     /// </summary>
     public static IServiceCollection ConfigureServices(this IServiceCollection services, IConfiguration configuration)
     {
+#if WINDOWS
         // Crypto services
         services.AddCryptographyServices();
 
@@ -51,10 +55,11 @@ public static class ServiceConfiguration
 
         // HTTP client
         services.AddHttpClient();
-
+#endif
         return services;
     }
 
+#if WINDOWS
     private static void ConfigureDatabaseServices(IServiceCollection services)
     {
         services.AddScoped<IDatabaseConfigurationService, DatabaseConfigurationService>();
@@ -143,4 +148,5 @@ public static class ServiceConfiguration
             builder.AddProvider(new FileLoggerProvider(logBase, LogLevel.Debug));
         });
     }
+#endif
 }
