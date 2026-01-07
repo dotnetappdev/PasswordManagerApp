@@ -75,11 +75,13 @@ public static class MauiProgram
 		// Configure database context with default SQLite (will be reconfigured after setup)
 		// Create a temporary platform service to get the default path
 		var tempPlatformService = new MauiPlatformService();
-		var defaultDbPath = Path.Combine(tempPlatformService.GetAppDataDirectory(), "data", "passwordmanager.db");
-		var defaultDirectory = Path.GetDirectoryName(defaultDbPath);
-		if (!Directory.Exists(defaultDirectory))
+		var appDataDir = tempPlatformService.GetAppDataDirectory();
+		var defaultDbPath = Path.Combine(appDataDir, "passwordmanager.db");
+		
+		// Ensure directory exists
+		if (!Directory.Exists(appDataDir))
 		{
-			Directory.CreateDirectory(defaultDirectory!);
+			Directory.CreateDirectory(appDataDir);
 		}
 
 		builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
