@@ -156,7 +156,8 @@ public sealed partial class SettingsPage : Page
                 if (platformService != null)
                 {
                     var appDataDir = platformService.GetAppDataDirectory();
-                    var dbPath = System.IO.Path.Combine(appDataDir, "data", "passwordmanager.db");
+                    // Fixed: Match the actual database path used in ServiceConfiguration.cs
+                    var dbPath = System.IO.Path.Combine(appDataDir, "passwordmanager.db");
                     CurrentDbPathTextBox.Text = dbPath;
 
                     // Ensure the directory exists
@@ -165,6 +166,16 @@ public sealed partial class SettingsPage : Page
                     {
                         System.IO.Directory.CreateDirectory(dbDirectory);
                         await _logger.LogAsync("SettingsPage", $"Created database directory: {dbDirectory}");
+                    }
+
+                    // Check if the database file actually exists
+                    if (System.IO.File.Exists(dbPath))
+                    {
+                        await _logger.LogAsync("SettingsPage", $"Database file found at: {dbPath}");
+                    }
+                    else
+                    {
+                        await _logger.LogAsync("SettingsPage", $"Database file does not exist yet at: {dbPath}");
                     }
                 }
             }
@@ -186,7 +197,8 @@ public sealed partial class SettingsPage : Page
                 if (platformService != null)
                 {
                     var appDataDir = platformService.GetAppDataDirectory();
-                    var dataFolder = System.IO.Path.Combine(appDataDir, "data");
+                    // Fixed: Open the actual folder where the database is stored
+                    var dataFolder = appDataDir;
 
                     // Ensure directory exists before opening
                     if (!System.IO.Directory.Exists(dataFolder))
@@ -956,6 +968,82 @@ public sealed partial class SettingsPage : Page
             };
 
             await resultDialog.ShowAsync();
+        }
+    }
+
+    private async void SeedDataButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Show confirmation dialog
+            var confirmDialog = new ContentDialog
+            {
+                Title = "Seed Essential Data",
+                Content = "This will seed categories, collections, and tags into the database if they are missing.\n\nThis is useful if the category dropdown is empty or you need to restore default data.\n\nContinue?",
+                PrimaryButtonText = "Yes, Seed Data",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = XamlRoot
+            };
+
+            var result = await confirmDialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && _serviceProvider != null)
+            {
+                // Show progress indicator
+                var progressDialog = new ContentDialog
+                {
+                    Title = "Seeding Data",
+                    Content = new ProgressRing { IsActive = true, Width = 50, Height = 50 },
+                    XamlRoot = XamlRoot
+                };
+
+                // Show progress dialog (fire and forget)
+                var progressTask = progressDialog.ShowAsync();
+
+                try
+                {
+                    // Get the AppStartupService to trigger seeding
+                    var startupService = _serviceProvider.GetService<IAppStartupService>();
+                    if (startupService != null)
+                    {
+                        await _logger.LogAsync("SettingsPage", "Manually triggering essential data seeding");
+                        
+                        // Call the database initialization which includes essential data seeding
+                        await startupService.InitializeDatabaseAsync();
+                        
+                        await _logger.LogAsync("SettingsPage", "Essential data seeding completed");
+
+                        // Close progress dialog
+                        progressDialog.Hide();
+
+                        // Show success message
+                        var successDialog = new ContentDialog
+                        {
+                            Title = "✓ Success",
+                            Content = "Essential data has been seeded successfully!\n\n• Categories\n• Collections\n• Tags\n\nYou can now add new items with the category dropdown populated.",
+                            CloseButtonText = "OK",
+                            XamlRoot = XamlRoot
+                        };
+                        await successDialog.ShowAsync();
+                    }
+                    else
+                    {
+                        progressDialog.Hide();
+                        await ShowErrorDialog("Startup service not available. Please restart the application.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    progressDialog.Hide();
+                    await _logger.LogErrorAsync("SettingsPage", "Error seeding data", ex);
+                    await ShowErrorDialog($"Failed to seed data: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Error in SeedDataButton_Click", ex);
+            await ShowErrorDialog($"An error occurred: {ex.Message}");
         }
     }
 
