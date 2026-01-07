@@ -108,9 +108,17 @@ public partial class App : Application
                 // Show the database configuration dialog on UI thread
                 await m_window.DispatcherQueue.EnqueueAsync(async () =>
                 {
-                    var dialog = new Dialogs.DatabaseConfigurationDialog(platformService, databaseConfigService);
-                    dialog.XamlRoot = m_window.Content.XamlRoot;
-                    await dialog.ShowAsync();
+                    // Verify XamlRoot is available before showing dialog
+                    if (m_window.Content?.XamlRoot != null)
+                    {
+                        var dialog = new Dialogs.DatabaseConfigurationDialog(platformService, databaseConfigService);
+                        dialog.XamlRoot = m_window.Content.XamlRoot;
+                        await dialog.ShowAsync();
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("XamlRoot not available, skipping database configuration dialog");
+                    }
                 });
             }
         }

@@ -15,11 +15,11 @@ public static class DispatcherQueueExtensions
             try
             {
                 await function();
-                tcs.SetResult(true);
+                tcs.TrySetResult(true);
             }
             catch (Exception ex)
             {
-                tcs.SetException(ex);
+                tcs.TrySetException(ex);
             }
         });
         
@@ -35,11 +35,32 @@ public static class DispatcherQueueExtensions
             try
             {
                 action();
-                tcs.SetResult(true);
+                tcs.TrySetResult(true);
             }
             catch (Exception ex)
             {
-                tcs.SetException(ex);
+                tcs.TrySetException(ex);
+            }
+        });
+        
+        return tcs.Task;
+    }
+    
+    // Overload for synchronous functions that return values
+    public static Task<T> EnqueueAsync<T>(this DispatcherQueue dispatcher, Func<T> function)
+    {
+        var tcs = new TaskCompletionSource<T>();
+        
+        dispatcher.TryEnqueue(() =>
+        {
+            try
+            {
+                var result = function();
+                tcs.TrySetResult(result);
+            }
+            catch (Exception ex)
+            {
+                tcs.TrySetException(ex);
             }
         });
         

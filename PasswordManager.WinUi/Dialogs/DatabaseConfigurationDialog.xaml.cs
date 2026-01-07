@@ -16,8 +16,6 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
 
     public string SelectedDatabasePath => string.IsNullOrWhiteSpace(_selectedPath) ? _defaultPath : _selectedPath;
 
-    public string PreviewPath => SelectedDatabasePath;
-
     public DatabaseConfigurationDialog(IPlatformService platformService, IDatabaseConfigurationService databaseConfigService)
     {
         _platformService = platformService;
@@ -73,6 +71,14 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
         
         try
         {
+            // Validate path security
+            if (!IsPathSecure(pathToUse))
+            {
+                args.Cancel = true;
+                await ShowErrorAsync("Invalid Path", "The selected path is not allowed. Please choose a location in your user directories.");
+                return;
+            }
+            
             // Ensure the directory exists
             var directory = Path.GetDirectoryName(pathToUse);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
@@ -112,6 +118,41 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
         }
     }
 
+    private bool IsPathSecure(string path)
+    {
+        try
+        {
+            // Get the full path to resolve any relative paths
+            var fullPath = Path.GetFullPath(path);
+            
+            // Disallow system directories
+            var systemDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
+            var windowsDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            var programFilesDir = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            var programFilesX86Dir = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            
+            if (fullPath.StartsWith(systemDir, StringComparison.OrdinalIgnoreCase) ||
+                fullPath.StartsWith(windowsDir, StringComparison.OrdinalIgnoreCase) ||
+                fullPath.StartsWith(programFilesDir, StringComparison.OrdinalIgnoreCase) ||
+                fullPath.StartsWith(programFilesX86Dir, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+            
+            // Disallow UNC paths (network paths)
+            if (fullPath.StartsWith(@"\\"))
+            {
+                return false;
+            }
+            
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private async void OnCloseButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
     {
         // Use default path
@@ -131,7 +172,14 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
         try
         {
             var config = _databaseConfigService.GetDefaultConfiguration();
-            config.Sqlite!.DatabasePath = databasePath;
+            
+            // Ensure Sqlite config is initialized
+            if (config.Sqlite == null)
+            {
+                config.Sqlite = new PasswordManager.Models.Configuration.SqliteConfig();
+            }
+            
+            config.Sqlite.DatabasePath = databasePath;
             config.IsFirstRun = false;
             
             await _databaseConfigService.SaveConfigurationAsync(config);
