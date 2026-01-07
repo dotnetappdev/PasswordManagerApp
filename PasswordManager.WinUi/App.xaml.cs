@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -7,6 +9,7 @@ using PasswordManager.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using PasswordManager.Models.Configuration;
 using PasswordManager.WinUi.Services;
+using PasswordManager.WinUi.Helpers;
 using Sentry;
 
 namespace PasswordManager.WinUi;
@@ -72,6 +75,9 @@ public partial class App : Application
             {
                 await _host.StartAsync();
 
+                // Check if this is first run and show database configuration dialog
+                await ShowDatabaseConfigurationIfNeededAsync();
+
                 using var scope = _host.Services.CreateScope();
                 var startupService = scope.ServiceProvider.GetRequiredService<IAppStartupService>();
                 await startupService.InitializeAsync();
@@ -82,6 +88,37 @@ public partial class App : Application
                 SentrySdk.CaptureException(ex);
             }
         });
+    }
+
+    private async Task ShowDatabaseConfigurationIfNeededAsync()
+    {
+        try
+        {
+            using var scope = _host.Services.CreateScope();
+            var databaseConfigService = scope.ServiceProvider.GetRequiredService<IDatabaseConfigurationService>();
+            var platformService = scope.ServiceProvider.GetRequiredService<IPlatformService>();
+            
+            // Check if this is first run
+            var isFirstRun = await databaseConfigService.IsFirstRunAsync();
+            
+            if (isFirstRun)
+            {
+                System.Diagnostics.Debug.WriteLine("First run detected - showing database configuration dialog");
+                
+                // Show the database configuration dialog on UI thread
+                await m_window.DispatcherQueue.EnqueueAsync(async () =>
+                {
+                    var dialog = new Dialogs.DatabaseConfigurationDialog(platformService, databaseConfigService);
+                    dialog.XamlRoot = m_window.Content.XamlRoot;
+                    await dialog.ShowAsync();
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error checking/showing database configuration: {ex.Message}");
+            // Continue with startup even if dialog fails
+        }
     }
 
     private async Task LoadSavedTheme()
