@@ -133,8 +133,11 @@ public static class ServiceConfiguration
         services.AddScoped<INetworkLocationBackupService, NetworkLocationBackupService>();
         services.AddScoped<CloudBackupManager>();
         services.AddScoped<IBackupSettingsService, BackupSettingsService>();
-        services.AddSingleton<IScheduledBackupService, ScheduledBackupService>();
-        services.AddHostedService<ScheduledBackupService>();
+        
+        // Register ScheduledBackupService as singleton and use the same instance for hosted service
+        services.AddSingleton<ScheduledBackupService>();
+        services.AddSingleton<IScheduledBackupService>(provider => provider.GetRequiredService<ScheduledBackupService>());
+        services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<ScheduledBackupService>());
     }
 
     private static void ConfigureLogging(IServiceCollection services)
