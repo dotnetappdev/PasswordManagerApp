@@ -52,7 +52,6 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error picking folder: {ex.Message}");
             await ShowErrorAsync("Error", $"Failed to select folder: {ex.Message}");
         }
     }
@@ -113,7 +112,6 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
         catch (Exception ex)
         {
             args.Cancel = true;
-            System.Diagnostics.Debug.WriteLine($"Error validating path: {ex.Message}");
             await ShowErrorAsync("Error", $"Failed to validate path: {ex.Message}");
         }
     }
@@ -162,7 +160,6 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error saving default configuration: {ex.Message}");
             // Continue anyway - allow app to use defaults
         }
     }
@@ -184,11 +181,9 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
             
             await _databaseConfigService.SaveConfigurationAsync(config);
             
-            System.Diagnostics.Debug.WriteLine($"Database configuration saved: {databasePath}");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error saving database configuration: {ex.Message}");
             throw;
         }
     }

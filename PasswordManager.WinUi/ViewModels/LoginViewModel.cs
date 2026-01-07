@@ -120,7 +120,6 @@ public class LoginViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error during initialization: {ex.Message}");
             // Default to first-time setup on error
             _isFirstTimeSetup = true;
             ShowProfileSelection = false;
@@ -151,7 +150,6 @@ public class LoginViewModel : BaseViewModel
                     // Attempt a simple database operation to check if initialization is complete
                     var testUsers = await _userProfileService.GetAllUsersAsync();
                     // If we get here without exception, database is ready
-                    System.Diagnostics.Debug.WriteLine($"Database initialization confirmed after {totalWaitTime}ms");
                     return;
                 }
                 catch (Exception ex) when (ex.Message.Contains("no such table") || 
@@ -159,24 +157,20 @@ public class LoginViewModel : BaseViewModel
                                           ex.Message.Contains("SQLite Error"))
                 {
                     // Database still initializing, wait a bit more
-                    System.Diagnostics.Debug.WriteLine($"Database still initializing, waiting... ({totalWaitTime}ms elapsed)");
                     await Task.Delay(pollIntervalMs);
                     totalWaitTime += pollIntervalMs;
                 }
             }
             
-            System.Diagnostics.Debug.WriteLine($"Database initialization wait timeout after {maxWaitTimeMs}ms");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error during database initialization wait: {ex.Message}");
             // Continue anyway, let the normal error handling deal with it
         }
     }
 
     private void UpdateUIForSetupMode()
     {
-        System.Diagnostics.Debug.WriteLine($"UpdateUIForSetupMode called - IsFirstTimeSetup: {_isFirstTimeSetup}");
 
         if (_isFirstTimeSetup)
         {
@@ -203,7 +197,6 @@ public class LoginViewModel : BaseViewModel
         OnPropertyChanged(nameof(ShowProfileSelection));
         OnPropertyChanged(nameof(ShowPasswordEntry));
 
-        System.Diagnostics.Debug.WriteLine($"UpdateUIForSetupMode completed - PageTitle: {PageTitle}, PrimaryButtonText: {PrimaryButtonText}");
     }
 
     public string MasterPassword
@@ -312,37 +305,31 @@ public class LoginViewModel : BaseViewModel
             IsLoading = true;
             ErrorMessage = string.Empty;
 
-            System.Diagnostics.Debug.WriteLine($"AuthenticateAsync called - IsFirstTimeSetup: {IsFirstTimeSetup}, MasterPassword length: {MasterPassword?.Length}");
 
             if (string.IsNullOrWhiteSpace(MasterPassword))
             {
                 ErrorMessage = "Please enter your master password.";
-                System.Diagnostics.Debug.WriteLine("AuthenticateAsync failed - empty password");
                 return false;
             }
 
             if (IsFirstTimeSetup)
             {
-                System.Diagnostics.Debug.WriteLine("Calling SetupMasterPasswordAsync");
                 return await SetupMasterPasswordAsync();
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("Calling LoginWithMasterPasswordAsync");
                 return await LoginWithMasterPasswordAsync();
             }
         }
         catch (Exception ex)
         {
             ErrorMessage = $"Authentication failed: {ex.Message}";
-            System.Diagnostics.Debug.WriteLine($"AuthenticateAsync error: {ex}");
             return false;
         }
         finally
         {
             IsLoading = false;
             OnPropertyChanged(nameof(HasError));
-            System.Diagnostics.Debug.WriteLine($"AuthenticateAsync completed - IsLoading: {IsLoading}, ErrorMessage: {ErrorMessage}");
         }
     }
 
@@ -393,27 +380,22 @@ public class LoginViewModel : BaseViewModel
         try
         {
             // Add more detailed logging for debugging
-            System.Diagnostics.Debug.WriteLine($"LoginWithMasterPasswordAsync - Starting authentication process. SelectedUser: {SelectedUser?.Email ?? "None"}");
 
             // If we have a selected user, we need to authenticate against that specific user
             if (SelectedUser != null)
             {
-                System.Diagnostics.Debug.WriteLine($"Authenticating specific user: {SelectedUser.Email}");
                 return await AuthenticateSpecificUserAsync(SelectedUser, MasterPassword);
             }
 
             // Fallback to original authentication (try all users)
-            System.Diagnostics.Debug.WriteLine("Attempting master password authentication against all users");
             var loginResult = await _authService.AuthenticateAsync(MasterPassword);
 
             if (loginResult)
             {
-                System.Diagnostics.Debug.WriteLine("Authentication successful");
                 return true;
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("Authentication failed, checking for hints");
                 
                 // First check if any users exist in the database
                 try
@@ -424,17 +406,14 @@ public class LoginViewModel : BaseViewModel
                     if (activeUsers.Count == 0)
                     {
                         ErrorMessage = "No users found in the database. Please check your database setup or create a new account.";
-                        System.Diagnostics.Debug.WriteLine("No active users found in database");
                         return false;
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine($"Found {activeUsers.Count} active users in database");
                     }
                 }
                 catch (Exception userEx)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error checking users: {userEx.Message}");
                     ErrorMessage = "Database error occurred. Please check your database configuration.";
                     return false;
                 }
@@ -450,13 +429,11 @@ public class LoginViewModel : BaseViewModel
                     ErrorMessage = "Incorrect master password. Please try again. If this is your first login, try 'CommonMaster123!'";
                 }
                 
-                System.Diagnostics.Debug.WriteLine($"Authentication failed with error: {ErrorMessage}");
                 return false;
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"LoginWithMasterPasswordAsync error: {ex.Message}");
             ErrorMessage = $"Login error: {ex.Message}";
             return false;
         }
@@ -541,7 +518,6 @@ public class LoginViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error authenticating user {user.Email}: {ex.Message}");
             ErrorMessage = "Authentication failed. Please try again.";
             return false;
         }
@@ -563,7 +539,6 @@ public class LoginViewModel : BaseViewModel
         catch (Exception ex)
         {
             ErrorMessage = $"Failed to refresh: {ex.Message}";
-            System.Diagnostics.Debug.WriteLine($"RefreshAsync error: {ex}");
         }
         finally
         {
@@ -583,23 +558,13 @@ public class LoginViewModel : BaseViewModel
             var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManager.DAL.PasswordManagerDbContextApp>();
             
             var dbUsers = await dbContext.Users.ToListAsync();
-            System.Diagnostics.Debug.WriteLine($"=== DEBUG: Database User Check ===");
-            System.Diagnostics.Debug.WriteLine($"Total users in database: {dbUsers.Count}");
             
             foreach (var user in dbUsers)
             {
-                System.Diagnostics.Debug.WriteLine($"User: {user.Email}");
-                System.Diagnostics.Debug.WriteLine($"  - IsActive: {user.IsActive}");
-                System.Diagnostics.Debug.WriteLine($"  - HasUserSalt: {!string.IsNullOrEmpty(user.UserSalt)}");
-                System.Diagnostics.Debug.WriteLine($"  - HasMasterPasswordHash: {!string.IsNullOrEmpty(user.MasterPasswordHash)}");
-                System.Diagnostics.Debug.WriteLine($"  - MasterPasswordHint: {user.MasterPasswordHint ?? "None"}");
-                System.Diagnostics.Debug.WriteLine($"  - HasMasterKeyIdentifier: {!string.IsNullOrEmpty(user.MasterKeyIdentifier)}");
             }
-            System.Diagnostics.Debug.WriteLine($"=== End DEBUG ===");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"DEBUG: Error checking users: {ex.Message}");
         }
     }
 }

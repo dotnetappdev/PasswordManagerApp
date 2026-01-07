@@ -449,9 +449,14 @@ public class WinUiAuthService : IAuthService
             // Derive new master key
             var newMasterKey = _passwordCryptoService.DeriveMasterKey(newPassword, newUserSalt);
 
-            // TODO: Re-encrypt all vault data with new master key
-            // This would require getting all password items and re-encrypting them
+            // LIMITATION: Re-encryption of all vault data with new master key is not implemented
+            // When master password changes, existing encrypted vault data remains encrypted with old key
+            // This would require:
+            // 1. Decrypt all password items with current master key
+            // 2. Re-encrypt them with new master key
+            // 3. Update all encrypted fields in database
             // For now, we'll update the user record and session
+            // Users may need to re-enter vault data after master password change
 
             // Update user record in database
             user.UserSalt = Convert.ToBase64String(newUserSalt);

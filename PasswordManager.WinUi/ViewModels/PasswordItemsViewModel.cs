@@ -116,7 +116,6 @@ public class PasswordItemsViewModel : BaseViewModel
         catch (Exception ex)
         {
             // Handle error - could show a message to user
-            System.Diagnostics.Debug.WriteLine($"Error loading password items: {ex.Message}");
         }
         finally
         {
@@ -212,7 +211,6 @@ public class PasswordItemsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error applying filters: {ex.Message}");
         }
     }
 
@@ -242,7 +240,6 @@ public class PasswordItemsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error deleting password item: {ex.Message}");
         }
     }
 }

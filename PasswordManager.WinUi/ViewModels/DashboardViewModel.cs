@@ -181,7 +181,6 @@ public class DashboardViewModel : BaseViewModel
         catch (Exception ex)
         {
             StatusText = $"Error loading dashboard: {ex.Message}";
-            System.Diagnostics.Debug.WriteLine($"Dashboard load error: {ex}");
         }
         finally
         {
@@ -296,7 +295,6 @@ public class DashboardViewModel : BaseViewModel
         catch (Exception ex)
         {
             StatusText = $"Filter error: {ex.Message}";
-            System.Diagnostics.Debug.WriteLine($"Navigation filter error: {ex}");
         }
         finally
         {
@@ -370,7 +368,6 @@ public class DashboardViewModel : BaseViewModel
         catch (Exception ex)
         {
             StatusText = $"Search error: {ex.Message}";
-            System.Diagnostics.Debug.WriteLine($"Search error: {ex}");
         }
     }
 

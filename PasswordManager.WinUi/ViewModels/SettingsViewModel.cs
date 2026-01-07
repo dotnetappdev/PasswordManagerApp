@@ -191,7 +191,6 @@ public class SettingsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading settings: {ex.Message}");
             // Use defaults on error
             SelectedTheme = "System";
             SessionTimeoutMinutes = 30;
@@ -229,7 +228,6 @@ public class SettingsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error saving settings: {ex.Message}");
             return false;
         }
         finally
@@ -261,7 +259,6 @@ public class SettingsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error exporting data: {ex.Message}");
             return false;
         }
         finally
@@ -281,7 +278,6 @@ public class SettingsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error changing password: {ex.Message}");
             return false;
         }
         finally
@@ -301,7 +297,6 @@ public class SettingsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error clearing data: {ex.Message}");
             return false;
         }
         finally

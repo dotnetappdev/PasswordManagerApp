@@ -86,7 +86,6 @@ public class UserProfileSelectionViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading user profiles: {ex.Message}");
         }
         finally
         {
@@ -165,7 +164,6 @@ public class UserProfileSelectionViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error creating profile: {ex.Message}");
             return false;
         }
     }

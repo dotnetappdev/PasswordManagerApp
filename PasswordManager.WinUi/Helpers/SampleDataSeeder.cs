@@ -59,9 +59,6 @@ namespace PasswordManager.WinUi.Helpers
                         db.Users.Add(demoUser);
                         await db.SaveChangesAsync();
                         seedUserId = demoUser.Id;
-
-                        System.Diagnostics.Debug.WriteLine($"Created demo user with proper cryptographic setup: {demoUser.Email}");
-                        System.Diagnostics.Debug.WriteLine($"Demo master password: {demoMasterPassword}");
                     }
                     else
                     {
@@ -221,12 +218,10 @@ namespace PasswordManager.WinUi.Helpers
                     }
                 };
                 await passwordItemService.CreateAsync(sampleCreditCard);
-
-                System.Diagnostics.Debug.WriteLine("Sample data seeded successfully!");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error seeding sample data: {ex.Message}");
+                // Silently fail if seeding fails
             }
         }
     }

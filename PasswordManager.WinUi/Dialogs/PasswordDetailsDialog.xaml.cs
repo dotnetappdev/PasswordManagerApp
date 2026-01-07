@@ -78,7 +78,6 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error deleting item: {ex.Message}");
         }
     }
 
@@ -112,7 +111,6 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error editing item: {ex.Message}");
         }
     }
 
@@ -154,7 +152,6 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading password details: {ex.Message}");
         }
     }
 
@@ -185,7 +182,6 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error toggling password visibility: {ex.Message}");
             }
         }
     }
@@ -207,7 +203,6 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error copying username: {ex.Message}");
             }
         }
     }
@@ -232,7 +227,6 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error copying password: {ex.Message}");
             }
         }
     }
@@ -253,7 +247,6 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error opening URL: {ex.Message}");
             }
         }
     }

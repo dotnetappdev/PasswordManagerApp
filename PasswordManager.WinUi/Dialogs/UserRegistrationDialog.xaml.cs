@@ -50,7 +50,6 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"UserRegistrationDialog init error: {ex.Message}");
             // Disable primary action so user cannot proceed when dialog is in an invalid state
             try { this.IsPrimaryButtonEnabled = false; } catch { }
         }
@@ -62,7 +61,6 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to attach PrimaryButtonClick: {ex.Message}");
         }
     }
 
@@ -126,7 +124,6 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error determining permissions: {ex.Message}");
             // Default to safe permissions
             CanCreateAdminAccount = false;
             ShowRoleSelection = true;
@@ -157,7 +154,6 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"AdminToggleSwitch_Toggled error: {ex.Message}");
         }
     }
 
@@ -170,7 +166,6 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"RoleComboBox_SelectionChanged error: {ex.Message}");
         }
     }
 
@@ -199,7 +194,6 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"UpdateRoleDescription error: {ex.Message}");
         }
     }
 
@@ -262,7 +256,6 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
                 if (!isCurrentUserAdmin)
                 {
                     ShowErrorMessage("Only administrators can create admin accounts. Access denied.");
-                    System.Diagnostics.Debug.WriteLine($"Security violation: User {_currentUser.Email} with roles [{string.Join(", ", currentUserRoles)}] attempted to create admin account");
                     return false;
                 }
             }
@@ -320,12 +313,10 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
                 MasterPassword = masterPassword
             };
 
-            System.Diagnostics.Debug.WriteLine($"Successfully created user: {newUser.Email} with role: {selectedRole}");
             return true;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error creating user: {ex.Message}");
             ShowErrorMessage($"An error occurred while creating the user: {ex.Message}");
             return false;
         }

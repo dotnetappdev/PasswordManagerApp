@@ -14,7 +14,7 @@ public class CrossPlatformSecureStorageService : ISecureStorageService
     {
         var platformService = new CrossPlatformService();
         _storageDirectory = Path.Combine(platformService.GetAppDataDirectory(), "secure");
-        
+
         if (!Directory.Exists(_storageDirectory))
         {
             Directory.CreateDirectory(_storageDirectory);
@@ -32,9 +32,8 @@ public class CrossPlatformSecureStorageService : ISecureStorageService
                 return Task.FromResult<string?>(content);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Error reading secure storage: {ex.Message}");
         }
         return Task.FromResult<string?>(null);
     }
@@ -46,9 +45,8 @@ public class CrossPlatformSecureStorageService : ISecureStorageService
             var filePath = Path.Combine(_storageDirectory, $"{key}.dat");
             File.WriteAllText(filePath, value);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Error writing to secure storage: {ex.Message}");
         }
         return Task.CompletedTask;
     }
@@ -64,9 +62,8 @@ public class CrossPlatformSecureStorageService : ISecureStorageService
                 return Task.FromResult(true);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Error removing from secure storage: {ex.Message}");
         }
         return Task.FromResult(false);
     }
@@ -82,9 +79,8 @@ public class CrossPlatformSecureStorageService : ISecureStorageService
                 return true;
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Error removing from secure storage: {ex.Message}");
         }
         return false;
     }
@@ -99,9 +95,8 @@ public class CrossPlatformSecureStorageService : ISecureStorageService
                 Directory.CreateDirectory(_storageDirectory);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Error clearing secure storage: {ex.Message}");
         }
         return Task.CompletedTask;
     }
@@ -116,9 +111,8 @@ public class CrossPlatformSecureStorageService : ISecureStorageService
                 Directory.CreateDirectory(_storageDirectory);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Error clearing secure storage: {ex.Message}");
         }
     }
 }

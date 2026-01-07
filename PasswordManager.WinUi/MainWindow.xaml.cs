@@ -103,7 +103,6 @@ public sealed partial class MainWindow : Window
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Navigation error: {ex.Message}");
                     // Reset selection on error
                     sender.SelectedItem = null;
                 }
@@ -152,12 +151,10 @@ public sealed partial class MainWindow : Window
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine($"Navigation failed - ContentFrame: {ContentFrame != null}");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Navigation error for page '{pageTag}': {ex.Message}");
         }
     }
 
@@ -281,7 +278,6 @@ public sealed partial class MainWindow : Window
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error during auto-filter: {ex.Message}");
                 }
             }
             else
@@ -300,7 +296,6 @@ public sealed partial class MainWindow : Window
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Error clearing filter: {ex.Message}");
                     }
                 }
             }
@@ -346,7 +341,6 @@ public sealed partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error during search: {ex.Message}");
             }
         }
     }
@@ -396,7 +390,6 @@ public sealed partial class MainWindow : Window
         if (authService?.CurrentUser != null)
         {
             _currentUserId = authService.CurrentUser.Id;
-            System.Diagnostics.Debug.WriteLine($"MainWindow captured current user ID: {_currentUserId}");
         }
 
         SetAuthenticationState(true);
@@ -479,7 +472,6 @@ public sealed partial class MainWindow : Window
         if (sender is NavigationViewItem navItem)
         {
             var tag = navItem.Tag?.ToString();
-            System.Diagnostics.Debug.WriteLine($"Right-tapped on navigation item: {tag}");
 
             // For now, just select the item if it's not already selected
             if (MainNavigationView.SelectedItem != navItem)
@@ -511,13 +503,11 @@ public sealed partial class MainWindow : Window
             var result = await tagDialog.ShowAsync();
             if (result == ContentDialogResult.Primary && tagDialog.Result is not null)
             {
-                System.Diagnostics.Debug.WriteLine($"Created new tag: {tagDialog.Result.Name}");
                 await ShowInfoMessage("Tag Created", $"Tag '{tagDialog.Result.Name}' has been created successfully.");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error creating tag: {ex.Message}");
             await ShowErrorMessage("Error", $"Failed to create tag: {ex.Message}");
         }
     }
@@ -541,13 +531,11 @@ public sealed partial class MainWindow : Window
             var result = await categoryDialog.ShowAsync();
             if (result == ContentDialogResult.Primary && categoryDialog.Result is not null)
             {
-                System.Diagnostics.Debug.WriteLine($"Created new category: {categoryDialog.Result.Name}");
                 await ShowInfoMessage("Category Created", $"Category '{categoryDialog.Result.Name}' has been created successfully.");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error creating category: {ex.Message}");
             await ShowErrorMessage("Error", $"Failed to create category: {ex.Message}");
         }
     }
@@ -607,7 +595,6 @@ public sealed partial class MainWindow : Window
                             }
                             catch (Exception ex)
                             {
-                                System.Diagnostics.Debug.WriteLine($"Error parsing category color '{category.Color}': {ex.Message}");
                                 // Use default color on parse error
                             }
                         }
@@ -643,7 +630,6 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error refreshing categories: {ex.Message}");
         }
     }
 
@@ -741,7 +727,6 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error refreshing tags: {ex.Message}");
         }
     }
 
@@ -821,12 +806,10 @@ public sealed partial class MainWindow : Window
                 await collectionService.CreateAsync(newCollection);
                 await ShowInfoMessage("Vault Created", $"Vault '{newCollection.Name}' has been created successfully.");
 
-                System.Diagnostics.Debug.WriteLine($"Created new vault: {newCollection.Name}");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error creating vault: {ex.Message}");
             await ShowErrorMessage("Error", $"Failed to create vault: {ex.Message}");
         }
     }
@@ -869,11 +852,9 @@ public sealed partial class MainWindow : Window
                     break;
             }
 
-            System.Diagnostics.Debug.WriteLine($"Edit item clicked for: {tag}");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error editing item: {ex.Message}");
             await ShowErrorMessage("Error", $"Failed to edit item: {ex.Message}");
         }
     }
@@ -927,12 +908,10 @@ public sealed partial class MainWindow : Window
                         break;
                 }
 
-                System.Diagnostics.Debug.WriteLine($"Delete item clicked for: {tag}");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error deleting item: {ex.Message}");
             await ShowErrorMessage("Error", $"Failed to delete item: {ex.Message}");
         }
     }
@@ -1012,14 +991,12 @@ public sealed partial class MainWindow : Window
                 }
                 catch (Exception deleteEx)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error deleting category from database: {deleteEx.Message}");
                     await ShowErrorMessage("Error", $"Failed to delete category: {deleteEx.Message}");
                 }
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error deleting category: {ex.Message}");
             await ShowErrorMessage("Error", $"Failed to delete category: {ex.Message}");
         }
     }
@@ -1073,7 +1050,6 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error navigating to categories: {ex.Message}");
             await ShowErrorMessage("Error", $"Failed to open categories page: {ex.Message}");
         }
     }
@@ -1104,7 +1080,6 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error toggling category favorite: {ex.Message}");
             await ShowErrorMessage("Error", $"Failed to update category: {ex.Message}");
         }
     }

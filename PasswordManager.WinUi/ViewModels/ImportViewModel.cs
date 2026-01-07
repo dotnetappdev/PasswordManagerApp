@@ -120,7 +120,6 @@ public class ImportViewModel : BaseViewModel
             // Check available providers for debugging
             var availableProviders = await _importService.GetAvailableProvidersAsync();
             var providerNames = string.Join(", ", availableProviders.Select(p => p.ProviderName));
-            System.Diagnostics.Debug.WriteLine($"Available import providers: {providerNames}");
 
             // Determine import provider based on selected type
             string providerName = SelectedImportType switch
@@ -139,7 +138,6 @@ public class ImportViewModel : BaseViewModel
             };
 
             ImportStatus = $"Importing from {SelectedImportType}...";
-            System.Diagnostics.Debug.WriteLine($"Looking for provider: {providerName}");
 
             // Perform import
             using var fileStream = new FileStream(SelectedFilePath, FileMode.Open, FileAccess.Read);
@@ -188,7 +186,6 @@ public class ImportViewModel : BaseViewModel
         catch (Exception ex)
         {
             ImportStatus = $"Import failed: {ex.Message}";
-            System.Diagnostics.Debug.WriteLine($"Import error: {ex}");
             return false;
         }
         finally
