@@ -318,15 +318,14 @@ public class AppStartupService : IAppStartupService
             {
                 _logger.LogInformation("Essential data missing, seeding now");
                 
-                // Get or create test user
-                const string testUserId = "test-user-id-12345";
-                var testUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == testUserId);
+                // Get or create test user using shared constant
+                var testUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == TestDataSeeder.TestUserId);
                 if (testUser == null)
                 {
                     _logger.LogInformation("Creating test user for essential data");
                     testUser = new Models.ApplicationUser
                     {
-                        Id = testUserId,
+                        Id = TestDataSeeder.TestUserId,
                         UserName = "testuser@example.com",
                         Email = "testuser@example.com",
                         EmailConfirmed = true,
@@ -340,21 +339,21 @@ public class AppStartupService : IAppStartupService
                 if (!hasCollections)
                 {
                     _logger.LogInformation("Seeding collections");
-                    TestDataSeeder.SeedCollections(dbContext, testUserId);
+                    TestDataSeeder.SeedCollections(dbContext, TestDataSeeder.TestUserId);
                 }
 
                 // Seed categories if missing
                 if (!hasCategoriesSeed)
                 {
                     _logger.LogInformation("Seeding categories");
-                    TestDataSeeder.SeedCategories(dbContext, testUserId);
+                    TestDataSeeder.SeedCategories(dbContext, TestDataSeeder.TestUserId);
                 }
 
                 // Seed tags if missing
                 if (!hasTags)
                 {
                     _logger.LogInformation("Seeding tags");
-                    TestDataSeeder.SeedTags(dbContext, testUserId);
+                    TestDataSeeder.SeedTags(dbContext, TestDataSeeder.TestUserId);
                 }
 
                 _logger.LogInformation("Essential data seeding completed successfully");

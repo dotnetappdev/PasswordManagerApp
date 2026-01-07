@@ -8,15 +8,17 @@ namespace PasswordManager.DAL.Seed;
 
 public static class TestDataSeeder
 {
+    // Shared constant for test user ID to avoid duplication
+    public const string TestUserId = "test-user-id-12345";
+
     public static void SeedTestData(PasswordManagerDbContext db)
     {
         // First, create a test user if none exists
-        const string testUserId = "test-user-id-12345";
-        if (!db.Users.Any(u => u.Id == testUserId))
+        if (!db.Users.Any(u => u.Id == TestUserId))
         {
             db.Users.Add(new ApplicationUser
             {
-                Id = testUserId,
+                Id = TestUserId,
                 UserName = "testuser@example.com",
                 Email = "testuser@example.com",
                 EmailConfirmed = true,
@@ -25,10 +27,10 @@ public static class TestDataSeeder
             db.SaveChanges();
         }
 
-        SeedCollections(db, testUserId);
-        SeedCategories(db, testUserId);
-        SeedTags(db, testUserId);
-        SeedPasswordItems(db, testUserId);
+        SeedCollections(db, TestUserId);
+        SeedCategories(db, TestUserId);
+        SeedTags(db, TestUserId);
+        SeedPasswordItems(db, TestUserId);
     }
 
     public static void SeedCollections(PasswordManagerDbContext db, string testUserId)
