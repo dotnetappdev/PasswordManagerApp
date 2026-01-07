@@ -12,15 +12,24 @@ namespace PasswordManager.Services.Services
     public class VaultService : IVaultService
     {
         private readonly PasswordManagerDbContext _db;
+        private readonly IAuthService _authService;
 
-        public VaultService(PasswordManagerDbContext db)
+        public VaultService(PasswordManagerDbContext db, IAuthService authService)
         {
             _db = db;
+            _authService = authService;
         }
 
         public async Task<List<Vault>> GetAllAsync()
         {
+            var userId = _authService.CurrentUser?.Id;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return new List<Vault>();
+            }
+
             return await _db.Vaults
+                .Where(v => v.UserId == userId)
                 .Include(v => v.Categories)
                 .Include(v => v.PasswordItems)
                 .ToListAsync();
@@ -28,7 +37,14 @@ namespace PasswordManager.Services.Services
 
         public async Task<Vault?> GetByIdAsync(int id)
         {
+            var userId = _authService.CurrentUser?.Id;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return null;
+            }
+
             return await _db.Vaults
+                .Where(v => v.UserId == userId)
                 .Include(v => v.Categories)
                 .Include(v => v.PasswordItems)
                 .FirstOrDefaultAsync(v => v.Id == id);
@@ -75,7 +91,7 @@ namespace PasswordManager.Services.Services
             }
 
             // If not found, throw an exception
-            throw new InvalidOperationException($"Vault with ID {vault.Id} not found.");
+            throw new InvalidOperationException($"Unable to update vault: Vault with ID {vault.Id} not found.");
         }
 
         public async Task DeleteAsync(int id)
@@ -151,7 +167,14 @@ namespace PasswordManager.Services.Services
 
         public async Task<Vault?> GetDefaultVaultAsync()
         {
+            var userId = _authService.CurrentUser?.Id;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return null;
+            }
+
             return await _db.Vaults
+                .Where(v => v.UserId == userId)
                 .Include(v => v.Categories)
                 .Include(v => v.PasswordItems)
                 .FirstOrDefaultAsync(v => v.IsDefault);
@@ -159,7 +182,14 @@ namespace PasswordManager.Services.Services
 
         public async Task SetAsDefaultAsync(int id)
         {
-            var vault = await _db.Vaults.FindAsync(id);
+            var userId = _authService.CurrentUser?.Id;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return;
+            }
+
+            var vault = await _db.Vaults
+                .FirstOrDefaultAsync(v => v.Id == id && v.UserId == userId);
             if (vault != null)
             {
                 // Clear any existing default vault for this user

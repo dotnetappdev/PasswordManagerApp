@@ -19,7 +19,18 @@ public class VaultsViewModel : BaseViewModel
         
         Vaults = new ObservableCollection<Vault>();
         
-        LoadVaultsAsync();
+        // Use fire-and-forget with proper error handling
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await LoadVaultsAsync();
+            }
+            catch
+            {
+                // Error already logged in LoadVaultsAsync
+            }
+        });
     }
 
     public ObservableCollection<Vault> Vaults { get; }
@@ -134,10 +145,13 @@ public class VaultsViewModel : BaseViewModel
             if (updatedVault != null)
             {
                 // Update the item in the collection
-                var index = Vaults.ToList().FindIndex(v => v.Id == vault.Id);
-                if (index >= 0)
+                for (int i = 0; i < Vaults.Count; i++)
                 {
-                    Vaults[index] = updatedVault;
+                    if (Vaults[i].Id == vault.Id)
+                    {
+                        Vaults[i] = updatedVault;
+                        break;
+                    }
                 }
                 return true;
             }
