@@ -414,6 +414,8 @@ public class VaultApiService : IVaultApiService
         _logger = logger;
     }
 
+    // NOTE: This API service does not filter by user. Authorization should be handled
+    // at the controller/middleware level. For user-filtered operations, use VaultService instead.
     public async Task<IEnumerable<VaultDto>> GetAllAsync()
     {
         try
