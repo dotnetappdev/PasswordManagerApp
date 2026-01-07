@@ -54,7 +54,9 @@ public class CategoriesViewModel : BaseViewModel
             
             Categories.Clear();
             
-            // Load categories - password counts can be displayed in the UI binding
+            // Load categories without modifying their properties
+            // Note: Password counts should be displayed in the UI via separate service calls
+            // or computed properties, not by mutating the Category model's Description field
             foreach (var category in categories)
             {
                 Categories.Add(category);
