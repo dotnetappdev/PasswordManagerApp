@@ -31,7 +31,7 @@ public static class TestDataSeeder
         SeedPasswordItems(db, testUserId);
     }
 
-    private static void SeedCollections(PasswordManagerDbContext db, string testUserId)
+    public static void SeedCollections(PasswordManagerDbContext db, string testUserId)
     {
         if (!db.Collections.Any())
         {
@@ -46,7 +46,7 @@ public static class TestDataSeeder
         }
     }
 
-    private static void SeedCategories(PasswordManagerDbContext db, string testUserId)
+    public static void SeedCategories(PasswordManagerDbContext db, string testUserId)
     {
         if (!db.Categories.Any())
         {
@@ -86,7 +86,7 @@ public static class TestDataSeeder
         }
     }
 
-    private static void SeedTags(PasswordManagerDbContext db, string testUserId)
+    public static void SeedTags(PasswordManagerDbContext db, string testUserId)
     {
         if (!db.Tags.Any())
         {

@@ -4,6 +4,7 @@ using PasswordManager.Services.Interfaces;
 using PasswordManager.DAL;
 using Microsoft.EntityFrameworkCore;
 using PasswordManager.DAL.Seed;
+using PasswordManager.Models;
 
 namespace PasswordManager.Services.Services;
 
@@ -218,6 +219,9 @@ public class AppStartupService : IAppStartupService
                     // Seed Identity data and test data regardless of migration status
                     await SeedIdentityDataIfNeeded(scope);
 
+                    // Seed essential data (categories, collections, tags) - required for app to function
+                    await SeedEssentialDataIfNeeded(dbContext);
+
                     // Seed test data if database is empty
                     await SeedTestDataIfNeeded(dbContext);
                 }
@@ -295,6 +299,75 @@ public class AppStartupService : IAppStartupService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during background startup sync");
+        }
+    }
+
+    private async Task SeedEssentialDataIfNeeded(PasswordManagerDbContext dbContext)
+    {
+        try
+        {
+            // Essential data (categories, collections, tags) is required for the app to function
+            // This should be seeded even if password items exist
+            _logger.LogInformation("Checking if essential data (categories, collections, tags) needs to be seeded");
+
+            var hasCategoriesSeed = await dbContext.Categories.AnyAsync();
+            var hasCollections = await dbContext.Collections.AnyAsync();
+            var hasTags = await dbContext.Tags.AnyAsync();
+
+            if (!hasCategoriesSeed || !hasCollections || !hasTags)
+            {
+                _logger.LogInformation("Essential data missing, seeding now");
+                
+                // Get or create test user
+                const string testUserId = "test-user-id-12345";
+                var testUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == testUserId);
+                if (testUser == null)
+                {
+                    _logger.LogInformation("Creating test user for essential data");
+                    testUser = new Models.ApplicationUser
+                    {
+                        Id = testUserId,
+                        UserName = "testuser@example.com",
+                        Email = "testuser@example.com",
+                        EmailConfirmed = true,
+                        IsActive = true
+                    };
+                    dbContext.Users.Add(testUser);
+                    await dbContext.SaveChangesAsync();
+                }
+
+                // Seed collections if missing
+                if (!hasCollections)
+                {
+                    _logger.LogInformation("Seeding collections");
+                    TestDataSeeder.SeedCollections(dbContext, testUserId);
+                }
+
+                // Seed categories if missing
+                if (!hasCategoriesSeed)
+                {
+                    _logger.LogInformation("Seeding categories");
+                    TestDataSeeder.SeedCategories(dbContext, testUserId);
+                }
+
+                // Seed tags if missing
+                if (!hasTags)
+                {
+                    _logger.LogInformation("Seeding tags");
+                    TestDataSeeder.SeedTags(dbContext, testUserId);
+                }
+
+                _logger.LogInformation("Essential data seeding completed successfully");
+            }
+            else
+            {
+                _logger.LogDebug("Essential data already exists, skipping seeding");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error seeding essential data");
+            // Don't throw - seeding failure shouldn't prevent app startup
         }
     }
 
