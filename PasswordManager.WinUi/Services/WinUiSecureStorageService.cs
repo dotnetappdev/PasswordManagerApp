@@ -16,11 +16,6 @@ public class WinUiSecureStorageService : ISecureStorageService
             var filePath = GetSecureFilePath(key);
             if (!File.Exists(filePath))
             {
-                // Debug logging for missing salt files
-                if (key.StartsWith("userSalt_"))
-                {
-                    System.Diagnostics.Debug.WriteLine($"SecureStorage: Salt file not found for key '{key}' at path '{filePath}'");
-                }
                 return null;
             }
 
@@ -28,18 +23,10 @@ public class WinUiSecureStorageService : ISecureStorageService
             var decryptedData = ProtectedData.Unprotect(encryptedData, null, DataProtectionScope.CurrentUser);
             var result = Encoding.UTF8.GetString(decryptedData);
             
-            // Debug logging for salt retrieval
-            if (key.StartsWith("userSalt_"))
-            {
-                System.Diagnostics.Debug.WriteLine($"SecureStorage: Successfully retrieved salt for key '{key}'");
-            }
-            
             return result;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            // Enhanced error logging
-            System.Diagnostics.Debug.WriteLine($"SecureStorage GetAsync error for key '{key}': {ex.Message}");
             return null;
         }
     }
@@ -59,18 +46,10 @@ public class WinUiSecureStorageService : ISecureStorageService
             }
 
             await File.WriteAllBytesAsync(filePath, encryptedData);
-            
-            // Debug logging for salt storage
-            if (key.StartsWith("userSalt_"))
-            {
-                System.Diagnostics.Debug.WriteLine($"SecureStorage: Stored salt for key '{key}' at path '{filePath}'");
-            }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            // Enhanced error logging for debugging
-            System.Diagnostics.Debug.WriteLine($"SecureStorage SetAsync error for key '{key}': {ex.Message}");
-            // Don't throw - secure storage failures shouldn't crash the app, but we should know about them
+            // Don't throw - secure storage failures shouldn't crash the app
         }
     }
 

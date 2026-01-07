@@ -144,9 +144,9 @@ namespace PasswordManager.WinUi.Services
                     UpdateResourceIfExists(resources, "NavigationViewTopPaneBackground", "#F8FAFC");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error updating theme resources: {ex.Message}");
+                // Silently ignore theme update errors
             }
         }
 
@@ -157,7 +157,6 @@ namespace PasswordManager.WinUi.Services
                 // Validate hex color format
                 if (string.IsNullOrEmpty(colorString) || !colorString.StartsWith("#") || colorString.Length != 7)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Invalid color format for {key}: {colorString}");
                     return;
                 }
 
@@ -173,9 +172,9 @@ namespace PasswordManager.WinUi.Services
                     resources[key] = new Microsoft.UI.Xaml.Media.SolidColorBrush(color);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error updating resource {key}: {ex.Message}");
+                // Silently ignore resource update errors
             }
         }
 

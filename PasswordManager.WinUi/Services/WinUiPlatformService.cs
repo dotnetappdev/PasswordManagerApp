@@ -14,19 +14,12 @@ public class WinUiPlatformService : IPlatformService
         {
             if (!Directory.Exists(appDir))
             {
-                var dirInfo = Directory.CreateDirectory(appDir);
-                System.Diagnostics.Debug.WriteLine($"[WinUiPlatformService] Created directory: {dirInfo.FullName}");
-                System.Diagnostics.Debug.WriteLine($"[WinUiPlatformService] Directory exists after creation: {Directory.Exists(appDir)}");
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine($"[WinUiPlatformService] Directory already exists: {appDir}");
+                Directory.CreateDirectory(appDir);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            System.Diagnostics.Debug.WriteLine($"[WinUiPlatformService] ERROR creating directory: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"[WinUiPlatformService] Stack trace: {ex.StackTrace}");
+            // Directory creation failed, will return path anyway
         }
 
         return appDir;
@@ -100,9 +93,8 @@ public class WinUiPlatformService : IPlatformService
             });
             return true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            System.Diagnostics.Debug.WriteLine($"Error opening URL: {ex.Message}");
             return false;
         }
     }
@@ -121,9 +113,8 @@ public class WinUiPlatformService : IPlatformService
             });
             return true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            System.Diagnostics.Debug.WriteLine($"Error sharing text: {ex.Message}");
             return false;
         }
     }
@@ -149,9 +140,8 @@ public class WinUiPlatformService : IPlatformService
             File.WriteAllBytes(downloadsPath, data);
             return Task.FromResult(true);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            System.Diagnostics.Debug.WriteLine($"Error saving file: {ex.Message}");
             return Task.FromResult(false);
         }
     }
