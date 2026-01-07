@@ -24,6 +24,10 @@ namespace PasswordManager.Models
         public int? CollectionId { get; set; }
         public Collection? Collection { get; set; }
 
+        // Vault relationship
+        public int? VaultId { get; set; }
+        public Vault? Vault { get; set; }
+
         // Navigation property for related PasswordItems
         public List<PasswordItem> PasswordItems { get; set; } = new();
     }

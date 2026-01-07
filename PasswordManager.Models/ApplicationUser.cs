@@ -128,6 +128,7 @@ public class ApplicationUser : IdentityUser
     public virtual ICollection<Collection> Collections { get; set; } = new List<Collection>();
     public virtual ICollection<Category> Categories { get; set; } = new List<Category>();
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
+    public virtual ICollection<Vault> Vaults { get; set; } = new List<Vault>();
     public virtual ICollection<LoginItem> LoginItems { get; set; } = new List<LoginItem>();
     public virtual ICollection<CreditCardItem> CreditCardItems { get; set; } = new List<CreditCardItem>();
     public virtual ICollection<SecureNoteItem> SecureNoteItems { get; set; } = new List<SecureNoteItem>();
