@@ -28,17 +28,17 @@ public class Program
     {
         Console.WriteLine("PasswordManager WinUI - Cross-platform build");
         Console.WriteLine("Note: This build excludes WinUI functionality for non-Windows platforms.");
-        
+
         var host = CreateHostBuilder(args).Build();
-        
+
         try
         {
             await host.StartAsync();
-            
+
             using var scope = host.Services.CreateScope();
             var startupService = scope.ServiceProvider.GetRequiredService<IAppStartupService>();
             await startupService.InitializeAsync();
-            
+
             Console.WriteLine("Core services initialized successfully.");
             Console.WriteLine("Press any key to exit...");
             Console.ReadKey();
@@ -73,7 +73,7 @@ public class Program
                 var platformService = new CrossPlatformService();
                 var appDataDir = platformService.GetAppDataDirectory();
                 var defaultDbPath = Path.Combine(appDataDir, "passwordmanager.db");
-                
+
                 // Ensure directory exists before creating database context
                 if (!Directory.Exists(appDataDir))
                 {
@@ -82,7 +82,7 @@ public class Program
 
                 services.AddDbContext<PasswordManagerDbContextApp>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
-                
+
                 services.AddDbContext<PasswordManagerDbContext>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
 
@@ -117,7 +117,7 @@ public class Program
                 services.AddSingleton<PluginDiscoveryService>();
                 services.AddScoped<IImportService, ImportService>();
 
-                services.AddLogging(builder => 
+                services.AddLogging(builder =>
                 {
                     builder.AddConsole();
                     builder.AddDebug();

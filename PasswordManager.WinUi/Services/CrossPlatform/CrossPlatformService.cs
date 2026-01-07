@@ -11,12 +11,12 @@ public class CrossPlatformService : IPlatformService
     {
         var baseDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var appDir = Path.Combine(baseDir, ".passwordmanager");
-        
+
         if (!Directory.Exists(appDir))
         {
             Directory.CreateDirectory(appDir);
         }
-        
+
         return appDir;
     }
 

@@ -18,7 +18,7 @@ namespace PasswordManager.WinUi.Services.FileLogging
             _minLevel = minLevel;
         }
 
-        public IDisposable BeginScope<TState>(TState state) => null!;
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
         public bool IsEnabled(LogLevel logLevel) => logLevel >= _minLevel;
 

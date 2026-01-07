@@ -14,7 +14,7 @@ public class CrossPlatformSecureStorageService : ISecureStorageService
     {
         var platformService = new CrossPlatformService();
         _storageDirectory = Path.Combine(platformService.GetAppDataDirectory(), "secure");
-        
+
         if (!Directory.Exists(_storageDirectory))
         {
             Directory.CreateDirectory(_storageDirectory);
