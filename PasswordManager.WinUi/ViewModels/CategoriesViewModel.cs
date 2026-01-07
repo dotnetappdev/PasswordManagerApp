@@ -54,16 +54,11 @@ public class CategoriesViewModel : BaseViewModel
             
             Categories.Clear();
             
-            // Load categories with password counts
+            // Load categories without modifying their properties
+            // Note: Password counts should be displayed in the UI via separate service calls
+            // or computed properties, not by mutating the Category model's Description field
             foreach (var category in categories)
             {
-                // Get password count for this category
-                var passwordItems = await _passwordItemService.GetAllAsync();
-                var categoryPasswordCount = passwordItems.Count(p => p.CategoryId == category.Id && !p.IsDeleted && !p.IsArchived);
-                
-                // Store count in description field for display (this is a workaround)
-                category.Description = $"{category.Description} ({categoryPasswordCount} passwords)";
-                
                 Categories.Add(category);
             }
         }

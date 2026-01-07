@@ -212,7 +212,9 @@ public sealed partial class AddPasswordDialog : ContentDialog
         }
 
         // Show the appropriate fields panel
-        TypeComboBox_SelectionChanged(TypeComboBox, null);
+        // Note: TypeComboBox_SelectionChanged doesn't use the SelectionChangedEventArgs parameter,
+        // it only checks TypeComboBox.SelectedIndex. Passing null! is safe here as the parameter is unused.
+        TypeComboBox_SelectionChanged(TypeComboBox, null!);
 
         // Handle special category-based forms
         if (!string.IsNullOrEmpty(categoryName))

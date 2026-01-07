@@ -231,7 +231,8 @@ public sealed partial class MainWindow : Window
             "AllItems" or "Favorites" or "LoginCategory" or "CreditCardCategory" or
             "SecureNotesCategory" or "IdentityCategory" or "WiFiCategory" or "PasskeysCategory" or
             "Archive" or "RecentlyDeleted" or "Passwords" => true,
-            _ => false
+            // Also treat any tag ending with "Category" as a password items page (for dynamic categories)
+            _ => pageTag.EndsWith("Category", StringComparison.OrdinalIgnoreCase)
         };
     }
 

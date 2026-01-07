@@ -237,6 +237,7 @@ public class PasswordItemsViewModel : BaseViewModel
         {
             await _passwordItemService.DeleteAsync(item.Id);
             PasswordItems.Remove(item);
+            _allItems.Remove(item); // Also remove from the cached all items list
             OnPropertyChanged(nameof(HasNoItems));
         }
         catch (Exception ex)
