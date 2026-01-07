@@ -211,8 +211,8 @@ public sealed partial class AddPasswordDialog : ContentDialog
             Title = $"Add {categoryName}";
         }
 
-        // Show the appropriate fields panel
-        TypeComboBox_SelectionChanged(TypeComboBox, null);
+        // Show the appropriate fields panel (e parameter not used in the handler)
+        TypeComboBox_SelectionChanged(TypeComboBox, null!);
 
         // Handle special category-based forms
         if (!string.IsNullOrEmpty(categoryName))
