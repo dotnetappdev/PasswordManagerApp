@@ -354,3 +354,127 @@ public class TagApiService : ITagApiService
         }
     }
 }
+
+public class VaultApiService : IVaultApiService
+{
+    private readonly PasswordManagerDbContext _context;
+    private readonly ILogger<VaultApiService> _logger;
+
+    public VaultApiService(
+        PasswordManagerDbContext context,
+        ILogger<VaultApiService> logger)
+    {
+        _context = context;
+        _logger = logger;
+    }
+
+    public async Task<IEnumerable<VaultDto>> GetAllAsync()
+    {
+        try
+        {
+            var vaults = await _context.Vaults
+                .Include(v => v.Categories)
+                .Include(v => v.PasswordItems)
+                .ToListAsync();
+
+            return vaults.Select(v => v.ToDto()).ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all vaults");
+            throw;
+        }
+    }
+
+    public async Task<VaultDto?> GetByIdAsync(int id)
+    {
+        try
+        {
+            var vault = await _context.Vaults
+                .Include(v => v.Categories)
+                .Include(v => v.PasswordItems)
+                .FirstOrDefaultAsync(v => v.Id == id);
+
+            return vault?.ToDto();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting vault with ID {Id}", id);
+            throw;
+        }
+    }
+
+    public async Task<VaultDto> CreateAsync(CreateVaultDto createDto)
+    {
+        try
+        {
+            var vault = createDto.ToEntity();
+            _context.Vaults.Add(vault);
+            await _context.SaveChangesAsync();
+
+            return await GetByIdAsync(vault.Id) ?? throw new InvalidOperationException("Failed to retrieve created vault");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating vault");
+            throw;
+        }
+    }
+
+    public async Task<VaultDto?> UpdateAsync(int id, UpdateVaultDto updateDto)
+    {
+        try
+        {
+            var existingVault = await _context.Vaults.FindAsync(id);
+            if (existingVault == null)
+                return null;
+
+            existingVault.UpdateFromDto(updateDto);
+            await _context.SaveChangesAsync();
+
+            return await GetByIdAsync(id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating vault with ID {Id}", id);
+            throw;
+        }
+    }
+
+    public async Task<bool> DeleteAsync(int id)
+    {
+        try
+        {
+            var vault = await _context.Vaults.FindAsync(id);
+            if (vault == null)
+                return false;
+
+            _context.Vaults.Remove(vault);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting vault with ID {Id}", id);
+            throw;
+        }
+    }
+
+    public async Task<VaultDto?> GetDefaultVaultAsync()
+    {
+        try
+        {
+            var vault = await _context.Vaults
+                .Include(v => v.Categories)
+                .Include(v => v.PasswordItems)
+                .FirstOrDefaultAsync(v => v.IsDefault);
+
+            return vault?.ToDto();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting default vault");
+            throw;
+        }
+    }
+}

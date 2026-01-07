@@ -122,6 +122,7 @@ builder.Services.AddScoped<IPasswordItemApiService, PasswordManager.Services.Ser
 builder.Services.AddScoped<ICategoryApiService, PasswordManager.Services.Services.CategoryApiService>();
 builder.Services.AddScoped<ICollectionApiService, PasswordManager.Services.Services.CollectionApiService>();
 builder.Services.AddScoped<ITagApiService, PasswordManager.Services.Services.TagApiService>();
+builder.Services.AddScoped<IVaultApiService, PasswordManager.Services.Services.VaultApiService>();
 builder.Services.AddScoped<ISyncService, PasswordManager.Services.Services.SyncService>();
 builder.Services.AddScoped<IDatabaseContextFactory, PasswordManager.Services.Services.DatabaseContextFactory>();
 builder.Services.AddScoped<IPasswordEncryptionService, PasswordManager.Services.Services.PasswordEncryptionService>();
