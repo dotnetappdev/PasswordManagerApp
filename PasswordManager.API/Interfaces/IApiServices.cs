@@ -30,3 +30,13 @@ public interface ITagApiService
     Task<TagDto?> UpdateAsync(int id, UpdateTagDto updateDto);
     Task<bool> DeleteAsync(int id);
 }
+
+public interface IVaultApiService
+{
+    Task<IEnumerable<VaultDto>> GetAllAsync();
+    Task<VaultDto?> GetByIdAsync(int id);
+    Task<VaultDto> CreateAsync(CreateVaultDto createDto);
+    Task<VaultDto?> UpdateAsync(int id, UpdateVaultDto updateDto);
+    Task<bool> DeleteAsync(int id);
+    Task<VaultDto?> GetDefaultVaultAsync();
+}

@@ -35,6 +35,10 @@ public class PasswordItem
     // Collection relationship
     public int? CollectionId { get; set; } // Foreign key to Collection - required
 
+    // Vault relationship
+    public int? VaultId { get; set; } // Foreign key to Vault
+    public Vault? Vault { get; set; } // Navigation property
+
     public string? Website { get; set; }
     // Navigation properties
     public LoginItem? LoginItem { get; set; }

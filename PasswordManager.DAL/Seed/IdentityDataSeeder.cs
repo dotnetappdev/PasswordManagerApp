@@ -15,6 +15,7 @@ public class IdentityDataSeeder
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly IPasswordCryptoService _passwordCryptoService;
+    private readonly PasswordManagerDbContext _dbContext;
     // private readonly IPermissionService _permissionService;
     private readonly ILogger<IdentityDataSeeder> _logger;
     
@@ -25,12 +26,14 @@ public class IdentityDataSeeder
         UserManager<ApplicationUser> userManager,
         RoleManager<ApplicationRole> roleManager,
         IPasswordCryptoService passwordCryptoService,
+        PasswordManagerDbContext dbContext,
         // IPermissionService permissionService,
         ILogger<IdentityDataSeeder> logger)
     {
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _roleManager = roleManager ?? throw new ArgumentNullException(nameof(roleManager));
         _passwordCryptoService = passwordCryptoService ?? throw new ArgumentNullException(nameof(passwordCryptoService));
+        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         // _permissionService = permissionService ?? throw new ArgumentNullException(nameof(permissionService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -175,12 +178,128 @@ public class IdentityDataSeeder
         {
             await _userManager.AddToRoleAsync(user, roleName);
             _logger.LogInformation("Created default user {Email} with role {Role} and master key support", email, roleName);
+            
+            // Seed default vault and categories for the new user
+            try
+            {
+                await SeedDefaultVaultAndCategoriesAsync(user.Id);
+                _logger.LogInformation("Seeded default vault and categories for user {Email}", email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to seed default vault for user {Email}", email);
+            }
         }
         else
         {
             _logger.LogError("Failed to create user {Email}: {Errors}", 
                 email, string.Join(", ", result.Errors.Select(e => e.Description)));
         }
+    }
+
+    /// <summary>
+    /// Seeds default "Personal" vault with standard categories for a user
+    /// </summary>
+    private async Task SeedDefaultVaultAndCategoriesAsync(string userId)
+    {
+        // Check if user already has a vault
+        var existingVault = await _dbContext.Vaults
+            .FirstOrDefaultAsync(v => v.UserId == userId);
+        
+        if (existingVault != null)
+        {
+            _logger.LogInformation("User {UserId} already has a vault, skipping seed", userId);
+            return;
+        }
+
+        // Create default "Personal" vault
+        var vault = new Vault
+        {
+            Name = "Personal",
+            Description = "Your personal password vault",
+            IsDefault = true,
+            Icon = "🔐",
+            UserId = userId,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _dbContext.Vaults.Add(vault);
+        await _dbContext.SaveChangesAsync();
+
+        // Seed default categories
+        var defaultCategories = new[]
+        {
+            new Category 
+            { 
+                Name = "Logins", 
+                Description = "Login credentials for websites and apps",
+                Icon = "🔑",
+                Color = "#4A90E2",
+                VaultId = vault.Id,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            },
+            new Category 
+            { 
+                Name = "Credit Cards", 
+                Description = "Credit and debit card information",
+                Icon = "💳",
+                Color = "#E94B3C",
+                VaultId = vault.Id,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            },
+            new Category 
+            { 
+                Name = "Secure Notes", 
+                Description = "Encrypted notes and documents",
+                Icon = "📝",
+                Color = "#F5A623",
+                VaultId = vault.Id,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            },
+            new Category 
+            { 
+                Name = "WiFi Networks", 
+                Description = "WiFi network passwords",
+                Icon = "📶",
+                Color = "#7ED321",
+                VaultId = vault.Id,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            },
+            new Category 
+            { 
+                Name = "Passkeys", 
+                Description = "Passkey credentials for passwordless authentication",
+                Icon = "🔐",
+                Color = "#9013FE",
+                VaultId = vault.Id,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            },
+            new Category 
+            { 
+                Name = "Identities", 
+                Description = "Personal identification information",
+                Icon = "👤",
+                Color = "#50E3C2",
+                VaultId = vault.Id,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }
+        };
+
+        _dbContext.Categories.AddRange(defaultCategories);
+        await _dbContext.SaveChangesAsync();
     }
 
     /// <summary>

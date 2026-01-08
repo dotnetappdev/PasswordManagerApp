@@ -129,6 +129,7 @@ public sealed partial class MainWindow : Window
                 "WiFiCategory" => typeof(Views.PasswordItemsPage), // Filter for WiFi items
                 "PasskeysCategory" => typeof(Views.PasswordItemsPage), // Filter for passkeys
                 "Categories" => typeof(Views.CategoriesPage),
+                "Vaults" => typeof(Views.VaultsPage),
                 "ManageItems" => typeof(Views.ManageItemsPage),
                 "SecurityDashboard" => typeof(Views.DashboardPage), // Could create security dashboard
                 "Archive" => typeof(Views.PasswordItemsPage), // Filter for archived items

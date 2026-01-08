@@ -279,6 +279,18 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
+                <!-- Vaults -->
+                <NavigationViewItem x:Name="VaultsNavItem"
+                                    Content="Vaults"
+                                    Tag="Vaults"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE72E;"
+                                  FontSize="18"
+                                  Foreground="{StaticResource ModernPrimaryBrush}"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
                 <!-- Import -->
                 <NavigationViewItem x:Name="ImportNavItem"
                                     Content="Import Data"

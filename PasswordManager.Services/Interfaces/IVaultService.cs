@@ -1,0 +1,18 @@
+using PasswordManager.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace PasswordManager.Services.Interfaces
+{
+    public interface IVaultService
+    {
+        Task<List<Vault>> GetAllAsync();
+        Task<Vault?> GetByIdAsync(int id);
+        Task<Vault> CreateAsync(Vault vault);
+        Task<Vault> UpdateAsync(Vault vault);
+        Task DeleteAsync(int id);
+        Task<Vault?> GetDefaultVaultAsync();
+        Task SetAsDefaultAsync(int id);
+        Task<Vault> GetOrCreateDefaultVaultAsync(string userId);
+    }
+}

@@ -19,6 +19,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
     public DbSet<Tag> Tags { get; set; } = null!;
     public DbSet<Category> Categories { get; set; } = null!;
     public DbSet<Collection> Collections { get; set; } = null!;
+    public DbSet<Vault> Vaults { get; set; } = null!;
     public DbSet<ApiKey> ApiKeys { get; set; } = null!;
     public DbSet<ApplicationUser> Users { get; set; } = null!;
     public DbSet<QrLoginToken> QrLoginTokens { get; set; } = null!;
@@ -59,6 +60,13 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.HasOne(e => e.Collection)
                   .WithMany(c => c.PasswordItems)
                   .HasForeignKey(e => e.CollectionId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure Vault relationship (optional)
+            entity.HasOne(e => e.Vault)
+                  .WithMany(v => v.PasswordItems)
+                  .HasForeignKey(e => e.VaultId)
                   .IsRequired(false)
                   .OnDelete(DeleteBehavior.Restrict);
 
@@ -178,6 +186,39 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Configure Vault
+        modelBuilder.Entity<Vault>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Icon).HasMaxLength(100);
+            entity.Property(e => e.Color).HasMaxLength(7);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
+
+            // Configure User relationship
+            entity.Property(e => e.UserId).IsRequired();
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.Vaults)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Categories relationship
+            entity.HasMany(e => e.Categories)
+                  .WithOne(c => c.Vault)
+                  .HasForeignKey(c => c.VaultId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure PasswordItems relationship
+            entity.HasMany(e => e.PasswordItems)
+                  .WithOne(p => p.Vault)
+                  .HasForeignKey(p => p.VaultId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Configure Tag
         modelBuilder.Entity<Tag>(entity =>
         {
@@ -211,6 +252,13 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
                   .WithMany(u => u.Categories)
                   .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Vault relationship (optional)
+            entity.HasOne(e => e.Vault)
+                  .WithMany(v => v.Categories)
+                  .HasForeignKey(e => e.VaultId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Configure Collection

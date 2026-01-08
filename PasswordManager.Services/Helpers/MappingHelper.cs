@@ -282,4 +282,47 @@ public static class MappingHelper
             LastModified = entity.LastModified
         };
     }
+
+    // Vault mappings
+    public static VaultDto ToDto(this Vault entity)
+    {
+        return new VaultDto
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            Description = entity.Description,
+            IsDefault = entity.IsDefault,
+            Icon = entity.Icon,
+            Color = entity.Color,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt,
+            UserId = entity.UserId,
+            Categories = entity.Categories?.Select(c => c.ToDto()).ToList() ?? new List<CategoryDto>(),
+            PasswordItemsCount = entity.PasswordItems?.Count ?? 0
+        };
+    }
+
+    public static Vault ToEntity(this CreateVaultDto dto)
+    {
+        return new Vault
+        {
+            Name = dto.Name,
+            Description = dto.Description,
+            IsDefault = dto.IsDefault,
+            Icon = dto.Icon,
+            Color = dto.Color,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+    }
+
+    public static void UpdateFromDto(this Vault entity, UpdateVaultDto dto)
+    {
+        entity.Name = dto.Name;
+        entity.Description = dto.Description;
+        entity.IsDefault = dto.IsDefault;
+        entity.Icon = dto.Icon;
+        entity.Color = dto.Color;
+        entity.UpdatedAt = DateTime.UtcNow;
+    }
 }
