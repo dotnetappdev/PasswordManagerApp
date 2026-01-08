@@ -100,34 +100,54 @@ public static class ServiceConfiguration
             // Check if configuration file exists
             if (File.Exists(configFilePath))
             {
-                var jsonContent = File.ReadAllText(configFilePath);
-                var config = System.Text.Json.JsonSerializer.Deserialize<PasswordManager.Models.Configuration.DatabaseConfiguration>(
-                    jsonContent, 
-                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                
-                if (config?.Sqlite?.DatabasePath != null && !string.IsNullOrWhiteSpace(config.Sqlite.DatabasePath))
+                try
                 {
-                    // If path is absolute, use it directly; otherwise, make it relative to app data directory
-                    var dbPath = config.Sqlite.DatabasePath;
-                    if (!Path.IsPathRooted(dbPath))
-                    {
-                        dbPath = Path.Combine(platformService.GetAppDataDirectory(), dbPath);
-                    }
+                    var jsonContent = File.ReadAllText(configFilePath);
+                    var config = System.Text.Json.JsonSerializer.Deserialize<PasswordManager.Models.Configuration.DatabaseConfiguration>(
+                        jsonContent, 
+                        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     
-                    // Ensure the directory exists
-                    var directory = Path.GetDirectoryName(dbPath);
-                    if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                    if (config?.Sqlite?.DatabasePath != null && !string.IsNullOrWhiteSpace(config.Sqlite.DatabasePath))
                     {
-                        Directory.CreateDirectory(directory);
+                        // If path is absolute, use it directly; otherwise, make it relative to app data directory
+                        var dbPath = config.Sqlite.DatabasePath;
+                        if (!Path.IsPathRooted(dbPath))
+                        {
+                            dbPath = Path.Combine(platformService.GetAppDataDirectory(), dbPath);
+                        }
+                        
+                        // Validate path security before creating directories
+                        if (IsPathSecure(dbPath))
+                        {
+                            // Ensure the directory exists
+                            var directory = Path.GetDirectoryName(dbPath);
+                            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                            {
+                                Directory.CreateDirectory(directory);
+                            }
+                            
+                            return dbPath;
+                        }
+                        // If path is not secure, fall through to default
                     }
-                    
-                    return dbPath;
+                }
+                catch (System.Text.Json.JsonException)
+                {
+                    // JSON deserialization failed, fall back to default
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // Cannot access the file or create directory, fall back to default
+                }
+                catch (IOException)
+                {
+                    // File I/O error, fall back to default
                 }
             }
         }
         catch
         {
-            // If we can't read the config, fall back to default
+            // If we can't access the config directory at all, fall back to default
         }
         
         // Default path based on app data directory
@@ -140,6 +160,48 @@ public static class ServiceConfiguration
         }
         
         return Path.Combine(appDataDir, "passwordmanager.db");
+    }
+
+    private static bool IsPathSecure(string path)
+    {
+        try
+        {
+            // Get the full path to resolve any relative paths and path traversal attempts
+            var fullPath = Path.GetFullPath(path);
+            
+            // Check for path traversal attempts
+            if (fullPath.Contains(".."))
+            {
+                return false;
+            }
+            
+            // Disallow system directories
+            var systemDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
+            var windowsDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            var programFilesDir = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            var programFilesX86Dir = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            
+            if (fullPath.StartsWith(systemDir, StringComparison.OrdinalIgnoreCase) ||
+                fullPath.StartsWith(windowsDir, StringComparison.OrdinalIgnoreCase) ||
+                fullPath.StartsWith(programFilesDir, StringComparison.OrdinalIgnoreCase) ||
+                fullPath.StartsWith(programFilesX86Dir, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+            
+            // Disallow UNC paths (network paths)
+            if (fullPath.StartsWith(@"\\"))
+            {
+                return false;
+            }
+            
+            return true;
+        }
+        catch
+        {
+            // If we can't validate the path, consider it insecure
+            return false;
+        }
     }
 
     private static void ConfigureBusinessServices(IServiceCollection services)
