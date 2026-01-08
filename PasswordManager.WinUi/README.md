@@ -207,20 +207,39 @@ The WinUI application supports both packaged (MSIX) and unpackaged execution mod
 
 #### Packaged Mode (MSIX)
 - App runs in a sandboxed environment
-- Uses `Windows.Storage.ApplicationData.Current.LocalFolder.Path` for app data
-- Database stored in: `%LocalAppData%\Packages\[PackageId]\LocalState\`
+- Default app data location: `Windows.Storage.ApplicationData.Current.LocalFolder.Path` (typically `%LocalAppData%\Packages\[PackageId]\LocalState\`)
 - Deployed via MSIX installer or Microsoft Store
 - Launch Profile: "PasswordManager.WinUi (Package)"
 
 #### Unpackaged Mode
 - App runs with traditional desktop permissions
-- Uses `%LocalAppData%\PasswordManager` for app data
-- Database stored in: `%LocalAppData%\PasswordManager\passwordmanager.db`
+- Default app data location: `%LocalAppData%\PasswordManager`
 - Deployed as standalone executable
 - Launch Profile: "PasswordManager.WinUi (Unpackaged)"
 - Requires `trustInfo` section in app.manifest for proper execution
 
-**Note**: The application automatically detects the execution mode at runtime using `Windows.ApplicationModel.Package.Current` and adjusts the data directory path accordingly. This ensures the SQLite database is created in the correct location for both deployment scenarios.
+#### Custom Database Path
+
+**Users can dictate the database location** regardless of packaging mode:
+
+1. On first run, the application shows a database configuration dialog
+2. Users can:
+   - Accept the default location (based on packaging mode)
+   - Browse to select a custom folder location
+   - Manually enter a custom database path
+3. The selected path is saved in `appsettings.json` in the app data directory
+4. The application will use the configured path on subsequent launches
+
+**Path Restrictions** (for security):
+- Cannot use system directories (Windows, System32, Program Files)
+- Cannot use UNC/network paths
+- Must be accessible with current user permissions
+
+**To Change Database Location After First Run**:
+- Delete or edit `appsettings.json` in your app data directory
+- Or use the Settings page to reconfigure the database location
+
+**Note**: The application automatically detects the execution mode at runtime using `Windows.ApplicationModel.Package.Current` and provides appropriate default paths, but **always respects user-configured custom paths** stored in the configuration.
 
 ## Interface Screenshots
 

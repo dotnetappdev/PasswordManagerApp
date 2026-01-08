@@ -65,15 +65,15 @@ public static class ServiceConfiguration
         services.AddScoped<IDatabaseConfigurationService, DatabaseConfigurationService>();
         services.AddScoped<DynamicDatabaseContextFactory>();
 
+        // Get the database path from saved configuration or use default
         var platformService = new WinUiPlatformService();
-        var appDataDir = platformService.GetAppDataDirectory(); // This already creates the directory
-        var defaultDbPath = Path.Combine(appDataDir, "passwordmanager.db");
+        var dbPath = GetConfiguredDatabasePath(platformService);
 
         services.AddDbContext<PasswordManagerDbContextApp>(options =>
-            options.UseSqlite($"Data Source={defaultDbPath}"));
+            options.UseSqlite($"Data Source={dbPath}"));
 
         services.AddDbContext<PasswordManagerDbContext>(options =>
-            options.UseSqlite($"Data Source={defaultDbPath}"));
+            options.UseSqlite($"Data Source={dbPath}"));
 
         services.AddIdentityCore<ApplicationUser>(options =>
         {
@@ -89,6 +89,57 @@ public static class ServiceConfiguration
             provider.GetRequiredService<PasswordManagerDbContext>());
 
         services.AddScoped<PasswordManager.DAL.Seed.IdentityDataSeeder>();
+    }
+
+    private static string GetConfiguredDatabasePath(IPlatformService platformService)
+    {
+        try
+        {
+            var configFilePath = Path.Combine(platformService.GetAppDataDirectory(), "appsettings.json");
+            
+            // Check if configuration file exists
+            if (File.Exists(configFilePath))
+            {
+                var jsonContent = File.ReadAllText(configFilePath);
+                var config = System.Text.Json.JsonSerializer.Deserialize<PasswordManager.Models.Configuration.DatabaseConfiguration>(
+                    jsonContent, 
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                
+                if (config?.Sqlite?.DatabasePath != null && !string.IsNullOrWhiteSpace(config.Sqlite.DatabasePath))
+                {
+                    // If path is absolute, use it directly; otherwise, make it relative to app data directory
+                    var dbPath = config.Sqlite.DatabasePath;
+                    if (!Path.IsPathRooted(dbPath))
+                    {
+                        dbPath = Path.Combine(platformService.GetAppDataDirectory(), dbPath);
+                    }
+                    
+                    // Ensure the directory exists
+                    var directory = Path.GetDirectoryName(dbPath);
+                    if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
+                    
+                    return dbPath;
+                }
+            }
+        }
+        catch
+        {
+            // If we can't read the config, fall back to default
+        }
+        
+        // Default path based on app data directory
+        var appDataDir = platformService.GetAppDataDirectory();
+        
+        // Ensure directory exists for the default path
+        if (!Directory.Exists(appDataDir))
+        {
+            Directory.CreateDirectory(appDataDir);
+        }
+        
+        return Path.Combine(appDataDir, "passwordmanager.db");
     }
 
     private static void ConfigureBusinessServices(IServiceCollection services)
