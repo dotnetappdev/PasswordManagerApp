@@ -201,6 +201,27 @@ dotnet run
 
 The application provides a complete password management experience with all the features of the original Blazor app, optimized for Windows desktop users with native performance and Windows 11 design language.
 
+### Packaged vs Unpackaged Mode
+
+The WinUI application supports both packaged (MSIX) and unpackaged execution modes:
+
+#### Packaged Mode (MSIX)
+- App runs in a sandboxed environment
+- Uses `Windows.Storage.ApplicationData.Current.LocalFolder.Path` for app data
+- Database stored in: `%LocalAppData%\Packages\[PackageId]\LocalState\`
+- Deployed via MSIX installer or Microsoft Store
+- Launch Profile: "PasswordManager.WinUi (Package)"
+
+#### Unpackaged Mode
+- App runs with traditional desktop permissions
+- Uses `%LocalAppData%\PasswordManager` for app data
+- Database stored in: `%LocalAppData%\PasswordManager\passwordmanager.db`
+- Deployed as standalone executable
+- Launch Profile: "PasswordManager.WinUi (Unpackaged)"
+- Requires `trustInfo` section in app.manifest for proper execution
+
+**Note**: The application automatically detects the execution mode at runtime using `Windows.ApplicationModel.Package.Current` and adjusts the data directory path accordingly. This ensures the SQLite database is created in the correct location for both deployment scenarios.
+
 ## Interface Screenshots
 
 For a visual tour of the WinUI application interface, including screenshots of all major screens and features, see the [WinUI Screenshots Documentation](../screenshots.md).
