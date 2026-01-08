@@ -93,87 +93,72 @@ public static class ServiceConfiguration
 
     private static string GetConfiguredDatabasePath(IPlatformService platformService)
     {
+        var configFilePath = Path.Combine(platformService.GetAppDataDirectory(), "appsettings.json");
+        
+        // Try to read configuration file
         try
         {
-            var configFilePath = Path.Combine(platformService.GetAppDataDirectory(), "appsettings.json");
+            var jsonContent = File.ReadAllText(configFilePath);
+            var config = System.Text.Json.JsonSerializer.Deserialize<PasswordManager.Models.Configuration.DatabaseConfiguration>(
+                jsonContent, 
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             
-            // Check if configuration file exists
-            if (File.Exists(configFilePath))
+            if (config?.Sqlite?.DatabasePath != null && !string.IsNullOrWhiteSpace(config.Sqlite.DatabasePath))
             {
-                try
+                // If path is absolute, use it directly; otherwise, make it relative to app data directory
+                var dbPath = config.Sqlite.DatabasePath;
+                if (!Path.IsPathRooted(dbPath))
                 {
-                    var jsonContent = File.ReadAllText(configFilePath);
-                    var config = System.Text.Json.JsonSerializer.Deserialize<PasswordManager.Models.Configuration.DatabaseConfiguration>(
-                        jsonContent, 
-                        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    
-                    if (config?.Sqlite?.DatabasePath != null && !string.IsNullOrWhiteSpace(config.Sqlite.DatabasePath))
+                    dbPath = Path.Combine(platformService.GetAppDataDirectory(), dbPath);
+                }
+                
+                // Validate path security before creating directories
+                if (IsPathSecure(dbPath))
+                {
+                    // Ensure the directory exists
+                    var directory = Path.GetDirectoryName(dbPath);
+                    if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                     {
-                        // If path is absolute, use it directly; otherwise, make it relative to app data directory
-                        var dbPath = config.Sqlite.DatabasePath;
-                        if (!Path.IsPathRooted(dbPath))
-                        {
-                            dbPath = Path.Combine(platformService.GetAppDataDirectory(), dbPath);
-                        }
-                        
-                        // Validate path security before creating directories
-                        if (IsPathSecure(dbPath))
-                        {
-                            // Ensure the directory exists
-                            var directory = Path.GetDirectoryName(dbPath);
-                            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                            {
-                                Directory.CreateDirectory(directory);
-                            }
-                            
-                            return dbPath;
-                        }
-                        // If path is not secure, fall through to default
+                        Directory.CreateDirectory(directory);
                     }
+                    
+                    return dbPath;
                 }
-                catch (System.Text.Json.JsonException)
-                {
-                    // JSON deserialization failed, fall back to default
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    // Cannot access the file or create directory, fall back to default
-                }
-                catch (IOException)
-                {
-                    // File I/O error, fall back to default
-                }
+                // If path is not secure, fall through to default
             }
+        }
+        catch (FileNotFoundException)
+        {
+            // Configuration file doesn't exist, use default
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // JSON deserialization failed, fall back to default
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Cannot access the file or create directory, fall back to default
+        }
+        catch (IOException)
+        {
+            // File I/O error, fall back to default
         }
         catch
         {
-            // If we can't access the config directory at all, fall back to default
+            // Any other error accessing config, fall back to default
         }
         
-        // Default path based on app data directory
-        var appDataDir = platformService.GetAppDataDirectory();
-        
-        // Ensure directory exists for the default path
-        if (!Directory.Exists(appDataDir))
-        {
-            Directory.CreateDirectory(appDataDir);
-        }
-        
-        return Path.Combine(appDataDir, "passwordmanager.db");
+        // Default path - GetAppDataDirectory already ensures directory exists
+        return Path.Combine(platformService.GetAppDataDirectory(), "passwordmanager.db");
     }
 
     private static bool IsPathSecure(string path)
     {
         try
         {
-            // Get the full path to resolve any relative paths and path traversal attempts
+            // Get the full path to resolve any relative paths
+            // Path.GetFullPath already normalizes and resolves path traversal attempts
             var fullPath = Path.GetFullPath(path);
-            
-            // Check for path traversal attempts
-            if (fullPath.Contains(".."))
-            {
-                return false;
-            }
             
             // Disallow system directories
             var systemDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
