@@ -12,10 +12,10 @@ public class WinUiPlatformService : IPlatformService
         try
         {
             // If we can access Package.Current without exception, we're packaged
-            var package = Windows.ApplicationModel.Package.Current;
-            return package != null;
+            _ = Windows.ApplicationModel.Package.Current;
+            return true;
         }
-        catch
+        catch (InvalidOperationException)
         {
             // Exception thrown when accessing Package.Current means we're unpackaged
             return false;
