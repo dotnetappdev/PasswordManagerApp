@@ -4,22 +4,52 @@ namespace PasswordManager.WinUi.Services;
 
 public class WinUiPlatformService : IPlatformService
 {
-    public string GetAppDataDirectory()
+    /// <summary>
+    /// Determines if the app is running as a packaged MSIX app.
+    /// </summary>
+    private static bool IsPackaged()
     {
-        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var appDir = Path.Combine(localAppData, "PasswordManager");
-
-        // FORCE directory creation with explicit verification
         try
         {
-            if (!Directory.Exists(appDir))
-            {
-                Directory.CreateDirectory(appDir);
-            }
+            // If we can access Package.Current without exception, we're packaged
+            var package = Windows.ApplicationModel.Package.Current;
+            return package != null;
         }
-        catch (Exception)
+        catch
         {
-            // Directory creation failed, will return path anyway
+            // Exception thrown when accessing Package.Current means we're unpackaged
+            return false;
+        }
+    }
+
+    public string GetAppDataDirectory()
+    {
+        string appDir;
+
+        if (IsPackaged())
+        {
+            // For packaged apps (MSIX), use Windows.Storage.ApplicationData.Current.LocalFolder
+            // This is the correct location for sandboxed apps
+            appDir = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
+        }
+        else
+        {
+            // For unpackaged apps, use the traditional LocalApplicationData folder
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            appDir = Path.Combine(localAppData, "PasswordManager");
+
+            // Create directory for unpackaged apps (packaged apps have LocalFolder pre-created)
+            try
+            {
+                if (!Directory.Exists(appDir))
+                {
+                    Directory.CreateDirectory(appDir);
+                }
+            }
+            catch (Exception)
+            {
+                // Directory creation failed, will return path anyway
+            }
         }
 
         return appDir;
