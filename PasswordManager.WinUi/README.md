@@ -201,6 +201,46 @@ dotnet run
 
 The application provides a complete password management experience with all the features of the original Blazor app, optimized for Windows desktop users with native performance and Windows 11 design language.
 
+### Packaged vs Unpackaged Mode
+
+The WinUI application supports both packaged (MSIX) and unpackaged execution modes:
+
+#### Packaged Mode (MSIX)
+- App runs in a sandboxed environment
+- Default app data location: `Windows.Storage.ApplicationData.Current.LocalFolder.Path` (typically `%LocalAppData%\Packages\[PackageId]\LocalState\`)
+- Deployed via MSIX installer or Microsoft Store
+- Launch Profile: "PasswordManager.WinUi (Package)"
+
+#### Unpackaged Mode
+- App runs with traditional desktop permissions
+- Default app data location: `%LocalAppData%\PasswordManager`
+- Deployed as standalone executable
+- Launch Profile: "PasswordManager.WinUi (Unpackaged)"
+- Requires `trustInfo` section in app.manifest for proper execution
+
+#### Custom Database Path
+
+**Users can dictate the database location** regardless of packaging mode:
+
+1. On first run, the application shows a database configuration dialog
+2. Users can:
+   - Accept the default location (based on packaging mode)
+   - Browse to select a custom folder location
+   - Manually enter a custom database path
+3. The selected path is saved in `appsettings.json` in the app data directory
+4. The application will use the configured path on subsequent launches
+
+**Path Restrictions** (for security):
+- Cannot use system directories (Windows, System32, Program Files)
+- Cannot use UNC/network paths
+- Must be accessible with current user permissions
+
+**To Change Database Location After First Run**:
+- Delete or edit `appsettings.json` in your app data directory
+- Or use the Settings page to reconfigure the database location
+
+**Note**: The application automatically detects the execution mode at runtime using `Windows.ApplicationModel.Package.Current` and provides appropriate default paths, but **always respects user-configured custom paths** stored in the configuration.
+
 ## Interface Screenshots
 
 For a visual tour of the WinUI application interface, including screenshots of all major screens and features, see the [WinUI Screenshots Documentation](../screenshots.md).
