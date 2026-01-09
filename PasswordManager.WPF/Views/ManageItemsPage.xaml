@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page x:Class="PasswordManager.WinUi.Views.ManageItemsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{StaticResource ModernBackgroundBrush}">
+
+    <ScrollViewer>
+        <StackPanel Spacing="32" Margin="0,0,0,24">
+            
+            <!-- Page Header -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <StackPanel Grid.Column="0" Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Border Background="{StaticResource ModernAccentBrush}"
+                                   CornerRadius="12"
+                                   Width="32"
+                                   Height="32">
+                                <FontIcon Glyph="&#xE8B8;" 
+                                         FontSize="16"
+                                         Foreground="White"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Manage Collections, Types &amp; Tags" 
+                                      Style="{StaticResource ModernHeading3Style}"
+                                      VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="Organize your password items with custom collections, types, and tags"
+                                  Style="{StaticResource ModernCaptionStyle}"/>
+                    </StackPanel>
+                    
+                    <Button x:Name="RefreshAllButton"
+                           Grid.Column="1"
+                           Style="{StaticResource ModernSecondaryButtonStyle}"
+                           Click="RefreshAllButton_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE72C;" FontSize="14"/>
+                            <TextBlock Text="Refresh All"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Collections Section -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Spacing="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="Collections" 
+                                      Style="{StaticResource ModernHeading4Style}"/>
+                            <TextBlock Text="Categories to organize your password items"
+                                      Style="{StaticResource ModernCaptionStyle}"/>
+                        </StackPanel>
+                        
+                        <Button x:Name="AddCollectionButton"
+                               Grid.Column="1"
+                               Style="{StaticResource ModernPrimaryButtonStyle}"
+                               Click="AddCollectionButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE109;" FontSize="14"/>
+                                <TextBlock Text="Add Collection"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    
+                    <!-- Collections List -->
+                    <ListView x:Name="CollectionsListView"
+                             MaxHeight="200"
+                             SelectionMode="Single">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,4" Height="48">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <Border Grid.Column="0"
+                                           Background="{StaticResource ModernSuccessBrush}"
+                                           CornerRadius="6"
+                                           Width="24"
+                                           Height="24"
+                                           Margin="0,0,12,0"
+                                           VerticalAlignment="Center">
+                                        <FontIcon Glyph="&#xE8FD;" 
+                                                 FontSize="12"
+                                                 Foreground="White"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center"/>
+                                    </Border>
+                                    
+                                    <StackPanel Grid.Column="1" 
+                                               VerticalAlignment="Center" 
+                                               Spacing="2">
+                                        <TextBlock Text="{Binding Name}" 
+                                                  FontSize="14"
+                                                  FontWeight="SemiBold"
+                                                  Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                        <TextBlock Text="{Binding Description}" 
+                                                  FontSize="12"
+                                                  Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                                  Visibility="{Binding Description, Converter={StaticResource StringToVisibilityConverter}}"/>
+                                    </StackPanel>
+                                    
+                                    <StackPanel Grid.Column="2" 
+                                               Orientation="Horizontal" 
+                                               Spacing="8"
+                                               VerticalAlignment="Center">
+                                        <Button Background="Transparent"
+                                               BorderThickness="0"
+                                               Padding="8"
+                                               CornerRadius="4"
+                                               Click="EditCollectionButton_Click">
+                                            <FontIcon Glyph="&#xE70F;" FontSize="14" Foreground="{StaticResource ModernPrimaryBrush}"/>
+                                        </Button>
+                                        <Button Background="Transparent"
+                                               BorderThickness="0"
+                                               Padding="8"
+                                               CornerRadius="4"
+                                               Click="DeleteCollectionButton_Click">
+                                            <FontIcon Glyph="&#xE74D;" FontSize="14" Foreground="{StaticResource ModernErrorBrush}"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </Border>
+
+            <!-- Types Section -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Spacing="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="Types" 
+                                      Style="{StaticResource ModernHeading4Style}"/>
+                            <TextBlock Text="Item types like Login, Credit Card, Secure Note, etc."
+                                      Style="{StaticResource ModernCaptionStyle}"/>
+                        </StackPanel>
+                        
+                        <Button x:Name="AddTypeButton"
+                               Grid.Column="1"
+                               Style="{StaticResource ModernPrimaryButtonStyle}"
+                               Click="AddTypeButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE109;" FontSize="14"/>
+                                <TextBlock Text="Add Type"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    
+                    <!-- Types List -->
+                    <ListView x:Name="TypesListView"
+                             MaxHeight="200"
+                             SelectionMode="Single">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,4" Height="48">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <Border Grid.Column="0"
+                                           Background="{StaticResource ModernPrimaryBrush}"
+                                           CornerRadius="6"
+                                           Width="24"
+                                           Height="24"
+                                           Margin="0,0,12,0"
+                                           VerticalAlignment="Center">
+                                        <FontIcon Glyph="&#xE192;" 
+                                                 FontSize="12"
+                                                 Foreground="White"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center"/>
+                                    </Border>
+                                    
+                                    <StackPanel Grid.Column="1" 
+                                               VerticalAlignment="Center" 
+                                               Spacing="2">
+                                        <TextBlock Text="{Binding}" 
+                                                  FontSize="14"
+                                                  FontWeight="SemiBold"
+                                                  Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                    </StackPanel>
+                                    
+                                    <StackPanel Grid.Column="2" 
+                                               Orientation="Horizontal" 
+                                               Spacing="8"
+                                               VerticalAlignment="Center">
+                                        <Button Background="Transparent"
+                                               BorderThickness="0"
+                                               Padding="8"
+                                               CornerRadius="4"
+                                               Click="EditTypeButton_Click">
+                                            <FontIcon Glyph="&#xE70F;" FontSize="14" Foreground="{StaticResource ModernPrimaryBrush}"/>
+                                        </Button>
+                                        <Button Background="Transparent"
+                                               BorderThickness="0"
+                                               Padding="8"
+                                               CornerRadius="4"
+                                               Click="DeleteTypeButton_Click">
+                                            <FontIcon Glyph="&#xE74D;" FontSize="14" Foreground="{StaticResource ModernErrorBrush}"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </Border>
+
+            <!-- Tags Section -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Spacing="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="Tags" 
+                                      Style="{StaticResource ModernHeading4Style}"/>
+                            <TextBlock Text="Labels to organize items like Work, Personal, Finance, etc."
+                                      Style="{StaticResource ModernCaptionStyle}"/>
+                        </StackPanel>
+                        
+                        <Button x:Name="AddTagButton"
+                               Grid.Column="1"
+                               Style="{StaticResource ModernPrimaryButtonStyle}"
+                               Click="AddTagButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE109;" FontSize="14"/>
+                                <TextBlock Text="Add Tag"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    
+                    <!-- Tags List -->
+                    <ListView x:Name="TagsListView"
+                             MaxHeight="200"
+                             SelectionMode="Single">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,4" Height="48">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <Border Grid.Column="0"
+                                           Background="{StaticResource ModernWarningBrush}"
+                                           CornerRadius="6"
+                                           Width="24"
+                                           Height="24"
+                                           Margin="0,0,12,0"
+                                           VerticalAlignment="Center">
+                                        <FontIcon Glyph="&#xE1CB;" 
+                                                 FontSize="12"
+                                                 Foreground="White"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center"/>
+                                    </Border>
+                                    
+                                    <StackPanel Grid.Column="1" 
+                                               VerticalAlignment="Center" 
+                                               Spacing="2">
+                                        <TextBlock Text="{Binding Name}" 
+                                                  FontSize="14"
+                                                  FontWeight="SemiBold"
+                                                  Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                        <TextBlock Text="{Binding Description}" 
+                                                  FontSize="12"
+                                                  Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                                  Visibility="{Binding Description, Converter={StaticResource StringToVisibilityConverter}}"/>
+                                    </StackPanel>
+                                    
+                                    <StackPanel Grid.Column="2" 
+                                               Orientation="Horizontal" 
+                                               Spacing="8"
+                                               VerticalAlignment="Center">
+                                        <Button Background="Transparent"
+                                               BorderThickness="0"
+                                               Padding="8"
+                                               CornerRadius="4"
+                                               Click="EditTagButton_Click">
+                                            <FontIcon Glyph="&#xE70F;" FontSize="14" Foreground="{StaticResource ModernPrimaryBrush}"/>
+                                        </Button>
+                                        <Button Background="Transparent"
+                                               BorderThickness="0"
+                                               Padding="8"
+                                               CornerRadius="4"
+                                               Click="DeleteTagButton_Click">
+                                            <FontIcon Glyph="&#xE74D;" FontSize="14" Foreground="{StaticResource ModernErrorBrush}"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:ContentDialog x:Class="PasswordManager.WinUi.Dialogs.ItemTypeSelectionDialog"
+               xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               Title="What would you like to add?"
+               PrimaryButtonText=""
+               CloseButtonText="Cancel"
+               PrimaryButtonClick="ui:ContentDialog_PrimaryButtonClick"
+               Background="{StaticResource ModernFormBackgroundBrush}"
+               Style="{StaticResource Modern1PasswordDialogStyle}"
+               PrimaryButtonStyle="{StaticResource ui:ContentDialogPrimaryButtonStyle}"
+               CloseButtonStyle="{StaticResource ui:ContentDialogSecondaryButtonStyle}"
+               MaxWidth="700"
+               MaxHeight="650">
+
+    <ScrollViewer>
+        <StackPanel Spacing="16"
+                    Padding="20">
+
+            <!-- Search Box -->
+            <ui:AutoSuggestBox x:Name="ItemSearchBox"
+                            PlaceholderText="Try searching anything"
+                            QueryIcon="Find"
+                            Style="{StaticResource Modernui:AutoSuggestBoxStyle}"
+                            CornerRadius="8"
+                            Height="40"
+                            FontSize="16"/>
+
+            <!-- Main Category Grid - 6 core item types in 3x2 layout -->
+            <Grid x:Name="MainCategoryGrid">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Top row - Main categories matching navigation menu -->
+                <Button x:Name="LoginButton"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Click="CategoryButton_Click"
+                        Tag="Login"
+                        Style="{StaticResource CardButtonStyle}"
+                        Margin="8"
+                        MinHeight="100">
+                    <StackPanel Spacing="8">
+                        <Border Background="#4facfe"
+                                CornerRadius="12"
+                                Width="48"
+                                Height="48">
+                            <FontIcon Glyph="&#xE192;"
+                                      FontSize="24"
+                                      Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Login"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="CreditCardButton"
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        Click="CategoryButton_Click"
+                        Tag="Credit Card"
+                        Style="{StaticResource CardButtonStyle}"
+                        Margin="8"
+                        MinHeight="100">
+                    <StackPanel Spacing="8">
+                        <Border Background="#10b981"
+                                CornerRadius="12"
+                                Width="48"
+                                Height="48">
+                            <FontIcon Glyph="&#xE8C7;"
+                                      FontSize="24"
+                                      Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Credit Card"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="SecureNoteButton"
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        Click="CategoryButton_Click"
+                        Tag="Secure Note"
+                        Style="{StaticResource CardButtonStyle}"
+                        Margin="8"
+                        MinHeight="100">
+                    <StackPanel Spacing="8">
+                        <Border Background="#f59e0b"
+                                CornerRadius="12"
+                                Width="48"
+                                Height="48">
+                            <FontIcon Glyph="&#xE70F;"
+                                      FontSize="24"
+                                      Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Secure Note"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Second row -->
+                <Button x:Name="WiFiButton"
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Click="CategoryButton_Click"
+                        Tag="WiFi"
+                        Style="{StaticResource CardButtonStyle}"
+                        Margin="8"
+                        MinHeight="100">
+                    <StackPanel Spacing="8">
+                        <Border Background="#8b5cf6"
+                                CornerRadius="12"
+                                Width="48"
+                                Height="48">
+                            <FontIcon Glyph="&#xE701;"
+                                      FontSize="24"
+                                      Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="WiFi Password"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="PasswordButton"
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Click="CategoryButton_Click"
+                        Tag="Password"
+                        Style="{StaticResource CardButtonStyle}"
+                        Margin="8"
+                        MinHeight="100">
+                    <StackPanel Spacing="8">
+                        <Border Background="#ef4444"
+                                CornerRadius="12"
+                                Width="48"
+                                Height="48">
+                            <FontIcon Glyph="&#xE1F5;"
+                                      FontSize="24"
+                                      Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Password"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="PasskeyButton"
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        Click="CategoryButton_Click"
+                        Tag="Passkey"
+                        Style="{StaticResource CardButtonStyle}"
+                        Margin="8"
+                        MinHeight="100">
+                    <StackPanel Spacing="8">
+                        <Border Background="#ec4899"
+                                CornerRadius="12"
+                                Width="48"
+                                Height="48">
+                            <FontIcon Glyph="&#xE8D7;"
+                                      FontSize="24"
+                                      Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Passkey"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+        </StackPanel>
+    </ScrollViewer>
+</ui:ContentDialog>

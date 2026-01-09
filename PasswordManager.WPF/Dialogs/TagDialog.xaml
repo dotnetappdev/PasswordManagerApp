@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:ContentDialog x:Class="PasswordManager.WinUi.Dialogs.TagDialog"
+               xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               xmlns:controls="clr-namespace:PasswordManager.WPF.Controls"
+               Title="New Tag"
+               PrimaryButtonText="Save"
+               CloseButtonText="Cancel"
+               DefaultButton="Primary"
+               Style="{StaticResource Modern1PasswordDialogStyle}"
+               PrimaryButtonStyle="{StaticResource ui:ContentDialogPrimaryButtonStyle}"
+               CloseButtonStyle="{StaticResource ui:ContentDialogSecondaryButtonStyle}">
+
+    <Grid Background="{StaticResource ModernFormBackgroundBrush}"
+          MaxWidth="450"
+          MaxHeight="500">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="24"
+                        Margin="32">
+
+                <!-- Error Message -->
+                <Border x:Name="ErrorMessageBorder"
+                        Background="{StaticResource ModernErrorBrush}"
+                        CornerRadius="12"
+                        Padding="16"
+                        Visibility="Collapsed">
+                    <TextBlock x:Name="ErrorMessageText"
+                               Text=""
+                               Foreground="White"
+                               FontSize="14"
+                               FontWeight="Medium"
+                               TextWrapping="Wrap"/>
+                </Border>
+
+                <!-- Tag Name Field -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Name"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource ModernTextPrimaryBrush}"
+                               Margin="0,0,0,4"/>
+                    <Border Background="{StaticResource ModernSurfaceBrush}"
+                            CornerRadius="8"
+                            BorderBrush="{StaticResource ModernBorderBrush}"
+                            BorderThickness="1">
+                        <Grid>
+                            <TextBox x:Name="TagNameTextBox"
+                                     PlaceholderText="Enter tag name"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Padding="16,12"
+                                     FontSize="14"
+                                     MaxLength="50"/>
+                            <controls:ReadOnlyField x:Name="TagNameTextDisplay"
+                                                    Visibility="Collapsed"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!-- Tag Description Field -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Description"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource ModernTextPrimaryBrush}"
+                               Margin="0,0,0,4"/>
+                    <Border Background="{StaticResource ModernSurfaceBrush}"
+                            CornerRadius="8"
+                            BorderBrush="{StaticResource ModernBorderBrush}"
+                            BorderThickness="1">
+                        <Grid>
+                            <TextBox x:Name="TagDescriptionTextBox"
+                                     PlaceholderText="Add description (optional)"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Padding="16,12"
+                                     FontSize="14"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     MaxHeight="80"
+                                     MaxLength="200"/>
+                            <controls:ReadOnlyField x:Name="TagDescriptionTextDisplay"
+                                                    Visibility="Collapsed"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!-- Tag Color Selection -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Color"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource ModernTextPrimaryBrush}"
+                               Margin="0,0,0,4"/>
+                    <Border Background="{StaticResource ModernSurfaceBrush}"
+                            CornerRadius="8"
+                            BorderBrush="{StaticResource ModernBorderBrush}"
+                            BorderThickness="1"
+                            Padding="16,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <ComboBox x:Name="TagColorComboBox"
+                                      Grid.Column="0"
+                                      PlaceholderText="Choose color"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      FontSize="14"
+                                      SelectedIndex="0">
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <Ellipse Fill="#3b82f6"
+                                                 Width="18"
+                                                 Height="18"/>
+                                        <TextBlock Text="Blue"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <Ellipse Fill="#10b981"
+                                                 Width="18"
+                                                 Height="18"/>
+                                        <TextBlock Text="Green"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <Ellipse Fill="#f59e0b"
+                                                 Width="18"
+                                                 Height="18"/>
+                                        <TextBlock Text="Orange"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <Ellipse Fill="#ef4444"
+                                                 Width="18"
+                                                 Height="18"/>
+                                        <TextBlock Text="Red"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <Ellipse Fill="#8b5cf6"
+                                                 Width="18"
+                                                 Height="18"/>
+                                        <TextBlock Text="Purple"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <Ellipse Fill="#ec4899"
+                                                 Width="18"
+                                                 Height="18"/>
+                                        <TextBlock Text="Pink"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                                <ComboBoxItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="12">
+                                        <Ellipse Fill="#6b7280"
+                                                 Width="18"
+                                                 Height="18"/>
+                                        <TextBlock Text="Gray"
+                                                   FontSize="14"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                            </ComboBox>
+
+                            <Ellipse x:Name="ColorPreview"
+                                     Grid.Column="1"
+                                     Fill="#3b82f6"
+                                     Width="22"
+                                     Height="22"
+                                     Margin="12,0,0,0"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!-- Color display for read-only -->
+                <controls:ReadOnlyField x:Name="TagColorTextDisplay"
+                                        Visibility="Collapsed"/>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</ui:ContentDialog>
