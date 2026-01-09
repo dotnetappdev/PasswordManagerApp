@@ -1,0 +1,40 @@
+<Application
+    x:Class="PasswordManager.WinUi.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:PasswordManager.WPF.Converters">
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="http://schemas.modernwpf.com/2019" />
+                <!-- Modern Theme Resources -->
+                <ResourceDictionary Source="Themes/ModernTheme.xaml"/>
+                <!-- Light Theme Resources -->
+                <ResourceDictionary Source="Themes/LightTheme.xaml"/>
+                <!-- Dark Theme Resources (merged conditionally by ThemeService) -->
+                <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Value Converters -->
+            <converters:TypeToIconConverter x:Key="TypeToIconConverter"/>
+            <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+            <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+            <converters:BoolToInvertedVisibilityConverter x:Key="BoolToInvertedVisibilityConverter"/>
+            <converters:FirstTimeSetupToSubtitleConverter x:Key="FirstTimeSetupToSubtitleConverter"/>
+            <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+            <converters:StatusToIconConverter x:Key="StatusToIconConverter"/>
+            <converters:StatusToColorConverter x:Key="StatusToColorConverter"/>
+            <!--<converters:ApiModeToInputScopeConverter x:Key="ApiModeToInputScopeConverter"/>-->
+            <converters:ApiModeToVisibilityConverter x:Key="ApiModeToVisibilityConverter"/>
+            <converters:LocalModeToEnabledConverter x:Key="LocalModeToEnabledConverter"/>
+            <converters:DateFormatConverter x:Key="DateFormatConverter"/>
+            <converters:NotNullToBoolConverter x:Key="NotNullToBoolConverter"/>
+            <converters:DateToModifiedStringConverter x:Key="DateToModifiedStringConverter"/>
+            <converters:NotNullToInvertedVisibilityConverter x:Key="NotNullToInvertedVisibilityConverter"/>
+            <converters:BoolNegationConverter x:Key="BoolNegationConverter"/>
+
+            <!-- Removed WebsiteToColorConverter (likely already in ModernTheme.xaml) -->
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
