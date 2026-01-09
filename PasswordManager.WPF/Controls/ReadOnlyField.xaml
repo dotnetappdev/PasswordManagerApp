@@ -12,11 +12,6 @@
     GotFocus="Root_GotFocus"
     LostFocus="Root_LostFocus">
 
-    <UserControl.KeyboardAccelerators>
-        <KeyboardAccelerator Key="C"
-                             Modifiers="Control"
-                             Invoked="CopyKeyboardAccelerator_Invoked"/>
-    </UserControl.KeyboardAccelerators>
 
     <Grid Background="Transparent"
           PointerEntered="Root_PointerEntered"
@@ -49,7 +44,7 @@
                 Background="Transparent"
                 BorderThickness="0">
             <StackPanel Orientation="Horizontal"
-                        Spacing="4">
+                        Margin="4">
                 <SymbolIcon Symbol="Copy"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
             </StackPanel>

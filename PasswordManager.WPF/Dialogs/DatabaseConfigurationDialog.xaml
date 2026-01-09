@@ -9,8 +9,9 @@
     PrimaryButtonClick="OnPrimaryButtonClick"
     CloseButtonClick="OnCloseButtonClick">
 
-    <ScrollViewer MaxHeight="500">
-        <StackPanel Spacing="16" Padding="4">
+    <ScrollViewer xmlns:ui="http://schemas.modernwpf.com/2019"
+    MaxHeight="500">
+        <StackPanel Margin="16" Padding="4">
             <!-- Header -->
             <TextBlock TextWrapping="Wrap" FontSize="14">
                 Choose where to store your password database. The database will be created at the location you specify.
@@ -20,7 +21,7 @@
             <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     CornerRadius="8"
                     Padding="12">
-                <StackPanel Spacing="8">
+                <StackPanel Margin="8">
                     <TextBlock Text="Default Location" FontWeight="SemiBold"/>
                     <TextBlock x:Name="DefaultPathTextBlock" 
                                TextWrapping="Wrap"
@@ -31,10 +32,10 @@
             </Border>
 
             <!-- Custom Path Section -->
-            <StackPanel Spacing="8">
+            <StackPanel Margin="8">
                 <TextBlock Text="Custom Database Path (Optional)" FontWeight="SemiBold"/>
                 <TextBox x:Name="CustomPathTextBox"
-                         PlaceholderText="Leave empty to use default location"
+                         ui:ControlHelper.PlaceholderText="Leave empty to use default location"
                          TextChanged="CustomPathTextBox_TextChanged"/>
                 <Button x:Name="BrowseButton"
                         Content="Browse..."
@@ -53,7 +54,7 @@
                     CornerRadius="8"
                     Padding="12"
                     x:Name="PreviewBorder">
-                <StackPanel Spacing="8">
+                <StackPanel Margin="8">
                     <TextBlock Text="Database will be created at:" FontWeight="SemiBold"/>
                     <TextBlock x:Name="PreviewPathTextBlock"
                                TextWrapping="Wrap"
@@ -67,7 +68,7 @@
             <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     CornerRadius="8"
                     Padding="12">
-                <StackPanel Spacing="8">
+                <StackPanel Margin="8">
                     <TextBlock Text="Important Notes:" FontWeight="SemiBold"/>
                     <TextBlock TextWrapping="Wrap">
                         • The database file contains all your encrypted passwords

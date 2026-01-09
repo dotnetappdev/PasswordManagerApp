@@ -11,11 +11,12 @@
                PrimaryButtonStyle="{StaticResource ui:ContentDialogPrimaryButtonStyle}"
                CloseButtonStyle="{StaticResource ui:ContentDialogSecondaryButtonStyle}">
 
-    <Grid Background="{StaticResource ModernFormBackgroundBrush}"
+    <Grid xmlns:ui="http://schemas.modernwpf.com/2019"
+    Background="{StaticResource ModernFormBackgroundBrush}"
           MaxWidth="450"
           MaxHeight="500">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="24"
+            <StackPanel Margin="24"
                         Margin="32">
 
                 <!-- Error Message -->
@@ -33,7 +34,7 @@
                 </Border>
 
                 <!-- Tag Name Field -->
-                <StackPanel Spacing="8">
+                <StackPanel Margin="8">
                     <TextBlock Text="Name"
                                FontSize="14"
                                FontWeight="SemiBold"
@@ -45,7 +46,7 @@
                             BorderThickness="1">
                         <Grid>
                             <TextBox x:Name="TagNameTextBox"
-                                     PlaceholderText="Enter tag name"
+                                     ui:ControlHelper.PlaceholderText="Enter tag name"
                                      Background="Transparent"
                                      BorderThickness="0"
                                      Padding="16,12"
@@ -58,7 +59,7 @@
                 </StackPanel>
 
                 <!-- Tag Description Field -->
-                <StackPanel Spacing="8">
+                <StackPanel Margin="8">
                     <TextBlock Text="Description"
                                FontSize="14"
                                FontWeight="SemiBold"
@@ -70,7 +71,7 @@
                             BorderThickness="1">
                         <Grid>
                             <TextBox x:Name="TagDescriptionTextBox"
-                                     PlaceholderText="Add description (optional)"
+                                     ui:ControlHelper.PlaceholderText="Add description (optional)"
                                      Background="Transparent"
                                      BorderThickness="0"
                                      Padding="16,12"
@@ -86,7 +87,7 @@
                 </StackPanel>
 
                 <!-- Tag Color Selection -->
-                <StackPanel Spacing="8">
+                <StackPanel Margin="8">
                     <TextBlock Text="Color"
                                FontSize="14"
                                FontWeight="SemiBold"
@@ -105,14 +106,14 @@
 
                             <ComboBox x:Name="TagColorComboBox"
                                       Grid.Column="0"
-                                      PlaceholderText="Choose color"
+                                      ui:ControlHelper.PlaceholderText="Choose color"
                                       Background="Transparent"
                                       BorderThickness="0"
                                       FontSize="14"
                                       SelectedIndex="0">
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <Ellipse Fill="#3b82f6"
                                                  Width="18"
                                                  Height="18"/>
@@ -123,7 +124,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <Ellipse Fill="#10b981"
                                                  Width="18"
                                                  Height="18"/>
@@ -134,7 +135,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <Ellipse Fill="#f59e0b"
                                                  Width="18"
                                                  Height="18"/>
@@ -145,7 +146,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <Ellipse Fill="#ef4444"
                                                  Width="18"
                                                  Height="18"/>
@@ -156,7 +157,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <Ellipse Fill="#8b5cf6"
                                                  Width="18"
                                                  Height="18"/>
@@ -167,7 +168,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <Ellipse Fill="#ec4899"
                                                  Width="18"
                                                  Height="18"/>
@@ -178,7 +179,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <Ellipse Fill="#6b7280"
                                                  Width="18"
                                                  Height="18"/>

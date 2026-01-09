@@ -11,11 +11,12 @@
                PrimaryButtonStyle="{StaticResource ui:ContentDialogPrimaryButtonStyle}"
                CloseButtonStyle="{StaticResource ui:ContentDialogSecondaryButtonStyle}">
 
-    <Grid Background="{StaticResource ModernFormBackgroundBrush}"
+    <Grid xmlns:ui="http://schemas.modernwpf.com/2019"
+    Background="{StaticResource ModernFormBackgroundBrush}"
           MaxWidth="480"
           MaxHeight="600">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="24"
+            <StackPanel Margin="24"
                         Margin="32">
 
                 <!-- Error Message -->
@@ -33,7 +34,7 @@
                 </Border>
 
                 <!-- Type Name Field -->
-                <StackPanel Spacing="8">
+                <StackPanel Margin="8">
                     <TextBlock Text="Name"
                                FontSize="14"
                                FontWeight="SemiBold"
@@ -45,7 +46,7 @@
                             BorderThickness="1">
                         <Grid>
                             <TextBox x:Name="TypeNameTextBox"
-                                     PlaceholderText="Enter type name"
+                                     ui:ControlHelper.PlaceholderText="Enter type name"
                                      Background="Transparent"
                                      BorderThickness="0"
                                      Padding="16,12"
@@ -58,7 +59,7 @@
                 </StackPanel>
 
                 <!-- Type Description Field -->
-                <StackPanel Spacing="8">
+                <StackPanel Margin="8">
                     <TextBlock Text="Description"
                                FontSize="14"
                                FontWeight="SemiBold"
@@ -70,7 +71,7 @@
                             BorderThickness="1">
                         <Grid>
                             <TextBox x:Name="TypeDescriptionTextBox"
-                                     PlaceholderText="Add description (optional)"
+                                     ui:ControlHelper.PlaceholderText="Add description (optional)"
                                      Background="Transparent"
                                      BorderThickness="0"
                                      Padding="16,12"
@@ -86,7 +87,7 @@
                 </StackPanel>
 
                 <!-- Type Icon Selection -->
-                <StackPanel Spacing="8">
+                <StackPanel Margin="8">
                     <TextBlock Text="Icon"
                                FontSize="14"
                                FontWeight="SemiBold"
@@ -99,14 +100,14 @@
                             Padding="16,12">
                         <Grid>
                             <ComboBox x:Name="TypeIconComboBox"
-                                      PlaceholderText="Choose icon"
+                                      ui:ControlHelper.PlaceholderText="Choose icon"
                                       Background="Transparent"
                                       BorderThickness="0"
                                       FontSize="14"
                                       SelectedIndex="0">
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <FontIcon Glyph="&#xE192;"
                                                   FontSize="18"
                                                   Foreground="#3b82f6"/>
@@ -117,7 +118,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <FontIcon Glyph="&#xE8C7;"
                                                   FontSize="18"
                                                   Foreground="#10b981"/>
@@ -128,7 +129,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <FontIcon Glyph="&#xE70F;"
                                                   FontSize="18"
                                                   Foreground="#f59e0b"/>
@@ -139,7 +140,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <FontIcon Glyph="&#xE701;"
                                                   FontSize="18"
                                                   Foreground="#8b5cf6"/>
@@ -150,7 +151,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <FontIcon Glyph="&#xE8D7;"
                                                   FontSize="18"
                                                   Foreground="#ec4899"/>
@@ -161,7 +162,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <FontIcon Glyph="&#xE77B;"
                                                   FontSize="18"
                                                   Foreground="#ef4444"/>
@@ -172,7 +173,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <FontIcon Glyph="&#xE8FD;"
                                                   FontSize="18"
                                                   Foreground="#6b7280"/>
@@ -183,7 +184,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <FontIcon Glyph="&#xE734;"
                                                   FontSize="18"
                                                   Foreground="#059669"/>
@@ -201,7 +202,7 @@
                 </StackPanel>
 
                 <!-- Type Color Selection -->
-                <StackPanel Spacing="8">
+                <StackPanel Margin="8">
                     <TextBlock Text="Color"
                                FontSize="14"
                                FontWeight="SemiBold"
@@ -220,14 +221,14 @@
 
                             <ComboBox x:Name="TypeColorComboBox"
                                       Grid.Column="0"
-                                      PlaceholderText="Choose color"
+                                      ui:ControlHelper.PlaceholderText="Choose color"
                                       Background="Transparent"
                                       BorderThickness="0"
                                       FontSize="14"
                                       SelectedIndex="0">
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <Ellipse Fill="#3b82f6"
                                                  Width="20"
                                                  Height="20"/>
@@ -238,7 +239,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <Ellipse Fill="#10b981"
                                                  Width="20"
                                                  Height="20"/>
@@ -249,7 +250,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <Ellipse Fill="#f59e0b"
                                                  Width="20"
                                                  Height="20"/>
@@ -260,7 +261,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <Ellipse Fill="#ef4444"
                                                  Width="20"
                                                  Height="20"/>
@@ -271,7 +272,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <Ellipse Fill="#8b5cf6"
                                                  Width="20"
                                                  Height="20"/>
@@ -282,7 +283,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <Ellipse Fill="#ec4899"
                                                  Width="20"
                                                  Height="20"/>
@@ -293,7 +294,7 @@
                                 </ComboBoxItem>
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
-                                                Spacing="12">
+                                                Margin="12">
                                         <Ellipse Fill="#6b7280"
                                                  Width="20"
                                                  Height="20"/>

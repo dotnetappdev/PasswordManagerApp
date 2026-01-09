@@ -14,12 +14,13 @@
                MaxHeight="650">
 
     <ScrollViewer>
-        <StackPanel Spacing="16"
+        <StackPanel xmlns:ui="http://schemas.modernwpf.com/2019"
+    Margin="16"
                     Padding="20">
 
             <!-- Search Box -->
             <ui:AutoSuggestBox x:Name="ItemSearchBox"
-                            PlaceholderText="Try searching anything"
+                            ui:ControlHelper.PlaceholderText="Try searching anything"
                             QueryIcon="Find"
                             Style="{StaticResource Modernui:AutoSuggestBoxStyle}"
                             CornerRadius="8"
@@ -47,7 +48,7 @@
                         Style="{StaticResource CardButtonStyle}"
                         Margin="8"
                         MinHeight="100">
-                    <StackPanel Spacing="8">
+                    <StackPanel Margin="8">
                         <Border Background="#4facfe"
                                 CornerRadius="12"
                                 Width="48"
@@ -74,7 +75,7 @@
                         Style="{StaticResource CardButtonStyle}"
                         Margin="8"
                         MinHeight="100">
-                    <StackPanel Spacing="8">
+                    <StackPanel Margin="8">
                         <Border Background="#10b981"
                                 CornerRadius="12"
                                 Width="48"
@@ -101,7 +102,7 @@
                         Style="{StaticResource CardButtonStyle}"
                         Margin="8"
                         MinHeight="100">
-                    <StackPanel Spacing="8">
+                    <StackPanel Margin="8">
                         <Border Background="#f59e0b"
                                 CornerRadius="12"
                                 Width="48"
@@ -129,7 +130,7 @@
                         Style="{StaticResource CardButtonStyle}"
                         Margin="8"
                         MinHeight="100">
-                    <StackPanel Spacing="8">
+                    <StackPanel Margin="8">
                         <Border Background="#8b5cf6"
                                 CornerRadius="12"
                                 Width="48"
@@ -156,7 +157,7 @@
                         Style="{StaticResource CardButtonStyle}"
                         Margin="8"
                         MinHeight="100">
-                    <StackPanel Spacing="8">
+                    <StackPanel Margin="8">
                         <Border Background="#ef4444"
                                 CornerRadius="12"
                                 Width="48"
@@ -183,7 +184,7 @@
                         Style="{StaticResource CardButtonStyle}"
                         Margin="8"
                         MinHeight="100">
-                    <StackPanel Spacing="8">
+                    <StackPanel Margin="8">
                         <Border Background="#ec4899"
                                 CornerRadius="12"
                                 Width="48"

@@ -12,7 +12,8 @@
     -->
 
     <!-- Enhanced Modern Color Palette - 1Password Style -->
-    <Color x:Key="ModernPrimaryColor">#005BFF</Color>
+    <Color xmlns:ui="http://schemas.modernwpf.com/2019"
+    x:Key="ModernPrimaryColor">#005BFF</Color>
     <Color x:Key="ModernPrimaryLightColor">#3B82F6</Color>
     <Color x:Key="ModernPrimaryDarkColor">#0041CC</Color>
     <Color x:Key="ModernAccentColor">#EC4899</Color>
@@ -154,19 +155,19 @@
         <Setter Property="Foreground"
                 Value="White"/>
         <Setter Property="BorderThickness"
-                Value="0"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,12"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="100"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="36"/>
+                Value="0"/>-->
     </Style>
 
     <!-- Enhanced TextBox Style with 1Password-like behavior -->
@@ -178,15 +179,15 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="1"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="40"/>
+                Value="0"/>-->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
@@ -236,7 +237,7 @@
                                         <Setter Target="BorderElement.BorderBrush"
                                                 Value="{StaticResource ModernPrimaryBrush}"/>
                                         <Setter Target="BorderElement.BorderThickness"
-                                                Value="2"/>
+                                                Value="0"/>-->
                                         <Setter Target="PlaceholderText.Foreground"
                                                 Value="{StaticResource ModernPrimaryBrush}"/>
                                     </VisualState.Setters>
@@ -268,15 +269,15 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="1"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="40"/>
+                Value="0"/>-->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBox">
@@ -335,7 +336,7 @@
                                         <Setter Target="BorderElement.BorderBrush"
                                                 Value="{StaticResource ModernPrimaryBrush}"/>
                                         <Setter Target="BorderElement.BorderThickness"
-                                                Value="2"/>
+                                                Value="0"/>-->
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Disabled">
@@ -365,15 +366,15 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="1"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="40"/>
+                Value="0"/>-->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="PasswordBox">
@@ -423,7 +424,7 @@
                                         <Setter Target="BorderElement.BorderBrush"
                                                 Value="{StaticResource ModernPrimaryBrush}"/>
                                         <Setter Target="BorderElement.BorderThickness"
-                                                Value="2"/>
+                                                Value="0"/>-->
                                         <Setter Target="PlaceholderText.Foreground"
                                                 Value="{StaticResource ModernPrimaryBrush}"/>
                                     </VisualState.Setters>
@@ -454,19 +455,19 @@
         <Setter Property="Foreground"
                 Value="White"/>
         <Setter Property="BorderThickness"
-                Value="0"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,12"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="100"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="36"/>
+                Value="0"/>-->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -535,19 +536,19 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="1"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,12"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="100"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="36"/>
+                Value="0"/>-->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -611,14 +612,14 @@
            TargetType="Border">
         <Setter Property="Background"
                 Value="{StaticResource ModernCardBrush}"/>
-        <Setter Property="CornerRadius"
-                Value="16"/>
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
-                Value="24"/>
+                Value="0"/>-->
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="1"/>
+                Value="0"/>-->
     </Style>
 
     <!-- Modern Elevated Card Style -->
@@ -626,14 +627,14 @@
            TargetType="Border">
         <Setter Property="Background"
                 Value="{StaticResource ModernElevatedSurfaceBrush}"/>
-        <Setter Property="CornerRadius"
-                Value="20"/>
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
-                Value="32"/>
+                Value="0"/>-->
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="1"/>
+                Value="0"/>-->
     </Style>
 
 
@@ -649,15 +650,15 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="1"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="40"/>
+                Value="0"/>-->
     </Style>
 
     <!-- Card Button Style for Item Type Selection -->
@@ -670,11 +671,11 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="1"/>
-        <Setter Property="CornerRadius"
-                Value="12"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
-                Value="12"/>
+                Value="0"/>-->
         <Setter Property="HorizontalAlignment"
                 Value="Stretch"/>
         <Setter Property="VerticalAlignment"
@@ -728,7 +729,7 @@
     <Style x:Key="ModernHeading1Style"
            TargetType="TextBlock">
         <Setter Property="FontSize"
-                Value="36"/>
+                Value="0"/>-->
         <Setter Property="FontWeight"
                 Value="Bold"/>
         <Setter Property="Foreground"
@@ -738,7 +739,7 @@
     <Style x:Key="ModernHeading2Style"
            TargetType="TextBlock">
         <Setter Property="FontSize"
-                Value="28"/>
+                Value="0"/>-->
         <Setter Property="FontWeight"
                 Value="Bold"/>
         <Setter Property="Foreground"
@@ -748,7 +749,7 @@
     <Style x:Key="ModernHeading3Style"
            TargetType="TextBlock">
         <Setter Property="FontSize"
-                Value="22"/>
+                Value="0"/>-->
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="Foreground"
@@ -758,7 +759,7 @@
     <Style x:Key="ModernBodyStyle"
            TargetType="TextBlock">
         <Setter Property="FontSize"
-                Value="16"/>
+                Value="0"/>-->
         <Setter Property="FontWeight"
                 Value="Normal"/>
         <Setter Property="Foreground"
@@ -768,7 +769,7 @@
     <Style x:Key="ModernCaptionStyle"
            TargetType="TextBlock">
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="FontWeight"
                 Value="Normal"/>
         <Setter Property="Foreground"
@@ -785,17 +786,17 @@
         <Setter Property="IsBackButtonVisible"
                 Value="Collapsed"/>
         <Setter Property="OpenPaneLength"
-                Value="320"/>
+                Value="0"/>-->
         <Setter Property="CompactModeThresholdWidth"
-                Value="640"/>
+                Value="0"/>-->
         <Setter Property="ExpandedModeThresholdWidth"
-                Value="1028"/>
+                Value="0"/>-->
         <Setter Property="PaneDisplayMode"
                 Value="LeftMinimal"/>
         <Setter Property="Margin"
-                Value="0"/>
+                Value="0"/>-->
         <Setter Property="Padding"
-                Value="0"/>
+                Value="0"/>-->
     </Style>
 
     <!-- Enhanced ui:ui:NavigationViewItem Style -->
@@ -806,11 +807,11 @@
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="Margin"
                 Value="8,4"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ui:ui:NavigationViewItem">
@@ -881,7 +882,7 @@
                                                                                 <Setter Target="LayoutRoot.Background"
                                                                                                 Value="{StaticResource ModernSidebarBackgroundBrush}"/>
                                                                                 <Setter Target="SelectionIndicator.Opacity"
-                                                                                                Value="1"/>
+                                                                                                Value="0"/>-->
                                                                                 <Setter Target="ContentPresenter.Foreground"
                                                                                                 Value="{StaticResource ModernTextPrimaryBrush}"/>
                                                                         </VisualState.Setters>
@@ -891,7 +892,7 @@
                                                                                 <Setter Target="LayoutRoot.Background"
                                                                                                 Value="{StaticResource ModernSidebarBackgroundBrush}"/>
                                                                                 <Setter Target="SelectionIndicator.Opacity"
-                                                                                                Value="1"/>
+                                                                                                Value="0"/>-->
                                                                                 <Setter Target="ContentPresenter.Foreground"
                                                                                                 Value="{StaticResource ModernTextPrimaryBrush}"/>
                                                                         </VisualState.Setters>
@@ -914,13 +915,13 @@
         <Setter Property="Background"
                 Value="Transparent"/>
         <Setter Property="BorderThickness"
-                Value="0"/>
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
-        <Setter Property="CornerRadius"
-                Value="6"/>
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="Foreground"
                 Value="{StaticResource ModernTextPrimaryBrush}"/>
         <Setter Property="Template">
@@ -971,9 +972,9 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="1"/>
-        <Setter Property="CornerRadius"
-                Value="12"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
     </Style>
 
     <!-- Modern 1Password-style Button Style -->
@@ -984,19 +985,19 @@
         <Setter Property="Foreground"
                 Value="White"/>
         <Setter Property="BorderThickness"
-                Value="0"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,10"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="100"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="36"/>
+                Value="0"/>-->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -1041,19 +1042,19 @@
         <Setter Property="Foreground"
                 Value="White"/>
         <Setter Property="BorderThickness"
-                Value="0"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,10"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="100"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="36"/>
+                Value="0"/>-->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -1116,19 +1117,19 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="1"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,10"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="100"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="36"/>
+                Value="0"/>-->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -1188,9 +1189,9 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="1"/>
-        <Setter Property="CornerRadius"
-                Value="16"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="PrimaryButtonStyle"
                 Value="{StaticResource ui:ContentDialogPrimaryButtonStyle}"/>
         <Setter Property="SecondaryButtonStyle"
@@ -1198,20 +1199,20 @@
         <Setter Property="CloseButtonStyle"
                 Value="{StaticResource ui:ContentDialogSecondaryButtonStyle}"/>
         <Setter Property="MaxWidth"
-                Value="520"/>
+                Value="0"/>-->
         <Setter Property="MaxHeight"
-                Value="720"/>
+                Value="0"/>-->
         <Setter Property="MinWidth"
-                Value="480"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="300"/>
+                Value="0"/>-->
         <!-- Enhanced centering with proper positioning for all screen sizes -->
         <Setter Property="HorizontalAlignment"
                 Value="Center"/>
         <Setter Property="VerticalAlignment"
                 Value="Center"/>
         <Setter Property="Margin"
-                Value="40"/>
+                Value="0"/>-->
         <!-- Override template for better centering control -->
         <Setter Property="Template">
             <Setter.Value>
@@ -1323,7 +1324,7 @@
     <Style x:Key="FormFieldGroupStyle"
             TargetType="StackPanel">
         <Setter Property="Spacing"
-                Value="8"/>
+                Value="0"/>-->
         <Setter Property="Margin"
                 Value="0,0,0,16"/>
         <Setter Property="Background"
@@ -1334,7 +1335,7 @@
     <Style x:Key="FormLabelStyle"
             TargetType="TextBlock">
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="Foreground"
@@ -1349,7 +1350,7 @@
     <Style x:Key="ValidationMessageStyle"
             TargetType="TextBlock">
         <Setter Property="FontSize"
-                Value="12"/>
+                Value="0"/>-->
         <Setter Property="Foreground"
                 Value="{StaticResource ModernErrorBrush}"/>
         <Setter Property="Margin"
@@ -1362,7 +1363,7 @@
     <Style x:Key="SuccessMessageStyle"
             TargetType="TextBlock">
         <Setter Property="FontSize"
-                Value="12"/>
+                Value="0"/>-->
         <Setter Property="Foreground"
                 Value="{StaticResource ModernSuccessBrush}"/>
         <Setter Property="Margin"
@@ -1379,19 +1380,19 @@
         <Setter Property="Foreground"
                 Value="White"/>
         <Setter Property="BorderThickness"
-                Value="0"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,12"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="100"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="36"/>
+                Value="0"/>-->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -1458,15 +1459,15 @@
         <Setter Property="Foreground"
                 Value="{StaticResource ModernTextSecondaryBrush}"/>
         <Setter Property="BorderThickness"
-                Value="0"/>
-        <Setter Property="CornerRadius"
-                Value="6"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
-                Value="8"/>
+                Value="0"/>-->
         <Setter Property="MinWidth"
-                Value="36"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="36"/>
+                Value="0"/>-->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -1523,15 +1524,15 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="1"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="40"/>
+                Value="0"/>-->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
@@ -1562,7 +1563,7 @@
                                         <Setter Target="BorderElement.BorderBrush"
                                                 Value="{StaticResource ModernPrimaryBrush}"/>
                                         <Setter Target="BorderElement.BorderThickness"
-                                                Value="2"/>
+                                                Value="0"/>-->
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Disabled">
@@ -1591,15 +1592,15 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="1"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="40"/>
+                Value="0"/>-->
     </Style>
 
     <!-- Validation Error Message Style -->
@@ -1608,7 +1609,7 @@
         <Setter Property="Foreground"
                 Value="{StaticResource ModernErrorBrush}"/>
         <Setter Property="FontSize"
-                Value="12"/>
+                Value="0"/>-->
         <Setter Property="Margin"
                 Value="0,4,0,0"/>
         <Setter Property="TextWrapping"
@@ -1621,9 +1622,9 @@
         <Setter Property="Foreground"
                 Value="{StaticResource ModernPrimaryBrush}"/>
         <Setter Property="Width"
-                Value="24"/>
+                Value="0"/>-->
         <Setter Property="Height"
-                Value="24"/>
+                Value="0"/>-->
     </Style>
 
     <!-- Success Message Style -->
@@ -1639,15 +1640,15 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="1"/>
-        <Setter Property="CornerRadius"
-                Value="8"/>
+                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius"
+                Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="0"/>-->
         <Setter Property="MinHeight"
-                Value="40"/>
+                Value="0"/>-->
     </Style>
 
 </ResourceDictionary>
