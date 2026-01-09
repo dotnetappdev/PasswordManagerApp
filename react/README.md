@@ -73,10 +73,26 @@ npm run android
 - **Search**: Fast search across all password items
 - **Favorites**: Mark frequently used items as favorites
 
-### 🔄 Flexible Storage Modes
-- **Local SQLite Database**: Store all data locally on device, works completely offline
-- **API Mode**: Connect to Password Manager API for cloud sync across devices
-- Seamless switching between modes in settings
+### 🔄 User-Configurable Storage Modes
+
+**✨ Users control their data storage preference:**
+
+- **Local SQLite Database**: 
+  - ✅ User selects in Settings screen
+  - Store all data locally on device
+  - Works completely offline
+  - No configuration required
+  
+- **API Mode**: 
+  - ✅ User selects in Settings screen
+  - User provides their own API URL and API Key
+  - Connect to Password Manager API for cloud sync across devices
+  - Test connection button to verify API
+  
+- **Easy Mode Switching**: 
+  - ✅ Switch between modes anytime in Settings
+  - No app restart required
+  - Settings persist across sessions
 
 ### 🎨 User Experience
 - Clean, modern Material Design UI
@@ -187,30 +203,128 @@ npx react-native run-android
 
 ## Configuration
 
-### Database Modes
+### 🔧 User-Configurable Database Modes
 
-The app supports two database modes:
+**The app allows users to choose their storage mode directly in the Settings screen.**
+
+Users can switch between two database modes at any time:
 
 #### Local Mode (Default)
+- ✅ **User selectable** in Settings → Database Mode
 - Stores all data in SQLite database on device
 - Works completely offline
 - No internet connection required
 - Data stays on device only
+- **No configuration needed** - works out of the box
 
 #### API Mode
+- ✅ **User selectable** in Settings → Database Mode
 - Connects to Password Manager API
 - Enables cloud synchronization
 - Requires API URL and API key
 - Data synced across devices
+- **User provides their own API URL and API Key**
 
-### Configuring API Mode
+### How Users Configure the Mode
 
-1. Open app and navigate to **Settings**
-2. Select **API with Cloud Sync** mode
-3. Enter your API URL (e.g., `https://api.example.com`)
-4. Enter your API Key
-5. Tap **Test Connection** to verify
-6. Save settings
+**Step-by-step for end users:**
+
+1. **Open the app** and login/register
+2. Navigate to **Profile** tab → **Settings** button
+3. See **"Database Mode"** section at the top
+4. Tap on your preferred mode:
+   - **Local SQLite Database** - for offline-only use
+   - **API with Cloud Sync** - for multi-device sync
+
+**If API mode is selected:**
+5. **API Configuration** section appears
+6. User enters their **API URL** (e.g., `https://api.example.com`)
+7. User enters their **API Key** (stored securely in device keychain)
+8. User taps **Test Connection** to verify API is reachable
+9. Tap **Save Settings** to apply changes
+
+**Mode switching:**
+- Users can switch modes at any time
+- No data loss when switching (data remains in original storage)
+- App automatically uses the selected mode for all operations
+
+**Visual Flow:**
+```
+User Flow for Configuration:
+┌──────────────────────────────────────────────────────────┐
+│  1. Open App → Login/Register                            │
+└────────────────┬─────────────────────────────────────────┘
+                 │
+                 ▼
+┌──────────────────────────────────────────────────────────┐
+│  2. Navigate: Profile Tab → Settings Button              │
+└────────────────┬─────────────────────────────────────────┘
+                 │
+                 ▼
+┌──────────────────────────────────────────────────────────┐
+│  3. Database Mode Section (Top of Settings)              │
+│                                                           │
+│  [ ] Local SQLite Database     ← User selects           │
+│      ✓ Offline, no config needed                         │
+│                                                           │
+│  [ ] API with Cloud Sync        ← User selects           │
+│      ✓ Multi-device sync                                 │
+└────────────────┬─────────────────────────────────────────┘
+                 │
+                 ▼
+         ┌───────┴────────┐
+         │                │
+    Local Mode       API Mode
+         │                │
+         │                ▼
+         │    ┌────────────────────────────┐
+         │    │ API Configuration Appears  │
+         │    │ • Enter API URL            │
+         │    │ • Enter API Key            │
+         │    │ • Test Connection button   │
+         │    └────────────┬───────────────┘
+         │                 │
+         └────────┬────────┘
+                  ▼
+    ┌──────────────────────────────┐
+    │  4. Save Settings Button      │
+    │     → Settings Applied        │
+    │     → Mode Active             │
+    └───────────────────────────────┘
+```
+
+**Code Implementation:**
+
+The services automatically respect the user's mode selection:
+
+```typescript
+// Services check user's configured mode before each operation
+class PasswordItemService {
+  async getAll(): Promise<PasswordItem[]> {
+    const settings = await storageService.getSettings();
+    
+    // Automatically use the mode the USER configured
+    if (settings.mode === 'api') {
+      return await this.getAllFromApi();  // Use user's API URL
+    } else {
+      return await this.getAllFromDatabase();  // Use local SQLite
+    }
+  }
+}
+
+// User's settings are stored securely
+class StorageService {
+  async saveSettings(settings: AppSettings): Promise<void> {
+    await this.setItem('@settings:mode', settings.mode);  // 'local' or 'api'
+    if (settings.apiUrl) {
+      await this.setItem('@settings:apiUrl', settings.apiUrl);  // User's URL
+    }
+    if (settings.apiKey) {
+      await this.setSecureItem('@settings:apiKey', settings.apiKey);  // Secure!
+    }
+  }
+}
+```
 
 ### Security Settings
 
