@@ -353,7 +353,7 @@
                             </StackPanel>
 
                             <!-- Progress Ring -->
-                            <ui:ProgressRing x:Name="Authui:ProgressRing"
+                            <ui:ProgressRing x:Name="AuthProgressRing"
                                          x:FieldModifier="private"
                                          IsActive="{Binding IsLoading}"
                                          HorizontalAlignment="Center"

@@ -1,4 +1,4 @@
-<ui:ContentDialog x:Class="PasswordManager.WinUi.Dialogs.UserRegistrationDialog"
+<ui:ContentDialog xmlns:ui="http://schemas.modernwpf.com/2019" x:Class="PasswordManager.WPF.Dialogs.UserRegistrationDialog"
                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                xmlns:converters="clr-namespace:PasswordManager.WPF.Converters"
@@ -9,7 +9,7 @@
                Background="#404040"
                RequestedTheme="Dark">
 
-    <ui:ContentDialog.Resources>
+    <ui:ContentDialog xmlns:ui="http://schemas.modernwpf.com/2019".Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
     </ui:ContentDialog.Resources>
 

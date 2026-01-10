@@ -11,8 +11,8 @@
                Visibility="Visible"/>
 
         <!-- Main Navigation View (shown after authentication) -->
-        <ui:NavigationView x:Name="Mainui:NavigationView"
-                        Style="{StaticResource Modernui:NavigationViewStyle}"
+        <ui:NavigationView x:Name="MainNavigationView"
+                        Style="{StaticResource ModernNavigationViewStyle}"
                         IsBackButtonVisible="Collapsed"
                         IsSettingsVisible="False"
                         IsPaneToggleButtonVisible="False"
@@ -20,7 +20,7 @@
                         OpenPaneLength="280"
                         CompactModeThresholdWidth="0"
                         ExpandedModeThresholdWidth="0"
-                        SelectionChanged="Mainui:NavigationView_SelectionChanged"
+                        SelectionChanged="MainNavigationView_SelectionChanged"
                         Visibility="Collapsed"
                         Margin="0"
                         Padding="0">

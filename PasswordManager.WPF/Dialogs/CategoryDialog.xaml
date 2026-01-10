@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ui:ContentDialog x:Class="PasswordManager.WinUi.Dialogs.CategoryDialog"
+<ui:ContentDialog xmlns:ui="http://schemas.modernwpf.com/2019" x:Class="PasswordManager.WPF.Dialogs.CategoryDialog"
                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                xmlns:controls="clr-namespace:PasswordManager.WPF.Controls"
