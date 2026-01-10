@@ -52,6 +52,7 @@ Modern Windows app packages for Microsoft Store and enterprise distribution:
 |-----------|-------------|---------------|
 | **Blazor Web App** | Web application with theme support | [PasswordManager.Web](PasswordManager.Web/README.md) |
 | **WinUI Desktop App** | Native Windows application | [PasswordManager.WinUi](PasswordManager.WinUi/README.md) |
+| **React Native Mobile App** | iOS and Android mobile app with SQLite and API sync | [REACT_NATIVE_MOBILE_APP.md](REACT_NATIVE_MOBILE_APP.md) · [Setup Guide](react/SETUP.md) |
 | **Uno Platform Mobile App** | Cross-platform iOS, Android, and WebAssembly app | [UNO_PLATFORM_GUIDE.md](UNO_PLATFORM_GUIDE.md) |
 | **Browser Extension** | Chrome/Edge/Firefox extension with multiple connection modes | [README](PasswordManager.BrowserExtension/README.md) · [Installation](PasswordManager.BrowserExtension/INSTALLATION.md) · [Packaging](PasswordManager.BrowserExtension/PACKAGING.md) |
 | **Shared Components** | Cross-platform UI components | [PasswordManager.Components.Shared](PasswordManager.Components.Shared/README.md) |
