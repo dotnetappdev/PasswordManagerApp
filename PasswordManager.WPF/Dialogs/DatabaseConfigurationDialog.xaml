@@ -1,5 +1,5 @@
-<ui:ContentDialog
-    x:Class="PasswordManager.WinUi.Dialogs.DatabaseConfigurationDialog"
+<ui:ContentDialog xmlns:ui="http://schemas.modernwpf.com/2019"
+    x:Class="PasswordManager.WPF.Dialogs.DatabaseConfigurationDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="Database Configuration"
@@ -11,14 +11,14 @@
 
     <ScrollViewer xmlns:ui="http://schemas.modernwpf.com/2019"
     MaxHeight="500">
-        <StackPanel Margin="16" Padding="4">
+        <StackPanel Margin="16">
             <!-- Header -->
             <TextBlock TextWrapping="Wrap" FontSize="14">
                 Choose where to store your password database. The database will be created at the location you specify.
             </TextBlock>
 
             <!-- Default Location Info -->
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            <Border Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
                     CornerRadius="8"
                     Padding="12">
                 <StackPanel Margin="8">
@@ -27,7 +27,7 @@
                                TextWrapping="Wrap"
                                FontFamily="Consolas"
                                FontSize="12"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                               Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
                 </StackPanel>
             </Border>
 
@@ -43,14 +43,10 @@
             </StackPanel>
 
             <!-- Warning for custom path -->
-            <ui:InfoBar x:Name="CustomPathWarning"
-                     Severity="Warning"
-                     IsOpen="False"
-                     Title="Custom Path Selected"
-                     Message="Make sure the folder exists and you have write permissions. The database file will be created automatically."/>
+            
 
             <!-- Preview -->
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            <Border Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
                     CornerRadius="8"
                     Padding="12"
                     x:Name="PreviewBorder">
@@ -60,12 +56,12 @@
                                TextWrapping="Wrap"
                                FontFamily="Consolas"
                                FontSize="12"
-                               Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                               Foreground="{StaticResource AccentTextFillColorPrimaryBrush}"/>
                 </StackPanel>
             </Border>
 
             <!-- Important Notes -->
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            <Border Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
                     CornerRadius="8"
                     Padding="12">
                 <StackPanel Margin="8">

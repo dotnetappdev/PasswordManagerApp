@@ -155,19 +155,19 @@
         <Setter Property="Foreground"
                 Value="White"/>
         <Setter Property="BorderThickness"
-                Value="0"/>-->
+                Value="0"/>
         <!-- <Setter Property="CornerRadius"
                 Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,12"/>
         <Setter Property="FontSize"
-                Value="0"/>-->
+                Value="14"/>
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="0"/>-->
+                Value="120"/>
         <Setter Property="MinHeight"
-                Value="0"/>-->
+                Value="36"/>
     </Style>
 
     <!-- Enhanced TextBox Style with 1Password-like behavior -->
@@ -179,33 +179,31 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="0"/>-->
+                Value="1"/>
         <!-- <Setter Property="CornerRadius"
                 Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
-                Value="0"/>-->
+                Value="14"/>
         <Setter Property="MinHeight"
-                Value="0"/>-->
+                Value="36"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Border x:Name="BorderElement"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding CornerRadius}">
+                            BorderThickness="{TemplateBinding BorderThickness}">
                         <Grid>
                             <ScrollViewer x:Name="ContentElement"
                                           Margin="{TemplateBinding Padding}"
-                                          HorizontalScrollMode="Auto"
+                                          
                                           HorizontalScrollBarVisibility="Hidden"
-                                          VerticalScrollMode="Auto"
+                                          
                                           VerticalScrollBarVisibility="Hidden"
                                           IsTabStop="False"
-                                          ZoomMode="Disabled"/>
-                            <TextBlock x:Name="PlaceholderText"
+                                          />
                                        Text="{TemplateBinding PlaceholderText}"
                                        Foreground="{StaticResource ModernTextTertiaryBrush}"
                                        Margin="{TemplateBinding Padding}"
@@ -214,19 +212,7 @@
                         </Grid>
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background"
-                                                Value="{StaticResource ModernSurfaceBrush}"/>
-                                        <Setter Target="BorderElement.BorderBrush"
-                                                Value="{StaticResource ModernBorderBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background"
                                                 Value="#F5F8FF"/>
-                                        <Setter Target="BorderElement.BorderBrush"
                                                 Value="{StaticResource ModernPrimaryLightBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
@@ -386,12 +372,12 @@
                         <Grid>
                             <ScrollViewer x:Name="ContentElement"
                                           Margin="{TemplateBinding Padding}"
-                                          HorizontalScrollMode="Auto"
+                                          
                                           HorizontalScrollBarVisibility="Hidden"
-                                          VerticalScrollMode="Auto"
+                                          
                                           VerticalScrollBarVisibility="Hidden"
                                           IsTabStop="False"
-                                          ZoomMode="Disabled"/>
+                                          />
                             <TextBlock x:Name="PlaceholderText"
                                        Text="{TemplateBinding PlaceholderText}"
                                        Foreground="{StaticResource ModernTextTertiaryBrush}"
@@ -1544,11 +1530,11 @@
                         <ScrollViewer x:Name="ContentElement"
                                       Margin="{TemplateBinding Padding}"
                                       VerticalAlignment="Center"
-                                      HorizontalScrollMode="Auto"
+                                      
                                       HorizontalScrollBarVisibility="Auto"
-                                      VerticalScrollMode="Auto"
+                                      
                                       VerticalScrollBarVisibility="Auto"
-                                      ZoomMode="Disabled"/>
+                                      />
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="CommonStates">
                                 <VisualState x:Name="Normal"/>
