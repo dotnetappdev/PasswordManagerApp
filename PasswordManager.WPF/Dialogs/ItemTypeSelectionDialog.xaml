@@ -15,8 +15,7 @@
 
     <ScrollViewer>
         <StackPanel xmlns:ui="http://schemas.modernwpf.com/2019"
-    Margin="16"
-                    Padding="20">
+    Margin="16">
 
             <!-- Search Box -->
             <ui:AutoSuggestBox x:Name="ItemSearchBox"

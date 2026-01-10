@@ -104,17 +104,17 @@
             <!-- Navigation Menu Items -->
             <ui:NavigationView.MenuItems>
                 <!-- All Items -->
-                <ui:ui:NavigationViewItem x:Name="AllItemsNavItem"
+                <ui:NavigationViewItem x:Name="AllItemsNavItem"
                                     Content="All Items"
                                     Tag="AllItems"
-                                    Style="{StaticResource Modernui:ui:NavigationViewItemStyle}"
-                                    RightTapped="NavigationItem_RightTapped">
-                    <ui:ui:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8A5;"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets"
                                   FontSize="18"
                                   Foreground="{StaticResource ModernPrimaryBrush}"/>
                     </ui:ui:NavigationViewItem.Icon>
-                    <ui:ui:NavigationViewItem.ContextFlyout>
+                    <ui:NavigationViewItem.ContextFlyout>
                         <MenuFlyout>
                             <MenuFlyoutItem Text="Edit"
                                             Icon="Edit"
@@ -129,17 +129,17 @@
                 </ui:ui:NavigationViewItem>
 
                 <!-- Favorites -->
-                <ui:ui:NavigationViewItem x:Name="FavoritesNavItem"
+                <ui:NavigationViewItem x:Name="FavoritesNavItem"
                                     Content="Favorites"
                                     Tag="Favorites"
-                                    Style="{StaticResource Modernui:ui:NavigationViewItemStyle}"
-                                    RightTapped="NavigationItem_RightTapped">
-                    <ui:ui:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE734;"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE734;" FontFamily="Segoe MDL2 Assets"
                                   FontSize="18"
                                   Foreground="{StaticResource ModernWarningBrush}"/>
                     </ui:ui:NavigationViewItem.Icon>
-                    <ui:ui:NavigationViewItem.ContextFlyout>
+                    <ui:NavigationViewItem.ContextFlyout>
                         <MenuFlyout>
                             <MenuFlyoutItem Text="Edit"
                                             Icon="Edit"
@@ -154,23 +154,23 @@
                 </ui:ui:NavigationViewItem>
 
                 <!-- Personal (use the same PasswordItemsPage as other categories) -->
-                <ui:ui:NavigationViewItem Content="Personal"
+                <ui:NavigationViewItem Content="Personal"
                                     Tag="Passwords"
-                                    Style="{StaticResource Modernui:ui:NavigationViewItemStyle}">
-                    <ui:ui:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#x25A0;"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#x25A0;" FontFamily="Segoe MDL2 Assets"
                                   FontSize="16"
                                   Foreground="#3b82f6"/>
                     </ui:ui:NavigationViewItem.Icon>
                 </ui:ui:NavigationViewItem>
 
                 <!-- Logins moved here to be closer to Personal -->
-                <ui:ui:NavigationViewItem x:Name="LoginCategoryNavItem"
+                <ui:NavigationViewItem x:Name="LoginCategoryNavItem"
                                     Content="Logins"
                                     Tag="LoginCategory"
-                                    Style="{StaticResource Modernui:ui:NavigationViewItemStyle}">
-                    <ui:ui:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE192;"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE192;" FontFamily="Segoe MDL2 Assets"
                                   FontSize="16"
                                   Foreground="#3b82f6"/>
                     </ui:ui:NavigationViewItem.Icon>
@@ -207,7 +207,7 @@
                             CornerRadius="14"
                             ToolTipService.ToolTip="Add Category"
                             Click="AddCategoryNavButton_Click">
-                        <FontIcon Glyph="&#xE710;"
+                        <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets"
                                   FontSize="14"
                                   VerticalAlignment="Center"
                                   HorizontalAlignment="Center"/>
@@ -226,7 +226,7 @@
                             CornerRadius="14"
                             ToolTipService.ToolTip="Configure Favorite Categories"
                             Click="ConfigureCategoriesButton_Click">
-                        <FontIcon Glyph="&#xE713;"
+                        <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets"
                                   FontSize="14"
                                   VerticalAlignment="Center"
                                   HorizontalAlignment="Center"/>
@@ -270,36 +270,36 @@
                 <ui:ui:ui:NavigationViewItemSeparator Margin="12,8"/>
 
                 <!-- Tools & Security -->
-                <ui:ui:NavigationViewItem x:Name="SecurityAuditNavItem"
+                <ui:NavigationViewItem x:Name="SecurityAuditNavItem"
                                     Content="Security Dashboard"
                                     Tag="SecurityDashboard"
-                                    Style="{StaticResource Modernui:ui:NavigationViewItemStyle}">
-                    <ui:ui:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE72E;"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
                                   FontSize="18"
                                   Foreground="{StaticResource ModernErrorBrush}"/>
                     </ui:ui:NavigationViewItem.Icon>
                 </ui:ui:NavigationViewItem>
 
                 <!-- Vaults -->
-                <ui:ui:NavigationViewItem x:Name="VaultsNavItem"
+                <ui:NavigationViewItem x:Name="VaultsNavItem"
                                     Content="Vaults"
                                     Tag="Vaults"
-                                    Style="{StaticResource Modernui:ui:NavigationViewItemStyle}">
-                    <ui:ui:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE72E;"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
                                   FontSize="18"
                                   Foreground="{StaticResource ModernPrimaryBrush}"/>
                     </ui:ui:NavigationViewItem.Icon>
                 </ui:ui:NavigationViewItem>
 
                 <!-- Import -->
-                <ui:ui:NavigationViewItem x:Name="ImportNavItem"
+                <ui:NavigationViewItem x:Name="ImportNavItem"
                                     Content="Import Data"
                                     Tag="Import"
-                                    Style="{StaticResource Modernui:ui:NavigationViewItemStyle}">
-                    <ui:ui:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8B5;"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets"
                                   FontSize="18"
                                   Foreground="{StaticResource ModernSuccessBrush}"/>
                     </ui:ui:NavigationViewItem.Icon>
@@ -309,12 +309,12 @@
             <!-- Footer Menu Items -->
             <ui:NavigationView.FooterMenuItems>
                 <!-- Manage Items -->
-                <!--<ui:ui:NavigationViewItem x:Name="ManageAllItemsNavItem"
+                <!--<ui:NavigationViewItem x:Name="ManageAllItemsNavItem"
                                     Content="Manage Collections, Types &amp; Tags"
                                     Tag="ManageItems"
-                                    Style="{StaticResource Modernui:ui:NavigationViewItemStyle}">
-                    <ui:ui:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8FD;"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE8FD;" FontFamily="Segoe MDL2 Assets"
                                   FontSize="16"
                                   Foreground="{StaticResource ModernAccentBrush}"/>
                     </ui:ui:NavigationViewItem.Icon>
@@ -322,23 +322,23 @@
 
                 <ui:ui:ui:NavigationViewItemSeparator Margin="8,4"/>
 
-                <ui:ui:NavigationViewItem x:Name="ArchiveNavItem"
+                <ui:NavigationViewItem x:Name="ArchiveNavItem"
                                     Content="Archive"
                                     Tag="Archive"
-                                    Style="{StaticResource Modernui:ui:NavigationViewItemStyle}">
-                    <ui:ui:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7B8;"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE7B8;" FontFamily="Segoe MDL2 Assets"
                                   FontSize="16"
                                   Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                     </ui:ui:NavigationViewItem.Icon>
                 </ui:ui:NavigationViewItem>
 
-                <ui:ui:NavigationViewItem x:Name="RecentlyDeletedNavItem"
+                <ui:NavigationViewItem x:Name="RecentlyDeletedNavItem"
                                     Content="Recently Deleted"
                                     Tag="RecentlyDeleted"
-                                    Style="{StaticResource Modernui:ui:NavigationViewItemStyle}">
-                    <ui:ui:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE74D;"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets"
                                   FontSize="16"
                                   Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                     </ui:ui:NavigationViewItem.Icon>
@@ -346,12 +346,12 @@
 
                 <ui:ui:ui:NavigationViewItemSeparator Margin="8,4"/>
 
-                <ui:ui:NavigationViewItem x:Name="SettingsNavItem"
+                <ui:NavigationViewItem x:Name="SettingsNavItem"
                                     Content="Settings"
                                     Tag="Settings"
-                                    Style="{StaticResource Modernui:ui:NavigationViewItemStyle}">
-                    <ui:ui:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE713;"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets"
                                   FontSize="16"
                                   Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                     </ui:ui:NavigationViewItem.Icon>

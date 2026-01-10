@@ -337,7 +337,7 @@
                                        Style="{StaticResource ModernCaptionStyle}"
                                        Foreground="{StaticResource ModernSuccessBrush}"
                                        VerticalAlignment="Center"/>
-                            <ToggleSwitch IsOn="True"
+                            <CheckBox IsChecked="True"
                                           Margin="0"
                                           HorizontalAlignment="Right"/>
                         </StackPanel>

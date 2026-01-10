@@ -198,12 +198,12 @@
                         <Grid>
                             <ScrollViewer x:Name="ContentElement"
                                           Margin="{TemplateBinding Padding}"
-                                          HorizontalScrollMode="Auto"
+                                          
                                           HorizontalScrollBarVisibility="Hidden"
-                                          VerticalScrollMode="Auto"
+                                          
                                           VerticalScrollBarVisibility="Hidden"
                                           IsTabStop="False"
-                                          ZoomMode="Disabled"/>
+                                          />
                             <TextBlock x:Name="PlaceholderText"
                                        Text="{TemplateBinding PlaceholderText}"
                                        Foreground="{StaticResource ModernTextTertiaryBrush}"
@@ -385,12 +385,12 @@
                         <Grid>
                             <ScrollViewer x:Name="ContentElement"
                                           Margin="{TemplateBinding Padding}"
-                                          HorizontalScrollMode="Auto"
+                                          
                                           HorizontalScrollBarVisibility="Hidden"
-                                          VerticalScrollMode="Auto"
+                                          
                                           VerticalScrollBarVisibility="Hidden"
                                           IsTabStop="False"
-                                          ZoomMode="Disabled"/>
+                                          />
                             <TextBlock x:Name="PlaceholderText"
                                        Text="{TemplateBinding PlaceholderText}"
                                        Foreground="{StaticResource ModernTextTertiaryBrush}"
@@ -1543,11 +1543,11 @@
                         <ScrollViewer x:Name="ContentElement"
                                       Margin="{TemplateBinding Padding}"
                                       VerticalAlignment="Center"
-                                      HorizontalScrollMode="Auto"
+                                      
                                       HorizontalScrollBarVisibility="Auto"
-                                      VerticalScrollMode="Auto"
+                                      
                                       VerticalScrollBarVisibility="Auto"
-                                      ZoomMode="Disabled"/>
+                                      />
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="CommonStates">
                                 <VisualState x:Name="Normal"/>

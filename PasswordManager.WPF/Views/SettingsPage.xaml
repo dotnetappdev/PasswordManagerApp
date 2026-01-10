@@ -194,7 +194,7 @@
                             <TextBlock Text="This is the active database file location. To change it, configure the database provider below." 
                                       Style="{StaticResource ModernCaptionStyle}"
                                       TextWrapping="Wrap"
-                                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                      Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
                             
                             <TextBlock Text="Custom SQLite Database Path" 
                                       Style="{StaticResource ModernCaptionStyle}"
@@ -290,7 +290,6 @@
                                 <TextBox x:Name="NetworkPathTextBox"
                                         Text="{Binding NetworkPath, Mode=TwoWay}"
                                         ui:ControlHelper.PlaceholderText="\\server\share\folder or Z:\backups"
-                                        Content="Network Path"
                                         Style="{StaticResource ModernTextBoxStyle}"
                                         MinWidth="300"/>
                                         
@@ -330,7 +329,7 @@
                                            
                                 <TextBlock Text="{Binding NextScheduledBackupFormatted}"
                                           Style="{StaticResource ModernCaptionStyle}"
-                                          Foreground="{ThemeResource SystemAccentColor}"
+                                          Foreground="{StaticResource SystemAccentColor}"
                                           Visibility="{Binding NextScheduledBackupFormatted, Converter={StaticResource StringToVisibilityConverter}}"/>
                             </StackPanel>
                         </StackPanel>
@@ -755,7 +754,7 @@
                     <StackPanel Margin="16">
                         <!-- Reset Password Data -->
                         <Border Style="{StaticResource ModernCardStyle}"
-                               Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                               Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
                                BorderBrush="{StaticResource ModernWarningBrush}">
                             <StackPanel Margin="12">
                                 <StackPanel Orientation="Horizontal" Margin="8">
@@ -787,7 +786,7 @@
                         
                         <!-- Reset All Data -->
                         <Border Style="{StaticResource ModernCardStyle}"
-                               Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                               Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
                                BorderBrush="{StaticResource ModernErrorBrush}">
                             <StackPanel Margin="12">
                                 <StackPanel Orientation="Horizontal" Margin="8">
@@ -822,7 +821,7 @@
                         
                         <!-- Secure Wipe Database -->
                         <Border Style="{StaticResource ModernCardStyle}"
-                               Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                               Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
                                BorderBrush="#dc2626"
                                BorderThickness="2">
                             <StackPanel Margin="12">
@@ -859,7 +858,7 @@
                         
                         <!-- Reseed Sample Data -->
                         <Border Style="{StaticResource ModernCardStyle}"
-                               Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                               Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
                                BorderBrush="{StaticResource ModernPrimaryBrush}">
                             <StackPanel Margin="12">
                                 <StackPanel Orientation="Horizontal" Margin="8">

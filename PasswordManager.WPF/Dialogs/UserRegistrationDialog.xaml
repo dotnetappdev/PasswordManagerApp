@@ -14,16 +14,10 @@
 
     <ScrollViewer xmlns:ui="http://schemas.modernwpf.com/2019"
     MaxHeight="600" VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="20" Margin="0,20,0,0">
+        <StackPanel Margin="0,20,0,0">
             
             <!-- ui:InfoBar for validation messages -->
-            <ui:InfoBar x:Name="Validationui:InfoBar"
-                     x:FieldModifier="private"
-                     IsOpen="False"
-                     Severity="Warning"
-                     Title="Validation Error"
-                     Message=""
-                     IsClosable="True"/>
+            
             
             <!-- Personal Information Section -->
             <Border Background="#2D2D2D" 

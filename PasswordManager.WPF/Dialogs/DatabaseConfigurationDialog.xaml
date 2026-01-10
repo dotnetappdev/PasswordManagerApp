@@ -18,7 +18,7 @@
             </TextBlock>
 
             <!-- Default Location Info -->
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            <Border Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
                     CornerRadius="8"
                     Padding="12">
                 <StackPanel Margin="8">
@@ -27,7 +27,7 @@
                                TextWrapping="Wrap"
                                FontFamily="Consolas"
                                FontSize="12"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                               Foreground="{StaticResource TextFillColorSecondaryBrush}"/>
                 </StackPanel>
             </Border>
 
@@ -43,14 +43,10 @@
             </StackPanel>
 
             <!-- Warning for custom path -->
-            <ui:InfoBar x:Name="CustomPathWarning"
-                     Severity="Warning"
-                     IsOpen="False"
-                     Title="Custom Path Selected"
-                     Message="Make sure the folder exists and you have write permissions. The database file will be created automatically."/>
+            
 
             <!-- Preview -->
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            <Border Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
                     CornerRadius="8"
                     Padding="12"
                     x:Name="PreviewBorder">
@@ -60,12 +56,12 @@
                                TextWrapping="Wrap"
                                FontFamily="Consolas"
                                FontSize="12"
-                               Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                               Foreground="{StaticResource AccentTextFillColorPrimaryBrush}"/>
                 </StackPanel>
             </Border>
 
             <!-- Important Notes -->
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            <Border Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
                     CornerRadius="8"
                     Padding="12">
                 <StackPanel Margin="8">

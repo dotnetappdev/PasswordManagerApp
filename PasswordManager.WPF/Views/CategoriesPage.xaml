@@ -176,7 +176,7 @@
                     </ListView.ItemTemplate>
                     
                     <ListView.ItemContainerStyle>
-                        <Style TargetType="GridViewItem">
+                        <Style TargetType="ListViewItem">
                             <Setter Property="Margin" Value="0,0,16,16"/>
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                             <Setter Property="VerticalContentAlignment" Value="Stretch"/>

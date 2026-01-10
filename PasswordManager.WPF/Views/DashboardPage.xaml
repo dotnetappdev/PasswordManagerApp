@@ -217,10 +217,10 @@
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                <Setter Property="Padding" Value="0"/>-->
-                                <Setter Property="Margin" Value="0"/>-->
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="0"/>
                                 <Setter Property="Background" Value="Transparent"/>
-                                <Setter Property="BorderThickness" Value="0"/>-->
+                                <Setter Property="BorderThickness" Value="0"/>
                             </Style>
                         </ListView.ItemContainerStyle>
                     </ListView>
@@ -255,12 +255,12 @@
                                 <StackPanel Grid.Column="0" Margin="8">
                                     <TextBlock Text="Type" FontSize="12" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                                     <ComboBox SelectedValue="{Binding EditItem.Type, Mode=TwoWay}" SelectedValuePath="Tag" Style="{StaticResource ModernComboBoxStyle}">
-                                        <ComboBoxItem Content="Login" Tag="{x:Bind models:ItemType.Login, Mode=OneTime}"/>
-                                        <ComboBoxItem Content="Credit Card" Tag="{x:Bind models:ItemType.CreditCard, Mode=OneTime}"/>
-                                        <ComboBoxItem Content="Secure Note" Tag="{x:Bind models:ItemType.SecureNote, Mode=OneTime}"/>
-                                        <ComboBoxItem Content="WiFi" Tag="{x:Bind models:ItemType.WiFi, Mode=OneTime}"/>
-                                        <ComboBoxItem Content="Passkey" Tag="{x:Bind models:ItemType.Passkey, Mode=OneTime}"/>
-                                        <ComboBoxItem Content="Password" Tag="{x:Bind models:ItemType.Password, Mode=OneTime}"/>
+                                        <ComboBoxItem Content="Login" Tag="{Binding models:ItemType.Login, Mode=OneTime}"/>
+                                        <ComboBoxItem Content="Credit Card" Tag="{Binding models:ItemType.CreditCard, Mode=OneTime}"/>
+                                        <ComboBoxItem Content="Secure Note" Tag="{Binding models:ItemType.SecureNote, Mode=OneTime}"/>
+                                        <ComboBoxItem Content="WiFi" Tag="{Binding models:ItemType.WiFi, Mode=OneTime}"/>
+                                        <ComboBoxItem Content="Passkey" Tag="{Binding models:ItemType.Passkey, Mode=OneTime}"/>
+                                        <ComboBoxItem Content="Password" Tag="{Binding models:ItemType.Password, Mode=OneTime}"/>
                                     </ComboBox>
                                 </StackPanel>
                                 <CheckBox Grid.Column="1" Content="★ Favorite" IsChecked="{Binding EditItem.IsFavorite, Mode=TwoWay}" VerticalAlignment="Bottom"/>
