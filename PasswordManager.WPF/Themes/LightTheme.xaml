@@ -174,26 +174,6 @@
 
     <!-- Light Theme ui:ui:NavigationViewItem Style -->
     <Style x:Key="LightModernui:ui:NavigationViewItemStyle"
-           TargetType="ui:ui:NavigationViewItem">
-        <Setter Property="Foreground" Value="{StaticResource LightModernTextPrimaryBrush}"/>
-        <Setter Property="FontWeight" Value="Normal"/>
-        <Setter Property="FontSize" Value="0"/>-->
-        <Setter Property="Margin" Value="4,2"/>
-        <!-- <Setter Property="CornerRadius" Value="0"/>-->
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ui:ui:NavigationViewItem">
-                    <Border x:Name="LayoutRoot"
-                            Background="{TemplateBinding Background}"
-                            CornerRadius="{TemplateBinding CornerRadius}"
-                            Margin="{TemplateBinding Margin}">
-                        <Grid>
-                            <Border x:Name="SelectionIndicator"
-                                    Width="3"
-                                    HorizontalAlignment="Left"
-                                    Background="{StaticResource LightModernPrimaryBrush}"
-                                    CornerRadius="0,2,2,0"
-                                    Opacity="0"/>
                             
                             <Grid x:Name="ContentGrid"
                                   Margin="16,8,16,8">

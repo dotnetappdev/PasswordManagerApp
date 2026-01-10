@@ -192,7 +192,7 @@
                             BorderBrush="#4A4A4A"
                             BorderThickness="1"
                             Padding="16,12"
-                            Visibility="{x:Bind CanCreateAdminAccount, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                            Visibility="{Binding CanCreateAdminAccount, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -210,17 +210,17 @@
                                            TextWrapping="Wrap"/>
                             </StackPanel>
                             
-                            <ToggleSwitch x:Name="AdminToggleSwitch"
+                            <CheckBox x:Name="AdminToggleSwitch"
                                          x:FieldModifier="private"
                                          Grid.Column="1"
                                          VerticalAlignment="Center"
-                                         Toggled="AdminToggleSwitch_Toggled"/>
+                                         Checked="AdminToggleSwitch_Toggled"/>
                         </Grid>
                     </Border>
 
                     <!-- Role Selection ComboBox (when not admin) -->
                     <StackPanel Margin="8" 
-                                Visibility="{x:Bind ShowRoleSelection, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                                Visibility="{Binding ShowRoleSelection, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
                         <TextBlock Text="User Role" Foreground="#B0B0B0" FontSize="14"/>
                         <Border Background="#3A3A3A"
                                 CornerRadius="8"

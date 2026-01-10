@@ -204,7 +204,6 @@
                                           VerticalScrollBarVisibility="Hidden"
                                           IsTabStop="False"
                                           />
-                            <TextBlock x:Name="PlaceholderText"
                                        Text="{TemplateBinding PlaceholderText}"
                                        Foreground="{StaticResource ModernTextTertiaryBrush}"
                                        Margin="{TemplateBinding Padding}"
@@ -213,19 +212,7 @@
                         </Grid>
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background"
-                                                Value="{StaticResource ModernSurfaceBrush}"/>
-                                        <Setter Target="BorderElement.BorderBrush"
-                                                Value="{StaticResource ModernBorderBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background"
                                                 Value="#F5F8FF"/>
-                                        <Setter Target="BorderElement.BorderBrush"
                                                 Value="{StaticResource ModernPrimaryLightBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>

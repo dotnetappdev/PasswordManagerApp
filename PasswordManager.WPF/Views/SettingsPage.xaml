@@ -52,13 +52,13 @@
                     
                     <StackPanel Margin="16">
                         <CheckBox x:Name="TwoFactorToggle"
-                                     Content="Enable Two-Factor Authentication" 
+                                     
                                      IsChecked="{Binding EnableTwoFactor, Mode=TwoWay}"
                                      Checked="TwoFactorToggle_Toggled"
                                      Unchecked="TwoFactorToggle_Toggled"/>
                         
                         <CheckBox x:Name="PasscodeToggle"
-                                     Content="Require Passcode on Startup" 
+                                     
                                      IsChecked="{Binding RequirePasscode, Mode=TwoWay}"
                                      Checked="PasscodeToggle_Toggled"/>
                         
@@ -153,10 +153,10 @@
                                      SelectionChanged="DatabaseProviderComboBox_SelectionChanged"
                                      Style="{StaticResource ModernComboBoxStyle}"
                                      MinWidth="240">
-                                <ComboBoxItem Content="SQLite" IsSelected="True"/>
-                                <ComboBoxItem Content="SQL Server"/>
-                                <ComboBoxItem Content="MySQL"/>
-                                <ComboBoxItem Content="PostgreSQL"/>
+                                <ComboBoxItem IsSelected="True"/>
+                                <ComboBoxItem/>
+                                <ComboBoxItem/>
+                                <ComboBoxItem/>
                             </ComboBox>
                         </StackPanel>
                         
@@ -234,7 +234,7 @@
                         </Button>
                         
                         <CheckBox x:Name="SyncToggle"
-                                     Content="Enable Cloud Sync" 
+                                     
                                      IsChecked="{Binding EnableSync, Mode=TwoWay}"
                                      Checked="SyncToggle_Toggled"/>
                     </StackPanel>
@@ -262,7 +262,7 @@
                     
                     <StackPanel Margin="16">
                         <CheckBox x:Name="CloudBackupToggle"
-                                     Content="Enable Cloud Backup" 
+                                     
                                      IsChecked="{Binding EnableCloudBackup, Mode=TwoWay}"
                                      Checked="CloudBackupToggle_Toggled"/>
                         
@@ -311,7 +311,7 @@
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>
                             
-                            <ComboBox Content="Schedule Frequency"
+                            <ComboBox
                                      ItemsSource="{Binding ScheduleIntervalOptions}"
                                      SelectedValue="{Binding BackupScheduleInterval, Mode=TwoWay}"
                                      SelectedValuePath="Interval"
@@ -323,7 +323,7 @@
                             <StackPanel Margin="8" Visibility="{Binding AutoBackupEnabled, Converter={StaticResource BoolToVisibilityConverter}}">
                                 <TextBlock Text="Preferred Backup Time"
                                           Style="{StaticResource ModernCaptionStyle}"/>
-                                <TimePicker x:Name="BackupTimePicker"
+                                <!-- TimePicker not supported in WPF: <TimePicker x:Name="BackupTimePicker"
                                            Time="{Binding PreferredBackupTime, Mode=TwoWay}"
                                            ClockIdentifier="24HourClock"/>
                                            
@@ -395,14 +395,14 @@
                                             </StackPanel>
                                             
                                             <Button Grid.Column="1" 
-                                                   Content="Restore" 
+                                                   
                                                    Style="{StaticResource ModernSecondaryButtonStyle}"
                                                    Margin="8,0"
                                                    Click="RestoreBackupButton_Click"
                                                    Tag="{Binding}"/>
                                             
                                             <Button Grid.Column="2" 
-                                                   Content="Delete" 
+                                                   
                                                    Background="{StaticResource ModernErrorBrush}"
                                                    Foreground="White"
                                                    BorderThickness="0"
@@ -534,14 +534,14 @@
                                      SelectionChanged="ImportUserModeComboBox_SelectionChanged"
                                      AutomationProperties.Name="Select import target mode"
                                      AutomationProperties.HelpText="Choose how to distribute imported passwords to users">
-                                <ComboBoxItem Content="Current User (Default)" 
+                                <ComboBoxItem 
                                             Tag="current" 
                                             IsSelected="True"
                                             AutomationProperties.Name="Current User - Import passwords only for your account"/>
-                                <ComboBoxItem Content="All Users" 
+                                <ComboBoxItem 
                                             Tag="all"
                                             AutomationProperties.Name="All Users - Import passwords accessible to all system users"/>
-                                <ComboBoxItem Content="Select Multiple Users" 
+                                <ComboBoxItem 
                                             Tag="multiple"
                                             AutomationProperties.Name="Select Multiple Users - Choose specific users to import passwords for"/>
                             </ComboBox>
