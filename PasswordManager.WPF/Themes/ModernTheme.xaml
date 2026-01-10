@@ -155,19 +155,19 @@
         <Setter Property="Foreground"
                 Value="White"/>
         <Setter Property="BorderThickness"
-                Value="0"/>-->
+                Value="0"/>
         <!-- <Setter Property="CornerRadius"
                 Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,12"/>
         <Setter Property="FontSize"
-                Value="0"/>-->
+                Value="14"/>
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="0"/>-->
+                Value="120"/>
         <Setter Property="MinHeight"
-                Value="0"/>-->
+                Value="36"/>
     </Style>
 
     <!-- Enhanced TextBox Style with 1Password-like behavior -->

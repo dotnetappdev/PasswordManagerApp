@@ -14,8 +14,6 @@
 
 
     <Grid Background="Transparent"
-          PointerEntered="Root_PointerEntered"
-          PointerExited="Root_PointerExited"
           Padding="0,8,0,8">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>

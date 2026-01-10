@@ -98,13 +98,13 @@
     <Style TargetType="Button">
         <Setter Property="Background" Value="{StaticResource DarkModernPrimaryBrush}"/>
         <Setter Property="Foreground" Value="White"/>
-        <Setter Property="BorderThickness" Value="0"/>-->
+        <Setter Property="BorderThickness" Value="0"/>
         <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding" Value="16,12"/>
-        <Setter Property="FontSize" Value="0"/>-->
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="MinWidth" Value="0"/>-->
-        <Setter Property="MinHeight" Value="0"/>-->
+        <Setter Property="MinWidth" Value="120"/>
+        <Setter Property="MinHeight" Value="36"/>
     </Style>
 
     <Style TargetType="TextBox">

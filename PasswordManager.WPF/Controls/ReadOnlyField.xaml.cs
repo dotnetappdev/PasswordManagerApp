@@ -9,6 +9,10 @@ namespace PasswordManager.WPF.Controls
         public ReadOnlyField()
         {
             this.InitializeComponent();
+            
+            // Add WPF mouse enter/leave handlers
+            this.MouseEnter += (s, e) => CopyButton.Visibility = Visibility.Visible;
+            this.MouseLeave += (s, e) => CopyButton.Visibility = Visibility.Collapsed;
         }
 
         public string Text
@@ -20,7 +24,6 @@ namespace PasswordManager.WPF.Controls
         public static readonly DependencyProperty TextProperty =
             DependencyProperty.Register("Text", typeof(string), typeof(ReadOnlyField), new PropertyMetadata(string.Empty));
 
-        // FontFamilyOverride removed - TextBlock uses theme/default font to avoid WinRT binding issues
         // Raw value to copy to clipboard (may differ from displayed Text)
         public string CopyText
         {
@@ -33,19 +36,9 @@ namespace PasswordManager.WPF.Controls
 
         private void CopyButton_Click(object sender, RoutedEventArgs e)
         {
-            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-            dataPackage.SetText(Text ?? string.Empty);
-            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
-        }
-
-        private void Root_PointerEntered(object sender, PointerRoutedEventArgs e)
-        {
-            CopyButton.Visibility = Visibility.Visible;
-        }
-
-        private void Root_PointerExited(object sender, PointerRoutedEventArgs e)
-        {
-            CopyButton.Visibility = Visibility.Collapsed;
+            // Use WPF Clipboard API
+            var textToCopy = CopyText ?? Text ?? string.Empty;
+            System.Windows.Clipboard.SetText(textToCopy);
         }
 
         private void Root_GotFocus(object sender, RoutedEventArgs e)
@@ -56,16 +49,6 @@ namespace PasswordManager.WPF.Controls
         private void Root_LostFocus(object sender, RoutedEventArgs e)
         {
             CopyButton.Visibility = Visibility.Collapsed;
-        }
-
-        private void CopyKeyboardAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        {
-            // Copy on Ctrl+C when focused
-            var textToCopy = CopyText ?? Text ?? string.Empty;
-            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-            dataPackage.SetText(textToCopy);
-            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
-            args.Handled = true;
         }
     }
 }

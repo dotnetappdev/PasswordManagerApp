@@ -1,11 +1,12 @@
-<Page xmlns:ui="http://schemas.modernwpf.com/2019"
-    x:Class="PasswordManager.WinUi.Views.ImportPage"
+<Page
+    x:Class="PasswordManager.WPF.Views.ImportPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.modernwpf.com/2019"
       Background="{StaticResource ModernBackgroundBrush}">
 
     <ScrollViewer>
-        <StackPanel Margin="24" Margin="0,0,0,24">
+        <StackPanel Margin="0,0,0,24">
             
             <!-- Page Header -->
             <Border Style="{StaticResource ModernCardStyle}">
