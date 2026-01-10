@@ -7,8 +7,8 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
-using PasswordManager.WinUi.Models;
-using PasswordManager.WinUi.Services;
+using PasswordManager.WPF.Models;
+using PasswordManager.WPF.Services;
 
 namespace PasswordManager.WPF;
 
