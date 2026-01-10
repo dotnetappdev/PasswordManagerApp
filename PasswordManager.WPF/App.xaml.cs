@@ -8,8 +8,8 @@ using PasswordManager.DAL;
 using PasswordManager.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using PasswordManager.Models.Configuration;
-using PasswordManager.WinUi.Services;
-using PasswordManager.WinUi.Helpers;
+using PasswordManager.WPF.Services;
+using PasswordManager.WPF.Helpers;
 using Sentry;
 
 namespace PasswordManager.WPF;
@@ -60,14 +60,16 @@ public partial class App : Application
     /// <summary>
     /// Invoked when the application is launched normally by the end user.
     /// </summary>
-    protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+    protected override async void OnStartup(StartupEventArgs e)
     {
+        base.OnStartup(e);
+
         m_window = new MainWindow(_host.Services);
 
         ThemeHelper.Initialize(m_window, this);
         _ = LoadSavedTheme();
 
-        m_window.Activate();
+        m_window.Show();
 
         _ = Task.Run(async () =>
         {
@@ -103,19 +105,11 @@ public partial class App : Application
             if (isFirstRun)
             {
                 // Show the database configuration dialog on UI thread
-                await m_window.DispatcherQueue.EnqueueAsync(async () =>
+                await m_window.Dispatcher.InvokeAsync(async () =>
                 {
-                    // Verify XamlRoot is available before showing dialog
-                    if (m_window.Content?.XamlRoot != null)
-                    {
-                        var dialog = new Dialogs.DatabaseConfigurationDialog(platformService, databaseConfigService);
-                        dialog.XamlRoot = m_window.Content.XamlRoot;
-                        await dialog.ShowAsync();
-                    }
-                    else
-                    {
-                        // XamlRoot not available, skip dialog
-                    }
+                    // Show dialog in WPF
+                    var dialog = new Dialogs.DatabaseConfigurationDialog(platformService, databaseConfigService);
+                    await dialog.ShowAsync();
                 });
             }
         }
@@ -129,25 +123,6 @@ public partial class App : Application
     {
         try
         {
-            var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            if (localSettings.Values.ContainsKey("SelectedTheme"))
-            {
-                var savedTheme = localSettings.Values["SelectedTheme"]?.ToString();
-                if (!string.IsNullOrEmpty(savedTheme))
-                {
-                    var theme = savedTheme switch
-                    {
-                        "Light" => PasswordManager.WinUi.Services.AppTheme.Light,
-                        "Dark" => PasswordManager.WinUi.Services.AppTheme.Dark,
-                        "System" => PasswordManager.WinUi.Services.AppTheme.System,
-                        _ => PasswordManager.WinUi.Services.AppTheme.System
-                    };
-
-                    PasswordManager.WinUi.Services.ThemeHelper.SetTheme(theme);
-                    return;
-                }
-            }
-
             using var scope = _host.Services.CreateScope();
             var secureStorage = scope.ServiceProvider.GetRequiredService<ISecureStorageService>();
             var savedThemeFromSecure = await secureStorage.GetAsync("SelectedTheme");
@@ -156,21 +131,24 @@ public partial class App : Application
             {
                 var theme = savedThemeFromSecure switch
                 {
-                    "Light" => PasswordManager.WinUi.Services.AppTheme.Light,
-                    "Dark" => PasswordManager.WinUi.Services.AppTheme.Dark,
-                    "System" => PasswordManager.WinUi.Services.AppTheme.System,
-                    _ => PasswordManager.WinUi.Services.AppTheme.System
+                    "Light" => AppTheme.Light,
+                    "Dark" => AppTheme.Dark,
+                    "System" => AppTheme.System,
+                    _ => AppTheme.System
                 };
 
-                PasswordManager.WinUi.Services.ThemeHelper.SetTheme(theme);
-
-                localSettings.Values["SelectedTheme"] = savedThemeFromSecure;
+                ThemeHelper.SetTheme(theme);
+            }
+            else
+            {
+                // Default to System theme
+                ThemeHelper.SetTheme(AppTheme.System);
             }
         }
         catch (Exception ex)
         {
             SentrySdk.CaptureException(ex);
-            PasswordManager.WinUi.Services.ThemeHelper.SetTheme(PasswordManager.WinUi.Services.AppTheme.System);
+            ThemeHelper.SetTheme(AppTheme.System);
         }
     }
 

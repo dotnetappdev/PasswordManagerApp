@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using PasswordManager.Models;
@@ -43,8 +45,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
                 Title = "Confirm Deletion",
                 Content = $"Are you sure you want to delete '{_passwordItem.Title}'? This action cannot be undone.",
                 PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
-                XamlRoot = this.XamlRoot
+                CloseButtonText = "Cancel"
             };
 
             var res = await confirm.ShowAsync();
@@ -57,7 +58,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
                 {
                     await passwordService.DeleteAsync(_passwordItem.Id);
 
-                    // Update and show the in-dialog ModerateInfoBar message
+                    // Update and show the in-dialog InfoBar message
                     if (ModerateInfoBar != null)
                     {
                         ModerateInfoBar.IsOpen = true;
@@ -89,7 +90,6 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
             if (serviceProvider == null) return;
 
             var dialog = new Dialogs.AddPasswordDialog(serviceProvider, _passwordItem);
-            dialog.XamlRoot = this.XamlRoot;
 
             var result = await dialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary && dialog.Result is not null)
@@ -193,9 +193,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
         {
             try
             {
-                var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-                dataPackage.SetText(_passwordItem.LoginItem.Username);
-                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+                System.Windows.Clipboard.SetText(_passwordItem.LoginItem.Username);
 
                 CopyUsernameButton.Content = "✅ Copied";
                 await Task.Delay(2000);
@@ -216,9 +214,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
                 var revealedPassword = await _passwordRevealService.RevealPasswordAsync(_passwordItem.LoginItem, "current-session");
                 if (!string.IsNullOrEmpty(revealedPassword))
                 {
-                    var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-                    dataPackage.SetText(revealedPassword);
-                    Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+                    System.Windows.Clipboard.SetText(revealedPassword);
 
                     CopyPasswordButton.Content = "✅ Copied";
                     await Task.Delay(2000);

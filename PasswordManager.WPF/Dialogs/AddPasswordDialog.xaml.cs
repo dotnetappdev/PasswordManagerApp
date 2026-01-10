@@ -1,13 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
-using System.Collections.Generic;
-using System;
-using PasswordManager.WinUi.Helpers;
+using PasswordManager.WPF.Helpers;
 
 namespace PasswordManager.WPF.Dialogs;
 
@@ -73,27 +74,13 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
     {
         try
         {
-            var mainXamlRoot = (App.Current as App)?.MainWindow?.Content?.XamlRoot;
-            if (mainXamlRoot != null)
-            {
-                this.XamlRoot = mainXamlRoot;
-            }
-            else if (this.XamlRoot == null)
-            {
-                // Fallback to current page/root if available
-                this.XamlRoot = (Application.Current as App)?.MainWindow?.Content?.XamlRoot ?? this.XamlRoot;
-            }
-
             // Apply modern dialog style if none is set
-            if (this.Style == null && Application.Current.Resources.ContainsKey("Modern1PasswordDialogStyle"))
+            if (this.Style == null && Application.Current.Resources.Contains("Modern1PasswordDialogStyle"))
             {
                 this.Style = Application.Current.Resources["Modern1PasswordDialogStyle"] as Style;
             }
 
-            // Ensure alignment is explicitly centered
-            this.HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Center;
-            this.VerticalAlignment = Microsoft.UI.Xaml.VerticalAlignment.Center;
-            this.Margin = new Microsoft.UI.Xaml.Thickness(0);
+            // WPF ContentDialog centers automatically
         }
         catch (Exception)
         {
@@ -790,15 +777,12 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         if (sender is Button button && button.Tag is string itemType)
         {
             // Hide the selection panel and show the detail panel
-            ItemSelectionPanel.Visibility = Visibility.Collapsed;
-            LoginDetailPanel.Visibility = Visibility.Visible;
+            if (ItemSelectionPanel != null)
+                ItemSelectionPanel.Visibility = Visibility.Collapsed;
+            if (LoginDetailPanel != null)
+                LoginDetailPanel.Visibility = Visibility.Visible;
 
-            // Update the dialog title
-            if (XamlRoot?.Content is FrameworkElement root)
-            {
-                // Update title in the template if possible
-                // For now, we'll just show the form
-            }
+            // Update the dialog title - WPF handles this automatically
         }
     }
 
@@ -820,11 +804,14 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         // For now, just a placeholder
     }
 
-    private void PasswordTextBox_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
+    private void PasswordTextBox_MouseRightButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         // Show password generator on right-click
-        PasswordGeneratorPopup.Visibility = Visibility.Visible;
-        GenerateNewPassword();
+        if (PasswordGeneratorPopup != null)
+        {
+            PasswordGeneratorPopup.Visibility = Visibility.Visible;
+            GenerateNewPassword();
+        }
     }
 
     private void RefreshPassword_Click(object sender, RoutedEventArgs e)
@@ -882,7 +869,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         }
     }
 
-    private void PasswordLengthSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    private void PasswordLengthSlider_ValueChanged(object sender, System.Windows.RoutedPropertyChangedEventArgs<double> e)
     {
         if (PasswordLengthText != null)
         {
