@@ -17,10 +17,10 @@
                     <StackPanel Grid.Column="0" Margin="8">
                         <StackPanel Orientation="Horizontal" Margin="12">
                             <Border Background="{StaticResource ModernPrimaryBrush}"
-                                   CornerRadius="12"
+                                  
                                    Width="32"
                                    Height="32">
-                                <FontIcon Glyph="&#xE72E;" 
+                                <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" 
                                          FontSize="16"
                                          Foreground="White"
                                          HorizontalAlignment="Center"
@@ -39,7 +39,7 @@
                                Style="{StaticResource ModernSecondaryButtonStyle}"
                                Click="RefreshButton_Click">
                             <StackPanel Orientation="Horizontal" Margin="8">
-                                <FontIcon Glyph="&#xE72C;" FontSize="14"/>
+                                <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                                 <TextBlock Text="Refresh"/>
                             </StackPanel>
                         </Button>
@@ -48,7 +48,7 @@
                                Style="{StaticResource ModernPrimaryButtonStyle}"
                                Click="AddVaultButton_Click">
                             <StackPanel Orientation="Horizontal" Margin="8">
-                                <FontIcon Glyph="&#xE710;" FontSize="14"/>
+                                <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                                 <TextBlock Text="Add Vault"/>
                             </StackPanel>
                         </Button>
@@ -81,7 +81,7 @@
                                         <!-- Vault Icon -->
                                         <Border Grid.Column="0"
                                                Background="{StaticResource ModernPrimaryBrush}"
-                                               CornerRadius="8"
+                                              
                                                Width="40"
                                                Height="40"
                                                Margin="0,0,16,0">
@@ -97,7 +97,7 @@
                                                 <TextBlock Text="{Binding Name}"
                                                           Style="{StaticResource ModernBodyStrongStyle}"/>
                                                 <Border Background="{StaticResource ModernSuccessBrush}"
-                                                       CornerRadius="4"
+                                                      
                                                        Padding="6,2"
                                                        Visibility="{Binding IsDefault}">
                                                     <TextBlock Text="Default"
@@ -131,13 +131,13 @@
                                                    Click="EditVaultButton_Click"
                                                    Tag="{Binding}"
                                                    ToolTipService.ToolTip="Edit Vault">
-                                                <FontIcon Glyph="&#xE70F;" FontSize="16"/>
+                                                <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
                                             </Button>
                                             <Button Style="{StaticResource ModernIconButtonStyle}"
                                                    Click="DeleteVaultButton_Click"
                                                    Tag="{Binding}"
                                                    ToolTipService.ToolTip="Delete Vault">
-                                                <FontIcon Glyph="&#xE74D;" FontSize="16"/>
+                                                <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
                                             </Button>
                                         </StackPanel>
                                     </Grid>

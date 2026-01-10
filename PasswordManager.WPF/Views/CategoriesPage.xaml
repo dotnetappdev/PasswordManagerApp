@@ -19,10 +19,10 @@
                     <StackPanel Grid.Column="0" Margin="8">
                         <StackPanel Orientation="Horizontal" Margin="12">
                             <Border Background="{StaticResource ModernSuccessBrush}"
-                                   CornerRadius="12"
+                                  
                                    Width="32"
                                    Height="32">
-                                <FontIcon Glyph="&#xE8FD;" 
+                                <TextBlock Text="&#xE8FD;" FontFamily="Segoe MDL2 Assets" 
                                          FontSize="16"
                                          Foreground="White"
                                          HorizontalAlignment="Center"
@@ -41,7 +41,7 @@
                                Style="{StaticResource ModernSecondaryButtonStyle}"
                                Click="RefreshButton_Click">
                             <StackPanel Orientation="Horizontal" Margin="8">
-                                <FontIcon Glyph="&#xE72C;" FontSize="14"/>
+                                <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                                 <TextBlock Text="Refresh"/>
                             </StackPanel>
                         </Button>
@@ -50,7 +50,7 @@
                                Style="{StaticResource ModernPrimaryButtonStyle}"
                                Click="AddCategoryButton_Click">
                             <StackPanel Orientation="Horizontal" Margin="8">
-                                <FontIcon Glyph="&#xE109;" FontSize="14"/>
+                                <TextBlock Text="&#xE109;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                                 <TextBlock Text="Add Category"/>
                             </StackPanel>
                         </Button>
@@ -111,11 +111,11 @@
                                     <!-- Category Header -->
                                     <StackPanel Grid.Row="0" Margin="0,0,0,16">
                                         <Border Background="{StaticResource ModernPrimaryGradientBrush}"
-                                               CornerRadius="10"
+                                              
                                                Width="40"
                                                Height="40"
                                                HorizontalAlignment="Left">
-                                            <FontIcon Glyph="{Binding Icon}"
+                                            <TextBlock Text="{Binding Icon}" FontFamily="Segoe MDL2 Assets"
                                                      FontSize="18"
                                                      Foreground="White"
                                                      HorizontalAlignment="Center"
@@ -146,27 +146,27 @@
                                                BorderBrush="{StaticResource ModernWarningBrush}"
                                                BorderThickness="1.5"
                                                Foreground="{StaticResource ModernWarningBrush}"
-                                               CornerRadius="8"
+                                              
                                                Padding="12,8"
                                                Click="ToggleFavoriteButton_Click"
                                                ToolTipService.ToolTip="Toggle Favorite">
-                                            <FontIcon Glyph="&#xE734;" FontSize="14"/>
+                                            <TextBlock Text="&#xE734;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                                         </Button>
                                         <Button Style="{StaticResource ModernSecondaryButtonStyle}"
                                                Padding="12,8"
                                                Click="EditCategoryButton_Click"
                                                ToolTipService.ToolTip="Edit">
-                                            <FontIcon Glyph="&#xE70F;" FontSize="14"/>
+                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                                         </Button>
                                         <Button Background="Transparent"
                                                BorderBrush="{StaticResource ModernErrorBrush}"
                                                BorderThickness="1.5"
                                                Foreground="{StaticResource ModernErrorBrush}"
-                                               CornerRadius="8"
+                                              
                                                Padding="12,8"
                                                Click="DeleteCategoryButton_Click"
                                                ToolTipService.ToolTip="Delete">
-                                            <FontIcon Glyph="&#xE74D;" FontSize="14"/>
+                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                                         </Button>
                                     </StackPanel>
                                 </Grid>
@@ -193,11 +193,11 @@
                        Visibility="{Binding HasNoCategories, Converter={StaticResource BoolToVisibilityConverter}}">
                     <StackPanel Margin="20" HorizontalAlignment="Center">
                         <Border Background="{StaticResource ModernSuccessBrush}"
-                               CornerRadius="24"
+                              
                                Width="80"
                                Height="80"
                                HorizontalAlignment="Center">
-                            <FontIcon Glyph="&#xE8B7;" 
+                            <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" 
                                      FontSize="36"
                                      Foreground="White"
                                      HorizontalAlignment="Center"
@@ -217,7 +217,7 @@
         Click="AddCategoryButton_Click">
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal" Margin="8">
-                                    <FontIcon Glyph="&#xE109;" FontSize="16"/>
+                                    <TextBlock Text="&#xE109;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
                                     <TextBlock Text="Add Your First Category"/>
                                 </StackPanel>
                             </Button.Content>

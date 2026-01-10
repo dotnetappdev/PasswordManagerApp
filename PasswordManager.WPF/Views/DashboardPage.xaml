@@ -44,7 +44,7 @@
                                Style="{StaticResource Modernui:AutoSuggestBoxStyle}"
                                TextChanged="SearchBox_TextChanged"
                                QuerySubmitted="SearchBox_QuerySubmitted"
-                               CornerRadius="20"/>
+                              />
                 
                 <!-- Action Buttons -->
                 <StackPanel Grid.Column="1" 
@@ -60,10 +60,10 @@
         <ControlTemplate TargetType="Button">
             <Border x:Name="Border"
                    Background="{StaticResource ModernNewItemButtonBrush}"
-                   CornerRadius="6"
+                  
                    Padding="16,8">
                 <StackPanel Orientation="Horizontal" Margin="8">
-                    <FontIcon Glyph="&#xE109;" FontSize="14" Foreground="White"/>
+                    <TextBlock Text="&#xE109;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="White"/>
                     <TextBlock Text="{TemplateBinding Content}" 
                               FontWeight="SemiBold" 
                               FontSize="14"
@@ -93,7 +93,7 @@
                       </MenuFlyout>
                   </Button.Flyout>
                   <StackPanel Orientation="Horizontal" Margin="8">
-                      <FontIcon Glyph="&#xE71D;" FontSize="14" Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                      <TextBlock Text="&#xE71D;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource ModernTextPrimaryBrush}"/>
                       <TextBlock Text="Sort" Foreground="{StaticResource ModernTextPrimaryBrush}" />
                   </StackPanel>
               </Button>
@@ -106,10 +106,10 @@
         <ControlTemplate TargetType="Button">
             <Border x:Name="Border"
                     Background="Transparent"
-                    CornerRadius="6"
+                   
                     Padding="16,8">
                 <StackPanel Orientation="Horizontal" Margin="8">
-                    <FontIcon Glyph="&#xE70F;" FontSize="14" Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                    <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource ModernTextPrimaryBrush}"/>
                     <TextBlock Text="Edit" 
                               FontWeight="SemiBold" 
                               FontSize="14"
@@ -180,7 +180,7 @@
                                              <!-- Website Favicon/Icon: try favicon, else show two-letter initials -->
                                              <Grid Grid.Column="0" Width="40" Height="40" VerticalAlignment="Center">
                                               <Border x:Name="IconBackground" 
-                                                   Width="40" Height="40" CornerRadius="8"
+                                                   Width="40" Height="40"
                                                    Background="{Binding Website, Converter={StaticResource WebsiteToColorConverter}}"
                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
@@ -214,7 +214,7 @@
                                         </StackPanel>
                                         
                                         <!-- Favorite Icon -->
-                                        <FontIcon Grid.Column="2" 
+                                        <TextBlock FontFamily="Segoe MDL2 Assets" Grid.Column="2" 
                                                  Glyph="&#xE734;" 
                                                  FontSize="14"
                                                  Foreground="#f59e0b"
@@ -299,13 +299,13 @@
                             <StackPanel Orientation="Horizontal" Margin="12">
                                 <Button x:Name="SaveInlineButton" Style="{StaticResource ModernPrimaryButtonStyle}" Click="SaveInlineButton_Click">
                                     <StackPanel Orientation="Horizontal" Margin="8">
-                                        <FontIcon Glyph="&#xE74E;" FontSize="14"/>
+                                        <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                                         <TextBlock Text="Save"/>
                                     </StackPanel>
                                 </Button>
                                 <Button x:Name="CancelInlineButton" Style="{StaticResource ModernSecondaryButtonStyle}" Click="CancelInlineButton_Click">
                                     <StackPanel Orientation="Horizontal" Margin="8">
-                                        <FontIcon Glyph="&#xE711;" FontSize="14"/>
+                                        <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                                         <TextBlock Text="Cancel"/>
                                     </StackPanel>
                                 </Button>
@@ -327,7 +327,7 @@
                             <Border Grid.Column="0" 
                                    Width="64" 
                                    Height="64"
-                                   CornerRadius="12"
+                                  
                                    Background="{StaticResource ModernAccentBrush}"
                                    Margin="0,0,16,0">
                                 <TextBlock Text="{Binding SelectedPasswordItem.Title, FallbackValue='?'}" 
@@ -488,7 +488,7 @@
                                HorizontalAlignment="Center" 
                                VerticalAlignment="Center"
                                Visibility="{Binding SelectedPasswordItem, Converter={StaticResource NotNullToInvertedVisibilityConverter}}">
-                        <FontIcon Glyph="&#xE8F1;" 
+                        <TextBlock Text="&#xE8F1;" FontFamily="Segoe MDL2 Assets" 
                                  FontSize="48" 
                                  Foreground="{StaticResource ModernTextTertiaryBrush}"/>
                         <TextBlock Text="Select an item to view details" 

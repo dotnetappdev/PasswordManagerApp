@@ -179,15 +179,15 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="0"/>-->
+                Value="1"/>
         <!-- <Setter Property="CornerRadius"
                 Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
-                Value="0"/>-->
+                Value="14"/>
         <Setter Property="MinHeight"
-                Value="0"/>-->
+                Value="36"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Page x:Class="PasswordManager.WinUi.Views.ProfilePage"
+<Page x:Class="PasswordManager.WPF.Views.ProfilePage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:converters="clr-namespace:PasswordManager.WPF.Converters"
@@ -11,8 +11,7 @@
     </Page.Resources>
 
     <ScrollViewer>
-        <StackPanel Margin="24"
-                Padding="40">
+        <StackPanel Margin="24">
 
             <!-- Header -->
             <Grid>
@@ -26,7 +25,7 @@
                 <Border Grid.Column="0"
                         Width="80"
                         Height="80"
-                        CornerRadius="40"
+                       
                         Background="{StaticResource ModernPrimaryGradientBrush}"
                         Margin="0,0,20,0">
                     <TextBlock x:Name="ProfileInitials"
@@ -77,12 +76,12 @@
             <Border Background="#5D2A2A"
                     BorderBrush="#DC2626"
                     BorderThickness="1"
-                    CornerRadius="8"
+                   
                     Padding="16,12"
                     Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
                 <StackPanel Orientation="Horizontal"
                             Margin="8">
-                    <FontIcon Glyph="&#xE783;"
+                    <TextBlock Text="&#xE783;" FontFamily="Segoe MDL2 Assets"
                               FontSize="16"
                               Foreground="#DC2626"/>
                     <TextBlock Text="{Binding ErrorMessage}"
@@ -97,7 +96,7 @@
                     Background="#1A1A1A"
                     BorderBrush="#4A4A4A"
                     BorderThickness="1"
-                    CornerRadius="12"
+                   
                     Padding="24"
                     Visibility="{Binding ShowProfileManagement, Converter={StaticResource BoolToVisibilityConverter}}">
                 <StackPanel Margin="20">
@@ -135,7 +134,7 @@
                                     <Button Background="#2D2D2D"
                                             BorderBrush="#4A4A4A"
                                             BorderThickness="1"
-                                            CornerRadius="8"
+                                           
                                             HorizontalAlignment="Left"
                                             Padding="12,10"
                                             MinWidth="180"
@@ -160,7 +159,7 @@
 
                                             <!-- Admin badge (visible when IsAdmin == true) -->
                                             <Border Background="#FFB020"
-                                                    CornerRadius="8"
+                                                   
                                                     Padding="8,4"
                                                     VerticalAlignment="Center"
                                                     Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -181,7 +180,7 @@
                             Background="#4A90E2"
                             Foreground="White"
                             BorderThickness="0"
-                            CornerRadius="8"
+                           
                             HorizontalAlignment="Stretch"
                             MinHeight="48"
                             FontSize="16"
@@ -290,7 +289,7 @@
                                 Orientation="Horizontal"
                                 Margin="12"
                                 Margin="0,0,0,12">
-                            <FontIcon Glyph="&#xE8D7;"
+                            <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets"
                                       FontSize="16"
                                       Foreground="{StaticResource ModernPrimaryBrush}"/>
                             <TextBlock Text="Master Password"
@@ -310,7 +309,7 @@
                                 Orientation="Horizontal"
                                 Margin="12"
                                 Margin="0,0,0,12">
-                            <FontIcon Glyph="&#xE72E;"
+                            <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
                                       FontSize="16"
                                       Foreground="{StaticResource ModernSuccessBrush}"/>
                             <TextBlock Text="Two-Factor Authentication"
@@ -330,7 +329,7 @@
                         <StackPanel Grid.Row="2"
                                 Orientation="Horizontal"
                                 Margin="12">
-                            <FontIcon Glyph="&#xE8F1;"
+                            <TextBlock Text="&#xE8F1;" FontFamily="Segoe MDL2 Assets"
                                       FontSize="16"
                                       Foreground="{StaticResource ModernSuccessBrush}"/>
                             <TextBlock Text="Biometric Authentication"
