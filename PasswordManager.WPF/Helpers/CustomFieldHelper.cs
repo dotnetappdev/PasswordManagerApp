@@ -1,13 +1,13 @@
-using System.Windows;
-using System.Windows.Controls;
-using PasswordManager.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using ModernWpf.Controls;
+using PasswordManager.Models;
 
 namespace PasswordManager.WPF.Helpers;
-
-using PasswordManager.WinUi.Helpers;
 
 public static class CustomFieldHelper
 {
@@ -15,7 +15,6 @@ public static class CustomFieldHelper
     {
         var fieldPanel = new StackPanel
         {
-            Spacing = 8,
             Margin = new Thickness(0, 0, 0, 12),
             Tag = field
         };
@@ -25,23 +24,24 @@ public static class CustomFieldHelper
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        var nameTextBox = new TextBox
+        var nameTextBox = new System.Windows.Controls.TextBox
         {
             Text = field.Name,
-            PlaceholderText = "Field name",
             Style = ResourceHelper.GetStyle("ModernTextBoxStyle"),
             Margin = new Thickness(0, 0, 8, 0)
         };
+        ModernWpf.Controls.ControlHelper.SetPlaceholderText(nameTextBox, "Field name");
+        
         nameTextBox.TextChanged += (s, e) =>
         {
             field.Name = nameTextBox.Text;
             onFieldChanged?.Invoke(field);
         };
 
-        var removeButton = new Button
+        var removeButton = new System.Windows.Controls.Button
         {
             Content = "🗑️",
-            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            Background = new SolidColorBrush(Colors.Transparent),
             BorderThickness = new Thickness(0),
             Padding = new Thickness(8)
         };
@@ -88,9 +88,9 @@ public static class CustomFieldHelper
                 var passwordBox = new PasswordBox
                 {
                     Password = field.Value,
-                    PlaceholderText = "Enter password",
                     Style = ResourceHelper.GetStyle("ModernPasswordBoxStyle")
                 };
+                ModernWpf.Controls.ControlHelper.SetPlaceholderText(passwordBox, "Enter password");
                 passwordBox.PasswordChanged += (s, e) =>
                 {
                     field.Value = passwordBox.Password;
@@ -105,25 +105,28 @@ public static class CustomFieldHelper
                 };
                 if (DateTime.TryParse(field.Value, out var date))
                 {
-                    datePicker.Date = date;
+                    datePicker.SelectedDate = date;
                 }
-                datePicker.DateChanged += (s, e) =>
+                datePicker.SelectedDateChanged += (s, e) =>
                 {
-                    field.Value = datePicker.Date.ToString("yyyy-MM-dd");
-                    onFieldChanged?.Invoke(field);
+                    if (datePicker.SelectedDate.HasValue)
+                    {
+                        field.Value = datePicker.SelectedDate.Value.ToString("yyyy-MM-dd");
+                        onFieldChanged?.Invoke(field);
+                    }
                 };
                 return datePicker;
 
             case CustomFieldType.TextArea:
-                var textArea = new TextBox
+                var textArea = new System.Windows.Controls.TextBox
                 {
                     Text = field.Value,
-                    PlaceholderText = "Enter text",
                     AcceptsReturn = true,
                     TextWrapping = TextWrapping.Wrap,
                     MaxHeight = 120,
                     Style = ResourceHelper.GetStyle("ModernTextBoxStyle")
                 };
+                ModernWpf.Controls.ControlHelper.SetPlaceholderText(textArea, "Enter text");
                 textArea.TextChanged += (s, e) =>
                 {
                     field.Value = textArea.Text;
@@ -132,12 +135,12 @@ public static class CustomFieldHelper
                 return textArea;
 
             case CustomFieldType.Number:
-                var numberBox = new NumberBox
+                var numberBox = new ModernWpf.Controls.NumberBox
                 {
                     Value = double.TryParse(field.Value, out var number) ? number : 0,
-                    PlaceholderText = "Enter number",
                     Style = ResourceHelper.GetStyle("ModernNumberBoxStyle")
                 };
+                ModernWpf.Controls.ControlHelper.SetPlaceholderText(numberBox, "Enter number");
                 numberBox.ValueChanged += (s, e) =>
                 {
                     field.Value = numberBox.Value.ToString();
@@ -150,12 +153,12 @@ public static class CustomFieldHelper
             case CustomFieldType.Phone:
             case CustomFieldType.Text:
             default:
-                var textBox = new TextBox
+                var textBox = new System.Windows.Controls.TextBox
                 {
                     Text = field.Value,
-                    PlaceholderText = GetPlaceholderForType(field.Type),
                     Style = ResourceHelper.GetStyle("ModernTextBoxStyle")
                 };
+                ModernWpf.Controls.ControlHelper.SetPlaceholderText(textBox, GetPlaceholderForType(field.Type));
                 textBox.TextChanged += (s, e) =>
                 {
                     field.Value = textBox.Text;
@@ -178,13 +181,13 @@ public static class CustomFieldHelper
         };
     }
 
-    public static ComboBox CreateFieldTypeSelector(CustomFieldType selectedType, Action<CustomFieldType> onTypeChanged)
+    public static System.Windows.Controls.ComboBox CreateFieldTypeSelector(CustomFieldType selectedType, Action<CustomFieldType> onTypeChanged)
     {
-        var comboBox = new ComboBox
+        var comboBox = new System.Windows.Controls.ComboBox
         {
-            PlaceholderText = "Select field type",
             Style = ResourceHelper.GetStyle("ModernComboBoxStyle")
         };
+        ModernWpf.Controls.ControlHelper.SetPlaceholderText(comboBox, "Select field type");
 
         var fieldTypes = Enum.GetValues<CustomFieldType>().ToList();
         foreach (var type in fieldTypes)

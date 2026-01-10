@@ -1,9 +1,7 @@
 using System.Windows;
-using Microsoft.UI;
-using Microsoft.UI.Windowing;
-using WinRT.Interop;
-using System;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System;
 
 namespace PasswordManager.WPF.Services
 {
@@ -19,49 +17,29 @@ namespace PasswordManager.WPF.Services
         private static AppTheme _currentTheme = AppTheme.Dark;
         private static Window? _window;
         private static Application? _application;
-        private static Windows.UI.ViewManagement.UISettings? _uiSettings;
-        private static NavigationView? _navigationView;
+        private static Control? _navigationView;
 
         public static event EventHandler<AppTheme>? ThemeChanged;
 
         public static AppTheme CurrentTheme => _currentTheme;
 
-        public static void Initialize(Window window, Application application, NavigationView? navigationView = null)
+        public static void Initialize(Window window, Application application, Control? navigationView = null)
         {
             _window = window;
             _application = application;
             _navigationView = navigationView;
 
-            // Set up system theme change listener
-            _uiSettings = new Windows.UI.ViewManagement.UISettings();
-            _uiSettings.ColorValuesChanged += OnSystemThemeChanged;
-
             ApplyTheme(_currentTheme);
         }
 
-        public static void SetNavigationView(NavigationView navigationView)
+        public static void SetNavigationView(Control navigationView)
         {
             _navigationView = navigationView;
             // Apply current theme to the newly set navigation view
-            if (_navigationView != null)
+            if (_navigationView != null && _navigationView is FrameworkElement fe)
             {
                 var actualTheme = _currentTheme == AppTheme.System ? GetSystemTheme() : _currentTheme;
-                _navigationView.RequestedTheme = actualTheme == AppTheme.Dark
-                    ? ElementTheme.Dark
-                    : ElementTheme.Light;
-            }
-        }
-
-        private static async void OnSystemThemeChanged(Windows.UI.ViewManagement.UISettings sender, object args)
-        {
-            // Only respond if we're in System theme mode
-            if (_currentTheme == AppTheme.System)
-            {
-                // Dispatch to UI thread
-                if (_window?.DispatcherQueue != null)
-                {
-                    _window.DispatcherQueue.TryEnqueue(() => ApplyTheme(_currentTheme));
-                }
+                // ModernWPF handles theming through resource dictionaries
             }
         }
 
@@ -80,25 +58,9 @@ namespace PasswordManager.WPF.Services
             if (_window == null || _application == null) return;
 
             var actualTheme = theme == AppTheme.System ? GetSystemTheme() : theme;
-            var elementTheme = actualTheme == AppTheme.Dark ? ElementTheme.Dark : ElementTheme.Light;
-
-            // Apply theme to window content
-            if (_window?.Content is FrameworkElement rootElement)
-            {
-                rootElement.RequestedTheme = elementTheme;
-            }
-
-            // Apply theme to NavigationView specifically to ensure menu updates
-            if (_navigationView != null)
-            {
-                _navigationView.RequestedTheme = elementTheme;
-            }
 
             // Update resource dictionaries
             UpdateThemeResources(actualTheme);
-
-            // Update title bar to match theme
-            UpdateTitleBar(actualTheme);
         }
 
         private static void UpdateThemeResources(AppTheme actualTheme)
@@ -160,16 +122,11 @@ namespace PasswordManager.WPF.Services
                     return;
                 }
 
-                var color = Microsoft.UI.ColorHelper.FromArgb(
-                    255,
-                    Convert.ToByte(colorString.Substring(1, 2), 16),
-                    Convert.ToByte(colorString.Substring(3, 2), 16),
-                    Convert.ToByte(colorString.Substring(5, 2), 16)
-                );
+                var color = (Color)ColorConverter.ConvertFromString(colorString);
 
-                if (resources.ContainsKey(key))
+                if (resources.Contains(key))
                 {
-                    resources[key] = new Microsoft.UI.Xaml.Media.SolidColorBrush(color);
+                    resources[key] = new SolidColorBrush(color);
                 }
             }
             catch (Exception)
@@ -182,70 +139,23 @@ namespace PasswordManager.WPF.Services
         {
             try
             {
-                // Check Windows system theme
-                var uiSettings = new Windows.UI.ViewManagement.UISettings();
-                var backgroundColor = uiSettings.GetColorValue(Windows.UI.ViewManagement.UIColorType.Background);
-
-                // If the background color is close to black, it's dark mode
-                return (backgroundColor.R + backgroundColor.G + backgroundColor.B) < 384
-                    ? AppTheme.Dark
-                    : AppTheme.Light;
+                // Check Windows system theme using registry
+                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                    @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                var value = key?.GetValue("AppsUseLightTheme");
+                
+                if (value is int intValue)
+                {
+                    // 0 = dark, 1 = light
+                    return intValue == 0 ? AppTheme.Dark : AppTheme.Light;
+                }
+                
+                return AppTheme.Light;
             }
             catch
             {
                 // Default to light if we can't detect system theme
                 return AppTheme.Light;
-            }
-        }
-
-        private static void UpdateTitleBar(AppTheme actualTheme)
-        {
-            try
-            {
-                if (_window != null && AppWindowTitleBar.IsCustomizationSupported())
-                {
-                    var hwnd = WindowNative.GetWindowHandle(_window);
-                    var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
-                    var appWindow = AppWindow.GetFromWindowId(windowId);
-                    var titleBar = appWindow.TitleBar;
-
-                    if (actualTheme == AppTheme.Dark)
-                    {
-                        // Dark theme colors
-                        titleBar.BackgroundColor = Microsoft.UI.Colors.Black;
-                        titleBar.ForegroundColor = Microsoft.UI.Colors.White;
-                        titleBar.InactiveBackgroundColor = Microsoft.UI.Colors.DarkSlateGray;
-                        titleBar.InactiveForegroundColor = Microsoft.UI.Colors.Gray;
-                        titleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Black;
-                        titleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
-                        titleBar.ButtonHoverBackgroundColor = Microsoft.UI.Colors.DimGray;
-                        titleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.White;
-                        titleBar.ButtonPressedBackgroundColor = Microsoft.UI.Colors.Gray;
-                        titleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.White;
-                        titleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Black;
-                        titleBar.ButtonInactiveForegroundColor = Microsoft.UI.Colors.Gray;
-                    }
-                    else
-                    {
-                        // Light theme colors
-                        titleBar.BackgroundColor = Microsoft.UI.Colors.White;
-                        titleBar.ForegroundColor = Microsoft.UI.Colors.Black;
-                        titleBar.InactiveBackgroundColor = Microsoft.UI.Colors.LightGray;
-                        titleBar.InactiveForegroundColor = Microsoft.UI.Colors.Gray;
-                        titleBar.ButtonBackgroundColor = Microsoft.UI.Colors.White;
-                        titleBar.ButtonForegroundColor = Microsoft.UI.Colors.Black;
-                        titleBar.ButtonHoverBackgroundColor = Microsoft.UI.Colors.LightGray;
-                        titleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.Black;
-                        titleBar.ButtonPressedBackgroundColor = Microsoft.UI.Colors.Gray;
-                        titleBar.ButtonPressedForegroundColor = Microsoft.UI.Colors.Black;
-                        titleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.White;
-                        titleBar.ButtonInactiveForegroundColor = Microsoft.UI.Colors.Gray;
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // Title bar customization might not be supported on all systems
             }
         }
     }

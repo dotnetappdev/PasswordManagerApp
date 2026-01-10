@@ -9,7 +9,7 @@ public static class ResourceHelper
     {
         try
         {
-            if (Application.Current?.Resources != null && Application.Current.Resources.ContainsKey(key))
+            if (Application.Current?.Resources != null && Application.Current.Resources.Contains(key))
             {
                 return Application.Current.Resources[key] as T;
             }
@@ -25,7 +25,7 @@ public static class ResourceHelper
     {
         var brush = GetResource<Brush>(key);
         if (brush != null) return brush;
-        return fallback ?? new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        return fallback ?? new SolidColorBrush(Colors.Transparent);
     }
 
     public static Style? GetStyle(string key)

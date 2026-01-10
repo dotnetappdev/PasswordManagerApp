@@ -1,12 +1,13 @@
+using System;
+using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
-using System;
 
 namespace PasswordManager.WPF.Converters;
 
 public class WebsiteToIconConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is string website && !string.IsNullOrEmpty(website))
         {
@@ -19,7 +20,7 @@ public class WebsiteToIconConverter : IValueConverter
         return GetDefaultIcon();
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -88,27 +89,23 @@ public class WebsiteToColorConverter : IValueConverter
 {
     private readonly WebsiteToIconConverter _iconConverter = new();
 
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is string website && !string.IsNullOrEmpty(website))
         {
             var domain = _iconConverter.GetDomainFromUrl(website).ToLowerInvariant();
             var (_, color, _) = _iconConverter.GetIconForDomain(domain);
             
-            return new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255,
-                System.Convert.ToByte(color.Substring(1, 2), 16),
-                System.Convert.ToByte(color.Substring(3, 2), 16),
-                System.Convert.ToByte(color.Substring(5, 2), 16)));
+            var wpfColor = (Color)ColorConverter.ConvertFromString(color);
+            return new SolidColorBrush(wpfColor);
         }
         
         var defaultIcon = _iconConverter.GetDefaultIcon();
-        return new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255,
-            System.Convert.ToByte(defaultIcon.Color.Substring(1, 2), 16),
-            System.Convert.ToByte(defaultIcon.Color.Substring(3, 2), 16),
-            System.Convert.ToByte(defaultIcon.Color.Substring(5, 2), 16)));
+        var defaultColor = (Color)ColorConverter.ConvertFromString(defaultIcon.Color);
+        return new SolidColorBrush(defaultColor);
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -118,7 +115,7 @@ public class WebsiteToLetterConverter : IValueConverter
 {
     private readonly WebsiteToIconConverter _iconConverter = new();
 
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is string website && !string.IsNullOrEmpty(website))
         {
@@ -130,7 +127,7 @@ public class WebsiteToLetterConverter : IValueConverter
         return _iconConverter.GetDefaultIcon().Letter;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }

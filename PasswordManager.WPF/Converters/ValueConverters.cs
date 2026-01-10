@@ -1,14 +1,15 @@
+using System;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using PasswordManager.Models;
-using System.Reflection;
 
 namespace PasswordManager.WPF.Converters;
 
 public class TypeToIconConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is ItemType itemType)
         {
@@ -25,24 +26,20 @@ public class TypeToIconConverter : IValueConverter
         return "📄";
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
 }
 
-
-
-
-
 public class NotNullToVisibilityConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         return value != null ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -50,7 +47,7 @@ public class NotNullToVisibilityConverter : IValueConverter
 
 public class BoolToVisibilityConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is bool boolValue)
         {
@@ -59,7 +56,7 @@ public class BoolToVisibilityConverter : IValueConverter
         return Visibility.Collapsed;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is Visibility visibility)
         {
@@ -71,7 +68,7 @@ public class BoolToVisibilityConverter : IValueConverter
 
 public class InverseBoolToVisibilityConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is bool boolValue)
         {
@@ -80,7 +77,7 @@ public class InverseBoolToVisibilityConverter : IValueConverter
         return Visibility.Visible;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -88,7 +85,7 @@ public class InverseBoolToVisibilityConverter : IValueConverter
 
 public class BoolToInvertedVisibilityConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is bool boolValue)
         {
@@ -97,7 +94,7 @@ public class BoolToInvertedVisibilityConverter : IValueConverter
         return Visibility.Visible;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -105,7 +102,7 @@ public class BoolToInvertedVisibilityConverter : IValueConverter
 
 public class FirstTimeSetupToSubtitleConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is bool isFirstTimeSetup)
         {
@@ -116,7 +113,7 @@ public class FirstTimeSetupToSubtitleConverter : IValueConverter
         return "Enter your master password to continue";
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -124,12 +121,12 @@ public class FirstTimeSetupToSubtitleConverter : IValueConverter
 
 public class StringToVisibilityConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         return !string.IsNullOrWhiteSpace(value?.ToString()) ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -137,7 +134,7 @@ public class StringToVisibilityConverter : IValueConverter
 
 public class StatusToIconConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         return value?.ToString()?.ToLower() switch
         {
@@ -149,7 +146,7 @@ public class StatusToIconConverter : IValueConverter
         };
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -157,28 +154,20 @@ public class StatusToIconConverter : IValueConverter
 
 public class StatusToColorConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        var colorName = value?.ToString()?.ToLower() switch
-        {
-            "success" => "Green",
-            "error" => "Red",
-            "warning" => "Orange",
-            "skipped" => "Orange",
-            _ => "Gray"
-        };
-        // Map statuses to concrete brushes to avoid relying on resource keys that may be missing
+        // Map statuses to concrete brushes
         return value?.ToString()?.ToLower() switch
         {
-            "success" => new SolidColorBrush(Microsoft.UI.Colors.Green),
-            "error" => new SolidColorBrush(Microsoft.UI.Colors.Red),
-            "warning" => new SolidColorBrush(Microsoft.UI.Colors.Orange),
-            "skipped" => new SolidColorBrush(Microsoft.UI.Colors.Orange),
-            _ => new SolidColorBrush(Microsoft.UI.Colors.Gray)
+            "success" => new SolidColorBrush(Colors.Green),
+            "error" => new SolidColorBrush(Colors.Red),
+            "warning" => new SolidColorBrush(Colors.Orange),
+            "skipped" => new SolidColorBrush(Colors.Orange),
+            _ => new SolidColorBrush(Colors.Gray)
         };
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -186,7 +175,7 @@ public class StatusToColorConverter : IValueConverter
 
 public class ApiModeToVisibilityConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is string authMode)
         {
@@ -195,7 +184,7 @@ public class ApiModeToVisibilityConverter : IValueConverter
         return Visibility.Collapsed;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -203,7 +192,7 @@ public class ApiModeToVisibilityConverter : IValueConverter
 
 public class LocalModeToEnabledConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is string authMode)
         {
@@ -212,7 +201,7 @@ public class LocalModeToEnabledConverter : IValueConverter
         return true;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -220,7 +209,7 @@ public class LocalModeToEnabledConverter : IValueConverter
 
 public class DateFormatConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is DateTime dateTime)
         {
@@ -229,7 +218,7 @@ public class DateFormatConverter : IValueConverter
         return string.Empty;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -237,12 +226,12 @@ public class DateFormatConverter : IValueConverter
 
 public class NotNullToBoolConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         return value != null;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotSupportedException();
     }
@@ -250,7 +239,7 @@ public class NotNullToBoolConverter : IValueConverter
 
 public class DateToModifiedStringConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is DateTime dt)
         {
@@ -262,7 +251,7 @@ public class DateToModifiedStringConverter : IValueConverter
         return string.Empty;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -270,13 +259,13 @@ public class DateToModifiedStringConverter : IValueConverter
 
 public class NotNullToInvertedVisibilityConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         // Visible when null, collapsed when not null
         return value is null ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
@@ -284,13 +273,13 @@ public class NotNullToInvertedVisibilityConverter : IValueConverter
 
 public class BoolNegationConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is bool b) return !b;
         return true; // default to enabled when value is not a bool
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is bool b) return !b;
         return false;

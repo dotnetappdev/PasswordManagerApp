@@ -1,16 +1,19 @@
-using System.Windows.Dispatching;
 using System;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace PasswordManager.WPF.Helpers;
 
-public static class DispatcherQueueExtensions
+/// <summary>
+/// Extension methods for WPF Dispatcher to provide async operations similar to DispatcherQueue
+/// </summary>
+public static class DispatcherExtensions
 {
-    public static Task EnqueueAsync(this DispatcherQueue dispatcher, Func<Task> function)
+    public static Task InvokeAsync(this Dispatcher dispatcher, Func<Task> function)
     {
         var tcs = new TaskCompletionSource<bool>();
         
-        dispatcher.TryEnqueue(async () =>
+        dispatcher.InvokeAsync(async () =>
         {
             try
             {
@@ -26,11 +29,11 @@ public static class DispatcherQueueExtensions
         return tcs.Task;
     }
     
-    public static Task EnqueueAsync(this DispatcherQueue dispatcher, Action action)
+    public static Task InvokeAsync(this Dispatcher dispatcher, Action action)
     {
         var tcs = new TaskCompletionSource<bool>();
         
-        dispatcher.TryEnqueue(() =>
+        dispatcher.InvokeAsync(() =>
         {
             try
             {
@@ -47,11 +50,11 @@ public static class DispatcherQueueExtensions
     }
     
     // Overload for synchronous functions that return values
-    public static Task<T> EnqueueAsync<T>(this DispatcherQueue dispatcher, Func<T> function)
+    public static Task<T> InvokeAsync<T>(this Dispatcher dispatcher, Func<T> function)
     {
         var tcs = new TaskCompletionSource<T>();
         
-        dispatcher.TryEnqueue(() =>
+        dispatcher.InvokeAsync(() =>
         {
             try
             {
