@@ -89,13 +89,13 @@
                 </Border>
                 
                 <!-- Categories GridView -->
-                <GridView x:Name="CategoriesGridView"
+                <ListView x:Name="CategoriesGridView"
                          ItemsSource="{Binding Categories}"
                          Visibility="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibilityConverter}}"
                          SelectionMode="Single"
                          SelectionChanged="CategoriesGridView_SelectionChanged">
                     
-                    <GridView.ItemTemplate>
+                    <ListView.ItemTemplate>
                         <DataTemplate>
                             <Border Style="{StaticResource ModernCardStyle}" 
                                    Width="240"
@@ -173,17 +173,17 @@
                                 
                             </Border>
                         </DataTemplate>
-                    </GridView.ItemTemplate>
+                    </ListView.ItemTemplate>
                     
-                    <GridView.ItemContainerStyle>
+                    <ListView.ItemContainerStyle>
                         <Style TargetType="GridViewItem">
                             <Setter Property="Margin" Value="0,0,16,16"/>
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                             <Setter Property="VerticalContentAlignment" Value="Stretch"/>
                         </Style>
-                    </GridView.ItemContainerStyle>
+                    </ListView.ItemContainerStyle>
                     
-                </GridView>
+                </ListView>
                 
                 <!-- Empty State -->
                 <Border Style="{StaticResource ModernElevatedCardStyle}"

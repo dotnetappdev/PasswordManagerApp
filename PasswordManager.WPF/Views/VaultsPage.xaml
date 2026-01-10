@@ -63,7 +63,7 @@
                               Style="{StaticResource ModernHeading4Style}"/>
                     
                     <ListView x:Name="VaultsListView"
-                             ItemsSource="{x:Bind ViewModel.Vaults, Mode=OneWay}"
+                             ItemsSource="{Binding ViewModel.Vaults}"
                              SelectionMode="Single">
                         <ListView.ItemTemplate>
                             <DataTemplate>

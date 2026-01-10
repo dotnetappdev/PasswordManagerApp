@@ -80,18 +80,7 @@
                       Style="{StaticResource ModernSecondaryButtonStyle}"
                       Click="SortButton_Click"
                       IsEnabled="{Binding AllPasswordItems.Count, Converter={StaticResource NotZeroToBoolConverter}}">
-                  <Button.Flyout>
-                      <MenuFlyout Placement="Bottom" x:Name="SortFlyout">
-                          <MenuFlyoutItem Text="Title" Click="SortBy_Title_Click"/>
-                          <MenuFlyoutItem Text="Date Created" Click="SortBy_Created_Click"/>
-                          <MenuFlyoutItem Text="Date Modified" Click="SortBy_Modified_Click"/>
-                          <MenuFlyoutItem Text="Frequently Used" Click="SortBy_FrequentlyUsed_Click"/>
-                          <MenuFlyoutItem Text="Recently Used" Click="SortBy_RecentlyUsed_Click"/>
-                          <MenuFlyoutSeparator />
-                          <MenuFlyoutItem Text="Newest First" Click="SortBy_NewestFirst_Click"/>
-                          <MenuFlyoutItem Text="Oldest First" Click="SortBy_OldestFirst_Click"/>
-                      </MenuFlyout>
-                  </Button.Flyout>
+                  <!-- Note: WPF doesn't support Button.Flyout. Functionality moved to Click event handler -->
                   <StackPanel Orientation="Horizontal" Margin="8">
                       <TextBlock Text="&#xE71D;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource ModernTextPrimaryBrush}"/>
                       <TextBlock Text="Sort" Foreground="{StaticResource ModernTextPrimaryBrush}" />
@@ -215,7 +204,7 @@
                                         
                                         <!-- Favorite Icon -->
                                         <TextBlock FontFamily="Segoe MDL2 Assets" Grid.Column="2" 
-                                                 Glyph="&#xE734;" 
+                                                 Text="&#xE734;" 
                                                  FontSize="14"
                                                  Foreground="#f59e0b"
                                                  VerticalAlignment="Center"

@@ -16,8 +16,7 @@
           MaxWidth="450"
           MaxHeight="500">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="24"
-                        Margin="32">
+            <StackPanel Margin="32">
 
                 <!-- Error Message -->
                 <Border x:Name="ErrorMessageBorder"

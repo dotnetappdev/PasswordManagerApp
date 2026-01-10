@@ -51,15 +51,16 @@
                     </StackPanel>
                     
                     <StackPanel Margin="16">
-                        <ToggleSwitch x:Name="TwoFactorToggle"
-                                     Header="Enable Two-Factor Authentication" 
-                                     IsOn="{Binding EnableTwoFactor, Mode=TwoWay}"
-                                     Toggled="TwoFactorToggle_Toggled"/>
+                        <CheckBox x:Name="TwoFactorToggle"
+                                     Content="Enable Two-Factor Authentication" 
+                                     IsChecked="{Binding EnableTwoFactor, Mode=TwoWay}"
+                                     Checked="TwoFactorToggle_Toggled"
+                                     Unchecked="TwoFactorToggle_Toggled"/>
                         
-                        <ToggleSwitch x:Name="PasscodeToggle"
-                                     Header="Require Passcode on Startup" 
-                                     IsOn="{Binding RequirePasscode, Mode=TwoWay}"
-                                     Toggled="PasscodeToggle_Toggled"/>
+                        <CheckBox x:Name="PasscodeToggle"
+                                     Content="Require Passcode on Startup" 
+                                     IsChecked="{Binding RequirePasscode, Mode=TwoWay}"
+                                     Checked="PasscodeToggle_Toggled"/>
                         
                         <Button x:Name="ChangePasswordButton"
                                Style="{StaticResource ModernSecondaryButtonStyle}"
@@ -232,10 +233,10 @@
                             </StackPanel>
                         </Button>
                         
-                        <ToggleSwitch x:Name="SyncToggle"
-                                     Header="Enable Cloud Sync" 
-                                     IsOn="{Binding EnableSync, Mode=TwoWay}"
-                                     Toggled="SyncToggle_Toggled"/>
+                        <CheckBox x:Name="SyncToggle"
+                                     Content="Enable Cloud Sync" 
+                                     IsChecked="{Binding EnableSync, Mode=TwoWay}"
+                                     Checked="SyncToggle_Toggled"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -260,10 +261,10 @@
                     </StackPanel>
                     
                     <StackPanel Margin="16">
-                        <ToggleSwitch x:Name="CloudBackupToggle"
-                                     Header="Enable Cloud Backup" 
-                                     IsOn="{Binding EnableCloudBackup, Mode=TwoWay}"
-                                     Toggled="CloudBackupToggle_Toggled"/>
+                        <CheckBox x:Name="CloudBackupToggle"
+                                     Content="Enable Cloud Backup" 
+                                     IsChecked="{Binding EnableCloudBackup, Mode=TwoWay}"
+                                     Checked="CloudBackupToggle_Toggled"/>
                         
                         <StackPanel Margin="8" Visibility="{Binding EnableCloudBackup, Converter={StaticResource BoolToVisibilityConverter}}">
                             <TextBlock Text="Cloud Provider" 
@@ -289,7 +290,7 @@
                                 <TextBox x:Name="NetworkPathTextBox"
                                         Text="{Binding NetworkPath, Mode=TwoWay}"
                                         ui:ControlHelper.PlaceholderText="\\server\share\folder or Z:\backups"
-                                        Header="Network Path"
+                                        Content="Network Path"
                                         Style="{StaticResource ModernTextBoxStyle}"
                                         MinWidth="300"/>
                                         
@@ -311,7 +312,7 @@
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>
                             
-                            <ComboBox Header="Schedule Frequency"
+                            <ComboBox Content="Schedule Frequency"
                                      ItemsSource="{Binding ScheduleIntervalOptions}"
                                      SelectedValue="{Binding BackupScheduleInterval, Mode=TwoWay}"
                                      SelectedValuePath="Interval"

@@ -14,7 +14,7 @@
 
 
     <Grid Background="Transparent"
-          Padding="0,8,0,8">
+          Margin="0,8,0,8">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="Auto"/>

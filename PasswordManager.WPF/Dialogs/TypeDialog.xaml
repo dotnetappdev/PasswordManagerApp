@@ -16,8 +16,7 @@
           MaxWidth="480"
           MaxHeight="600">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="24"
-                        Margin="32">
+            <StackPanel Margin="32">
 
                 <!-- Error Message -->
                 <Border x:Name="ErrorMessageBorder"
@@ -108,7 +107,7 @@
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
                                                 Margin="12">
-                                        <FontIcon Glyph="&#xE192;"
+                                        <TextBlock Text="&#xE192;" FontFamily="Segoe MDL2 Assets"
                                                   FontSize="18"
                                                   Foreground="#3b82f6"/>
                                         <TextBlock Text="Login"
@@ -119,7 +118,7 @@
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
                                                 Margin="12">
-                                        <FontIcon Glyph="&#xE8C7;"
+                                        <TextBlock Text="&#xE8C7;" FontFamily="Segoe MDL2 Assets"
                                                   FontSize="18"
                                                   Foreground="#10b981"/>
                                         <TextBlock Text="Credit Card"
@@ -130,7 +129,7 @@
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
                                                 Margin="12">
-                                        <FontIcon Glyph="&#xE70F;"
+                                        <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets"
                                                   FontSize="18"
                                                   Foreground="#f59e0b"/>
                                         <TextBlock Text="Secure Note"
@@ -141,7 +140,7 @@
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
                                                 Margin="12">
-                                        <FontIcon Glyph="&#xE701;"
+                                        <TextBlock Text="&#xE701;" FontFamily="Segoe MDL2 Assets"
                                                   FontSize="18"
                                                   Foreground="#8b5cf6"/>
                                         <TextBlock Text="WiFi Password"
@@ -152,7 +151,7 @@
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
                                                 Margin="12">
-                                        <FontIcon Glyph="&#xE8D7;"
+                                        <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets"
                                                   FontSize="18"
                                                   Foreground="#ec4899"/>
                                         <TextBlock Text="Passkey"
@@ -163,7 +162,7 @@
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
                                                 Margin="12">
-                                        <FontIcon Glyph="&#xE77B;"
+                                        <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets"
                                                   FontSize="18"
                                                   Foreground="#ef4444"/>
                                         <TextBlock Text="Identity"
@@ -174,7 +173,7 @@
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
                                                 Margin="12">
-                                        <FontIcon Glyph="&#xE8FD;"
+                                        <TextBlock Text="&#xE8FD;" FontFamily="Segoe MDL2 Assets"
                                                   FontSize="18"
                                                   Foreground="#6b7280"/>
                                         <TextBlock Text="Document"
@@ -185,7 +184,7 @@
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
                                                 Margin="12">
-                                        <FontIcon Glyph="&#xE734;"
+                                        <TextBlock Text="&#xE734;" FontFamily="Segoe MDL2 Assets"
                                                   FontSize="18"
                                                   Foreground="#059669"/>
                                         <TextBlock Text="Other"

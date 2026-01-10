@@ -287,7 +287,6 @@
                         <!-- Master Password -->
                         <StackPanel Grid.Row="0"
                                 Orientation="Horizontal"
-                                Margin="12"
                                 Margin="0,0,0,12">
                             <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets"
                                       FontSize="16"
@@ -307,7 +306,6 @@
                         <!-- Two-Factor Authentication -->
                         <StackPanel Grid.Row="1"
                                 Orientation="Horizontal"
-                                Margin="12"
                                 Margin="0,0,0,12">
                             <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
                                       FontSize="16"

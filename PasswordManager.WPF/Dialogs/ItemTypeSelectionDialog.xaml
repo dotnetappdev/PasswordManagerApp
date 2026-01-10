@@ -5,11 +5,11 @@
                Title="What would you like to add?"
                PrimaryButtonText=""
                CloseButtonText="Cancel"
-               PrimaryButtonClick="ui:ContentDialog_PrimaryButtonClick"
+               PrimaryButtonClick="ContentDialog_PrimaryButtonClick"
                Background="{StaticResource ModernFormBackgroundBrush}"
                Style="{StaticResource Modern1PasswordDialogStyle}"
-               PrimaryButtonStyle="{StaticResource ui:ContentDialogPrimaryButtonStyle}"
-               CloseButtonStyle="{StaticResource ui:ContentDialogSecondaryButtonStyle}"
+               PrimaryButtonStyle="{StaticResource ContentDialogPrimaryButtonStyle}"
+               CloseButtonStyle="{StaticResource ContentDialogSecondaryButtonStyle}"
                MaxWidth="700"
                MaxHeight="650">
 
@@ -53,7 +53,7 @@
                                 CornerRadius="12"
                                 Width="48"
                                 Height="48">
-                            <FontIcon Glyph="&#xE192;"
+                            <TextBlock Text="&#xE192;" FontFamily="Segoe MDL2 Assets"
                                       FontSize="24"
                                       Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
@@ -80,7 +80,7 @@
                                 CornerRadius="12"
                                 Width="48"
                                 Height="48">
-                            <FontIcon Glyph="&#xE8C7;"
+                            <TextBlock Text="&#xE8C7;" FontFamily="Segoe MDL2 Assets"
                                       FontSize="24"
                                       Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
@@ -107,7 +107,7 @@
                                 CornerRadius="12"
                                 Width="48"
                                 Height="48">
-                            <FontIcon Glyph="&#xE70F;"
+                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets"
                                       FontSize="24"
                                       Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
@@ -135,7 +135,7 @@
                                 CornerRadius="12"
                                 Width="48"
                                 Height="48">
-                            <FontIcon Glyph="&#xE701;"
+                            <TextBlock Text="&#xE701;" FontFamily="Segoe MDL2 Assets"
                                       FontSize="24"
                                       Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
@@ -162,7 +162,7 @@
                                 CornerRadius="12"
                                 Width="48"
                                 Height="48">
-                            <FontIcon Glyph="&#xE1F5;"
+                            <TextBlock Text="&#xE1F5;" FontFamily="Segoe MDL2 Assets"
                                       FontSize="24"
                                       Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
@@ -189,7 +189,7 @@
                                 CornerRadius="12"
                                 Width="48"
                                 Height="48">
-                            <FontIcon Glyph="&#xE8D7;"
+                            <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets"
                                       FontSize="24"
                                       Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"

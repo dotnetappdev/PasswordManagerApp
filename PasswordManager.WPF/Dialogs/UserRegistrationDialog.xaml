@@ -6,10 +6,9 @@
                PrimaryButtonText="Create Account"
                SecondaryButtonText="Cancel"
                DefaultButton="Primary"
-               Background="#404040"
-               RequestedTheme="Dark">
+               Background="#404040">
 
-    <ui:ContentDialog xmlns:ui="http://schemas.modernwpf.com/2019".Resources>
+    <ui:ContentDialog.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
     </ui:ContentDialog.Resources>
 
@@ -255,7 +254,7 @@
                             BorderThickness="1"
                             Padding="12">
                         <StackPanel Orientation="Horizontal" Margin="8">
-                            <FontIcon Glyph="&#xE946;" 
+                            <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets" 
                                      FontSize="16" 
                                      Foreground="#4A90E2"
                                      VerticalAlignment="Top"/>
@@ -280,7 +279,7 @@
                     Padding="16,12"
                     Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal" Margin="8">
-                    <FontIcon Glyph="&#xE783;"
+                    <TextBlock Text="&#xE783;" FontFamily="Segoe MDL2 Assets"
                               FontSize="16"
                               Foreground="#DC2626"/>
                     <TextBlock x:Name="ErrorMessageTextBlock"
