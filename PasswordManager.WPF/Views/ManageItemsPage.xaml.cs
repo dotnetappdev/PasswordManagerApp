@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Models;
-using PasswordManager.WinUi.Dialogs;
+using PasswordManager.WPF.Dialogs;
 using PasswordManager.Services.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -34,7 +34,7 @@ public sealed partial class ManageItemsPage : Page
         LoadPredefinedTypes();
     }
 
-    protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
 

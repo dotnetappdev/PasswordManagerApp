@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.WinUi.ViewModels;
+using PasswordManager.WPF.ViewModels;
 using PasswordManager.Models;
 using System;
 using System.Threading.Tasks;
@@ -64,7 +64,7 @@ public sealed partial class VaultsPage : Page
         }
     }
 
-    protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    public void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
         

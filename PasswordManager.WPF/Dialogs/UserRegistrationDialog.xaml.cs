@@ -9,7 +9,6 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.UI;
 
 namespace PasswordManager.WPF.Dialogs;
 
@@ -476,13 +475,13 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
     {
         if (hasError)
         {
-            border.BorderBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                Microsoft.UI.Colors.Red);
+            border.BorderBrush = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Colors.Red);
             border.BorderThickness = new Thickness(2);
         }
         else
         {
-            border.BorderBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+            border.BorderBrush = new System.Windows.Media.SolidColorBrush(
                 Color.FromArgb(255, 74, 74, 74)); // #4A4A4A
             border.BorderThickness = new Thickness(1);
         }
@@ -526,15 +525,15 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
 
         var (strength, color) = score switch
         {
-            5 => ("Very Strong", Microsoft.UI.Colors.Green),
-            4 => ("Strong", Microsoft.UI.Colors.LightGreen),
-            3 => ("Medium", Microsoft.UI.Colors.Orange),
-            2 => ("Weak", Microsoft.UI.Colors.OrangeRed),
-            _ => ("Very Weak", Microsoft.UI.Colors.Red)
+            5 => ("Very Strong", System.Windows.Media.Colors.Green),
+            4 => ("Strong", System.Windows.Media.Colors.LightGreen),
+            3 => ("Medium", System.Windows.Media.Colors.Orange),
+            2 => ("Weak", System.Windows.Media.Colors.OrangeRed),
+            _ => ("Very Weak", System.Windows.Media.Colors.Red)
         };
 
         PasswordStrengthText.Text = $"Password strength: {strength}";
-        PasswordStrengthBar.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(color);
+        PasswordStrengthBar.Foreground = new System.Windows.Media.SolidColorBrush(color);
     }
 
     private int CalculatePasswordStrength(string password)

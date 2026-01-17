@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
-using PasswordManager.WinUi.ViewModels;
+using PasswordManager.WPF.ViewModels;
 using PasswordManager.Models;
 using System;
 using System.Diagnostics;
@@ -23,7 +23,7 @@ public sealed partial class DashboardPage : Page
         InitializeComponent();
     }
 
-    protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    public void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
 

@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
-using PasswordManager.WinUi.ViewModels;
+using PasswordManager.WPF.ViewModels;
 using PasswordManager.Models.DTOs.Auth;
 using PasswordManager.Models;
 using Microsoft.AspNetCore.Identity;
@@ -42,7 +42,7 @@ public sealed partial class LoginPage : Page
         }
     }
 
-    protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    public void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
         if (e.Parameter is IServiceProvider serviceProvider)

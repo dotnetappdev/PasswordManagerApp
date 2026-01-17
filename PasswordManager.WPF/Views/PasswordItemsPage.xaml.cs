@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.WinUi.ViewModels;
-using PasswordManager.WinUi.Helpers;
-using PasswordManager.WinUi.Models;
+using PasswordManager.WPF.ViewModels;
+using PasswordManager.WPF.Helpers;
+using PasswordManager.WPF.Models;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
 using System.Linq;
@@ -42,7 +42,7 @@ public sealed partial class PasswordItemsPage : Page
         }
     }
 
-    protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
 
@@ -176,7 +176,7 @@ public sealed partial class PasswordItemsPage : Page
         var allStackPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
         allStackPanel.Children.Add(new Border
         {
-            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LightGray),
+            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.LightGray),
             CornerRadius = new CornerRadius(4),
             Width = 16,
             Height = 16
@@ -193,14 +193,14 @@ public sealed partial class PasswordItemsPage : Page
             var stackPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
 
             // Add color indicator
-            var colorBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush();
-            if (!string.IsNullOrEmpty(category.Color) && Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(Microsoft.UI.Xaml.Media.SolidColorBrush), category.Color) is Microsoft.UI.Xaml.Media.SolidColorBrush brush)
+            var colorBrush = new System.Windows.Media.SolidColorBrush();
+            if (!string.IsNullOrEmpty(category.Color) && Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(System.Windows.Media.SolidColorBrush), category.Color) is System.Windows.Media.SolidColorBrush brush)
             {
                 colorBrush = brush;
             }
             else
             {
-                colorBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray);
+                colorBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Gray);
             }
 
             stackPanel.Children.Add(new Border
@@ -231,7 +231,7 @@ public sealed partial class PasswordItemsPage : Page
                         {
                             Text = $"({count})",
                             FontSize = 12,
-                            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray),
+                            Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Gray),
                             Margin = new Thickness(4, 0, 0, 0)
                         });
                     }
@@ -285,7 +285,7 @@ public sealed partial class PasswordItemsPage : Page
             var allItemsBtn = this.FindName("AllItemsButton") as Button;
             if (allItemsBtn != null)
             {
-                allItemsBtn.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                allItemsBtn.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent);
             }
 
             // Example: if there are more named filter buttons, try to reset them too
@@ -295,14 +295,14 @@ public sealed partial class PasswordItemsPage : Page
                 var btn = this.FindName(name) as Button;
                 if (btn != null)
                 {
-                    btn.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                    btn.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent);
                 }
             }
 
             // Set selected button style if provided (defensive resource lookup)
             if (selectedButton != null)
             {
-                selectedButton.Background = Helpers.ResourceHelper.GetBrush("ModernPrimaryBrush", new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent));
+                selectedButton.Background = Helpers.ResourceHelper.GetBrush("ModernPrimaryBrush", new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent));
             }
         }
         catch
@@ -458,12 +458,12 @@ public sealed partial class PasswordItemsPage : Page
             {
                 var originalText = contentSubtitle.Text;
                 contentSubtitle.Text = $"✓ {message}";
-                contentSubtitle.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Green);
+                contentSubtitle.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Green);
 
                 // Reset after a delay
                 await Task.Delay(2000);
                 contentSubtitle.Text = originalText;
-                contentSubtitle.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray);
+                contentSubtitle.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Gray);
             }
             else
             {
@@ -950,7 +950,7 @@ public sealed partial class PasswordItemsPage : Page
         }
     }
 
-    private void ItemsList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+    private void ItemsList_DoubleTapped(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         var list = GetElement<ListView>("ItemsList");
         if (list != null && list.SelectedItem is PasswordItem item)
@@ -1140,7 +1140,7 @@ public sealed partial class PasswordItemsPage : Page
         var allStackPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
         allStackPanel.Children.Add(new Border
         {
-            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LightGray),
+            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.LightGray),
             CornerRadius = new CornerRadius(4),
             Width = 16,
             Height = 16
@@ -1162,14 +1162,14 @@ public sealed partial class PasswordItemsPage : Page
             var stackPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
 
             // Add color indicator
-            var colorBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush();
-            if (!string.IsNullOrEmpty(category.Color) && Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(Microsoft.UI.Xaml.Media.SolidColorBrush), category.Color) is Microsoft.UI.Xaml.Media.SolidColorBrush brush)
+            var colorBrush = new System.Windows.Media.SolidColorBrush();
+            if (!string.IsNullOrEmpty(category.Color) && Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(System.Windows.Media.SolidColorBrush), category.Color) is System.Windows.Media.SolidColorBrush brush)
             {
                 colorBrush = brush;
             }
             else
             {
-                colorBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray);
+                colorBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Gray);
             }
 
             stackPanel.Children.Add(new Border

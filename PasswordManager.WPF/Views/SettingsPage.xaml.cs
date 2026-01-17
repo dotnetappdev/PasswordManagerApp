@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Models.DTOs;
 using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.WinUi.ViewModels;
+using PasswordManager.WPF.ViewModels;
 using PasswordManager.Services.Utilities;
 using PasswordManager.Imports.Interfaces;
 using System.Linq;
@@ -27,7 +27,7 @@ public sealed partial class SettingsPage : Page
         _logger = new FileLogger();
     }
 
-    protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
 
@@ -414,7 +414,7 @@ public sealed partial class SettingsPage : Page
                     {
                         Content = $"{user.Email} ({user.FirstName} {user.LastName})".Trim(),
                         Tag = user.Id,
-                        Margin = new Microsoft.UI.Xaml.Thickness(4)
+                        Margin = new System.Windows.Thickness(4)
                     };
                     UserSelectionListView.Items.Add(checkBox);
                 }
@@ -885,7 +885,7 @@ public sealed partial class SettingsPage : Page
         {
             Header = "Connection String",
             PlaceholderText = "Enter database connection string...",
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            TextWrapping = System.Windows.TextWrapping.Wrap,
             AcceptsReturn = true,
             MinHeight = 80,
             Text = _viewModel?.DatabaseConnectionString ?? ""
@@ -902,7 +902,7 @@ public sealed partial class SettingsPage : Page
         var testButton = new Button
         {
             Content = "Test Connection",
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 8, 0, 0)
+            Margin = new System.Windows.Thickness(0, 8, 0, 0)
         };
 
         var stackPanel = new StackPanel { Spacing = 16 };
@@ -1100,9 +1100,9 @@ public sealed partial class SettingsPage : Page
 
         var errorTextBlock = new TextBlock
         {
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Visibility = Microsoft.UI.Xaml.Visibility.Collapsed
+            Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red),
+            TextWrapping = System.Windows.TextWrapping.Wrap,
+            Visibility = System.Windows.Visibility.Collapsed
         };
 
         var stackPanel = new StackPanel { Spacing = 16 };

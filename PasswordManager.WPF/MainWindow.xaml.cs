@@ -467,7 +467,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async void NavigationItem_RightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
+    private async void NavigationItem_RightTapped(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         // Handle right-click context menu functionality for navigation items
         if (sender is ModernWpf.Controls.ModernWpf.Controls.NavigationViewItem navItem)
@@ -667,7 +667,7 @@ public sealed partial class MainWindow : Window
                     {
                         if (!string.IsNullOrWhiteSpace(tag.Color))
                         {
-                            var color = Microsoft.UI.Colors.Transparent;
+                            var color = System.Windows.Media.Colors.Transparent;
                             // Expecting hex like #rrggbb
                             if (tag.Color.StartsWith("#"))
                             {
@@ -681,7 +681,7 @@ public sealed partial class MainWindow : Window
                                 }
                             }
 
-                            if (color != Microsoft.UI.Colors.Transparent)
+                            if (color != System.Windows.Media.Colors.Transparent)
                                 border.Background = new SolidColorBrush(color);
                         }
                     }
@@ -690,7 +690,7 @@ public sealed partial class MainWindow : Window
                     var txt = new TextBlock
                     {
                         Text = tag.Name,
-                        Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
+                        Foreground = new SolidColorBrush(System.Windows.Media.Colors.White),
                         FontSize = 13,
                         VerticalAlignment = VerticalAlignment.Center
                     };
@@ -701,7 +701,7 @@ public sealed partial class MainWindow : Window
                     var btn = new Button
                     {
                         Content = border,
-                        Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                        Background = new SolidColorBrush(System.Windows.Media.Colors.Transparent),
                         BorderThickness = new Thickness(0),
                         Padding = new Thickness(0),
                         HorizontalAlignment = HorizontalAlignment.Left
