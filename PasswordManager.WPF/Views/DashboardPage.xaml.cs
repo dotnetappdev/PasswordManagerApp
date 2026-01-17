@@ -1,3 +1,4 @@
+using ModernWpf.Controls;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +14,7 @@ namespace PasswordManager.WPF.Views;
 /// <summary>
 /// Main dashboard page showing password items and navigation
 /// </summary>
-public sealed partial class DashboardPage : Page
+public sealed partial class DashboardPage : System.Windows.Controls.Page
 {
     private IServiceProvider? _serviceProvider;
     private DashboardViewModel? _viewModel;

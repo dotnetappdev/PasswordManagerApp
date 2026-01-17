@@ -36,7 +36,7 @@ public sealed partial class ItemTypeSelectionDialog : ModernWpf.Controls.Content
         }
     }
 
-    private void ModernWpf.Controls.ContentDialog_PrimaryButtonClick(ModernWpf.Controls.ContentDialog sender, ModernWpf.Controls.ContentDialogButtonClickEventArgs args)
+    private void ContentDialog_PrimaryButtonClick(ModernWpf.Controls.ContentDialog sender, ModernWpf.Controls.ContentDialogButtonClickEventArgs args)
     {
         // Handle primary button if needed - categories are selected via button clicks now
         if (SelectedItemType == null)

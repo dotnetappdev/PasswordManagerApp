@@ -34,9 +34,9 @@ public sealed partial class LoginPage : Page
         }
     }
 
-    private async void MasterPasswordBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    private async void MasterPasswordBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        if (e.Key == Windows.System.VirtualKey.Enter)
+        if (e.Key == System.Windows.Input.Key.Enter)
         {
             await DoPrimaryActionAsync();
         }

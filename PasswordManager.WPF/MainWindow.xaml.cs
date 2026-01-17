@@ -1,3 +1,4 @@
+using ModernWpf.Controls;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -76,11 +77,11 @@ public sealed partial class MainWindow : Window
         {
             // Show login frame and hide main navigation
             LoginFrame.Visibility = Visibility.Visible;
-            MainModernWpf.Controls.NavigationView.Visibility = Visibility.Collapsed;
+            MainNavigationView.Visibility = Visibility.Collapsed;
         }
     }
 
-    private void MainModernWpf.Controls.NavigationView_SelectionChanged(ModernWpf.Controls.NavigationView sender, ModernWpf.Controls.NavigationViewSelectionChangedEventArgs args)
+    private void MainNavigationView_SelectionChanged(ModernWpf.Controls.NavigationView sender, ModernWpf.Controls.NavigationViewSelectionChangedEventArgs args)
     {
         // Only allow navigation if authenticated
         if (!_isAuthenticated)

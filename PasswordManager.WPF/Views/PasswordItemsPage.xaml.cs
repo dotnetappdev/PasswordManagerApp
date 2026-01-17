@@ -1,3 +1,4 @@
+using ModernWpf.Controls;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +15,7 @@ using System;
 
 namespace PasswordManager.WPF.Views;
 
-public sealed partial class PasswordItemsPage : Page
+public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 {
     private PasswordItemsViewModel? _viewModel;
     private IServiceProvider? _serviceProvider;

@@ -20,10 +20,7 @@ public sealed partial class CategoriesPage : Page
     }
 
     // Helper to prefer the main window XamlRoot so dialogs center on the app window
-    private Microsoft.UI.Xaml.XamlRoot? GetMainXamlRoot()
-    {
-        return (App.Current as App)?.MainWindow?.Content?.XamlRoot;
-    }
+    // WPF: GetMainXamlRoot() removed - not needed
 
     /// <summary>
     /// Helper method to properly configure dialog for centering
@@ -36,11 +33,11 @@ public sealed partial class CategoriesPage : Page
             var mainXamlRoot = GetMainXamlRoot();
             if (mainXamlRoot != null)
             {
-                dialog.XamlRoot = mainXamlRoot;
+                // WPF: XamlRoot not needed
             }
             else if (this.XamlRoot != null)
             {
-                dialog.XamlRoot = this.XamlRoot;
+                // WPF: XamlRoot not needed
             }
             
             // Ensure the dialog uses the proper style for centering if it doesn't have one already
@@ -58,7 +55,7 @@ public sealed partial class CategoriesPage : Page
             // Fallback to page XamlRoot
             if (this.XamlRoot != null)
             {
-                dialog.XamlRoot = this.XamlRoot;
+                // WPF: XamlRoot not needed
             }
         }
     }
