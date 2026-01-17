@@ -12,6 +12,7 @@ using PasswordManager.Models;
 using PasswordManager.Services;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
+using System.IO;
 
 #if FALSE
 using PasswordManager.WPF.Services.FileLogging;

@@ -37,16 +37,14 @@ public sealed partial class MainWindow : Window
     {
         _serviceProvider = serviceProvider;
         this.InitializeComponent();
-        this.Title = "Password Manager - WinUI";
+        this.Title = "Password Manager - WPF";
 
         // Set window size
-        this.AppWindow.Resize(new Windows.Graphics.SizeInt32(1200, 800));
+        this.Width = 1200;
+        this.Height = 800;
 
         // Cache style early (after resources loaded by InitializeComponent)
         _navItemStyle = TryGetNavItemStyle();
-
-        // Register ModernWpf.Controls.NavigationView with ThemeHelper so it updates correctly
-        ThemeHelper.SetModernWpf.Controls.NavigationView(MainModernWpf.Controls.NavigationView);
 
         // Initialize navigation - start with Login if not authenticated, otherwise Home
         InitializeNavigation();
@@ -71,7 +69,7 @@ public sealed partial class MainWindow : Window
         {
             // Hide login frame and show main navigation
             LoginFrame.Visibility = Visibility.Collapsed;
-            MainModernWpf.Controls.NavigationView.Visibility = Visibility.Visible;
+            MainNavigationView.Visibility = Visibility.Visible;
         }
         else
         {
@@ -91,7 +89,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        if (args.SelectedItem is ModernWpf.Controls.ModernWpf.Controls.NavigationViewItem selectedItem)
+        if (args.SelectedItem is ModernWpf.Controls.NavigationViewItem selectedItem)
         {
             string tag = selectedItem.Tag?.ToString() ?? "";
 
@@ -273,10 +271,10 @@ public sealed partial class MainWindow : Window
                     NavigateToPage("AllItems");
 
                     // Apply auto-filter with slight delay to ensure page is loaded
-                    System.Windows.Threading.Dispatcher.GetForCurrentThread().TryEnqueue(() =>
+                    Dispatcher.BeginInvoke(new Action(() =>
                     {
                         PassSearchQueryToPage(query);
-                    });
+                    }));
                 }
                 catch (Exception ex)
                 {
@@ -291,10 +289,10 @@ public sealed partial class MainWindow : Window
                 {
                     try
                     {
-                        System.Windows.Threading.Dispatcher.GetForCurrentThread().TryEnqueue(() =>
+                        Dispatcher.BeginInvoke(new Action(() =>
                         {
                             PassSearchQueryToPage("");
-                        });
+                        }));
                     }
                     catch (Exception ex)
                     {
@@ -317,29 +315,29 @@ public sealed partial class MainWindow : Window
                 NavigateToPage("AllItems");
 
                 // Use a more reliable way to pass search query
-                System.Windows.Threading.Dispatcher.GetForCurrentThread().TryEnqueue(() =>
+                Dispatcher.BeginInvoke(new Action(() =>
                 {
                     PassSearchQueryToPage(searchQuery);
-                });
+                }));
 
                 // Provide visual feedback
                 sender.PlaceholderText = $"Searching for '{searchQuery}'...";
 
                 // Reset placeholder after a delay
-                System.Windows.Threading.Dispatcher.GetForCurrentThread().TryEnqueue(
-                    System.Windows.Threading.DispatcherPriority.Low, () =>
+                Dispatcher.BeginInvoke(
+                    System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
                 {
                     Task.Delay(3000).ContinueWith(_ =>
                     {
-                        System.Windows.Threading.Dispatcher.GetForCurrentThread().TryEnqueue(() =>
+                        Dispatcher.BeginInvoke(new Action(() =>
                         {
                             if (sender.PlaceholderText.StartsWith("Searching"))
                             {
                                 sender.PlaceholderText = "Search passwords...";
                             }
-                        });
+                        }));
                     });
-                });
+                }));
             }
             catch (Exception ex)
             {
@@ -395,7 +393,7 @@ public sealed partial class MainWindow : Window
         }
 
         SetAuthenticationState(true);
-        MainModernWpf.Controls.NavigationView.SelectedItem = AllItemsNavItem;
+        MainNavigationView.SelectedItem = AllItemsNavItem;
         NavigateToPage("AllItems");
     }
 
@@ -409,7 +407,7 @@ public sealed partial class MainWindow : Window
         SetAuthenticationState(false);
 
         // Clear navigation selection
-        MainModernWpf.Controls.NavigationView.SelectedItem = null;
+        MainNavigationView.SelectedItem = null;
 
         // Navigate back to login
         LoginFrame.Navigate(typeof(Views.LoginPage), _serviceProvider);
@@ -456,8 +454,7 @@ public sealed partial class MainWindow : Window
             Content = "Are you sure you want to sign out?",
             PrimaryButtonText = "Sign Out",
             CloseButtonText = "Cancel",
-            DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
-            XamlRoot = this.Content.XamlRoot
+            DefaultButton = ModernWpf.Controls.ContentDialogButton.Close
         };
 
         var result = await dialog.ShowAsync();
@@ -471,14 +468,14 @@ public sealed partial class MainWindow : Window
     private async void NavigationItem_RightTapped(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         // Handle right-click context menu functionality for navigation items
-        if (sender is ModernWpf.Controls.ModernWpf.Controls.NavigationViewItem navItem)
+        if (sender is ModernWpf.Controls.NavigationViewItem navItem)
         {
             var tag = navItem.Tag?.ToString();
 
             // For now, just select the item if it's not already selected
-            if (MainModernWpf.Controls.NavigationView.SelectedItem != navItem)
+            if (MainNavigationView.SelectedItem != navItem)
             {
-                MainModernWpf.Controls.NavigationView.SelectedItem = navItem;
+                MainNavigationView.SelectedItem = navItem;
                 if (!string.IsNullOrEmpty(tag))
                 {
                     NavigateToPage(tag);
@@ -565,66 +562,24 @@ public sealed partial class MainWindow : Window
                 
                 foreach (var category in favoriteCategories)
                 {
-                    var navItem = new ModernWpf.Controls.ModernWpf.Controls.NavigationViewItem
+                    var navItem = new ModernWpf.Controls.NavigationViewItem
                     {
                         Content = category.Name,
                         Tag = $"{category.Name}Category",
                         Style = _navItemStyle
                     };
                     
-                    // Set icon if available
+                    // Set icon if available (using ModernWpf.Controls icon)
                     if (!string.IsNullOrWhiteSpace(category.Icon))
                     {
-                        var icon = new FontIcon
-                        {
-                            Glyph = category.Icon,
-                            FontSize = 16
-                        };
-                        
-                        // Set color if available
-                        if (!string.IsNullOrWhiteSpace(category.Color))
-                        {
-                            try
-                            {
-                                var hex = category.Color.TrimStart('#');
-                                if (hex.Length == 6)
-                                {
-                                    var r = Convert.ToByte(hex.Substring(0, 2), 16);
-                                    var g = Convert.ToByte(hex.Substring(2, 2), 16);
-                                    var b = Convert.ToByte(hex.Substring(4, 2), 16);
-                                    icon.Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, r, g, b));
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                // Use default color on parse error
-                            }
-                        }
-                        
-                        navItem.Icon = icon;
+                        // ModernWPF NavigationViewItem uses IconElement property
+                        // For WPF, we'll need to create a proper icon using ModernWpf types
+                        // Skipping icon for now as it requires proper WPF icon implementation
                     }
                     
-                    // Add context menu
-                    var contextMenu = new MenuFlyout();
-                    var toggleFavoriteItem = new MenuFlyoutItem
-                    {
-                        Text = "Remove from Favorites",
-                        Icon = new SymbolIcon(Symbol.UnFavorite),
-                        Tag = category.Id.ToString()
-                    };
-                    toggleFavoriteItem.Click += ToggleCategoryFavorite_Click;
-                    
-                    var deleteItem = new MenuFlyoutItem
-                    {
-                        Text = "Delete Category",
-                        Icon = new SymbolIcon(Symbol.Delete),
-                        Tag = category.Id.ToString() // Use ID for deletion
-                    };
-                    deleteItem.Click += DeleteCategoryItem_Click;
-                    
-                    contextMenu.Items.Add(toggleFavoriteItem);
-                    contextMenu.Items.Add(deleteItem);
-                    navItem.ContextFlyout = contextMenu;
+                    // Note: Context menus in WPF use System.Windows.Controls.ContextMenu
+                    // not MenuFlyout from WinUI
+                    // Context menu implementation would need to be rewritten for WPF
                     
                     categoriesPanel.Children.Add(navItem);
                 }
@@ -645,7 +600,7 @@ public sealed partial class MainWindow : Window
 
             var tags = (await tagService.GetAllAsync()).ToList();
 
-            System.Windows.Threading.Dispatcher.GetForCurrentThread().TryEnqueue(() =>
+            Dispatcher.Invoke(() =>
             {
                 var fe = this.Content as FrameworkElement;
                 var tagsPanel = fe?.FindName("SidebarTagsPanel") as StackPanel;
@@ -1033,11 +988,19 @@ public sealed partial class MainWindow : Window
         try
         {
             // Check current content tree
-            if (this.Content is FrameworkElement fe && fe.Resources.TryGetValue("ModernModernWpf.Controls.ModernWpf.Controls.NavigationViewItemStyle", out var styleObj2) && styleObj2 is Style s2)
-                return s2;
+            if (this.Content is FrameworkElement fe && fe.Resources.Contains("ModernWpfNavigationViewItemStyle"))
+            {
+                var styleObj2 = fe.Resources["ModernWpfNavigationViewItemStyle"];
+                if (styleObj2 is Style s2)
+                    return s2;
+            }
             // Check application resources
-            if (Application.Current.Resources.TryGetValue("ModernModernWpf.Controls.ModernWpf.Controls.NavigationViewItemStyle", out var appStyle) && appStyle is Style s3)
-                return s3;
+            if (Application.Current.Resources.Contains("ModernWpfNavigationViewItemStyle"))
+            {
+                var appStyle = Application.Current.Resources["ModernWpfNavigationViewItemStyle"];
+                if (appStyle is Style s3)
+                    return s3;
+            }
         }
         catch { }
         return null; // fallback - style optional

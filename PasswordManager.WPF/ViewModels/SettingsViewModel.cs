@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.WPF.Services;
+using System.IO;
 
 namespace PasswordManager.WPF.ViewModels;
 
