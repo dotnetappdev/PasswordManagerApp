@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.WinUi.ViewModels;
+using PasswordManager.WPF.ViewModels;
 
 namespace PasswordManager.WPF.Views;
 
@@ -15,7 +15,7 @@ public sealed partial class ImportPage : Page
         this.InitializeComponent();
     }
 
-    protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    public void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
 

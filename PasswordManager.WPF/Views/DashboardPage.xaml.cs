@@ -1,8 +1,9 @@
+using ModernWpf.Controls;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
-using PasswordManager.WinUi.ViewModels;
+using PasswordManager.WPF.ViewModels;
 using PasswordManager.Models;
 using System;
 using System.Diagnostics;
@@ -13,7 +14,7 @@ namespace PasswordManager.WPF.Views;
 /// <summary>
 /// Main dashboard page showing password items and navigation
 /// </summary>
-public sealed partial class DashboardPage : Page
+public sealed partial class DashboardPage : System.Windows.Controls.Page
 {
     private IServiceProvider? _serviceProvider;
     private DashboardViewModel? _viewModel;
@@ -23,7 +24,7 @@ public sealed partial class DashboardPage : Page
         InitializeComponent();
     }
 
-    protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    public void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
 

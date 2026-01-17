@@ -457,7 +457,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         }
     }
 
-    private async void ModernWpf.Controls.ContentDialog_PrimaryButtonClick(ModernWpf.Controls.ContentDialog sender, ModernWpf.Controls.ContentDialogButtonClickEventArgs args)
+    private async void ContentDialog_PrimaryButtonClick(ModernWpf.Controls.ContentDialog sender, ModernWpf.Controls.ContentDialogButtonClickEventArgs args)
     {
         // If read-only, just close
         if (_isReadOnly)

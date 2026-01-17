@@ -13,8 +13,8 @@ using PasswordManager.Services;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
 
-#if WINDOWS
-using PasswordManager.Wpf.Services.FileLogging;
+#if FALSE
+using PasswordManager.WPF.Services.FileLogging;
 #endif
 
 namespace PasswordManager.WPF.Services;

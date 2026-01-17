@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Models.DTOs;
 using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.WinUi.ViewModels;
+using PasswordManager.WPF.ViewModels;
 using PasswordManager.Services.Utilities;
 using PasswordManager.Imports.Interfaces;
 using System.Linq;
@@ -27,7 +27,7 @@ public sealed partial class SettingsPage : Page
         _logger = new FileLogger();
     }
 
-    protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
 
@@ -232,7 +232,7 @@ public sealed partial class SettingsPage : Page
                     Title = "Success",
                     Content = "Database path copied to clipboard",
                     CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
+                    // WPF: XamlRoot not needed
                 };
                 _ = dialog.ShowAsync(); // Fire and forget
 
@@ -386,7 +386,7 @@ public sealed partial class SettingsPage : Page
                 Title = "Export Result",
                 Content = message,
                 CloseButtonText = "OK",
-                XamlRoot = XamlRoot
+                // WPF: XamlRoot not needed
             };
 
             await dialog.ShowAsync();
@@ -414,7 +414,7 @@ public sealed partial class SettingsPage : Page
                     {
                         Content = $"{user.Email} ({user.FirstName} {user.LastName})".Trim(),
                         Tag = user.Id,
-                        Margin = new Microsoft.UI.Xaml.Thickness(4)
+                        Margin = new System.Windows.Thickness(4)
                     };
                     UserSelectionListView.Items.Add(checkBox);
                 }
@@ -835,7 +835,7 @@ public sealed partial class SettingsPage : Page
             Title = title,
             Content = message,
             CloseButtonText = "OK",
-            XamlRoot = this.XamlRoot
+            // WPF: XamlRoot not needed
         };
         await dialog.ShowAsync();
     }
@@ -866,7 +866,7 @@ public sealed partial class SettingsPage : Page
                     Title = "Export Folder Selected",
                     Content = $"Export folder set to: {folder.Path}",
                     CloseButtonText = "OK",
-                    XamlRoot = XamlRoot
+                    // WPF: XamlRoot not needed
                 };
 
                 await dialog.ShowAsync();
@@ -885,7 +885,7 @@ public sealed partial class SettingsPage : Page
         {
             Header = "Connection String",
             PlaceholderText = "Enter database connection string...",
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+            TextWrapping = System.Windows.TextWrapping.Wrap,
             AcceptsReturn = true,
             MinHeight = 80,
             Text = _viewModel?.DatabaseConnectionString ?? ""
@@ -902,7 +902,7 @@ public sealed partial class SettingsPage : Page
         var testButton = new Button
         {
             Content = "Test Connection",
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 8, 0, 0)
+            Margin = new System.Windows.Thickness(0, 8, 0, 0)
         };
 
         var stackPanel = new StackPanel { Spacing = 16 };
@@ -916,7 +916,7 @@ public sealed partial class SettingsPage : Page
             Content = stackPanel,
             PrimaryButtonText = "Save",
             CloseButtonText = "Cancel",
-            XamlRoot = XamlRoot
+            // WPF: XamlRoot not needed
         };
 
         // Handle test connection button
@@ -929,7 +929,7 @@ public sealed partial class SettingsPage : Page
                     Title = "Connection Test",
                     Content = "Connection test functionality would be implemented here.\nFor now, simulating successful connection.",
                     CloseButtonText = "OK",
-                    XamlRoot = XamlRoot
+                    // WPF: XamlRoot not needed
                 };
                 await testDialog.ShowAsync();
             }
@@ -953,7 +953,7 @@ public sealed partial class SettingsPage : Page
                 Title = success ? "Success" : "Error",
                 Content = success ? "Database configuration saved successfully." : "Failed to save database configuration.",
                 CloseButtonText = "OK",
-                XamlRoot = XamlRoot
+                // WPF: XamlRoot not needed
             };
 
             await resultDialog.ShowAsync();
@@ -972,7 +972,7 @@ public sealed partial class SettingsPage : Page
                 PrimaryButtonText = "Yes, Seed Data",
                 CloseButtonText = "Cancel",
                 DefaultButton = ModernWpf.Controls.ContentDialogButton.Primary,
-                XamlRoot = XamlRoot
+                // WPF: XamlRoot not needed
             };
 
             var result = await confirmDialog.ShowAsync();
@@ -983,7 +983,7 @@ public sealed partial class SettingsPage : Page
                 {
                     Title = "Seeding Data",
                     Content = new ProgressRing { IsActive = true, Width = 50, Height = 50 },
-                    XamlRoot = XamlRoot
+                    // WPF: XamlRoot not needed
                 };
 
                 // Show progress dialog (fire and forget)
@@ -1011,7 +1011,7 @@ public sealed partial class SettingsPage : Page
                             Title = "✓ Success",
                             Content = "Essential data has been seeded successfully!\n\n• Categories\n• Collections\n• Tags\n\nYou can now add new items with the category dropdown populated.",
                             CloseButtonText = "OK",
-                            XamlRoot = XamlRoot
+                            // WPF: XamlRoot not needed
                         };
                         await successDialog.ShowAsync();
                     }
@@ -1045,7 +1045,7 @@ public sealed partial class SettingsPage : Page
             PrimaryButtonText = "Yes, Delete Everything",
             CloseButtonText = "Cancel",
             DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
-            XamlRoot = XamlRoot
+            // WPF: XamlRoot not needed
         };
 
         var result = await confirmDialog.ShowAsync();
@@ -1059,7 +1059,7 @@ public sealed partial class SettingsPage : Page
                 Title = "Clear Data Result",
                 Content = message,
                 CloseButtonText = "OK",
-                XamlRoot = XamlRoot
+                // WPF: XamlRoot not needed
             };
 
             await resultDialog.ShowAsync();
@@ -1100,9 +1100,9 @@ public sealed partial class SettingsPage : Page
 
         var errorTextBlock = new TextBlock
         {
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red),
-            TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-            Visibility = Microsoft.UI.Xaml.Visibility.Collapsed
+            Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red),
+            TextWrapping = System.Windows.TextWrapping.Wrap,
+            Visibility = System.Windows.Visibility.Collapsed
         };
 
         var stackPanel = new StackPanel { Spacing = 16 };
@@ -1118,7 +1118,7 @@ public sealed partial class SettingsPage : Page
             Content = stackPanel,
             PrimaryButtonText = "Change Password",
             CloseButtonText = "Cancel",
-            XamlRoot = XamlRoot
+            // WPF: XamlRoot not needed
         };
 
         var result = await dialog.ShowAsync();
@@ -1174,7 +1174,7 @@ public sealed partial class SettingsPage : Page
                 Title = success ? "Success" : "Error",
                 Content = message,
                 CloseButtonText = "OK",
-                XamlRoot = XamlRoot
+                // WPF: XamlRoot not needed
             };
 
             await resultDialog.ShowAsync();
@@ -1213,7 +1213,7 @@ public sealed partial class SettingsPage : Page
             Title = "Error",
             Content = message,
             CloseButtonText = "OK",
-            XamlRoot = XamlRoot
+            // WPF: XamlRoot not needed
         };
         await errorDialog.ShowAsync();
     }
@@ -1256,7 +1256,7 @@ public sealed partial class SettingsPage : Page
                 Content = await CreateMasterPasswordInput(),
                 PrimaryButtonText = "Create Backup",
                 CloseButtonText = "Cancel",
-                XamlRoot = XamlRoot
+                // WPF: XamlRoot not needed
             };
 
             var result = await passwordDialog.ShowAsync();
@@ -1270,7 +1270,7 @@ public sealed partial class SettingsPage : Page
                     Title = success ? "Success" : "Error",
                     Content = message,
                     CloseButtonText = "OK",
-                    XamlRoot = XamlRoot
+                    // WPF: XamlRoot not needed
                 };
 
                 await dialog.ShowAsync();
@@ -1309,7 +1309,7 @@ public sealed partial class SettingsPage : Page
                 Title = success ? "Success" : "Error",
                 Content = message,
                 CloseButtonText = "OK",
-                XamlRoot = XamlRoot
+                // WPF: XamlRoot not needed
             };
 
             await dialog.ShowAsync();
@@ -1327,7 +1327,7 @@ public sealed partial class SettingsPage : Page
                 Content = $"This will replace all current data with the backup from {backup.CreatedAt:MMM dd, yyyy HH:mm}. This action cannot be undone.\n\nAre you sure you want to continue?",
                 PrimaryButtonText = "Yes, Restore",
                 CloseButtonText = "Cancel",
-                XamlRoot = XamlRoot
+                // WPF: XamlRoot not needed
             };
 
             if (await confirmDialog.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -1339,7 +1339,7 @@ public sealed partial class SettingsPage : Page
                     Content = await CreateMasterPasswordInput(),
                     PrimaryButtonText = "Restore",
                     CloseButtonText = "Cancel",
-                    XamlRoot = XamlRoot
+                    // WPF: XamlRoot not needed
                 };
 
                 if (await passwordDialog.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary && passwordDialog.Content is PasswordBox passwordBox)
@@ -1352,7 +1352,7 @@ public sealed partial class SettingsPage : Page
                         Title = success ? "Success" : "Error",
                         Content = message,
                         CloseButtonText = "OK",
-                        XamlRoot = XamlRoot
+                        // WPF: XamlRoot not needed
                     };
 
                     await dialog.ShowAsync();
@@ -1371,7 +1371,7 @@ public sealed partial class SettingsPage : Page
                 Content = $"Are you sure you want to delete the backup '{backup.FileName}'? This action cannot be undone.",
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
-                XamlRoot = XamlRoot
+                // WPF: XamlRoot not needed
             };
 
             if (await confirmDialog.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -1385,7 +1385,7 @@ public sealed partial class SettingsPage : Page
                         Title = "Error",
                         Content = "Failed to delete backup. Please try again.",
                         CloseButtonText = "OK",
-                        XamlRoot = XamlRoot
+                        // WPF: XamlRoot not needed
                     };
 
                     await errorDialog.ShowAsync();
@@ -1412,7 +1412,7 @@ public sealed partial class SettingsPage : Page
                     Title = result?.Success == true ? "Export Success" : "Export Failed",
                     Content = message,
                     CloseButtonText = "OK",
-                    XamlRoot = XamlRoot
+                    // WPF: XamlRoot not needed
                 };
 
                 await dialog.ShowAsync();
@@ -1468,7 +1468,7 @@ public sealed partial class SettingsPage : Page
             PrimaryButtonText = "Yes, Wipe",
             CloseButtonText = "Cancel",
             DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
-            XamlRoot = XamlRoot
+            // WPF: XamlRoot not needed
         };
 
         if (await confirm.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -1501,7 +1501,7 @@ public sealed partial class SettingsPage : Page
             PrimaryButtonText = "Yes, Reset",
             CloseButtonText = "Cancel",
             DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
-            XamlRoot = XamlRoot
+            // WPF: XamlRoot not needed
         };
 
         if (await confirm.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -1521,7 +1521,7 @@ public sealed partial class SettingsPage : Page
                     Title = result.Success ? "Reset Complete" : "Reset Failed",
                     Content = result.Success ? "Password data has been reset." : $"Failed to reset password data: {result.Message}",
                     CloseButtonText = "OK",
-                    XamlRoot = XamlRoot
+                    // WPF: XamlRoot not needed
                 };
                 await dlg.ShowAsync();
             }
@@ -1541,7 +1541,7 @@ public sealed partial class SettingsPage : Page
             PrimaryButtonText = "Yes, Reset All",
             CloseButtonText = "Cancel",
             DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
-            XamlRoot = XamlRoot
+            // WPF: XamlRoot not needed
         };
 
         if (await confirm.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -1561,7 +1561,7 @@ public sealed partial class SettingsPage : Page
                     Title = result.Success ? "Reset Complete" : "Reset Failed",
                     Content = result.Success ? "All database tables have been reset." : $"Failed to reset database: {result.Message}",
                     CloseButtonText = "OK",
-                    XamlRoot = XamlRoot
+                    // WPF: XamlRoot not needed
                 };
 
                 await dlg.ShowAsync();
@@ -1595,7 +1595,7 @@ public sealed partial class SettingsPage : Page
                 Title = result.Success ? "Reseeded" : "Reseed Failed",
                 Content = result.Success ? "Sample data has been reseeded." : $"Failed to reseed sample data: {result.Message}",
                 CloseButtonText = "OK",
-                XamlRoot = XamlRoot
+                // WPF: XamlRoot not needed
             };
             await dlg.ShowAsync();
         }

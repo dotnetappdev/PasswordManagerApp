@@ -192,8 +192,7 @@
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
                 Value="0"/>
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
@@ -226,53 +225,23 @@
                                       Margin="0,0,12,0"/>
                             <TextBlock x:Name="PlaceholderText"
                                        Grid.Column="0"
-                                       Text="{TemplateBinding PlaceholderText}"
                                        Foreground="{StaticResource ModernTextTertiaryBrush}"
                                        Margin="{TemplateBinding Padding}"
                                        VerticalAlignment="Center"
                                        IsHitTestVisible="False"/>
                         </Grid>
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background"
-                                                Value="{StaticResource ModernSurfaceBrush}"/>
-                                        <Setter Target="BorderElement.BorderBrush"
-                                                Value="{StaticResource ModernBorderBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background"
-                                                Value="#F5F8FF"/>
-                                        <Setter Target="BorderElement.BorderBrush"
-                                                Value="{StaticResource ModernPrimaryLightBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Pressed">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background"
-                                                Value="#F5F8FF"/>
-                                        <Setter Target="BorderElement.BorderBrush"
-                                                Value="{StaticResource ModernPrimaryBrush}"/>
-                                        <Setter Target="BorderElement.BorderThickness"
-                                                Value="1"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Disabled">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background"
-                                                Value="#F8F9FA"/>
-                                        <Setter Target="BorderElement.BorderBrush"
-                                                Value="#E9ECEF"/>
-                                        <Setter Target="ContentPresenter.Foreground"
-                                                Value="{StaticResource ModernTextTertiaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="BorderElement" Property="Background" Value="#F5F8FF"/>
+                            <Setter TargetName="BorderElement" Property="BorderBrush" Value="{StaticResource ModernPrimaryLightBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="BorderElement" Property="Background" Value="#F8F9FA"/>
+                            <Setter TargetName="BorderElement" Property="BorderBrush" Value="#E9ECEF"/>
+                            <Setter TargetName="ContentPresenter" Property="TextBlock.Foreground" Value="{StaticResource ModernTextTertiaryBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -288,8 +257,7 @@
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
                 Value="1"/>
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
@@ -313,55 +281,28 @@
                                           IsTabStop="False"
                                           />
                             <TextBlock x:Name="PlaceholderText"
-                                       Text="{TemplateBinding PlaceholderText}"
                                        Foreground="{StaticResource ModernTextTertiaryBrush}"
                                        Margin="{TemplateBinding Padding}"
                                        VerticalAlignment="Center"
                                        IsHitTestVisible="False"/>
                         </Grid>
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background"
-                                                Value="{StaticResource ModernSurfaceBrush}"/>
-                                        <Setter Target="BorderElement.BorderBrush"
-                                                Value="{StaticResource ModernBorderBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background"
-                                                Value="#F5F8FF"/>
-                                        <Setter Target="BorderElement.BorderBrush"
-                                                Value="{StaticResource ModernPrimaryLightBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Focused">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background"
-                                                Value="#F5F8FF"/>
-                                        <Setter Target="BorderElement.BorderBrush"
-                                                Value="{StaticResource ModernPrimaryBrush}"/>
-                                        <Setter Target="BorderElement.BorderThickness"
-                                                Value="1"/>
-                                        <Setter Target="PlaceholderText.Foreground"
-                                                Value="{StaticResource ModernPrimaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Disabled">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background"
-                                                Value="#F8F9FA"/>
-                                        <Setter Target="BorderElement.BorderBrush"
-                                                Value="#E9ECEF"/>
-                                        <Setter Target="ContentElement.Foreground"
-                                                Value="{StaticResource ModernTextTertiaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="BorderElement" Property="Background" Value="#F5F8FF"/>
+                            <Setter TargetName="BorderElement" Property="BorderBrush" Value="{StaticResource ModernPrimaryLightBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="BorderElement" Property="Background" Value="#F5F8FF"/>
+                            <Setter TargetName="BorderElement" Property="BorderBrush" Value="{StaticResource ModernPrimaryBrush}"/>
+                            <Setter TargetName="BorderElement" Property="BorderThickness" Value="1"/>
+                            <Setter TargetName="PlaceholderText" Property="Foreground" Value="{StaticResource ModernPrimaryBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="BorderElement" Property="Background" Value="#F8F9FA"/>
+                            <Setter TargetName="BorderElement" Property="BorderBrush" Value="#E9ECEF"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -376,8 +317,7 @@
                 Value="White"/>
         <Setter Property="BorderThickness"
                 Value="0"/>
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,12"/>
         <Setter Property="FontSize"
@@ -395,14 +335,13 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding CornerRadius}"
                             Padding="{TemplateBinding Padding}">
                         <Grid>
                             <ContentPresenter x:Name="ContentPresenter"
                                               HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
                                               Content="{TemplateBinding Content}"
-                                              Foreground="{TemplateBinding Foreground}"/>
+                                              />
                             <ui:ProgressRing x:Name="LoadingIndicator"
                                           Width="20"
                                           Height="20"
@@ -410,36 +349,7 @@
                                           Visibility="Collapsed"
                                           Foreground="White"/>
                         </Grid>
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="{StaticResource ModernPrimaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="{StaticResource ModernPrimaryLightBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Pressed">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="{StaticResource ModernPrimaryDarkBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Disabled">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="#E9ECEF"/>
-                                        <Setter Target="ContentPresenter.Foreground"
-                                                Value="{StaticResource ModernTextTertiaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
+                        
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -457,8 +367,7 @@
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
                 Value="0"/>
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,12"/>
         <Setter Property="FontSize"
@@ -476,51 +385,13 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding CornerRadius}"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter x:Name="ContentPresenter"
                                           HorizontalAlignment="Center"
                                           VerticalAlignment="Center"
                                           Content="{TemplateBinding Content}"
-                                          Foreground="{TemplateBinding Foreground}"/>
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="Transparent"/>
-                                        <Setter Target="RootBorder.BorderBrush"
-                                                Value="{StaticResource ModernBorderBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                                                <VisualState x:Name="PointerOver">
-                                                                        <VisualState.Setters>
-                                                                                <Setter Target="RootBorder.Background"
-                                                                                                Value="{StaticResource ModernButtonPointerOverBrush}"/>
-                                                                                <Setter Target="RootBorder.BorderBrush"
-                                                                                                Value="{StaticResource ModernPrimaryLightBrush}"/>
-                                                                        </VisualState.Setters>
-                                                                </VisualState>
-                                                                <VisualState x:Name="Pressed">
-                                                                        <VisualState.Setters>
-                                                                                <Setter Target="RootBorder.Background"
-                                                                                                Value="{StaticResource ModernButtonPressedBrush}"/>
-                                                                                <Setter Target="RootBorder.BorderBrush"
-                                                                                                Value="{StaticResource ModernPrimaryBrush}"/>
-                                                                        </VisualState.Setters>
-                                                                </VisualState>
-                                <VisualState x:Name="Disabled">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="Transparent"/>
-                                        <Setter Target="RootBorder.BorderBrush"
-                                                Value="#E9ECEF"/>
-                                        <Setter Target="ContentPresenter.Foreground"
-                                                Value="{StaticResource ModernTextTertiaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
+                                          />
+                        
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -532,8 +403,7 @@
            TargetType="Border">
         <Setter Property="Background"
                 Value="{StaticResource ModernCardBrush}"/>
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="12"/>
         <Setter Property="BorderBrush"
@@ -547,8 +417,7 @@
            TargetType="Border">
         <Setter Property="Background"
                 Value="{StaticResource ModernElevatedSurfaceBrush}"/>
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="12"/>
         <Setter Property="BorderBrush"
@@ -571,8 +440,7 @@
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
                 Value="1"/>
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
@@ -592,8 +460,7 @@
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
                 Value="0"/>
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="12"/>
         <Setter Property="HorizontalAlignment"
@@ -611,34 +478,13 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding CornerRadius}"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter x:Name="ContentPresenter"
                                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                           Content="{TemplateBinding Content}"
-                                          Foreground="{TemplateBinding Foreground}"/>
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal"/>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="{StaticResource ModernElevatedSurfaceBrush}"/>
-                                        <Setter Target="RootBorder.BorderBrush"
-                                                Value="{StaticResource ModernPrimaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Pressed">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="{StaticResource ModernPrimaryLightBrush}"/>
-                                        <Setter Target="RootBorder.BorderBrush"
-                                                Value="{StaticResource ModernPrimaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
+                                          />
+                        
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -719,9 +565,9 @@
                 Value="0"/>
     </Style>
 
-    <!-- Enhanced ui:ui:NavigationViewItem Style -->
-    <Style x:Key="Modernui:ui:NavigationViewItemStyle"
-           TargetType="ui:ui:NavigationViewItem">
+    <!-- Enhanced ui:NavigationViewItem Style -->
+    <Style x:Key="Modernui:NavigationViewItemStyle"
+           TargetType="ui:NavigationViewItem">
         <Setter Property="Foreground"
                 Value="{StaticResource ModernTextPrimaryBrush}"/>
         <Setter Property="FontWeight"
@@ -730,14 +576,12 @@
                 Value="0"/>
         <Setter Property="Margin"
                 Value="8,4"/>
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="ui:ui:NavigationViewItem">
+                <ControlTemplate TargetType="ui:NavigationViewItem">
                     <Border x:Name="LayoutRoot"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="{TemplateBinding CornerRadius}"
                             Margin="{TemplateBinding Margin}">
                         <Grid>
                             <Border x:Name="SelectionIndicator"
@@ -782,43 +626,7 @@
                             </Grid>
                         </Grid>
 
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal"/>
-                                                                <VisualState x:Name="PointerOver">
-                                                                        <VisualState.Setters>
-                                                                                <Setter Target="LayoutRoot.Background"
-                                                                                                Value="{StaticResource ModernSurfaceBrush}"/>
-                                                                        </VisualState.Setters>
-                                                                </VisualState>
-                                                                <VisualState x:Name="Pressed">
-                                                                        <VisualState.Setters>
-                                                                                <Setter Target="LayoutRoot.Background"
-                                                                                                Value="{StaticResource ModernElevatedSurfaceBrush}"/>
-                                                                        </VisualState.Setters>
-                                                                </VisualState>
-                                                                <VisualState x:Name="Selected">
-                                                                        <VisualState.Setters>
-                                                                                <Setter Target="LayoutRoot.Background"
-                                                                                                Value="{StaticResource ModernSidebarBackgroundBrush}"/>
-                                                                                <Setter Target="SelectionIndicator.Opacity"
-                                                                                                Value="0"/>-->
-                                                                                <Setter Target="ContentPresenter.Foreground"
-                                                                                                Value="{StaticResource ModernTextPrimaryBrush}"/>
-                                                                        </VisualState.Setters>
-                                                                </VisualState>
-                                                                <VisualState x:Name="PointerOverSelected">
-                                                                        <VisualState.Setters>
-                                                                                <Setter Target="LayoutRoot.Background"
-                                                                                                Value="{StaticResource ModernSidebarBackgroundBrush}"/>
-                                                                                <Setter Target="SelectionIndicator.Opacity"
-                                                                                                Value="0"/>-->
-                                                                                <Setter Target="ContentPresenter.Foreground"
-                                                                                                Value="{StaticResource ModernTextPrimaryBrush}"/>
-                                                                        </VisualState.Setters>
-                                                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
+                        
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -838,8 +646,7 @@
                 Value="1"/>
         <Setter Property="Padding"
                 Value="12,10"/>
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="FontSize"
                 Value="14"/>
         <Setter Property="Foreground"
@@ -849,34 +656,11 @@
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="RootBorder"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="{TemplateBinding CornerRadius}"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter x:Name="ContentPresenter"
                                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal"/>
-                                                        <VisualState x:Name="PointerOver">
-                                                                        <VisualState.Setters>
-                                                                                <Setter Target="RootBorder.Background"
-                                                                                                Value="{StaticResource ModernSurfaceBrush}"/>
-                                                                        </VisualState.Setters>
-                                                                </VisualState>
-                                                                <VisualState x:Name="Pressed">
-                                                                        <VisualState.Setters>
-                                                                                <Setter Target="RootBorder.Background"
-                                                                                                Value="{StaticResource ModernElevatedSurfaceBrush}"/>
-                                                                        </VisualState.Setters>
-                                                                </VisualState>
-                                <VisualState x:Name="Disabled">
-                                    <VisualState.Setters>
-                                        <Setter Target="ContentPresenter.Foreground"
-                                                Value="{StaticResource ModernTextTertiaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
+                        
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -893,8 +677,7 @@
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
                 Value="1"/>
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
     </Style>
 
     <!-- Modern 1Password-style Button Style -->
@@ -905,9 +688,8 @@
         <Setter Property="Foreground"
                 Value="White"/>
         <Setter Property="BorderThickness"
-                Value="0"/>-->
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+                Value="0"/>
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,10"/>
         <Setter Property="FontSize"
@@ -915,7 +697,7 @@
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="MinHeight"
                 Value="36"/>
         <Setter Property="Template">
@@ -923,30 +705,13 @@
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="RootBorder"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="{TemplateBinding CornerRadius}"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter x:Name="ContentPresenter"
                                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                           Content="{TemplateBinding Content}"
-                                          Foreground="{TemplateBinding Foreground}"/>
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal"/>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="#004DCC"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Pressed">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="#0041B3"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
+                                          />
+                        
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -962,17 +727,16 @@
         <Setter Property="Foreground"
                 Value="White"/>
         <Setter Property="BorderThickness"
-                Value="0"/>-->
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+                Value="0"/>
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,10"/>
         <Setter Property="FontSize"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="MinHeight"
                 Value="36"/>
         <Setter Property="Template">
@@ -982,14 +746,13 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding CornerRadius}"
                             Padding="{TemplateBinding Padding}">
                         <Grid>
                             <ContentPresenter x:Name="ContentPresenter"
                                               HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
                                               Content="{TemplateBinding Content}"
-                                              Foreground="{TemplateBinding Foreground}"/>
+                                              />
                             <ui:ProgressRing x:Name="LoadingIndicator"
                                           Width="18"
                                           Height="18"
@@ -997,31 +760,7 @@
                                           Visibility="Collapsed"
                                           Foreground="White"/>
                         </Grid>
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal"/>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="{StaticResource ModernPrimaryLightBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Pressed">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="{StaticResource ModernPrimaryDarkBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Disabled">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="#E9ECEF"/>
-                                        <Setter Target="ContentPresenter.Foreground"
-                                                Value="{StaticResource ModernTextTertiaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
+                        
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -1037,19 +776,18 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="0"/>-->
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+                Value="0"/>
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,10"/>
         <Setter Property="FontSize"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="MinHeight"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -1057,42 +795,13 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding CornerRadius}"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter x:Name="ContentPresenter"
                                           HorizontalAlignment="Center"
                                           VerticalAlignment="Center"
                                           Content="{TemplateBinding Content}"
-                                          Foreground="{TemplateBinding Foreground}"/>
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal"/>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="#F5F8FF"/>
-                                        <Setter Target="RootBorder.BorderBrush"
-                                                Value="{StaticResource ModernPrimaryLightBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Pressed">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="#E6F2FF"/>
-                                        <Setter Target="RootBorder.BorderBrush"
-                                                Value="{StaticResource ModernPrimaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Disabled">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.BorderBrush"
-                                                Value="#E9ECEF"/>
-                                        <Setter Target="ContentPresenter.Foreground"
-                                                Value="{StaticResource ModernTextTertiaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
+                                          />
+                        
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -1109,9 +818,8 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="0"/>-->
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+                Value="0"/>
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="PrimaryButtonStyle"
                 Value="{StaticResource ui:ContentDialogPrimaryButtonStyle}"/>
         <Setter Property="SecondaryButtonStyle"
@@ -1119,20 +827,20 @@
         <Setter Property="CloseButtonStyle"
                 Value="{StaticResource ui:ContentDialogSecondaryButtonStyle}"/>
         <Setter Property="MaxWidth"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="MaxHeight"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="MinWidth"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="MinHeight"
-                Value="0"/>-->
+                Value="0"/>
         <!-- Enhanced centering with proper positioning for all screen sizes -->
         <Setter Property="HorizontalAlignment"
                 Value="Center"/>
         <Setter Property="VerticalAlignment"
                 Value="Center"/>
         <Setter Property="Margin"
-                Value="0"/>-->
+                Value="0"/>
         <!-- Override template for better centering control -->
         <Setter Property="Template">
             <Setter.Value>
@@ -1140,14 +848,13 @@
                     <Grid x:Name="Container">
                         <!-- Backdrop -->
                         <Rectangle x:Name="SmokeLayerBackground"
-                                   Fill="{ThemeResource ui:ContentDialogSmokeFill}"/>
+                                   Fill="{DynamicResource ui:ContentDialogSmokeFill}"/>
                         
                         <!-- Dialog container with absolute centering -->
                         <Border x:Name="BackgroundElement"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{TemplateBinding CornerRadius}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 MaxWidth="{TemplateBinding MaxWidth}"
@@ -1182,7 +889,7 @@
                                                         ContentTemplate="{TemplateBinding TitleTemplate}"
                                                         FontSize="20"
                                                         FontWeight="SemiBold"
-                                                        Foreground="{TemplateBinding Foreground}"
+                                                        
                                                         HorizontalAlignment="Left"
                                                         VerticalAlignment="Top"
                                                         IsTabStop="False"
@@ -1201,7 +908,7 @@
                                 <!-- Button area -->
                                 <Border x:Name="CommandSpace"
                                         Grid.Row="1"
-                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                        Background="{DynamicResource LayerFillColorDefaultBrush}"
                                         BorderBrush="{TemplateBinding BorderBrush}"
                                         BorderThickness="0,1,0,0"
                                         Padding="24,16">
@@ -1243,8 +950,6 @@
     <!-- Enhanced form field grouping style for dark theme -->
     <Style x:Key="FormFieldGroupStyle"
             TargetType="StackPanel">
-        <Setter Property="Spacing"
-                Value="0"/>-->
         <Setter Property="Margin"
                 Value="0,0,0,16"/>
         <Setter Property="Background"
@@ -1255,7 +960,7 @@
     <Style x:Key="FormLabelStyle"
             TargetType="TextBlock">
         <Setter Property="FontSize"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="Foreground"
@@ -1270,7 +975,7 @@
     <Style x:Key="ValidationMessageStyle"
             TargetType="TextBlock">
         <Setter Property="FontSize"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="Foreground"
                 Value="{StaticResource ModernErrorBrush}"/>
         <Setter Property="Margin"
@@ -1283,7 +988,7 @@
     <Style x:Key="SuccessMessageStyle"
             TargetType="TextBlock">
         <Setter Property="FontSize"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="Foreground"
                 Value="{StaticResource ModernSuccessBrush}"/>
         <Setter Property="Margin"
@@ -1300,19 +1005,18 @@
         <Setter Property="Foreground"
                 Value="White"/>
         <Setter Property="BorderThickness"
-                Value="0"/>-->
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+                Value="0"/>
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="16,12"/>
         <Setter Property="FontSize"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="MinHeight"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -1320,14 +1024,13 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding CornerRadius}"
                             Padding="{TemplateBinding Padding}">
                         <Grid>
                             <ContentPresenter x:Name="ContentPresenter"
                                               HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
                                               Content="{TemplateBinding Content}"
-                                              Foreground="{TemplateBinding Foreground}"/>
+                                              />
                             <ui:ProgressRing x:Name="LoadingIndicator"
                                           Width="20"
                                           Height="20"
@@ -1335,36 +1038,7 @@
                                           Visibility="Collapsed"
                                           Foreground="White"/>
                         </Grid>
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="{StaticResource ModernNewItemButtonBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="#D099FA"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Pressed">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="#B077EA"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Disabled">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="#E9ECEF"/>
-                                        <Setter Target="ContentPresenter.Foreground"
-                                                Value="{StaticResource ModernTextTertiaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
+                        
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -1379,15 +1053,14 @@
         <Setter Property="Foreground"
                 Value="{StaticResource ModernTextSecondaryBrush}"/>
         <Setter Property="BorderThickness"
-                Value="0"/>-->
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+                Value="0"/>
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="MinWidth"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="MinHeight"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -1395,39 +1068,12 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding CornerRadius}"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter x:Name="ContentPresenter"
                                           Content="{TemplateBinding Content}"
                                           HorizontalAlignment="Center"
                                           VerticalAlignment="Center"/>
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal"/>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="{StaticResource ModernElevatedSurfaceBrush}"/>
-                                        <Setter Target="ContentPresenter.Foreground"
-                                                Value="{StaticResource ModernTextPrimaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Pressed">
-                                    <VisualState.Setters>
-                                        <Setter Target="RootBorder.Background"
-                                                Value="{StaticResource ModernBorderBrush}"/>
-                                        <Setter Target="ContentPresenter.Foreground"
-                                                Value="{StaticResource ModernTextPrimaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Disabled">
-                                    <VisualState.Setters>
-                                        <Setter Target="ContentPresenter.Foreground"
-                                                Value="{StaticResource ModernTextTertiaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
+                        
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -1444,23 +1090,21 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="0"/>-->
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+                Value="0"/>
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="MinHeight"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Border x:Name="BorderElement"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding CornerRadius}">
+                            BorderThickness="{TemplateBinding BorderThickness}">
                         <ScrollViewer x:Name="ContentElement"
                                       Margin="{TemplateBinding Padding}"
                                       VerticalAlignment="Center"
@@ -1469,33 +1113,7 @@
                                       
                                       VerticalScrollBarVisibility="Auto"
                                       />
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal"/>
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.BorderBrush"
-                                                Value="{StaticResource ModernPrimaryBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Focused">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.BorderBrush"
-                                                Value="{StaticResource ModernPrimaryBrush}"/>
-                                        <Setter Target="BorderElement.BorderThickness"
-                                                Value="0"/>-->
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Disabled">
-                                    <VisualState.Setters>
-                                        <Setter Target="BorderElement.Background"
-                                                Value="{StaticResource ModernBorderBrush}"/>
-                                        <Setter Target="BorderElement.BorderBrush"
-                                                Value="{StaticResource ModernBorderBrush}"/>
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
+                        
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -1512,15 +1130,14 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="0"/>-->
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+                Value="0"/>
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="MinHeight"
-                Value="0"/>-->
+                Value="0"/>
     </Style>
 
     <!-- Validation Error Message Style -->
@@ -1529,7 +1146,7 @@
         <Setter Property="Foreground"
                 Value="{StaticResource ModernErrorBrush}"/>
         <Setter Property="FontSize"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="Margin"
                 Value="0,4,0,0"/>
         <Setter Property="TextWrapping"
@@ -1542,9 +1159,9 @@
         <Setter Property="Foreground"
                 Value="{StaticResource ModernPrimaryBrush}"/>
         <Setter Property="Width"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="Height"
-                Value="0"/>-->
+                Value="0"/>
     </Style>
 
     <!-- Success Message Style -->
@@ -1560,15 +1177,14 @@
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
-                Value="0"/>-->
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
+                Value="0"/>
+        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
-                Value="0"/>-->
+                Value="0"/>
         <Setter Property="MinHeight"
-                Value="0"/>-->
+                Value="0"/>
     </Style>
 
 </ResourceDictionary>
