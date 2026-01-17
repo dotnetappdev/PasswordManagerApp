@@ -90,9 +90,7 @@ public sealed partial class DatabaseConfigurationDialog : ModernWpf.Controls.Con
                     Title = "Create Directory?",
                     Content = $"The directory does not exist:\n\n{directory}\n\nDo you want to create it?",
                     PrimaryButtonText = "Create",
-                    CloseButtonText = "Cancel",
-                    XamlRoot = this.XamlRoot
-                };
+                    CloseButtonText = "Cancel"};
 
                 var result = await confirmDialog.ShowAsync();
                 if (result == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -194,9 +192,7 @@ public sealed partial class DatabaseConfigurationDialog : ModernWpf.Controls.Con
         {
             Title = title,
             Content = message,
-            CloseButtonText = "OK",
-            XamlRoot = this.XamlRoot
-        };
+            CloseButtonText = "OK"};
         await errorDialog.ShowAsync();
     }
 }

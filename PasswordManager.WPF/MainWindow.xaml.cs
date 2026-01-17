@@ -150,12 +150,10 @@ public sealed partial class MainWindow : Window
                 ContentFrame.Navigate(pageType, navigationParameter);
             }
             else
-            {
-            }
+            { }
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     private object CreateNavigationParameter(string pageTag)
@@ -277,8 +275,7 @@ public sealed partial class MainWindow : Window
                     }));
                 }
                 catch (Exception ex)
-                {
-                }
+                { }
             }
             else
             {
@@ -295,8 +292,7 @@ public sealed partial class MainWindow : Window
                         }));
                     }
                     catch (Exception ex)
-                    {
-                    }
+                    { }
                 }
             }
         }
@@ -340,8 +336,7 @@ public sealed partial class MainWindow : Window
                 }));
             }
             catch (Exception ex)
-            {
-            }
+            { }
         }
     }
 
@@ -490,19 +485,13 @@ public sealed partial class MainWindow : Window
         {
             // Open the TagDialog for creating a new tag
             var tagDialog = new Dialogs.TagDialog(_serviceProvider);
-            tagDialog.XamlRoot = this.Content.XamlRoot;
-
-            // Subscribe to saved event to refresh nav if needed
-            tagDialog.TagSaved += async (s, tag) =>
-            {
-                // For now, just refresh categories panel as tags may influence UI
-                await RefreshCategoriesAsync();
-            };
 
             var result = await tagDialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary && tagDialog.Result is not null)
             {
                 await ShowInfoMessage("Tag Created", $"Tag '{tagDialog.Result.Name}' has been created successfully.");
+                // Refresh categories panel as tags may influence UI
+                await RefreshCategoriesAsync();
             }
         }
         catch (Exception ex)
@@ -519,13 +508,6 @@ public sealed partial class MainWindow : Window
         {
             // Open the CategoryDialog for creating a new category
             var categoryDialog = new Dialogs.CategoryDialog(_serviceProvider);
-            categoryDialog.XamlRoot = this.Content.XamlRoot;
-
-            // Subscribe to category saved event to refresh navigation
-            categoryDialog.CategorySaved += async (s, cat) =>
-            {
-                await RefreshCategoriesAsync();
-            };
 
             var result = await categoryDialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary && categoryDialog.Result is not null)
@@ -586,8 +568,7 @@ public sealed partial class MainWindow : Window
             });
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     // Populate the SidebarTagsPanel with tag chips
@@ -683,8 +664,7 @@ public sealed partial class MainWindow : Window
             });
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     // Delete category navigation handler removed (UI buttons removed). Kept method removed per request.
@@ -706,9 +686,7 @@ public sealed partial class MainWindow : Window
                 Title = "Create New Vault",
                 PrimaryButtonText = "Create",
                 CloseButtonText = "Cancel",
-                DefaultButton = ModernWpf.Controls.ContentDialogButton.Primary,
-                XamlRoot = this.Content.XamlRoot
-            };
+                DefaultButton = ModernWpf.Controls.ContentDialogButton.Primary};
 
             var nameTextBox = new TextBox
             {
@@ -837,9 +815,7 @@ public sealed partial class MainWindow : Window
                 Content = $"Are you sure you want to delete '{tag}'? This action cannot be undone.",
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
-                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
-                XamlRoot = this.Content.XamlRoot
-            };
+                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close};
 
             var result = await confirmDialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -899,9 +875,7 @@ public sealed partial class MainWindow : Window
                 Content = $"Are you sure you want to delete this category? Items in this category will not be deleted, but they will lose their category assignment.",
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
-                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
-                XamlRoot = this.Content.XamlRoot
-            };
+                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close};
 
             var result = await confirmDialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -965,9 +939,7 @@ public sealed partial class MainWindow : Window
         {
             Title = title,
             Content = message,
-            CloseButtonText = "OK",
-            XamlRoot = this.Content.XamlRoot
-        };
+            CloseButtonText = "OK"};
         await errorDialog.ShowAsync();
     }
 
@@ -977,9 +949,7 @@ public sealed partial class MainWindow : Window
         {
             Title = title,
             Content = message,
-            CloseButtonText = "OK",
-            XamlRoot = this.Content.XamlRoot
-        };
+            CloseButtonText = "OK"};
         await infoDialog.ShowAsync();
     }
 

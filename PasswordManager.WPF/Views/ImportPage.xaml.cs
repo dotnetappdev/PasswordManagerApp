@@ -17,9 +17,8 @@ public sealed partial class ImportPage : Page
 
     public void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
-        base.OnNavigatedTo(e);
-
-        if (e.Parameter is IServiceProvider serviceProvider)
+        // Note: WPF Page doesn't have base.OnNavigatedTo
+        if (e.ExtraData is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
             _viewModel = new ImportViewModel(serviceProvider);
@@ -36,38 +35,33 @@ public sealed partial class ImportPage : Page
     {
         try
         {
-            var filePicker = new Windows.Storage.Pickers.FileOpenPicker();
-
-            // Get the current window's HWND
-            var app = App.Current as App;
-            var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(app?.MainWindow);
-
-            // Initialize the file picker with the window handle
-            WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hWnd);
-
-            filePicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
-            filePicker.FileTypeFilter.Add(".csv");
-            filePicker.FileTypeFilter.Add(".1pux");
-            filePicker.FileTypeFilter.Add(".json");
-            filePicker.FileTypeFilter.Add(".txt");
-
-            var file = await filePicker.PickSingleFileAsync();
-            if (file != null && _viewModel != null)
+            // Use WPF's OpenFileDialog instead of WinUI's FilePicker
+            var dialog = new Microsoft.Win32.OpenFileDialog
             {
-                _viewModel.SelectedFilePath = file.Path;
+                Title = "Select Import File",
+                Filter = "All Supported Files|*.csv;*.1pux;*.json;*.txt|CSV Files (*.csv)|*.csv|1Password Files (*.1pux)|*.1pux|JSON Files (*.json)|*.json|Text Files (*.txt)|*.txt",
+                FilterIndex = 1,
+                DefaultExt = ".csv",
+                CheckFileExists = true,
+                CheckPathExists = true
+            };
+
+            var result = dialog.ShowDialog();
+            if (result == true && _viewModel != null)
+            {
+                _viewModel.SelectedFilePath = dialog.FileName;
             }
         }
         catch (Exception ex)
         {
-            var dialog = new ModernWpf.Controls.ContentDialog
+            var errorDialog = new ModernWpf.Controls.ContentDialog
             {
                 Title = "File Selection Error",
                 Content = $"Failed to open file picker: {ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = this.XamlRoot
+                CloseButtonText = "OK"
             };
 
-            await dialog.ShowAsync();
+            await errorDialog.ShowAsync();
         }
     }
 
@@ -83,8 +77,7 @@ public sealed partial class ImportPage : Page
                 {
                     Title = "Import Error",
                     Content = _viewModel.ImportStatus,
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
+                    CloseButtonText = "OK"
                 };
 
                 await dialog.ShowAsync();

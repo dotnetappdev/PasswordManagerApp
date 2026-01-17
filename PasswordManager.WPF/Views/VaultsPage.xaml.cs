@@ -21,7 +21,7 @@ public sealed partial class VaultsPage : Page
     public VaultsViewModel? ViewModel => _viewModel;
 
     // Helper to prefer the main window XamlRoot so dialogs center on the app window
-    // WPF: GetMainXamlRoot() removed - not needed
+    // WPF: null removed - not needed
 
     /// <summary>
     /// Helper method to properly configure dialog for centering
@@ -31,8 +31,7 @@ public sealed partial class VaultsPage : Page
         try
         {
             // Set XamlRoot to the main window's content for proper centering
-            var mainXamlRoot = GetMainXamlRoot();
-            if (mainXamlRoot != null)
+                        if (mainXamlRoot != null)
             {
                 // WPF: XamlRoot not needed
             }
@@ -45,7 +44,7 @@ public sealed partial class VaultsPage : Page
             if (dialog.Style == null)
             {
                 // Apply the Modern1PasswordDialogStyle from resources
-                if (Application.Current.Resources.ContainsKey("Modern1PasswordDialogStyle"))
+                if (Application.Current.Resources.Contains("Modern1PasswordDialogStyle"))
                 {
                     dialog.Style = Application.Current.Resources["Modern1PasswordDialogStyle"] as Style;
                 }
@@ -63,9 +62,8 @@ public sealed partial class VaultsPage : Page
 
     public void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
-        base.OnNavigatedTo(e);
-        
-        if (e.Parameter is IServiceProvider serviceProvider)
+        // Note: WPF Page doesn't have base.OnNavigatedTo
+        if (e.ExtraData is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
             _viewModel = new VaultsViewModel(serviceProvider);
@@ -91,22 +89,20 @@ public sealed partial class VaultsPage : Page
 
             var nameTextBox = new TextBox
             {
-                PlaceholderText = "Vault name",
+                // PlaceholderText = "Vault name",
                 Margin = new Thickness(0, 0, 0, 16)
             };
 
             var descriptionTextBox = new TextBox
             {
-                PlaceholderText = "Description (optional)",
+                // PlaceholderText = "Description (optional)",
                 AcceptsReturn = true,
                 TextWrapping = TextWrapping.Wrap,
                 Height = 80
             };
 
             var stackPanel = new StackPanel
-            {
-                Spacing = 12
-            };
+            { };
             stackPanel.Children.Add(new TextBlock { Text = "Name", Margin = new Thickness(0, 0, 0, 4) });
             stackPanel.Children.Add(nameTextBox);
             stackPanel.Children.Add(new TextBlock { Text = "Description", Margin = new Thickness(0, 8, 0, 4) });
@@ -165,23 +161,21 @@ public sealed partial class VaultsPage : Page
                 var nameTextBox = new TextBox
                 {
                     Text = vault.Name,
-                    PlaceholderText = "Vault name",
+                    // PlaceholderText = "Vault name",
                     Margin = new Thickness(0, 0, 0, 16)
                 };
 
                 var descriptionTextBox = new TextBox
                 {
                     Text = vault.Description,
-                    PlaceholderText = "Description (optional)",
+                    // PlaceholderText = "Description (optional)",
                     AcceptsReturn = true,
                     TextWrapping = TextWrapping.Wrap,
                     Height = 80
                 };
 
                 var stackPanel = new StackPanel
-                {
-                    Spacing = 12
-                };
+                { };
                 stackPanel.Children.Add(new TextBlock { Text = "Name", Margin = new Thickness(0, 0, 0, 4) });
                 stackPanel.Children.Add(nameTextBox);
                 stackPanel.Children.Add(new TextBlock { Text = "Description", Margin = new Thickness(0, 8, 0, 4) });

@@ -138,7 +138,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
                 return;
             }
 
-            var isAdmin = AdminToggleSwitch.IsOn;
+            var isAdmin = AdminToggleSwitch.IsChecked;
             ShowRoleSelection = !isAdmin;
 
             if (isAdmin)
@@ -233,7 +233,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
 
             // Determine the role
             string selectedRole;
-            if (CanCreateAdminAccount && AdminToggleSwitch.IsOn)
+            if (CanCreateAdminAccount && AdminToggleSwitch.IsChecked)
             {
                 selectedRole = ApplicationRoles.Admin;
             }

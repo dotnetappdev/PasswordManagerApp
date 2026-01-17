@@ -36,9 +36,8 @@ public sealed partial class ManageItemsPage : Page
 
     public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
-        base.OnNavigatedTo(e);
-
-        if (e.Parameter is IServiceProvider serviceProvider)
+        // Note: WPF Page doesn't have base.OnNavigatedTo
+        if (e.ExtraData is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
 
@@ -125,7 +124,6 @@ public sealed partial class ManageItemsPage : Page
         try
         {
             var dialog = new CategoryDialog(_serviceProvider);
-            dialog.XamlRoot = this.XamlRoot;
 
             var result = await dialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary && dialog.Result != null)
@@ -146,7 +144,6 @@ public sealed partial class ManageItemsPage : Page
             try
             {
                 var dialog = new CategoryDialog(_serviceProvider, category);
-                dialog.XamlRoot = this.XamlRoot;
 
                 var result = await dialog.ShowAsync();
                 if (result == ModernWpf.Controls.ContentDialogResult.Primary && dialog.Result != null)
@@ -171,9 +168,7 @@ public sealed partial class ManageItemsPage : Page
                 Content = $"Are you sure you want to delete '{category.Name}'? This action cannot be undone.",
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
-                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
+                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close};
 
             var result = await confirmDialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -197,7 +192,6 @@ public sealed partial class ManageItemsPage : Page
         try
         {
             var dialog = new TypeDialog();
-            dialog.XamlRoot = this.XamlRoot;
 
             var result = await dialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary && !string.IsNullOrEmpty(dialog.Result))
@@ -221,7 +215,6 @@ public sealed partial class ManageItemsPage : Page
             try
             {
                 var dialog = new TypeDialog(typeName);
-                dialog.XamlRoot = this.XamlRoot;
 
                 var result = await dialog.ShowAsync();
                 if (result == ModernWpf.Controls.ContentDialogResult.Primary && !string.IsNullOrEmpty(dialog.Result))
@@ -250,9 +243,7 @@ public sealed partial class ManageItemsPage : Page
                 Content = $"Are you sure you want to delete '{typeName}'? This action cannot be undone.",
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
-                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
+                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close};
 
             var result = await confirmDialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -270,7 +261,6 @@ public sealed partial class ManageItemsPage : Page
         try
         {
             var dialog = new TagDialog(_serviceProvider);
-            dialog.XamlRoot = this.XamlRoot;
 
             var result = await dialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary && dialog.Result != null)
@@ -291,7 +281,6 @@ public sealed partial class ManageItemsPage : Page
             try
             {
                 var dialog = new TagDialog(_serviceProvider, tag);
-                dialog.XamlRoot = this.XamlRoot;
 
                 var result = await dialog.ShowAsync();
                 if (result == ModernWpf.Controls.ContentDialogResult.Primary && dialog.Result != null)
@@ -316,9 +305,7 @@ public sealed partial class ManageItemsPage : Page
                 Content = $"Are you sure you want to delete '{tag.Name}'? This action cannot be undone.",
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
-                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
+                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close};
 
             var result = await confirmDialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -342,9 +329,7 @@ public sealed partial class ManageItemsPage : Page
         {
             Title = "Error",
             Content = message,
-            CloseButtonText = "OK",
-            XamlRoot = this.XamlRoot
-        };
+            CloseButtonText = "OK"};
         await errorDialog.ShowAsync();
     }
 }

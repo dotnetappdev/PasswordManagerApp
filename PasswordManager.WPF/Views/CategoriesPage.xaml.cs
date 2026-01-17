@@ -20,7 +20,7 @@ public sealed partial class CategoriesPage : Page
     }
 
     // Helper to prefer the main window XamlRoot so dialogs center on the app window
-    // WPF: GetMainXamlRoot() removed - not needed
+    // WPF: null removed - not needed
 
     /// <summary>
     /// Helper method to properly configure dialog for centering
@@ -30,8 +30,7 @@ public sealed partial class CategoriesPage : Page
         try
         {
             // Set XamlRoot to the main window's content for proper centering
-            var mainXamlRoot = GetMainXamlRoot();
-            if (mainXamlRoot != null)
+                        if (mainXamlRoot != null)
             {
                 // WPF: XamlRoot not needed
             }
@@ -44,7 +43,7 @@ public sealed partial class CategoriesPage : Page
             if (dialog.Style == null)
             {
                 // Apply the Modern1PasswordDialogStyle from resources
-                if (Application.Current.Resources.ContainsKey("Modern1PasswordDialogStyle"))
+                if (Application.Current.Resources.Contains("Modern1PasswordDialogStyle"))
                 {
                     dialog.Style = Application.Current.Resources["Modern1PasswordDialogStyle"] as Style;
                 }
@@ -62,9 +61,8 @@ public sealed partial class CategoriesPage : Page
 
     public void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
-        base.OnNavigatedTo(e);
-        
-        if (e.Parameter is IServiceProvider serviceProvider)
+        // Note: WPF Page doesn't have base.OnNavigatedTo
+        if (e.ExtraData is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
             _viewModel = new CategoriesViewModel(serviceProvider);
