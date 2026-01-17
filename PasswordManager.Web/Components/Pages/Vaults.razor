@@ -86,7 +86,7 @@
 </div>
 
 @code {
-    private List<Vault>? vaults;
+    private List<PasswordManager.Models.Vault>? vaults;
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
@@ -122,7 +122,7 @@
     {
         try
         {
-            var vault = new Vault
+            var vault = new PasswordManager.Models.Vault
             {
                 Name = "New Vault",
                 Description = "Created from web interface",
@@ -138,12 +138,12 @@
         }
     }
 
-    private void EditVault(Vault vault)
+    private void EditVault(PasswordManager.Models.Vault vault)
     {
         // TODO: Implement edit dialog
     }
 
-    private async Task DeleteVault(Vault vault)
+    private async Task DeleteVault(PasswordManager.Models.Vault vault)
     {
         try
         {

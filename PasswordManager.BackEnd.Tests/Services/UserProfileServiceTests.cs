@@ -5,6 +5,7 @@ using NUnit.Framework;
 using PasswordManager.Crypto.Interfaces;
 using PasswordManager.Models;
 using PasswordManager.Models.DTOs.Auth;
+using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
 
 namespace PasswordManager.BackEnd.Tests.Services;
@@ -14,6 +15,7 @@ public class UserProfileServiceTests
 {
     private Mock<UserManager<ApplicationUser>> _mockUserManager = null!;
     private Mock<IPasswordCryptoService> _mockPasswordCryptoService = null!;
+    private Mock<IVaultService> _mockVaultService = null!;
     private Mock<ILogger<UserProfileService>> _mockLogger = null!;
     private UserProfileService _userProfileService = null!;
     private const string TestUserId = "test-user-id";
@@ -25,11 +27,13 @@ public class UserProfileServiceTests
         var store = new Mock<IUserStore<ApplicationUser>>();
         _mockUserManager = new Mock<UserManager<ApplicationUser>>(store.Object, null, null, null, null, null, null, null, null);
         _mockPasswordCryptoService = new Mock<IPasswordCryptoService>();
+        _mockVaultService = new Mock<IVaultService>();
         _mockLogger = new Mock<ILogger<UserProfileService>>();
 
         _userProfileService = new UserProfileService(
             _mockUserManager.Object,
             _mockPasswordCryptoService.Object,
+            _mockVaultService.Object,
             _mockLogger.Object);
     }
 
@@ -68,13 +72,13 @@ public class UserProfileServiceTests
 
         // Assert
         Assert.That(result, Has.Count.EqualTo(2));
-        
+
         var user1 = result.First(u => u.Id == "user1");
         Assert.That(user1.Email, Is.EqualTo("user1@example.com"));
         Assert.That(user1.FirstName, Is.EqualTo("John"));
         Assert.That(user1.LastName, Is.EqualTo("Doe"));
         Assert.That(user1.IsActive, Is.True);
-        
+
         var user2 = result.First(u => u.Id == "user2");
         Assert.That(user2.Email, Is.EqualTo("user2@example.com"));
         Assert.That(user2.FirstName, Is.EqualTo("Jane"));
@@ -112,7 +116,7 @@ public class UserProfileServiceTests
         Assert.That(result.FirstName, Is.EqualTo("John"));
         Assert.That(result.LastName, Is.EqualTo("Doe"));
         Assert.That(result.IsActive, Is.True);
-        
+
         // Check that it returns UserProfileDetailsDto with additional properties
         Assert.That(result, Is.InstanceOf<UserProfileDetailsDto>());
         var detailsDto = result as UserProfileDetailsDto;
@@ -176,7 +180,7 @@ public class UserProfileServiceTests
         Assert.That(result.Item3, Is.Null);
 
         _mockUserManager.Verify(x => x.CreateAsync(
-            It.Is<ApplicationUser>(u => 
+            It.Is<ApplicationUser>(u =>
                 u.Email == TestEmail &&
                 u.FirstName == "John" &&
                 u.LastName == "Doe" &&
@@ -291,9 +295,9 @@ public class UserProfileServiceTests
     public void Constructor_WithNullUserManager_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        var ex = Assert.Throws<ArgumentNullException>(() => 
-            new UserProfileService(null, _mockPasswordCryptoService.Object, _mockLogger.Object));
-        
+        var ex = Assert.Throws<ArgumentNullException>(() =>
+            new UserProfileService(null, _mockPasswordCryptoService.Object, _mockVaultService.Object, _mockLogger.Object));
+
         Assert.That(ex.ParamName, Is.EqualTo("userManager"));
     }
 
@@ -301,19 +305,29 @@ public class UserProfileServiceTests
     public void Constructor_WithNullPasswordCryptoService_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        var ex = Assert.Throws<ArgumentNullException>(() => 
-            new UserProfileService(_mockUserManager.Object, null, _mockLogger.Object));
-        
+        var ex = Assert.Throws<ArgumentNullException>(() =>
+            new UserProfileService(_mockUserManager.Object, null, _mockVaultService.Object, _mockLogger.Object));
+
         Assert.That(ex.ParamName, Is.EqualTo("passwordCryptoService"));
+    }
+
+    [Test]
+    public void Constructor_WithNullVaultService_ShouldThrowArgumentNullException()
+    {
+        // Act & Assert
+        var ex = Assert.Throws<ArgumentNullException>(() =>
+            new UserProfileService(_mockUserManager.Object, _mockPasswordCryptoService.Object, null!, _mockLogger.Object));
+
+        Assert.That(ex.ParamName, Is.EqualTo("vaultService"));
     }
 
     [Test]
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        var ex = Assert.Throws<ArgumentNullException>(() => 
-            new UserProfileService(_mockUserManager.Object, _mockPasswordCryptoService.Object, null));
-        
+        var ex = Assert.Throws<ArgumentNullException>(() =>
+            new UserProfileService(_mockUserManager.Object, _mockPasswordCryptoService.Object, _mockVaultService.Object, null!));
+
         Assert.That(ex.ParamName, Is.EqualTo("logger"));
     }
 }

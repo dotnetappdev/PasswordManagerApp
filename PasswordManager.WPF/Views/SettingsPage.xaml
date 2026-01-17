@@ -325,7 +325,7 @@
                                           Style="{StaticResource ModernCaptionStyle}"/>
                                 <!-- TimePicker not supported in WPF: <TimePicker x:Name="BackupTimePicker"
                                            Time="{Binding PreferredBackupTime, Mode=TwoWay}"
-                                           ClockIdentifier="24HourClock"/>
+                                           ClockIdentifier="24HourClock"/> -->
                                            
                                 <TextBlock Text="{Binding NextScheduledBackupFormatted}"
                                           Style="{StaticResource ModernCaptionStyle}"

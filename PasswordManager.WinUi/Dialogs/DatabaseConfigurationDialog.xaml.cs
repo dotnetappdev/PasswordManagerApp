@@ -21,7 +21,7 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
         _platformService = platformService;
         _databaseConfigService = databaseConfigService;
         this.InitializeComponent();
-        
+
         // Set default path
         _defaultPath = Path.Combine(_platformService.GetAppDataDirectory(), "passwordmanager.db");
         DefaultPathTextBlock.Text = _defaultPath;
@@ -33,11 +33,11 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
         try
         {
             var folderPicker = new FolderPicker();
-            
+
             // Get the window handle
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.Current.MainWindow);
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle((Application.Current as App)?.MainWindow);
             WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
-            
+
             folderPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
             folderPicker.FileTypeFilter.Add("*");
 
@@ -67,7 +67,7 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
     {
         // Validate the path
         var pathToUse = SelectedDatabasePath;
-        
+
         try
         {
             // Validate path security
@@ -77,14 +77,14 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
                 await ShowErrorAsync("Invalid Path", "The selected path is not allowed. Please choose a location in your user directories.");
                 return;
             }
-            
+
             // Ensure the directory exists
             var directory = Path.GetDirectoryName(pathToUse);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 // Ask for confirmation to create the directory
                 args.Cancel = true;
-                
+
                 var confirmDialog = new ContentDialog
                 {
                     Title = "Create Directory?",
@@ -122,13 +122,13 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
         {
             // Get the full path to resolve any relative paths
             var fullPath = Path.GetFullPath(path);
-            
+
             // Disallow system directories
             var systemDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
             var windowsDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
             var programFilesDir = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             var programFilesX86Dir = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-            
+
             if (fullPath.StartsWith(systemDir, StringComparison.OrdinalIgnoreCase) ||
                 fullPath.StartsWith(windowsDir, StringComparison.OrdinalIgnoreCase) ||
                 fullPath.StartsWith(programFilesDir, StringComparison.OrdinalIgnoreCase) ||
@@ -136,13 +136,13 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
             {
                 return false;
             }
-            
+
             // Disallow UNC paths (network paths)
             if (fullPath.StartsWith(@"\\"))
             {
                 return false;
             }
-            
+
             return true;
         }
         catch
@@ -169,18 +169,18 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
         try
         {
             var config = _databaseConfigService.GetDefaultConfiguration();
-            
+
             // Ensure Sqlite config is initialized
             if (config.Sqlite == null)
             {
                 config.Sqlite = new PasswordManager.Models.Configuration.SqliteConfig();
             }
-            
+
             config.Sqlite.DatabasePath = databasePath;
             config.IsFirstRun = false;
-            
+
             await _databaseConfigService.SaveConfigurationAsync(config);
-            
+
         }
         catch (Exception ex)
         {

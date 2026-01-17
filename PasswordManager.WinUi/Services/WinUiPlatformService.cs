@@ -1,58 +1,27 @@
 using PasswordManager.Services.Interfaces;
+using System;
+using System.IO;
+using Windows.Storage;
 
 namespace PasswordManager.WinUi.Services;
 
 public class WinUiPlatformService : IPlatformService
 {
-    /// <summary>
-    /// Determines if the app is running as a packaged MSIX app.
-    /// </summary>
-    private static bool IsPackaged()
-    {
-        try
-        {
-            // If we can access Package.Current without exception, we're packaged
-            _ = Windows.ApplicationModel.Package.Current;
-            return true;
-        }
-        catch (InvalidOperationException)
-        {
-            // Exception thrown when accessing Package.Current means we're unpackaged
-            return false;
-        }
-    }
-
     public string GetAppDataDirectory()
     {
-        string appDir;
-
-        if (IsPackaged())
+        // Prefer packaged app storage when available
+        try
         {
-            // For packaged apps (MSIX), use Windows.Storage.ApplicationData.Current.LocalFolder
-            // This is the correct location for sandboxed apps
-            appDir = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
+            var cachePath = ApplicationData.Current.LocalCacheFolder.Path;
+            return cachePath;
         }
-        else
+        catch
         {
-            // For unpackaged apps, use the traditional LocalApplicationData folder
+            // Fallback for unpackaged: %LocalAppData%\PasswordManager
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            appDir = Path.Combine(localAppData, "PasswordManager");
-
-            // Create directory for unpackaged apps (packaged apps have LocalFolder pre-created)
-            try
-            {
-                if (!Directory.Exists(appDir))
-                {
-                    Directory.CreateDirectory(appDir);
-                }
-            }
-            catch (Exception)
-            {
-                // Directory creation failed, will return path anyway
-            }
+            var appDir = Path.Combine(localAppData, "PasswordManager");
+            return appDir;
         }
-
-        return appDir;
     }
 
     public string GetDocumentsDirectory()
