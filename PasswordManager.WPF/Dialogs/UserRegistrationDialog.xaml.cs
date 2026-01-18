@@ -138,7 +138,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
                 return;
             }
 
-            var isAdmin = AdminToggleSwitch.IsChecked;
+            var isAdmin = AdminToggleSwitch.IsChecked == true;
             ShowRoleSelection = !isAdmin;
 
             if (isAdmin)
@@ -233,7 +233,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
 
             // Determine the role
             string selectedRole;
-            if (CanCreateAdminAccount && AdminToggleSwitch.IsChecked)
+            if (CanCreateAdminAccount && AdminToggleSwitch.IsChecked == true)
             {
                 selectedRole = ApplicationRoles.Admin;
             }
@@ -327,7 +327,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         if (string.IsNullOrWhiteSpace(FirstNameTextBox.Text))
         {
             ShowErrorMessage("Please enter a first name.");
-            FirstNameTextBox.Focus(FocusState.Programmatic);
+            FirstNameTextBox.Focus();
             return false;
         }
 
@@ -335,7 +335,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         {
             SetFieldError(FirstNameBorder, true);
             ShowErrorMessage("First name must be at least 2 characters long.");
-            FirstNameTextBox.Focus(FocusState.Programmatic);
+            FirstNameTextBox.Focus();
             return false;
         }
 
@@ -343,7 +343,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         {
             SetFieldError(FirstNameBorder, true);
             ShowErrorMessage("First name can only contain letters, spaces, hyphens, and apostrophes.");
-            FirstNameTextBox.Focus(FocusState.Programmatic);
+            FirstNameTextBox.Focus();
             return false;
         }
 
@@ -352,7 +352,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         {
             SetFieldError(LastNameBorder, true);
             ShowErrorMessage("Please enter a last name.");
-            LastNameTextBox.Focus(FocusState.Programmatic);
+            LastNameTextBox.Focus();
             return false;
         }
 
@@ -360,7 +360,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         {
             SetFieldError(LastNameBorder, true);
             ShowErrorMessage("Last name must be at least 2 characters long.");
-            LastNameTextBox.Focus(FocusState.Programmatic);
+            LastNameTextBox.Focus();
             return false;
         }
 
@@ -368,7 +368,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         {
             SetFieldError(LastNameBorder, true);
             ShowErrorMessage("Last name can only contain letters, spaces, hyphens, and apostrophes.");
-            LastNameTextBox.Focus(FocusState.Programmatic);
+            LastNameTextBox.Focus();
             return false;
         }
 
@@ -377,7 +377,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         {
             SetFieldError(EmailBorder, true);
             ShowErrorMessage("Please enter an email address.");
-            EmailTextBox.Focus(FocusState.Programmatic);
+            EmailTextBox.Focus();
             return false;
         }
 
@@ -385,7 +385,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         {
             SetFieldError(EmailBorder, true);
             ShowErrorMessage("Email address must be at least 3 characters long.");
-            EmailTextBox.Focus(FocusState.Programmatic);
+            EmailTextBox.Focus();
             return false;
         }
 
@@ -394,7 +394,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         {
             SetFieldError(EmailBorder, true);
             ShowErrorMessage("Please enter a valid email address with only legal characters (letters, numbers, @, ., -, _).");
-            EmailTextBox.Focus(FocusState.Programmatic);
+            EmailTextBox.Focus();
             return false;
         }
 
@@ -403,7 +403,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         {
             SetFieldError(MasterPasswordBorder, true);
             ShowErrorMessage("Please enter a master password.");
-            MasterPasswordBox.Focus(FocusState.Programmatic);
+            MasterPasswordBox.Focus();
             return false;
         }
 
@@ -413,7 +413,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         {
             SetFieldError(MasterPasswordBorder, true);
             ShowErrorMessage("Master password must be at least 8 characters long.");
-            MasterPasswordBox.Focus(FocusState.Programmatic);
+            MasterPasswordBox.Focus();
             return false;
         }
 
@@ -421,7 +421,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         {
             SetFieldError(MasterPasswordBorder, true);
             ShowErrorMessage("Master password must contain at least one uppercase letter.");
-            MasterPasswordBox.Focus(FocusState.Programmatic);
+            MasterPasswordBox.Focus();
             return false;
         }
 
@@ -429,7 +429,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         {
             SetFieldError(MasterPasswordBorder, true);
             ShowErrorMessage("Master password must contain at least one lowercase letter.");
-            MasterPasswordBox.Focus(FocusState.Programmatic);
+            MasterPasswordBox.Focus();
             return false;
         }
 
@@ -437,7 +437,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         {
             SetFieldError(MasterPasswordBorder, true);
             ShowErrorMessage("Master password must contain at least one number.");
-            MasterPasswordBox.Focus(FocusState.Programmatic);
+            MasterPasswordBox.Focus();
             return false;
         }
 
@@ -447,7 +447,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
             SetFieldError(MasterPasswordBorder, true);
             SetFieldError(ConfirmPasswordBorder, true);
             ShowErrorMessage("Passwords do not match. Please try again.");
-            ConfirmPasswordBox.Focus(FocusState.Programmatic);
+            ConfirmPasswordBox.Focus();
             return false;
         }
 
@@ -459,16 +459,16 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         ErrorMessageTextBlock.Text = message;
         ErrorMessageBorder.Visibility = Visibility.Visible;
 
-        // Also show in InfoBar for modern toast-like notification
-        ValidationInfoBar.Message = message;
-        ValidationInfoBar.Severity = InfoBarSeverity.Error;
-        ValidationInfoBar.IsOpen = true;
+        // InfoBar is not available in WPF/ModernWPF
+        // ValidationInfoBar.Message = message;
+        // ValidationInfoBar.Severity = InfoBarSeverity.Error;
+        // ValidationInfoBar.IsOpen = true;
     }
 
     private void HideErrorMessage()
     {
         ErrorMessageBorder.Visibility = Visibility.Collapsed;
-        ValidationInfoBar.IsOpen = false;
+        // ValidationInfoBar.IsOpen = false;
     }
 
     private void SetFieldError(Border border, bool hasError)
@@ -482,7 +482,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         else
         {
             border.BorderBrush = new System.Windows.Media.SolidColorBrush(
-                Color.FromArgb(255, 74, 74, 74)); // #4A4A4A
+                System.Windows.Media.Color.FromArgb(255, 74, 74, 74)); // #4A4A4A
             border.BorderThickness = new Thickness(1);
         }
     }
@@ -490,25 +490,25 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
     private void FirstNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         SetFieldError(FirstNameBorder, false);
-        ValidationInfoBar.IsOpen = false;
+        // ValidationInfoBar.IsOpen = false;
     }
 
     private void LastNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         SetFieldError(LastNameBorder, false);
-        ValidationInfoBar.IsOpen = false;
+        // ValidationInfoBar.IsOpen = false;
     }
 
     private void EmailTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         SetFieldError(EmailBorder, false);
-        ValidationInfoBar.IsOpen = false;
+        // ValidationInfoBar.IsOpen = false;
     }
 
     private void MasterPasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
     {
         SetFieldError(MasterPasswordBorder, false);
-        ValidationInfoBar.IsOpen = false;
+        // ValidationInfoBar.IsOpen = false;
 
         // Update password strength indicator
         var password = MasterPasswordBox.Password;
@@ -551,7 +551,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
     private void ConfirmPasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
     {
         SetFieldError(ConfirmPasswordBorder, false);
-        ValidationInfoBar.IsOpen = false;
+        // ValidationInfoBar.IsOpen = false;
     }
 }
 

@@ -534,7 +534,7 @@ public sealed partial class MainWindow : Window
             var favoriteCategories = categories.Where(c => c.IsFavorite).ToList();
             
             // Update UI on dispatcher thread
-            System.Windows.Threading.Dispatcher.GetForCurrentThread().TryEnqueue(() =>
+            Dispatcher.Invoke(() =>
             {
                 var favPanel = this.Content as FrameworkElement;
                 var categoriesPanel = favPanel?.FindName("FavoriteCategoriesPanel") as StackPanel;
@@ -596,7 +596,7 @@ public sealed partial class MainWindow : Window
                         CornerRadius = new CornerRadius(12),
                         Padding = new Thickness(8, 4, 8, 4),
                         Margin = new Thickness(8, 4, 8, 0),
-                        Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 48, 50, 52)),
+                        Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 48, 50, 52)),
                     };
 
                     // Try to use tag color if available
@@ -614,7 +614,7 @@ public sealed partial class MainWindow : Window
                                     var r = Convert.ToByte(hex.Substring(0, 2), 16);
                                     var g = Convert.ToByte(hex.Substring(2, 2), 16);
                                     var b = Convert.ToByte(hex.Substring(4, 2), 16);
-                                    color = Microsoft.UI.ColorHelper.FromArgb(255, r, g, b);
+                                    color = System.Windows.Media.Color.FromArgb(255, r, g, b);
                                 }
                             }
 

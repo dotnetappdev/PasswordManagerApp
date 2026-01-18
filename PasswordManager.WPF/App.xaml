@@ -1,5 +1,5 @@
 <Application
-    x:Class="PasswordManager.WinUi.App"
+    x:Class="PasswordManager.WPF.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="clr-namespace:PasswordManager.WPF.Converters">

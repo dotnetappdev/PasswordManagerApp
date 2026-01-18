@@ -536,7 +536,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             item.Title = TitleTextBox.Text.Trim();
             item.Description = DescriptionTextBox.Text?.Trim();
             item.Type = selectedType;
-            item.IsFavorite = IsFavoriteCheckBox.IsChecked;
+            item.IsFavorite = IsFavoriteCheckBox.IsChecked == true;
             item.LastModified = DateTime.UtcNow;
 
             // Set user ID from current authenticated user (use GetCurrentUserIdAsync result)

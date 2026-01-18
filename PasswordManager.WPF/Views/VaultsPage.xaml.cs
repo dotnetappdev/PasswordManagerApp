@@ -30,15 +30,7 @@ public sealed partial class VaultsPage : Page
     {
         try
         {
-            // Set XamlRoot to the main window's content for proper centering
-                        if (mainXamlRoot != null)
-            {
-                // WPF: XamlRoot not needed
-            }
-            else if (this.XamlRoot != null)
-            {
-                // WPF: XamlRoot not needed
-            }
+            // WPF: XamlRoot not needed in WPF
             
             // Ensure the dialog uses the proper style for centering if it doesn't have one already
             if (dialog.Style == null)
@@ -52,11 +44,7 @@ public sealed partial class VaultsPage : Page
         }
         catch (Exception ex)
         {
-            // Fallback to page XamlRoot
-            if (this.XamlRoot != null)
-            {
-                // WPF: XamlRoot not needed
-            }
+            // Fallback - no action needed in WPF
         }
     }
 
