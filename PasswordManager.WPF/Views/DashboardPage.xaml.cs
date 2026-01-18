@@ -26,9 +26,8 @@ public sealed partial class DashboardPage : System.Windows.Controls.Page
 
     public void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
-        base.OnNavigatedTo(e);
-
-        if (e.Parameter is IServiceProvider serviceProvider)
+        // Note: WPF Page doesn't have base.OnNavigatedTo
+        if (e.ExtraData is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
             _viewModel = new DashboardViewModel(serviceProvider);

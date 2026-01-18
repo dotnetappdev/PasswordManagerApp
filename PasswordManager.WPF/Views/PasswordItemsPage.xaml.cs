@@ -45,10 +45,9 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
     public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
-        base.OnNavigatedTo(e);
-
+        // Note: WPF Page doesn't have base.OnNavigatedTo
         // Handle both old service provider parameter and new filter data parameter
-        if (e.Parameter is NavigationFilterData filterData)
+        if (e.ExtraData is NavigationFilterData filterData)
         {
             _serviceProvider = filterData.ServiceProvider;
             _categoryService = _serviceProvider.GetRequiredService<ICategoryInterface>();
@@ -58,7 +57,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             // Apply the filter from navigation
             ApplyNavigationFilter(filterData);
         }
-        else if (e.Parameter is IServiceProvider serviceProvider)
+        else if (e.ExtraData is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
             _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
@@ -85,8 +84,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 }
             }
             catch (Exception ex)
-            {
-            }
+            { }
 
             // Reload view model items after seeding to ensure UI shows newly created items
             try
@@ -97,8 +95,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 }
             }
             catch (Exception ex)
-            {
-            }
+            { }
         }
     }
 
@@ -157,8 +154,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             }
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     private async Task PopulateCategoryDropdownAsync()
@@ -174,7 +170,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
         // Add "All Categories" option
         var allCategoriesItem = new ComboBoxItem();
-        var allStackPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        var allStackPanel = new StackPanel { Orientation = Orientation.Horizontal };
         allStackPanel.Children.Add(new Border
         {
             Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.LightGray),
@@ -191,7 +187,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         foreach (var category in _categories)
         {
             var item = new ComboBoxItem();
-            var stackPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+            var stackPanel = new StackPanel { Orientation = Orientation.Horizontal };
 
             // Add color indicator
             var colorBrush = new System.Windows.Media.SolidColorBrush();
@@ -424,8 +420,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             await ShowTemporaryMessageAsync("Password copied to clipboard");
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     private async void OpenWebsiteButton_Click(object sender, RoutedEventArgs e)
@@ -445,8 +440,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             await Windows.System.Launcher.LaunchUriAsync(uri);
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     private async Task ShowTemporaryMessageAsync(string message)
@@ -473,9 +467,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 {
                     Title = "",
                     Content = message,
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
-                };
+                    CloseButtonText = "OK"};
                 await dialog.ShowAsync();
             }
         }
@@ -565,8 +557,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             }
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     private string GetTypeIcon(string type)
@@ -666,9 +657,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 Content = $"Are you sure you want to delete '{item.Title}'?",
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
-                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
+                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close};
 
             var result = await dialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -707,9 +696,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 {
                     Title = "Error",
                     Content = "Service provider not initialized. Please navigate to this page properly.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
-                };
+                    CloseButtonText = "OK"};
                 await errorDialog.ShowAsync();
                 return;
             }
@@ -745,9 +732,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             {
                 Title = "Error",
                 Content = $"Error editing password: {ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = this.XamlRoot
-            };
+                CloseButtonText = "OK"};
             await errorDialog.ShowAsync();
         }
     }
@@ -846,8 +831,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             }
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     private async void RemoveTagButton_Click(object sender, RoutedEventArgs e)
@@ -880,8 +864,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             }
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     private void AddCategoryButton_Click(object sender, RoutedEventArgs e)
@@ -901,8 +884,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             }
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     private MainWindow? GetMainWindow()
@@ -921,21 +903,11 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             // Try to get the main window for proper centering
             var mainWindow = GetMainWindow();
 
-            // Set XamlRoot to the main window's content for proper centering
-            if (mainWindow?.Content?.XamlRoot != null)
-            {
-                dialog.XamlRoot = mainWindow.Content.XamlRoot;
-            }
-            else if (this.XamlRoot != null)
-            {
-                dialog.XamlRoot = this.XamlRoot;
-            }
-
             // Ensure the dialog uses the proper style for centering if it doesn't have one already
             if (dialog.Style == null)
             {
                 // Apply the Modern1PasswordDialogStyle from resources
-                if (Application.Current.Resources.ContainsKey("Modern1PasswordDialogStyle"))
+                if (Application.Current.Resources.Contains("Modern1PasswordDialogStyle"))
                 {
                     dialog.Style = Application.Current.Resources["Modern1PasswordDialogStyle"] as Style;
                 }
@@ -943,11 +915,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         }
         catch (Exception ex)
         {
-            // Fallback to page XamlRoot
-            if (this.XamlRoot != null)
-            {
-                dialog.XamlRoot = this.XamlRoot;
-            }
+            // Fallback - no action needed
         }
     }
 
@@ -971,9 +939,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 {
                     Title = "Error",
                     Content = "Service provider not initialized. Please navigate to this page properly.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
-                };
+                    CloseButtonText = "OK"};
                 await errorDialog.ShowAsync();
                 return;
             }
@@ -1012,9 +978,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 {
                     Title = "Error",
                     Content = "Service provider not initialized. Please navigate to this page properly.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
-                };
+                    CloseButtonText = "OK"};
                 await errorDialog.ShowAsync();
                 return;
             }
@@ -1079,8 +1043,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             ShowFilterAppliedFeedback();
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     private void ShowFilterAppliedFeedback()
@@ -1138,7 +1101,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
         // Always add "All Categories" option
         var allCategoriesItem = new ComboBoxItem();
-        var allStackPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        var allStackPanel = new StackPanel { Orientation = Orientation.Horizontal };
         allStackPanel.Children.Add(new Border
         {
             Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.LightGray),
@@ -1160,7 +1123,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         foreach (var category in filteredCategories)
         {
             var item = new ComboBoxItem();
-            var stackPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+            var stackPanel = new StackPanel { Orientation = Orientation.Horizontal };
 
             // Add color indicator
             var colorBrush = new System.Windows.Media.SolidColorBrush();
@@ -1214,8 +1177,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             await ShowTemporaryMessageAsync("Username copied to clipboard");
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     private void GeneratePasswordButton_Click(object sender, RoutedEventArgs e)
@@ -1236,8 +1198,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             }
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     private async void EditDetailButton_Click(object sender, RoutedEventArgs e)
@@ -1256,9 +1217,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 {
                     Title = "Error",
                     Content = "Service provider not initialized. Please navigate to this page properly.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
-                };
+                    CloseButtonText = "OK"};
                 await errorDialog.ShowAsync();
                 return;
             }
@@ -1279,9 +1238,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             {
                 Title = "Error",
                 Content = $"Error opening edit dialog: {ex.Message}",
-                CloseButtonText = "OK",
-                XamlRoot = this.XamlRoot
-            };
+                CloseButtonText = "OK"};
             await errorDialog.ShowAsync();
         }
     }
@@ -1329,14 +1286,14 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
                 var nameTextBox = new TextBox
                 {
-                    PlaceholderText = "Field name",
+                    // PlaceholderText = "Field name",
                     Margin = new Thickness(0, 0, 4, 0)
                 };
                 Grid.SetColumn(nameTextBox, 0);
 
                 var valueTextBox = new TextBox
                 {
-                    PlaceholderText = "Field value",
+                    // PlaceholderText = "Field value",
                     Margin = new Thickness(4, 0, 4, 0)
                 };
                 Grid.SetColumn(valueTextBox, 1);
@@ -1360,7 +1317,6 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             }
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 }

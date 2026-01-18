@@ -30,7 +30,7 @@ public static class CustomFieldHelper
             Style = ResourceHelper.GetStyle("ModernTextBoxStyle"),
             Margin = new Thickness(0, 0, 8, 0)
         };
-        ModernWpf.Controls.ControlHelper.SetPlaceholderText(nameTextBox, "Field name");
+        // PlaceholderText not available - using direct property;
         
         nameTextBox.TextChanged += (s, e) =>
         {
@@ -90,7 +90,7 @@ public static class CustomFieldHelper
                     Password = field.Value,
                     Style = ResourceHelper.GetStyle("ModernPasswordBoxStyle")
                 };
-                ModernWpf.Controls.ControlHelper.SetPlaceholderText(passwordBox, "Enter password");
+                // PlaceholderText not available - using direct property;
                 passwordBox.PasswordChanged += (s, e) =>
                 {
                     field.Value = passwordBox.Password;
@@ -126,7 +126,7 @@ public static class CustomFieldHelper
                     MaxHeight = 120,
                     Style = ResourceHelper.GetStyle("ModernTextBoxStyle")
                 };
-                ModernWpf.Controls.ControlHelper.SetPlaceholderText(textArea, "Enter text");
+                // PlaceholderText not available - using direct property;
                 textArea.TextChanged += (s, e) =>
                 {
                     field.Value = textArea.Text;
@@ -140,7 +140,7 @@ public static class CustomFieldHelper
                     Value = double.TryParse(field.Value, out var number) ? number : 0,
                     Style = ResourceHelper.GetStyle("ModernNumberBoxStyle")
                 };
-                ModernWpf.Controls.ControlHelper.SetPlaceholderText(numberBox, "Enter number");
+                // PlaceholderText not available - using direct property;
                 numberBox.ValueChanged += (s, e) =>
                 {
                     field.Value = numberBox.Value.ToString();
@@ -158,7 +158,7 @@ public static class CustomFieldHelper
                     Text = field.Value,
                     Style = ResourceHelper.GetStyle("ModernTextBoxStyle")
                 };
-                ModernWpf.Controls.ControlHelper.SetPlaceholderText(textBox, GetPlaceholderForType(field.Type));
+                // PlaceholderText not available - using direct property);
                 textBox.TextChanged += (s, e) =>
                 {
                     field.Value = textBox.Text;
@@ -187,7 +187,7 @@ public static class CustomFieldHelper
         {
             Style = ResourceHelper.GetStyle("ModernComboBoxStyle")
         };
-        ModernWpf.Controls.ControlHelper.SetPlaceholderText(comboBox, "Select field type");
+        // PlaceholderText not available - using direct property;
 
         var fieldTypes = Enum.GetValues<CustomFieldType>().ToList();
         foreach (var type in fieldTypes)

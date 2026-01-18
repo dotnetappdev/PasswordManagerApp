@@ -12,6 +12,7 @@ using PasswordManager.Models;
 using PasswordManager.Services;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Services;
+using System.IO;
 
 #if FALSE
 using PasswordManager.WPF.Services.FileLogging;
@@ -199,7 +200,7 @@ public static class ServiceConfiguration
         services.AddScoped<IPasswordEncryptionService, PasswordEncryptionService>();
         services.AddScoped<IPasskeyService, PasskeyService>();
         services.AddScoped<WpfAuthService>();
-        services.AddScoped<IAuthService, ConfigurableAuthService>();
+        services.AddScoped<IAuthService, WpfAuthService>();
         services.AddScoped<IPasswordRevealService, PasswordRevealService>();
         services.AddScoped<IAppSyncService, AppSyncService>();
         services.AddScoped<IAppStartupService, AppStartupService>();
@@ -246,7 +247,8 @@ public static class ServiceConfiguration
         services.AddLogging(builder =>
         {
             builder.AddDebug();
-            builder.AddProvider(new FileLoggerProvider(logBase, LogLevel.Debug));
+            // FileLoggerProvider is WinUI-specific, commenting out for WPF
+            // builder.AddProvider(new FileLoggerProvider(logBase, LogLevel.Debug));
         });
     }
 #endif

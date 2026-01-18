@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Models.DTOs;
@@ -29,9 +30,8 @@ public sealed partial class SettingsPage : Page
 
     public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
-        base.OnNavigatedTo(e);
-
-        if (e.Parameter is IServiceProvider serviceProvider)
+        // Note: WPF Page doesn't have base.OnNavigatedTo
+        if (e.ExtraData is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
             _authService = serviceProvider.GetRequiredService<IAuthService>();
@@ -317,8 +317,7 @@ public sealed partial class SettingsPage : Page
             }
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     private async void TwoFactorToggle_Toggled(object sender, RoutedEventArgs e)
@@ -679,8 +678,7 @@ public sealed partial class SettingsPage : Page
                     }
                 }
                 catch (Exception ex)
-                {
-                }
+                { }
             }
 
             // Perform import
@@ -884,7 +882,7 @@ public sealed partial class SettingsPage : Page
         var connectionStringBox = new TextBox
         {
             Header = "Connection String",
-            PlaceholderText = "Enter database connection string...",
+            // PlaceholderText = "Enter database connection string...",
             TextWrapping = System.Windows.TextWrapping.Wrap,
             AcceptsReturn = true,
             MinHeight = 80,
@@ -905,7 +903,7 @@ public sealed partial class SettingsPage : Page
             Margin = new System.Windows.Thickness(0, 8, 0, 0)
         };
 
-        var stackPanel = new StackPanel { Spacing = 16 };
+        var stackPanel = new StackPanel { };
         stackPanel.Children.Add(providerComboBox);
         stackPanel.Children.Add(connectionStringBox);
         stackPanel.Children.Add(testButton);
@@ -1077,25 +1075,25 @@ public sealed partial class SettingsPage : Page
         var currentPasswordBox = new PasswordBox
         {
             Header = "Current Master Password",
-            PlaceholderText = "Enter current master password"
+            // PlaceholderText = "Enter current master password"
         };
 
         var newPasswordBox = new PasswordBox
         {
             Header = "New Master Password",
-            PlaceholderText = "Enter new master password (min 8 chars, with uppercase, lowercase, and numbers)"
+            // PlaceholderText = "Enter new master password (min 8 chars, with uppercase, lowercase, and numbers)"
         };
 
         var confirmPasswordBox = new PasswordBox
         {
             Header = "Confirm New Master Password",
-            PlaceholderText = "Confirm new master password"
+            // PlaceholderText = "Confirm new master password"
         };
 
         var passwordHintBox = new TextBox
         {
             Header = "Password Hint (Optional)",
-            PlaceholderText = "Enter a hint to help you remember your password"
+            // PlaceholderText = "Enter a hint to help you remember your password"
         };
 
         var errorTextBlock = new TextBlock
@@ -1105,7 +1103,7 @@ public sealed partial class SettingsPage : Page
             Visibility = System.Windows.Visibility.Collapsed
         };
 
-        var stackPanel = new StackPanel { Spacing = 16 };
+        var stackPanel = new StackPanel { };
         stackPanel.Children.Add(errorTextBlock);
         stackPanel.Children.Add(currentPasswordBox);
         stackPanel.Children.Add(newPasswordBox);
@@ -1422,7 +1420,7 @@ public sealed partial class SettingsPage : Page
 
     private async Task<PasswordBox> CreateMasterPasswordInput()
     {
-        var stackPanel = new StackPanel { Spacing = 8 };
+        var stackPanel = new StackPanel { };
 
         stackPanel.Children.Add(new TextBlock
         {
@@ -1432,7 +1430,7 @@ public sealed partial class SettingsPage : Page
 
         var passwordBox = new PasswordBox
         {
-            PlaceholderText = "Master Password",
+            // PlaceholderText = "Master Password",
             Width = 300
         };
         stackPanel.Children.Add(passwordBox);

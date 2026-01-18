@@ -30,7 +30,7 @@ public sealed partial class LoginPage : Page
         // Focus the master password field when the page loads
         if (this.FindName("MasterPasswordBox") is PasswordBox masterPasswordBox)
         {
-            masterPasswordBox.Focus(FocusState.Programmatic);
+            masterPasswordBox.Focus();
         }
     }
 
@@ -42,10 +42,11 @@ public sealed partial class LoginPage : Page
         }
     }
 
+    // Custom navigation handler for WPF (replacing WinUI's OnNavigatedTo)
     public void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
-        base.OnNavigatedTo(e);
-        if (e.Parameter is IServiceProvider serviceProvider)
+        // Note: WPF Page doesn't have base.OnNavigatedTo
+        if (e.ExtraData is IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
             _viewModel = new LoginViewModel(serviceProvider);
@@ -65,8 +66,7 @@ public sealed partial class LoginPage : Page
             _ = CheckAuthenticationStatusAsync();
         }
         else
-        {
-        }
+        { }
     }
 
     private async Task CheckAuthenticationStatusAsync()
@@ -86,8 +86,7 @@ public sealed partial class LoginPage : Page
             }
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     private async Task DoPrimaryActionAsync()
@@ -100,7 +99,7 @@ public sealed partial class LoginPage : Page
 
         // Resolve UI elements once for this handler
         var primaryActionButton = this.FindName("PrimaryActionButton") as Button;
-        var authProgressRing = this.FindName("AuthProgressRing") as ProgressRing;
+        var authProgressRing = this.FindName("AuthProgressRing") as System.Windows.Controls.ProgressBar;
         var masterPasswordBox = this.FindName("MasterPasswordBox") as PasswordBox;
         var confirmPasswordBox = this.FindName("ConfirmPasswordBox") as PasswordBox;
         var passwordHintBox = this.FindName("PasswordHintBox") as TextBox;
@@ -108,7 +107,7 @@ public sealed partial class LoginPage : Page
         try
         {
             if (primaryActionButton != null) primaryActionButton.IsEnabled = false;
-            if (authProgressRing != null) authProgressRing.IsActive = true;
+            if (authProgressRing != null) authProgressRing.IsIndeterminate = true;
 
             // Update ViewModel with current values
             _viewModel.MasterPassword = masterPasswordBox?.Password ?? string.Empty;
@@ -132,11 +131,6 @@ public sealed partial class LoginPage : Page
                 {
                     mainWindow.NavigateToHome();
                 }
-                else
-                {
-                    // Fallback navigation
-                    this.Frame?.Navigate(typeof(DashboardPage), _serviceProvider);
-                }
             }
         }
         catch (Exception ex)
@@ -146,7 +140,7 @@ public sealed partial class LoginPage : Page
         finally
         {
             if (primaryActionButton != null) primaryActionButton.IsEnabled = true;
-            if (authProgressRing != null) authProgressRing.IsActive = false;
+            if (authProgressRing != null) authProgressRing.IsIndeterminate = false;
         }
     }
 
@@ -216,8 +210,7 @@ public sealed partial class LoginPage : Page
                 }
             }
             catch (Exception ex)
-            {
-            }
+            { }
 
             // Create and show the registration dialog
             if (_serviceProvider == null)
@@ -226,44 +219,19 @@ public sealed partial class LoginPage : Page
             }
 
             var registrationDialog = new Dialogs.UserRegistrationDialog(_serviceProvider!, currentUser);
-            // Ensure the dialog has the XamlRoot set so it can be shown correctly
-            registrationDialog.XamlRoot = this.XamlRoot;
+            
             var result = await registrationDialog.ShowAsync();
-
-            if (result == ModernWpf.Controls.ContentDialogResult.Primary && registrationDialog.Result != null)
+            if (result == ModernWpf.Controls.ContentDialogResult.Primary)
             {
-                // User was created successfully
-                var userResult = registrationDialog.Result;
-
-                // Optionally auto-login the new user
-                if (_viewModel != null)
+                // Refresh the profiles list
+                if (_profileSelectionViewModel != null)
                 {
-                    _viewModel.MasterPassword = userResult.MasterPassword;
-                    _viewModel.SelectedUser = new UserDto
-                    {
-                        Id = userResult.User.Id,
-                        Email = userResult.User.Email!,
-                        FirstName = userResult.User.FirstName!,
-                        LastName = userResult.User.LastName!,
-                        IsActive = userResult.User.IsActive
-                    };
-                    _viewModel.ShowProfileSelection = false;
-
-                    // Attempt to authenticate with the new user
-                    var success = await _viewModel.AuthenticateAsync();
-                    if (success)
-                    {
-                        if (GetMainWindow() is MainWindow mainWindow)
-                        {
-                            mainWindow.NavigateToHome();
-                        }
-                    }
+                    await _profileSelectionViewModel.LoadUserProfilesAsync();
                 }
             }
         }
         catch (Exception ex)
-        {
-        }
+        { }
     }
 
     private async void CreateAccountButton_Click(object sender, RoutedEventArgs e)
@@ -277,12 +245,11 @@ public sealed partial class LoginPage : Page
             }
 
             var registrationDialog = new Dialogs.UserRegistrationDialog(_serviceProvider);
-            registrationDialog.XamlRoot = this.XamlRoot;
-
+            
             var result = await registrationDialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary)
             {
-                // Registration was successful, refresh the login page
+                // Refresh the login page
                 if (_viewModel != null)
                 {
                     await _viewModel.RefreshAsync();
@@ -302,9 +269,7 @@ public sealed partial class LoginPage : Page
         {
             Title = "Error",
             Content = message,
-            CloseButtonText = "OK",
-            XamlRoot = this.XamlRoot
-        };
+            CloseButtonText = "OK"};
         await errorDialog.ShowAsync();
     }
 
@@ -314,9 +279,7 @@ public sealed partial class LoginPage : Page
         {
             Title = "Success",
             Content = message,
-            CloseButtonText = "OK",
-            XamlRoot = this.XamlRoot
-        };
+            CloseButtonText = "OK"};
         await successDialog.ShowAsync();
     }
 

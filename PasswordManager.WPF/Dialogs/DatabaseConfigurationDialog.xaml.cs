@@ -28,38 +28,36 @@ public sealed partial class DatabaseConfigurationDialog : ModernWpf.Controls.Con
         PreviewPathTextBlock.Text = _defaultPath;
     }
 
-    private async void BrowseButton_Click(object sender, RoutedEventArgs e)
+    private void BrowseButton_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            var folderPicker = new FolderPicker();
-
-            // Get the window handle
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle((App.Current as App)?.MainWindow);
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
-
-            folderPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-            folderPicker.FileTypeFilter.Add("*");
-
-            var folder = await folderPicker.PickSingleFolderAsync();
-            if (folder != null)
+            // Use WPF's folder browser dialog
+            var folderDialog = new System.Windows.Forms.FolderBrowserDialog
             {
-                _selectedPath = Path.Combine(folder.Path, "passwordmanager.db");
+                Description = "Select folder for database",
+                ShowNewFolderButton = true
+            };
+
+            var result = folderDialog.ShowDialog();
+            if (result == System.Windows.Forms.DialogResult.OK)
+            {
+                _selectedPath = Path.Combine(folderDialog.SelectedPath, "passwordmanager.db");
                 CustomPathTextBox.Text = _selectedPath;
-                CustomPathWarning.IsOpen = true;
+                // CustomPathWarning.IsOpen = true; // InfoBar not available in WPF
                 PreviewPathTextBlock.Text = _selectedPath;
             }
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync("Error", $"Failed to select folder: {ex.Message}");
+            ShowError("Error", $"Failed to select folder: {ex.Message}");
         }
     }
 
     private void CustomPathTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         _selectedPath = CustomPathTextBox.Text?.Trim() ?? string.Empty;
-        CustomPathWarning.IsOpen = !string.IsNullOrWhiteSpace(_selectedPath);
+        // CustomPathWarning.IsOpen = !string.IsNullOrWhiteSpace(_selectedPath); // InfoBar not available in WPF
         PreviewPathTextBlock.Text = string.IsNullOrWhiteSpace(_selectedPath) ? _defaultPath : _selectedPath;
     }
 
@@ -90,9 +88,7 @@ public sealed partial class DatabaseConfigurationDialog : ModernWpf.Controls.Con
                     Title = "Create Directory?",
                     Content = $"The directory does not exist:\n\n{directory}\n\nDo you want to create it?",
                     PrimaryButtonText = "Create",
-                    CloseButtonText = "Cancel",
-                    XamlRoot = this.XamlRoot
-                };
+                    CloseButtonText = "Cancel"};
 
                 var result = await confirmDialog.ShowAsync();
                 if (result == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -188,15 +184,24 @@ public sealed partial class DatabaseConfigurationDialog : ModernWpf.Controls.Con
         }
     }
 
+    private void ShowError(string title, string message)
+    {
+        var errorDialog = new ModernWpf.Controls.ContentDialog
+        {
+            Title = title,
+            Content = message,
+            CloseButtonText = "OK"
+        };
+        _ = errorDialog.ShowAsync();
+    }
+
     private async System.Threading.Tasks.Task ShowErrorAsync(string title, string message)
     {
         var errorDialog = new ModernWpf.Controls.ContentDialog
         {
             Title = title,
             Content = message,
-            CloseButtonText = "OK",
-            XamlRoot = this.XamlRoot
-        };
+            CloseButtonText = "OK"};
         await errorDialog.ShowAsync();
     }
 }

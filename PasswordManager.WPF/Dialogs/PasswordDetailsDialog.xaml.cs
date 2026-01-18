@@ -58,18 +58,19 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
                 {
                     await passwordService.DeleteAsync(_passwordItem.Id);
 
+                    // InfoBar is not available in WPF
                     // Update and show the in-dialog InfoBar message
-                    if (ModerateInfoBar != null)
-                    {
-                        ModerateInfoBar.IsOpen = true;
-                        ModerateInfoBar.Visibility = Visibility.Visible;
-                        // Update message content if possible
-                        try
-                        {
-                            ModerateInfoBar.Message = $"'{_passwordItem.Title}' has been deleted.";
-                        }
-                        catch { }
-                    }
+                    // if (ModerateInfoBar != null)
+                    // {
+                    //     ModerateInfoBar.IsOpen = true;
+                    //     ModerateInfoBar.Visibility = Visibility.Visible;
+                    //     // Update message content if possible
+                    //     try
+                    //     {
+                    //         ModerateInfoBar.Message = $"'{_passwordItem.Title}' has been deleted.";
+                    //     }
+                    //     catch { }
+                    // }
                 }
 
                 // Close dialog after a short delay to let user see the message

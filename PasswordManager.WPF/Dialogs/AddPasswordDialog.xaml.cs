@@ -297,7 +297,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         TitleTextBox.Text = _editingItem.Title;
         DescriptionTextBox.Text = _editingItem.Description ?? string.Empty;
         TypeComboBox.SelectedIndex = (int)_editingItem.Type - 1;
-        IsFavoriteCheckBox.IsOn = _editingItem.IsFavorite;
+        IsFavoriteCheckBox.IsChecked = _editingItem.IsFavorite;
 
         // Set login-specific fields if applicable
         if (_editingItem.LoginItem != null)
@@ -536,7 +536,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             item.Title = TitleTextBox.Text.Trim();
             item.Description = DescriptionTextBox.Text?.Trim();
             item.Type = selectedType;
-            item.IsFavorite = IsFavoriteCheckBox.IsOn;
+            item.IsFavorite = IsFavoriteCheckBox.IsChecked == true;
             item.LastModified = DateTime.UtcNow;
 
             // Set user ID from current authenticated user (use GetCurrentUserIdAsync result)
@@ -842,8 +842,8 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
     {
         // Get password settings from the UI
         int length = (int)(PasswordLengthSlider?.Value ?? 13);
-        bool includeNumbers = NumbersToggle?.IsOn ?? true;
-        bool includeSymbols = SymbolsToggle?.IsOn ?? false;
+        bool includeNumbers = NumbersToggle?.IsChecked ?? true;
+        bool includeSymbols = SymbolsToggle?.IsChecked ?? false;
 
         string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
