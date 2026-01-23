@@ -100,7 +100,7 @@ public sealed partial class DashboardPage : System.Windows.Controls.Page
 
     private void PasswordItemsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is ListView listView)
+        if (sender is System.Windows.Controls.ListView listView)
         {
             var selectedItem = listView.SelectedItem as PasswordItem;
             if (selectedItem is not null)
@@ -229,9 +229,8 @@ public sealed partial class DashboardPage : System.Windows.Controls.Page
     {
         try
         {
-            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-            dataPackage.SetText(text);
-            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+            // Use WPF Clipboard instead of UWP
+            System.Windows.Clipboard.SetText(text);
         }
         catch
         {

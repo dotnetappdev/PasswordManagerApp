@@ -1557,7 +1557,11 @@ public sealed partial class SettingsPage : Page
 
                 if (result.Success)
                 {
-                    Frame.Navigate(typeof(LoginPage), _serviceProvider);
+                    // Navigate back to login using NavigationService
+                    if (this.NavigationService != null)
+                    {
+                        this.NavigationService.Navigate(new System.Uri("Views/LoginPage.xaml", System.UriKind.Relative));
+                    }
                 }
             }
             catch (Exception ex)
