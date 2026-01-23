@@ -690,15 +690,15 @@ public sealed partial class MainWindow : Window
 
             var nameTextBox = new TextBox
             {
-                PlaceholderText = "Enter vault name",
-                HorizontalAlignment = HorizontalAlignment.Stretch
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Tag = "Enter vault name" // Use Tag to store placeholder hint
             };
 
             var descriptionTextBox = new TextBox
             {
-                PlaceholderText = "Enter description (optional)",
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                Margin = new Thickness(0, 12, 0, 0)
+                Margin = new Thickness(0, 12, 0, 0),
+                Tag = "Enter description (optional)" // Use Tag to store placeholder hint
             };
 
             var content = new StackPanel
@@ -706,7 +706,9 @@ public sealed partial class MainWindow : Window
                 Children =
                 {
                     new TextBlock { Text = "Create a new vault to organize your password items." },
+                    new TextBlock { Text = "Vault Name:", Margin = new Thickness(0, 8, 0, 4), FontWeight = FontWeights.SemiBold },
                     nameTextBox,
+                    new TextBlock { Text = "Description (optional):", Margin = new Thickness(0, 8, 0, 4), FontWeight = FontWeights.SemiBold },
                     descriptionTextBox
                 }
             };
@@ -756,7 +758,7 @@ public sealed partial class MainWindow : Window
         try
         {
             // Get the tag from the menu item to identify which navigation item to edit
-            var menuItem = sender as MenuFlyoutItem;
+            var menuItem = sender as MenuItem;
             var tag = menuItem?.Tag?.ToString();
 
             if (string.IsNullOrEmpty(tag))
@@ -799,7 +801,7 @@ public sealed partial class MainWindow : Window
         try
         {
             // Get the tag from the menu item to identify which navigation item to delete
-            var menuItem = sender as MenuFlyoutItem;
+            var menuItem = sender as MenuItem;
             var tag = menuItem?.Tag?.ToString();
 
             if (string.IsNullOrEmpty(tag))
@@ -853,7 +855,7 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            var menuItem = sender as MenuFlyoutItem;
+            var menuItem = sender as MenuItem;
             var tag = menuItem?.Tag?.ToString();
 
             if (string.IsNullOrEmpty(tag))
@@ -993,7 +995,7 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            var menuItem = sender as MenuFlyoutItem;
+            var menuItem = sender as MenuItem;
             var categoryIdStr = menuItem?.Tag?.ToString();
             
             if (string.IsNullOrEmpty(categoryIdStr) || !int.TryParse(categoryIdStr, out int categoryId))
