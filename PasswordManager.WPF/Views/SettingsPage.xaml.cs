@@ -222,9 +222,7 @@ public sealed partial class SettingsPage : Page
             var path = CurrentDbPathTextBox.Text;
             if (!string.IsNullOrEmpty(path))
             {
-                var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-                dataPackage.SetText(path);
-                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+                System.Windows.Clipboard.SetText(path);
 
                 // Show success notification
                 var dialog = new ModernWpf.Controls.ContentDialog
@@ -457,23 +455,21 @@ public sealed partial class SettingsPage : Page
     {
         try
         {
-            var filePicker = new Windows.Storage.Pickers.FileOpenPicker();
-            var app = App.Current as App;
-            var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(app?.MainWindow);
-            WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hWnd);
-
-            filePicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
-            filePicker.FileTypeFilter.Add(".csv");
-            filePicker.FileTypeFilter.Add(".1pux");
-            // Some 1Password exports use the .1pu extension — include it so files are selectable
-            filePicker.FileTypeFilter.Add(".1pu");
-            filePicker.FileTypeFilter.Add(".json");
-            filePicker.FileTypeFilter.Add(".txt");
-
-            var file = await filePicker.PickSingleFileAsync();
-            if (file != null)
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
-                ImportFilePathTextBox.Text = file.Path;
+                Title = "Select Import File",
+                Filter = "All Supported Files|*.csv;*.1pux;*.1pu;*.json;*.txt|" +
+                         "CSV Files (*.csv)|*.csv|" +
+                         "1Password Files (*.1pux;*.1pu)|*.1pux;*.1pu|" +
+                         "JSON Files (*.json)|*.json|" +
+                         "Text Files (*.txt)|*.txt|" +
+                         "All Files (*.*)|*.*",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                ImportFilePathTextBox.Text = openFileDialog.FileName;
                 UpdateImportButtonState();
             }
         }
@@ -842,27 +838,21 @@ public sealed partial class SettingsPage : Page
     {
         try
         {
-            var folderPicker = new Windows.Storage.Pickers.FolderPicker();
-
-            // Get the current window's HWND
-            var app = App.Current as App;
-            var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(app?.MainWindow);
-
-            // Initialize the folder picker with the window handle
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hWnd);
-
-            folderPicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
-            folderPicker.FileTypeFilter.Add("*");
-
-            var folder = await folderPicker.PickSingleFolderAsync();
-            if (folder != null && _viewModel != null)
+            var folderDialog = new System.Windows.Forms.FolderBrowserDialog
             {
-                _viewModel.ExportPath = folder.Path;
+                Description = "Select Export Folder",
+                UseDescriptionForTitle = true,
+                SelectedPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+
+            if (folderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK && _viewModel != null)
+            {
+                _viewModel.ExportPath = folderDialog.SelectedPath;
 
                 var dialog = new ModernWpf.Controls.ContentDialog
                 {
                     Title = "Export Folder Selected",
-                    Content = $"Export folder set to: {folder.Path}",
+                    Content = $"Export folder set to: {folderDialog.SelectedPath}",
                     CloseButtonText = "OK",
                     // WPF: XamlRoot not needed
                 };
@@ -881,7 +871,6 @@ public sealed partial class SettingsPage : Page
         // Create database configuration dialog
         var connectionStringBox = new TextBox
         {
-            Header = "Connection String",
             // PlaceholderText = "Enter database connection string...",
             TextWrapping = System.Windows.TextWrapping.Wrap,
             AcceptsReturn = true,
@@ -891,7 +880,6 @@ public sealed partial class SettingsPage : Page
 
         var providerComboBox = new ComboBox
         {
-            Header = "Database Provider",
             MinWidth = 200,
             ItemsSource = new string[] { "SqlServer", "MySQL", "PostgreSQL", "SQLite" },
             SelectedItem = _viewModel?.DatabaseProvider ?? "SQLite"
@@ -977,10 +965,16 @@ public sealed partial class SettingsPage : Page
             if (result == ModernWpf.Controls.ContentDialogResult.Primary && _serviceProvider != null)
             {
                 // Show progress indicator
+                var progressBar = new System.Windows.Controls.ProgressBar
+                {
+                    IsIndeterminate = true,
+                    Width = 200,
+                    Height = 20
+                };
                 var progressDialog = new ModernWpf.Controls.ContentDialog
                 {
                     Title = "Seeding Data",
-                    Content = new ProgressRing { IsActive = true, Width = 50, Height = 50 },
+                    Content = progressBar,
                     // WPF: XamlRoot not needed
                 };
 
@@ -1065,7 +1059,7 @@ public sealed partial class SettingsPage : Page
             if (success)
             {
                 // Navigate back to login
-                Frame.Navigate(typeof(LoginPage), _serviceProvider);
+                NavigationService?.Navigate(new LoginPage(), _serviceProvider);
             }
         }
     }
@@ -1074,25 +1068,21 @@ public sealed partial class SettingsPage : Page
     {
         var currentPasswordBox = new PasswordBox
         {
-            Header = "Current Master Password",
             // PlaceholderText = "Enter current master password"
         };
 
         var newPasswordBox = new PasswordBox
         {
-            Header = "New Master Password",
             // PlaceholderText = "Enter new master password (min 8 chars, with uppercase, lowercase, and numbers)"
         };
 
         var confirmPasswordBox = new PasswordBox
         {
-            Header = "Confirm New Master Password",
             // PlaceholderText = "Confirm new master password"
         };
 
         var passwordHintBox = new TextBox
         {
-            Header = "Password Hint (Optional)",
             // PlaceholderText = "Enter a hint to help you remember your password"
         };
 
@@ -1566,7 +1556,7 @@ public sealed partial class SettingsPage : Page
 
                 if (result.Success)
                 {
-                    Frame.Navigate(typeof(LoginPage), _serviceProvider);
+                    NavigationService?.Navigate(new LoginPage(), _serviceProvider);
                 }
             }
             catch (Exception ex)

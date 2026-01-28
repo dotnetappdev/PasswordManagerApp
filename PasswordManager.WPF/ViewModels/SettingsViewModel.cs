@@ -152,41 +152,15 @@ public class SettingsViewModel : BaseViewModel
         {
             IsLoading = true;
 
-            // Load theme setting from application data
-            var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            if (localSettings.Values.ContainsKey("SelectedTheme"))
-            {
-                SelectedTheme = localSettings.Values["SelectedTheme"]?.ToString() ?? "System";
-            }
-            else
-            {
-                SelectedTheme = "System";
-            }
-
-            // Load other settings
-            SessionTimeoutMinutes = localSettings.Values.ContainsKey("SessionTimeout")
-                ? Convert.ToInt32(localSettings.Values["SessionTimeout"])
-                : 30;
-
-            AuthenticationMode = localSettings.Values.ContainsKey("AuthMode")
-                ? localSettings.Values["AuthMode"]?.ToString() ?? "Local Database"
-                : "Local Database";
-
-            ApiBaseUrl = localSettings.Values.ContainsKey("ApiBaseUrl")
-                ? localSettings.Values["ApiBaseUrl"]?.ToString() ?? "https://localhost:7001/api"
-                : "https://localhost:7001/api";
-
-            DatabaseProvider = localSettings.Values.ContainsKey("DatabaseProvider")
-                ? localSettings.Values["DatabaseProvider"]?.ToString() ?? "SQLite"
-                : "SQLite";
-
-            SqliteDatabasePath = localSettings.Values.ContainsKey("SqliteDatabasePath")
-                ? localSettings.Values["SqliteDatabasePath"]?.ToString() ?? "passwordmanager.db"
-                : "passwordmanager.db";
-
-            ExportPath = localSettings.Values.ContainsKey("ExportPath")
-                ? localSettings.Values["ExportPath"]?.ToString() ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport")
-                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport");
+            // In WPF, settings would typically be loaded from application settings or configuration
+            // For now, use defaults - these can be persisted using a settings service or configuration file
+            SelectedTheme = "System";
+            SessionTimeoutMinutes = 30;
+            AuthenticationMode = "Local Database";
+            ApiBaseUrl = "https://localhost:7001/api";
+            DatabaseProvider = "SQLite";
+            SqliteDatabasePath = "passwordmanager.db";
+            ExportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport");
 
             ApplyTheme();
         }
@@ -213,15 +187,9 @@ public class SettingsViewModel : BaseViewModel
         {
             IsLoading = true;
 
-            // Save settings to application data
-            var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            localSettings.Values["SelectedTheme"] = SelectedTheme;
-            localSettings.Values["SessionTimeout"] = SessionTimeoutMinutes;
-            localSettings.Values["AuthMode"] = AuthenticationMode;
-            localSettings.Values["ApiBaseUrl"] = ApiBaseUrl;
-            localSettings.Values["DatabaseProvider"] = DatabaseProvider;
-            localSettings.Values["ExportPath"] = ExportPath;
-
+            // In WPF, settings would typically be saved to application settings or configuration
+            // For now, this is a no-op - settings can be persisted using a settings service or configuration file
+            
             // Apply theme immediately
             ApplyTheme();
             
