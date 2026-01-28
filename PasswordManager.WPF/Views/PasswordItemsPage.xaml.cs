@@ -429,9 +429,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 return;
             }
 
-            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-            dataPackage.SetText(pwd);
-            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+            System.Windows.Clipboard.SetText(pwd);
             await ShowTemporaryMessageAsync("Password copied to clipboard");
         }
         catch (Exception ex)
@@ -899,7 +897,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             else
             {
                 // Fallback navigation
-                Frame?.Navigate(typeof(CategoriesPage), _serviceProvider);
+                NavigationService?.Navigate(new CategoriesPage(), _serviceProvider);
             }
         }
         catch (Exception ex)
@@ -1202,9 +1200,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 return;
             }
 
-            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-            dataPackage.SetText(username);
-            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+            System.Windows.Clipboard.SetText(username);
             await ShowTemporaryMessageAsync("Username copied to clipboard");
         }
         catch (Exception ex)
