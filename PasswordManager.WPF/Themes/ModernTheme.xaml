@@ -4,103 +4,92 @@
         xmlns:ui="http://schemas.modernwpf.com/2019">
 
     <!-- 
-    Modern Theme for Password Manager (WinUI)
+    Modern Theme for Password Manager (WPF)
     
-    This theme implements the Password Manager UI Design System.
-    Colors are aligned with PasswordManager.Models/UI/UIConstants.cs
+    Professional design system – Inter typography, deep dark palette,
+    gradient brand accents. Aligned with PasswordManager.Models/UI/UIConstants.cs
     
     For full documentation, see: UI_DESIGN_SYSTEM.md
     -->
 
-    <!-- Enhanced Modern Color Palette - 1Password Style -->
-    <Color xmlns:ui="http://schemas.modernwpf.com/2019"
-    x:Key="ModernPrimaryColor">#005BFF</Color>
+    <!-- ═══════════════════════════════════════════
+         Colour Tokens
+    ═══════════════════════════════════════════ -->
+
+    <!-- Brand / Primary -->
+    <Color x:Key="ModernPrimaryColor">#005BFF</Color>
     <Color x:Key="ModernPrimaryLightColor">#3B82F6</Color>
     <Color x:Key="ModernPrimaryDarkColor">#0041CC</Color>
-    <Color x:Key="ModernAccentColor">#EC4899</Color>
-    <Color x:Key="ModernAccentLightColor">#F472B6</Color>
+
+    <!-- Accent (violet) -->
+    <Color x:Key="ModernAccentColor">#7C3AED</Color>
+    <Color x:Key="ModernAccentLightColor">#A78BFA</Color>
+
+    <!-- Semantic -->
     <Color x:Key="ModernSuccessColor">#10B981</Color>
     <Color x:Key="ModernWarningColor">#F59E0B</Color>
     <Color x:Key="ModernErrorColor">#EF4444</Color>
+    <Color x:Key="ModernInfoColor">#3B82F6</Color>
 
-    <!-- Enhanced Background Colors - 1Password Dark Theme Style (Default) -->
-    <Color x:Key="ModernBackgroundColor">#1A1A1A</Color>
-    <Color x:Key="ModernSurfaceColor">#262626</Color>
-    <Color x:Key="ModernCardColor">#262626</Color>
-    <Color x:Key="ModernElevatedSurfaceColor">#333333</Color>
-    <Color x:Key="ModernBorderColor">#404040</Color>
-    <Color x:Key="ModernFormBackgroundColor">#262626</Color>
+    <!-- Dark theme surfaces (deeper, richer) -->
+    <Color x:Key="ModernBackgroundColor">#0F1117</Color>
+    <Color x:Key="ModernSurfaceColor">#1A1D27</Color>
+    <Color x:Key="ModernCardColor">#1A1D27</Color>
+    <Color x:Key="ModernElevatedSurfaceColor">#232635</Color>
+    <Color x:Key="ModernOverlayColor">#2C2F42</Color>
+    <Color x:Key="ModernBorderColor">#FFFFFF14</Color>   <!-- rgba(255,255,255,0.08) -->
+    <Color x:Key="ModernFormBackgroundColor">#1A1D27</Color>
 
-    <!-- Sidebar specific colors as per requirements -->
-    <Color x:Key="ModernSidebarBackgroundColor">#141414</Color>
+    <!-- Sidebar -->
+    <Color x:Key="ModernSidebarBackgroundColor">#0B0D14</Color>
+    <Color x:Key="ModernNewItemButtonColor">#005BFF</Color>
 
-        <!-- New item button color (use primary color for consistency) -->
-        <Color x:Key="ModernNewItemButtonColor">#005BFF</Color>
-
-    <!-- Light theme variants (for future use) -->
-    <Color x:Key="ModernLightBackgroundColor">#F8F9FA</Color>
+    <!-- Light theme variants -->
+    <Color x:Key="ModernLightBackgroundColor">#F0F2FF</Color>
     <Color x:Key="ModernLightSurfaceColor">#FFFFFF</Color>
     <Color x:Key="ModernLightCardColor">#FFFFFF</Color>
-    <Color x:Key="ModernLightFormBackgroundColor">#F6F8FA</Color>
+    <Color x:Key="ModernLightFormBackgroundColor">#F5F7FF</Color>
 
-    <!-- Text Colors for Dark Theme -->
-    <Color x:Key="ModernTextPrimaryColor">#FFFFFF</Color>
-    <Color x:Key="ModernTextSecondaryColor">#B0B0B0</Color>
-    <Color x:Key="ModernTextTertiaryColor">#808080</Color>
+    <!-- Text (dark theme) -->
+    <Color x:Key="ModernTextPrimaryColor">#F0F2FF</Color>
+    <Color x:Key="ModernTextSecondaryColor">#8B90A7</Color>
+    <Color x:Key="ModernTextTertiaryColor">#5A5F78</Color>
 
-    <!-- Brushes -->
-    <SolidColorBrush x:Key="ModernPrimaryBrush"
-                     Color="{StaticResource ModernPrimaryColor}"/>
-    <SolidColorBrush x:Key="ModernPrimaryLightBrush"
-                     Color="{StaticResource ModernPrimaryLightColor}"/>
-    <SolidColorBrush x:Key="ModernPrimaryDarkBrush"
-                     Color="{StaticResource ModernPrimaryDarkColor}"/>
-    <SolidColorBrush x:Key="ModernAccentBrush"
-                     Color="{StaticResource ModernAccentColor}"/>
-    <SolidColorBrush x:Key="ModernAccentLightBrush"
-                     Color="{StaticResource ModernAccentLightColor}"/>
-    <SolidColorBrush x:Key="ModernSuccessBrush"
-                     Color="{StaticResource ModernSuccessColor}"/>
-    <SolidColorBrush x:Key="ModernWarningBrush"
-                     Color="{StaticResource ModernWarningColor}"/>
-    <SolidColorBrush x:Key="ModernErrorBrush"
-                     Color="{StaticResource ModernErrorColor}"/>
+    <!-- ═══════════════════════════════════════════
+         Solid Brushes
+    ═══════════════════════════════════════════ -->
+    <SolidColorBrush x:Key="ModernPrimaryBrush"          Color="{StaticResource ModernPrimaryColor}"/>
+    <SolidColorBrush x:Key="ModernPrimaryLightBrush"     Color="{StaticResource ModernPrimaryLightColor}"/>
+    <SolidColorBrush x:Key="ModernPrimaryDarkBrush"      Color="{StaticResource ModernPrimaryDarkColor}"/>
+    <SolidColorBrush x:Key="ModernAccentBrush"           Color="{StaticResource ModernAccentColor}"/>
+    <SolidColorBrush x:Key="ModernAccentLightBrush"      Color="{StaticResource ModernAccentLightColor}"/>
+    <SolidColorBrush x:Key="ModernSuccessBrush"          Color="{StaticResource ModernSuccessColor}"/>
+    <SolidColorBrush x:Key="ModernWarningBrush"          Color="{StaticResource ModernWarningColor}"/>
+    <SolidColorBrush x:Key="ModernErrorBrush"            Color="{StaticResource ModernErrorColor}"/>
+    <SolidColorBrush x:Key="ModernInfoBrush"             Color="{StaticResource ModernInfoColor}"/>
 
-    <SolidColorBrush x:Key="ModernBackgroundBrush"
-                     Color="{StaticResource ModernBackgroundColor}"/>
-    <SolidColorBrush x:Key="ModernSurfaceBrush"
-                     Color="{StaticResource ModernSurfaceColor}"/>
-    <SolidColorBrush x:Key="ModernCardBrush"
-                     Color="{StaticResource ModernCardColor}"/>
-    <SolidColorBrush x:Key="ModernElevatedSurfaceBrush"
-                     Color="{StaticResource ModernElevatedSurfaceColor}"/>
-    <SolidColorBrush x:Key="ModernBorderBrush"
-                     Color="{StaticResource ModernBorderColor}"/>
-    <SolidColorBrush x:Key="ModernFormBackgroundBrush"
-                     Color="{StaticResource ModernFormBackgroundColor}"/>
+    <SolidColorBrush x:Key="ModernBackgroundBrush"       Color="{StaticResource ModernBackgroundColor}"/>
+    <SolidColorBrush x:Key="ModernSurfaceBrush"          Color="{StaticResource ModernSurfaceColor}"/>
+    <SolidColorBrush x:Key="ModernCardBrush"             Color="{StaticResource ModernCardColor}"/>
+    <SolidColorBrush x:Key="ModernElevatedSurfaceBrush"  Color="{StaticResource ModernElevatedSurfaceColor}"/>
+    <SolidColorBrush x:Key="ModernBorderBrush"           Color="{StaticResource ModernBorderColor}"/>
+    <SolidColorBrush x:Key="ModernFormBackgroundBrush"   Color="{StaticResource ModernFormBackgroundColor}"/>
 
-    <!-- New sidebar and button brushes -->
     <SolidColorBrush x:Key="ModernSidebarBackgroundBrush"
                      Color="{StaticResource ModernSidebarBackgroundColor}"/>
     <SolidColorBrush x:Key="ModernNewItemButtonBrush"
                      Color="{StaticResource ModernNewItemButtonColor}"/>
 
-        <!-- Button state brushes (dark theme friendly) -->
-        <SolidColorBrush x:Key="ModernButtonPointerOverBrush" Color="#2A2A2A" />
-        <SolidColorBrush x:Key="ModernButtonPressedBrush" Color="#222222" />
+    <!-- Button state brushes -->
+    <SolidColorBrush x:Key="ModernButtonPointerOverBrush" Color="#232635" />
+    <SolidColorBrush x:Key="ModernButtonPressedBrush"     Color="#1A1D27" />
 
-    <SolidColorBrush x:Key="ModernTextPrimaryBrush"
-                     Color="{StaticResource ModernTextPrimaryColor}"/>
-    <SolidColorBrush x:Key="ModernTextSecondaryBrush"
-                     Color="{StaticResource ModernTextSecondaryColor}"/>
-    <SolidColorBrush x:Key="ModernTextTertiaryBrush"
-                     Color="{StaticResource ModernTextTertiaryColor}"/>
+    <SolidColorBrush x:Key="ModernTextPrimaryBrush"    Color="{StaticResource ModernTextPrimaryColor}"/>
+    <SolidColorBrush x:Key="ModernTextSecondaryBrush"  Color="{StaticResource ModernTextSecondaryColor}"/>
+    <SolidColorBrush x:Key="ModernTextTertiaryBrush"   Color="{StaticResource ModernTextTertiaryColor}"/>
+    <SolidColorBrush x:Key="ModernSecondaryBrush"      Color="{StaticResource ModernAccentColor}"/>
 
-    <!-- Missing ModernSecondaryBrush that was causing the error -->
-    <SolidColorBrush x:Key="ModernSecondaryBrush"
-                     Color="{StaticResource ModernTextSecondaryColor}"/>
-
-    <!-- ui:NavigationView Pane Background Brushes (WinUI 3 theme resource overrides) -->
+    <!-- NavigationView pane background overrides -->
     <SolidColorBrush x:Key="ui:NavigationViewDefaultPaneBackground"
             Color="{StaticResource ModernSidebarBackgroundColor}"/>
     <SolidColorBrush x:Key="ui:NavigationViewExpandedPaneBackground"
@@ -112,7 +101,7 @@
     <SolidColorBrush x:Key="ui:NavigationViewContentGridBackground"
             Color="{StaticResource ModernBackgroundColor}"/>
 
-    <!-- Remove any margins or padding from ui:NavigationView content -->
+    <!-- NavigationView margins -->
     <Thickness x:Key="ui:NavigationViewContentMargin">0</Thickness>
     <Thickness x:Key="ui:NavigationViewMinimalContentGridMargin">0</Thickness>
     <Thickness x:Key="ui:NavigationViewHeaderMargin">0</Thickness>
@@ -121,54 +110,45 @@
     <Thickness x:Key="Topui:NavigationViewContentMargin">0</Thickness>
     <Thickness x:Key="Topui:NavigationViewContentGridMargin">0</Thickness>
 
-    <!-- Modern Gradient Brushes -->
-    <LinearGradientBrush x:Key="ModernPrimaryGradientBrush"
-                         StartPoint="0,0"
-                         EndPoint="1,1">
-        <GradientStop Color="{StaticResource ModernPrimaryColor}"
-                      Offset="0"/>
-        <GradientStop Color="{StaticResource ModernPrimaryLightColor}"
-                      Offset="1"/>
+    <!-- ═══════════════════════════════════════════
+         Gradient Brushes
+    ═══════════════════════════════════════════ -->
+
+    <!-- Brand gradient: blue → violet (135°) -->
+    <LinearGradientBrush x:Key="ModernBrandGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="{StaticResource ModernPrimaryColor}"  Offset="0"/>
+        <GradientStop Color="{StaticResource ModernAccentColor}"   Offset="1"/>
     </LinearGradientBrush>
 
-    <LinearGradientBrush x:Key="ModernAccentGradientBrush"
-                         StartPoint="0,0"
-                         EndPoint="1,1">
-        <GradientStop Color="{StaticResource ModernAccentColor}"
-                      Offset="0"/>
-        <GradientStop Color="{StaticResource ModernAccentLightColor}"
-                      Offset="1"/>
+    <!-- Primary-only gradient (for buttons) -->
+    <LinearGradientBrush x:Key="ModernPrimaryGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="{StaticResource ModernPrimaryColor}"      Offset="0"/>
+        <GradientStop Color="{StaticResource ModernPrimaryLightColor}" Offset="1"/>
     </LinearGradientBrush>
 
-    <LinearGradientBrush x:Key="ModernCardGradientBrush"
-                         StartPoint="0,0"
-                         EndPoint="0,1">
-        <GradientStop Color="#FFFFFF"
-                      Offset="0"/>
-        <GradientStop Color="#F8FAFC"
-                      Offset="1"/>
+    <!-- Accent gradient -->
+    <LinearGradientBrush x:Key="ModernAccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="{StaticResource ModernAccentColor}"      Offset="0"/>
+        <GradientStop Color="{StaticResource ModernAccentLightColor}" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- Card surface gradient (subtle top-to-bottom depth) -->
+    <LinearGradientBrush x:Key="ModernCardGradientBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#1E2130" Offset="0"/>
+        <GradientStop Color="#1A1D27" Offset="1"/>
     </LinearGradientBrush>
 
     <!-- Default Button Style for consistency -->
     <Style TargetType="Button">
-        <Setter Property="Background"
-                Value="{StaticResource ModernPrimaryBrush}"/>
-        <Setter Property="Foreground"
-                Value="White"/>
-        <Setter Property="BorderThickness"
-                Value="0"/>
-        <!-- <Setter Property="CornerRadius"
-                Value="0"/>-->
-        <Setter Property="Padding"
-                Value="16,12"/>
-        <Setter Property="FontSize"
-                Value="14"/>
-        <Setter Property="FontWeight"
-                Value="SemiBold"/>
-        <Setter Property="MinWidth"
-                Value="120"/>
-        <Setter Property="MinHeight"
-                Value="36"/>
+        <Setter Property="Background"     Value="{StaticResource ModernBrandGradientBrush}"/>
+        <Setter Property="Foreground"     Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding"        Value="18,10"/>
+        <Setter Property="FontSize"       Value="14"/>
+        <Setter Property="FontWeight"     Value="SemiBold"/>
+        <Setter Property="MinWidth"       Value="120"/>
+        <Setter Property="MinHeight"      Value="38"/>
+        <Setter Property="Cursor"         Value="Hand"/>
     </Style>
 
     <!-- Enhanced TextBox Style with 1Password-like behavior (simplified for WPF) -->

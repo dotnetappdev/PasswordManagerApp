@@ -16,39 +16,46 @@ namespace PasswordManager.Models.UI
             public const string PrimaryBlueLight = "#3B82F6";
             public const string PrimaryBlueDark = "#0041CC";
 
-            // Secondary/Accent Colors
-            public const string AccentPink = "#EC4899";
-            public const string AccentPinkLight = "#F472B6";
+            // Secondary/Accent Colors (violet – updated from pink)
+            public const string AccentViolet = "#7C3AED";
+            public const string AccentVioletLight = "#A78BFA";
+            // Legacy aliases kept for backward compatibility (previously pink, now violet)
+            [System.Obsolete("Use AccentViolet instead.")]
+            public const string AccentPink = "#7C3AED";
+            [System.Obsolete("Use AccentVioletLight instead.")]
+            public const string AccentPinkLight = "#A78BFA";
 
             // Status Colors
             public const string SuccessGreen = "#10B981";
             public const string WarningOrange = "#F59E0B";
             public const string ErrorRed = "#EF4444";
+            public const string InfoBlue = "#3B82F6";
 
-            // Background Colors - Dark Theme (Default)
-            public const string BackgroundDark = "#1A1A1A";
-            public const string SurfaceDark = "#262626";
-            public const string CardDark = "#262626";
-            public const string ElevatedSurfaceDark = "#333333";
-            public const string BorderDark = "#404040";
-            public const string SidebarDark = "#141414";
+            // Background Colors - Dark Theme (deepened for richer feel)
+            public const string BackgroundDark = "#0F1117";
+            public const string SurfaceDark = "#1A1D27";
+            public const string CardDark = "#1A1D27";
+            public const string ElevatedSurfaceDark = "#232635";
+            public const string OverlayDark = "#2C2F42";
+            public const string BorderDark = "#FFFFFF14";   // rgba(255,255,255,0.08)
+            public const string SidebarDark = "#0B0D14";
 
             // Background Colors - Light Theme
-            public const string BackgroundLight = "#F8F9FA";
+            public const string BackgroundLight = "#F0F2FF";
             public const string SurfaceLight = "#FFFFFF";
             public const string CardLight = "#FFFFFF";
-            public const string ElevatedSurfaceLight = "#F6F8FA";
-            public const string BorderLight = "#E0E6ED";
+            public const string ElevatedSurfaceLight = "#F5F7FF";
+            public const string BorderLight = "rgba(0,0,0,0.08)";
 
             // Text Colors - Dark Theme
-            public const string TextPrimaryDark = "#FFFFFF";
-            public const string TextSecondaryDark = "#B0B0B0";
-            public const string TextTertiaryDark = "#808080";
+            public const string TextPrimaryDark = "#F0F2FF";
+            public const string TextSecondaryDark = "#8B90A7";
+            public const string TextTertiaryDark = "#5A5F78";
 
             // Text Colors - Light Theme
-            public const string TextPrimaryLight = "#1A1A1A";
-            public const string TextSecondaryLight = "#6C757D";
-            public const string TextTertiaryLight = "#94A3B8";
+            public const string TextPrimaryLight = "#0F1117";
+            public const string TextSecondaryLight = "#5A5F78";
+            public const string TextTertiaryLight = "#8B90A7";
 
             // Special Purpose Colors
             public const string NewItemButton = "#005BFF";
@@ -99,9 +106,9 @@ namespace PasswordManager.Models.UI
             public const int FontSizeHeading2 = 32;
             public const int FontSizeHeading1 = 36;
 
-            // Font Families
-            public const string FontFamilyDefault = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
-            public const string FontFamilyMonospace = "'Courier New', Courier, monospace";
+            // Font Families (Inter first for professional SaaS look)
+            public const string FontFamilyDefault = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+            public const string FontFamilyMonospace = "'JetBrains Mono', 'Fira Code', 'Courier New', Courier, monospace";
         }
 
         /// <summary>
