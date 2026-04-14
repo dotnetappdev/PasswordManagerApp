@@ -11,9 +11,10 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Color="@(_isDarkMode ? Color.Dark : Color.Default)" Fixed="true" Dense="true">
+    <MudAppBar Color="@(_isDarkMode ? Color.Dark : Color.Default)" Fixed="true" Dense="true"
+               Style="@(_isDarkMode ? "background: linear-gradient(135deg,#0F1117 0%,#1A1D27 100%); border-bottom: 1px solid rgba(255,255,255,0.07);" : "background: linear-gradient(135deg,#ffffff 0%,#f5f7ff 100%); border-bottom: 1px solid rgba(0,0,0,0.06);")">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Style="@(_isDarkMode ? "color: white;" : "color: inherit;")">Password Manager</MudText>
+        <MudText Typo="Typo.h6" Style="@(_isDarkMode ? "font-weight:700; background: linear-gradient(90deg,#60A5FA,#A78BFA); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:-0.02em;" : "font-weight:700; color:#1a1a2e; letter-spacing:-0.02em;")">🔐 Password Manager</MudText>
         <MudSpacer />
         <MudMenu>
             <ActivatorContent>
@@ -98,61 +99,63 @@
     {
         PaletteDark = new PaletteDark()
         {
-            Black = "#121212",
-            Background = "#1A1A1A",  // Matches UIConstants.Colors.BackgroundDark
-            Surface = "#262626",      // Matches UIConstants.Colors.SurfaceDark
-            DrawerBackground = "#141414",  // Matches UIConstants.Colors.SidebarDark
-            DrawerText = "rgba(255,255,255, 0.87)",
-            DrawerIcon = "rgba(255,255,255, 0.87)",
-            AppbarBackground = "#262626",  // Matches UIConstants.Colors.SurfaceDark
-            AppbarText = "rgba(255,255,255, 0.87)",
-            TextPrimary = "#FFFFFF",  // Matches UIConstants.Colors.TextPrimaryDark
-            TextSecondary = "#B0B0B0",  // Matches UIConstants.Colors.TextSecondaryDark
-            ActionDefault = "#B0B0B0",
-            ActionDisabled = "rgba(255,255,255, 0.26)",
-            ActionDisabledBackground = "rgba(255,255,255, 0.12)",
-            Divider = "#404040",  // Matches UIConstants.Colors.BorderDark
-            DividerLight = "rgba(255,255,255, 0.06)",
-            TableLines = "#404040",
-            LinesDefault = "#404040",
-            LinesInputs = "rgba(255,255,255, 0.3)",
-            TextDisabled = "rgba(255,255,255, 0.2)",
-            Primary = "#005BFF",   // Matches UIConstants.Colors.PrimaryBlue
-            Secondary = "#EC4899", // Matches UIConstants.Colors.AccentPink
-            Tertiary = "#10B981",  // Matches UIConstants.Colors.SuccessGreen
-            Info = "#3B82F6",      // Matches UIConstants.Colors.PrimaryBlueLight
-            Success = "#10B981",   // Matches UIConstants.Colors.SuccessGreen
-            Warning = "#F59E0B",   // Matches UIConstants.Colors.WarningOrange
-            Error = "#EF4444"      // Matches UIConstants.Colors.ErrorRed
+            Black = "#0F1117",
+            Background = "#0F1117",
+            Surface = "#1A1D27",
+            DrawerBackground = "#0B0D14",
+            DrawerText = "rgba(240,242,255,0.87)",
+            DrawerIcon = "rgba(139,144,167,1)",
+            AppbarBackground = "#1A1D27",
+            AppbarText = "rgba(240,242,255,0.87)",
+            TextPrimary = "#F0F2FF",
+            TextSecondary = "#8B90A7",
+            ActionDefault = "#8B90A7",
+            ActionDisabled = "rgba(255,255,255,0.24)",
+            ActionDisabledBackground = "rgba(255,255,255,0.10)",
+            Divider = "rgba(255,255,255,0.08)",
+            DividerLight = "rgba(255,255,255,0.04)",
+            TableLines = "rgba(255,255,255,0.08)",
+            LinesDefault = "rgba(255,255,255,0.08)",
+            LinesInputs = "rgba(255,255,255,0.24)",
+            TextDisabled = "rgba(255,255,255,0.18)",
+            Primary = "#005BFF",
+            Secondary = "#7C3AED",
+            Tertiary = "#10B981",
+            Info = "#3B82F6",
+            Success = "#10B981",
+            Warning = "#F59E0B",
+            Error = "#EF4444",
+            OverlayDark = "rgba(0,0,0,0.7)"
         },
         PaletteLight = new PaletteLight()
         {
-            Black = "#272c34",
-            Background = "#F8F9FA",  // Matches UIConstants.Colors.BackgroundLight
-            Surface = "#FFFFFF",     // Matches UIConstants.Colors.SurfaceLight
+            Black = "#0F1117",
+            Background = "#F0F2FF",
+            Surface = "#FFFFFF",
             DrawerBackground = "#FFFFFF",
-            DrawerText = "rgba(0,0,0, 0.87)",
-            DrawerIcon = "rgba(0,0,0, 0.54)",
+            DrawerText = "rgba(15,17,23,0.87)",
+            DrawerIcon = "rgba(90,95,120,1)",
             AppbarBackground = "#FFFFFF",
-            AppbarText = "rgba(0,0,0, 0.87)",
-            TextPrimary = "#1A1A1A",  // Matches UIConstants.Colors.TextPrimaryLight
-            TextSecondary = "#6C757D",  // Matches UIConstants.Colors.TextSecondaryLight
-            ActionDefault = "#6C757D",
-            ActionDisabled = "rgba(0,0,0, 0.26)",
-            ActionDisabledBackground = "rgba(0,0,0, 0.12)",
-            Divider = "#E0E6ED",  // Matches UIConstants.Colors.BorderLight
-            DividerLight = "rgba(0,0,0, 0.06)",
-            TableLines = "#E0E6ED",
-            LinesDefault = "#E0E6ED",
-            LinesInputs = "rgba(0,0,0, 0.42)",
-            TextDisabled = "rgba(0,0,0, 0.38)",
-            Primary = "#005BFF",   // Matches UIConstants.Colors.PrimaryBlue
-            Secondary = "#EC4899", // Matches UIConstants.Colors.AccentPink
-            Tertiary = "#10B981",  // Matches UIConstants.Colors.SuccessGreen
-            Info = "#3B82F6",      // Matches UIConstants.Colors.PrimaryBlueLight
-            Success = "#10B981",   // Matches UIConstants.Colors.SuccessGreen
-            Warning = "#F59E0B",   // Matches UIConstants.Colors.WarningOrange
-            Error = "#EF4444"      // Matches UIConstants.Colors.ErrorRed
+            AppbarText = "rgba(15,17,23,0.87)",
+            TextPrimary = "#0F1117",
+            TextSecondary = "#5A5F78",
+            ActionDefault = "#5A5F78",
+            ActionDisabled = "rgba(0,0,0,0.24)",
+            ActionDisabledBackground = "rgba(0,0,0,0.10)",
+            Divider = "rgba(0,0,0,0.08)",
+            DividerLight = "rgba(0,0,0,0.04)",
+            TableLines = "rgba(0,0,0,0.08)",
+            LinesDefault = "rgba(0,0,0,0.08)",
+            LinesInputs = "rgba(0,0,0,0.38)",
+            TextDisabled = "rgba(0,0,0,0.26)",
+            Primary = "#005BFF",
+            Secondary = "#7C3AED",
+            Tertiary = "#10B981",
+            Info = "#3B82F6",
+            Success = "#10B981",
+            Warning = "#F59E0B",
+            Error = "#EF4444",
+            OverlayDark = "rgba(0,0,0,0.5)"
         }
     };
 
