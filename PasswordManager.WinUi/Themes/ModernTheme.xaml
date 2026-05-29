@@ -12,9 +12,9 @@
     -->
 
     <!-- Enhanced Modern Color Palette - 1Password Style -->
-    <Color x:Key="ModernPrimaryColor">#005BFF</Color>
-    <Color x:Key="ModernPrimaryLightColor">#3B82F6</Color>
-    <Color x:Key="ModernPrimaryDarkColor">#0041CC</Color>
+    <Color x:Key="ModernPrimaryColor">#7C3AED</Color>
+    <Color x:Key="ModernPrimaryLightColor">#A78BFA</Color>
+    <Color x:Key="ModernPrimaryDarkColor">#5B21B6</Color>
     <Color x:Key="ModernAccentColor">#EC4899</Color>
     <Color x:Key="ModernAccentLightColor">#F472B6</Color>
     <Color x:Key="ModernSuccessColor">#10B981</Color>
@@ -33,7 +33,7 @@
     <Color x:Key="ModernSidebarBackgroundColor">#141414</Color>
 
         <!-- New item button color (use primary color for consistency) -->
-        <Color x:Key="ModernNewItemButtonColor">#005BFF</Color>
+        <Color x:Key="ModernNewItemButtonColor">#7C3AED</Color>
 
     <!-- Light theme variants (for future use) -->
     <Color x:Key="ModernLightBackgroundColor">#F8F9FA</Color>
@@ -224,7 +224,7 @@
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
                                         <Setter Target="BorderElement.Background"
-                                                Value="#F5F8FF"/>
+                                                Value="#F5F3FF"/>
                                         <Setter Target="BorderElement.BorderBrush"
                                                 Value="{StaticResource ModernPrimaryLightBrush}"/>
                                     </VisualState.Setters>
@@ -232,7 +232,7 @@
                                 <VisualState x:Name="Focused">
                                     <VisualState.Setters>
                                         <Setter Target="BorderElement.Background"
-                                                Value="#F5F8FF"/>
+                                                Value="#F5F3FF"/>
                                         <Setter Target="BorderElement.BorderBrush"
                                                 Value="{StaticResource ModernPrimaryBrush}"/>
                                         <Setter Target="BorderElement.BorderThickness"
@@ -323,7 +323,7 @@
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
                                         <Setter Target="BorderElement.Background"
-                                                Value="#F5F8FF"/>
+                                                Value="#F5F3FF"/>
                                         <Setter Target="BorderElement.BorderBrush"
                                                 Value="{StaticResource ModernPrimaryLightBrush}"/>
                                     </VisualState.Setters>
@@ -331,7 +331,7 @@
                                 <VisualState x:Name="Pressed">
                                     <VisualState.Setters>
                                         <Setter Target="BorderElement.Background"
-                                                Value="#F5F8FF"/>
+                                                Value="#F5F3FF"/>
                                         <Setter Target="BorderElement.BorderBrush"
                                                 Value="{StaticResource ModernPrimaryBrush}"/>
                                         <Setter Target="BorderElement.BorderThickness"
@@ -411,7 +411,7 @@
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
                                         <Setter Target="BorderElement.Background"
-                                                Value="#F5F8FF"/>
+                                                Value="#F5F3FF"/>
                                         <Setter Target="BorderElement.BorderBrush"
                                                 Value="{StaticResource ModernPrimaryLightBrush}"/>
                                     </VisualState.Setters>
@@ -419,7 +419,7 @@
                                 <VisualState x:Name="Focused">
                                     <VisualState.Setters>
                                         <Setter Target="BorderElement.Background"
-                                                Value="#F5F8FF"/>
+                                                Value="#F5F3FF"/>
                                         <Setter Target="BorderElement.BorderBrush"
                                                 Value="{StaticResource ModernPrimaryBrush}"/>
                                         <Setter Target="BorderElement.BorderThickness"
@@ -1015,13 +1015,13 @@
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
                                         <Setter Target="RootBorder.Background"
-                                                Value="#004DCC"/>
+                                                Value="#6D28D9"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Pressed">
                                     <VisualState.Setters>
                                         <Setter Target="RootBorder.Background"
-                                                Value="#0041B3"/>
+                                                Value="#5B21B6"/>
                                     </VisualState.Setters>
                                 </VisualState>
                             </VisualStateGroup>
@@ -1149,7 +1149,7 @@
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
                                         <Setter Target="RootBorder.Background"
-                                                Value="#F5F8FF"/>
+                                                Value="#F5F3FF"/>
                                         <Setter Target="RootBorder.BorderBrush"
                                                 Value="{StaticResource ModernPrimaryLightBrush}"/>
                                     </VisualState.Setters>
@@ -1157,7 +1157,7 @@
                                 <VisualState x:Name="Pressed">
                                     <VisualState.Setters>
                                         <Setter Target="RootBorder.Background"
-                                                Value="#E6F2FF"/>
+                                                Value="#EDE9FE"/>
                                         <Setter Target="RootBorder.BorderBrush"
                                                 Value="{StaticResource ModernPrimaryBrush}"/>
                                     </VisualState.Setters>

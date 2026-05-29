@@ -1,0 +1,14 @@
+{
+  "name": "keeper",
+  "displayName": "Keeper",
+  "description": "Import passwords from Keeper CSV export files",
+  "version": "1.0.0",
+  "author": "PasswordManager Team",
+  "website": "https://keepersecurity.com",
+  "created": "2026-05-29T00:00:00Z",
+  "lastUpdated": "2026-05-29T00:00:00Z",
+  "tags": ["keeper", "csv", "password-manager"],
+  "supportedFileExtensions": [".csv"],
+  "importFormat": "Keeper CSV Export",
+  "instructions": "Export your passwords from Keeper:\n1. Log into Keeper Vault\n2. Go to Settings > Export\n3. Choose CSV format\n4. Save the CSV file\n5. Import it here"
+}

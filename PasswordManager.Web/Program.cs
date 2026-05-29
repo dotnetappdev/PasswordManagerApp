@@ -42,7 +42,34 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 // Add MudBlazor services
-builder.Services.AddMudServices();
+builder.Services.AddMudServices(config =>
+{
+    config.SnackbarConfiguration.PositionClass = MudBlazor.Defaults.Classes.Position.BottomRight;
+});
+
+// Configure MudBlazor theme with purple branding
+builder.Services.AddScoped(sp => new MudBlazor.MudTheme()
+{
+    PaletteLight = new MudBlazor.PaletteLight()
+    {
+        Primary = "#7C3AED",
+        PrimaryLighten = "#A78BFA",
+        PrimaryDarken = "#5B21B6",
+        Secondary = "#EC4899",
+        AppbarBackground = "#7C3AED",
+    },
+    PaletteDark = new MudBlazor.PaletteDark()
+    {
+        Primary = "#7C3AED",
+        PrimaryLighten = "#A78BFA",
+        PrimaryDarken = "#5B21B6",
+        Secondary = "#EC4899",
+        AppbarBackground = "#1A1D27",
+        Background = "#0F1117",
+        Surface = "#1A1D27",
+        DrawerBackground = "#0B0D14",
+    }
+});
 
 // Add theme service for light/dark mode support
 builder.Services.AddScoped<PasswordManager.Components.Shared.Services.ThemeService>();
@@ -132,6 +159,10 @@ builder.Services.AddScoped<IDatabaseMigrationService, PasswordManager.Services.S
 builder.Services.AddScoped<IDatabaseHealthService, PasswordManager.Services.Services.DatabaseHealthService>();
 builder.Services.AddScoped<IDatabaseResetService, PasswordManager.Services.Services.DatabaseResetService>();
 builder.Services.AddScoped<IPermissionService, PasswordManager.Services.Services.PermissionService>();
+builder.Services.AddScoped<IVaultService, PasswordManager.Services.Services.VaultService>();
+builder.Services.AddScoped<IAuditLogService, PasswordManager.Services.Services.AuditLogService>();
+builder.Services.AddScoped<ITwoFactorService, PasswordManager.Services.Services.TwoFactorService>();
+builder.Services.AddScoped<IDeviceService, PasswordManager.Services.Services.DeviceService>();
 
 // Register crypto services
 builder.Services.AddCryptographyServices();
@@ -191,6 +222,9 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.MapRazorPages();
+
+// Health check endpoint (used by Docker health checks)
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
 // Initialize database with migration handling
 using (var scope = app.Services.CreateScope())

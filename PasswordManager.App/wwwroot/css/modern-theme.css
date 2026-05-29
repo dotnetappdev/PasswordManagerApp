@@ -3,9 +3,9 @@
 /* Enhanced Modern Color Palette - 1Password Style */
 :root {
     /* Primary Colors */
-    --modern-primary-color: #005BFF;
-    --modern-primary-light-color: #3B82F6;
-    --modern-primary-dark-color: #0041CC;
+    --modern-primary-color: #7C3AED;
+    --modern-primary-light-color: #A78BFA;
+    --modern-primary-dark-color: #5B21B6;
     --modern-accent-color: #EC4899;
     --modern-accent-light-color: #F472B6;
     --modern-success-color: #10B981;
@@ -24,7 +24,7 @@
     --modern-sidebar-background-color: #141414;
     
     /* New item button color */
-    --modern-new-item-button-color: #005BFF;
+    --modern-new-item-button-color: #7C3AED;
 
     /* Light theme variants (for future use) */
     --modern-light-background-color: #F8F9FA;
@@ -39,7 +39,7 @@
 
     /* Hover and focus effects */
     --modern-hover-opacity: 0.8;
-    --modern-focus-ring: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    --modern-focus-ring: 0 0 0 2px rgba(124, 58, 237, 0.5);
     --modern-border-radius: 8px;
     --modern-border-radius-small: 6px;
     --modern-border-radius-large: 12px;
@@ -95,7 +95,7 @@ body {
 .modern-button:hover {
     opacity: var(--modern-hover-opacity);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 91, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
 }
 
 .modern-button:focus {

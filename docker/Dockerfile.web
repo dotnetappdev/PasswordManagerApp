@@ -1,64 +1,62 @@
-# Dockerfile for Password Manager Web API
+# Dockerfile for Password Manager Blazor Web App
 # Multi-stage build for optimized image size
 
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copy solution and project files
+# Copy solution and project files for restore (layer caching)
 COPY PasswordManager.sln .
-COPY PasswordManager.API/PasswordManager.API.csproj PasswordManager.API/
+COPY PasswordManager.Web/PasswordManager.Web.csproj PasswordManager.Web/
 COPY PasswordManager.Models/PasswordManager.Models.csproj PasswordManager.Models/
 COPY PasswordManager.DAL/PasswordManager.DAL.csproj PasswordManager.DAL/
-COPY PasswordManager.DAL.SupaBase/PasswordManager.DAL.SupaBase.csproj PasswordManager.DAL.SupaBase/
 COPY PasswordManager.DAL.SqlServer/PasswordManager.DAL.SqlServer.csproj PasswordManager.DAL.SqlServer/
 COPY PasswordManager.DAL.MySql/PasswordManager.DAL.MySql.csproj PasswordManager.DAL.MySql/
+COPY PasswordManager.DAL.SupaBase/PasswordManager.DAL.SupaBase.csproj PasswordManager.DAL.SupaBase/
 COPY PasswordManager.DAL.Postgres/PasswordManager.DAL.Postgres.csproj PasswordManager.DAL.Postgres/
 COPY PasswordManager.Crypto/PasswordManager.Crypto.csproj PasswordManager.Crypto/
 COPY PasswordManager.Services/PasswordManager.Services.csproj PasswordManager.Services/
+COPY PasswordManager.Components.Shared/PasswordManager.Components.Shared.csproj PasswordManager.Components.Shared/
 COPY PasswordManager.Imports/PasswordManager.Imports.csproj PasswordManager.Imports/
 
 # Restore dependencies
-RUN dotnet restore PasswordManager.API/PasswordManager.API.csproj
+RUN dotnet restore PasswordManager.Web/PasswordManager.Web.csproj
 
 # Copy all source files
 COPY . .
 
 # Build the application
-WORKDIR /src/PasswordManager.API
-RUN dotnet build PasswordManager.API.csproj -c Release -o /app/build
+WORKDIR /src/PasswordManager.Web
+RUN dotnet build PasswordManager.Web.csproj -c Release -o /app/build
 
 # Publish stage
 FROM build AS publish
-RUN dotnet publish PasswordManager.API.csproj -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish PasswordManager.Web.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
-# Install necessary tools
+# Install curl for health checks
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Copy published application
 COPY --from=publish /app/publish .
 
-# Create directory for logs and certificates
-RUN mkdir -p /app/logs /https
+# Create directory for logs
+RUN mkdir -p /app/logs
 
 # Set environment variables
-ENV ASPNETCORE_URLS=https://+:443;http://+:80
-ENV ASPNETCORE_HTTPS_PORT=443
+ENV ASPNETCORE_URLS=http://+:80
 ENV ASPNETCORE_ENVIRONMENT=Production
-ENV ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
-ENV ASPNETCORE_Kestrel__Certificates__Default__Password=
 
 # Expose ports
 EXPOSE 80
 EXPOSE 443
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:80/health || exit 1
 
 # Run the application
-ENTRYPOINT ["dotnet", "PasswordManager.API.dll"]
+ENTRYPOINT ["dotnet", "PasswordManager.Web.dll"]

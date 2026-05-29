@@ -5,9 +5,9 @@
 
     <!-- Enhanced Light Theme Color Palette - Professional Style -->
     <Color xmlns:ui="http://schemas.modernwpf.com/2019"
-    x:Key="LightModernPrimaryColor">#005BFF</Color>
-    <Color x:Key="LightModernPrimaryLightColor">#3B82F6</Color>
-    <Color x:Key="LightModernPrimaryDarkColor">#0041CC</Color>
+    x:Key="LightModernPrimaryColor">#7C3AED</Color>
+    <Color x:Key="LightModernPrimaryLightColor">#A78BFA</Color>
+    <Color x:Key="LightModernPrimaryDarkColor">#5B21B6</Color>
     <Color x:Key="LightModernAccentColor">#EC4899</Color>
     <Color x:Key="LightModernAccentLightColor">#F472B6</Color>
     <Color x:Key="LightModernSuccessColor">#10B981</Color>
@@ -26,7 +26,7 @@
     <Color x:Key="LightModernSidebarBackgroundColor">#F8FAFC</Color>
 
         <!-- New item button color (match primary color) -->
-        <Color x:Key="LightModernNewItemButtonColor">#005BFF</Color>
+        <Color x:Key="LightModernNewItemButtonColor">#7C3AED</Color>
 
     <!-- Enhanced Light Text Colors -->
     <Color x:Key="LightModernTextPrimaryColor">#1E293B</Color>
@@ -71,8 +71,8 @@
             Color="{StaticResource LightModernNewItemButtonColor}"/>
 
     <!-- Button state brushes (light theme) -->
-    <SolidColorBrush x:Key="LightModernButtonPointerOverBrush" Color="#E6F2FF" />
-    <SolidColorBrush x:Key="LightModernButtonPressedBrush" Color="#DCEFFC" />
+    <SolidColorBrush x:Key="LightModernButtonPointerOverBrush" Color="#EDE9FE" />
+    <SolidColorBrush x:Key="LightModernButtonPressedBrush" Color="#DDD6FE" />
 
     <SolidColorBrush x:Key="LightModernTextPrimaryBrush"
             Color="{StaticResource LightModernTextPrimaryColor}"/>

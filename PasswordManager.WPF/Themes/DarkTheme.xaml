@@ -4,9 +4,9 @@
     xmlns:ui="http://schemas.modernwpf.com/2019">
 
     <!-- Enhanced Dark Theme Color Palette - 1Password Style -->
-    <Color x:Key="DarkModernPrimaryColor">#005BFF</Color>
-    <Color x:Key="DarkModernPrimaryLightColor">#4285F4</Color>
-    <Color x:Key="DarkModernPrimaryDarkColor">#0041CC</Color>
+    <Color x:Key="DarkModernPrimaryColor">#7C3AED</Color>
+    <Color x:Key="DarkModernPrimaryLightColor">#A78BFA</Color>
+    <Color x:Key="DarkModernPrimaryDarkColor">#5B21B6</Color>
     <Color x:Key="DarkModernAccentColor">#EC4899</Color>
     <Color x:Key="DarkModernAccentLightColor">#F472B6</Color>
     <Color x:Key="DarkModernSuccessColor">#10B981</Color>

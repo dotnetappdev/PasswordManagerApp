@@ -1,0 +1,14 @@
+{
+  "name": "roboform",
+  "displayName": "RoboForm",
+  "description": "Import passwords from RoboForm CSV export files",
+  "version": "1.0.0",
+  "author": "PasswordManager Team",
+  "website": "https://roboform.com",
+  "created": "2026-05-29T00:00:00Z",
+  "lastUpdated": "2026-05-29T00:00:00Z",
+  "tags": ["roboform", "csv", "password-manager"],
+  "supportedFileExtensions": [".csv"],
+  "importFormat": "RoboForm CSV Export",
+  "instructions": "Export your passwords from RoboForm:\n1. Open RoboForm Editor\n2. Go to RoboForm menu > Print List\n3. Choose CSV format and export\n4. Import the CSV file here"
+}

@@ -22,8 +22,8 @@ Before you begin, ensure you have the following installed:
   - Mac: [Download Docker Desktop](https://www.docker.com/products/docker-desktop/)
   - Linux: [Install Docker Engine](https://docs.docker.com/engine/install/)
 - **Docker Compose** (included with Docker Desktop)
-- **.NET 9 SDK** (for certificate generation)
-  - [Download .NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- **.NET 10 SDK** (for certificate generation)
+  - [Download .NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 
 ### Verify Installation
 
@@ -38,7 +38,7 @@ docker-compose --version
 
 # Check .NET SDK version
 dotnet --version
-# Should show: 9.0.x or higher
+# Should show: 10.0.x or higher
 ```
 
 ## 🚀 Quick Start
@@ -101,10 +101,14 @@ docker-compose logs -f sqlserver
 
 Once the containers are running:
 
+- **Web UI:** http://localhost:8080
 - **Web API (HTTPS):** https://localhost:51650
 - **Web API (HTTP):** http://localhost:51651
 - **API Documentation:** https://localhost:51650/swagger
-- **Health Check:** http://localhost:51651/health
+- **API Health Check:** http://localhost:51651/health
+- **Nginx Reverse Proxy (unified entry point):** http://localhost:80
+  - Routes `/api/` → passwordmanager-api
+  - Routes everything else → passwordmanager-web
 - **SQL Server:** localhost:1433
 
 ## ⚙️ Configuration
@@ -117,9 +121,11 @@ The following environment variables can be configured in your `.env` file:
 |----------|---------|-------------|
 | `SQL_SA_PASSWORD` | `YourStrong@Password123` | SQL Server SA account password (must meet complexity requirements) |
 | `CERT_PASSWORD` | _(empty)_ | HTTPS certificate password (leave empty for dev cert) |
+| `ASPNETCORE_ENVIRONMENT` | `Production` | ASP.NET Core environment name |
 | `DATABASE_NAME` | `PasswordManagerDB` | Database name |
 | `API_HTTPS_PORT` | `51650` | HTTPS port for the API |
 | `API_HTTP_PORT` | `51651` | HTTP port for the API |
+| `WEB_HTTP_PORT` | `8080` | HTTP port for the Blazor web app |
 | `SQL_SERVER_PORT` | `1433` | SQL Server port |
 
 ### SQL Server Password Requirements
@@ -321,7 +327,9 @@ docker-compose up -d
 **Check logs:**
 ```bash
 docker-compose logs api
+docker-compose logs web
 docker-compose logs sqlserver
+docker-compose logs nginx
 ```
 
 **Common issues:**

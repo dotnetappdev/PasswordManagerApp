@@ -1,0 +1,14 @@
+{
+  "name": "nordpass",
+  "displayName": "NordPass",
+  "description": "Import passwords from NordPass CSV export files",
+  "version": "1.0.0",
+  "author": "PasswordManager Team",
+  "website": "https://nordpass.com",
+  "created": "2026-05-29T00:00:00Z",
+  "lastUpdated": "2026-05-29T00:00:00Z",
+  "tags": ["nordpass", "csv", "password-manager"],
+  "supportedFileExtensions": [".csv"],
+  "importFormat": "NordPass CSV Export",
+  "instructions": "Export your passwords from NordPass:\n1. Log into NordPass\n2. Go to Settings > Export Items\n3. Save the CSV file\n4. Import it here"
+}
