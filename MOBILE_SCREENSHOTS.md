@@ -30,6 +30,8 @@ This guide provides comprehensive instructions for capturing professional screen
 - ✅ **Consistent**: Same device, theme, and time across related screenshots
 - ✅ **Professional**: Clean status bar, full battery, good signal
 - ✅ **Both Themes**: Capture light and dark mode versions
+- ✅ **Full App Context**: Include top app bar/header, navigation, and page content in the same frame
+- ✅ **Navigation Coverage**: Show profile/login context and settings entry where applicable
 
 ## 🎨 Sample Data Setup
 

@@ -18,6 +18,12 @@ This guide describes how to capture professional screenshots of the Password Man
 - **Content**: Use sample data only (no real passwords)
 - **Consistency**: Same Windows theme and scaling across all screenshots
 
+### Full-Screen Documentation Standard
+- Capture the complete app shell (title bar, menu/toolbar, sidebar, and active page content).
+- Do not submit cropped form-only screenshots for documentation.
+- Keep profile/login context and settings access visible in representative screens.
+- Maintain a modern vault-style layout consistent with 1Password/LastPass-inspired navigation.
+
 ### Sample Data Setup
 
 Before capturing screenshots, ensure the application contains realistic sample data:
@@ -192,7 +198,7 @@ Sample Password Items:
 
 3. **Capture process**:
    - Use Windows + Shift + S for built-in screenshot tool
-   - Capture full window including title bar
+   - Capture full window including title bar, top actions, and sidebar navigation
    - Save as PNG format
    - Use descriptive filenames as specified
 

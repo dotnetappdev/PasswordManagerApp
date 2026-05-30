@@ -2,6 +2,8 @@
 
 This document contains screenshots of the Password Manager WinUI application interface, showcasing the native Windows application experience.
 
+Documentation screenshots must show the full application frame (title bar, menus/toolbar, sidebar, and active content area) rather than isolated form crops.
+
 ## Overview
 
 The WinUI application provides a modern, native Windows interface for password management with 1Password-inspired design:

@@ -254,22 +254,20 @@ PasswordManagerApp/
 - **Real-time search** and filtering
 - **Seeded demo data** for first-run exploration, including sample collections, categories, tags, and password items
 
-## Blazor Screenshots
+## Full Application Screenshots
 
-### Password Item
-![Blazor Password Item Form](screenshots/password-form.png)
+All documentation screenshots must capture the **entire application frame**, not isolated CRUD forms.
 
-### Credit Card
-![Blazor Credit Card Form](screenshots/credit-card-form.png)
+Required visible areas in every capture:
+- Window/app title bar and menu/toolbar
+- Left sidebar/navigation
+- Profile/login context (active profile or profile switcher)
+- Settings entry point and navigation context
+- Active page content in the same frame
 
-### Secure Note
-![Blazor Secure Note Form](screenshots/secure-note-form.png)
+This standard applies across Blazor, WPF, WinUI, and MAUI/Uno and should stay aligned with a modern vault experience (1Password/LastPass style patterns).
 
-### Identity
-![Blazor Identity Form](screenshots/identity-form.png)
-
-### API Credentials
-![Blazor API Credentials Form](screenshots/api-credentials-form.png)
+> Current form-only images in `screenshots/` are legacy references and should be replaced by full-screen captures during screenshot refresh.
 
 ### WinUI Desktop Application
 - **Native Windows performance** with WinUI 3
