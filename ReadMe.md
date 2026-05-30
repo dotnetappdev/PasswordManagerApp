@@ -76,6 +76,7 @@ Modern Windows app packages for Microsoft Store and enterprise distribution:
 | **Mobile Screenshots Guide** | Instructions for capturing iOS and Android screenshots | [MOBILE_SCREENSHOTS.md](MOBILE_SCREENSHOTS.md) |
 | **Entity Framework Identity Setup** | Complete guide for EF Identity and migration management | [EF_IDENTITY_SETUP_GUIDE.md](EF_IDENTITY_SETUP_GUIDE.md) |
 | **WinUI Screenshots** | Visual interface documentation for Windows app | [screenshots.md](screenshots.md) |
+| **Blazor Screenshots** | Blazor form screenshots for web UI | [PasswordManager.Web/README.md#blazor-ui-screenshots](PasswordManager.Web/README.md#blazor-ui-screenshots) |
 | **Complete Setup Guide** | Full setup and configuration guide | [SETUP.md](SETUP.md) |
 | **Browser Extension Setup** | Browser extension installation guide | [INSTALLATION.md](INSTALLATION.md) |
 | **Database Setup** | Database configuration guide | [ReadMe.DatabaseProviders.md](ReadMe.DatabaseProviders.md) |
