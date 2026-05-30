@@ -1,0 +1,250 @@
+@page "/categories"
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Models
+@inject ICategoryInterface CategoryService
+@inject IAuthService AuthService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Categories - VaultGuard</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-weight:700">Categories</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            @(categories?.Count ?? 0) categories
+        </MudText>
+    </div>
+    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary"
+               OnClick="@OpenAddDialog">New Category</MudButton>
+</MudStack>
+
+<MudPaper Class="mb-4 pa-3" Elevation="1">
+    <MudTextField @bind-Value="searchText" Placeholder="Search categories..."
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  Variant="Variant.Outlined" Margin="Margin.Dense"
+                  Immediate="true" TextChanged="@(_ => FilterCategories())"
+                  Style="max-width:400px;" />
+</MudPaper>
+
+@if (isLoading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudDataGrid T="Category" Items="@filteredCategories" Sortable="true" Hover="true"
+                 Dense="true" Bordered="false" Elevation="2" RowsPerPage="25">
+        <Columns>
+            <TemplateColumn Title="" CellStyle="width:48px; padding-left:16px;">
+                <CellTemplate>
+                    <MudIcon Icon="@Icons.Material.Filled.Category"
+                             Style="@($"color:{context.Item.Color ?? "#7C3AED"}")" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Name" Title="Name" Sortable="true" />
+            <PropertyColumn Property="x => x.Description" Title="Description" Sortable="false" />
+            <TemplateColumn Title="Items" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Default"
+                             Text="@((context.Item.PasswordItems?.Count ?? 0).ToString())" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.CreatedAt" Title="Created" Format="MMM d, yyyy" Sortable="true" />
+            <TemplateColumn Title="Actions" CellStyle="width:100px">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="0">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                       Color="Color.Default" OnClick="@(() => OpenEditDialog(context.Item))"
+                                       title="Edit" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                       Color="Color.Error" OnClick="@(() => DeleteCategory(context.Item))"
+                                       title="Delete" />
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="Category" />
+        </PagerContent>
+        <NoRecordsContent>
+            <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                <MudIcon Icon="@Icons.Material.Filled.Category"
+                         Style="font-size:4rem; color:#7C3AED; opacity:0.4;" />
+                <MudText Typo="Typo.h6" Color="Color.Secondary">No categories found</MudText>
+                <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
+                           Color="Color.Primary" OnClick="@OpenAddDialog">Add Category</MudButton>
+            </MudStack>
+        </NoRecordsContent>
+    </MudDataGrid>
+}
+
+@* Add/Edit Dialog *@
+<MudDialog @bind-Visible="_dialogVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_editingCategory?.Id > 0 ? "Edit Category" : "New Category")</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_editingCategory != null)
+        {
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="_editingCategory.Name" Label="Category Name"
+                              Variant="Variant.Outlined" Required="true"
+                              Placeholder="e.g. Social Media, Banking, Work" />
+                <MudTextField @bind-Value="_editingCategory.Description" Label="Description"
+                              Variant="Variant.Outlined" Lines="2"
+                              Placeholder="Optional description" />
+                <MudTextField @bind-Value="_editingCategory.Color" Label="Color (hex)"
+                              Variant="Variant.Outlined" Placeholder="#7C3AED"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Palette" />
+                <MudTextField @bind-Value="_editingCategory.Icon" Label="Icon (emoji or name)"
+                              Variant="Variant.Outlined" Placeholder="🏦 or shield" />
+                <MudCheckBox @bind-Value="_editingCategory.IsFavorite" Label="Show in navigation"
+                             Color="Color.Primary" />
+            </MudStack>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@CloseDialog" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="@SaveCategory" Variant="Variant.Filled" Color="Color.Primary"
+                   Disabled="@isSaving">
+            @if (isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            @(_editingCategory?.Id > 0 ? "Save Changes" : "Create Category")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    List<Category>? categories;
+    List<Category>? filteredCategories;
+    bool isLoading = true;
+    bool _dialogVisible = false;
+    bool isSaving = false;
+    string searchText = string.Empty;
+    Category? _editingCategory;
+    DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
+
+    protected override async Task OnInitializedAsync() => await LoadCategories();
+
+    async Task LoadCategories()
+    {
+        isLoading = true;
+        try
+        {
+            categories = await CategoryService.GetAllAsync() ?? new List<Category>();
+            FilterCategories();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading categories: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    void FilterCategories()
+    {
+        filteredCategories = string.IsNullOrEmpty(searchText)
+            ? categories?.ToList() ?? new List<Category>()
+            : categories?.Where(c =>
+                c.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                (c.Description?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+              ).ToList() ?? new List<Category>();
+    }
+
+    void OpenAddDialog()
+    {
+        _editingCategory = new Category
+        {
+            UserId = AuthService.CurrentUser?.Id,
+            Color = "#7C3AED",
+            CreatedAt = DateTime.UtcNow
+        };
+        _dialogVisible = true;
+    }
+
+    void OpenEditDialog(Category cat)
+    {
+        _editingCategory = new Category
+        {
+            Id = cat.Id,
+            Name = cat.Name,
+            Description = cat.Description,
+            Color = cat.Color,
+            Icon = cat.Icon,
+            IsFavorite = cat.IsFavorite,
+            UserId = cat.UserId
+        };
+        _dialogVisible = true;
+    }
+
+    async Task SaveCategory()
+    {
+        if (_editingCategory == null || string.IsNullOrWhiteSpace(_editingCategory.Name))
+        {
+            Snackbar.Add("Category name is required.", Severity.Warning);
+            return;
+        }
+        isSaving = true;
+        try
+        {
+            if (_editingCategory.Id > 0)
+            {
+                await CategoryService.UpdateAsync(_editingCategory);
+                Snackbar.Add("Category updated.", Severity.Success);
+            }
+            else
+            {
+                _editingCategory.UserId = AuthService.CurrentUser?.Id;
+                await CategoryService.CreateAsync(_editingCategory);
+                Snackbar.Add("Category created.", Severity.Success);
+            }
+            _dialogVisible = false;
+            await LoadCategories();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving category: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    async Task DeleteCategory(Category cat)
+    {
+        bool hasItems = false;
+        try { hasItems = await CategoryService.HasPasswordItemsAsync(cat.Id); } catch { }
+
+        string message = hasItems
+            ? $"Category \"{cat.Name}\" has password items. Deleting it may affect those items. Continue?"
+            : $"Delete category \"{cat.Name}\"?";
+
+        var confirmed = await DialogService.ShowMessageBox(
+            "Delete Category", message, yesText: "Delete", cancelText: "Cancel");
+
+        if (confirmed == true)
+        {
+            try
+            {
+                await CategoryService.DeleteAsync(cat.Id);
+                Snackbar.Add("Category deleted.", Severity.Success);
+                await LoadCategories();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error deleting category: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    void CloseDialog() => _dialogVisible = false;
+}

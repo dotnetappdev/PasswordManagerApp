@@ -1,0 +1,309 @@
+@page "/tags"
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Models
+@inject ITagService TagService
+@inject IAuthService AuthService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Tags - VaultGuard</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-weight:700">Tags</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            @(tags?.Count() ?? 0) tags
+        </MudText>
+    </div>
+    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary"
+               OnClick="@OpenAddDialog">New Tag</MudButton>
+</MudStack>
+
+<MudPaper Class="mb-4 pa-3" Elevation="1">
+    <MudTextField @bind-Value="searchText" Placeholder="Search tags..."
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  Variant="Variant.Outlined" Margin="Margin.Dense"
+                  Immediate="true" TextChanged="@(_ => FilterTags())"
+                  Style="max-width:400px;" />
+</MudPaper>
+
+@if (isLoading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (filteredTags?.Any() == true)
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="2">
+        <MudText Typo="Typo.subtitle2" Class="mb-3" Color="Color.Secondary">
+            Click a tag to edit it
+        </MudText>
+        <div style="display:flex; flex-wrap:wrap; gap:12px;">
+            @foreach (var tag in filteredTags)
+            {
+                var localTag = tag;
+                <MudChip T="Tag" Value="@localTag"
+                         Style="@($"background-color:{localTag.Color ?? "#7C3AED"}22; border: 1px solid {localTag.Color ?? "#7C3AED"}; color:{localTag.Color ?? "#7C3AED"}; cursor:pointer;")"
+                         OnClick="@(() => OpenEditDialog(localTag))"
+                         CloseIcon="@Icons.Material.Filled.Close"
+                         OnClose="@((MudChip<Tag> _) => DeleteTag(localTag))">
+                    @localTag.Name
+                    @if (localTag.IsSystemTag)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Lock" Style="font-size:0.8rem; margin-left:4px;" />
+                    }
+                </MudChip>
+            }
+        </div>
+    </MudPaper>
+
+    <MudDataGrid T="Tag" Items="@filteredTags" Sortable="true" Hover="true" Dense="true"
+                 Bordered="false" Elevation="2" RowsPerPage="25">
+        <Columns>
+            <TemplateColumn Title="" CellStyle="width:48px; padding-left:16px;">
+                <CellTemplate>
+                    <MudIcon Icon="@Icons.Material.Filled.Tag"
+                             Style="@($"color:{context.Item.Color ?? "#7C3AED"}")" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Name" Title="Name" Sortable="true" />
+            <PropertyColumn Property="x => x.Description" Title="Description" Sortable="false" />
+            <TemplateColumn Title="Items" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Default"
+                             Text="@((context.Item.PasswordItems?.Count ?? 0).ToString())" />
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Type" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.IsSystemTag)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Text="System" />
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Text="User" />
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.CreatedAt" Title="Created" Format="MMM d, yyyy" Sortable="true" />
+            <TemplateColumn Title="Actions" CellStyle="width:100px">
+                <CellTemplate>
+                    <MudStack Row="true" Spacing="0">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                       Color="Color.Default"
+                                       OnClick="@(() => OpenEditDialog(context.Item))"
+                                       Disabled="@context.Item.IsSystemTag"
+                                       title="Edit" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="@(() => DeleteTag(context.Item))"
+                                       Disabled="@context.Item.IsSystemTag"
+                                       title="Delete" />
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="Tag" />
+        </PagerContent>
+    </MudDataGrid>
+}
+else
+{
+    <MudPaper Class="pa-12 text-center" Elevation="1">
+        <MudIcon Icon="@Icons.Material.Filled.Tag" Style="font-size:4rem; color:#7C3AED; opacity:0.4;" />
+        <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No tags found</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+            Tags help you organize and find your passwords quickly.
+        </MudText>
+        <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
+                   Color="Color.Primary" OnClick="@OpenAddDialog">Create Tag</MudButton>
+    </MudPaper>
+}
+
+@* Add/Edit Dialog *@
+<MudDialog @bind-Visible="_dialogVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_editingTag?.Id > 0 ? "Edit Tag" : "New Tag")</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_editingTag != null)
+        {
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="_editingTag.Name" Label="Tag Name"
+                              Variant="Variant.Outlined" Required="true"
+                              Placeholder="e.g. important, banking, 2fa" />
+                <MudTextField @bind-Value="_editingTag.Description" Label="Description"
+                              Variant="Variant.Outlined"
+                              Placeholder="Optional description" />
+                <MudTextField @bind-Value="_editingTag.Color" Label="Color (hex)"
+                              Variant="Variant.Outlined" Placeholder="#7C3AED"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Palette" />
+                @if (!string.IsNullOrEmpty(_editingTag.Color))
+                {
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudText Typo="Typo.body2">Preview:</MudText>
+                        <MudChip T="string"
+                                 Style="@($"background-color:{_editingTag.Color}22; border: 1px solid {_editingTag.Color}; color:{_editingTag.Color};")"
+                                 Text="@(_editingTag.Name ?? "Tag Name")" />
+                    </MudStack>
+                }
+            </MudStack>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@CloseDialog" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="@SaveTag" Variant="Variant.Filled" Color="Color.Primary" Disabled="@isSaving">
+            @if (isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            @(_editingTag?.Id > 0 ? "Save Changes" : "Create Tag")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    IEnumerable<Tag>? tags;
+    IEnumerable<Tag>? filteredTags;
+    bool isLoading = true;
+    bool _dialogVisible = false;
+    bool isSaving = false;
+    string searchText = string.Empty;
+    Tag? _editingTag;
+    DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
+
+    protected override async Task OnInitializedAsync() => await LoadTags();
+
+    async Task LoadTags()
+    {
+        isLoading = true;
+        try
+        {
+            tags = await TagService.GetAllAsync() ?? Enumerable.Empty<Tag>();
+            FilterTags();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading tags: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    void FilterTags()
+    {
+        filteredTags = string.IsNullOrEmpty(searchText)
+            ? tags
+            : tags?.Where(t =>
+                t.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                (t.Description?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false));
+    }
+
+    void OpenAddDialog()
+    {
+        _editingTag = new Tag
+        {
+            UserId = AuthService.CurrentUser?.Id,
+            Color = "#7C3AED",
+            CreatedAt = DateTime.UtcNow
+        };
+        _dialogVisible = true;
+    }
+
+    void OpenEditDialog(Tag tag)
+    {
+        if (tag.IsSystemTag)
+        {
+            Snackbar.Add("System tags cannot be edited.", Severity.Warning);
+            return;
+        }
+        _editingTag = new Tag
+        {
+            Id = tag.Id,
+            Name = tag.Name,
+            Description = tag.Description,
+            Color = tag.Color,
+            UserId = tag.UserId
+        };
+        _dialogVisible = true;
+    }
+
+    async Task SaveTag()
+    {
+        if (_editingTag == null || string.IsNullOrWhiteSpace(_editingTag.Name))
+        {
+            Snackbar.Add("Tag name is required.", Severity.Warning);
+            return;
+        }
+
+        // Check for duplicate name
+        bool exists = false;
+        try { exists = await TagService.ExistsAsync(_editingTag.Name); } catch { }
+        if (exists && _editingTag.Id == 0)
+        {
+            Snackbar.Add($"A tag named \"{_editingTag.Name}\" already exists.", Severity.Warning);
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            if (_editingTag.Id > 0)
+            {
+                await TagService.UpdateAsync(_editingTag);
+                Snackbar.Add("Tag updated.", Severity.Success);
+            }
+            else
+            {
+                _editingTag.UserId = AuthService.CurrentUser?.Id;
+                await TagService.CreateAsync(_editingTag);
+                Snackbar.Add("Tag created.", Severity.Success);
+            }
+            _dialogVisible = false;
+            await LoadTags();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving tag: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    async Task DeleteTag(Tag tag)
+    {
+        if (tag.IsSystemTag)
+        {
+            Snackbar.Add("System tags cannot be deleted.", Severity.Warning);
+            return;
+        }
+
+        var confirmed = await DialogService.ShowMessageBox(
+            "Delete Tag",
+            $"Delete tag \"{tag.Name}\"? It will be removed from all items.",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (confirmed == true)
+        {
+            try
+            {
+                await TagService.DeleteAsync(tag.Id);
+                Snackbar.Add("Tag deleted.", Severity.Success);
+                await LoadTags();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error deleting tag: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    void CloseDialog() => _dialogVisible = false;
+}

@@ -1,0 +1,295 @@
+@page "/collections"
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Models
+@inject ICollectionService CollectionService
+@inject IAuthService AuthService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Collections - VaultGuard</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-weight:700">Collections</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            @(collections?.Count ?? 0) collections
+        </MudText>
+    </div>
+    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary"
+               OnClick="@OpenAddDialog">New Collection</MudButton>
+</MudStack>
+
+<MudPaper Class="mb-4 pa-3" Elevation="1">
+    <MudTextField @bind-Value="searchText" Placeholder="Search collections..."
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  Variant="Variant.Outlined" Margin="Margin.Dense"
+                  Immediate="true" TextChanged="@(_ => FilterCollections())"
+                  Style="max-width:400px;" />
+</MudPaper>
+
+@if (isLoading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudGrid>
+        @if (filteredCollections?.Any() == true)
+        {
+            @foreach (var col in filteredCollections)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudCard Elevation="2" Style="@($"border-left: 4px solid {(col.Color ?? "#7C3AED")}; height:100%;")">
+                        <MudCardContent>
+                            <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween">
+                                <MudStack Spacing="1">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudIcon Icon="@Icons.Material.Filled.FolderSpecial"
+                                                 Style="@($"color:{(col.Color ?? "#7C3AED")}; font-size:1.5rem;")" />
+                                        <MudText Typo="Typo.h6" Style="font-weight:600; font-size:1rem;">@col.Name</MudText>
+                                        @if (col.IsDefault)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Text="Default" />
+                                        }
+                                    </MudStack>
+                                    @if (!string.IsNullOrEmpty(col.Description))
+                                    {
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">@col.Description</MudText>
+                                    }
+                                </MudStack>
+                            </MudStack>
+
+                            <MudDivider Class="my-2" />
+
+                            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Items</MudText>
+                                    <MudText Typo="Typo.body2" Style="font-weight:600;">
+                                        @(col.PasswordItems?.Count ?? 0)
+                                    </MudText>
+                                </MudStack>
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Categories</MudText>
+                                    <MudText Typo="Typo.body2" Style="font-weight:600;">
+                                        @(col.Categories?.Count ?? 0)
+                                    </MudText>
+                                </MudStack>
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Created</MudText>
+                                    <MudText Typo="Typo.body2">@col.CreatedAt.ToString("MMM d")</MudText>
+                                </MudStack>
+                            </MudStack>
+                        </MudCardContent>
+                        <MudCardActions>
+                            @if (!col.IsDefault)
+                            {
+                                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Default"
+                                           OnClick="@(() => SetDefault(col))">Set Default</MudButton>
+                            }
+                            <MudSpacer />
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                           Color="Color.Default" OnClick="@(() => OpenEditDialog(col))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                           Color="Color.Error" OnClick="@(() => DeleteCollection(col))"
+                                           Disabled="@col.IsDefault" />
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        }
+        else
+        {
+            <MudItem xs="12">
+                <MudPaper Class="pa-12 text-center" Elevation="1">
+                    <MudIcon Icon="@Icons.Material.Filled.FolderSpecial"
+                             Style="font-size:4rem; color:#7C3AED; opacity:0.4;" />
+                    <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No collections found</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                        Create a collection to group your password categories.
+                    </MudText>
+                    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
+                               Color="Color.Primary" OnClick="@OpenAddDialog">Create Collection</MudButton>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@* Add/Edit Dialog *@
+<MudDialog @bind-Visible="_dialogVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_editingCollection?.Id > 0 ? "Edit Collection" : "New Collection")</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_editingCollection != null)
+        {
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="_editingCollection.Name" Label="Collection Name"
+                              Variant="Variant.Outlined" Required="true"
+                              Placeholder="e.g. Personal, Work, Family" />
+                <MudTextField @bind-Value="_editingCollection.Description" Label="Description"
+                              Variant="Variant.Outlined" Lines="2"
+                              Placeholder="Optional description" />
+                <MudTextField @bind-Value="_editingCollection.Color" Label="Color (hex)"
+                              Variant="Variant.Outlined" Placeholder="#7C3AED"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Palette" />
+                <MudTextField @bind-Value="_editingCollection.Icon" Label="Icon (emoji or name)"
+                              Variant="Variant.Outlined" Placeholder="📁 or folder" />
+                <MudCheckBox @bind-Value="_editingCollection.IsDefault" Label="Set as default collection"
+                             Color="Color.Primary" />
+            </MudStack>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@CloseDialog" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="@SaveCollection" Variant="Variant.Filled" Color="Color.Primary"
+                   Disabled="@isSaving">
+            @if (isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            @(_editingCollection?.Id > 0 ? "Save Changes" : "Create Collection")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    List<Collection>? collections;
+    List<Collection>? filteredCollections;
+    bool isLoading = true;
+    bool _dialogVisible = false;
+    bool isSaving = false;
+    string searchText = string.Empty;
+    Collection? _editingCollection;
+    DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
+
+    protected override async Task OnInitializedAsync() => await LoadCollections();
+
+    async Task LoadCollections()
+    {
+        isLoading = true;
+        try
+        {
+            collections = await CollectionService.GetAllAsync() ?? new List<Collection>();
+            FilterCollections();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading collections: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    void FilterCollections()
+    {
+        filteredCollections = string.IsNullOrEmpty(searchText)
+            ? collections?.ToList() ?? new List<Collection>()
+            : collections?.Where(c =>
+                c.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                (c.Description?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+              ).ToList() ?? new List<Collection>();
+    }
+
+    void OpenAddDialog()
+    {
+        _editingCollection = new Collection
+        {
+            UserId = AuthService.CurrentUser?.Id,
+            Color = "#7C3AED",
+            CreatedAt = DateTime.UtcNow
+        };
+        _dialogVisible = true;
+    }
+
+    void OpenEditDialog(Collection col)
+    {
+        _editingCollection = new Collection
+        {
+            Id = col.Id,
+            Name = col.Name,
+            Description = col.Description,
+            Color = col.Color,
+            Icon = col.Icon,
+            IsDefault = col.IsDefault,
+            UserId = col.UserId
+        };
+        _dialogVisible = true;
+    }
+
+    async Task SaveCollection()
+    {
+        if (_editingCollection == null || string.IsNullOrWhiteSpace(_editingCollection.Name))
+        {
+            Snackbar.Add("Collection name is required.", Severity.Warning);
+            return;
+        }
+        isSaving = true;
+        try
+        {
+            if (_editingCollection.Id > 0)
+            {
+                await CollectionService.UpdateAsync(_editingCollection);
+                Snackbar.Add("Collection updated.", Severity.Success);
+            }
+            else
+            {
+                _editingCollection.UserId = AuthService.CurrentUser?.Id;
+                await CollectionService.CreateAsync(_editingCollection);
+                Snackbar.Add("Collection created.", Severity.Success);
+            }
+            _dialogVisible = false;
+            await LoadCollections();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving collection: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    async Task SetDefault(Collection col)
+    {
+        try
+        {
+            await CollectionService.SetAsDefaultAsync(col.Id);
+            Snackbar.Add($"\"{col.Name}\" set as default collection.", Severity.Success);
+            await LoadCollections();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    async Task DeleteCollection(Collection col)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Delete Collection",
+            $"Delete collection \"{col.Name}\"?",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (confirmed == true)
+        {
+            try
+            {
+                await CollectionService.DeleteAsync(col.Id);
+                Snackbar.Add("Collection deleted.", Severity.Success);
+                await LoadCollections();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error deleting collection: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    void CloseDialog() => _dialogVisible = false;
+}

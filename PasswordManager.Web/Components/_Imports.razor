@@ -1,19 +1,22 @@
-﻿@using System.Net.Http
+@using System.Net.Http
 @using System.Net.Http.Json
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.Components.Web
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 @using Microsoft.AspNetCore.Components.Web.Virtualization
-@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.JSInterop
 @using MudBlazor
 @using PasswordManager.Web
 @using PasswordManager.Web.Components
+@using PasswordManager.Web.Components.Layout
 @using PasswordManager.Components.Shared
 @using PasswordManager.Components.Shared.Pages
 @using PasswordManager.Components.Shared.Components
 @using PasswordManager.Components.Shared.Components.Layout
 @using PasswordManager.Components.Shared.Components.Auth
 @using PasswordManager.Models
+@using PasswordManager.Models.DTOs.Auth
+@using PasswordManager.Models.DTOs.Audit
 @using PasswordManager.Services.Interfaces

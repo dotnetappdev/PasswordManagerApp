@@ -1,0 +1,357 @@
+@page "/audit-logs"
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Models
+@using PasswordManager.Models.DTOs.Audit
+@inject IAuditLogService AuditLogService
+@inject IAuthService AuthService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Audit Logs - VaultGuard</PageTitle>
+
+<MudText Typo="Typo.h4" Style="font-weight:700" Class="mb-1">Audit Logs</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    Track all activity on your account
+</MudText>
+
+<MudPaper Class="pa-3 mb-4" Elevation="1">
+    <MudGrid AlignItems="AlignItems.Center">
+        <MudItem xs="12" md="4">
+            <MudTextField @bind-Value="searchText" Placeholder="Search logs..."
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                          Immediate="true" TextChanged="@(_ => FilterLogs())" />
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <MudSelect T="string" @bind-Value="actionFilter" Label="Action" Variant="Variant.Outlined"
+                       Margin="Margin.Dense" FullWidth="true"
+                       ValueChanged="@((string s) => { actionFilter = s; FilterLogs(); })">
+                <MudSelectItem T="string" Value="@string.Empty">All Actions</MudSelectItem>
+                <MudSelectItem T="string" Value="Create">Create</MudSelectItem>
+                <MudSelectItem T="string" Value="Update">Update</MudSelectItem>
+                <MudSelectItem T="string" Value="Delete">Delete</MudSelectItem>
+                <MudSelectItem T="string" Value="Login">Login</MudSelectItem>
+                <MudSelectItem T="string" Value="Logout">Logout</MudSelectItem>
+                <MudSelectItem T="string" Value="Export">Export</MudSelectItem>
+                <MudSelectItem T="string" Value="Import">Import</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <MudSelect T="string" @bind-Value="entityFilter" Label="Entity Type" Variant="Variant.Outlined"
+                       Margin="Margin.Dense" FullWidth="true"
+                       ValueChanged="@((string s) => { entityFilter = s; FilterLogs(); })">
+                <MudSelectItem T="string" Value="@string.Empty">All Types</MudSelectItem>
+                <MudSelectItem T="string" Value="PasswordItem">Password Item</MudSelectItem>
+                <MudSelectItem T="string" Value="Vault">Vault</MudSelectItem>
+                <MudSelectItem T="string" Value="Category">Category</MudSelectItem>
+                <MudSelectItem T="string" Value="Collection">Collection</MudSelectItem>
+                <MudSelectItem T="string" Value="Tag">Tag</MudSelectItem>
+                <MudSelectItem T="string" Value="User">User</MudSelectItem>
+                <MudSelectItem T="string" Value="Passkey">Passkey</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <MudDatePicker Date="startDate" Label="From" Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           DateChanged="@((DateTime? d) => { startDate = d; FilterLogs(); })" />
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <MudDatePicker Date="endDate" Label="To" Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           DateChanged="@((DateTime? d) => { endDate = d; FilterLogs(); })" />
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (isLoading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudPaper Elevation="2">
+        <MudDataGrid T="AuditLogDto" Items="@filteredLogs" Sortable="true" Hover="true"
+                     Dense="true" Bordered="false" RowsPerPage="50">
+            <Columns>
+                <TemplateColumn Title="" CellStyle="width:48px; padding-left:16px;">
+                    <CellTemplate>
+                        <MudIcon Icon="@GetActionIcon(context.Item.Action)"
+                                 Style="@($"color:{GetActionColor(context.Item.Action, context.Item.Success)}; font-size:1.2rem;")" />
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Action" Sortable="true" SortBy="x => x.Action">
+                    <CellTemplate>
+                        <MudChip T="string" Size="Size.Small"
+                                 Color="@GetActionChipColor(context.Item.Action, context.Item.Success)"
+                                 Text="@context.Item.Action" />
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.EntityType" Title="Entity Type" Sortable="true" />
+                <PropertyColumn Property="x => x.EntityName" Title="Item" Sortable="false" />
+                <TemplateColumn Title="Status" Sortable="false">
+                    <CellTemplate>
+                        @if (context.Item.Success)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                     Style="color:#10B981; font-size:1.1rem;" />
+                        }
+                        else
+                        {
+                            <MudTooltip Text="@context.Item.ErrorMessage">
+                                <MudIcon Icon="@Icons.Material.Filled.Error"
+                                         Style="color:#EF4444; font-size:1.1rem;" />
+                            </MudTooltip>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Timestamp" Sortable="true" SortBy="x => x.Timestamp">
+                    <CellTemplate>
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.body2">
+                                @context.Item.Timestamp.ToLocalTime().ToString("MMM d, yyyy")
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @context.Item.Timestamp.ToLocalTime().ToString("HH:mm:ss")
+                            </MudText>
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Device" Sortable="false">
+                    <CellTemplate>
+                        @if (!string.IsNullOrEmpty(context.Item.DeviceName))
+                        {
+                            <MudText Typo="Typo.body2">@context.Item.DeviceName</MudText>
+                        }
+                        else if (!string.IsNullOrEmpty(context.Item.IpAddress))
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Item.IpAddress</MudText>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Details" CellStyle="width:60px">
+                    <CellTemplate>
+                        @if (!string.IsNullOrEmpty(context.Item.Changes))
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Info" Size="Size.Small"
+                                           Color="Color.Primary"
+                                           OnClick="@(() => ShowDetails(context.Item))"
+                                           title="View changes" />
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="AuditLogDto" />
+            </PagerContent>
+            <NoRecordsContent>
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.History"
+                             Style="font-size:4rem; color:#7C3AED; opacity:0.4;" />
+                    <MudText Typo="Typo.h6" Color="Color.Secondary">No audit logs found</MudText>
+                    @if (!string.IsNullOrEmpty(searchText) || !string.IsNullOrEmpty(actionFilter) ||
+                         !string.IsNullOrEmpty(entityFilter) || startDate.HasValue || endDate.HasValue)
+                    {
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@ClearFilters">
+                            Clear filters
+                        </MudButton>
+                    }
+                </MudStack>
+            </NoRecordsContent>
+        </MudDataGrid>
+    </MudPaper>
+
+    @if (totalCount > 0)
+    {
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 pa-2">
+            Showing @(filteredLogs?.Count ?? 0) of @totalCount total entries
+        </MudText>
+    }
+}
+
+@* Details Dialog *@
+<MudDialog @bind-Visible="_detailsDialogVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Log Entry Details</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_selectedLog != null)
+        {
+            <MudStack Spacing="2">
+                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Action</MudText>
+                    <MudChip T="string" Size="Size.Small"
+                             Color="@GetActionChipColor(_selectedLog.Action, _selectedLog.Success)"
+                             Text="@_selectedLog.Action" />
+                </MudStack>
+                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Entity</MudText>
+                    <MudText Typo="Typo.body2">@_selectedLog.EntityType — @_selectedLog.EntityName</MudText>
+                </MudStack>
+                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Timestamp</MudText>
+                    <MudText Typo="Typo.body2">@_selectedLog.Timestamp.ToLocalTime().ToString("MMM d, yyyy HH:mm:ss")</MudText>
+                </MudStack>
+                @if (!string.IsNullOrEmpty(_selectedLog.IpAddress))
+                {
+                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">IP Address</MudText>
+                        <MudText Typo="Typo.body2">@_selectedLog.IpAddress</MudText>
+                    </MudStack>
+                }
+                @if (!string.IsNullOrEmpty(_selectedLog.DeviceName))
+                {
+                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Device</MudText>
+                        <MudText Typo="Typo.body2">@_selectedLog.DeviceName</MudText>
+                    </MudStack>
+                }
+                @if (!_selectedLog.Success && !string.IsNullOrEmpty(_selectedLog.ErrorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true">@_selectedLog.ErrorMessage</MudAlert>
+                }
+                @if (!string.IsNullOrEmpty(_selectedLog.Changes))
+                {
+                    <MudDivider />
+                    <MudText Typo="Typo.subtitle2">Changes</MudText>
+                    <MudPaper Class="pa-3 rounded" Elevation="0"
+                              Style="background:rgba(0,0,0,0.2); font-family:monospace; font-size:0.75rem; overflow-x:auto; white-space:pre-wrap; word-break:break-all;">
+                        @_selectedLog.Changes
+                    </MudPaper>
+                }
+            </MudStack>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _detailsDialogVisible = false)" Variant="Variant.Text">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    List<AuditLogDto>? allLogs;
+    List<AuditLogDto>? filteredLogs;
+    bool isLoading = true;
+    int totalCount = 0;
+
+    string searchText = string.Empty;
+    string actionFilter = string.Empty;
+    string entityFilter = string.Empty;
+    DateTime? startDate;
+    DateTime? endDate;
+
+    bool _detailsDialogVisible = false;
+    AuditLogDto? _selectedLog;
+    DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true };
+
+    protected override async Task OnInitializedAsync() => await LoadLogs();
+
+    async Task LoadLogs()
+    {
+        isLoading = true;
+        try
+        {
+            var userId = AuthService.CurrentUser?.Id;
+            if (string.IsNullOrEmpty(userId))
+            {
+                allLogs = new List<AuditLogDto>();
+                filteredLogs = new List<AuditLogDto>();
+                return;
+            }
+
+            var request = new ListAuditLogsRequestDto
+            {
+                PageSize = 500,
+                Page = 1,
+                StartDate = startDate,
+                EndDate = endDate?.AddDays(1),
+                Action = string.IsNullOrEmpty(actionFilter) ? null : actionFilter,
+                EntityType = string.IsNullOrEmpty(entityFilter) ? null : entityFilter
+            };
+
+            var response = await AuditLogService.GetAuditLogsAsync(userId, request);
+            allLogs = response?.Logs ?? new List<AuditLogDto>();
+            totalCount = response?.TotalCount ?? 0;
+            FilterLogs();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading audit logs: {ex.Message}", Severity.Error);
+            allLogs = new List<AuditLogDto>();
+            filteredLogs = new List<AuditLogDto>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    void FilterLogs()
+    {
+        filteredLogs = allLogs?.Where(l =>
+            (string.IsNullOrEmpty(searchText) ||
+             l.Action.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+             (l.EntityType?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+             (l.EntityName?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)) &&
+            (string.IsNullOrEmpty(actionFilter) || l.Action.Equals(actionFilter, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(entityFilter) || l.EntityType.Equals(entityFilter, StringComparison.OrdinalIgnoreCase)) &&
+            (!startDate.HasValue || l.Timestamp >= startDate.Value) &&
+            (!endDate.HasValue || l.Timestamp <= endDate.Value.AddDays(1))
+        ).ToList() ?? new List<AuditLogDto>();
+    }
+
+    void ClearFilters()
+    {
+        searchText = string.Empty;
+        actionFilter = string.Empty;
+        entityFilter = string.Empty;
+        startDate = null;
+        endDate = null;
+        FilterLogs();
+    }
+
+    void ShowDetails(AuditLogDto log)
+    {
+        _selectedLog = log;
+        _detailsDialogVisible = true;
+    }
+
+    string GetActionIcon(string action) => action?.ToLower() switch
+    {
+        "create" => Icons.Material.Filled.AddCircle,
+        "update" => Icons.Material.Filled.Edit,
+        "delete" => Icons.Material.Filled.Delete,
+        "login" => Icons.Material.Filled.Login,
+        "logout" => Icons.Material.Filled.Logout,
+        "export" => Icons.Material.Filled.Upload,
+        "import" => Icons.Material.Filled.Download,
+        "view" => Icons.Material.Filled.Visibility,
+        _ => Icons.Material.Filled.Info
+    };
+
+    string GetActionColor(string action, bool success)
+    {
+        if (!success) return "#EF4444";
+        return action?.ToLower() switch
+        {
+            "create" => "#10B981",
+            "update" => "#F59E0B",
+            "delete" => "#EF4444",
+            "login" => "#3B82F6",
+            "logout" => "#6B7280",
+            _ => "#7C3AED"
+        };
+    }
+
+    Color GetActionChipColor(string action, bool success)
+    {
+        if (!success) return Color.Error;
+        return action?.ToLower() switch
+        {
+            "create" => Color.Success,
+            "update" => Color.Warning,
+            "delete" => Color.Error,
+            "login" => Color.Info,
+            "logout" => Color.Default,
+            _ => Color.Primary
+        };
+    }
+}

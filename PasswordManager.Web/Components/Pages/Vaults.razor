@@ -3,107 +3,160 @@
 @using PasswordManager.Models
 @inject IVaultService VaultService
 @inject IAuthService AuthService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
 
-<PageTitle>Vaults - Password Manager</PageTitle>
+<PageTitle>Vaults - VaultGuard</PageTitle>
 
-<div class="container-fluid p-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="mb-2">
-                        <span class="bi bi-shield-lock-fill"></span> Vaults
-                    </h1>
-                    <p class="text-muted">Manage your password vaults</p>
-                </div>
-                <div>
-                    <button class="btn btn-primary" @onclick="ShowCreateDialog">
-                        <span class="bi bi-plus-circle"></span> Add Vault
-                    </button>
-                </div>
-            </div>
-        </div>
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-weight:700">Vaults</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Manage your password vaults</MudText>
     </div>
+    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary"
+               OnClick="@OpenAddDialog">New Vault</MudButton>
+</MudStack>
 
-    @if (isLoading)
-    {
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        </div>
-    }
-    else if (vaults?.Any() == true)
-    {
-        <div class="row g-4">
-            @foreach (var vault in vaults)
+@if (isLoading)
+{
+    <MudGrid>
+        @for (int i = 0; i < 3; i++)
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="160px" />
+            </MudItem>
+        }
+    </MudGrid>
+}
+else if (vaults?.Any() == true)
+{
+    <MudGrid>
+        @foreach (var vault in vaults)
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2" Style="@($"border-top: 4px solid {(vault.Color ?? "#7C3AED")}; height:100%;")">
+                    <MudCardContent>
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+                            <MudStack Spacing="1">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Shield"
+                                             Style="@($"color:{(vault.Color ?? "#7C3AED")}; font-size:1.8rem;")" />
+                                    <MudText Typo="Typo.h6" Style="font-weight:600;">@vault.Name</MudText>
+                                    @if (vault.IsDefault)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Success"
+                                                 Text="Default" />
+                                    }
+                                </MudStack>
+                                @if (!string.IsNullOrEmpty(vault.Description))
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@vault.Description</MudText>
+                                }
+                            </MudStack>
+                        </MudStack>
+
+                        <MudDivider Class="my-3" />
+
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Items</MudText>
+                                <MudText Typo="Typo.body1" Style="font-weight:600;">
+                                    @(vault.PasswordItems?.Count ?? 0)
+                                </MudText>
+                            </MudStack>
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Created</MudText>
+                                <MudText Typo="Typo.body2">@vault.CreatedAt.ToString("MMM d, yyyy")</MudText>
+                            </MudStack>
+                        </MudStack>
+                    </MudCardContent>
+                    <MudCardActions>
+                        @if (!vault.IsDefault)
+                        {
+                            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Default"
+                                       OnClick="@(() => SetDefault(vault))">Set Default</MudButton>
+                        }
+                        <MudSpacer />
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                       Color="Color.Default" OnClick="@(() => OpenEditDialog(vault))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                       Color="Color.Error" OnClick="@(() => DeleteVault(vault))"
+                                       Disabled="@vault.IsDefault" />
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+else
+{
+    <MudPaper Class="pa-12 text-center" Elevation="1">
+        <MudIcon Icon="@Icons.Material.Filled.Shield" Style="font-size:4rem; color:#7C3AED; opacity:0.4;" />
+        <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No vaults found</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+            Create a vault to start organizing your passwords.
+        </MudText>
+        <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
+                   Color="Color.Primary" OnClick="@OpenAddDialog">Create Your First Vault</MudButton>
+    </MudPaper>
+}
+
+@* Add/Edit Dialog *@
+<MudDialog @bind-Visible="_dialogVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_editingVault?.Id > 0 ? "Edit Vault" : "New Vault")</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_editingVault != null)
+        {
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="_editingVault.Name" Label="Vault Name" Variant="Variant.Outlined"
+                              Required="true" Placeholder="e.g. Personal, Work, Family" />
+                <MudTextField @bind-Value="_editingVault.Description" Label="Description"
+                              Variant="Variant.Outlined" Lines="2"
+                              Placeholder="Optional description for this vault" />
+                <MudTextField @bind-Value="_editingVault.Color" Label="Color (hex)"
+                              Variant="Variant.Outlined" Placeholder="#7C3AED"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Palette" />
+                <MudCheckBox @bind-Value="_editingVault.IsDefault" Label="Set as default vault"
+                             Color="Color.Primary" />
+            </MudStack>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@CloseDialog" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="@SaveVault" Variant="Variant.Filled" Color="Color.Primary" Disabled="@isSaving">
+            @if (isSaving)
             {
-                <div class="col-md-6 col-lg-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div>
-                                    <h5 class="card-title mb-1">
-                                        🔐 @vault.Name
-                                        @if (vault.IsDefault)
-                                        {
-                                            <span class="badge bg-success ms-2">Default</span>
-                                        }
-                                    </h5>
-                                    <p class="card-text text-muted small">@vault.Description</p>
-                                </div>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
-                                        <span class="bi bi-three-dots-vertical"></span>
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        <li><button class="dropdown-item" @onclick="() => EditVault(vault)">Edit</button></li>
-                                        <li><button class="dropdown-item text-danger" @onclick="() => DeleteVault(vault)">Delete</button></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="mt-auto">
-                                <small class="text-muted">
-                                    @vault.PasswordItems?.Count items
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
             }
-        </div>
-    }
-    else
-    {
-        <div class="text-center py-5">
-            <h4 class="text-muted">No vaults found</h4>
-            <p>Create your first vault to organize your passwords</p>
-            <button class="btn btn-primary mt-3" @onclick="ShowCreateDialog">
-                <span class="bi bi-plus-circle"></span> Create Vault
-            </button>
-        </div>
-    }
-</div>
+            @(_editingVault?.Id > 0 ? "Save Changes" : "Create Vault")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
-    private List<PasswordManager.Models.Vault>? vaults;
-    private bool isLoading = true;
+    List<Vault>? vaults;
+    bool isLoading = true;
+    bool _dialogVisible = false;
+    bool isSaving = false;
+    Vault? _editingVault;
+    DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
 
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadVaults();
-    }
+    protected override async Task OnInitializedAsync() => await LoadVaults();
 
-    private async Task LoadVaults()
+    async Task LoadVaults()
     {
+        isLoading = true;
         try
         {
-            isLoading = true;
-            vaults = await VaultService.GetAllAsync();
+            vaults = await VaultService.GetAllAsync() ?? new List<Vault>();
         }
         catch (Exception ex)
         {
-            // Log error
+            Snackbar.Add($"Error loading vaults: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -111,48 +164,101 @@
         }
     }
 
-    private void ShowCreateDialog()
+    void OpenAddDialog()
     {
-        // TODO: Implement create dialog
-        // For now, create a simple vault programmatically
-        CreateVaultAsync();
+        _editingVault = new Vault
+        {
+            UserId = AuthService.CurrentUser?.Id ?? string.Empty,
+            Color = "#7C3AED"
+        };
+        _dialogVisible = true;
     }
 
-    private async Task CreateVaultAsync()
+    void OpenEditDialog(Vault vault)
     {
+        _editingVault = new Vault
+        {
+            Id = vault.Id,
+            Name = vault.Name,
+            Description = vault.Description,
+            IsDefault = vault.IsDefault,
+            Color = vault.Color,
+            Icon = vault.Icon,
+            UserId = vault.UserId
+        };
+        _dialogVisible = true;
+    }
+
+    async Task SaveVault()
+    {
+        if (_editingVault == null || string.IsNullOrWhiteSpace(_editingVault.Name))
+        {
+            Snackbar.Add("Vault name is required.", Severity.Warning);
+            return;
+        }
+        isSaving = true;
         try
         {
-            var vault = new PasswordManager.Models.Vault
+            if (_editingVault.Id > 0)
             {
-                Name = "New Vault",
-                Description = "Created from web interface",
-                UserId = AuthService.CurrentUser?.Id ?? string.Empty
-            };
-
-            await VaultService.CreateAsync(vault);
+                await VaultService.UpdateAsync(_editingVault);
+                Snackbar.Add("Vault updated successfully.", Severity.Success);
+            }
+            else
+            {
+                _editingVault.UserId = AuthService.CurrentUser?.Id ?? string.Empty;
+                await VaultService.CreateAsync(_editingVault);
+                Snackbar.Add("Vault created successfully.", Severity.Success);
+            }
+            _dialogVisible = false;
             await LoadVaults();
         }
         catch (Exception ex)
         {
-            // Log error
+            Snackbar.Add($"Error saving vault: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
         }
     }
 
-    private void EditVault(PasswordManager.Models.Vault vault)
-    {
-        // TODO: Implement edit dialog
-    }
-
-    private async Task DeleteVault(PasswordManager.Models.Vault vault)
+    async Task SetDefault(Vault vault)
     {
         try
         {
-            await VaultService.DeleteAsync(vault.Id);
+            await VaultService.SetAsDefaultAsync(vault.Id);
+            Snackbar.Add($"\"{vault.Name}\" set as default vault.", Severity.Success);
             await LoadVaults();
         }
         catch (Exception ex)
         {
-            // Log error
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
     }
+
+    async Task DeleteVault(Vault vault)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Delete Vault",
+            $"Are you sure you want to delete \"{vault.Name}\"? This will not delete the passwords inside it.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (confirmed == true)
+        {
+            try
+            {
+                await VaultService.DeleteAsync(vault.Id);
+                Snackbar.Add("Vault deleted.", Severity.Success);
+                await LoadVaults();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error deleting vault: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    void CloseDialog() => _dialogVisible = false;
 }

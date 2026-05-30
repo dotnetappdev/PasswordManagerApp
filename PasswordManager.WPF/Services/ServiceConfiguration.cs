@@ -210,6 +210,10 @@ public static class ServiceConfiguration
         services.AddScoped<IUserProfileService, UserProfileService>();
         services.AddScoped<IVaultSessionService, VaultSessionService>();
         services.AddScoped<IPasscodeService, PasscodeService>();
+        services.AddScoped<IVaultService, VaultService>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
+        services.AddScoped<ITwoFactorService, TwoFactorService>();
+        services.AddScoped<IDeviceService, DeviceService>();
 
         services.AddScoped<Fido2NetLib.IFido2>(provider =>
         {
