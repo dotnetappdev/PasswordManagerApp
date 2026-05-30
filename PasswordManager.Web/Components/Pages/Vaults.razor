@@ -1,21 +1,21 @@
 @page "/vaults"
+@rendermode InteractiveServer
 @using PasswordManager.Services.Interfaces
 @using PasswordManager.Models
 @inject IVaultService VaultService
 @inject IAuthService AuthService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@rendermode InteractiveServer
 
 <PageTitle>Vaults - VaultGuard</PageTitle>
 
 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
     <div>
         <MudText Typo="Typo.h4" Style="font-weight:700">Vaults</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">Manage your password vaults</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Organize your passwords into secure vaults</MudText>
     </div>
     <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary"
-               OnClick="@OpenAddDialog">New Vault</MudButton>
+               OnClick="OpenAddDialog">New Vault</MudButton>
 </MudStack>
 
 @if (isLoading)
@@ -38,27 +38,51 @@ else if (vaults?.Any() == true)
                 <MudCard Elevation="2" Style="@($"border-top: 4px solid {(vault.Color ?? "#7C3AED")}; height:100%;")">
                     <MudCardContent>
                         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                            <MudStack Spacing="1">
-                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                    <MudIcon Icon="@Icons.Material.Filled.Shield"
-                                             Style="@($"color:{(vault.Color ?? "#7C3AED")}; font-size:1.8rem;")" />
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@Icons.Material.Filled.Shield"
+                                         Style="@($"color:{(vault.Color ?? "#7C3AED")}; font-size:1.8rem;")" />
+                                <div>
                                     <MudText Typo="Typo.h6" Style="font-weight:600;">@vault.Name</MudText>
                                     @if (vault.IsDefault)
                                     {
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Success"
-                                                 Text="Default" />
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Class="mt-1">Default</MudChip>
                                     }
-                                </MudStack>
-                                @if (!string.IsNullOrEmpty(vault.Description))
-                                {
-                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@vault.Description</MudText>
-                                }
+                                </div>
                             </MudStack>
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Color="Color.Default">
+                                <MudMenuItem OnClick="@(() => OpenEditDialog(vault))">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                        <MudText>Edit</MudText>
+                                    </MudStack>
+                                </MudMenuItem>
+                                @if (!vault.IsDefault)
+                                {
+                                    <MudMenuItem OnClick="@(() => SetDefault(vault))">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                            <MudIcon Icon="@Icons.Material.Filled.StarBorder" Size="Size.Small" />
+                                            <MudText>Set as Default</MudText>
+                                        </MudStack>
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => DeleteVault(vault))">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                                     Style="color:#EF4444;" />
+                                            <MudText Color="Color.Error">Delete</MudText>
+                                        </MudStack>
+                                    </MudMenuItem>
+                                }
+                            </MudMenu>
                         </MudStack>
+
+                        @if (!string.IsNullOrEmpty(vault.Description))
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">@vault.Description</MudText>
+                        }
 
                         <MudDivider Class="my-3" />
 
-                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
                             <MudStack Spacing="0">
                                 <MudText Typo="Typo.caption" Color="Color.Secondary">Items</MudText>
                                 <MudText Typo="Typo.body1" Style="font-weight:600;">
@@ -71,19 +95,6 @@ else if (vaults?.Any() == true)
                             </MudStack>
                         </MudStack>
                     </MudCardContent>
-                    <MudCardActions>
-                        @if (!vault.IsDefault)
-                        {
-                            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Default"
-                                       OnClick="@(() => SetDefault(vault))">Set Default</MudButton>
-                        }
-                        <MudSpacer />
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
-                                       Color="Color.Default" OnClick="@(() => OpenEditDialog(vault))" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
-                                       Color="Color.Error" OnClick="@(() => DeleteVault(vault))"
-                                       Disabled="@vault.IsDefault" />
-                    </MudCardActions>
                 </MudCard>
             </MudItem>
         }
@@ -91,19 +102,23 @@ else if (vaults?.Any() == true)
 }
 else
 {
-    <MudPaper Class="pa-12 text-center" Elevation="1">
-        <MudIcon Icon="@Icons.Material.Filled.Shield" Style="font-size:4rem; color:#7C3AED; opacity:0.4;" />
-        <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No vaults found</MudText>
+    <MudPaper Class="pa-12 text-center" Elevation="0">
+        <MudIcon Icon="@Icons.Material.Filled.Shield"
+                 Style="font-size:4rem; color:#7C3AED; opacity:0.3;" />
+        <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No vaults yet</MudText>
         <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
             Create a vault to start organizing your passwords.
         </MudText>
         <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
-                   Color="Color.Primary" OnClick="@OpenAddDialog">Create Your First Vault</MudButton>
+                   Color="Color.Primary" Class="mt-3" OnClick="OpenAddDialog">
+            Create First Vault
+        </MudButton>
     </MudPaper>
 }
 
 @* Add/Edit Dialog *@
-<MudDialog @bind-Visible="_dialogVisible" Options="_dialogOptions">
+<MudDialog @bind-Visible="_dialogVisible"
+           Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true })">
     <TitleContent>
         <MudText Typo="Typo.h6">@(_editingVault?.Id > 0 ? "Edit Vault" : "New Vault")</MudText>
     </TitleContent>
@@ -111,8 +126,9 @@ else
         @if (_editingVault != null)
         {
             <MudStack Spacing="3">
-                <MudTextField @bind-Value="_editingVault.Name" Label="Vault Name" Variant="Variant.Outlined"
-                              Required="true" Placeholder="e.g. Personal, Work, Family" />
+                <MudTextField @bind-Value="_editingVault.Name" Label="Vault Name *"
+                              Variant="Variant.Outlined" Required="true"
+                              Placeholder="e.g. Personal, Work, Family" />
                 <MudTextField @bind-Value="_editingVault.Description" Label="Description"
                               Variant="Variant.Outlined" Lines="2"
                               Placeholder="Optional description for this vault" />
@@ -127,7 +143,8 @@ else
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="@CloseDialog" Variant="Variant.Text">Cancel</MudButton>
-        <MudButton OnClick="@SaveVault" Variant="Variant.Filled" Color="Color.Primary" Disabled="@isSaving">
+        <MudButton OnClick="@SaveVault" Variant="Variant.Filled" Color="Color.Primary"
+                   Disabled="@isSaving">
             @if (isSaving)
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
@@ -143,7 +160,6 @@ else
     bool _dialogVisible = false;
     bool isSaving = false;
     Vault? _editingVault;
-    DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
 
     protected override async Task OnInitializedAsync() => await LoadVaults();
 
@@ -241,9 +257,8 @@ else
     {
         var confirmed = await DialogService.ShowMessageBox(
             "Delete Vault",
-            $"Are you sure you want to delete \"{vault.Name}\"? This will not delete the passwords inside it.",
-            yesText: "Delete",
-            cancelText: "Cancel");
+            $"Delete \"{vault.Name}\"? Items in this vault will not be deleted.",
+            yesText: "Delete", cancelText: "Cancel");
 
         if (confirmed == true)
         {
