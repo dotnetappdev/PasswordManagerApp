@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
+    ]
+  }
+}

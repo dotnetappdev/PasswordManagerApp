@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.WPF.Services;
 using System.IO;
+using System.Text.Json;
 
 namespace PasswordManager.WPF.ViewModels;
 
@@ -24,6 +25,31 @@ public class SettingsViewModel : BaseViewModel
     private DateTime? _nextScheduledBackup;
     private string _selectedCloudProvider = "";
     private List<object> _availableBackups = new();
+
+    private static string SettingsFilePath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "PasswordManager", "settings.json");
+
+    private static Dictionary<string, string> LoadLocalSettings()
+    {
+        try
+        {
+            if (File.Exists(SettingsFilePath))
+                return JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsFilePath)) ?? new();
+        }
+        catch { }
+        return new();
+    }
+
+    private static void SaveLocalSettings(Dictionary<string, string> values)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(SettingsFilePath)!);
+            File.WriteAllText(SettingsFilePath, JsonSerializer.Serialize(values));
+        }
+        catch { }
+    }
 
     public SettingsViewModel(IServiceProvider serviceProvider)
     {
@@ -153,39 +179,14 @@ public class SettingsViewModel : BaseViewModel
             IsLoading = true;
 
             // Load theme setting from application data
-            var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            if (localSettings.Values.ContainsKey("SelectedTheme"))
-            {
-                SelectedTheme = localSettings.Values["SelectedTheme"]?.ToString() ?? "System";
-            }
-            else
-            {
-                SelectedTheme = "System";
-            }
-
-            // Load other settings
-            SessionTimeoutMinutes = localSettings.Values.ContainsKey("SessionTimeout")
-                ? Convert.ToInt32(localSettings.Values["SessionTimeout"])
-                : 30;
-
-            AuthenticationMode = localSettings.Values.ContainsKey("AuthMode")
-                ? localSettings.Values["AuthMode"]?.ToString() ?? "Local Database"
-                : "Local Database";
-
-            ApiBaseUrl = localSettings.Values.ContainsKey("ApiBaseUrl")
-                ? localSettings.Values["ApiBaseUrl"]?.ToString() ?? "https://localhost:7001/api"
-                : "https://localhost:7001/api";
-
-            DatabaseProvider = localSettings.Values.ContainsKey("DatabaseProvider")
-                ? localSettings.Values["DatabaseProvider"]?.ToString() ?? "SQLite"
-                : "SQLite";
-
-            SqliteDatabasePath = localSettings.Values.ContainsKey("SqliteDatabasePath")
-                ? localSettings.Values["SqliteDatabasePath"]?.ToString() ?? "passwordmanager.db"
-                : "passwordmanager.db";
-
-            ExportPath = localSettings.Values.ContainsKey("ExportPath")
-                ? localSettings.Values["ExportPath"]?.ToString() ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport")
+            var localSettings = LoadLocalSettings();
+            SelectedTheme = localSettings.TryGetValue("SelectedTheme", out var theme) ? theme : "System";
+            SessionTimeoutMinutes = localSettings.TryGetValue("SessionTimeout", out var timeout) ? Convert.ToInt32(timeout) : 30;
+            AuthenticationMode = localSettings.TryGetValue("AuthMode", out var authMode) ? authMode : "Local Database";
+            ApiBaseUrl = localSettings.TryGetValue("ApiBaseUrl", out var apiUrl) ? apiUrl : "https://localhost:7001/api";
+            DatabaseProvider = localSettings.TryGetValue("DatabaseProvider", out var dbProvider) ? dbProvider : "SQLite";
+            SqliteDatabasePath = localSettings.TryGetValue("SqliteDatabasePath", out var dbPath) ? dbPath : "passwordmanager.db";
+            ExportPath = localSettings.TryGetValue("ExportPath", out var exportPath) ? exportPath
                 : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport");
 
             ApplyTheme();
@@ -214,13 +215,14 @@ public class SettingsViewModel : BaseViewModel
             IsLoading = true;
 
             // Save settings to application data
-            var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            localSettings.Values["SelectedTheme"] = SelectedTheme;
-            localSettings.Values["SessionTimeout"] = SessionTimeoutMinutes;
-            localSettings.Values["AuthMode"] = AuthenticationMode;
-            localSettings.Values["ApiBaseUrl"] = ApiBaseUrl;
-            localSettings.Values["DatabaseProvider"] = DatabaseProvider;
-            localSettings.Values["ExportPath"] = ExportPath;
+            var localSettings = LoadLocalSettings();
+            localSettings["SelectedTheme"] = SelectedTheme;
+            localSettings["SessionTimeout"] = SessionTimeoutMinutes.ToString();
+            localSettings["AuthMode"] = AuthenticationMode;
+            localSettings["ApiBaseUrl"] = ApiBaseUrl;
+            localSettings["DatabaseProvider"] = DatabaseProvider;
+            localSettings["ExportPath"] = ExportPath;
+            SaveLocalSettings(localSettings);
 
             // Apply theme immediately
             ApplyTheme();

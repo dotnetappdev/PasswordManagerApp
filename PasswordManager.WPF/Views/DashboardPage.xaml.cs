@@ -1,6 +1,7 @@
 using ModernWpf.Controls;
 using System.Windows;
 using System.Windows.Controls;
+using ListView = System.Windows.Controls.ListView;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.WPF.ViewModels;
@@ -229,9 +230,7 @@ public sealed partial class DashboardPage : System.Windows.Controls.Page
     {
         try
         {
-            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-            dataPackage.SetText(text);
-            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+            System.Windows.Clipboard.SetText(text);
         }
         catch
         {

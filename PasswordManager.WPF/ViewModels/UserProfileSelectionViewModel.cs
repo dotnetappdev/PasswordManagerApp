@@ -63,7 +63,7 @@ public class UserProfileSelectionViewModel : BaseViewModel
 
     public bool HasUserProfiles => UserProfiles.Count > 0;
 
-    private async Task LoadUserProfilesAsync()
+    public async Task LoadUserProfilesAsync()
     {
         try
         {

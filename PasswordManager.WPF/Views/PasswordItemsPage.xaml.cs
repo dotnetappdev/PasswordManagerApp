@@ -1,13 +1,13 @@
 using ModernWpf.Controls;
 using System.Windows;
 using System.Windows.Controls;
+using ListView = System.Windows.Controls.ListView;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.WPF.ViewModels;
 using PasswordManager.WPF.Helpers;
 using PasswordManager.WPF.Models;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
-using System.Linq;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -178,7 +178,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             Width = 16,
             Height = 16
         });
-        allStackPanel.Children.Add(new TextBlock { Text = "All Categories", FontWeight = Microsoft.UI.Text.FontWeights.Medium });
+        allStackPanel.Children.Add(new TextBlock { Text = "All Categories", FontWeight = FontWeights.Medium });
         allCategoriesItem.Content = allStackPanel;
         allCategoriesItem.Tag = "all";
         categoryDropdown.Items.Add(allCategoriesItem);
@@ -190,14 +190,16 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             var stackPanel = new StackPanel { Orientation = Orientation.Horizontal };
 
             // Add color indicator
-            var colorBrush = new System.Windows.Media.SolidColorBrush();
-            if (!string.IsNullOrEmpty(category.Color) && Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(System.Windows.Media.SolidColorBrush), category.Color) is System.Windows.Media.SolidColorBrush brush)
+            var colorBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Gray);
+            if (!string.IsNullOrEmpty(category.Color))
             {
-                colorBrush = brush;
-            }
-            else
-            {
-                colorBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Gray);
+                try
+                {
+                    var converter = new System.Windows.Media.BrushConverter();
+                    if (converter.ConvertFromString(category.Color) is System.Windows.Media.SolidColorBrush parsed)
+                        colorBrush = parsed;
+                }
+                catch { }
             }
 
             stackPanel.Children.Add(new Border
@@ -212,7 +214,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             var categoryText = new TextBlock
             {
                 Text = category.Name,
-                FontWeight = Microsoft.UI.Text.FontWeights.Medium
+                FontWeight = FontWeights.Medium
             };
             stackPanel.Children.Add(categoryText);
 
@@ -414,9 +416,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 return;
             }
 
-            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-            dataPackage.SetText(pwd);
-            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+            System.Windows.Clipboard.SetText(pwd);
             await ShowTemporaryMessageAsync("Password copied to clipboard");
         }
         catch (Exception ex)
@@ -436,8 +436,11 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 return;
             }
 
-            var uri = new Uri(url);
-            await Windows.System.Launcher.LaunchUriAsync(uri);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
         }
         catch (Exception ex)
         { }
@@ -647,7 +650,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
     private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is MenuFlyoutItem menuItem &&
+        if (sender is System.Windows.Controls.MenuItem menuItem &&
             menuItem.DataContext is PasswordItem item &&
             _viewModel != null)
         {
@@ -671,8 +674,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     {
         PasswordItem? item = null;
 
-        // Support both MenuFlyoutItem (context menu) and Button (detail header Edit button)
-        if (sender is MenuFlyoutItem menuItem && menuItem.DataContext is PasswordItem mi)
+        // Support both System.Windows.Controls.MenuItem (context menu) and Button (detail header Edit button)
+        if (sender is System.Windows.Controls.MenuItem menuItem && menuItem.DataContext is PasswordItem mi)
         {
             item = mi;
         }
@@ -879,8 +882,9 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             }
             else
             {
-                // Fallback navigation
-                Frame?.Navigate(typeof(CategoriesPage), _serviceProvider);
+                // Fallback: navigate to Categories via content frame
+                var win = (App.Current as App)?.MainWindow;
+                win?.NavigateToPage("Categories");
             }
         }
         catch (Exception ex)
@@ -1063,17 +1067,16 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                     contentSubtitle.Text = "Filters applied";
 
                     // Reset after a brief delay
-                    System.Windows.Threading.Dispatcher.GetForCurrentThread().TryEnqueue(
-                        System.Windows.Threading.DispatcherPriority.Low, () =>
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
                     {
                         Task.Delay(2000).ContinueWith(_ =>
                         {
-                            System.Windows.Threading.Dispatcher.GetForCurrentThread().TryEnqueue(() =>
+                            Dispatcher.BeginInvoke(new Action(() =>
                             {
                                 contentSubtitle.Text = originalText;
-                            });
+                            }));
                         });
-                    });
+                    }));
                 }
             }
         }
@@ -1109,7 +1112,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             Width = 16,
             Height = 16
         });
-        allStackPanel.Children.Add(new TextBlock { Text = "All Categories", FontWeight = Microsoft.UI.Text.FontWeights.Medium });
+        allStackPanel.Children.Add(new TextBlock { Text = "All Categories", FontWeight = FontWeights.Medium });
         allCategoriesItem.Content = allStackPanel;
         allCategoriesItem.Tag = "all";
         categoryDropdown.Items.Add(allCategoriesItem);
@@ -1126,14 +1129,16 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             var stackPanel = new StackPanel { Orientation = Orientation.Horizontal };
 
             // Add color indicator
-            var colorBrush = new System.Windows.Media.SolidColorBrush();
-            if (!string.IsNullOrEmpty(category.Color) && Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(System.Windows.Media.SolidColorBrush), category.Color) is System.Windows.Media.SolidColorBrush brush)
+            var colorBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Gray);
+            if (!string.IsNullOrEmpty(category.Color))
             {
-                colorBrush = brush;
-            }
-            else
-            {
-                colorBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Gray);
+                try
+                {
+                    var converter = new System.Windows.Media.BrushConverter();
+                    if (converter.ConvertFromString(category.Color) is System.Windows.Media.SolidColorBrush parsed)
+                        colorBrush = parsed;
+                }
+                catch { }
             }
 
             stackPanel.Children.Add(new Border
@@ -1148,7 +1153,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             stackPanel.Children.Add(new TextBlock
             {
                 Text = category.Name,
-                FontWeight = Microsoft.UI.Text.FontWeights.Medium
+                FontWeight = FontWeights.Medium
             });
 
             item.Content = stackPanel;
@@ -1171,9 +1176,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 return;
             }
 
-            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-            dataPackage.SetText(username);
-            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+            System.Windows.Clipboard.SetText(username);
             await ShowTemporaryMessageAsync("Username copied to clipboard");
         }
         catch (Exception ex)

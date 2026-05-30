@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet *)",
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(pwsh *)",
+      "Bash(powershell *)",
+      "Bash(ls *)",
+      "Bash(dir *)",
+      "Bash(cat *)",
+      "Bash(echo *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(mkdir *)",
+      "Bash(rm *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(sed *)",
+      "Bash(awk *)",
+      "Bash(curl *)",
+      "Bash(jq *)",
+      "Bash(true)",
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch"
+    ],
+    "defaultMode": "acceptEdits"
+  }
+}
