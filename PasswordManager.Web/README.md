@@ -18,6 +18,23 @@ A modern Blazor Server web application for password management with full theme s
 - **✏️ Full CRUD Operations**: Create, edit, delete passwords and other items
 - **🔄 Real-time Sync**: Changes sync automatically with mobile apps via API
 
+## Blazor UI Screenshots
+
+### Password Item Form
+![Blazor Password Item Form](../screenshots/password-form.png)
+
+### Credit Card Form
+![Blazor Credit Card Form](../screenshots/credit-card-form.png)
+
+### Identity Form
+![Blazor Identity Form](../screenshots/identity-form.png)
+
+### API Credentials Form
+![Blazor API Credentials Form](../screenshots/api-credentials-form.png)
+
+### Secure Note Form
+![Blazor Secure Note Form](../screenshots/secure-note-form.png)
+
 ## Technology Stack
 
 - **.NET 9**: Latest version of Microsoft's unified development platform

@@ -5,13 +5,13 @@ html, body {
 }
 
 a, .btn-link {
-    color: #006bb7;
+    color: #7C3AED;
 }
 
 .btn-primary {
     color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    background-color: #7C3AED;
+    border-color: #5B21B6;
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
@@ -118,7 +118,7 @@ h1:focus {
 }
 
 .search-input:focus {
-    border-color: #0066cc;
+    border-color: #7C3AED;
     background-color: #ffffff;
 }
 
@@ -213,9 +213,9 @@ h1:focus {
 }
 
 .nav-item.active {
-    background-color: #eff6ff;
-    border-right: 3px solid #3b82f6;
-    color: #1e40af;
+    background-color: rgba(124, 58, 237, 0.08);
+    border-right: 3px solid #7C3AED;
+    color: #5B21B6;
 }
 
 .nav-icon {
@@ -238,7 +238,7 @@ h1:focus {
 }
 
 .nav-item.active .nav-text {
-    color: #1e40af;
+    color: #5B21B6;
     font-weight: 600;
 }
 
@@ -254,8 +254,8 @@ h1:focus {
 }
 
 .nav-item.active .item-count {
-    background-color: #dbeafe;
-    color: #1e40af;
+    background-color: rgba(124, 58, 237, 0.12);
+    color: #5B21B6;
 }
 
 /* Tag specific styles */
@@ -285,6 +285,6 @@ h1:focus {
 }
 
 .collection-item.active .nav-icon {
-    color: #1e40af;
+    color: #5B21B6;
 }
 }

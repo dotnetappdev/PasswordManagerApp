@@ -17,19 +17,19 @@
     ═══════════════════════════════════════════ -->
 
     <!-- Brand / Primary -->
-    <Color x:Key="ModernPrimaryColor">#005BFF</Color>
-    <Color x:Key="ModernPrimaryLightColor">#3B82F6</Color>
-    <Color x:Key="ModernPrimaryDarkColor">#0041CC</Color>
+    <Color x:Key="ModernPrimaryColor">#7C3AED</Color>
+    <Color x:Key="ModernPrimaryLightColor">#A78BFA</Color>
+    <Color x:Key="ModernPrimaryDarkColor">#5B21B6</Color>
 
-    <!-- Accent (violet) -->
-    <Color x:Key="ModernAccentColor">#7C3AED</Color>
-    <Color x:Key="ModernAccentLightColor">#A78BFA</Color>
+    <!-- Accent (pink) -->
+    <Color x:Key="ModernAccentColor">#EC4899</Color>
+    <Color x:Key="ModernAccentLightColor">#F472B6</Color>
 
     <!-- Semantic -->
     <Color x:Key="ModernSuccessColor">#10B981</Color>
     <Color x:Key="ModernWarningColor">#F59E0B</Color>
     <Color x:Key="ModernErrorColor">#EF4444</Color>
-    <Color x:Key="ModernInfoColor">#3B82F6</Color>
+    <Color x:Key="ModernInfoColor">#A78BFA</Color>
 
     <!-- Dark theme surfaces (deeper, richer) -->
     <Color x:Key="ModernBackgroundColor">#0F1117</Color>
@@ -42,7 +42,7 @@
 
     <!-- Sidebar -->
     <Color x:Key="ModernSidebarBackgroundColor">#0B0D14</Color>
-    <Color x:Key="ModernNewItemButtonColor">#005BFF</Color>
+    <Color x:Key="ModernNewItemButtonColor">#7C3AED</Color>
 
     <!-- Light theme variants -->
     <Color x:Key="ModernLightBackgroundColor">#F0F2FF</Color>
@@ -114,7 +114,7 @@
          Gradient Brushes
     ═══════════════════════════════════════════ -->
 
-    <!-- Brand gradient: blue → violet (135°) -->
+    <!-- Brand gradient: violet → light violet (135°) -->
     <LinearGradientBrush x:Key="ModernBrandGradientBrush" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="{StaticResource ModernPrimaryColor}"  Offset="0"/>
         <GradientStop Color="{StaticResource ModernAccentColor}"   Offset="1"/>
@@ -213,7 +213,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="BorderElement" Property="Background" Value="#F5F8FF"/>
+                            <Setter TargetName="BorderElement" Property="Background" Value="#F5F3FF"/>
                             <Setter TargetName="BorderElement" Property="BorderBrush" Value="{StaticResource ModernPrimaryLightBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
@@ -269,11 +269,11 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="BorderElement" Property="Background" Value="#F5F8FF"/>
+                            <Setter TargetName="BorderElement" Property="Background" Value="#F5F3FF"/>
                             <Setter TargetName="BorderElement" Property="BorderBrush" Value="{StaticResource ModernPrimaryLightBrush}"/>
                         </Trigger>
                         <Trigger Property="IsFocused" Value="True">
-                            <Setter TargetName="BorderElement" Property="Background" Value="#F5F8FF"/>
+                            <Setter TargetName="BorderElement" Property="Background" Value="#F5F3FF"/>
                             <Setter TargetName="BorderElement" Property="BorderBrush" Value="{StaticResource ModernPrimaryBrush}"/>
                             <Setter TargetName="BorderElement" Property="BorderThickness" Value="1"/>
                             <Setter TargetName="PlaceholderText" Property="Foreground" Value="{StaticResource ModernPrimaryBrush}"/>

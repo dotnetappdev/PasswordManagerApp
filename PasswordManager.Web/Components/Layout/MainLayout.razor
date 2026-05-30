@@ -1,28 +1,81 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@inject PasswordManager.Components.Shared.Services.ThemeService ThemeService
 
-<MudThemeProvider />
+<MudThemeProvider Theme="_theme" IsDarkMode="@_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<div class="page">
-    <div class="sidebar">
-        <PasswordManager.Web.Components.Layout.NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <span class="app-version-badge">v1.0</span>
-        </div>
-
-        <article class="content px-4">
+<MudLayout>
+    <MudAppBar Elevation="0" Color="Color.Transparent" Style="background: var(--mud-palette-drawer-background); border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h6" Style="font-weight:700; background: linear-gradient(135deg, #7C3AED, #A78BFA); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">🔐 VaultGuard</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" Color="Color.Inherit" OnClick="@ToggleDarkMode" />
+        <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" Direction="Direction.Bottom" OffsetY="true">
+            <MudMenuItem Href="/profile">Profile</MudMenuItem>
+            <MudMenuItem Href="/settings">Settings</MudMenuItem>
+            <MudDivider />
+            <MudMenuItem>Sign Out</MudMenuItem>
+        </MudMenu>
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="0" Variant="DrawerVariant.Responsive" Color="Color.Transparent">
+        <MudNavMenu>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+            <MudNavLink Href="/passwords" Icon="@Icons.Material.Filled.Lock">All Items</MudNavLink>
+            <MudNavLink Href="/vaults" Icon="@Icons.Material.Filled.Shield">Vaults</MudNavLink>
+            <MudNavLink Href="/categories" Icon="@Icons.Material.Filled.Category">Categories</MudNavLink>
+            <MudNavLink Href="/collections" Icon="@Icons.Material.Filled.FolderSpecial">Collections</MudNavLink>
+            <MudNavLink Href="/tags" Icon="@Icons.Material.Filled.Tag">Tags</MudNavLink>
+            <MudDivider Class="my-2" />
+            <MudNavLink Href="/import" Icon="@Icons.Material.Filled.Download">Import</MudNavLink>
+            <MudNavLink Href="/audit-logs" Icon="@Icons.Material.Filled.History">Audit Logs</MudNavLink>
+            <MudDivider Class="my-2" />
+            <MudNavLink Href="/passkeys" Icon="@Icons.Material.Filled.Fingerprint">Passkeys</MudNavLink>
+            <MudNavLink Href="/api-keys" Icon="@Icons.Material.Filled.Key">API Keys</MudNavLink>
+            <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
             @Body
-        </article>
-    </main>
-</div>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
 
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
-</div>
+@code {
+    bool _drawerOpen = true;
+    bool _isDarkMode = true;
+
+    MudTheme _theme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#7C3AED",
+            PrimaryLighten = "#A78BFA",
+            PrimaryDarken = "#5B21B6",
+            Secondary = "#EC4899",
+            AppbarBackground = "#7C3AED",
+            AppbarText = "#FFFFFF",
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#7C3AED",
+            PrimaryLighten = "#A78BFA",
+            PrimaryDarken = "#5B21B6",
+            Secondary = "#EC4899",
+            AppbarBackground = "#0B0D14",
+            AppbarText = "#F0F2FF",
+            Background = "#0F1117",
+            BackgroundGray = "#0B0D14",
+            Surface = "#1A1D27",
+            DrawerBackground = "#0B0D14",
+            DrawerText = "#F0F2FF",
+            TextPrimary = "#F0F2FF",
+            TextSecondary = "#8B90A7",
+        }
+    };
+
+    void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+    void ToggleDarkMode() => _isDarkMode = !_isDarkMode;
+}

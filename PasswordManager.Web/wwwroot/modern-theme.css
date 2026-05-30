@@ -8,12 +8,12 @@
 ───────────────────────────────────────────── */
 :root {
     /* Primary palette */
-    --pm-primary:        #005BFF;
-    --pm-primary-light:  #3B82F6;
-    --pm-primary-dark:   #0041CC;
-    --pm-primary-glow:   rgba(0, 91, 255, 0.28);
-    --pm-accent:         #7C3AED;      /* rich violet accent */
-    --pm-accent-light:   #A78BFA;
+    --pm-primary:        #7C3AED;
+    --pm-primary-light:  #A78BFA;
+    --pm-primary-dark:   #5B21B6;
+    --pm-primary-glow:   rgba(124, 58, 237, 0.28);
+    --pm-accent:         #A78BFA;      /* rich violet accent */
+    --pm-accent-light:   #C4B5FD;
 
     /* Semantic colours */
     --pm-success:        #10B981;
@@ -27,17 +27,17 @@
     --pm-surface-raised: #232635;      /* elevated surface    */
     --pm-surface-overlay:#2C2F42;      /* modal / dropdown    */
     --pm-border:         rgba(255,255,255,0.08);
-    --pm-border-focus:   rgba(0, 91, 255, 0.6);
+    --pm-border-focus:   rgba(124, 58, 237, 0.6);
 
     /* Sidebar */
     --pm-sidebar-bg:     #0B0D14;
-    --pm-sidebar-active: rgba(0, 91, 255, 0.15);
+    --pm-sidebar-active: rgba(124, 58, 237, 0.15);
     --pm-sidebar-width:  260px;
 
     /* Gradient utilities */
-    --pm-gradient-brand: linear-gradient(135deg, #005BFF 0%, #7C3AED 100%);
+    --pm-gradient-brand: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
     --pm-gradient-card:  linear-gradient(145deg, #1A1D27 0%, #232635 100%);
-    --pm-gradient-glow:  radial-gradient(ellipse at top, rgba(0,91,255,0.12) 0%, transparent 70%);
+    --pm-gradient-glow:  radial-gradient(ellipse at top, rgba(124,58,237,0.12) 0%, transparent 70%);
 
     /* Text */
     --pm-text-primary:   #F0F2FF;
@@ -48,7 +48,7 @@
     --pm-shadow-sm:   0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
     --pm-shadow-md:   0 4px 16px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3);
     --pm-shadow-lg:   0 10px 40px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.4);
-    --pm-shadow-glow: 0 0 24px rgba(0,91,255,0.3);
+    --pm-shadow-glow: 0 0 24px rgba(124,58,237,0.3);
 
     /* Border radius */
     --pm-radius-xs:  4px;
@@ -239,7 +239,7 @@ main {
     gap: 8px;
     text-decoration: none;
     min-height: 40px;
-    box-shadow: 0 2px 8px rgba(0,91,255,0.25);
+    box-shadow: 0 2px 8px rgba(124,58,237,0.25);
     letter-spacing: 0.01em;
 }
 

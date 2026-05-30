@@ -1,0 +1,397 @@
+@page "/passkeys"
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Models
+@using PasswordManager.Models.DTOs.Auth
+@inject IPasskeyService PasskeyService
+@inject IAuthService AuthService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Passkeys - VaultGuard</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-weight:700">Passkeys</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            WebAuthn passkeys for passwordless authentication
+        </MudText>
+    </div>
+    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary"
+               OnClick="@OpenRegisterDialog">Register New Passkey</MudButton>
+</MudStack>
+
+@if (!string.IsNullOrEmpty(passkeyStatus?.IsEnabled.ToString()))
+{
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 rounded-lg" Elevation="2" Style="border-left: 4px solid #7C3AED;">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.Fingerprint"
+                             Style="color:#7C3AED; font-size:2rem;" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h4" Style="font-weight:700;">
+                            @(passkeyStatus?.PasskeyCount ?? 0)
+                        </MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Passkeys</MudText>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-4 rounded-lg" Elevation="2"
+                      Style="@($"border-left: 4px solid {(passkeyStatus?.IsEnabled == true ? "#10B981" : "#6B7280")};")">
+                <MudStack Row="true" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@(passkeyStatus?.IsEnabled == true ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)"
+                             Style="@($"color:{(passkeyStatus?.IsEnabled == true ? "#10B981" : "#6B7280")}; font-size:2rem;")" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.body1" Style="font-weight:600;">
+                            @(passkeyStatus?.IsEnabled == true ? "Passkeys Enabled" : "Passkeys Disabled")
+                        </MudText>
+                        @if (passkeyStatus?.EnabledAt != null)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                Since @passkeyStatus.EnabledAt.Value.ToString("MMM d, yyyy")
+                            </MudText>
+                        }
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+<MudAlert Severity="Severity.Info" Class="mb-4" Dense="true">
+    <MudText Typo="Typo.body2">
+        <strong>What are passkeys?</strong> Passkeys use your device's biometrics (fingerprint, face ID) or
+        hardware security key to sign in without a password. They are phishing-resistant and more secure
+        than passwords.
+    </MudText>
+</MudAlert>
+
+@if (isLoading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (passkeys?.Any() == true)
+{
+    <MudDataGrid T="PasskeyDto" Items="@passkeys" Sortable="true" Hover="true" Dense="false"
+                 Bordered="false" Elevation="2">
+        <Columns>
+            <TemplateColumn Title="" CellStyle="width:48px; padding-left:16px;">
+                <CellTemplate>
+                    <MudIcon Icon="@GetDeviceIcon(context.Item.DeviceType)"
+                             Style="color:#7C3AED; font-size:1.5rem;" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Name" Title="Name" Sortable="true" />
+            <TemplateColumn Title="Device Type" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Default"
+                             Text="@(context.Item.DeviceType ?? "Unknown")" />
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Backed Up" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.IsBackedUp)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Cloud" Style="color:#10B981;" title="Synced across devices" />
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.PhoneAndroid" Style="color:#6B7280;" title="Device-bound" />
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Verification" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.RequiresUserVerification)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Text="Required" />
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Text="Optional" />
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.CreatedAt" Title="Registered" Format="MMM d, yyyy" Sortable="true" />
+            <TemplateColumn Title="Last Used" Sortable="false">
+                <CellTemplate>
+                    <MudText Typo="Typo.body2">
+                        @(context.Item.LastUsedAt?.ToString("MMM d, yyyy") ?? "Never")
+                    </MudText>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Status" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small"
+                             Color="@(context.Item.IsActive ? Color.Success : Color.Error)"
+                             Text="@(context.Item.IsActive ? "Active" : "Inactive")" />
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Actions" CellStyle="width:80px">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                   Color="Color.Error"
+                                   OnClick="@(() => DeletePasskey(context.Item))"
+                                   title="Remove passkey" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent>
+            <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                <MudIcon Icon="@Icons.Material.Filled.Fingerprint"
+                         Style="font-size:4rem; color:#7C3AED; opacity:0.4;" />
+                <MudText Typo="Typo.h6" Color="Color.Secondary">No passkeys registered</MudText>
+            </MudStack>
+        </NoRecordsContent>
+    </MudDataGrid>
+}
+else
+{
+    <MudPaper Class="pa-12 text-center" Elevation="1">
+        <MudIcon Icon="@Icons.Material.Filled.Fingerprint"
+                 Style="font-size:5rem; color:#7C3AED; opacity:0.4;" />
+        <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No passkeys registered</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+            Register a passkey to enable fast, secure passwordless sign-in.
+        </MudText>
+        <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
+                   Color="Color.Primary" OnClick="@OpenRegisterDialog">
+            Register Your First Passkey
+        </MudButton>
+    </MudPaper>
+}
+
+@* Register Passkey Dialog *@
+<MudDialog @bind-Visible="_registerDialogVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Register New Passkey</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudAlert Severity="Severity.Info" Dense="true">
+                Your browser will prompt you to use your device's biometrics or security key to
+                register the passkey.
+            </MudAlert>
+            <MudTextField @bind-Value="_passkeyName" Label="Passkey Name"
+                          Variant="Variant.Outlined" Required="true"
+                          Placeholder="e.g. MacBook Pro, iPhone 15, YubiKey" />
+            <MudTextField @bind-Value="_masterPasswordForPasskey" Label="Master Password (to confirm)"
+                          InputType="InputType.Password" Variant="Variant.Outlined" Required="true" />
+            <MudCheckBox @bind-Value="_storeInVault" Label="Store passkey in encrypted vault"
+                         Color="Color.Primary" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@CloseRegisterDialog" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="@RegisterPasskey" Variant="Variant.Filled" Color="Color.Primary"
+                   Disabled="@isRegistering">
+            @if (isRegistering)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Register Passkey
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@* Delete Passkey Dialog *@
+<MudDialog @bind-Visible="_deleteDialogVisible" Options="_deleteDialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="color:#EF4444;">Remove Passkey</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudAlert Severity="Severity.Warning" Dense="true">
+                Removing this passkey will prevent you from using it to sign in. Make sure you have
+                another sign-in method available.
+            </MudAlert>
+            <MudText Typo="Typo.body1">
+                Remove passkey: <strong>@_deletingPasskey?.Name</strong>?
+            </MudText>
+            <MudTextField @bind-Value="_masterPasswordForDelete" Label="Master Password (to confirm)"
+                          InputType="InputType.Password" Variant="Variant.Outlined" Required="true" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@CloseDeleteDialog" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="@ConfirmDeletePasskey" Variant="Variant.Filled" Color="Color.Error"
+                   Disabled="@isDeleting">
+            @if (isDeleting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Remove Passkey
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    List<PasskeyDto>? passkeys;
+    PasskeyStatusDto? passkeyStatus;
+    bool isLoading = true;
+    bool _registerDialogVisible = false;
+    bool _deleteDialogVisible = false;
+    bool isRegistering = false;
+    bool isDeleting = false;
+
+    string _passkeyName = string.Empty;
+    string _masterPasswordForPasskey = string.Empty;
+    bool _storeInVault = true;
+
+    PasskeyDto? _deletingPasskey;
+    string _masterPasswordForDelete = string.Empty;
+
+    DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
+    DialogOptions _deleteDialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    protected override async Task OnInitializedAsync() => await LoadPasskeys();
+
+    async Task LoadPasskeys()
+    {
+        isLoading = true;
+        try
+        {
+            var userId = AuthService.CurrentUser?.Id;
+            if (string.IsNullOrEmpty(userId))
+            {
+                passkeys = new List<PasskeyDto>();
+                return;
+            }
+
+            var response = await PasskeyService.GetUserPasskeysAsync(userId);
+            passkeys = response?.Passkeys ?? new List<PasskeyDto>();
+
+            passkeyStatus = await PasskeyService.GetPasskeyStatusAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading passkeys: {ex.Message}", Severity.Error);
+            passkeys = new List<PasskeyDto>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    void OpenRegisterDialog()
+    {
+        _passkeyName = string.Empty;
+        _masterPasswordForPasskey = string.Empty;
+        _storeInVault = true;
+        _registerDialogVisible = true;
+    }
+
+    void CloseRegisterDialog() => _registerDialogVisible = false;
+
+    async Task RegisterPasskey()
+    {
+        if (string.IsNullOrWhiteSpace(_passkeyName))
+        {
+            Snackbar.Add("Passkey name is required.", Severity.Warning);
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_masterPasswordForPasskey))
+        {
+            Snackbar.Add("Master password is required to register a passkey.", Severity.Warning);
+            return;
+        }
+
+        var userId = AuthService.CurrentUser?.Id;
+        if (string.IsNullOrEmpty(userId))
+        {
+            Snackbar.Add("Not authenticated.", Severity.Error);
+            return;
+        }
+
+        isRegistering = true;
+        try
+        {
+            var startDto = new PasskeyRegistrationStartDto
+            {
+                PasskeyName = _passkeyName,
+                MasterPassword = _masterPasswordForPasskey,
+                StoreInVault = _storeInVault
+            };
+            var startResponse = await PasskeyService.StartPasskeyRegistrationAsync(userId, startDto);
+            if (startResponse == null)
+            {
+                Snackbar.Add("Failed to start passkey registration. Check your master password.", Severity.Error);
+                return;
+            }
+
+            // In a real implementation, you would use JS interop to complete WebAuthn ceremony
+            Snackbar.Add("Passkey registration started. Complete the browser prompt to finish.", Severity.Info);
+            _registerDialogVisible = false;
+            await LoadPasskeys();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error registering passkey: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isRegistering = false;
+        }
+    }
+
+    void DeletePasskey(PasskeyDto passkey)
+    {
+        _deletingPasskey = passkey;
+        _masterPasswordForDelete = string.Empty;
+        _deleteDialogVisible = true;
+    }
+
+    void CloseDeleteDialog() => _deleteDialogVisible = false;
+
+    async Task ConfirmDeletePasskey()
+    {
+        if (_deletingPasskey == null) return;
+        if (string.IsNullOrWhiteSpace(_masterPasswordForDelete))
+        {
+            Snackbar.Add("Master password is required to remove a passkey.", Severity.Warning);
+            return;
+        }
+
+        var userId = AuthService.CurrentUser?.Id;
+        if (string.IsNullOrEmpty(userId)) return;
+
+        isDeleting = true;
+        try
+        {
+            var deleteDto = new PasskeyDeleteDto { MasterPassword = _masterPasswordForDelete };
+            var success = await PasskeyService.DeletePasskeyAsync(userId, _deletingPasskey.Id, deleteDto);
+            if (success)
+            {
+                Snackbar.Add($"Passkey \"{_deletingPasskey.Name}\" removed.", Severity.Success);
+                _deleteDialogVisible = false;
+                await LoadPasskeys();
+            }
+            else
+            {
+                Snackbar.Add("Failed to remove passkey. Check your master password.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isDeleting = false;
+        }
+    }
+
+    string GetDeviceIcon(string? deviceType) => deviceType?.ToLower() switch
+    {
+        "android" => Icons.Material.Filled.Android,
+        "ios" or "iphone" or "ipad" => Icons.Material.Filled.PhoneIphone,
+        "windows" => Icons.Material.Filled.Window,
+        "mac" or "macos" => Icons.Material.Filled.LaptopMac,
+        "yubikey" or "security-key" or "hardware" => Icons.Material.Filled.Key,
+        _ => Icons.Material.Filled.Fingerprint
+    };
+}

@@ -117,6 +117,12 @@ public static class MauiProgram
 		builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 		builder.Services.AddScoped<IVaultSessionService, VaultSessionService>();
 		builder.Services.AddScoped<IPasscodeService, PasscodeService>();
+		builder.Services.AddScoped<IVaultService, VaultService>();
+		builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+		builder.Services.AddScoped<ITwoFactorService, TwoFactorService>();
+		builder.Services.AddScoped<IDeviceService, DeviceService>();
+		builder.Services.AddScoped<IPasskeyService, PasskeyService>();
+		builder.Services.AddScoped<ICustomFieldService, CustomFieldService>();
 
 		// Register sync services
 		builder.Services.AddHttpClient();

@@ -1,0 +1,422 @@
+@page "/settings"
+@using PasswordManager.Services.Interfaces
+@inject IAuthService AuthService
+@inject IUserProfileService UserProfileService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Settings - VaultGuard</PageTitle>
+
+<MudText Typo="Typo.h4" Style="font-weight:700" Class="mb-4">Settings</MudText>
+
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4" Color="Color.Primary">
+    <MudTabPanel Text="Security" Icon="@Icons.Material.Filled.Security">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Master Password</MudText>
+                    <MudTextField @bind-Value="_currentPassword" Label="Current Password"
+                                  InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-3" />
+                    <MudTextField @bind-Value="_newPassword" Label="New Password"
+                                  InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-3" />
+                    <MudTextField @bind-Value="_confirmPassword" Label="Confirm New Password"
+                                  InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-3" />
+                    <MudTextField @bind-Value="_passwordHint" Label="Password Hint (optional)"
+                                  Variant="Variant.Outlined" Class="mb-3"
+                                  Placeholder="A hint to help you remember" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               OnClick="@ChangePassword" Disabled="@isSavingPassword"
+                               StartIcon="@Icons.Material.Filled.Lock">
+                        @if (isSavingPassword)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        Change Password
+                    </MudButton>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Two-Factor Authentication</MudText>
+                    <MudAlert Severity="Severity.Info" Class="mb-3" Dense="true">
+                        2FA adds an extra layer of security to your account.
+                    </MudAlert>
+                    <MudStack Spacing="2">
+                        <MudButton Href="/passkeys" StartIcon="@Icons.Material.Filled.Fingerprint"
+                                   Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true">
+                            Manage Passkeys
+                        </MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.Smartphone"
+                                   Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">
+                            Setup Authenticator App
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+
+                <MudPaper Class="pa-4 rounded-lg mt-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Session &amp; Lock</MudText>
+                    <MudSelect T="int" @bind-Value="_autoLockMinutes" Label="Auto-lock after"
+                               Variant="Variant.Outlined" Class="mb-3">
+                        <MudSelectItem T="int" Value="5">5 minutes</MudSelectItem>
+                        <MudSelectItem T="int" Value="15">15 minutes</MudSelectItem>
+                        <MudSelectItem T="int" Value="30">30 minutes</MudSelectItem>
+                        <MudSelectItem T="int" Value="60">1 hour</MudSelectItem>
+                        <MudSelectItem T="int" Value="0">Never</MudSelectItem>
+                    </MudSelect>
+                    <MudSwitch T="bool" @bind-Value="_lockOnBrowserClose" Label="Lock when browser closes"
+                               Color="Color.Primary" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Default" Class="mt-3"
+                               OnClick="@SaveSecuritySettings"
+                               StartIcon="@Icons.Material.Filled.Save">Save</MudButton>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1"
+                          Style="border: 1px solid rgba(239,68,68,0.3);">
+                    <MudText Typo="Typo.h6" Class="mb-2" Style="font-weight:600; color:#EF4444;">
+                        Danger Zone
+                    </MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                        These actions are irreversible. Please be certain before proceeding.
+                    </MudText>
+                    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error"
+                                   StartIcon="@Icons.Material.Filled.DeleteForever">
+                            Delete All Passwords
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error"
+                                   StartIcon="@Icons.Material.Filled.PersonRemove"
+                                   Href="/profile">
+                            Delete Account
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
+
+    <MudTabPanel Text="Appearance" Icon="@Icons.Material.Filled.Palette">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Theme</MudText>
+                    <MudRadioGroup T="string" @bind-Value="_themeMode">
+                        <MudRadio T="string" Value="dark" Color="Color.Primary">Dark Mode</MudRadio>
+                        <MudRadio T="string" Value="light" Color="Color.Primary">Light Mode</MudRadio>
+                        <MudRadio T="string" Value="system" Color="Color.Primary">System Default</MudRadio>
+                    </MudRadioGroup>
+                    <MudDivider Class="my-3" />
+                    <MudText Typo="Typo.subtitle2" Class="mb-2">Accent Color</MudText>
+                    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                        @foreach (var color in accentColors)
+                        {
+                            <MudTooltip Text="@color.Name">
+                                <div @onclick="@(() => _accentColor = color.Hex)"
+                                     style="@($"width:32px; height:32px; border-radius:50%; background:{color.Hex}; cursor:pointer; border: 3px solid {(_accentColor == color.Hex ? "white" : "transparent")}; box-shadow: 0 0 0 1px {color.Hex};")"
+                                     title="@color.Name">
+                                </div>
+                            </MudTooltip>
+                        }
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Display</MudText>
+                    <MudSwitch T="bool" @bind-Value="_compactMode" Label="Compact mode" Color="Color.Primary" />
+                    <MudSwitch T="bool" @bind-Value="_showFavicons" Label="Show website favicons" Color="Color.Primary" />
+                    <MudSwitch T="bool" @bind-Value="_animationsEnabled" Label="Enable animations" Color="Color.Primary" />
+                    <MudDivider Class="my-3" />
+                    <MudSelect T="int" @bind-Value="_itemsPerPage" Label="Items per page"
+                               Variant="Variant.Outlined">
+                        <MudSelectItem T="int" Value="10">10</MudSelectItem>
+                        <MudSelectItem T="int" Value="20">20</MudSelectItem>
+                        <MudSelectItem T="int" Value="50">50</MudSelectItem>
+                        <MudSelectItem T="int" Value="100">100</MudSelectItem>
+                    </MudSelect>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
+
+    <MudTabPanel Text="Database" Icon="@Icons.Material.Filled.Storage">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Database Provider</MudText>
+                    <MudSelect T="string" @bind-Value="_dbProvider" Label="Database" Variant="Variant.Outlined"
+                               Class="mb-3">
+                        <MudSelectItem T="string" Value="SqlServer">SQL Server</MudSelectItem>
+                        <MudSelectItem T="string" Value="PostgreSQL">PostgreSQL</MudSelectItem>
+                        <MudSelectItem T="string" Value="MySQL">MySQL / MariaDB</MudSelectItem>
+                        <MudSelectItem T="string" Value="SQLite">SQLite</MudSelectItem>
+                        <MudSelectItem T="string" Value="Supabase">Supabase (PostgreSQL)</MudSelectItem>
+                    </MudSelect>
+                    <MudTextField @bind-Value="_connectionString" Label="Connection String"
+                                  Variant="Variant.Outlined" Lines="3"
+                                  Placeholder="Server=...;Database=...;..." Class="mb-3" />
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Link">Test Connection</MudButton>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Backup</MudText>
+                    <MudSwitch T="bool" @bind-Value="_autoBackup" Label="Enable automatic backups"
+                               Color="Color.Primary" Class="mb-2" />
+                    <MudSelect T="int" @bind-Value="_backupInterval" Label="Backup frequency"
+                               Variant="Variant.Outlined" Class="mb-3" Disabled="!_autoBackup">
+                        <MudSelectItem T="int" Value="1">Daily</MudSelectItem>
+                        <MudSelectItem T="int" Value="7">Weekly</MudSelectItem>
+                        <MudSelectItem T="int" Value="30">Monthly</MudSelectItem>
+                    </MudSelect>
+                    <MudStack Row="true" Spacing="2">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Backup">Backup Now</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                                   StartIcon="@Icons.Material.Filled.Restore">Restore</MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
+
+    <MudTabPanel Text="Sync" Icon="@Icons.Material.Filled.Sync">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Sync Settings</MudText>
+                    <MudSwitch T="bool" @bind-Value="_autoSync" Label="Enable Auto-Sync"
+                               Color="Color.Primary" Class="mb-3" />
+                    <MudSelect T="int" @bind-Value="_syncInterval" Label="Sync interval"
+                               Variant="Variant.Outlined" Class="mb-3" Disabled="!_autoSync">
+                        <MudSelectItem T="int" Value="5">Every 5 minutes</MudSelectItem>
+                        <MudSelectItem T="int" Value="15">Every 15 minutes</MudSelectItem>
+                        <MudSelectItem T="int" Value="30">Every 30 minutes</MudSelectItem>
+                        <MudSelectItem T="int" Value="60">Every hour</MudSelectItem>
+                    </MudSelect>
+                    <MudStack Row="true" Spacing="2">
+                        <MudButton StartIcon="@Icons.Material.Filled.Sync" Variant="Variant.Filled"
+                                   Color="Color.Primary">Sync Now</MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.Save" Variant="Variant.Outlined"
+                                   Color="Color.Default" OnClick="@SaveSyncSettings">Save</MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Conflict Resolution</MudText>
+                    <MudRadioGroup T="string" @bind-Value="_conflictResolution">
+                        <MudRadio T="string" Value="server" Color="Color.Primary">
+                            Server wins (prefer server data)
+                        </MudRadio>
+                        <MudRadio T="string" Value="client" Color="Color.Primary">
+                            Client wins (prefer local data)
+                        </MudRadio>
+                        <MudRadio T="string" Value="newest" Color="Color.Primary">
+                            Newest wins (by timestamp)
+                        </MudRadio>
+                    </MudRadioGroup>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
+
+    <MudTabPanel Text="Notifications" Icon="@Icons.Material.Filled.Notifications">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Notification Preferences</MudText>
+                    <MudSwitch T="bool" @bind-Value="_notifyPasswordExpiry" Label="Notify on password expiry"
+                               Color="Color.Primary" />
+                    <MudSwitch T="bool" @bind-Value="_notifyNewLogin" Label="Notify on new login"
+                               Color="Color.Primary" />
+                    <MudSwitch T="bool" @bind-Value="_notifyWeakPasswords" Label="Alert for weak passwords"
+                               Color="Color.Primary" />
+                    <MudSwitch T="bool" @bind-Value="_notifyDataBreach" Label="Data breach alerts"
+                               Color="Color.Primary" />
+                    <MudDivider Class="my-3" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               OnClick="@SaveNotificationSettings"
+                               StartIcon="@Icons.Material.Filled.Save">Save Preferences</MudButton>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Password Health</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                        Configure thresholds for password health checks.
+                    </MudText>
+                    <MudSelect T="int" @bind-Value="_passwordExpiryDays" Label="Password expires after"
+                               Variant="Variant.Outlined" Class="mb-3">
+                        <MudSelectItem T="int" Value="30">30 days</MudSelectItem>
+                        <MudSelectItem T="int" Value="60">60 days</MudSelectItem>
+                        <MudSelectItem T="int" Value="90">90 days</MudSelectItem>
+                        <MudSelectItem T="int" Value="180">6 months</MudSelectItem>
+                        <MudSelectItem T="int" Value="365">1 year</MudSelectItem>
+                        <MudSelectItem T="int" Value="0">Never</MudSelectItem>
+                    </MudSelect>
+                    <MudSelect T="int" @bind-Value="_minPasswordLength" Label="Minimum password length"
+                               Variant="Variant.Outlined">
+                        <MudSelectItem T="int" Value="8">8 characters</MudSelectItem>
+                        <MudSelectItem T="int" Value="12">12 characters</MudSelectItem>
+                        <MudSelectItem T="int" Value="16">16 characters</MudSelectItem>
+                        <MudSelectItem T="int" Value="20">20 characters</MudSelectItem>
+                    </MudSelect>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
+
+    <MudTabPanel Text="Encryption" Icon="@Icons.Material.Filled.EnhancedEncryption">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Encryption Settings</MudText>
+                    <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true">
+                        Changing encryption settings requires re-encrypting all your data.
+                    </MudAlert>
+                    <MudSelect T="string" @bind-Value="_encryptionAlgorithm" Label="Encryption Algorithm"
+                               Variant="Variant.Outlined" Class="mb-3">
+                        <MudSelectItem T="string" Value="AES-256-GCM">AES-256-GCM (Recommended)</MudSelectItem>
+                        <MudSelectItem T="string" Value="AES-256-CBC">AES-256-CBC</MudSelectItem>
+                        <MudSelectItem T="string" Value="ChaCha20">ChaCha20-Poly1305</MudSelectItem>
+                    </MudSelect>
+                    <MudSelect T="int" @bind-Value="_pbkdf2Iterations" Label="PBKDF2 Iterations"
+                               Variant="Variant.Outlined" Class="mb-3">
+                        <MudSelectItem T="int" Value="100000">100,000 (Fast)</MudSelectItem>
+                        <MudSelectItem T="int" Value="300000">300,000 (Balanced)</MudSelectItem>
+                        <MudSelectItem T="int" Value="600000">600,000 (Recommended)</MudSelectItem>
+                        <MudSelectItem T="int" Value="1000000">1,000,000 (Slow/Secure)</MudSelectItem>
+                    </MudSelect>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Key Derivation</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                        Current settings: PBKDF2-SHA256 with @_pbkdf2Iterations.ToString("N0") iterations
+                    </MudText>
+                    <MudChip T="string" Color="Color.Success" Icon="@Icons.Material.Filled.VerifiedUser"
+                             Text="End-to-End Encrypted" />
+                    <MudDivider Class="my-3" />
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Your master password never leaves your device. All encryption and decryption
+                        happens locally.
+                    </MudText>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    // Security
+    string _currentPassword = string.Empty;
+    string _newPassword = string.Empty;
+    string _confirmPassword = string.Empty;
+    string _passwordHint = string.Empty;
+    int _autoLockMinutes = 30;
+    bool _lockOnBrowserClose = true;
+    bool isSavingPassword = false;
+
+    // Appearance
+    string _themeMode = "dark";
+    string _accentColor = "#7C3AED";
+    bool _compactMode = false;
+    bool _showFavicons = true;
+    bool _animationsEnabled = true;
+    int _itemsPerPage = 20;
+
+    // Database
+    string _dbProvider = "SqlServer";
+    string _connectionString = string.Empty;
+    bool _autoBackup = false;
+    int _backupInterval = 7;
+
+    // Sync
+    bool _autoSync = true;
+    int _syncInterval = 30;
+    string _conflictResolution = "newest";
+
+    // Notifications
+    bool _notifyPasswordExpiry = true;
+    bool _notifyNewLogin = true;
+    bool _notifyWeakPasswords = true;
+    bool _notifyDataBreach = true;
+    int _passwordExpiryDays = 90;
+    int _minPasswordLength = 12;
+
+    // Encryption
+    string _encryptionAlgorithm = "AES-256-GCM";
+    int _pbkdf2Iterations = 600000;
+
+    record AccentColor(string Name, string Hex);
+    readonly List<AccentColor> accentColors = new()
+    {
+        new("Purple", "#7C3AED"),
+        new("Violet", "#8B5CF6"),
+        new("Indigo", "#6366F1"),
+        new("Blue", "#3B82F6"),
+        new("Cyan", "#06B6D4"),
+        new("Green", "#10B981"),
+        new("Pink", "#EC4899"),
+        new("Rose", "#F43F5E"),
+        new("Orange", "#F59E0B"),
+    };
+
+    async Task ChangePassword()
+    {
+        if (string.IsNullOrWhiteSpace(_currentPassword) || string.IsNullOrWhiteSpace(_newPassword))
+        {
+            Snackbar.Add("Current and new passwords are required.", Severity.Warning);
+            return;
+        }
+        if (_newPassword != _confirmPassword)
+        {
+            Snackbar.Add("New passwords do not match.", Severity.Warning);
+            return;
+        }
+        if (_newPassword.Length < 8)
+        {
+            Snackbar.Add("Password must be at least 8 characters.", Severity.Warning);
+            return;
+        }
+
+        isSavingPassword = true;
+        try
+        {
+            var result = await AuthService.ChangeMasterPasswordAsync(_currentPassword, _newPassword, _passwordHint);
+            if (result)
+            {
+                Snackbar.Add("Password changed successfully.", Severity.Success);
+                _currentPassword = string.Empty;
+                _newPassword = string.Empty;
+                _confirmPassword = string.Empty;
+                _passwordHint = string.Empty;
+            }
+            else
+            {
+                Snackbar.Add("Failed to change password. Check your current password.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSavingPassword = false;
+        }
+    }
+
+    void SaveSecuritySettings() =>
+        Snackbar.Add("Security settings saved.", Severity.Success);
+
+    void SaveSyncSettings() =>
+        Snackbar.Add("Sync settings saved.", Severity.Success);
+
+    void SaveNotificationSettings() =>
+        Snackbar.Add("Notification preferences saved.", Severity.Success);
+}

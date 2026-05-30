@@ -1,0 +1,111 @@
+@page "/collections"
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Models
+@inject ICollectionService CollectionService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+        <div>
+            <MudText Typo="Typo.h4" Style="font-weight:700">Collections</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Group your passwords into collections</MudText>
+        </div>
+        <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAdd">New Collection</MudButton>
+    </MudStack>
+
+    @if (isLoading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+    else
+    {
+        <MudDataGrid T="Collection" Items="@collections" Hover="true" Elevation="2" Dense="true" Sortable="true">
+            <Columns>
+                <TemplateColumn Title="" CellStyle="width:40px;">
+                    <CellTemplate>
+                        <MudIcon Icon="@Icons.Material.Filled.FolderSpecial" Style="color:#7C3AED;" Size="Size.Small" />
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Name" Title="Name" Sortable="true" />
+                <PropertyColumn Property="x => x.Description" Title="Description" />
+                <TemplateColumn Title="Actions" CellStyle="width:100px;">
+                    <CellTemplate>
+                        <MudStack Row="true" Spacing="0">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenEdit(context.Item))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => Delete(context.Item))" />
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <NoRecordsContent>
+                <MudStack AlignItems="AlignItems.Center" Class="pa-6" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.FolderSpecial" Style="font-size:3rem; opacity:0.3;" />
+                    <MudText Color="Color.Secondary">No collections yet</MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAdd">Add Collection</MudButton>
+                </MudStack>
+            </NoRecordsContent>
+        </MudDataGrid>
+    }
+</MudContainer>
+
+<MudDialog @bind-Visible="_open" Options="@(new DialogOptions { MaxWidth=MaxWidth.Small, FullWidth=true })">
+    <TitleContent><MudText Typo="Typo.h6">@(_editing?.Id > 0 ? "Edit Collection" : "New Collection")</MudText></TitleContent>
+    <DialogContent>
+        @if (_editing != null)
+        {
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="_editing.Name" Label="Name *" Variant="Variant.Outlined" Required="true" />
+                <MudTextField @bind-Value="_editing.Description" Label="Description" Variant="Variant.Outlined" Lines="2" />
+            </MudStack>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _open=false)" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Save" Variant="Variant.Filled" Color="Color.Primary" Disabled="_saving">
+            @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2"/> }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    List<Collection> collections = new();
+    bool isLoading, _open, _saving;
+    Collection? _editing;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    async Task Load()
+    {
+        isLoading = true;
+        try { collections = await CollectionService.GetAllAsync() ?? new(); }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { isLoading = false; }
+    }
+
+    void OpenAdd() { _editing = new Collection(); _open = true; }
+    void OpenEdit(Collection c) { _editing = new Collection { Id=c.Id, Name=c.Name, Description=c.Description }; _open = true; }
+
+    async Task Save()
+    {
+        if (_editing == null || string.IsNullOrWhiteSpace(_editing.Name)) return;
+        _saving = true;
+        try
+        {
+            if (_editing.Id > 0) await CollectionService.UpdateAsync(_editing);
+            else await CollectionService.CreateAsync(_editing);
+            Snackbar.Add("Collection saved", Severity.Success);
+            _open = false; await Load();
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _saving = false; }
+    }
+
+    async Task Delete(Collection c)
+    {
+        var ok = await DialogService.ShowMessageBox("Delete", $"Delete \"{c.Name}\"?", yesText:"Delete", cancelText:"Cancel");
+        if (ok == true)
+        {
+            try { await CollectionService.DeleteAsync(c.Id); Snackbar.Add("Deleted", Severity.Success); await Load(); }
+            catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        }
+    }
+}

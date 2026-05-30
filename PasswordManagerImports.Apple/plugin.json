@@ -1,0 +1,14 @@
+{
+  "name": "apple-passwords",
+  "displayName": "Apple Passwords",
+  "description": "Import passwords from Apple Passwords CSV export files",
+  "version": "1.0.0",
+  "author": "PasswordManager Team",
+  "website": "https://apple.com",
+  "created": "2026-05-29T00:00:00Z",
+  "lastUpdated": "2026-05-29T00:00:00Z",
+  "tags": ["apple", "icloud", "csv", "password-manager"],
+  "supportedFileExtensions": [".csv"],
+  "importFormat": "Apple Passwords CSV Export",
+  "instructions": "Export your passwords from Apple Passwords:\n1. Open the Passwords app on macOS or iOS\n2. Go to File > Export Passwords (macOS) or Settings > Export (iOS)\n3. Save the CSV file\n4. Import it here"
+}

@@ -1,0 +1,286 @@
+@page "/profile"
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Models
+@using PasswordManager.Models.DTOs.Auth
+@inject IAuthService AuthService
+@inject IUserProfileService UserProfileService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Profile - VaultGuard</PageTitle>
+
+<MudText Typo="Typo.h4" Style="font-weight:700" Class="mb-1">Profile</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">Manage your account information</MudText>
+
+@if (isLoading)
+{
+    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </MudStack>
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-6 rounded-lg text-center" Elevation="2">
+                <MudAvatar Style="width:80px; height:80px; font-size:2rem; background: linear-gradient(135deg, #7C3AED, #A78BFA); margin:0 auto 16px auto;">
+                    @GetInitials()
+                </MudAvatar>
+                <MudText Typo="Typo.h6" Style="font-weight:600;">@GetFullName()</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@(user?.Email ?? AuthService.CurrentUser?.Email)</MudText>
+                <MudDivider Class="my-3" />
+                <MudStack Spacing="1">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Member since</MudText>
+                        <MudText Typo="Typo.caption">
+                            @(user?.CreatedAt.ToString("MMM yyyy") ?? AuthService.CurrentUser?.CreatedAt.ToString("MMM yyyy"))
+                        </MudText>
+                    </MudStack>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Last login</MudText>
+                        <MudText Typo="Typo.caption">
+                            @(user?.LastLoginAt?.ToString("MMM d, yyyy") ?? "Unknown")
+                        </MudText>
+                    </MudStack>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Status</MudText>
+                        <MudChip T="string" Size="Size.Small"
+                                 Color="@(user?.IsActive == true ? Color.Success : Color.Error)"
+                                 Text="@(user?.IsActive == true ? "Active" : "Inactive")" />
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="8">
+            <MudPaper Class="pa-4 rounded-lg mb-4" Elevation="2">
+                <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Personal Information</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_firstName" Label="First Name"
+                                      Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_lastName" Label="Last Name"
+                                      Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_email" Label="Email Address"
+                                      Variant="Variant.Outlined"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Email"
+                                      InputType="InputType.Email" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_passwordHint" Label="Master Password Hint"
+                                      Variant="Variant.Outlined"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Help"
+                                      Placeholder="A hint to help you remember your master password" />
+                    </MudItem>
+                </MudGrid>
+                <MudStack Row="true" Spacing="2" Class="mt-3">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               OnClick="@SaveProfile" Disabled="@isSaving"
+                               StartIcon="@Icons.Material.Filled.Save">
+                        @if (isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        Save Changes
+                    </MudButton>
+                    <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="@ResetForm">
+                        Cancel
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+
+            <MudPaper Class="pa-4 rounded-lg mb-4" Elevation="2">
+                <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Security</MudText>
+                <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                    <MudButton Href="/settings" StartIcon="@Icons.Material.Filled.Lock"
+                               Variant="Variant.Outlined" Color="Color.Primary">
+                        Change Password
+                    </MudButton>
+                    <MudButton Href="/passkeys" StartIcon="@Icons.Material.Filled.Fingerprint"
+                               Variant="Variant.Outlined" Color="Color.Default">
+                        Manage Passkeys
+                    </MudButton>
+                    <MudButton Href="/audit-logs" StartIcon="@Icons.Material.Filled.History"
+                               Variant="Variant.Outlined" Color="Color.Default">
+                        View Audit Log
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+
+            <MudPaper Class="pa-4 rounded-lg" Elevation="2"
+                      Style="border: 1px solid rgba(239,68,68,0.3);">
+                <MudText Typo="Typo.h6" Class="mb-2" Style="font-weight:600; color:#EF4444;">
+                    Delete Account
+                </MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                    Permanently delete your account and all associated data. This action cannot be undone.
+                </MudText>
+                <MudTextField @bind-Value="_deleteConfirmPassword" Label="Confirm with your password"
+                              InputType="InputType.Password" Variant="Variant.Outlined"
+                              Class="mb-3" Style="max-width:360px;" />
+                <MudButton Variant="Variant.Filled" Color="Color.Error"
+                           OnClick="@DeleteAccount" Disabled="@isDeletingAccount"
+                           StartIcon="@Icons.Material.Filled.DeleteForever">
+                    @if (isDeletingAccount)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    }
+                    Delete My Account
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    UserDto? user;
+    bool isLoading = true;
+    bool isSaving = false;
+    bool isDeletingAccount = false;
+
+    string _firstName = string.Empty;
+    string _lastName = string.Empty;
+    string _email = string.Empty;
+    string _passwordHint = string.Empty;
+    string _deleteConfirmPassword = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfile();
+    }
+
+    async Task LoadProfile()
+    {
+        isLoading = true;
+        try
+        {
+            user = await UserProfileService.GetCurrentUserAsync();
+            if (user != null)
+            {
+                _firstName = user.FirstName ?? string.Empty;
+                _lastName = user.LastName ?? string.Empty;
+                _email = user.Email;
+            }
+            else if (AuthService.CurrentUser != null)
+            {
+                _firstName = AuthService.CurrentUser.FirstName ?? string.Empty;
+                _lastName = AuthService.CurrentUser.LastName ?? string.Empty;
+                _email = AuthService.CurrentUser.Email ?? string.Empty;
+                _passwordHint = AuthService.CurrentUser.MasterPasswordHint ?? string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading profile: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    async Task SaveProfile()
+    {
+        var userId = user?.Id ?? AuthService.CurrentUser?.Id;
+        if (string.IsNullOrEmpty(userId))
+        {
+            Snackbar.Add("Unable to identify current user.", Severity.Error);
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            var updateDto = new UpdateUserProfileDto
+            {
+                Id = userId,
+                FirstName = _firstName,
+                LastName = _lastName,
+                Email = _email,
+                MasterPasswordHint = _passwordHint
+            };
+            var (success, errorMessage) = await UserProfileService.UpdateUserProfileAsync(updateDto);
+            if (success)
+            {
+                Snackbar.Add("Profile updated successfully.", Severity.Success);
+                await LoadProfile();
+            }
+            else
+            {
+                Snackbar.Add($"Failed to update profile: {errorMessage}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    void ResetForm()
+    {
+        if (user != null)
+        {
+            _firstName = user.FirstName ?? string.Empty;
+            _lastName = user.LastName ?? string.Empty;
+            _email = user.Email;
+        }
+    }
+
+    async Task DeleteAccount()
+    {
+        if (string.IsNullOrWhiteSpace(_deleteConfirmPassword))
+        {
+            Snackbar.Add("Please enter your password to confirm deletion.", Severity.Warning);
+            return;
+        }
+
+        isDeletingAccount = true;
+        try
+        {
+            var (success, errorMessage) = await AuthService.DeleteAccountAsync(_deleteConfirmPassword);
+            if (success)
+            {
+                Snackbar.Add("Account deleted successfully.", Severity.Success);
+                await AuthService.LogoutAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Failed to delete account: {errorMessage}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isDeletingAccount = false;
+            _deleteConfirmPassword = string.Empty;
+        }
+    }
+
+    string GetInitials()
+    {
+        var first = (_firstName.Length > 0 ? _firstName[0].ToString() : "");
+        var last = (_lastName.Length > 0 ? _lastName[0].ToString() : "");
+        if (string.IsNullOrEmpty(first) && string.IsNullOrEmpty(last))
+            return (AuthService.CurrentUser?.Email?.Substring(0, 1) ?? "U").ToUpper();
+        return (first + last).ToUpper();
+    }
+
+    string GetFullName()
+    {
+        var full = $"{_firstName} {_lastName}".Trim();
+        return string.IsNullOrEmpty(full) ? (AuthService.CurrentUser?.Email ?? "User") : full;
+    }
+}

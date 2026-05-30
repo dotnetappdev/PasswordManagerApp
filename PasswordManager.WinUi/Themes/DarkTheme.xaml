@@ -3,9 +3,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- Enhanced Dark Theme Color Palette - 1Password Style -->
-    <Color x:Key="DarkModernPrimaryColor">#005BFF</Color>
-    <Color x:Key="DarkModernPrimaryLightColor">#4285F4</Color>
-    <Color x:Key="DarkModernPrimaryDarkColor">#0041CC</Color>
+    <Color x:Key="DarkModernPrimaryColor">#7C3AED</Color>
+    <Color x:Key="DarkModernPrimaryLightColor">#A78BFA</Color>
+    <Color x:Key="DarkModernPrimaryDarkColor">#5B21B6</Color>
     <Color x:Key="DarkModernAccentColor">#EC4899</Color>
     <Color x:Key="DarkModernAccentLightColor">#F472B6</Color>
     <Color x:Key="DarkModernSuccessColor">#10B981</Color>
@@ -231,14 +231,14 @@
                                 </VisualState>
                                 <VisualState x:Name="Selected">
                                     <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background" Value="#1A3D5A"/>
+                                        <Setter Target="LayoutRoot.Background" Value="#2E1065"/>
                                         <Setter Target="SelectionIndicator.Opacity" Value="1"/>
                                         <Setter Target="ContentPresenter.Foreground" Value="{StaticResource DarkModernPrimaryBrush}"/>
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="PointerOverSelected">
                                     <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background" Value="#224A6A"/>
+                                        <Setter Target="LayoutRoot.Background" Value="#3B0764"/>
                                         <Setter Target="SelectionIndicator.Opacity" Value="1"/>
                                         <Setter Target="ContentPresenter.Foreground" Value="{StaticResource DarkModernPrimaryBrush}"/>
                                     </VisualState.Setters>

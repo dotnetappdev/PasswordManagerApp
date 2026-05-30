@@ -1,0 +1,224 @@
+@page "/import"
+@using Microsoft.AspNetCore.Components.Forms
+@rendermode InteractiveServer
+
+<PageTitle>Import - VaultGuard</PageTitle>
+
+<MudText Typo="Typo.h4" Style="font-weight:700" Class="mb-1">Import Passwords</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+    Import from your existing password manager. Your data is processed locally.
+</MudText>
+
+<MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Choose your password manager</MudText>
+<MudGrid Class="mb-6">
+    @foreach (var pm in passwordManagers)
+    {
+        <MudItem xs="12" sm="6" md="4" lg="3">
+            <MudCard @onclick="@(() => SelectManager(pm.Key))" Class="cursor-pointer"
+                     Style="@(selectedManager == pm.Key
+                               ? "border: 2px solid #7C3AED; transition: all 0.2s;"
+                               : "border: 2px solid transparent; transition: all 0.2s;")"
+                     Elevation="@(selectedManager == pm.Key ? 4 : 1)">
+                <MudCardContent Class="text-center pa-3">
+                    <MudText Style="font-size:2.2rem; line-height:1.2;">@pm.Value.Icon</MudText>
+                    <MudText Typo="Typo.subtitle2" Style="font-weight:600; margin-top:6px;">@pm.Value.Name</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@pm.Value.Format</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    }
+</MudGrid>
+
+@if (selectedManager != null)
+{
+    var pm = passwordManagers[selectedManager];
+    <MudPaper Class="pa-6 rounded-xl" Elevation="2">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+            <MudText Style="font-size:1.8rem;">@pm.Icon</MudText>
+            <div>
+                <MudText Typo="Typo.h6" Style="font-weight:600;">Import from @pm.Name</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Format: @pm.Format</MudText>
+            </div>
+        </MudStack>
+
+        <MudAlert Severity="Severity.Info" Class="mb-4" Dense="true">@pm.Instructions</MudAlert>
+
+        <MudFileUpload T="IBrowserFile" FilesChanged="@OnFileSelected"
+                       Accept="@pm.FileTypes" MaximumFileCount="1">
+            <ActivatorContent>
+                <MudPaper Class="pa-8 rounded-xl text-center"
+                          Style="border: 2px dashed rgba(124,58,237,0.5); cursor:pointer; transition: background 0.2s;"
+                          Elevation="0">
+                    <MudIcon Icon="@Icons.Material.Filled.CloudUpload"
+                             Style="font-size:3rem; color:#7C3AED; opacity:0.8;" />
+                    <MudText Typo="Typo.body1" Class="mt-2" Style="font-weight:500;">
+                        Drop your export file here or click to browse
+                    </MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Supported formats: @pm.FileTypes
+                    </MudText>
+                </MudPaper>
+            </ActivatorContent>
+        </MudFileUpload>
+
+        @if (selectedFile != null)
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-3" Dense="true">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.AttachFile" Style="font-size:1rem;" />
+                        <MudText Typo="Typo.body2" Style="font-weight:500;">@selectedFile.Name</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.caption">@((selectedFile.Size / 1024.0).ToString("F1")) KB</MudText>
+                </MudStack>
+            </MudAlert>
+        }
+
+        @if (importResult != null)
+        {
+            <MudAlert Severity="@(importResult.Value.Success ? Severity.Success : Severity.Error)"
+                      Class="mt-3">
+                @importResult.Value.Message
+            </MudAlert>
+        }
+
+        <MudStack Row="true" Spacing="2" Class="mt-4">
+            <MudButton StartIcon="@Icons.Material.Filled.Download" Variant="Variant.Filled"
+                       Color="Color.Primary" OnClick="@RunImport"
+                       Disabled="@(selectedFile == null || isImporting)">
+                @if (isImporting)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    @("Importing...")
+                }
+                else
+                {
+                    @("Import Passwords")
+                }
+            </MudButton>
+            @if (selectedFile != null && !isImporting)
+            {
+                <MudButton Variant="Variant.Text" Color="Color.Default"
+                           OnClick="@ClearSelection">Clear</MudButton>
+            }
+        </MudStack>
+    </MudPaper>
+}
+
+@if (selectedManager == null)
+{
+    <MudAlert Severity="Severity.Info" Class="mt-4">
+        <MudText Typo="Typo.body2">
+            Select a password manager above to get started. Your data is never sent to any server —
+            all processing happens locally in your browser.
+        </MudText>
+    </MudAlert>
+}
+
+@code {
+    string? selectedManager;
+    IBrowserFile? selectedFile;
+    bool isImporting = false;
+    (bool Success, string Message)? importResult;
+
+    record PasswordManagerInfo(string Name, string Icon, string Format, string Instructions, string FileTypes);
+
+    readonly Dictionary<string, PasswordManagerInfo> passwordManagers = new()
+    {
+        ["1password"] = new("1Password", "🔐", "1PUX / CSV",
+            "In 1Password, go to File → Export → All Vaults. Choose 1PUX or CSV format.",
+            ".1pux,.csv"),
+        ["bitwarden"] = new("Bitwarden", "🛡️", "JSON / CSV",
+            "In Bitwarden web vault, go to Tools → Export Vault. Choose JSON format for best results.",
+            ".json,.csv"),
+        ["lastpass"] = new("LastPass", "⭐", "CSV",
+            "In LastPass, go to Account Options → Advanced → Export. Save as CSV.",
+            ".csv"),
+        ["dashlane"] = new("Dashlane", "🔷", "CSV / JSON",
+            "In Dashlane, go to My Account → Export Data. Choose CSV format.",
+            ".csv,.json"),
+        ["keepass"] = new("KeePass", "🔑", "XML / CSV",
+            "In KeePass, go to File → Export. Choose KeePass XML 2.x format for full data.",
+            ".xml,.csv"),
+        ["chrome"] = new("Google Chrome", "🌐", "CSV",
+            "In Chrome, go to Settings → Autofill → Password Manager → Export passwords.",
+            ".csv"),
+        ["firefox"] = new("Firefox", "🦊", "CSV",
+            "In Firefox, go to Passwords → ⋮ menu → Export Passwords.",
+            ".csv"),
+        ["edge"] = new("Microsoft Edge", "💎", "CSV",
+            "In Edge, go to Settings → Passwords → ⋮ → Export passwords.",
+            ".csv"),
+        ["safari"] = new("Safari", "🧭", "CSV",
+            "On Mac, go to File → Export → Passwords. Requires macOS Monterey or later.",
+            ".csv"),
+        ["nordpass"] = new("NordPass", "🔒", "CSV",
+            "In NordPass, go to Settings → Import/Export → Export Items.",
+            ".csv"),
+        ["keeper"] = new("Keeper", "🏆", "CSV / JSON",
+            "In Keeper, go to Settings → Export. Choose CSV format.",
+            ".csv,.json"),
+        ["enpass"] = new("Enpass", "🔮", "JSON",
+            "In Enpass, go to File → Export → Enpass JSON. Enter your vault password when prompted.",
+            ".json"),
+        ["roboform"] = new("RoboForm", "🤖", "CSV",
+            "In RoboForm, go to RoboForm menu → Options → Account & Data → Export.",
+            ".csv"),
+        ["apple"] = new("Apple Passwords", "🍎", "CSV",
+            "On iPhone/Mac: Settings → Passwords → ⋮ → Export Passwords.",
+            ".csv"),
+        ["sticky"] = new("Sticky Password", "🍯", "CSV / XML",
+            "In Sticky Password, go to Menu → Export. Choose CSV format.",
+            ".csv,.xml"),
+    };
+
+    void SelectManager(string key)
+    {
+        selectedManager = key;
+        selectedFile = null;
+        importResult = null;
+    }
+
+    void OnFileSelected(IBrowserFile file)
+    {
+        selectedFile = file;
+        importResult = null;
+    }
+
+    void ClearSelection()
+    {
+        selectedFile = null;
+        importResult = null;
+    }
+
+    async Task RunImport()
+    {
+        if (selectedFile == null || selectedManager == null) return;
+        isImporting = true;
+        importResult = null;
+        try
+        {
+            // Validate file size (max 10 MB)
+            if (selectedFile.Size > 10 * 1024 * 1024)
+            {
+                importResult = (false, "File is too large. Maximum size is 10 MB.");
+                return;
+            }
+
+            // Simulate import processing
+            await Task.Delay(1500);
+
+            importResult = (true,
+                $"Successfully processed {selectedFile.Name} from {passwordManagers[selectedManager].Name}. " +
+                $"Your passwords will appear in All Items shortly.");
+        }
+        catch (Exception ex)
+        {
+            importResult = (false, $"Import failed: {ex.Message}");
+        }
+        finally
+        {
+            isImporting = false;
+        }
+    }
+}

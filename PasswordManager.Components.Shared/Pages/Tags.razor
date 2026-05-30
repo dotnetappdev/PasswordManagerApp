@@ -1,0 +1,116 @@
+@page "/tags"
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Models
+@inject ITagService TagService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+        <div>
+            <MudText Typo="Typo.h4" Style="font-weight:700">Tags</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Label and find your passwords faster</MudText>
+        </div>
+        <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAdd">New Tag</MudButton>
+    </MudStack>
+
+    @if (isLoading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+    else if (tags.Any())
+    {
+        <MudPaper Class="pa-4" Elevation="2">
+            <div style="display:flex; flex-wrap:wrap; gap:12px;">
+                @foreach (var tag in tags)
+                {
+                    <MudChip T="Tag" Value="@tag" Color="Color.Primary" Variant="Variant.Filled"
+                        OnClose="@(() => DeleteTag(tag))" CloseIcon="@Icons.Material.Filled.Close">
+                        @tag.Name
+                    </MudChip>
+                }
+            </div>
+        </MudPaper>
+        <MudDataGrid T="Tag" Items="@tags" Hover="true" Elevation="2" Dense="true" Class="mt-4">
+            <Columns>
+                <TemplateColumn Title="" CellStyle="width:40px;">
+                    <CellTemplate>
+                        <MudIcon Icon="@Icons.Material.Filled.Tag" Style="color:#7C3AED;" Size="Size.Small" />
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Name" Title="Tag Name" Sortable="true" />
+                <TemplateColumn Title="Actions" CellStyle="width:100px;">
+                    <CellTemplate>
+                        <MudStack Row="true" Spacing="0">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenEdit(context.Item))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteTag(context.Item))" />
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    }
+    else
+    {
+        <MudPaper Class="pa-8 text-center" Elevation="0">
+            <MudIcon Icon="@Icons.Material.Filled.Tag" Style="font-size:3rem; opacity:0.3;" />
+            <MudText Color="Color.Secondary" Class="mt-2">No tags yet</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" OnClick="OpenAdd">Add First Tag</MudButton>
+        </MudPaper>
+    }
+</MudContainer>
+
+<MudDialog @bind-Visible="_open" Options="@(new DialogOptions{MaxWidth=MaxWidth.ExtraSmall, FullWidth=true})">
+    <TitleContent><MudText Typo="Typo.h6">@(_editing?.Id > 0 ? "Edit Tag" : "New Tag")</MudText></TitleContent>
+    <DialogContent>
+        @if (_editing != null)
+        {
+            <MudTextField @bind-Value="_editing.Name" Label="Tag Name *" Variant="Variant.Outlined" Required="true" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _open=false)" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Save" Variant="Variant.Filled" Color="Color.Primary" Disabled="_saving">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    List<Tag> tags = new();
+    bool isLoading, _open, _saving;
+    Tag? _editing;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    async Task Load()
+    {
+        isLoading = true;
+        try { tags = (await TagService.GetUserTagsAsync())?.ToList() ?? new(); }
+        catch { try { tags = (await TagService.GetAllAsync())?.ToList() ?? new(); } catch { } }
+        finally { isLoading = false; }
+    }
+
+    void OpenAdd() { _editing = new Tag(); _open = true; }
+    void OpenEdit(Tag t) { _editing = new Tag { Id=t.Id, Name=t.Name }; _open = true; }
+
+    async Task Save()
+    {
+        if (_editing == null || string.IsNullOrWhiteSpace(_editing.Name)) return;
+        _saving = true;
+        try
+        {
+            if (_editing.Id > 0) await TagService.UpdateAsync(_editing);
+            else await TagService.CreateAsync(_editing);
+            Snackbar.Add("Tag saved", Severity.Success);
+            _open = false; await Load();
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _saving = false; }
+    }
+
+    async Task DeleteTag(Tag t)
+    {
+        var ok = await DialogService.ShowMessageBox("Delete Tag", $"Delete tag \"{t.Name}\"?", yesText:"Delete", cancelText:"Cancel");
+        if (ok == true)
+        {
+            try { await TagService.DeleteAsync(t.Id); Snackbar.Add("Tag deleted", Severity.Success); await Load(); }
+            catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        }
+    }
+}
