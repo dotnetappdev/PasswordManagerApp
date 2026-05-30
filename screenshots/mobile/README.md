@@ -75,6 +75,8 @@ adb pull /sdcard/screenshot.png ./screenshot-name.png
 - **Resolution**: Minimum 1080p for clarity
 - **Format**: PNG with transparency support
 - **Content**: Realistic but fake sample data (no real passwords)
+- **Framing**: Full screen captures including app bar/header and navigation context
+- **Coverage**: Include login/profile and settings navigation states in the screenshot set
 - **Themes**: Capture both light and dark mode versions
 - **Quality**: Clean status bar, full battery, good signal
 

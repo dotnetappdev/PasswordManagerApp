@@ -43,6 +43,8 @@ To add screenshots when running the WinUI application on Windows:
 ### Key Requirements:
 - **Both Themes**: Capture light and dark theme versions of each interface
 - **1Password Styling**: Showcase the professional design elements
+- **Full App Frame**: Include title bar, top menus/toolbar, left sidebar, and page content in one capture
+- **Navigation Context**: Ensure profile/login context and settings entry are visible where applicable
 - **Sample Data**: Use realistic but fake data for demonstrations
 - **Consistency**: Maintain same scaling and window sizing across captures
 
@@ -51,6 +53,7 @@ To add screenshots when running the WinUI application on Windows:
 - **Format**: PNG with transparency where applicable
 - **Resolution**: Minimum 1920x1080, recommended 2560x1440 for high-DPI displays
 - **Content**: Use sample data only (no real passwords or sensitive information)
+- **Coverage**: Avoid cropped CRUD-only screenshots; capture the full application shell
 - **Themes**: Capture both light and dark theme versions
 - **Consistency**: Same Windows theme and scaling within each theme set
 - **Quality**: Clear, readable text and UI elements
