@@ -25,6 +25,8 @@ public class PasswordManagerDbContextApp : IdentityDbContext<ApplicationUser, Ap
     public DbSet<UserTwoFactorBackupCode> UserTwoFactorBackupCodes { get; set; } = null!;
     public DbSet<UserRelationship> UserRelationships { get; set; } = null!;
     public DbSet<ChildPermissionConfig> ChildPermissionConfigs { get; set; } = null!;
+    public DbSet<OtpCode> OtpCodes { get; set; } = null!;
+    public DbSet<UserBackupSettings> UserBackupSettings { get; set; } = null!;
     
     // ApplicationUser DbSet - this will map to AspNetUsers table automatically via IdentityDbContext
     // Use 'new' keyword to explicitly hide the inherited Users property from IdentityDbContext

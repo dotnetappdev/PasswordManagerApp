@@ -23,31 +23,31 @@
                           Immediate="true" TextChanged="@(_ => FilterLogs())" />
         </MudItem>
         <MudItem xs="6" md="2">
-            <MudSelect T="string" @bind-Value="actionFilter" Label="Action" Variant="Variant.Outlined"
+            <MudSelect T="string" Value="@actionFilter" Label="Action" Variant="Variant.Outlined"
                        Margin="Margin.Dense" FullWidth="true"
                        ValueChanged="@((string s) => { actionFilter = s; FilterLogs(); })">
                 <MudSelectItem T="string" Value="@string.Empty">All Actions</MudSelectItem>
-                <MudSelectItem T="string" Value="Create">Create</MudSelectItem>
-                <MudSelectItem T="string" Value="Update">Update</MudSelectItem>
-                <MudSelectItem T="string" Value="Delete">Delete</MudSelectItem>
-                <MudSelectItem T="string" Value="Login">Login</MudSelectItem>
-                <MudSelectItem T="string" Value="Logout">Logout</MudSelectItem>
-                <MudSelectItem T="string" Value="Export">Export</MudSelectItem>
-                <MudSelectItem T="string" Value="Import">Import</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Create")">Create</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Update")">Update</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Delete")">Delete</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Login")">Login</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Logout")">Logout</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Export")">Export</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Import")">Import</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="6" md="2">
-            <MudSelect T="string" @bind-Value="entityFilter" Label="Entity Type" Variant="Variant.Outlined"
+            <MudSelect T="string" Value="@entityFilter" Label="Entity Type" Variant="Variant.Outlined"
                        Margin="Margin.Dense" FullWidth="true"
                        ValueChanged="@((string s) => { entityFilter = s; FilterLogs(); })">
                 <MudSelectItem T="string" Value="@string.Empty">All Types</MudSelectItem>
-                <MudSelectItem T="string" Value="PasswordItem">Password Item</MudSelectItem>
-                <MudSelectItem T="string" Value="Vault">Vault</MudSelectItem>
-                <MudSelectItem T="string" Value="Category">Category</MudSelectItem>
-                <MudSelectItem T="string" Value="Collection">Collection</MudSelectItem>
-                <MudSelectItem T="string" Value="Tag">Tag</MudSelectItem>
-                <MudSelectItem T="string" Value="User">User</MudSelectItem>
-                <MudSelectItem T="string" Value="Passkey">Passkey</MudSelectItem>
+                <MudSelectItem T="string" Value="@("PasswordItem")">Password Item</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Vault")">Vault</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Category")">Category</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Collection")">Collection</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Tag")">Tag</MudSelectItem>
+                <MudSelectItem T="string" Value="@("User")">User</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Passkey")">Passkey</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="6" md="2">
