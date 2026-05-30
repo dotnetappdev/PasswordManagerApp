@@ -265,6 +265,28 @@ using (var scope = app.Services.CreateScope())
         {
             Console.WriteLine($"⚠️  Identity seeding warning: {seedEx.Message}");
         }
+
+        try
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+            if (!await dbContext.PasswordItems.AnyAsync())
+            {
+                var seedUserId =
+                    await dbContext.Users
+                        .Where(u => u.Email == "user@passwordmanager.local")
+                        .Select(u => u.Id)
+                        .FirstOrDefaultAsync()
+                    ?? await dbContext.Users.Select(u => u.Id).FirstOrDefaultAsync()
+                    ?? PasswordManager.DAL.Seed.TestDataSeeder.TestUserId;
+
+                PasswordManager.DAL.Seed.TestDataSeeder.SeedTestData(dbContext, seedUserId);
+                Console.WriteLine("✅ Demo password data seeded successfully");
+            }
+        }
+        catch (Exception seedEx)
+        {
+            Console.WriteLine($"⚠️  Demo data seeding warning: {seedEx.Message}");
+        }
     }
     catch (Exception ex)
     {

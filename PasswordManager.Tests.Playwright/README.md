@@ -1,15 +1,13 @@
 # PasswordManager Playwright UI Tests
 
-This project contains comprehensive UI tests for the PasswordManager WinUI application using Microsoft Playwright.
+This project contains UI tests for PasswordManager using Microsoft Playwright.
 
 ## Overview
 
-The test suite covers CRUD (Create, Read, Update, Delete) operations for all major forms and dialogs in the PasswordManager application:
+The test suite includes:
 
-- **Password Items**: Create, view, edit, and delete password entries
-- **Categories**: Manage password categories 
-- **Tags**: Create and manage tags for organization
-- **User Management**: Admin functionality for managing users
+- **Blazor seeded-data smoke tests**: Launch the Blazor web app, verify demo data is available, and capture screenshots
+- **WinUI placeholder coverage**: Existing desktop-oriented CRUD workflow scaffolding for future Windows automation work
 
 ## Test Structure
 
@@ -29,10 +27,9 @@ The test suite covers CRUD (Create, Read, Update, Delete) operations for all maj
 
 ## Prerequisites
 
-1. **Windows Environment**: The WinUI application requires Windows to run
-2. **.NET 9.0 SDK**: Required for building and running tests
-3. **Built WinUI Application**: The PasswordManager.WinUi project must be built successfully
-4. **Playwright Browsers**: Installed automatically on first run
+1. **.NET SDK**: Required for building and running tests
+2. **Playwright Browsers**: Installed automatically on first run
+3. **Blazor test mode**: The seeded-data tests start `PasswordManager.Web` automatically, or use `PLAYWRIGHT_BASE_URL` when targeting an already running instance
 
 ## Setup Instructions
 

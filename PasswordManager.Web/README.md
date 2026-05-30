@@ -17,6 +17,7 @@ A modern Blazor Server web application for password management with full theme s
 - **📋 One-Click Copy**: Copy passwords to clipboard with visual feedback
 - **✏️ Full CRUD Operations**: Create, edit, delete passwords and other items
 - **🔄 Real-time Sync**: Changes sync automatically with mobile apps via API
+- **🌱 Seeded Demo Data**: Fresh local databases are automatically populated with sample collections, categories, tags, and password items
 
 ## Blazor UI Screenshots
 
@@ -112,6 +113,7 @@ Supports multiple database providers through Entity Framework Core:
    - After setup, you'll be redirected to the home page
    - Register a new account or login with existing credentials
    - Enter your master password to unlock the vault
+   - On a fresh local database, sample data such as **Chase Bank**, **Personal Gmail**, and **Netflix** is added automatically for demos and screenshots
 
 ### Setup Wizard
 
