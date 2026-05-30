@@ -13,12 +13,21 @@ public static class TestDataSeeder
 
     public static void SeedTestData(PasswordManagerDbContext db)
     {
-        // First, create a test user if none exists
-        if (!db.Users.Any(u => u.Id == TestUserId))
+        SeedTestData(db, TestUserId, createUserIfMissing: true);
+    }
+
+    public static void SeedTestData(PasswordManagerDbContext db, string testUserId)
+    {
+        SeedTestData(db, testUserId, createUserIfMissing: false);
+    }
+
+    private static void SeedTestData(PasswordManagerDbContext db, string testUserId, bool createUserIfMissing)
+    {
+        if (createUserIfMissing && !db.Users.Any(u => u.Id == testUserId))
         {
             db.Users.Add(new ApplicationUser
             {
-                Id = TestUserId,
+                Id = testUserId,
                 UserName = "testuser@example.com",
                 Email = "testuser@example.com",
                 EmailConfirmed = true,
@@ -27,10 +36,10 @@ public static class TestDataSeeder
             db.SaveChanges();
         }
 
-        SeedCollections(db, TestUserId);
-        SeedCategories(db, TestUserId);
-        SeedTags(db, TestUserId);
-        SeedPasswordItems(db, TestUserId);
+        SeedCollections(db, testUserId);
+        SeedCategories(db, testUserId);
+        SeedTags(db, testUserId);
+        SeedPasswordItems(db, testUserId);
     }
 
     public static void SeedCollections(PasswordManagerDbContext db, string testUserId)

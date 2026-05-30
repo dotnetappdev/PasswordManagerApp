@@ -252,6 +252,24 @@ PasswordManagerApp/
 - **Responsive design** works on all devices
 - **API key management** built-in
 - **Real-time search** and filtering
+- **Seeded demo data** for first-run exploration, including sample collections, categories, tags, and password items
+
+## Blazor Screenshots
+
+### Password Item
+![Blazor Password Item Form](screenshots/password-form.png)
+
+### Credit Card
+![Blazor Credit Card Form](screenshots/credit-card-form.png)
+
+### Secure Note
+![Blazor Secure Note Form](screenshots/secure-note-form.png)
+
+### Identity
+![Blazor Identity Form](screenshots/identity-form.png)
+
+### API Credentials
+![Blazor API Credentials Form](screenshots/api-credentials-form.png)
 
 ### WinUI Desktop Application
 - **Native Windows performance** with WinUI 3
