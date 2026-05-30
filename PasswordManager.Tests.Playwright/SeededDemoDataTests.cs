@@ -5,6 +5,12 @@ namespace PasswordManager.Tests.Playwright;
 [TestClass]
 public class SeededDemoDataTests : BlazorWebTestBase
 {
+    [ClassCleanup]
+    public static Task CleanupAsync()
+    {
+        return StopAppAsync();
+    }
+
     [TestMethod]
     public async Task HomePage_ShowsSeededDemoContent()
     {

@@ -12,88 +12,87 @@ public abstract class BlazorWebTestBase : PageTest
     private static Process? _appProcess;
     private static string? _baseUrl;
     private static string? _tempHomeDirectory;
+    private static readonly SemaphoreSlim AppStartLock = new(1, 1);
     private static readonly string WebProjectPath = Path.GetFullPath(Path.Combine(
         AppContext.BaseDirectory,
         "..", "..", "..", "..",
         "PasswordManager.Web",
         "PasswordManager.Web.csproj"));
 
-    [AssemblyInitialize]
-    public static async Task AssemblyInitialize(TestContext context)
+    private static async Task EnsureAppStartedAsync()
     {
-        Microsoft.Playwright.Program.Main(new[] { "install", "chromium" });
-
-        _baseUrl = Environment.GetEnvironmentVariable("PLAYWRIGHT_BASE_URL");
         if (!string.IsNullOrWhiteSpace(_baseUrl))
         {
             return;
         }
 
-        _baseUrl = "http://127.0.0.1:5099";
-        _tempHomeDirectory = Path.Combine(Path.GetTempPath(), $"passwordmanager-playwright-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(_tempHomeDirectory);
-
-        var appDataDirectory = Path.Combine(_tempHomeDirectory, ".local", "share", "PasswordManager");
-        Directory.CreateDirectory(appDataDirectory);
-
-        var databasePath = Path.Combine(_tempHomeDirectory, "passwordmanager.playwright.db");
-        var configPath = Path.Combine(appDataDirectory, "appsettings.json");
-        var config = new
-        {
-            provider = 0,
-            authenticationMode = 0,
-            isFirstRun = false,
-            sqlite = new
-            {
-                databasePath
-            }
-        };
-
-        await File.WriteAllTextAsync(configPath, JsonSerializer.Serialize(config, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        }));
-
-        _appProcess = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "dotnet",
-                Arguments = $"run --project \"{WebProjectPath}\" --no-launch-profile --urls {_baseUrl}",
-                WorkingDirectory = Path.GetDirectoryName(WebProjectPath)!,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false
-            }
-        };
-
-        _appProcess.StartInfo.Environment["HOME"] = _tempHomeDirectory;
-        _appProcess.StartInfo.Environment["XDG_DATA_HOME"] = Path.Combine(_tempHomeDirectory, ".local", "share");
-        _appProcess.Start();
-
-        await WaitForAppAsync(_baseUrl, _appProcess);
-    }
-
-    [AssemblyCleanup]
-    public static Task AssemblyCleanup()
-    {
+        await AppStartLock.WaitAsync();
         try
         {
-            if (_appProcess is { HasExited: false })
+            if (!string.IsNullOrWhiteSpace(_baseUrl))
             {
-                _appProcess.Kill(entireProcessTree: true);
-                _appProcess.WaitForExit(5000);
+                return;
             }
-        }
-        catch
-        {
-            // Best effort cleanup
-        }
 
-        return Task.CompletedTask;
+            Microsoft.Playwright.Program.Main(new[] { "install", "chromium" });
+
+            _baseUrl = Environment.GetEnvironmentVariable("PLAYWRIGHT_BASE_URL");
+            if (!string.IsNullOrWhiteSpace(_baseUrl))
+            {
+                return;
+            }
+
+            _baseUrl = "http://127.0.0.1:5099";
+            _tempHomeDirectory = Path.Combine(Path.GetTempPath(), $"passwordmanager-playwright-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(_tempHomeDirectory);
+
+            var appDataDirectory = Path.Combine(_tempHomeDirectory, ".local", "share", "PasswordManager");
+            Directory.CreateDirectory(appDataDirectory);
+
+            var databasePath = Path.Combine(_tempHomeDirectory, "passwordmanager.playwright.db");
+            var configPath = Path.Combine(appDataDirectory, "appsettings.json");
+            var config = new
+            {
+                provider = 0,
+                authenticationMode = 0,
+                isFirstRun = false,
+                sqlite = new
+                {
+                    databasePath
+                }
+            };
+
+            await File.WriteAllTextAsync(configPath, JsonSerializer.Serialize(config, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            }));
+
+            _appProcess = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments = $"run --project \"{WebProjectPath}\" --no-launch-profile --urls {_baseUrl}",
+                    WorkingDirectory = Path.GetDirectoryName(WebProjectPath)!,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false
+                }
+            };
+
+            _appProcess.StartInfo.Environment["HOME"] = _tempHomeDirectory;
+            _appProcess.StartInfo.Environment["XDG_DATA_HOME"] = Path.Combine(_tempHomeDirectory, ".local", "share");
+            _appProcess.Start();
+
+            await WaitForAppAsync(_baseUrl, _appProcess);
+        }
+        finally
+        {
+            AppStartLock.Release();
+        }
     }
 
-    protected override BrowserNewContextOptions ContextOptions()
+    public override BrowserNewContextOptions ContextOptions()
     {
         return new BrowserNewContextOptions
         {
@@ -109,7 +108,26 @@ public abstract class BlazorWebTestBase : PageTest
     [TestInitialize]
     public async Task NavigateToHomePageAsync()
     {
+        await EnsureAppStartedAsync();
         await Page.GotoAsync(_baseUrl ?? throw new InvalidOperationException("Playwright base URL was not initialized."));
+    }
+
+    public static Task StopAppAsync()
+    {
+        try
+        {
+            if (_appProcess is { HasExited: false })
+            {
+                _appProcess.Kill(entireProcessTree: true);
+                _appProcess.WaitForExit(5000);
+            }
+        }
+        catch
+        {
+            // Best effort cleanup
+        }
+
+        return Task.CompletedTask;
     }
 
     protected async Task SaveEvidenceAsync(string name)
