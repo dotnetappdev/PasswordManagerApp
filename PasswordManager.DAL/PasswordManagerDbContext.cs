@@ -94,9 +94,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Username).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Password).IsRequired().HasMaxLength(1000);
             entity.Property(e => e.WebsiteUrl).HasMaxLength(500);
-            entity.Property(e => e.Notes).HasMaxLength(1000);
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
 
@@ -168,6 +166,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
         // Configure CustomField
         modelBuilder.Entity<CustomField>(entity =>
         {
+            entity.ToTable("CustomField");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Value).IsRequired().HasMaxLength(5000);
@@ -189,6 +188,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
         // Configure Vault
         modelBuilder.Entity<Vault>(entity =>
         {
+            entity.ToTable("Vault");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Description).HasMaxLength(500);
@@ -299,6 +299,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
         // Configure ApplicationUser
         modelBuilder.Entity<ApplicationUser>(entity =>
         {
+            entity.ToTable("AspNetUsers");
             entity.Property(e => e.Id).IsRequired();
             entity.Property(e => e.UserName).HasMaxLength(256);
             entity.Property(e => e.Email).HasMaxLength(256);
@@ -407,5 +408,9 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.HasIndex(e => e.UserId).IsUnique(); // One setting per user
             entity.HasIndex(e => e.NextBackupAt); // For scheduled backup queries
         });
+
+        // Map Device and AuditLog to their actual table names (created by PasswordManagerDbContextApp with singular names)
+        modelBuilder.Entity<Device>().ToTable("Device");
+        modelBuilder.Entity<AuditLog>().ToTable("AuditLog");
     }
 }

@@ -127,6 +127,10 @@ else
     }
 }
 
+// Register DbContext interfaces for DI
+builder.Services.AddScoped<IPasswordManagerDbContext>(sp => sp.GetRequiredService<PasswordManagerDbContext>());
+builder.Services.AddScoped<IPasswordManagerDbContextApp>(sp => sp.GetRequiredService<PasswordManagerDbContextApp>());
+
 // Add Identity services with roles
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {
@@ -221,8 +225,6 @@ app.UseAuthorization();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapRazorPages();
-
 // Health check endpoint (used by Docker health checks)
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
@@ -231,27 +233,42 @@ using (var scope = app.Services.CreateScope())
 {
     try
     {
-        // Use the centralized migration service to apply pending migrations for both contexts
+        // Use EnsureCreated to set up schema from current model (works without pending migrations)
+        try
+        {
+            var dbContextApp = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
+            await dbContextApp.Database.EnsureCreatedAsync();
+            Console.WriteLine("✅ PasswordManagerDbContextApp schema ensured");
+        }
+        catch (Exception ensureEx)
+        {
+            Console.WriteLine($"⚠️  Schema ensure warning (App): {ensureEx.Message}");
+        }
+
+        try
+        {
+            var dbContextMain = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+            await dbContextMain.Database.EnsureCreatedAsync();
+            Console.WriteLine("✅ PasswordManagerDbContext schema ensured");
+        }
+        catch (Exception ensureEx)
+        {
+            Console.WriteLine($"⚠️  Schema ensure warning (Main): {ensureEx.Message}");
+        }
+
+        // Also run the migration service for any remaining work (table creation, etc.)
         var migrationService = scope.ServiceProvider.GetService<IDatabaseMigrationService>();
         if (migrationService != null)
         {
-            var result = await migrationService.ApplyPendingMigrationsAsync();
-            Console.WriteLine($"Database migration service result: Success={result.Success}, Message={result.Message}");
-
-            // Always attempt to ensure the PasswordItemTags junction table exists as a final safety net
             try
             {
                 await migrationService.EnsurePasswordItemTagsTableExistsAsync();
-                Console.WriteLine("Ensured PasswordItemTags junction table exists (fallback)");
+                Console.WriteLine("Ensured PasswordItemTags junction table exists");
             }
             catch (Exception ensureEx)
             {
                 Console.WriteLine($"Warning: could not ensure PasswordItemTags table: {ensureEx.Message}");
             }
-        }
-        else
-        {
-            Console.WriteLine("Warning: IDatabaseMigrationService not registered - skipping automatic migrations");
         }
 
         // Seed Identity data (roles and default users)
