@@ -21,9 +21,14 @@ public class MauiPlatformService : IPlatformService
     {
         try
         {
-            // Show database selection only on Windows and macOS
-            return DeviceInfo.Platform == DevicePlatform.WinUI ||
-                   DeviceInfo.Platform == DevicePlatform.MacCatalyst;
+            // Mobile platforms should always use the default local setup flow.
+            if (DeviceInfo.Platform == DevicePlatform.iOS || DeviceInfo.Platform == DevicePlatform.Android)
+            {
+                return false;
+            }
+
+            // Show database selection only on desktop platforms.
+            return DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst;
         }
         catch (Exception)
         {

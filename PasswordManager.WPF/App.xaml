@@ -8,12 +8,8 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="http://schemas.modernwpf.com/2019" />
-                <!-- Modern Theme Resources -->
+                <!-- Base Modern Theme Resources -->
                 <ResourceDictionary Source="Themes/ModernTheme.xaml"/>
-                <!-- Light Theme Resources -->
-                <ResourceDictionary Source="Themes/LightTheme.xaml"/>
-                <!-- Dark Theme Resources (merged conditionally by ThemeService) -->
-                <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <!-- Value Converters -->

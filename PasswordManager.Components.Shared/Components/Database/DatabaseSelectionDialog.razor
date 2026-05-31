@@ -12,66 +12,73 @@
                 <i class="fas fa-database"></i>
                 Database Configuration
             </h2>
-            <p class="dialog-subtitle">Choose your database provider and configure connection settings</p>
+            <p class="dialog-subtitle">@GetWizardSubtitle()</p>
+            <p class="dialog-subtitle" style="font-size: 0.85rem; margin-top: 0.5rem;">
+                Step @(CurrentStep == SetupWizardStep.ProviderSelection ? 1 : 2) of 2
+            </p>
         </div>
 
         <div class="dialog-content">
             <EditForm Model="Configuration" OnValidSubmit="HandleValidSubmit">
                 <DataAnnotationsValidator />
 
-                <!-- Database Provider Selection -->
-                <div class="provider-selection">
-                    <h3>Select Database Provider</h3>
-                    <div class="provider-grid">
-                        <div class="provider-card local-provider @(Configuration.Provider == DatabaseProvider.Sqlite ? "selected" : "")"
-                             @onclick="() => SelectProvider(DatabaseProvider.Sqlite)">
-                            <div class="provider-icon">
-                                <i class="fas fa-laptop"></i>
+                @if (CurrentStep == SetupWizardStep.ProviderSelection)
+                {
+                    <!-- Database Provider Selection -->
+                    <div class="provider-selection">
+                        <h3>Select Database Provider</h3>
+                        <div class="provider-grid">
+                            <div class="provider-card local-provider @(Configuration.Provider == DatabaseProvider.Sqlite ? "selected" : "")"
+                                 @onclick="() => SelectProvider(DatabaseProvider.Sqlite)">
+                                <div class="provider-icon">
+                                    <i class="fas fa-laptop"></i>
+                                </div>
+                                <div class="provider-info">
+                                    <h4>Local (SQLite)</h4>
+                                    <p>Local file database - no server required</p>
+                                    <span class="provider-badge recommended">Recommended</span>
+                                </div>
                             </div>
-                            <div class="provider-info">
-                                <h4>Local (SQLite)</h4>
-                                <p>Local file database - no server required</p>
-                                <span class="provider-badge recommended">Recommended</span>
-                            </div>
-                        </div>
 
-                        <div class="provider-card @(Configuration.Provider == DatabaseProvider.SqlServer ? "selected" : "")"
-                             @onclick="() => SelectProvider(DatabaseProvider.SqlServer)">
-                            <div class="provider-icon">
-                                <i class="fas fa-server"></i>
+                            <div class="provider-card @(Configuration.Provider == DatabaseProvider.SqlServer ? "selected" : "")"
+                                 @onclick="() => SelectProvider(DatabaseProvider.SqlServer)">
+                                <div class="provider-icon">
+                                    <i class="fas fa-server"></i>
+                                </div>
+                                <div class="provider-info">
+                                    <h4>MS SQL Server</h4>
+                                    <p>Microsoft SQL Server</p>
+                                </div>
                             </div>
-                            <div class="provider-info">
-                                <h4>MS SQL Server</h4>
-                                <p>Microsoft SQL Server</p>
-                            </div>
-                        </div>
 
-                        <div class="provider-card @(Configuration.Provider == DatabaseProvider.MySql ? "selected" : "")"
-                             @onclick="() => SelectProvider(DatabaseProvider.MySql)">
-                            <div class="provider-icon">
-                                <i class="fas fa-database"></i>
+                            <div class="provider-card @(Configuration.Provider == DatabaseProvider.MySql ? "selected" : "")"
+                                 @onclick="() => SelectProvider(DatabaseProvider.MySql)">
+                                <div class="provider-icon">
+                                    <i class="fas fa-database"></i>
+                                </div>
+                                <div class="provider-info">
+                                    <h4>MySQL</h4>
+                                    <p>MySQL/MariaDB Server</p>
+                                </div>
                             </div>
-                            <div class="provider-info">
-                                <h4>MySQL</h4>
-                                <p>MySQL/MariaDB Server</p>
-                            </div>
-                        </div>
 
-                        <div class="provider-card @(Configuration.Provider == DatabaseProvider.PostgreSql ? "selected" : "")"
-                             @onclick="() => SelectProvider(DatabaseProvider.PostgreSql)">
-                            <div class="provider-icon">
-                                <i class="fas fa-elephant"></i>
-                            </div>
-                            <div class="provider-info">
-                                <h4>PostgreSQL</h4>
-                                <p>PostgreSQL Server</p>
+                            <div class="provider-card @(Configuration.Provider == DatabaseProvider.PostgreSql ? "selected" : "")"
+                                 @onclick="() => SelectProvider(DatabaseProvider.PostgreSql)">
+                                <div class="provider-icon">
+                                    <i class="fas fa-elephant"></i>
+                                </div>
+                                <div class="provider-info">
+                                    <h4>PostgreSQL</h4>
+                                    <p>PostgreSQL Server</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Configuration Forms -->
-                <div class="configuration-section">
+                }
+                else
+                {
+                    <!-- Configuration Forms -->
+                    <div class="configuration-section">
                     @if (Configuration.Provider == DatabaseProvider.Sqlite)
                     {
                         <div class="config-form">
@@ -258,136 +265,165 @@
                             </div>
                         </div>
                     }
-                </div>
+                    </div>
+                }
 
-                <!-- Migration Status -->
-                @if (MigrationStatus != null && MigrationStatus.HasPendingMigrations)
+                @if (CurrentStep == SetupWizardStep.Configuration)
                 {
-                    <div class="migration-status warning">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <div class="migration-info">
-                            <strong>Pending Migrations Detected</strong>
-                            <p>There are @MigrationStatus.PendingMigrations.Count() pending database migrations that need to be applied before you can use the app.</p>
-                            @if (ShowMigrationDetails)
-                            {
-                                <ul class="migration-list">
-                                    @foreach (var migration in MigrationStatus.PendingMigrations)
-                                    {
-                                        <li>@migration</li>
-                                    }
-                                </ul>
-                            }
-                            <button type="button" class="btn btn-link btn-sm" @onclick="ToggleMigrationDetails">
+                    <!-- Migration Status -->
+                    @if (MigrationStatus != null && MigrationStatus.HasPendingMigrations)
+                    {
+                        <div class="migration-status warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <div class="migration-info">
+                                <strong>Pending Migrations Detected</strong>
+                                <p>There are @MigrationStatus.PendingMigrations.Count() pending database migrations that need to be applied before you can use the app.</p>
                                 @if (ShowMigrationDetails)
                                 {
-                                    <span><i class="fas fa-chevron-up"></i> Hide Details</span>
+                                    <ul class="migration-list">
+                                        @foreach (var migration in MigrationStatus.PendingMigrations)
+                                        {
+                                            <li>@migration</li>
+                                        }
+                                    </ul>
+                                }
+                                <button type="button" class="btn btn-link btn-sm" @onclick="ToggleMigrationDetails">
+                                    @if (ShowMigrationDetails)
+                                    {
+                                        <span><i class="fas fa-chevron-up"></i> Hide Details</span>
+                                    }
+                                    else
+                                    {
+                                        <span><i class="fas fa-chevron-down"></i> Show Details</span>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Connection Status -->
+                    @if (!string.IsNullOrEmpty(ConnectionStatus))
+                    {
+                        <div class="connection-status @(IsConnectionSuccessful ? "success" : "error")">
+                            <i class="fas @(IsConnectionSuccessful ? "fa-check-circle" : "fa-exclamation-triangle")"></i>
+                            @ConnectionStatus
+                        </div>
+                    }
+
+                    <!-- Dialog Actions -->
+                    <div class="dialog-actions">
+                        <button type="button" 
+                                class="btn btn-outline-secondary"
+                                @onclick="GoToProviderStep"
+                                disabled="@IsProcessing">
+                            <i class="fas fa-arrow-left"></i>
+                            Back
+                        </button>
+
+                        <button type="button" 
+                                class="btn btn-secondary" 
+                                @onclick="TestConnection" 
+                                disabled="@IsProcessing">
+                            @if (IsProcessing && CurrentAction == "testing")
+                            {
+                                <i class="fas fa-spinner fa-spin"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-plug"></i>
+                            }
+                            Test Connection
+                        </button>
+
+                        @if (IsConnectionSuccessful && Configuration.Provider != DatabaseProvider.Sqlite)
+                        {
+                            <button type="button" 
+                                    class="btn btn-success" 
+                                    @onclick="CreateDatabase" 
+                                    disabled="@IsProcessing">
+                                @if (IsProcessing && CurrentAction == "creating")
+                                {
+                                    <i class="fas fa-spinner fa-spin"></i>
                                 }
                                 else
                                 {
-                                    <span><i class="fas fa-chevron-down"></i> Show Details</span>
+                                    <i class="fas fa-plus-circle"></i>
                                 }
+                                Create Database
                             </button>
-                        </div>
+                        }
+
+                        @if (MigrationStatus != null && MigrationStatus.HasPendingMigrations && IsConnectionSuccessful)
+                        {
+                            <button type="button" 
+                                    class="btn btn-warning" 
+                                    @onclick="ApplyMigrations" 
+                                    disabled="@IsProcessing">
+                                @if (IsProcessing && CurrentAction == "migrating")
+                                {
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-database"></i>
+                                }
+                                Apply Migrations
+                            </button>
+                        }
+
+                        <button type="submit" 
+                                class="btn btn-primary" 
+                                disabled="@IsProcessing">
+                            @if (IsProcessing && CurrentAction == "saving")
+                            {
+                                <i class="fas fa-spinner fa-spin"></i>
+                            }
+                            else if (MigrationStatus != null && MigrationStatus.HasPendingMigrations)
+                            {
+                                <i class="fas fa-plus"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-save"></i>
+                            }
+                            @if (Configuration.Provider == DatabaseProvider.Sqlite)
+                            {
+                                <span>Setup Local Database</span>
+                            }
+                            else if (MigrationStatus != null && MigrationStatus.HasPendingMigrations)
+                            {
+                                <span>Setup & Continue</span>
+                            }
+                            else
+                            {
+                                <span>Save & Continue</span>
+                            }
+                        </button>
                     </div>
                 }
-
-                <!-- Connection Status -->
-                @if (!string.IsNullOrEmpty(ConnectionStatus))
+                else
                 {
-                    <div class="connection-status @(IsConnectionSuccessful ? "success" : "error")">
-                        <i class="fas @(IsConnectionSuccessful ? "fa-check-circle" : "fa-exclamation-triangle")"></i>
-                        @ConnectionStatus
+                    <div class="dialog-actions">
+                        <button type="button"
+                                class="btn btn-primary"
+                                @onclick="GoToConfigurationStep">
+                            Continue
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
                     </div>
                 }
-
-                <!-- Dialog Actions -->
-                <div class="dialog-actions">
-                    <button type="button" 
-                            class="btn btn-secondary" 
-                            @onclick="TestConnection" 
-                            disabled="@IsProcessing">
-                        @if (IsProcessing && CurrentAction == "testing")
-                        {
-                            <i class="fas fa-spinner fa-spin"></i>
-                        }
-                        else
-                        {
-                            <i class="fas fa-plug"></i>
-                        }
-                        Test Connection
-                    </button>
-                    
-                    @if (IsConnectionSuccessful && Configuration.Provider != DatabaseProvider.Sqlite)
-                    {
-                        <button type="button" 
-                                class="btn btn-success" 
-                                @onclick="CreateDatabase" 
-                                disabled="@IsProcessing">
-                            @if (IsProcessing && CurrentAction == "creating")
-                            {
-                                <i class="fas fa-spinner fa-spin"></i>
-                            }
-                            else
-                            {
-                                <i class="fas fa-plus-circle"></i>
-                            }
-                            Create Database
-                        </button>
-                    }
-                    
-                    @if (MigrationStatus != null && MigrationStatus.HasPendingMigrations && IsConnectionSuccessful)
-                    {
-                        <button type="button" 
-                                class="btn btn-warning" 
-                                @onclick="ApplyMigrations" 
-                                disabled="@IsProcessing">
-                            @if (IsProcessing && CurrentAction == "migrating")
-                            {
-                                <i class="fas fa-spinner fa-spin"></i>
-                            }
-                            else
-                            {
-                                <i class="fas fa-database"></i>
-                            }
-                            Apply Migrations
-                        </button>
-                    }
-                    
-                    <button type="submit" 
-                            class="btn btn-primary" 
-                            disabled="@IsProcessing">
-                        @if (IsProcessing && CurrentAction == "saving")
-                        {
-                            <i class="fas fa-spinner fa-spin"></i>
-                        }
-                        else if (MigrationStatus != null && MigrationStatus.HasPendingMigrations)
-                        {
-                            <i class="fas fa-plus"></i>
-                        }
-                        else
-                        {
-                            <i class="fas fa-save"></i>
-                        }
-                        @if (Configuration.Provider == DatabaseProvider.Sqlite)
-                        {
-                            <span>Setup Local Database</span>
-                        }
-                        else if (MigrationStatus != null && MigrationStatus.HasPendingMigrations)
-                        {
-                            <span>Setup & Continue</span>
-                        }
-                        else
-                        {
-                            <span>Save & Continue</span>
-                        }
-                    </button>
-                </div>
             </EditForm>
         </div>
     </div>
 </div>
 
 @code {
+    private enum SetupWizardStep
+    {
+        ProviderSelection,
+        Configuration
+    }
+
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback OnConfigurationSaved { get; set; }
 
@@ -398,6 +434,7 @@
     private string ConnectionStatus { get; set; } = string.Empty;
     private bool IsConnectionSuccessful { get; set; }
     private string CurrentAction { get; set; } = string.Empty;
+    private SetupWizardStep CurrentStep { get; set; } = SetupWizardStep.ProviderSelection;
 
     // Password fields (not bound to model for security)
     private string SqlServerPassword { get; set; } = string.Empty;
@@ -408,7 +445,6 @@
     {
         Configuration = DatabaseConfigService.GetDefaultConfiguration();
         EnsureProviderConfig();
-        await CheckMigrationStatus();
     }
 
     private void SelectProvider(DatabaseProvider provider)
@@ -418,6 +454,24 @@
         ConnectionStatus = string.Empty;
         MigrationStatus = null; // Reset migration status when changing provider
         IsConnectionSuccessful = false; // Reset connection status
+    }
+
+    private string GetWizardSubtitle()
+    {
+        return CurrentStep == SetupWizardStep.ProviderSelection
+            ? "Step 1: Choose your database provider"
+            : "Step 2: Configure your connection settings";
+    }
+
+    private async Task GoToConfigurationStep()
+    {
+        CurrentStep = SetupWizardStep.Configuration;
+        await CheckMigrationStatus();
+    }
+
+    private void GoToProviderStep()
+    {
+        CurrentStep = SetupWizardStep.ProviderSelection;
     }
 
     private void ToggleMigrationDetails()

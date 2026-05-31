@@ -78,6 +78,7 @@ else
     private bool IsInitialized { get; set; }
     private bool HasError { get; set; }
     private int InitializationTimeoutSeconds { get; set; }
+    private bool _configurationCompletionNotified;
     private Timer? _timeoutTimer;
     private CancellationTokenSource? _initializationCts;
 
@@ -168,7 +169,7 @@ else
             {
                 // If not showing dialog, notify that configuration is complete
                 Logger.LogDebug("Database configuration is complete, notifying parent component");
-                await OnConfigurationComplete.InvokeAsync();
+                await NotifyConfigurationCompleteAsync();
             }
             else
             {
@@ -238,7 +239,7 @@ else
             ShowDatabaseSelection = false;
             IsInitialized = true;
             
-            await OnConfigurationComplete.InvokeAsync();
+            await NotifyConfigurationCompleteAsync();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -249,7 +250,7 @@ else
             ShowDatabaseSelection = false;
             IsInitialized = true;
             
-            await OnConfigurationComplete.InvokeAsync();
+            await NotifyConfigurationCompleteAsync();
             StateHasChanged();
         }
     }
@@ -259,8 +260,19 @@ else
         Logger.LogInformation("Database configuration completed by user");
         ShowDatabaseSelection = false;
         IsInitialized = true;
-        await OnConfigurationComplete.InvokeAsync();
+        await NotifyConfigurationCompleteAsync();
         StateHasChanged();
+    }
+
+    private async Task NotifyConfigurationCompleteAsync()
+    {
+        if (_configurationCompletionNotified)
+        {
+            return;
+        }
+
+        _configurationCompletionNotified = true;
+        await OnConfigurationComplete.InvokeAsync();
     }
 
     public void Dispose()
