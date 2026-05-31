@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -7,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
+using PasswordManager.Services.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.WPF.Helpers;
 
@@ -22,6 +24,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
     private PasswordItem? _editingItem;
     private bool _isReadOnly = false;
     private List<CustomField> _customFields = new();
+    private string? _brandIconDataUrl;
 
     public PasswordItem? Result { get; private set; }
 
@@ -55,6 +58,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         }
 
         RefreshCustomFieldsUI();
+        UpdateBrandIconStatus();
 
         // Apply read-only mode UI changes
         if (_isReadOnly)
@@ -154,6 +158,8 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             genBtnLocal.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
         }
         AddWebsiteButton.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        UploadBrandIconButton.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        RemoveBrandIconButton.Visibility = readOnly || string.IsNullOrWhiteSpace(_brandIconDataUrl) ? Visibility.Collapsed : Visibility.Visible;
         AddMoreLoginButton.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
         AddCustomFieldButton.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
         AddMoreSecureNoteButton.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
@@ -882,8 +888,13 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
     {
         if (_editingItem?.CustomFields != null)
         {
-            _customFields = new List<CustomField>(_editingItem.CustomFields);
+            _brandIconDataUrl = BrandIconHelper.GetCustomBrandIconDataUrl(_editingItem);
+            _customFields = _editingItem.CustomFields
+                .Where(field => !string.Equals(field.Name, BrandIconHelper.BrandIconCustomFieldName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
+
+        UpdateBrandIconStatus();
     }
 
     private void AddCustomField_Click(object sender, RoutedEventArgs e)
@@ -939,6 +950,89 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             field.PasswordItemId = item.Id;
             item.CustomFields.Add(field);
         }
+
+        if (!string.IsNullOrWhiteSpace(_brandIconDataUrl))
+        {
+            BrandIconHelper.SetCustomBrandIcon(item, _brandIconDataUrl);
+        }
+    }
+
+    private void UpdateBrandIconStatus()
+    {
+        if (BrandIconStatusText == null || RemoveBrandIconButton == null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_brandIconDataUrl))
+        {
+            BrandIconStatusText.Text = "We'll use the website icon automatically, or you can upload your own.";
+            RemoveBrandIconButton.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        BrandIconStatusText.Text = "A custom brand icon will be saved with this item.";
+        RemoveBrandIconButton.Visibility = _isReadOnly ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private async void UploadBrandIcon_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Image Files|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.webp;*.svg",
+                CheckFileExists = true,
+                Multiselect = false
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            var fileInfo = new FileInfo(dialog.FileName);
+            if (fileInfo.Length > BrandIconHelper.MaxBrandIconBytes)
+            {
+                await ShowErrorDialog("Brand icons must be 1 MB or smaller.");
+                return;
+            }
+
+            var bytes = await File.ReadAllBytesAsync(dialog.FileName);
+            var mimeType = GetImageMimeType(dialog.FileName);
+            if (mimeType == null)
+            {
+                await ShowErrorDialog("Please choose a supported image file.");
+                return;
+            }
+
+            _brandIconDataUrl = $"data:{mimeType};base64,{Convert.ToBase64String(bytes)}";
+            UpdateBrandIconStatus();
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog($"Unable to load brand icon: {ex.Message}");
+        }
+    }
+
+    private void RemoveBrandIcon_Click(object sender, RoutedEventArgs e)
+    {
+        _brandIconDataUrl = null;
+        UpdateBrandIconStatus();
+    }
+
+    private static string? GetImageMimeType(string filePath)
+    {
+        return Path.GetExtension(filePath).ToLowerInvariant() switch
+        {
+            ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
+            ".bmp" => "image/bmp",
+            ".webp" => "image/webp",
+            ".svg" => "image/svg+xml",
+            _ => null
+        };
     }
 
     // Button Event Handlers for Form-Specific Actions

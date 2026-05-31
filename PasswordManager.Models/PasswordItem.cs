@@ -53,36 +53,36 @@ public class PasswordItem
     public List<Tag> Tags { get; set; } = new();
     
     // Computed properties for backward compatibility with UI components
+    private LoginItem EnsureLoginItem()
+    {
+        LoginItem ??= new LoginItem();
+        return LoginItem;
+    }
+
     [NotMapped]
     public string? Username 
     { 
         get => LoginItem?.Username; 
-        set 
-        { 
-            if (LoginItem != null) 
-                LoginItem.Username = value; 
-        } 
+        set => EnsureLoginItem().Username = value;
     }
     
     [NotMapped]
     public string? Password 
     { 
         get => LoginItem?.Password; 
-        set 
-        { 
-            if (LoginItem != null) 
-                LoginItem.Password = value; 
-        } 
+        set => EnsureLoginItem().Password = value;
     }
     
     [NotMapped]
     public string? WebsiteUrl 
     { 
-        get => LoginItem?.WebsiteUrl; 
+        get => LoginItem?.WebsiteUrl ?? LoginItem?.Website ?? Website; 
         set 
         { 
-            if (LoginItem != null) 
-                LoginItem.WebsiteUrl = value; 
+            var loginItem = EnsureLoginItem();
+            loginItem.WebsiteUrl = value;
+            loginItem.Website = value;
+            Website = value;
         } 
     }
     

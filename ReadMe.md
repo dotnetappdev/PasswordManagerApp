@@ -55,6 +55,14 @@ A full-featured, self-hosted password manager built with **Blazor Server (.NET 1
 
 ---
 
+### 🏷️ Login Brand Icons
+
+Login items can now render an automatically resolved company icon in the item list, with uploaded custom icons taking priority when an override is present.
+
+![Login brand icons](https://github.com/user-attachments/assets/bfb22548-b0c4-45bf-843b-c1b2ab903c25)
+
+---
+
 ### 📱 Mobile – Light Mode (390 × 844)
 
 | Dashboard |
