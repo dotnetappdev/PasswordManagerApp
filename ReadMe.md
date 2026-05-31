@@ -59,6 +59,31 @@ A full-featured, self-hosted password manager built with **Blazor Server (.NET 1
 
 ---
 
+### 🧩 Item Templates & Custom Fields (Desktop / MAUI-style forms)
+
+| Login | Password | Secure Note |
+|------|----------|-------------|
+| ![Login Form](screenshots/password-form.png) | ![Password Form](screenshots/api-credentials-form.png) | ![Secure Note Form](screenshots/secure-note-form.png) |
+
+| Credit Card | Credit Card + Date | Credit Card + Custom Field |
+|-------------|--------------------|----------------------------|
+| ![Credit Card Form](screenshots/credit-card-form.png) | ![Credit Card Form with Date](screenshots/credit-card-form-with-date-field.png) | ![Credit Card Form with Custom Field](screenshots/credit-card-form-with-custom-field.png) |
+
+| API Credentials + Custom Field | Identity |
+|--------------------------------|----------|
+| ![API Credentials with Custom Field](screenshots/api-credentials-form-with-custom-field.png) | ![Identity Form](screenshots/identity-form.png) |
+
+---
+
+### 📲 iOS & Biometric Support
+
+- iOS app support is provided through the mobile implementation with Face ID / Touch ID support.
+- Capture workflow and screenshot checklist: [MOBILE_SCREENSHOTS.md](MOBILE_SCREENSHOTS.md)
+- Mobile screenshot folder structure: [screenshots/mobile/README.md](screenshots/mobile/README.md)
+- Biometric implementation details: [BIOMETRIC_AUTH_IMPLEMENTATION.md](BIOMETRIC_AUTH_IMPLEMENTATION.md)
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites

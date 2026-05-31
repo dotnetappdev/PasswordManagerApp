@@ -29,6 +29,7 @@ public sealed partial class ItemTypeSelectionDialog : ModernWpf.Controls.Content
                 "WiFi" => ItemType.WiFi,
                 "Password" => ItemType.Password,
                 "Passkey" => ItemType.Passkey,
+                "Identity" => ItemType.Identity,
                 _ => ItemType.Login // Default fallback
             };
 
