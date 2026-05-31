@@ -59,6 +59,17 @@ A full-featured, self-hosted password manager built with **Blazor Server (.NET 1
 
 ---
 
+### 🪟 WinUI Desktop Screenshots
+
+- WinUI screenshot capture and coverage guide: [screenshots/SCREENSHOT_GUIDE.md](screenshots/SCREENSHOT_GUIDE.md)
+- WinUI screenshot folder and naming conventions: [screenshots/README.md](screenshots/README.md)
+- Current WinUI dashboard/login placeholders:
+  - [screenshots/winui-dashboard-placeholders.md](screenshots/winui-dashboard-placeholders.md)
+  - [screenshots/winui-login-light.placeholder](screenshots/winui-login-light.placeholder)
+  - [screenshots/winui-login-dark.placeholder](screenshots/winui-login-dark.placeholder)
+
+---
+
 ### 🧩 Item Templates & Custom Fields (Desktop / MAUI-style forms)
 
 | Login | Password | Secure Note |
@@ -77,7 +88,10 @@ A full-featured, self-hosted password manager built with **Blazor Server (.NET 1
 
 ### 📲 iOS & Biometric Support
 
-- iOS app support is provided through the mobile implementation with Face ID / Touch ID support.
+- iOS app support is available via the mobile implementations with Face ID / Touch ID support:
+  - [REACT_NATIVE_MOBILE_APP.md](REACT_NATIVE_MOBILE_APP.md) (feature-complete cross-platform mobile app)
+  - [PasswordManager.App](PasswordManager.App) (MAUI app with iOS target support)
+  - [PasswordManager.Uno](PasswordManager.Uno) (Uno Platform mobile support)
 - Capture workflow and screenshot checklist: [MOBILE_SCREENSHOTS.md](MOBILE_SCREENSHOTS.md)
 - Mobile screenshot folder structure: [screenshots/mobile/README.md](screenshots/mobile/README.md)
 - Biometric implementation details: [BIOMETRIC_AUTH_IMPLEMENTATION.md](BIOMETRIC_AUTH_IMPLEMENTATION.md)
