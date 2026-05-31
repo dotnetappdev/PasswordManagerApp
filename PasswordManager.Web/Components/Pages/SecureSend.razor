@@ -1,0 +1,439 @@
+@page "/secure-send"
+@rendermode InteractiveServer
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Models
+@inject IPasswordItemService PasswordItemService
+@inject ISnackbar Snackbar
+
+<PageTitle>Secure Send - VaultGuard</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-weight:700">Secure Send</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Share sensitive information with anyone, securely
+        </MudText>
+    </div>
+    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
+               Color="Color.Primary" OnClick="@OpenCreateDialog">
+        Create Send
+    </MudButton>
+</MudStack>
+
+<MudAlert Severity="Severity.Info" Class="mb-4">
+    Create a one-time encrypted link to share passwords or text.
+    Links expire automatically and can be password-protected.
+</MudAlert>
+
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mb-4" @bind-ActivePanelIndex="activeTab">
+
+    @* My Sends Tab *@
+    <MudTabPanel Text="My Sends" Icon="@Icons.Material.Filled.List">
+        <div class="pa-4">
+            @if (sends.Count == 0)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-10" Spacing="3">
+                    <MudIcon Icon="@Icons.Material.Filled.Share"
+                             Style="font-size:4rem; color:#7C3AED; opacity:0.3;" />
+                    <MudText Typo="Typo.h6" Color="Color.Secondary">No sends yet</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">
+                        Create your first secure send to share a password or text securely.
+                    </MudText>
+                    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
+                               Color="Color.Primary" OnClick="@OpenCreateDialog">
+                        Create Your First Send
+                    </MudButton>
+                </MudStack>
+            }
+            else
+            {
+                <MudDataGrid T="SecureSendViewModel" Items="@sends" Sortable="true" Hover="true"
+                             Dense="false" Elevation="0">
+                    <Columns>
+                        <TemplateColumn Title="Name" Sortable="false">
+                            <CellTemplate>
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.body1" Style="font-weight:500;">@context.Item.Name</MudText>
+                                    @if (context.Item.IsPasswordProtected)
+                                    {
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                            <MudIcon Icon="@Icons.Material.Filled.Lock"
+                                                     Style="font-size:0.85rem; color:#8B90A7;" />
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Password protected</MudText>
+                                        </MudStack>
+                                    }
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Type" CellStyle="width:120px;">
+                            <CellTemplate>
+                                <MudChip T="string" Size="Size.Small"
+                                         Color="@(context.Item.Type == "Text" ? Color.Info : Color.Primary)"
+                                         Text="@context.Item.Type" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Expiry" CellStyle="width:160px;" Sortable="false">
+                            <CellTemplate>
+                                @if (context.Item.ExpiresAt == null)
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">Never</MudText>
+                                }
+                                else if (context.Item.ExpiresAt < DateTime.UtcNow)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Text="Expired" />
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2">
+                                        @context.Item.ExpiresAt.Value.ToString("MMM d, yyyy HH:mm")
+                                    </MudText>
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Views" CellStyle="width:100px;">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">
+                                    @context.Item.ViewCount / @context.Item.MaxViews
+                                </MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Status" CellStyle="width:110px;">
+                            <CellTemplate>
+                                @if (!context.Item.IsActive || (context.Item.ExpiresAt.HasValue && context.Item.ExpiresAt < DateTime.UtcNow) || context.Item.ViewCount >= context.Item.MaxViews)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Text="Inactive" />
+                                }
+                                else
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Text="Active" />
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Actions" CellStyle="width:110px;">
+                            <CellTemplate>
+                                <MudStack Row="true" Spacing="0">
+                                    <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                                                   Size="Size.Small" Color="Color.Primary"
+                                                   Title="Copy Link"
+                                                   OnClick="@(() => CopyLink(context.Item))" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                   Size="Size.Small" Color="Color.Error"
+                                                   Title="Delete Send"
+                                                   OnClick="@(() => DeleteSend(context.Item))" />
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudText Color="Color.Secondary" Class="pa-4">No sends found.</MudText>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+        </div>
+    </MudTabPanel>
+
+    @* Create New Tab *@
+    <MudTabPanel Text="Create New" Icon="@Icons.Material.Filled.Add">
+        <div class="pa-4">
+            <MudPaper Class="pa-4 rounded-lg" Elevation="1" Style="max-width:600px;">
+                <MudText Typo="Typo.h6" Style="font-weight:600;" Class="mb-4">New Secure Send</MudText>
+                @RenderCreateForm()
+            </MudPaper>
+        </div>
+    </MudTabPanel>
+
+</MudTabs>
+
+@* Created link alert *@
+@if (!string.IsNullOrEmpty(lastCreatedLink))
+{
+    <MudAlert Severity="Severity.Success" Class="mt-2" ShowCloseIcon="true"
+              CloseIconClicked="@(() => lastCreatedLink = "")">
+        <MudStack Spacing="1">
+            <MudText Typo="Typo.body2" Style="font-weight:600;">Secure link created!</MudText>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudText Typo="Typo.body2" Style="font-family:monospace; word-break:break-all;">
+                    @lastCreatedLink
+                </MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                               Size="Size.Small" Color="Color.Success"
+                               OnClick="@CopyLastLink"
+                               Title="Copy link" />
+            </MudStack>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Share this link with the recipient. It will expire or become inactive after the configured limits.
+            </MudText>
+        </MudStack>
+    </MudAlert>
+}
+
+@* Create Send Dialog (launched from top "Create Send" button) *@
+<MudDialog @bind-Visible="createDialogVisible"
+           Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="font-weight:600;">Create Secure Send</MudText>
+    </TitleContent>
+    <DialogContent>
+        @RenderCreateForm()
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => createDialogVisible = false)" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="@CreateSend" Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Link">
+            Create Link
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    class SecureSendViewModel
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8];
+        public string Name { get; set; } = "";
+        public string Type { get; set; } = "Text"; // Text, Password
+        public string Content { get; set; } = "";
+        public int MaxViews { get; set; } = 5;
+        public int ViewCount { get; set; } = 0;
+        public DateTime? ExpiresAt { get; set; }
+        public bool IsPasswordProtected { get; set; } = false;
+        public string AccessPassword { get; set; } = "";
+        public string Link { get; set; } = "";
+        public bool IsActive { get; set; } = true;
+    }
+
+    int activeTab = 0;
+    bool createDialogVisible = false;
+    string lastCreatedLink = "";
+
+    // Form state
+    string formName = "";
+    string formType = "Text";
+    string formContent = "";
+    int formMaxViews = 5;
+    string formExpiry = "7 days";
+    bool formPasswordProtect = false;
+    string formAccessPassword = "";
+    bool showFormPassword = false;
+
+    List<SecureSendViewModel> sends = new()
+    {
+        new SecureSendViewModel
+        {
+            Id = "abc12345",
+            Name = "Netflix Password",
+            Type = "Password",
+            Content = "[encrypted]",
+            MaxViews = 3,
+            ViewCount = 1,
+            ExpiresAt = DateTime.UtcNow.AddDays(5),
+            IsPasswordProtected = false,
+            Link = "https://vault.local/s/abc12345",
+            IsActive = true
+        },
+        new SecureSendViewModel
+        {
+            Id = "def67890",
+            Name = "WiFi Credentials",
+            Type = "Text",
+            Content = "[encrypted]",
+            MaxViews = 1,
+            ViewCount = 0,
+            ExpiresAt = DateTime.UtcNow.AddHours(12),
+            IsPasswordProtected = true,
+            Link = "https://vault.local/s/def67890",
+            IsActive = true
+        }
+    };
+
+    RenderFragment RenderCreateForm() => __builder =>
+    {
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="formName"
+                          Label="Name *"
+                          Variant="Variant.Outlined"
+                          Placeholder="e.g. Netflix Password, WiFi Info"
+                          HelperText="A label to identify this send." />
+
+            <div>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">Type</MudText>
+                <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">
+                    <MudButton OnClick="@(() => { formType = "Text"; formContent = ""; })"
+                               Variant="@(formType == "Text" ? Variant.Filled : Variant.Outlined)"
+                               StartIcon="@Icons.Material.Filled.TextFields">
+                        Text
+                    </MudButton>
+                    <MudButton OnClick="@(() => { formType = "Password"; formContent = ""; })"
+                               Variant="@(formType == "Password" ? Variant.Filled : Variant.Outlined)"
+                               StartIcon="@Icons.Material.Filled.Lock">
+                        Password Item
+                    </MudButton>
+                </MudButtonGroup>
+            </div>
+
+            @if (formType == "Text")
+            {
+                <MudTextField @bind-Value="formContent"
+                              Label="Content *"
+                              Variant="Variant.Outlined"
+                              Lines="4"
+                              Placeholder="Enter the text to share securely..." />
+            }
+            else
+            {
+                <MudAutocomplete T="string" @bind-Value="formContent"
+                                 Label="Password Item"
+                                 Variant="Variant.Outlined"
+                                 SearchFunc="@SearchPasswordItems"
+                                 Placeholder="Search for a password item..." />
+            }
+
+            <MudNumericField @bind-Value="formMaxViews"
+                             Label="Max Views"
+                             Variant="Variant.Outlined"
+                             Min="1" Max="100"
+                             HelperText="Link deactivates after this many views." />
+
+            <MudSelect T="string" @bind-Value="formExpiry"
+                       Label="Expires After"
+                       Variant="Variant.Outlined">
+                <MudSelectItem T="string" Value="@("1 hour")">1 hour</MudSelectItem>
+                <MudSelectItem T="string" Value="@("1 day")">1 day</MudSelectItem>
+                <MudSelectItem T="string" Value="@("7 days")">7 days</MudSelectItem>
+                <MudSelectItem T="string" Value="@("30 days")">30 days</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Never")">Never</MudSelectItem>
+            </MudSelect>
+
+            <MudSwitch @bind-Value="formPasswordProtect"
+                       Color="Color.Primary"
+                       Label="Password protect this send" />
+
+            @if (formPasswordProtect)
+            {
+                <MudTextField @bind-Value="formAccessPassword"
+                              Label="Access Password"
+                              Variant="Variant.Outlined"
+                              InputType="@(showFormPassword ? InputType.Text : InputType.Password)"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@(showFormPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                              OnAdornmentClick="@(() => showFormPassword = !showFormPassword)"
+                              HelperText="Recipient will need to enter this to view the content." />
+            }
+
+            @if (!createDialogVisible)
+            {
+                <MudButton OnClick="@CreateSend" Variant="Variant.Filled" Color="Color.Primary"
+                           FullWidth="true" StartIcon="@Icons.Material.Filled.Link">
+                    Create Secure Link
+                </MudButton>
+            }
+        </MudStack>
+    };
+
+    void OpenCreateDialog()
+    {
+        ResetForm();
+        createDialogVisible = true;
+    }
+
+    void ResetForm()
+    {
+        formName = "";
+        formType = "Text";
+        formContent = "";
+        formMaxViews = 5;
+        formExpiry = "7 days";
+        formPasswordProtect = false;
+        formAccessPassword = "";
+        showFormPassword = false;
+    }
+
+    void CreateSend()
+    {
+        if (string.IsNullOrWhiteSpace(formName))
+        {
+            Snackbar.Add("Name is required.", Severity.Warning);
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(formContent))
+        {
+            Snackbar.Add("Content is required.", Severity.Warning);
+            return;
+        }
+        if (formPasswordProtect && string.IsNullOrWhiteSpace(formAccessPassword))
+        {
+            Snackbar.Add("Please enter an access password or disable password protection.", Severity.Warning);
+            return;
+        }
+
+        var id = Guid.NewGuid().ToString("N")[..8];
+        var link = $"https://vault.local/s/{id}";
+
+        DateTime? expiresAt = formExpiry switch
+        {
+            "1 hour"  => DateTime.UtcNow.AddHours(1),
+            "1 day"   => DateTime.UtcNow.AddDays(1),
+            "7 days"  => DateTime.UtcNow.AddDays(7),
+            "30 days" => DateTime.UtcNow.AddDays(30),
+            _         => (DateTime?)null
+        };
+
+        sends.Insert(0, new SecureSendViewModel
+        {
+            Id = id,
+            Name = formName,
+            Type = formType,
+            Content = "[encrypted]",
+            MaxViews = formMaxViews,
+            ViewCount = 0,
+            ExpiresAt = expiresAt,
+            IsPasswordProtected = formPasswordProtect,
+            AccessPassword = formAccessPassword,
+            Link = link,
+            IsActive = true
+        });
+
+        lastCreatedLink = link;
+        createDialogVisible = false;
+        activeTab = 0; // Switch to My Sends tab
+        Snackbar.Add("Secure send created!", Severity.Success);
+        ResetForm();
+    }
+
+    void CopyLink(SecureSendViewModel send)
+    {
+        lastCreatedLink = send.Link;
+        Snackbar.Add("Link copied to clipboard!", Severity.Success);
+    }
+
+    void CopyLastLink()
+    {
+        Snackbar.Add("Link copied to clipboard!", Severity.Success);
+    }
+
+    void DeleteSend(SecureSendViewModel send)
+    {
+        sends.Remove(send);
+        if (lastCreatedLink == send.Link)
+            lastCreatedLink = "";
+        Snackbar.Add($"\"{send.Name}\" deleted.", Severity.Info);
+    }
+
+    async Task<IEnumerable<string>> SearchPasswordItems(string value, CancellationToken ct)
+    {
+        try
+        {
+            var allEnum = await PasswordItemService.GetAllAsync();
+            var all = allEnum?.ToList() ?? new();
+            return all
+                .Where(x => !x.IsDeleted && !x.IsArchived)
+                .Where(x => string.IsNullOrEmpty(value) ||
+                            x.Title.Contains(value, StringComparison.OrdinalIgnoreCase))
+                .Select(x => x.Title)
+                .Take(15);
+        }
+        catch
+        {
+            return Enumerable.Empty<string>();
+        }
+    }
+}

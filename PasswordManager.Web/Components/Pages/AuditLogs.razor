@@ -20,7 +20,8 @@
             <MudTextField @bind-Value="searchText" Placeholder="Search logs..."
                           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                           Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                          Immediate="true" TextChanged="@(_ => FilterLogs())" />
+                          Immediate="true"
+                          ValueChanged="@((string s) => { searchText = s; FilterLogs(); })" />
         </MudItem>
         <MudItem xs="6" md="2">
             <MudSelect T="string" @bind-Value="actionFilter" Label="Action" Variant="Variant.Outlined"

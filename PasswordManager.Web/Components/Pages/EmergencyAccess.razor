@@ -1,0 +1,300 @@
+@page "/emergency-access"
+@rendermode InteractiveServer
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Models
+@inject ISnackbar Snackbar
+
+<PageTitle>Emergency Access - VaultGuard</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-weight:700">Emergency Access</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Grant trusted contacts emergency access to your vault
+        </MudText>
+    </div>
+</MudStack>
+
+<MudAlert Severity="Severity.Info" Class="mb-4">
+    Emergency Access lets you designate trusted contacts who can request access to your vault after a
+    waiting period you define. This is like digital inheritance for your passwords.
+</MudAlert>
+
+<MudGrid>
+    @* Left: People I Trust *@
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4 rounded-lg" Elevation="2" Style="height:100%;">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.h6" Style="font-weight:600;">People I Trust</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Contacts who can request access to your vault
+                    </MudText>
+                </MudStack>
+                <MudButton StartIcon="@Icons.Material.Filled.PersonAdd"
+                           Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                           OnClick="@OpenAddContactDialog">
+                    Add Trusted Contact
+                </MudButton>
+            </MudStack>
+
+            @if (trustedContacts.Count == 0)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.PeopleAlt"
+                             Style="font-size:3.5rem; color:#7C3AED; opacity:0.3;" />
+                    <MudText Typo="Typo.body1" Color="Color.Secondary">No trusted contacts yet</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">
+                        Add someone you trust to ensure they can access your vault in an emergency.
+                    </MudText>
+                </MudStack>
+            }
+            else
+            {
+                <MudList T="EmergencyContactViewModel" Dense="true">
+                    @foreach (var contact in trustedContacts)
+                    {
+                        <MudListItem T="EmergencyContactViewModel">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudAvatar Color="Color.Primary" Size="Size.Small">
+                                        @contact.Email[0].ToString().ToUpper()
+                                    </MudAvatar>
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.body2" Style="font-weight:500;">@contact.Email</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                            Wait @contact.WaitingPeriodDays days before access granted
+                                        </MudText>
+                                        @if (contact.RequestedAt.HasValue)
+                                        {
+                                            <MudText Typo="Typo.caption" Style="color:#F59E0B;">
+                                                Access requested @contact.RequestedAt.Value.ToString("MMM d, yyyy")
+                                            </MudText>
+                                        }
+                                    </MudStack>
+                                </MudStack>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudChip T="string" Size="Size.Small"
+                                             Color="@GetStatusColor(contact.Status)"
+                                             Text="@contact.Status" />
+                                    @if (contact.Status == "RequestPending")
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.Check"
+                                                       Size="Size.Small" Color="Color.Success"
+                                                       Title="Approve Access"
+                                                       OnClick="@(() => ApproveRequest(contact))" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                                       Size="Size.Small" Color="Color.Error"
+                                                       Title="Reject Request"
+                                                       OnClick="@(() => RejectRequest(contact))" />
+                                    }
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                   Size="Size.Small" Color="Color.Default"
+                                                   Title="Remove Contact"
+                                                   OnClick="@(() => RemoveContact(contact))" />
+                                </MudStack>
+                            </MudStack>
+                        </MudListItem>
+                        <MudDivider />
+                    }
+                </MudList>
+            }
+        </MudPaper>
+    </MudItem>
+
+    @* Right: People Who Trust Me *@
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4 rounded-lg" Elevation="2" Style="height:100%;">
+            <MudStack Spacing="0" Class="mb-3">
+                <MudText Typo="Typo.h6" Style="font-weight:600;">People Who Trust Me</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    Vaults you have been granted emergency access to
+                </MudText>
+            </MudStack>
+
+            @if (grantedToMe.Count == 0)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.LockOpen"
+                             Style="font-size:3.5rem; color:#7C3AED; opacity:0.3;" />
+                    <MudText Typo="Typo.body1" Color="Color.Secondary">
+                        No one has granted you emergency access yet
+                    </MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">
+                        When someone adds you as a trusted contact, their vault will appear here.
+                    </MudText>
+                </MudStack>
+            }
+            else
+            {
+                <MudList T="EmergencyContactViewModel" Dense="true">
+                    @foreach (var grant in grantedToMe)
+                    {
+                        <MudListItem T="EmergencyContactViewModel">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudAvatar Color="Color.Secondary" Size="Size.Small">
+                                        @grant.Email[0].ToString().ToUpper()
+                                    </MudAvatar>
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.body2" Style="font-weight:500;">@grant.Email</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                            @grant.WaitingPeriodDays-day waiting period
+                                        </MudText>
+                                    </MudStack>
+                                </MudStack>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudChip T="string" Size="Size.Small"
+                                             Color="@GetStatusColor(grant.Status)"
+                                             Text="@grant.Status" />
+                                    @if (grant.Status == "Approved")
+                                    {
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                                   Color="Color.Warning"
+                                                   OnClick="@(() => RequestAccess(grant))">
+                                            Request Access
+                                        </MudButton>
+                                    }
+                                </MudStack>
+                            </MudStack>
+                        </MudListItem>
+                        <MudDivider />
+                    }
+                </MudList>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudAlert Severity="Severity.Warning" Class="mt-4">
+    Backend integration for cross-user emergency access requires API configuration.
+    Contact your VaultGuard administrator to enable this feature.
+</MudAlert>
+
+@* Add Trusted Contact Dialog *@
+<MudDialog @bind-Visible="addDialogVisible"
+           Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="font-weight:600;">Add Trusted Contact</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudAlert Severity="Severity.Info" Dense="true">
+                The person will receive an email invitation. After accepting, if they request access,
+                you will have @newContact.WaitingPeriodDays days to deny before they gain read-only access.
+            </MudAlert>
+            <MudTextField @bind-Value="newContact.Email"
+                          Label="Email Address *"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Email"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Email" />
+            <MudSelect T="int" @bind-Value="newContact.WaitingPeriodDays"
+                       Label="Waiting Period"
+                       Variant="Variant.Outlined">
+                <MudSelectItem T="int" Value="1">1 day</MudSelectItem>
+                <MudSelectItem T="int" Value="7">7 days</MudSelectItem>
+                <MudSelectItem T="int" Value="14">14 days</MudSelectItem>
+                <MudSelectItem T="int" Value="30">30 days</MudSelectItem>
+            </MudSelect>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@CloseAddDialog" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="@AddContact" Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Send">
+            Send Invitation
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    class EmergencyContactViewModel
+    {
+        public string Email { get; set; } = "";
+        public int WaitingPeriodDays { get; set; } = 14;
+        public string Status { get; set; } = "Pending"; // Pending, Approved, RequestPending, Active
+        public DateTime? RequestedAt { get; set; }
+    }
+
+    bool addDialogVisible = false;
+    EmergencyContactViewModel newContact = new();
+
+    List<EmergencyContactViewModel> trustedContacts = new()
+    {
+        new() { Email = "alice@example.com", WaitingPeriodDays = 14, Status = "Approved" },
+        new() { Email = "bob@example.com",   WaitingPeriodDays = 7,  Status = "Pending" },
+        new() { Email = "carol@example.com", WaitingPeriodDays = 30, Status = "RequestPending", RequestedAt = DateTime.UtcNow.AddDays(-2) }
+    };
+
+    List<EmergencyContactViewModel> grantedToMe = new()
+    {
+        new() { Email = "dave@example.com", WaitingPeriodDays = 7, Status = "Approved" }
+    };
+
+    void OpenAddContactDialog()
+    {
+        newContact = new EmergencyContactViewModel();
+        addDialogVisible = true;
+    }
+
+    void CloseAddDialog() => addDialogVisible = false;
+
+    void AddContact()
+    {
+        if (string.IsNullOrWhiteSpace(newContact.Email))
+        {
+            Snackbar.Add("Email address is required.", Severity.Warning);
+            return;
+        }
+        var existing = trustedContacts.FirstOrDefault(c =>
+            c.Email.Equals(newContact.Email, StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
+        {
+            Snackbar.Add("This contact has already been added.", Severity.Warning);
+            return;
+        }
+        trustedContacts.Add(new EmergencyContactViewModel
+        {
+            Email = newContact.Email,
+            WaitingPeriodDays = newContact.WaitingPeriodDays,
+            Status = "Pending"
+        });
+        Snackbar.Add($"Invitation sent to {newContact.Email}.", Severity.Success);
+        addDialogVisible = false;
+    }
+
+    void ApproveRequest(EmergencyContactViewModel contact)
+    {
+        contact.Status = "Active";
+        Snackbar.Add($"Access granted to {contact.Email}.", Severity.Success);
+    }
+
+    void RejectRequest(EmergencyContactViewModel contact)
+    {
+        contact.Status = "Approved";
+        contact.RequestedAt = null;
+        Snackbar.Add($"Access request from {contact.Email} rejected.", Severity.Info);
+    }
+
+    void RemoveContact(EmergencyContactViewModel contact)
+    {
+        trustedContacts.Remove(contact);
+        Snackbar.Add($"{contact.Email} removed from trusted contacts.", Severity.Info);
+    }
+
+    void RequestAccess(EmergencyContactViewModel grant)
+    {
+        grant.Status = "RequestPending";
+        grant.RequestedAt = DateTime.UtcNow;
+        Snackbar.Add($"Access request sent to {grant.Email}.", Severity.Success);
+    }
+
+    Color GetStatusColor(string status) => status switch
+    {
+        "Approved"      => Color.Success,
+        "Active"        => Color.Info,
+        "RequestPending"=> Color.Warning,
+        _               => Color.Default  // Pending
+    };
+}

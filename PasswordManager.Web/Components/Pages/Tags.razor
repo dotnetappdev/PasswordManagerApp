@@ -1,11 +1,11 @@
 @page "/tags"
+@rendermode InteractiveServer
 @using PasswordManager.Services.Interfaces
 @using PasswordManager.Models
 @inject ITagService TagService
 @inject IAuthService AuthService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@rendermode InteractiveServer
 
 <PageTitle>Tags - VaultGuard</PageTitle>
 
@@ -23,8 +23,8 @@
 <MudPaper Class="mb-4 pa-3" Elevation="1">
     <MudTextField @bind-Value="searchText" Placeholder="Search tags..."
                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                  Immediate="true" TextChanged="@(_ => FilterTags())"
+                  Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                  ValueChanged="@((string s) => { searchText = s; FilterTags(); })"
                   Style="max-width:400px;" />
 </MudPaper>
 
@@ -182,7 +182,15 @@ else
         isLoading = true;
         try
         {
-            tags = await TagService.GetAllAsync() ?? Enumerable.Empty<Tag>();
+            // GetUserTagsAsync() returns user-specific tags (preferred)
+            try
+            {
+                tags = await TagService.GetUserTagsAsync() ?? Enumerable.Empty<Tag>();
+            }
+            catch
+            {
+                tags = await TagService.GetAllAsync() ?? Enumerable.Empty<Tag>();
+            }
             FilterTags();
         }
         catch (Exception ex)

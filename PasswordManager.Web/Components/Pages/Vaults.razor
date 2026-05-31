@@ -35,8 +35,9 @@ else if (vaults?.Any() == true)
         @foreach (var vault in vaults)
         {
             <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="2" Style="@($"border-top: 4px solid {(vault.Color ?? "#7C3AED")}; height:100%;")">
-                    <MudCardContent>
+                <MudPaper Elevation="2" Class="rounded-lg"
+                          Style="@($"border-top: 4px solid {(vault.Color ?? "#7C3AED")}; height:100%;")">
+                    <div class="pa-4">
                         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
                             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                                 <MudIcon Icon="@Icons.Material.Filled.Shield"
@@ -45,7 +46,7 @@ else if (vaults?.Any() == true)
                                     <MudText Typo="Typo.h6" Style="font-weight:600;">@vault.Name</MudText>
                                     @if (vault.IsDefault)
                                     {
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Class="mt-1">Default</MudChip>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Text="Default" Class="mt-1" />
                                     }
                                 </div>
                             </MudStack>
@@ -85,17 +86,15 @@ else if (vaults?.Any() == true)
                         <MudStack Row="true" Justify="Justify.SpaceBetween">
                             <MudStack Spacing="0">
                                 <MudText Typo="Typo.caption" Color="Color.Secondary">Items</MudText>
-                                <MudText Typo="Typo.body1" Style="font-weight:600;">
-                                    @(vault.PasswordItems?.Count ?? 0)
-                                </MudText>
+                                <MudText Typo="Typo.body1" Style="font-weight:600;">@(vault.PasswordItems?.Count ?? 0)</MudText>
                             </MudStack>
                             <MudStack Spacing="0">
                                 <MudText Typo="Typo.caption" Color="Color.Secondary">Created</MudText>
                                 <MudText Typo="Typo.body2">@vault.CreatedAt.ToString("MMM d, yyyy")</MudText>
                             </MudStack>
                         </MudStack>
-                    </MudCardContent>
-                </MudCard>
+                    </div>
+                </MudPaper>
             </MudItem>
         }
     </MudGrid>

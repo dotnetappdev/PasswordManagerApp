@@ -14,17 +14,15 @@
     @foreach (var pm in passwordManagers)
     {
         <MudItem xs="12" sm="6" md="4" lg="3">
-            <MudCard @onclick="@(() => SelectManager(pm.Key))" Class="cursor-pointer"
-                     Style="@(selectedManager == pm.Key
+            <MudPaper @onclick="@(() => SelectManager(pm.Key))" Class="cursor-pointer text-center pa-3 rounded-lg"
+                      Elevation="@(selectedManager == pm.Key ? 4 : 1)"
+                      Style="@(selectedManager == pm.Key
                                ? "border: 2px solid #7C3AED; transition: all 0.2s;"
-                               : "border: 2px solid transparent; transition: all 0.2s;")"
-                     Elevation="@(selectedManager == pm.Key ? 4 : 1)">
-                <MudCardContent Class="text-center pa-3">
-                    <MudText Style="font-size:2.2rem; line-height:1.2;">@pm.Value.Icon</MudText>
-                    <MudText Typo="Typo.subtitle2" Style="font-weight:600; margin-top:6px;">@pm.Value.Name</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">@pm.Value.Format</MudText>
-                </MudCardContent>
-            </MudCard>
+                               : "border: 2px solid transparent; transition: all 0.2s;")">
+                <MudText Style="font-size:2.2rem; line-height:1.2;">@pm.Value.Icon</MudText>
+                <MudText Typo="Typo.subtitle2" Style="font-weight:600; margin-top:6px;">@pm.Value.Name</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@pm.Value.Format</MudText>
+            </MudPaper>
         </MudItem>
     }
 </MudGrid>

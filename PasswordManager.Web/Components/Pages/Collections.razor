@@ -1,11 +1,11 @@
 @page "/collections"
+@rendermode InteractiveServer
 @using PasswordManager.Services.Interfaces
 @using PasswordManager.Models
 @inject ICollectionService CollectionService
 @inject IAuthService AuthService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@rendermode InteractiveServer
 
 <PageTitle>Collections - VaultGuard</PageTitle>
 
@@ -23,8 +23,8 @@
 <MudPaper Class="mb-4 pa-3" Elevation="1">
     <MudTextField @bind-Value="searchText" Placeholder="Search collections..."
                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                  Immediate="true" TextChanged="@(_ => FilterCollections())"
+                  Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                  ValueChanged="@((string s) => { searchText = s; FilterCollections(); })"
                   Style="max-width:400px;" />
 </MudPaper>
 
@@ -32,100 +32,94 @@
 {
     <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
 }
-else
+else if (filteredCollections?.Any() == true)
 {
     <MudGrid>
-        @if (filteredCollections?.Any() == true)
+        @foreach (var col in filteredCollections)
         {
-            @foreach (var col in filteredCollections)
-            {
-                <MudItem xs="12" sm="6" md="4" lg="3">
-                    <MudCard Elevation="2" Style="@($"border-left: 4px solid {(col.Color ?? "#7C3AED")}; height:100%;")">
-                        <MudCardContent>
-                            <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween">
-                                <MudStack Spacing="1">
-                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                        <MudIcon Icon="@Icons.Material.Filled.FolderSpecial"
-                                                 Style="@($"color:{(col.Color ?? "#7C3AED")}; font-size:1.5rem;")" />
-                                        <MudText Typo="Typo.h6" Style="font-weight:600; font-size:1rem;">@col.Name</MudText>
-                                        @if (col.IsDefault)
-                                        {
-                                            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Text="Default" />
-                                        }
-                                    </MudStack>
-                                    @if (!string.IsNullOrEmpty(col.Description))
-                                    {
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary">@col.Description</MudText>
-                                    }
-                                </MudStack>
-                            </MudStack>
+            <MudItem xs="12" sm="6" md="4" lg="3">
+                <MudPaper Elevation="2" Class="rounded-lg"
+                          Style="@($"border-left: 4px solid {(col.Color ?? "#7C3AED")}; height:100%; display:flex; flex-direction:column;")">
+                    <div class="pa-4 flex-grow-1">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.FolderSpecial"
+                                     Style="@($"color:{(col.Color ?? "#7C3AED")}; font-size:1.5rem;")" />
+                            <MudText Typo="Typo.h6" Style="font-weight:600; font-size:1rem;">@col.Name</MudText>
+                            @if (col.IsDefault)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Text="Default" />
+                            }
+                        </MudStack>
+                        @if (!string.IsNullOrEmpty(col.Description))
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@col.Description</MudText>
+                        }
 
-                            <MudDivider Class="my-2" />
+                        <MudDivider Class="my-2" />
 
-                            <MudStack Row="true" Justify="Justify.SpaceBetween">
-                                <MudStack Spacing="0">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Items</MudText>
-                                    <MudText Typo="Typo.body2" Style="font-weight:600;">
-                                        @(col.PasswordItems?.Count ?? 0)
-                                    </MudText>
-                                </MudStack>
-                                <MudStack Spacing="0">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Categories</MudText>
-                                    <MudText Typo="Typo.body2" Style="font-weight:600;">
-                                        @(col.Categories?.Count ?? 0)
-                                    </MudText>
-                                </MudStack>
-                                <MudStack Spacing="0">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Created</MudText>
-                                    <MudText Typo="Typo.body2">@col.CreatedAt.ToString("MMM d")</MudText>
-                                </MudStack>
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Items</MudText>
+                                <MudText Typo="Typo.body2" Style="font-weight:600;">@(col.PasswordItems?.Count ?? 0)</MudText>
                             </MudStack>
-                        </MudCardContent>
-                        <MudCardActions>
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Categories</MudText>
+                                <MudText Typo="Typo.body2" Style="font-weight:600;">@(col.Categories?.Count ?? 0)</MudText>
+                            </MudStack>
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Created</MudText>
+                                <MudText Typo="Typo.body2">@col.CreatedAt.ToString("MMM d")</MudText>
+                            </MudStack>
+                        </MudStack>
+                    </div>
+                    <MudDivider />
+                    <div class="pa-2">
+                        <MudStack Row="true" AlignItems="AlignItems.Center">
                             @if (!col.IsDefault)
                             {
-                                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Default"
+                                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
                                            OnClick="@(() => SetDefault(col))">Set Default</MudButton>
                             }
                             <MudSpacer />
                             <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
-                                           Color="Color.Default" OnClick="@(() => OpenEditDialog(col))" />
+                                           Color="Color.Default" OnClick="@(() => OpenEditDialog(col))" Title="Edit" />
                             <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
                                            Color="Color.Error" OnClick="@(() => DeleteCollection(col))"
-                                           Disabled="@col.IsDefault" />
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
-            }
-        }
-        else
-        {
-            <MudItem xs="12">
-                <MudPaper Class="pa-12 text-center" Elevation="1">
-                    <MudIcon Icon="@Icons.Material.Filled.FolderSpecial"
-                             Style="font-size:4rem; color:#7C3AED; opacity:0.4;" />
-                    <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No collections found</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-                        Create a collection to group your password categories.
-                    </MudText>
-                    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
-                               Color="Color.Primary" OnClick="@OpenAddDialog">Create Collection</MudButton>
+                                           Disabled="@col.IsDefault" Title="Delete" />
+                        </MudStack>
+                    </div>
                 </MudPaper>
             </MudItem>
         }
     </MudGrid>
 }
+else
+{
+    <MudPaper Class="pa-12 text-center" Elevation="1">
+        <MudIcon Icon="@Icons.Material.Filled.FolderSpecial"
+                 Style="font-size:4rem; color:#7C3AED; opacity:0.4;" />
+        <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No collections found</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+            Create a collection to group your password categories.
+        </MudText>
+        <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
+                   Color="Color.Primary" OnClick="@OpenAddDialog">Create Collection</MudButton>
+    </MudPaper>
+}
 
 @* Add/Edit Dialog *@
-<MudDialog @bind-Visible="_dialogVisible" Options="_dialogOptions">
+<MudDialog @bind-Visible="_dialogVisible"
+           Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true })">
     <TitleContent>
-        <MudText Typo="Typo.h6">@(_editingCollection?.Id > 0 ? "Edit Collection" : "New Collection")</MudText>
+        <MudText Typo="Typo.h6">
+            @(_editingCollection?.Id > 0 ? "Edit Collection" : "New Collection")
+        </MudText>
     </TitleContent>
     <DialogContent>
         @if (_editingCollection != null)
         {
             <MudStack Spacing="3">
-                <MudTextField @bind-Value="_editingCollection.Name" Label="Collection Name"
+                <MudTextField @bind-Value="_editingCollection.Name" Label="Collection Name *"
                               Variant="Variant.Outlined" Required="true"
                               Placeholder="e.g. Personal, Work, Family" />
                 <MudTextField @bind-Value="_editingCollection.Description" Label="Description"
@@ -135,10 +129,8 @@ else
                               Variant="Variant.Outlined" Placeholder="#7C3AED"
                               Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Palette" />
-                <MudTextField @bind-Value="_editingCollection.Icon" Label="Icon (emoji or name)"
-                              Variant="Variant.Outlined" Placeholder="📁 or folder" />
-                <MudCheckBox @bind-Value="_editingCollection.IsDefault" Label="Set as default collection"
-                             Color="Color.Primary" />
+                <MudTextField @bind-Value="_editingCollection.Icon" Label="Icon (emoji)"
+                              Variant="Variant.Outlined" Placeholder="📁" />
             </MudStack>
         }
     </DialogContent>
@@ -163,7 +155,6 @@ else
     bool isSaving = false;
     string searchText = string.Empty;
     Collection? _editingCollection;
-    DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
 
     protected override async Task OnInitializedAsync() => await LoadCollections();
 

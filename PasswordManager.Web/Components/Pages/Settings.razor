@@ -309,6 +309,83 @@
             </MudItem>
         </MudGrid>
     </MudTabPanel>
+
+    <MudTabPanel Text="About" Icon="@Icons.Material.Filled.Info">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-6 rounded-lg text-center" Elevation="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Shield"
+                             Style="font-size:4rem; color:#7C3AED; margin-bottom:16px;" />
+                    <MudText Typo="Typo.h5" Style="font-weight:700;">VaultGuard</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                        Secure Password Manager
+                    </MudText>
+                    <MudChip T="string" Color="Color.Primary" Size="Size.Small" Class="mb-4">
+                        Version 1.0.0
+                    </MudChip>
+                    <MudDivider Class="my-3" />
+                    <MudStack Spacing="2">
+                        <MudLink Href="https://github.com" Target="_blank" Color="Color.Primary">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1"
+                                      Justify="Justify.Center">
+                                <MudIcon Icon="@Icons.Material.Filled.Code" Size="Size.Small" />
+                                <MudText Typo="Typo.body2">Source Code</MudText>
+                            </MudStack>
+                        </MudLink>
+                        <MudLink Href="/audit-logs" Color="Color.Default">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1"
+                                      Justify="Justify.Center">
+                                <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Small" />
+                                <MudText Typo="Typo.body2">View Audit Logs</MudText>
+                            </MudStack>
+                        </MudLink>
+                        <MudLink Href="/profile" Color="Color.Default">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1"
+                                      Justify="Justify.Center">
+                                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" />
+                                <MudText Typo="Typo.body2">My Profile</MudText>
+                            </MudStack>
+                        </MudLink>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Technology Stack</MudText>
+                    <MudStack Spacing="2">
+                        @foreach (var tech in _techStack)
+                        {
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                <MudText Typo="Typo.body2" Style="font-weight:500;">@tech.Name</MudText>
+                                <MudChip T="string" Size="Size.Small" Color="Color.Default">@tech.Version</MudChip>
+                            </MudStack>
+                        }
+                    </MudStack>
+                    <MudDivider Class="my-3" />
+                    <MudAlert Severity="Severity.Success" Dense="true">
+                        <strong>End-to-End Encrypted</strong> — Your master password never leaves your device.
+                    </MudAlert>
+                </MudPaper>
+
+                <MudPaper Class="pa-4 rounded-lg mt-4" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-2" Style="font-weight:600;">Support</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                        Having issues? Check the documentation or report a bug.
+                    </MudText>
+                    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.MenuBook" Size="Size.Small">
+                            Documentation
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                                   StartIcon="@Icons.Material.Filled.BugReport" Size="Size.Small">
+                            Report Bug
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
 </MudTabs>
 
 @code {
