@@ -18,10 +18,10 @@ public class PasswordItemService : IPasswordItemService
     {
         return await _context.PasswordItems
             .Include(p => p.LoginItem)
-             .Include(p => p.CreditCardItem)
-           
+            .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Where(p => !p.IsDeleted)
             .OrderByDescending(p => p.LastModified)
@@ -35,6 +35,7 @@ public class PasswordItemService : IPasswordItemService
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Where(p => p.Type == type && !p.IsDeleted)
             .OrderByDescending(p => p.LastModified)
@@ -48,6 +49,7 @@ public class PasswordItemService : IPasswordItemService
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
     }
@@ -91,6 +93,7 @@ public class PasswordItemService : IPasswordItemService
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Where(p => !p.IsDeleted && (
                 p.Title.ToLower().Contains(term) ||
@@ -110,6 +113,7 @@ public class PasswordItemService : IPasswordItemService
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Where(p => p.IsFavorite && !p.IsDeleted)
             .OrderByDescending(p => p.LastModified)
@@ -123,6 +127,7 @@ public class PasswordItemService : IPasswordItemService
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Where(p => !p.IsDeleted && p.Tags.Any(t => t.Name == tagName))
             .OrderByDescending(p => p.LastModified)
@@ -136,6 +141,7 @@ public class PasswordItemService : IPasswordItemService
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Where(p => !p.IsDeleted)
             .OrderByDescending(p => p.LastModified)
@@ -150,6 +156,7 @@ public class PasswordItemService : IPasswordItemService
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Where(p => p.IsArchived && !p.IsDeleted)
             .OrderByDescending(p => p.LastModified)

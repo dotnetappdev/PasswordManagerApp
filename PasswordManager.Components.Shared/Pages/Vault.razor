@@ -2,6 +2,7 @@
 @page "/passwords"
 @attribute [Authorize]
 @using PasswordManager.Services.Interfaces
+@using PasswordManager.Services.Utilities
 @using PasswordManager.Models
 @inject IPasswordItemService PasswordItemService
 @inject IAuthService AuthService
@@ -99,7 +100,15 @@
                                         <MudCardContent>
                                             <MudStack Spacing="2">
                                                 <MudText Typo="Typo.h6">
-                                                    <MudIcon Icon="@GetPasswordIcon(password)" Size="Size.Small" Class="mr-2" />
+                                                    @if (!string.IsNullOrWhiteSpace(GetBrandIconSource(password)))
+                                                    {
+                                                        <img src="@GetBrandIconSource(password)" alt="Brand icon"
+                                                             style="width:20px; height:20px; margin-right:8px; border-radius:4px; object-fit:contain; vertical-align:middle;" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <MudIcon Icon="@GetPasswordIcon(password)" Size="Size.Small" Class="mr-2" />
+                                                    }
                                                     @password.Title
                                                 </MudText>
                                                 <MudText Typo="Typo.body2" Color="Color.Secondary">
@@ -152,7 +161,15 @@
                             <RowTemplate>
                                 <MudTd DataLabel="Title">
                                     <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
-                                        <MudIcon Icon="@GetPasswordIcon(context)" Size="Size.Small" />
+                                        @if (!string.IsNullOrWhiteSpace(GetBrandIconSource(context)))
+                                        {
+                                            <img src="@GetBrandIconSource(context)" alt="Brand icon"
+                                                 style="width:20px; height:20px; border-radius:4px; object-fit:contain;" />
+                                        }
+                                        else
+                                        {
+                                            <MudIcon Icon="@GetPasswordIcon(context)" Size="Size.Small" />
+                                        }
                                         <MudText>@context.Title</MudText>
                                     </MudStack>
                                 </MudTd>
@@ -286,6 +303,9 @@
             _ => Icons.Material.Filled.Language
         };
     }
+
+    private string? GetBrandIconSource(PasswordItem password)
+        => password.Type == ItemType.Login ? BrandIconHelper.GetBrandIconSource(password) : null;
 
     private async Task ViewPassword(PasswordItem password)
     {
