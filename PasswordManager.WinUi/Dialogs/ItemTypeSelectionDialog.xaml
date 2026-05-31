@@ -4,18 +4,24 @@
                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                Title="What would you like to add?"
                PrimaryButtonText=""
-               CloseButtonText="Cancel"
+               CloseButtonText=""
                PrimaryButtonClick="ContentDialog_PrimaryButtonClick"
                Background="{StaticResource ModernFormBackgroundBrush}"
                Style="{StaticResource Modern1PasswordDialogStyle}"
                PrimaryButtonStyle="{StaticResource ContentDialogPrimaryButtonStyle}"
                CloseButtonStyle="{StaticResource ContentDialogSecondaryButtonStyle}"
-               MaxWidth="700"
-               MaxHeight="650">
+               MaxWidth="760"
+               MaxHeight="760">
 
     <ScrollViewer>
         <StackPanel Spacing="16"
                     Padding="20">
+            <TextBlock Text="What would you like to add?"
+                      FontSize="40"
+                      FontWeight="SemiBold"
+                      Foreground="{StaticResource ModernTextPrimaryBrush}"
+                      HorizontalAlignment="Center"
+                      Margin="0,4,0,4"/>
 
             <!-- Search Box -->
             <AutoSuggestBox x:Name="ItemSearchBox"
@@ -66,36 +72,9 @@
                     </StackPanel>
                 </Button>
 
-                <Button x:Name="CreditCardButton"
-                        Grid.Row="0"
-                        Grid.Column="1"
-                        Click="CategoryButton_Click"
-                        Tag="Credit Card"
-                        Style="{StaticResource CardButtonStyle}"
-                        Margin="8"
-                        MinHeight="100">
-                    <StackPanel Spacing="8">
-                        <Border Background="#10b981"
-                                CornerRadius="12"
-                                Width="48"
-                                Height="48">
-                            <FontIcon Glyph="&#xE8C7;"
-                                      FontSize="24"
-                                      Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                      HorizontalAlignment="Center"
-                                      VerticalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="Credit Card"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource ModernTextPrimaryBrush}"
-                                   HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
-
                 <Button x:Name="SecureNoteButton"
                         Grid.Row="0"
-                        Grid.Column="2"
+                        Grid.Column="1"
                         Click="CategoryButton_Click"
                         Tag="Secure Note"
                         Style="{StaticResource CardButtonStyle}"
@@ -106,7 +85,7 @@
                                 CornerRadius="12"
                                 Width="48"
                                 Height="48">
-                            <FontIcon Glyph="&#xE70F;"
+                           <FontIcon Glyph="&#xE70F;"
                                       FontSize="24"
                                       Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
@@ -120,12 +99,39 @@
                     </StackPanel>
                 </Button>
 
+                <Button x:Name="CreditCardButton"
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        Click="CategoryButton_Click"
+                        Tag="Credit Card"
+                        Style="{StaticResource CardButtonStyle}"
+                        Margin="8"
+                        MinHeight="100">
+                    <StackPanel Spacing="8">
+                        <Border Background="#10b981"
+                                CornerRadius="12"
+                                Width="48"
+                                Height="48">
+                           <FontIcon Glyph="&#xE8C7;"
+                                      FontSize="24"
+                                      Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Credit Card"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
                 <!-- Second row -->
-                <Button x:Name="WiFiButton"
+                <Button x:Name="IdentityButton"
                         Grid.Row="1"
                         Grid.Column="0"
                         Click="CategoryButton_Click"
-                        Tag="WiFi"
+                        Tag="Identity"
                         Style="{StaticResource CardButtonStyle}"
                         Margin="8"
                         MinHeight="100">
@@ -134,13 +140,13 @@
                                 CornerRadius="12"
                                 Width="48"
                                 Height="48">
-                            <FontIcon Glyph="&#xE701;"
+                            <FontIcon Glyph="&#xE13D;"
                                       FontSize="24"
                                       Foreground="{StaticResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="WiFi Password"
+                        <TextBlock Text="Identity"
                                    FontSize="16"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource ModernTextPrimaryBrush}"
@@ -202,6 +208,35 @@
                     </StackPanel>
                 </Button>
             </Grid>
+
+            <TextBlock Text="Show more"
+                       FontSize="18"
+                       Foreground="{StaticResource ModernAccentBrush}"
+                       HorizontalAlignment="Center"
+                       Margin="0,8,0,0"/>
+
+            <Border Background="{StaticResource ModernSurfaceBrush}"
+                    BorderBrush="{StaticResource ModernBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="16,12"
+                    Margin="0,8,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Migrate data into PasswordManager"
+                               FontSize="18"
+                               Foreground="{StaticResource ModernTextPrimaryBrush}"
+                               VerticalAlignment="Center"/>
+                    <FontIcon Grid.Column="1"
+                              Glyph="&#xE76C;"
+                              FontSize="18"
+                              Foreground="{StaticResource ModernTextSecondaryBrush}"
+                              VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
 
         </StackPanel>
     </ScrollViewer>
