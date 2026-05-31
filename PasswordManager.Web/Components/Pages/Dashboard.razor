@@ -74,7 +74,7 @@ else
 
     <MudGrid>
         <MudItem xs="12" md="8">
-            <MudPaper Class="pa-4 rounded-lg" Elevation="2">
+            <MudPaper Class="pa-4 rounded-lg" Elevation="2" Style="background: var(--mud-palette-surface);">
                 <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600">Recent Items</MudText>
                 @if (recentItems?.Any() == true)
                 {
@@ -104,7 +104,7 @@ else
             </MudPaper>
         </MudItem>
         <MudItem xs="12" md="4">
-            <MudPaper Class="pa-4 rounded-lg" Elevation="2">
+            <MudPaper Class="pa-4 rounded-lg" Elevation="2" Style="background: var(--mud-palette-surface);">
                 <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600">Quick Actions</MudText>
                 <MudStack Spacing="2">
                     <MudButton Href="/passwords" StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">Add Password</MudButton>
@@ -114,7 +114,7 @@ else
                 </MudStack>
             </MudPaper>
 
-            <MudPaper Class="pa-4 rounded-lg mt-4" Elevation="2">
+            <MudPaper Class="pa-4 rounded-lg mt-4" Elevation="2" Style="background: var(--mud-palette-surface);">
                 <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600">Item Types</MudText>
                 @foreach (var kv in itemTypeCounts)
                 {

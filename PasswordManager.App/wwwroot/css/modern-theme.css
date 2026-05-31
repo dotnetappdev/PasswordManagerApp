@@ -12,16 +12,16 @@
     --modern-warning-color: #F59E0B;
     --modern-error-color: #EF4444;
 
-    /* Enhanced Background Colors - 1Password Dark Theme Style (Default) */
-    --modern-background-color: #1A1A1A;
-    --modern-surface-color: #262626;
-    --modern-card-color: #262626;
-    --modern-elevated-surface-color: #333333;
-    --modern-border-color: #404040;
-    --modern-form-background-color: #262626;
+    /* Enhanced Background Colors - Dark Theme Style (Default) */
+    --modern-background-color: #0F1117;
+    --modern-surface-color: #1A1D27;
+    --modern-card-color: #1A1D27;
+    --modern-elevated-surface-color: #252836;
+    --modern-border-color: rgba(255,255,255,0.08);
+    --modern-form-background-color: #1A1D27;
 
     /* Sidebar specific colors */
-    --modern-sidebar-background-color: #141414;
+    --modern-sidebar-background-color: #0B0D14;
     
     /* New item button color */
     --modern-new-item-button-color: #7C3AED;
@@ -32,10 +32,10 @@
     --modern-light-card-color: #FFFFFF;
     --modern-light-form-background-color: #F6F8FA;
 
-    /* Text Colors for Dark Theme */
-    --modern-text-primary-color: #FFFFFF;
-    --modern-text-secondary-color: #B0B0B0;
-    --modern-text-tertiary-color: #808080;
+    /* Text Colors (dark theme defaults) */
+    --modern-text-primary-color: #F0F2FF;
+    --modern-text-secondary-color: #8B90A7;
+    --modern-text-tertiary-color: #6B7280;
 
     /* Hover and focus effects */
     --modern-hover-opacity: 0.8;
@@ -467,32 +467,40 @@ body {
     }
 }
 
-/* Dark theme overrides for better contrast */
-.mud-theme-dark {
-    --mud-palette-background: var(--modern-background-color);
-    --mud-palette-surface: var(--modern-surface-color);
-    --mud-palette-primary: var(--modern-primary-color);
-    --mud-palette-text-primary: var(--modern-text-primary-color);
-    --mud-palette-text-secondary: var(--modern-text-secondary-color);
+/* Light mode variable overrides */
+@media (prefers-color-scheme: light) {
+    :root {
+        --modern-background-color: #F7F5FF;
+        --modern-surface-color: #FFFFFF;
+        --modern-card-color: #FFFFFF;
+        --modern-elevated-surface-color: #EDE9FE;
+        --modern-border-color: rgba(124,58,237,0.15);
+        --modern-form-background-color: #FFFFFF;
+        --modern-sidebar-background-color: #EDE9FE;
+        --modern-text-primary-color: #1F1535;
+        --modern-text-secondary-color: #5B21B6;
+        --modern-text-tertiary-color: #7C3AED;
+    }
 }
 
-/* Override MudBlazor default styles */
-.mud-paper {
-    background-color: var(--modern-card-color) !important;
-    border: 1px solid var(--modern-border-color) !important;
+/* Dark mode variable overrides */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --modern-background-color: #0F1117;
+        --modern-surface-color: #1A1D27;
+        --modern-card-color: #1A1D27;
+        --modern-elevated-surface-color: #252836;
+        --modern-border-color: rgba(255,255,255,0.08);
+        --modern-form-background-color: #1A1D27;
+        --modern-sidebar-background-color: #0B0D14;
+        --modern-text-primary-color: #F0F2FF;
+        --modern-text-secondary-color: #8B90A7;
+        --modern-text-tertiary-color: #6B7280;
+    }
 }
 
 .mud-button {
     border-radius: var(--modern-border-radius) !important;
-}
-
-.mud-input {
-    background-color: var(--modern-form-background-color) !important;
-    border-color: var(--modern-border-color) !important;
-}
-
-.mud-input:focus {
-    border-color: var(--modern-primary-color) !important;
 }
 
 /* Modern Badge Styling */

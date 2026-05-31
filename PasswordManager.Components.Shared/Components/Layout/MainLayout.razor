@@ -11,10 +11,10 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Color="@(_isDarkMode ? Color.Dark : Color.Default)" Fixed="true" Dense="true"
-               Style="@(_isDarkMode ? "background: linear-gradient(135deg,#0F1117 0%,#1A1D27 100%); border-bottom: 1px solid rgba(255,255,255,0.07);" : "background: linear-gradient(135deg,#ffffff 0%,#f5f7ff 100%); border-bottom: 1px solid rgba(0,0,0,0.06);")">
+    <MudAppBar Color="Color.Surface" Fixed="true" Dense="true"
+               Style="@(_isDarkMode ? "background: linear-gradient(135deg,#0F1117 0%,#1A1D27 100%); border-bottom: 1px solid rgba(255,255,255,0.07);" : "background: #7C3AED; border-bottom: 1px solid rgba(124,58,237,0.3);")">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Style="@(_isDarkMode ? "font-weight:700; background: linear-gradient(90deg,#60A5FA,#A78BFA); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:-0.02em;" : "font-weight:700; color:#1a1a2e; letter-spacing:-0.02em;")">🔐 Password Manager</MudText>
+        <MudText Typo="Typo.h6" Style="font-weight:700; background: linear-gradient(90deg,#A78BFA,#EC4899); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:-0.02em;">🔐 Password Manager</MudText>
         <MudSpacer />
         <MudMenu>
             <ActivatorContent>
@@ -38,12 +38,12 @@
         </MudMenu>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Color="@(_isDarkMode ? Color.Dark : Color.Default)">
+    <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Color="Color.Surface">
         <MudDrawerHeader>
-            <MudText Typo="Typo.h6" Style="@(_isDarkMode ? "color: white;" : "color: inherit;")">
-                <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Small" Style="margin-right: 8px;" />
-                Password Manager
-            </MudText>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="py-1">
+                <MudIcon Icon="@Icons.Material.Filled.Security" Color="Color.Primary" Size="Size.Small" />
+                <MudText Typo="Typo.subtitle1" Style="font-weight:700; color: var(--mud-palette-primary);">Password Manager</MudText>
+            </MudStack>
         </MudDrawerHeader>
         <MudNavMenu>
             <MudNavLink Href="/vault" Icon="@Icons.Material.Filled.Security" IconColor="Color.Primary">
@@ -86,7 +86,7 @@
     </MudDrawer>
 
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.False" Style="@($"background-color: {(_isDarkMode ? "#121212" : "#f5f5f5")}; min-height: 100vh; padding-top: 64px;")">
+        <MudContainer MaxWidth="MaxWidth.False" Style="background-color: var(--mud-palette-background); min-height: 100vh; padding-top: 64px;">
             @Body
         </MudContainer>
     </MudMainContent>
@@ -118,8 +118,10 @@
             LinesDefault = "rgba(255,255,255,0.08)",
             LinesInputs = "rgba(255,255,255,0.24)",
             TextDisabled = "rgba(255,255,255,0.18)",
-            Primary = "#005BFF",
-            Secondary = "#7C3AED",
+            Primary = "#7C3AED",
+            PrimaryLighten = "#A78BFA",
+            PrimaryDarken = "#5B21B6",
+            Secondary = "#EC4899",
             Tertiary = "#10B981",
             Info = "#3B82F6",
             Success = "#10B981",
@@ -130,26 +132,28 @@
         PaletteLight = new PaletteLight()
         {
             Black = "#0F1117",
-            Background = "#F0F2FF",
+            Background = "#F7F5FF",
             Surface = "#FFFFFF",
-            DrawerBackground = "#FFFFFF",
-            DrawerText = "rgba(15,17,23,0.87)",
-            DrawerIcon = "rgba(90,95,120,1)",
-            AppbarBackground = "#FFFFFF",
-            AppbarText = "rgba(15,17,23,0.87)",
-            TextPrimary = "#0F1117",
-            TextSecondary = "#5A5F78",
-            ActionDefault = "#5A5F78",
+            DrawerBackground = "#EDE9FE",
+            DrawerText = "rgba(31,21,53,0.87)",
+            DrawerIcon = "rgba(124,58,237,1)",
+            AppbarBackground = "#7C3AED",
+            AppbarText = "#FFFFFF",
+            TextPrimary = "#1F1535",
+            TextSecondary = "#5B21B6",
+            ActionDefault = "#7C3AED",
             ActionDisabled = "rgba(0,0,0,0.24)",
             ActionDisabledBackground = "rgba(0,0,0,0.10)",
-            Divider = "rgba(0,0,0,0.08)",
-            DividerLight = "rgba(0,0,0,0.04)",
+            Divider = "rgba(124,58,237,0.15)",
+            DividerLight = "rgba(124,58,237,0.08)",
             TableLines = "rgba(0,0,0,0.08)",
             LinesDefault = "rgba(0,0,0,0.08)",
             LinesInputs = "rgba(0,0,0,0.38)",
             TextDisabled = "rgba(0,0,0,0.26)",
-            Primary = "#005BFF",
-            Secondary = "#7C3AED",
+            Primary = "#7C3AED",
+            PrimaryLighten = "#A78BFA",
+            PrimaryDarken = "#5B21B6",
+            Secondary = "#EC4899",
             Tertiary = "#10B981",
             Info = "#3B82F6",
             Success = "#10B981",

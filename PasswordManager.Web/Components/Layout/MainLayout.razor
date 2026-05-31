@@ -7,11 +7,14 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="0" Color="Color.Transparent" Style="background: var(--mud-palette-drawer-background); border-bottom: 1px solid rgba(255,255,255,0.08);">
+    <MudAppBar Elevation="1" Color="Color.Surface"
+               Style="@($"border-bottom: 1px solid {(_isDarkMode ? "rgba(255,255,255,0.06)" : "rgba(124,58,237,0.12)")};")">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
         <MudText Typo="Typo.h6" Style="font-weight:700; background: linear-gradient(135deg, #7C3AED, #A78BFA); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">🔐 VaultGuard</MudText>
         <MudSpacer />
-        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" Color="Color.Inherit" OnClick="@ToggleDarkMode" />
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       Color="Color.Inherit" OnClick="@ToggleDarkMode"
+                       Title="@(_isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")" />
         <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" Direction="Direction.Bottom" OffsetY="true">
             <MudMenuItem Href="/profile">Profile</MudMenuItem>
             <MudMenuItem Href="/settings">Settings</MudMenuItem>
@@ -19,7 +22,14 @@
             <MudMenuItem>Sign Out</MudMenuItem>
         </MudMenu>
     </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="0" Variant="DrawerVariant.Responsive" Color="Color.Transparent">
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Variant="DrawerVariant.Responsive" Color="Color.Surface">
+        <MudDrawerHeader>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="py-2">
+                <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Primary" />
+                <MudText Typo="Typo.subtitle1" Style="font-weight:700; color: var(--mud-palette-primary);">VaultGuard</MudText>
+            </MudStack>
+        </MudDrawerHeader>
         <MudNavMenu>
             <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
             <MudNavLink Href="/passwords" Icon="@Icons.Material.Filled.Lock">All Items</MudNavLink>
@@ -39,6 +49,7 @@
             <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
+
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
             @Body
@@ -58,8 +69,22 @@
             PrimaryLighten = "#A78BFA",
             PrimaryDarken = "#5B21B6",
             Secondary = "#EC4899",
+            // Appbar stays purple in light mode for brand consistency
             AppbarBackground = "#7C3AED",
             AppbarText = "#FFFFFF",
+            // Light mode backgrounds — subtle purple-tinted whites
+            Background = "#F7F5FF",
+            BackgroundGray = "#EDE9FE",
+            Surface = "#FFFFFF",
+            DrawerBackground = "#EDE9FE",
+            DrawerText = "#1F1535",
+            DrawerIcon = "#7C3AED",
+            // Text
+            TextPrimary = "#1F1535",
+            TextSecondary = "#5B21B6",
+            // Action colors
+            ActionDefault = "#7C3AED",
+            Divider = "rgba(124,58,237,0.15)",
         },
         PaletteDark = new PaletteDark()
         {
@@ -67,15 +92,18 @@
             PrimaryLighten = "#A78BFA",
             PrimaryDarken = "#5B21B6",
             Secondary = "#EC4899",
-            AppbarBackground = "#0B0D14",
+            AppbarBackground = "#13151F",
             AppbarText = "#F0F2FF",
             Background = "#0F1117",
             BackgroundGray = "#0B0D14",
             Surface = "#1A1D27",
-            DrawerBackground = "#0B0D14",
-            DrawerText = "#F0F2FF",
+            DrawerBackground = "#13151F",
+            DrawerText = "#E0E2F0",
+            DrawerIcon = "#A78BFA",
             TextPrimary = "#F0F2FF",
             TextSecondary = "#8B90A7",
+            ActionDefault = "#A78BFA",
+            Divider = "rgba(255,255,255,0.08)",
         }
     };
 

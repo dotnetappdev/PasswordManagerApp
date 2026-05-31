@@ -4,7 +4,8 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { useColorScheme } from 'react-native';
+import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -31,10 +32,22 @@ const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const MainTab = createBottomTabNavigator<MainTabParamList>();
 
-const TAB_BAR_STYLE = {
-  backgroundColor: '#1A1D27',
-  borderTopColor: '#2A2D3A',
-  borderTopWidth: 1,
+const DARK_COLORS = {
+  background: '#0F1117',
+  surface: '#1A1D27',
+  border: '#2A2D3A',
+  text: '#F0F2FF',
+  textSecondary: '#8B90A7',
+  primary: '#7C3AED',
+};
+
+const LIGHT_COLORS = {
+  background: '#F7F5FF',
+  surface: '#FFFFFF',
+  border: 'rgba(124,58,237,0.15)',
+  text: '#1F1535',
+  textSecondary: '#5B21B6',
+  primary: '#7C3AED',
 };
 
 /**
@@ -56,6 +69,9 @@ const AuthNavigator = () => {
  * Main Tab Navigator
  */
 const MainNavigator = () => {
+  const colorScheme = useColorScheme();
+  const C = colorScheme === 'dark' ? DARK_COLORS : LIGHT_COLORS;
+
   return (
     <MainTab.Navigator
       screenOptions={({ route }) => ({
@@ -93,13 +109,13 @@ const MainNavigator = () => {
 
           return <Icon name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#7C3AED',
-        tabBarInactiveTintColor: '#8B90A7',
-        tabBarStyle: TAB_BAR_STYLE,
+        tabBarActiveTintColor: C.primary,
+        tabBarInactiveTintColor: C.textSecondary,
+        tabBarStyle: { backgroundColor: C.surface, borderTopColor: C.border, borderTopWidth: 1 },
         tabBarLabelStyle: { fontSize: 11 },
         headerShown: true,
-        headerStyle: { backgroundColor: '#1A1D27' },
-        headerTintColor: '#F0F2FF',
+        headerStyle: { backgroundColor: C.surface },
+        headerTintColor: C.text,
         headerTitleStyle: { fontWeight: '600' },
       })}>
       <MainTab.Screen
@@ -150,6 +166,8 @@ const MainNavigator = () => {
  * App Navigator
  */
 const AppNavigator = () => {
+  const colorScheme = useColorScheme();
+  const C = colorScheme === 'dark' ? DARK_COLORS : LIGHT_COLORS;
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -173,8 +191,12 @@ const AppNavigator = () => {
     return null; // Or a loading screen
   }
 
+  const navTheme = colorScheme === 'dark'
+    ? { ...DarkTheme, colors: { ...DarkTheme.colors, background: DARK_COLORS.background, card: DARK_COLORS.surface, border: DARK_COLORS.border, text: DARK_COLORS.text, primary: DARK_COLORS.primary } }
+    : { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: LIGHT_COLORS.background, card: LIGHT_COLORS.surface, border: LIGHT_COLORS.border, text: LIGHT_COLORS.text, primary: LIGHT_COLORS.primary } };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           <RootStack.Screen name="Main" component={MainNavigator} />
@@ -188,8 +210,8 @@ const AppNavigator = () => {
             headerShown: true,
             title: 'Settings',
             presentation: 'modal',
-            headerStyle: { backgroundColor: '#1A1D27' },
-            headerTintColor: '#F0F2FF',
+            headerStyle: { backgroundColor: C.surface },
+            headerTintColor: C.text,
           }}
         />
       </RootStack.Navigator>
