@@ -50,15 +50,9 @@ public sealed partial class TypeDialog : ModernWpf.Controls.ContentDialog
 
             // Populate and show icon/color display
             var iconText = "";
-            if (TypeIconComboBox.SelectedItem is ComboBoxItem sel && sel.Content is StackPanel sp && sp.Children.Count > 0 && sp.Children[0] is FontIcon fi)
+            if (TypeIconComboBox.SelectedItem is ComboBoxItem sel && sel.Content is StackPanel sp && sp.Children.Count > 1 && sp.Children[1] is TextBlock tb)
             {
-                // can't easily get glyph text; fallback to last textblock
-                if (sel.Content is StackPanel sp2 && sp2.Children.Count > 1 && sp2.Children[1] is TextBlock tb)
-                    iconText = tb.Text;
-            }
-            else if (TypeIconComboBox.SelectedItem is ComboBoxItem sel2 && sel2.Content is StackPanel sp3 && sp3.Children.Count > 1 && sp3.Children[1] is TextBlock tb3)
-            {
-                iconText = tb3.Text;
+                iconText = tb.Text;
             }
             TypeIconTextDisplay.Text = iconText;
             TypeIconTextDisplay.CopyText = iconText;

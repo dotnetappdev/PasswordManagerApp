@@ -690,13 +690,10 @@ public sealed partial class MainWindow : Window
 
             var nameTextBox = new TextBox
             {
-                PlaceholderText = "Enter vault name",
                 HorizontalAlignment = HorizontalAlignment.Stretch
             };
-
             var descriptionTextBox = new TextBox
             {
-                PlaceholderText = "Enter description (optional)",
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 Margin = new Thickness(0, 12, 0, 0)
             };
@@ -756,7 +753,7 @@ public sealed partial class MainWindow : Window
         try
         {
             // Get the tag from the menu item to identify which navigation item to edit
-            var menuItem = sender as MenuFlyoutItem;
+            var menuItem = sender as System.Windows.Controls.MenuItem;
             var tag = menuItem?.Tag?.ToString();
 
             if (string.IsNullOrEmpty(tag))
@@ -799,7 +796,7 @@ public sealed partial class MainWindow : Window
         try
         {
             // Get the tag from the menu item to identify which navigation item to delete
-            var menuItem = sender as MenuFlyoutItem;
+            var menuItem = sender as System.Windows.Controls.MenuItem;
             var tag = menuItem?.Tag?.ToString();
 
             if (string.IsNullOrEmpty(tag))
@@ -853,7 +850,7 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            var menuItem = sender as MenuFlyoutItem;
+            var menuItem = sender as System.Windows.Controls.MenuItem;
             var tag = menuItem?.Tag?.ToString();
 
             if (string.IsNullOrEmpty(tag))
@@ -993,7 +990,7 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            var menuItem = sender as MenuFlyoutItem;
+            var menuItem = sender as System.Windows.Controls.MenuItem;
             var categoryIdStr = menuItem?.Tag?.ToString();
             
             if (string.IsNullOrEmpty(categoryIdStr) || !int.TryParse(categoryIdStr, out int categoryId))

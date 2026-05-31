@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.WPF.Services;
 using System.IO;
+using System.Collections.Generic;
 
 namespace PasswordManager.WPF.ViewModels;
 
@@ -146,47 +147,28 @@ public class SettingsViewModel : BaseViewModel
 
     public List<int> TimeoutOptions => new List<int> { 5, 10, 15, 30, 60, 120 };
 
+    // In-memory settings store for WPF (replaces WinRT Windows.Storage.ApplicationData)
+    private static readonly Dictionary<string, object?> _localSettings = new();
+
+    private static string GetSetting(string key, string defaultValue) =>
+        _localSettings.TryGetValue(key, out var v) ? v?.ToString() ?? defaultValue : defaultValue;
+
+    private static int GetSettingInt(string key, int defaultValue) =>
+        _localSettings.TryGetValue(key, out var v) && v != null ? Convert.ToInt32(v) : defaultValue;
+
     private async Task LoadSettingsAsync()
     {
         try
         {
             IsLoading = true;
 
-            // Load theme setting from application data
-            var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            if (localSettings.Values.ContainsKey("SelectedTheme"))
-            {
-                SelectedTheme = localSettings.Values["SelectedTheme"]?.ToString() ?? "System";
-            }
-            else
-            {
-                SelectedTheme = "System";
-            }
-
-            // Load other settings
-            SessionTimeoutMinutes = localSettings.Values.ContainsKey("SessionTimeout")
-                ? Convert.ToInt32(localSettings.Values["SessionTimeout"])
-                : 30;
-
-            AuthenticationMode = localSettings.Values.ContainsKey("AuthMode")
-                ? localSettings.Values["AuthMode"]?.ToString() ?? "Local Database"
-                : "Local Database";
-
-            ApiBaseUrl = localSettings.Values.ContainsKey("ApiBaseUrl")
-                ? localSettings.Values["ApiBaseUrl"]?.ToString() ?? "https://localhost:7001/api"
-                : "https://localhost:7001/api";
-
-            DatabaseProvider = localSettings.Values.ContainsKey("DatabaseProvider")
-                ? localSettings.Values["DatabaseProvider"]?.ToString() ?? "SQLite"
-                : "SQLite";
-
-            SqliteDatabasePath = localSettings.Values.ContainsKey("SqliteDatabasePath")
-                ? localSettings.Values["SqliteDatabasePath"]?.ToString() ?? "passwordmanager.db"
-                : "passwordmanager.db";
-
-            ExportPath = localSettings.Values.ContainsKey("ExportPath")
-                ? localSettings.Values["ExportPath"]?.ToString() ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport")
-                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport");
+            SelectedTheme = GetSetting("SelectedTheme", "System");
+            SessionTimeoutMinutes = GetSettingInt("SessionTimeout", 30);
+            AuthenticationMode = GetSetting("AuthMode", "Local Database");
+            ApiBaseUrl = GetSetting("ApiBaseUrl", "https://localhost:7001/api");
+            DatabaseProvider = GetSetting("DatabaseProvider", "SQLite");
+            SqliteDatabasePath = GetSetting("SqliteDatabasePath", "passwordmanager.db");
+            ExportPath = GetSetting("ExportPath", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport"));
 
             ApplyTheme();
         }
@@ -213,18 +195,16 @@ public class SettingsViewModel : BaseViewModel
         {
             IsLoading = true;
 
-            // Save settings to application data
-            var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            localSettings.Values["SelectedTheme"] = SelectedTheme;
-            localSettings.Values["SessionTimeout"] = SessionTimeoutMinutes;
-            localSettings.Values["AuthMode"] = AuthenticationMode;
-            localSettings.Values["ApiBaseUrl"] = ApiBaseUrl;
-            localSettings.Values["DatabaseProvider"] = DatabaseProvider;
-            localSettings.Values["ExportPath"] = ExportPath;
+            _localSettings["SelectedTheme"] = SelectedTheme;
+            _localSettings["SessionTimeout"] = SessionTimeoutMinutes;
+            _localSettings["AuthMode"] = AuthenticationMode;
+            _localSettings["ApiBaseUrl"] = ApiBaseUrl;
+            _localSettings["DatabaseProvider"] = DatabaseProvider;
+            _localSettings["ExportPath"] = ExportPath;
 
             // Apply theme immediately
             ApplyTheme();
-            
+
             return true;
         }
         catch (Exception ex)
