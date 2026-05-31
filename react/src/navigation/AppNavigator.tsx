@@ -12,19 +12,30 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { RootStackParamList, AuthStackParamList, MainTabParamList } from './types';
 import { authService } from '../services';
 
-// Import screens (we'll create these next)
+// Auth screens
 import LoginScreen from '../screens/Auth/LoginScreen';
 import RegisterScreen from '../screens/Auth/RegisterScreen';
+
+// Main screens
 import DashboardScreen from '../screens/Main/DashboardScreen';
 import PasswordListScreen from '../screens/Main/PasswordListScreen';
 import SettingsScreen from '../screens/Main/SettingsScreen';
 import CategoriesScreen from '../screens/Main/CategoriesScreen';
 import VaultsScreen from '../screens/Main/VaultsScreen';
 import ProfileScreen from '../screens/Main/ProfileScreen';
+import PasswordHealthScreen from '../screens/Main/PasswordHealthScreen';
+import PasskeysScreen from '../screens/Main/PasskeysScreen';
+import SecureSendScreen from '../screens/Main/SecureSendScreen';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const MainTab = createBottomTabNavigator<MainTabParamList>();
+
+const TAB_BAR_STYLE = {
+  backgroundColor: '#1A1D27',
+  borderTopColor: '#2A2D3A',
+  borderTopWidth: 1,
+};
 
 /**
  * Auth Stack Navigator
@@ -67,15 +78,29 @@ const MainNavigator = () => {
             case 'Profile':
               iconName = focused ? 'account' : 'account-outline';
               break;
+            case 'PasswordHealth':
+              iconName = focused ? 'shield-check' : 'shield-check-outline';
+              break;
+            case 'Passkeys':
+              iconName = focused ? 'fingerprint' : 'fingerprint';
+              break;
+            case 'SecureSend':
+              iconName = focused ? 'share-variant' : 'share-variant-outline';
+              break;
             default:
               iconName = 'circle';
           }
 
           return <Icon name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: '#7C3AED',
+        tabBarInactiveTintColor: '#8B90A7',
+        tabBarStyle: TAB_BAR_STYLE,
+        tabBarLabelStyle: { fontSize: 11 },
         headerShown: true,
+        headerStyle: { backgroundColor: '#1A1D27' },
+        headerTintColor: '#F0F2FF',
+        headerTitleStyle: { fontWeight: '600' },
       })}>
       <MainTab.Screen
         name="Dashboard"
@@ -88,14 +113,29 @@ const MainNavigator = () => {
         options={{ title: 'Passwords' }}
       />
       <MainTab.Screen
+        name="PasswordHealth"
+        component={PasswordHealthScreen}
+        options={{ title: 'Health', tabBarLabel: 'Health' }}
+      />
+      <MainTab.Screen
+        name="Passkeys"
+        component={PasskeysScreen}
+        options={{ title: 'Passkeys' }}
+      />
+      <MainTab.Screen
+        name="SecureSend"
+        component={SecureSendScreen}
+        options={{ title: 'Send', tabBarLabel: 'Send' }}
+      />
+      <MainTab.Screen
         name="Categories"
         component={CategoriesScreen}
-        options={{ title: 'Categories' }}
+        options={{ title: 'Categories', tabBarItemStyle: { display: 'none' } }}
       />
       <MainTab.Screen
         name="Vaults"
         component={VaultsScreen}
-        options={{ title: 'Vaults' }}
+        options={{ title: 'Vaults', tabBarItemStyle: { display: 'none' } }}
       />
       <MainTab.Screen
         name="Profile"
@@ -148,6 +188,8 @@ const AppNavigator = () => {
             headerShown: true,
             title: 'Settings',
             presentation: 'modal',
+            headerStyle: { backgroundColor: '#1A1D27' },
+            headerTintColor: '#F0F2FF',
           }}
         />
       </RootStack.Navigator>

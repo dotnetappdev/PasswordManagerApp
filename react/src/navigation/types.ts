@@ -29,6 +29,9 @@ export type MainTabParamList = {
   Categories: undefined;
   Vaults: undefined;
   Profile: undefined;
+  PasswordHealth: undefined;
+  Passkeys: undefined;
+  SecureSend: undefined;
 };
 
 // Password Stack Navigator
