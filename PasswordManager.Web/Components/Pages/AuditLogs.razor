@@ -21,12 +21,12 @@
                           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                           Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                           Immediate="true"
-                          ValueChanged="@((string s) => { searchText = s; FilterLogs(); })" />
+                          @bind-Value:after="FilterLogs" />
         </MudItem>
         <MudItem xs="6" md="2">
             <MudSelect T="string" @bind-Value="actionFilter" Label="Action" Variant="Variant.Outlined"
                        Margin="Margin.Dense" FullWidth="true"
-                       ValueChanged="@((string s) => { actionFilter = s; FilterLogs(); })">
+                       @bind-Value:after="FilterLogs">
                 <MudSelectItem T="string" Value="@string.Empty">All Actions</MudSelectItem>
                 <MudSelectItem T="string" Value="Create">Create</MudSelectItem>
                 <MudSelectItem T="string" Value="Update">Update</MudSelectItem>
@@ -40,7 +40,7 @@
         <MudItem xs="6" md="2">
             <MudSelect T="string" @bind-Value="entityFilter" Label="Entity Type" Variant="Variant.Outlined"
                        Margin="Margin.Dense" FullWidth="true"
-                       ValueChanged="@((string s) => { entityFilter = s; FilterLogs(); })">
+                       @bind-Value:after="FilterLogs">
                 <MudSelectItem T="string" Value="@string.Empty">All Types</MudSelectItem>
                 <MudSelectItem T="string" Value="PasswordItem">Password Item</MudSelectItem>
                 <MudSelectItem T="string" Value="Vault">Vault</MudSelectItem>

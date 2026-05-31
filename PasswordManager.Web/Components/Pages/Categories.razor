@@ -25,7 +25,7 @@
                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                   Variant="Variant.Outlined" Margin="Margin.Dense"
                   Immediate="true"
-                  ValueChanged="@((string s) => { searchText = s; FilterCategories(); })"
+                  @bind-Value:after="FilterCategories"
                   Style="max-width:400px;" />
 </MudPaper>
 
