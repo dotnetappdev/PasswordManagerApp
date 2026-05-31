@@ -89,6 +89,19 @@
     <SolidColorBrush x:Key="ModernTextTertiaryBrush"   Color="{StaticResource ModernTextTertiaryColor}"/>
     <SolidColorBrush x:Key="ModernSecondaryBrush"      Color="{StaticResource ModernAccentColor}"/>
 
+    <!-- 1Password-style selected item background: #7C3AED at 12% opacity -->
+    <Color x:Key="ModernSelectedItemBgColor">#1E7C3AED</Color>
+    <SolidColorBrush x:Key="ModernSelectedItemBgBrush" Color="#1E7C3AED"/>
+    <!-- 1Password-style icon background: #7C3AED at 12% opacity (solid for WPF) -->
+    <SolidColorBrush x:Key="ModernIconBgLoginBrush"       Color="#1E3B82F6"/>
+    <SolidColorBrush x:Key="ModernIconBgCreditCardBrush"  Color="#1E10B981"/>
+    <SolidColorBrush x:Key="ModernIconBgSecureNoteBrush"  Color="#1EF59E0B"/>
+    <SolidColorBrush x:Key="ModernIconBgPasskeyBrush"     Color="#1E7C3AED"/>
+    <SolidColorBrush x:Key="ModernIconBgWifiBrush"        Color="#1EEC4899"/>
+    <SolidColorBrush x:Key="ModernIconBgDefaultBrush"     Color="#1E6B7280"/>
+    <!-- Section header purple -->
+    <SolidColorBrush x:Key="ModernSectionHeaderBrush"     Color="#7C3AED"/>
+
     <!-- NavigationView pane background overrides -->
     <SolidColorBrush x:Key="ui:NavigationViewDefaultPaneBackground"
             Color="{StaticResource ModernSidebarBackgroundColor}"/>
