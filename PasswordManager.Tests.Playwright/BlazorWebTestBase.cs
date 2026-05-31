@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Net.Http;
-using System.Text.Json;
 using Microsoft.Playwright;
 using Microsoft.Playwright.MSTest;
 
@@ -11,7 +10,7 @@ public abstract class BlazorWebTestBase : PageTest
 {
     private static Process? _appProcess;
     private static string? _baseUrl;
-    private static string? _tempHomeDirectory;
+    private static string? _tempDbPath;
     private static readonly SemaphoreSlim AppStartLock = new(1, 1);
     private static readonly string WebProjectPath = Path.GetFullPath(Path.Combine(
         AppContext.BaseDirectory,
@@ -21,58 +20,47 @@ public abstract class BlazorWebTestBase : PageTest
 
     private static async Task EnsureAppStartedAsync()
     {
+        // Show browser window when running tests locally
+        Environment.SetEnvironmentVariable("HEADED", "1");
+
         if (!string.IsNullOrWhiteSpace(_baseUrl))
-        {
             return;
-        }
 
         await AppStartLock.WaitAsync();
         try
         {
             if (!string.IsNullOrWhiteSpace(_baseUrl))
-            {
                 return;
-            }
 
             Microsoft.Playwright.Program.Main(new[] { "install", "chromium" });
 
+            // Allow override from CI
             _baseUrl = Environment.GetEnvironmentVariable("PLAYWRIGHT_BASE_URL");
             if (!string.IsNullOrWhiteSpace(_baseUrl))
-            {
                 return;
-            }
 
             _baseUrl = "http://127.0.0.1:5099";
-            _tempHomeDirectory = Path.Combine(Path.GetTempPath(), $"passwordmanager-playwright-{Guid.NewGuid():N}");
-            Directory.CreateDirectory(_tempHomeDirectory);
 
-            var appDataDirectory = Path.Combine(_tempHomeDirectory, ".local", "share", "PasswordManager");
-            Directory.CreateDirectory(appDataDirectory);
+            // Use a temp SQLite database for test isolation
+            _tempDbPath = Path.Combine(Path.GetTempPath(), $"pm-playwright-{Guid.NewGuid():N}.db");
 
-            var databasePath = Path.Combine(_tempHomeDirectory, "passwordmanager.playwright.db");
-            var configPath = Path.Combine(appDataDirectory, "appsettings.json");
-            var config = new
+            // Pre-build the web project so startup is fast
+            var buildProcess = Process.Start(new ProcessStartInfo
             {
-                provider = 0,
-                authenticationMode = 0,
-                isFirstRun = false,
-                sqlite = new
-                {
-                    databasePath
-                }
-            };
-
-            await File.WriteAllTextAsync(configPath, JsonSerializer.Serialize(config, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            }));
+                FileName = "dotnet",
+                Arguments = $"build \"{WebProjectPath}\" -c Debug --no-restore -v q",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            })!;
+            await buildProcess.WaitForExitAsync();
 
             _appProcess = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "dotnet",
-                    Arguments = $"run --project \"{WebProjectPath}\" --no-launch-profile --urls {_baseUrl}",
+                    Arguments = $"run --project \"{WebProjectPath}\" --no-launch-profile --no-build --urls {_baseUrl}",
                     WorkingDirectory = Path.GetDirectoryName(WebProjectPath)!,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -80,8 +68,12 @@ public abstract class BlazorWebTestBase : PageTest
                 }
             };
 
-            _appProcess.StartInfo.Environment["HOME"] = _tempHomeDirectory;
-            _appProcess.StartInfo.Environment["XDG_DATA_HOME"] = Path.Combine(_tempHomeDirectory, ".local", "share");
+            // Point the app at a temp SQLite db and disable seed/first-run prompts
+            _appProcess.StartInfo.Environment["DatabaseProvider"] = "Sqlite";
+            _appProcess.StartInfo.Environment["ConnectionStrings__SqliteConnection"] = $"Data Source={_tempDbPath}";
+            _appProcess.StartInfo.Environment["ConnectionStrings__DefaultConnection"] = $"Data Source={_tempDbPath}";
+            _appProcess.StartInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
+
             _appProcess.Start();
 
             await WaitForAppAsync(_baseUrl, _appProcess);
@@ -92,24 +84,22 @@ public abstract class BlazorWebTestBase : PageTest
         }
     }
 
-    public override BrowserNewContextOptions ContextOptions()
+    // Run browser in headed mode so tests are visible on screen.
+    // Set HEADED=1 environment variable (picked up by Playwright MSTest) or rely on
+    // the PLAYWRIGHT_HEADED env var. We also set it explicitly here so tests are
+    // always visible when run locally without extra env config.
+    public override BrowserNewContextOptions ContextOptions() => new()
     {
-        return new BrowserNewContextOptions
-        {
-            IgnoreHTTPSErrors = true,
-            ViewportSize = new ViewportSize
-            {
-                Width = 1440,
-                Height = 900
-            }
-        };
-    }
+        IgnoreHTTPSErrors = true,
+        ViewportSize = new ViewportSize { Width = 1440, Height = 900 }
+    };
 
     [TestInitialize]
     public async Task NavigateToHomePageAsync()
     {
         await EnsureAppStartedAsync();
-        await Page.GotoAsync(_baseUrl ?? throw new InvalidOperationException("Playwright base URL was not initialized."));
+        await Page.GotoAsync(_baseUrl ?? throw new InvalidOperationException("Base URL not initialized."));
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 
     public static Task StopAppAsync()
@@ -122,9 +112,11 @@ public abstract class BlazorWebTestBase : PageTest
                 _appProcess.WaitForExit(5000);
             }
         }
-        catch
+        catch { /* best-effort */ }
+
+        if (_tempDbPath is not null && File.Exists(_tempDbPath))
         {
-            // Best effort cleanup
+            try { File.Delete(_tempDbPath); } catch { }
         }
 
         return Task.CompletedTask;
@@ -132,48 +124,38 @@ public abstract class BlazorWebTestBase : PageTest
 
     protected async Task SaveEvidenceAsync(string name)
     {
-        var resultsDirectory = TestContext.TestResultsDirectory ?? Path.Combine(AppContext.BaseDirectory, "TestResults");
-        Directory.CreateDirectory(resultsDirectory);
-
-        var screenshotPath = Path.Combine(resultsDirectory, $"{name}.png");
-        await Page.ScreenshotAsync(new PageScreenshotOptions
-        {
-            Path = screenshotPath,
-            FullPage = true
-        });
-
-        TestContext.WriteLine($"Saved screenshot: {screenshotPath}");
+        var dir = TestContext.TestResultsDirectory ?? Path.Combine(AppContext.BaseDirectory, "TestResults");
+        Directory.CreateDirectory(dir);
+        var path = Path.Combine(dir, $"{name}.png");
+        await Page.ScreenshotAsync(new PageScreenshotOptions { Path = path, FullPage = true });
+        TestContext.WriteLine($"Screenshot: {path}");
     }
 
     private static async Task WaitForAppAsync(string baseUrl, Process process)
     {
-        using var client = new HttpClient();
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
 
-        for (var attempt = 0; attempt < 60; attempt++)
+        for (var attempt = 0; attempt < 90; attempt++)
         {
             if (process.HasExited)
             {
                 var stdOut = await process.StandardOutput.ReadToEndAsync();
                 var stdErr = await process.StandardError.ReadToEndAsync();
-                throw new InvalidOperationException($"PasswordManager.Web exited before tests started.{Environment.NewLine}{stdOut}{Environment.NewLine}{stdErr}");
+                throw new InvalidOperationException(
+                    $"PasswordManager.Web exited before tests started.{Environment.NewLine}{stdOut}{Environment.NewLine}{stdErr}");
             }
 
             try
             {
                 using var response = await client.GetAsync(baseUrl);
                 if ((int)response.StatusCode < 500)
-                {
                     return;
-                }
             }
-            catch
-            {
-                // Retry until the app is ready.
-            }
+            catch { /* not ready yet */ }
 
             await Task.Delay(1000);
         }
 
-        throw new TimeoutException($"Timed out waiting for PasswordManager.Web to start at {baseUrl}.");
+        throw new TimeoutException($"Timed out waiting for PasswordManager.Web at {baseUrl}.");
     }
 }

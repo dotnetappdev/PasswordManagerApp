@@ -3,7 +3,9 @@
     "allow": [
       "Bash(dotnet build *)",
       "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Skill(update-config:*)",
+      "Bash(dotnet script *)",
+      "Bash(PLAYWRIGHT_BASE_URL=http://127.0.0.1:5099 dotnet test PasswordManager.Tests.Playwright/PasswordManager.Tests.Playwright.csproj --filter \"FullyQualifiedName~ApplicationWorkflowTests\" --logger \"console;verbosity=minimal\")"
     ]
   }
 }
