@@ -24,7 +24,7 @@
     <MudTextField @bind-Value="searchText" Placeholder="Search tags..."
                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                   Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                  ValueChanged="@((string s) => { searchText = s; FilterTags(); })"
+                  @bind-Value:after="FilterTags"
                   Style="max-width:400px;" />
 </MudPaper>
 
