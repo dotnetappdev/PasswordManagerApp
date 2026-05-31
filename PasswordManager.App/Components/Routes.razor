@@ -21,6 +21,7 @@
     private NavigationManager NavigationManager { get; set; } = default!;
     
     private bool isDatabaseConfigured = false;
+    private bool hasHandledDatabaseConfiguration = false;
     
     protected override void OnInitialized()
     {
@@ -31,10 +32,19 @@
     {
         try
         {
+            if (hasHandledDatabaseConfiguration)
+            {
+                return;
+            }
+
+            hasHandledDatabaseConfiguration = true;
             isDatabaseConfigured = true;
             
-            // Navigate to master password page as the default route
-            NavigationManager.NavigateTo("/masterpassword", replace: true);
+            // Navigate to master password page only if we are not already on a startup route.
+            if (!IsOnStartupRoute())
+            {
+                NavigationManager.NavigateTo("/masterpassword", replace: true);
+            }
             StateHasChanged();
         }
         catch (Exception ex)
@@ -44,6 +54,11 @@
             StateHasChanged();
         }
     }
-}
 
+    private bool IsOnStartupRoute()
+    {
+        var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Trim('/').ToLowerInvariant();
+        return string.IsNullOrEmpty(currentPath) || currentPath == "masterpassword" || currentPath == "unlock";
+    }
+}
 
