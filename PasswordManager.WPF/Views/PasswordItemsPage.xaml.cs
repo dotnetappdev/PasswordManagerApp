@@ -376,6 +376,14 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             _selectedItem = selectedItem;
             ShowItemDetails(selectedItem);
         }
+        else
+        {
+            // Nothing selected — show empty state
+            var detailPanel = GetElement<StackPanel>("DetailPanel");
+            var emptyStatePanel = GetElement<StackPanel>("EmptyStatePanel");
+            if (detailPanel != null) detailPanel.Visibility = Visibility.Collapsed;
+            if (emptyStatePanel != null) emptyStatePanel.Visibility = Visibility.Visible;
+        }
     }
 
     private void PasswordCardsView_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -389,20 +397,21 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         var selected = _selectedItem ?? (list?.SelectedItem as PasswordItem);
         if (selected == null) return;
 
-        var detailPassword = GetElement<TextBlock>("DetailPassword");
-        if (detailPassword == null) return;
+        var detailPasswordField = GetElement<Controls.ReadOnlyField>("DetailPassword");
+        if (detailPasswordField == null) return;
+
+        var pwd = selected.Password ?? selected.LoginItem?.Password ?? "";
 
         // Toggle between masked and plain text
-        if (!string.IsNullOrEmpty(detailPassword.Text) && detailPassword.Text.StartsWith("•"))
+        if (!string.IsNullOrEmpty(detailPasswordField.Text) && detailPasswordField.Text.StartsWith("•"))
         {
-            // Show actual password if available
-            detailPassword.Text = selected.Password ?? selected.LoginItem?.Password ?? "";
+            // Show actual password
+            detailPasswordField.Text = pwd;
         }
         else
         {
             // Mask
-            var pwd = selected.Password ?? selected.LoginItem?.Password ?? "";
-            detailPassword.Text = string.IsNullOrEmpty(pwd) ? "" : new string('•', Math.Max(8, pwd.Length));
+            detailPasswordField.Text = string.IsNullOrEmpty(pwd) ? "" : new string('•', Math.Max(8, pwd.Length));
         }
     }
 
@@ -483,19 +492,24 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     {
         if (item == null) return;
 
-        // Safe lookups for all named XAML elements to avoid compile-time errors when XAML g.i.cs is missing
-        var detailPanel = GetElement<Grid>("DetailPanel");
+        // Show detail panel and hide empty state
+        var detailPanel = GetElement<StackPanel>("DetailPanel");
+        var emptyStatePanel = GetElement<StackPanel>("EmptyStatePanel");
+        if (emptyStatePanel != null) emptyStatePanel.Visibility = Visibility.Collapsed;
+        if (detailPanel != null) detailPanel.Visibility = Visibility.Visible;
+
+        // Safe lookups for all named XAML elements
         var detailTitle = GetElement<TextBlock>("DetailTitle");
         var detailSubtitle = GetElement<TextBlock>("DetailSubtitle");
         var detailItemTitle = GetElement<TextBlock>("DetailItemTitle");
         var detailItemSubtitle = GetElement<TextBlock>("DetailItemSubtitle");
-        var detailUsername = GetElement<TextBlock>("DetailUsername");
-        var detailWebsite = GetElement<TextBlock>("DetailWebsite");
-        var detailPassword = GetElement<TextBlock>("DetailPassword");
+        // ReadOnlyField lookups
+        var detailUsernameField = GetElement<Controls.ReadOnlyField>("DetailUsername");
+        var detailWebsiteField = GetElement<Controls.ReadOnlyField>("DetailWebsite");
+        var detailPasswordField = GetElement<Controls.ReadOnlyField>("DetailPassword");
         var detailIcon = GetElement<TextBlock>("DetailIcon");
         var detailCategory = GetElement<TextBlock>("DetailCategory");
 
-        if (detailPanel != null) detailPanel.Visibility = Visibility.Visible;
         if (detailTitle != null) detailTitle.Text = "Item Details";
         if (detailSubtitle != null) detailSubtitle.Text = $"Details for {item.Title}";
         if (detailItemTitle != null) detailItemTitle.Text = item.Title;
@@ -528,11 +542,14 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         }
 
         if (detailItemSubtitle != null) detailItemSubtitle.Text = item.Description ?? (!string.IsNullOrEmpty(username) ? username : "No additional information");
-        if (detailUsername != null) detailUsername.Text = username;
-        if (detailWebsite != null) detailWebsite.Text = website;
+
+        // Populate ReadOnlyField controls
+        if (detailUsernameField != null) { detailUsernameField.Text = username; detailUsernameField.CopyText = username; }
+        if (detailWebsiteField != null) { detailWebsiteField.Text = website; detailWebsiteField.CopyText = website; }
 
         // Show masked password if there is one
-        if (detailPassword != null) detailPassword.Text = string.IsNullOrEmpty(pwd) ? string.Empty : new string('•', Math.Max(8, pwd.Length));
+        var maskedPwd = string.IsNullOrEmpty(pwd) ? string.Empty : new string('•', Math.Max(8, pwd.Length));
+        if (detailPasswordField != null) { detailPasswordField.Text = maskedPwd; detailPasswordField.CopyText = pwd; }
 
         // Update icon based on type
         if (detailIcon != null) detailIcon.Text = GetTypeIcon(item.Type.ToString());
@@ -649,23 +666,40 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
     private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is System.Windows.Controls.MenuItem menuItem &&
-            menuItem.DataContext is PasswordItem item &&
-            _viewModel != null)
-        {
-            var dialog = new ModernWpf.Controls.ContentDialog
-            {
-                Title = "Delete Password Item",
-                Content = $"Are you sure you want to delete '{item.Title}'?",
-                PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
-                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close};
+        PasswordItem? item = null;
 
-            var result = await dialog.ShowAsync();
-            if (result == ModernWpf.Controls.ContentDialogResult.Primary)
-            {
-                await _viewModel.DeleteItemAsync(item);
-            }
+        if (sender is System.Windows.Controls.MenuItem menuItem && menuItem.DataContext is PasswordItem mi)
+        {
+            item = mi;
+        }
+        else if (sender is Button)
+        {
+            // Delete button in the detail panel — use the currently selected item
+            item = _selectedItem;
+        }
+
+        if (item == null || _viewModel == null) return;
+
+        var dialog = new ModernWpf.Controls.ContentDialog
+        {
+            Title = "Delete Password Item",
+            Content = $"Are you sure you want to delete '{item.Title}'?",
+            PrimaryButtonText = "Delete",
+            CloseButtonText = "Cancel",
+            DefaultButton = ModernWpf.Controls.ContentDialogButton.Close
+        };
+
+        var result = await dialog.ShowAsync();
+        if (result == ModernWpf.Controls.ContentDialogResult.Primary)
+        {
+            // Hide detail panel and show empty state after deletion
+            var detailPanel = GetElement<StackPanel>("DetailPanel");
+            var emptyStatePanel = GetElement<StackPanel>("EmptyStatePanel");
+            if (detailPanel != null) detailPanel.Visibility = Visibility.Collapsed;
+            if (emptyStatePanel != null) emptyStatePanel.Visibility = Visibility.Visible;
+            _selectedItem = null;
+
+            await _viewModel.DeleteItemAsync(item);
         }
     }
 

@@ -17,7 +17,7 @@
                         IsSettingsVisible="False"
                         IsPaneToggleButtonVisible="False"
                         PaneDisplayMode="Left"
-                        OpenPaneLength="280"
+                        OpenPaneLength="260"
                         CompactModeThresholdWidth="0"
                         ExpandedModeThresholdWidth="0"
                         SelectionChanged="MainNavigationView_SelectionChanged"
@@ -25,19 +25,19 @@
                         Margin="0"
                         Padding="0">
 
-            <!-- Custom Pane Header with Profile -->
+            <!-- Custom Pane Header: user avatar + name + vault -->
             <ui:NavigationView.PaneHeader>
-                <Grid Margin="16,12">
-                    <!-- Profile Section -->
-                    <Border Grid.Row="0"
-                            Background="Transparent"
-                            CornerRadius="8"
-                            Padding="12,8">
+                <StackPanel Margin="0,0,0,8">
+                    <!-- User profile row -->
+                    <Border Background="Transparent" Padding="12,14,12,10">
                         <Button x:Name="ProfileButton"
                                 Background="Transparent"
                                 BorderThickness="0"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Left"
+                                Padding="0"
+                                MinWidth="0"
+                                MinHeight="0"
                                 Click="ProfileButton_Click">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -46,63 +46,72 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Profile Picture -->
+                                <!-- Avatar circle with initials / icon -->
                                 <Border Grid.Column="0"
-                                        Width="32"
-                                        Height="32"
-                                        CornerRadius="16"
+                                        Width="38"
+                                        Height="38"
+                                        CornerRadius="19"
                                         Background="{StaticResource ModernPrimaryGradientBrush}"
-                                        Margin="0,0,12,0">
-                                    <TextBlock Text="👤"
+                                        Margin="0,0,10,0">
+                                    <TextBlock Text="D"
                                                FontSize="16"
+                                               FontWeight="Bold"
                                                Foreground="White"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
                                 </Border>
 
-                                <!-- User Info -->
-                                <StackPanel Grid.Column="1"
-                                            VerticalAlignment="Center"
-                                            Margin="2">
+                                <!-- User name + vault -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                     <TextBlock x:Name="UserNameText"
                                                Text="David Smith"
                                                FontSize="14"
                                                FontWeight="SemiBold"
                                                Foreground="{StaticResource ModernTextPrimaryBrush}"/>
-                                    <TextBlock Text="Personal"
-                                               FontSize="12"
-                                               Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                    <TextBlock Text="Personal Vault"
+                                               FontSize="11"
+                                               Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                               Margin="0,1,0,0"/>
                                 </StackPanel>
 
-                                <!-- Dropdown Arrow -->
+                                <!-- Chevron -->
                                 <TextBlock Grid.Column="2"
                                           Text="&#xE019;"
                                           FontFamily="Segoe MDL2 Assets"
-                                          FontSize="12"
-                                          Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                          FontSize="11"
+                                          Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                          VerticalAlignment="Center"/>
                             </Grid>
                         </Button>
                     </Border>
-                </Grid>
+
+                    <!-- Divider under profile -->
+                    <Border Height="1" Background="{StaticResource ModernBorderBrush}" Margin="12,0"/>
+
+                    <!-- Search box -->
+                    <Border Padding="12,10">
+                        <ui:AutoSuggestBox x:Name="SearchBox"
+                                        QueryIcon="Find"
+                                        ui:ControlHelper.PlaceholderText="Search passwords..."
+                                        TextChanged="SearchBox_TextChanged"
+                                        QuerySubmitted="SearchBox_QuerySubmitted"
+                                        Style="{StaticResource Modernui:AutoSuggestBoxStyle}"
+                                        Height="34"
+                                        HorizontalAlignment="Stretch"/>
+                    </Border>
+                </StackPanel>
             </ui:NavigationView.PaneHeader>
 
-            <!-- Header Content with Search Box -->
+            <!-- No Header (we moved search into PaneHeader) -->
             <ui:NavigationView.Header>
-                <Grid Margin="0">
-                    <ui:AutoSuggestBox x:Name="SearchBox"
-                                    QueryIcon="Find"
-                                    ui:ControlHelper.PlaceholderText="Search passwords..."
-                                    TextChanged="SearchBox_TextChanged"
-                                    QuerySubmitted="SearchBox_QuerySubmitted"
-                                    Style="{StaticResource Modernui:AutoSuggestBoxStyle}"
-                                    CornerRadius="8"
-                                    Height="36"
-                                    HorizontalAlignment="Stretch"/>
-                </Grid>
+                <Grid/>
             </ui:NavigationView.Header>
 
-            <!-- Navigation Menu Items -->
+            <!-- Navigation Menu Items with 1Password-style sections -->
             <ui:NavigationView.MenuItems>
+
+                <!-- ── SECTION: Main ── -->
+
                 <!-- All Items -->
                 <ui:NavigationViewItem x:Name="AllItemsNavItem"
                                     Content="All Items"
@@ -111,11 +120,137 @@
                                     MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets"
-                                  FontSize="18"
+                                  FontSize="16"
                                   Foreground="{StaticResource ModernPrimaryBrush}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
+
+                <!-- Favorites -->
+                <ui:NavigationViewItem Content="Favorites"
+                                    Tag="Favorites"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE1CE;" FontFamily="Segoe MDL2 Assets"
+                                  FontSize="16"
+                                  Foreground="#F59E0B"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <!-- Password Health / Security -->
+                <ui:NavigationViewItem Content="Password Health"
+                                    Tag="SecurityDashboard"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets"
+                                  FontSize="16"
+                                  Foreground="{StaticResource ModernSuccessBrush}"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <!-- Separator label: CATEGORIES -->
+                <ui:NavigationViewItemHeader Content="CATEGORIES"/>
+
+                <!-- Logins -->
+                <ui:NavigationViewItem Content="Logins"
+                                    Tag="LoginCategory"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE8D4;" FontFamily="Segoe MDL2 Assets"
+                                  FontSize="16"
+                                  Foreground="#3B82F6"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <!-- Credit Cards -->
+                <ui:NavigationViewItem Content="Credit Cards"
+                                    Tag="CreditCardCategory"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE8C7;" FontFamily="Segoe MDL2 Assets"
+                                  FontSize="16"
+                                  Foreground="#10B981"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <!-- Secure Notes -->
+                <ui:NavigationViewItem Content="Secure Notes"
+                                    Tag="SecureNotesCategory"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE70B;" FontFamily="Segoe MDL2 Assets"
+                                  FontSize="16"
+                                  Foreground="#F59E0B"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <!-- Passkeys -->
+                <ui:NavigationViewItem Content="Passkeys"
+                                    Tag="PasskeysCategory"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE785;" FontFamily="Segoe MDL2 Assets"
+                                  FontSize="16"
+                                  Foreground="{StaticResource ModernPrimaryBrush}"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <!-- Separator label: VAULTS -->
+                <ui:NavigationViewItemHeader Content="VAULTS"/>
+
+                <!-- Vaults -->
+                <ui:NavigationViewItem Content="Manage Vaults"
+                                    Tag="Vaults"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}"
+                                    MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets"
+                                  FontSize="16"
+                                  Foreground="{StaticResource ModernPrimaryBrush}"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <!-- Separator label: TAGS -->
+                <ui:NavigationViewItemHeader Content="TAGS"/>
+
+                <!-- Dynamic tag chips rendered from code-behind into SidebarTagsPanel -->
+                <ui:NavigationViewItem Tag="__TagsContainer__" Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock/>
+                    </ui:NavigationViewItem.Icon>
+                    <ui:NavigationViewItem.Content>
+                        <StackPanel x:Name="SidebarTagsPanel" Margin="-20,0,0,0"/>
+                    </ui:NavigationViewItem.Content>
+                </ui:NavigationViewItem>
+
             </ui:NavigationView.MenuItems>
+
+            <!-- Footer items: Settings -->
+            <ui:NavigationView.FooterMenuItems>
+                <ui:NavigationViewItem Content="Import"
+                                    Tag="Import"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets"
+                                  FontSize="16"
+                                  Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Settings"
+                                    Tag="Settings"
+                                    Style="{StaticResource ModernNavigationViewItemStyle}">
+                    <ui:NavigationViewItem.Icon>
+                        <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets"
+                                  FontSize="16"
+                                  Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+            </ui:NavigationView.FooterMenuItems>
 
             <!-- Content Frame for Navigation -->
             <Frame x:Name="ContentFrame"
