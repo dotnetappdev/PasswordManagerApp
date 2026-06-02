@@ -2,9 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace PasswordManager.Models.Configuration;
 
-/// <summary>
-/// Database provider types supported by the application
-/// </summary>
 public enum DatabaseProvider
 {
     Sqlite,
@@ -14,286 +11,242 @@ public enum DatabaseProvider
     Supabase
 }
 
-/// <summary>
-/// Authentication mode types
-/// </summary>
 public enum AuthenticationMode
 {
     LocalDatabase,
     ApiEndpoint
 }
 
-/// <summary>
-/// Database configuration settings
-/// </summary>
+public enum SqlServerAuthMode
+{
+    WindowsAuthentication,
+    SqlServerAuthentication
+}
+
+public enum SqlServerEncryptionMode
+{
+    None,
+    Optional,
+    Mandatory,
+    Strict
+}
+
+public enum SqlServerNetworkProtocol
+{
+    Default,
+    TcpIp,
+    NamedPipes,
+    SharedMemory
+}
+
+public enum SqlServerApplicationIntent
+{
+    ReadWrite,
+    ReadOnly
+}
+
+public enum MySqlSslMode
+{
+    None,
+    Preferred,
+    Required,
+    VerifyCA,
+    VerifyFull
+}
+
+public enum PostgreSqlSslMode
+{
+    Disable,
+    Allow,
+    Prefer,
+    Require,
+    VerifyCA,
+    VerifyFull
+}
+
 public class DatabaseConfiguration
 {
-    /// <summary>
-    /// The selected database provider
-    /// </summary>
     public DatabaseProvider Provider { get; set; } = DatabaseProvider.Sqlite;
-
-    /// <summary>
-    /// The selected authentication mode (local database vs API)
-    /// </summary>
     public AuthenticationMode AuthenticationMode { get; set; } = AuthenticationMode.LocalDatabase;
-
-    /// <summary>
-    /// Whether this is the first run and configuration is needed
-    /// </summary>
     public bool IsFirstRun { get; set; } = true;
-
-    /// <summary>
-    /// API URL for sync operations
-    /// </summary>
     public string? ApiUrl { get; set; }
-
-    /// <summary>
-    /// API Key for authentication
-    /// </summary>
     public string? ApiKey { get; set; }
-
-    /// <summary>
-    /// SQLite-specific configuration
-    /// </summary>
     public SqliteConfig? Sqlite { get; set; }
-
-    /// <summary>
-    /// SQL Server-specific configuration
-    /// </summary>
     public SqlServerConfig? SqlServer { get; set; }
-
-    /// <summary>
-    /// MySQL-specific configuration
-    /// </summary>
     public MySqlConfig? MySql { get; set; }
-
-    /// <summary>
-    /// PostgreSQL-specific configuration
-    /// </summary>
     public PostgreSqlConfig? PostgreSql { get; set; }
-
-    /// <summary>
-    /// Supabase-specific configuration
-    /// </summary>
     public SupabaseConfig? Supabase { get; set; }
 }
 
-/// <summary>
-/// SQLite database configuration
-/// </summary>
 public class SqliteConfig
 {
-    /// <summary>
-    /// Database file path (relative or absolute)
-    /// </summary>
     public string DatabasePath { get; set; } = "passwordmanager.db";
-
-    /// <summary>
-    /// API URL for sync operations
-    /// </summary>
     public string? ApiUrl { get; set; }
-
-    /// <summary>
-    /// API Key for authentication
-    /// </summary>
     public string? ApiKey { get; set; }
 }
 
-/// <summary>
-/// SQL Server database configuration
-/// </summary>
 public class SqlServerConfig
 {
-    /// <summary>
-    /// Database server host/IP address
-    /// </summary>
+    // --- Login ---
     [Required]
     public string Host { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Database server port (default: 1433)
-    /// </summary>
+    public string? InstanceName { get; set; }
+
     public int Port { get; set; } = 1433;
 
-    /// <summary>
-    /// Database name
-    /// </summary>
     [Required]
     public string Database { get; set; } = "PasswordManager";
 
-    /// <summary>
-    /// Username for database authentication
-    /// </summary>
+    public SqlServerAuthMode AuthMode { get; set; } = SqlServerAuthMode.SqlServerAuthentication;
+
     public string? Username { get; set; }
 
-    /// <summary>
-    /// Encrypted password for database authentication
-    /// </summary>
     public string? EncryptedPassword { get; set; }
 
-    /// <summary>
-    /// Whether to use Windows Authentication
-    /// </summary>
-    public bool UseWindowsAuthentication { get; set; } = false;
+    // --- Security ---
+    public SqlServerEncryptionMode Encryption { get; set; } = SqlServerEncryptionMode.Optional;
 
-    /// <summary>
-    /// Whether to trust server certificate
-    /// </summary>
     public bool TrustServerCertificate { get; set; } = false;
 
-    /// <summary>
-    /// Connection timeout in seconds
-    /// </summary>
-    public int ConnectionTimeout { get; set; } = 30;
+    /// <summary>Path or thumbprint of the server certificate to trust (used with Strict encryption)</summary>
+    public string? ServerCertificate { get; set; }
 
-    /// <summary>
-    /// API URL for sync operations
-    /// </summary>
+    // --- Connection Properties ---
+    public SqlServerNetworkProtocol NetworkProtocol { get; set; } = SqlServerNetworkProtocol.Default;
+
+    public int PacketSize { get; set; } = 4096;
+
+    public int ConnectionTimeout { get; set; } = 15;
+
+    public int CommandTimeout { get; set; } = 30;
+
+    public string ApplicationName { get; set; } = "PasswordManager";
+
+    public string? WorkstationId { get; set; }
+
+    // --- Advanced ---
+    public bool MultipleActiveResultSets { get; set; } = false;
+
+    public SqlServerApplicationIntent ApplicationIntent { get; set; } = SqlServerApplicationIntent.ReadWrite;
+
+    public bool MultiSubnetFailover { get; set; } = false;
+
+    public string? FailoverPartner { get; set; }
+
+    public bool Pooling { get; set; } = true;
+
+    public int MinPoolSize { get; set; } = 0;
+
+    public int MaxPoolSize { get; set; } = 100;
+
+    /// <summary>Extra key=value pairs appended to the connection string verbatim, as in SSMS Additional Parameters</summary>
+    public string? AdditionalParameters { get; set; }
+
     public string? ApiUrl { get; set; }
-
-    /// <summary>
-    /// API Key for authentication
-    /// </summary>
     public string? ApiKey { get; set; }
 }
 
-/// <summary>
-/// MySQL database configuration
-/// </summary>
 public class MySqlConfig
 {
-    /// <summary>
-    /// Database server host/IP address
-    /// </summary>
+    // --- General ---
     [Required]
     public string Host { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Database server port (default: 3306)
-    /// </summary>
     public int Port { get; set; } = 3306;
 
-    /// <summary>
-    /// Database name
-    /// </summary>
     [Required]
     public string Database { get; set; } = "PasswordManager";
 
-    /// <summary>
-    /// Username for database authentication
-    /// </summary>
     [Required]
     public string Username { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Encrypted password for database authentication
-    /// </summary>
     public string? EncryptedPassword { get; set; }
 
-    /// <summary>
-    /// Whether to use SSL connection
-    /// </summary>
-    public bool UseSsl { get; set; } = true;
+    // --- SSL ---
+    public MySqlSslMode SslMode { get; set; } = MySqlSslMode.Preferred;
 
-    /// <summary>
-    /// Connection timeout in seconds
-    /// </summary>
+    public string? SslCaPath { get; set; }
+
+    public string? SslCertPath { get; set; }
+
+    public string? SslKeyPath { get; set; }
+
+    // --- Advanced ---
     public int ConnectionTimeout { get; set; } = 30;
 
-    /// <summary>
-    /// API URL for sync operations
-    /// </summary>
-    public string? ApiUrl { get; set; }
+    public int CommandTimeout { get; set; } = 30;
 
-    /// <summary>
-    /// API Key for authentication
-    /// </summary>
+    public bool AllowZeroDateTime { get; set; } = false;
+
+    public bool AllowUserVariables { get; set; } = false;
+
+    public string CharacterSet { get; set; } = "utf8mb4";
+
+    public bool Pooling { get; set; } = true;
+
+    public int MinPoolSize { get; set; } = 0;
+
+    public int MaxPoolSize { get; set; } = 100;
+
+    public string? ApiUrl { get; set; }
     public string? ApiKey { get; set; }
 }
 
-/// <summary>
-/// PostgreSQL database configuration
-/// </summary>
 public class PostgreSqlConfig
 {
-    /// <summary>
-    /// Database server host/IP address
-    /// </summary>
+    // --- General ---
     [Required]
     public string Host { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Database server port (default: 5432)
-    /// </summary>
     public int Port { get; set; } = 5432;
 
-    /// <summary>
-    /// Database name
-    /// </summary>
     [Required]
     public string Database { get; set; } = "PasswordManager";
 
-    /// <summary>
-    /// Username for database authentication
-    /// </summary>
     [Required]
     public string Username { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Encrypted password for database authentication
-    /// </summary>
     public string? EncryptedPassword { get; set; }
 
-    /// <summary>
-    /// Whether to use SSL connection
-    /// </summary>
-    public bool UseSsl { get; set; } = true;
+    // --- SSL ---
+    public PostgreSqlSslMode SslMode { get; set; } = PostgreSqlSslMode.Prefer;
 
-    /// <summary>
-    /// Connection timeout in seconds
-    /// </summary>
+    public string? SslCertPath { get; set; }
+
+    public string? SslKeyPath { get; set; }
+
+    public string? SslRootCertPath { get; set; }
+
+    // --- Advanced ---
     public int ConnectionTimeout { get; set; } = 30;
 
-    /// <summary>
-    /// API URL for sync operations
-    /// </summary>
-    public string? ApiUrl { get; set; }
+    public int CommandTimeout { get; set; } = 30;
 
-    /// <summary>
-    /// API Key for authentication
-    /// </summary>
+    public string ApplicationName { get; set; } = "PasswordManager";
+
+    public string? SearchPath { get; set; }
+
+    public bool Pooling { get; set; } = true;
+
+    public int MinPoolSize { get; set; } = 1;
+
+    public int MaxPoolSize { get; set; } = 100;
+
+    public string? ApiUrl { get; set; }
     public string? ApiKey { get; set; }
 }
-/// <summary>
-/// Supabase database configuration
-/// </summary>
+
 public class SupabaseConfig
 {
-    /// <summary>
-    /// Supabase project URL
-    /// </summary>
     [Required]
     public string Url { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Supabase service role or anon key
-    /// </summary>
     [Required]
     public string ServiceKey { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Connection timeout in seconds
-    /// </summary>
     public int ConnectionTimeout { get; set; } = 30;
 
-    /// <summary>
-    /// API URL for sync operations
-    /// </summary>
     public string? ApiUrl { get; set; }
-
-    /// <summary>
-    /// API Key for authentication
-    /// </summary>
     public string? ApiKey { get; set; }
 }

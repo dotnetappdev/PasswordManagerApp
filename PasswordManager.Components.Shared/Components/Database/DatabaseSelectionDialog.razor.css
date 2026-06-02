@@ -95,6 +95,13 @@
     background: white;
     text-align: center;
     position: relative;
+    /* reset <button> defaults */
+    width: 100%;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .provider-card:hover {
@@ -183,7 +190,7 @@
 }
 
 .config-form h3 {
-    margin: 0 0 20px 0;
+    margin: 0 0 16px 0;
     color: #333;
     font-size: 16px;
     font-weight: 600;
@@ -191,6 +198,52 @@
     border-bottom: 2px solid #e9ecef;
 }
 
+/* Config Tabs */
+.config-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #dee2e6;
+    margin-bottom: 20px;
+    margin-top: 4px;
+}
+
+.config-tab {
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6c757d;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+}
+
+.config-tab:hover {
+    color: #007acc;
+    border-bottom-color: rgba(0, 122, 204, 0.4);
+}
+
+.config-tab.active {
+    color: #007acc;
+    border-bottom-color: #007acc;
+    background: none;
+}
+
+.config-tab-content {
+    padding-top: 4px;
+}
+
+/* Section divider within a tab */
+.section-divider {
+    border: none;
+    border-top: 1px solid #dee2e6;
+    margin: 20px 0;
+}
+
+/* Form elements */
 .form-group {
     margin-bottom: 16px;
 }
@@ -214,6 +267,10 @@
     flex: 1;
 }
 
+.form-row .col-md-6 {
+    flex: 1;
+}
+
 .form-group label {
     display: block;
     margin-bottom: 6px;
@@ -230,12 +287,20 @@
     font-size: 14px;
     transition: border-color 0.15s ease;
     background: white;
+    box-sizing: border-box;
 }
 
 .form-control:focus {
     outline: none;
     border-color: #007acc;
     box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
 }
 
 .form-text {
@@ -413,6 +478,19 @@
     box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
 }
 
+.btn-outline-secondary {
+    background: transparent;
+    color: #6c757d;
+    border: 1px solid #6c757d;
+}
+
+.btn-outline-secondary:hover:not(:disabled) {
+    background: #6c757d;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
 .btn-success {
     background: #28a745;
     color: white;
@@ -438,30 +516,39 @@
         width: 95%;
         margin: 20px;
     }
-    
+
     .dialog-content {
         padding: 20px;
     }
-    
+
     .provider-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .form-row {
         flex-direction: column;
         gap: 0;
     }
-    
+
     .form-row .form-group {
         margin-bottom: 16px;
     }
-    
+
     .dialog-actions {
         flex-direction: column;
     }
-    
+
     .btn {
         justify-content: center;
+    }
+
+    .config-tabs {
+        overflow-x: auto;
+    }
+
+    .config-tab {
+        padding: 8px 14px;
+        font-size: 13px;
     }
 }
 
@@ -471,34 +558,143 @@
         background: #2d3748;
         color: #e2e8f0;
     }
-    
+
     .config-form {
         background: #374151;
         border-color: #4b5563;
     }
-    
+
+    .config-form h3 {
+        color: #e2e8f0;
+        border-bottom-color: #4b5563;
+    }
+
     .form-control {
         background: #374151;
         border-color: #4b5563;
         color: #e2e8f0;
     }
-    
+
+    .form-control:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+    }
+
+    textarea.form-control {
+        background: #374151;
+        color: #e2e8f0;
+    }
+
+    .form-group label {
+        color: #cbd5e0;
+    }
+
+    .form-check-label {
+        color: #cbd5e0;
+    }
+
+    .form-text {
+        color: #9ca3af;
+    }
+
     .provider-card {
         background: #374151;
         border-color: #4b5563;
     }
-    
+
     .provider-card.selected {
         background: #3c4d63;
+        border-color: #60a5fa;
     }
-    
+
+    .provider-card:hover {
+        border-color: #60a5fa;
+    }
+
+    .provider-icon {
+        color: #60a5fa;
+    }
+
+    .provider-card.selected .provider-icon {
+        color: #93c5fd;
+    }
+
+    .provider-info h4 {
+        color: #e2e8f0;
+    }
+
+    .provider-info p {
+        color: #9ca3af;
+    }
+
+    .provider-selection h3 {
+        color: #e2e8f0;
+    }
+
+    /* Config tabs — dark mode */
+    .config-tabs {
+        border-bottom-color: #4b5563;
+    }
+
+    .config-tab {
+        color: #9ca3af;
+    }
+
+    .config-tab:hover {
+        color: #60a5fa;
+        border-bottom-color: rgba(96, 165, 250, 0.4);
+    }
+
+    .config-tab.active {
+        color: #60a5fa;
+        border-bottom-color: #60a5fa;
+    }
+
+    .section-divider {
+        border-top-color: #4b5563;
+    }
+
     .migration-status.warning {
         background: #451a03;
         color: #fed7aa;
         border-color: #9a3412;
     }
-    
+
     .migration-list {
         background: rgba(255, 255, 255, 0.1);
+    }
+
+    .dialog-actions {
+        border-top-color: #4b5563;
+    }
+
+    .connection-status.success {
+        background: #1a3a1a;
+        color: #86efac;
+        border-color: #166534;
+    }
+
+    .connection-status.error {
+        background: #3a1a1a;
+        color: #fca5a5;
+        border-color: #991b1b;
+    }
+
+    .btn-outline-secondary {
+        color: #9ca3af;
+        border-color: #6b7280;
+    }
+
+    .btn-outline-secondary:hover:not(:disabled) {
+        background: #6b7280;
+        color: white;
+    }
+
+    .btn-link {
+        color: #60a5fa;
+    }
+
+    .btn-link:hover {
+        color: #93c5fd;
     }
 }

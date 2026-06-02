@@ -1,633 +1,845 @@
 @page "/setup"
 @using PasswordManager.Models.Configuration
 @using PasswordManager.Services.Interfaces
-@using Microsoft.Extensions.Configuration
 @inject IDatabaseConfigurationService DatabaseConfigService
 @inject NavigationManager NavigationManager
-@inject IConfiguration Configuration
 
-<PageTitle>Setup - Password Manager</PageTitle>
+<PageTitle>Database Setup — Password Manager</PageTitle>
 
-<div class="setup-container">
-    <div class="setup-card">
-        <h1>🔧 Password Manager Setup</h1>
-        <p class="subtitle">Configure your database connection to get started</p>
+<div class="setup-page">
+    <div class="setup-shell">
 
-        @if (!string.IsNullOrEmpty(_message))
+        <!-- Header -->
+        <div class="setup-header">
+            <div class="setup-logo">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h1>Password Manager Setup</h1>
+            <p>@GetStepSubtitle()</p>
+            <div class="step-indicators">
+                <span class="step-dot @(_step == 1 ? "active" : _step > 1 ? "done" : "")">1</span>
+                <span class="step-line @(_step > 1 ? "done" : "")"></span>
+                <span class="step-dot @(_step == 2 ? "active" : "")">2</span>
+            </div>
+        </div>
+
+        <!-- Step 1 — Provider selection -->
+        @if (_step == 1)
         {
-            <div class="alert @(_isError ? "alert-danger" : "alert-success")">
-                @_message
+            <div class="setup-body">
+                <div class="provider-grid">
+                    <div class="provider-card @(_provider == DatabaseProvider.Sqlite ? "selected local" : "local")"
+                         @onclick="() => _provider = DatabaseProvider.Sqlite">
+                        <div class="pc-icon"><i class="fas fa-laptop"></i></div>
+                        <div class="pc-info">
+                            <strong>SQLite</strong>
+                            <span>Local file — no server needed</span>
+                            <em class="badge-rec">Recommended</em>
+                        </div>
+                        @if (_provider == DatabaseProvider.Sqlite)
+                        {
+                            <div class="pc-check"><i class="fas fa-check-circle"></i></div>
+                        }
+                    </div>
+
+                    <div class="provider-card @(_provider == DatabaseProvider.SqlServer ? "selected" : "")"
+                         @onclick="() => _provider = DatabaseProvider.SqlServer">
+                        <div class="pc-icon"><i class="fas fa-server"></i></div>
+                        <div class="pc-info">
+                            <strong>SQL Server</strong>
+                            <span>Microsoft SQL Server</span>
+                        </div>
+                        @if (_provider == DatabaseProvider.SqlServer)
+                        {
+                            <div class="pc-check"><i class="fas fa-check-circle"></i></div>
+                        }
+                    </div>
+
+                    <div class="provider-card @(_provider == DatabaseProvider.MySql ? "selected" : "")"
+                         @onclick="() => _provider = DatabaseProvider.MySql">
+                        <div class="pc-icon"><i class="fas fa-database"></i></div>
+                        <div class="pc-info">
+                            <strong>MySQL</strong>
+                            <span>MySQL / MariaDB</span>
+                        </div>
+                        @if (_provider == DatabaseProvider.MySql)
+                        {
+                            <div class="pc-check"><i class="fas fa-check-circle"></i></div>
+                        }
+                    </div>
+
+                    <div class="provider-card @(_provider == DatabaseProvider.PostgreSql ? "selected" : "")"
+                         @onclick="() => _provider = DatabaseProvider.PostgreSql">
+                        <div class="pc-icon"><i class="fas fa-elephant"></i></div>
+                        <div class="pc-info">
+                            <strong>PostgreSQL</strong>
+                            <span>PostgreSQL Server</span>
+                        </div>
+                        @if (_provider == DatabaseProvider.PostgreSql)
+                        {
+                            <div class="pc-check"><i class="fas fa-check-circle"></i></div>
+                        }
+                    </div>
+
+                    <div class="provider-card @(_provider == DatabaseProvider.Supabase ? "selected" : "")"
+                         @onclick="() => _provider = DatabaseProvider.Supabase">
+                        <div class="pc-icon"><i class="fas fa-cloud"></i></div>
+                        <div class="pc-info">
+                            <strong>Supabase</strong>
+                            <span>Hosted PostgreSQL</span>
+                        </div>
+                        @if (_provider == DatabaseProvider.Supabase)
+                        {
+                            <div class="pc-check"><i class="fas fa-check-circle"></i></div>
+                        }
+                    </div>
+                </div>
+
+                <div class="setup-actions">
+                    <button class="btn-primary" @onclick="GoToStep2">
+                        Continue <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
             </div>
         }
 
-        <div class="setup-form">
-            <div class="form-section">
-                <h3>Database Provider</h3>
-                <div class="form-group">
-                    <label for="dbProvider">Select Database Provider:</label>
-                    <select id="dbProvider" class="form-control" @bind="_selectedProvider">
-                        <option value="@DatabaseProvider.Sqlite">SQLite (Recommended for single user)</option>
-                        <option value="@DatabaseProvider.SqlServer">SQL Server</option>
-                        <option value="@DatabaseProvider.MySql">MySQL</option>
-                        <option value="@DatabaseProvider.PostgreSql">PostgreSQL</option>
-                        <option value="@DatabaseProvider.Supabase">Supabase</option>
-                    </select>
+        <!-- Step 2 — Configuration -->
+        @if (_step == 2)
+        {
+            <div class="setup-body">
+
+                <!-- SQLite -->
+                @if (_provider == DatabaseProvider.Sqlite)
+                {
+                    <div class="config-section">
+                        <h3>SQLite Configuration</h3>
+                        <div class="fg">
+                            <label>Database File Path</label>
+                            <input class="fc" type="text" @bind="_sqlitePath" placeholder="passwordmanager.db" />
+                            <small>Leave empty to use the default location</small>
+                        </div>
+                    </div>
+                }
+
+                <!-- SQL Server -->
+                @if (_provider == DatabaseProvider.SqlServer)
+                {
+                    <div class="config-tabs">
+                        <button class="ct @(_tab == "general" ? "active" : "")" @onclick='() => _tab = "general"'>General</button>
+                        <button class="ct @(_tab == "security" ? "active" : "")" @onclick='() => _tab = "security"'>Security</button>
+                        <button class="ct @(_tab == "advanced" ? "active" : "")" @onclick='() => _tab = "advanced"'>Advanced</button>
+                    </div>
+
+                    @if (_tab == "general")
+                    {
+                        <div class="config-section">
+                            <div class="form-row">
+                                <div class="fg flex2">
+                                    <label>Server <span class="req">*</span></label>
+                                    <input class="fc" type="text" @bind="_ss.Host" placeholder="localhost or IP address" />
+                                </div>
+                                <div class="fg flex1">
+                                    <label>Instance</label>
+                                    <input class="fc" type="text" @bind="_ss.InstanceName" placeholder="optional" />
+                                </div>
+                                <div class="fg port-field">
+                                    <label>Port</label>
+                                    <input class="fc" type="number" @bind="_ss.Port" />
+                                </div>
+                            </div>
+                            <div class="fg">
+                                <label>Database <span class="req">*</span></label>
+                                <input class="fc" type="text" @bind="_ss.Database" placeholder="PasswordManager" />
+                            </div>
+                            <div class="fg">
+                                <label>Authentication</label>
+                                <select class="fc" @bind="_ss.AuthMode">
+                                    <option value="@SqlServerAuthMode.SqlServerAuthentication">SQL Server Authentication</option>
+                                    <option value="@SqlServerAuthMode.WindowsAuthentication">Windows Authentication</option>
+                                </select>
+                            </div>
+                            @if (_ss.AuthMode == SqlServerAuthMode.SqlServerAuthentication)
+                            {
+                                <div class="fg">
+                                    <label>Username</label>
+                                    <input class="fc" type="text" @bind="_ss.Username" />
+                                </div>
+                                <div class="fg">
+                                    <label>Password</label>
+                                    <input class="fc" type="password" @bind="_ssPassword" />
+                                </div>
+                            }
+                        </div>
+                    }
+                    @if (_tab == "security")
+                    {
+                        <div class="config-section">
+                            <div class="section-label">Encryption</div>
+                            <div class="fg">
+                                <label>Encrypt Connection</label>
+                                <select class="fc" @bind="_ss.Encryption">
+                                    <option value="@SqlServerEncryptionMode.None">None</option>
+                                    <option value="@SqlServerEncryptionMode.Optional">Optional (default)</option>
+                                    <option value="@SqlServerEncryptionMode.Mandatory">Mandatory (TLS)</option>
+                                    <option value="@SqlServerEncryptionMode.Strict">Strict (TLS 1.3)</option>
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="check-label">
+                                    <input type="checkbox" @bind="_ss.TrustServerCertificate" />
+                                    Trust Server Certificate
+                                </label>
+                                <small>Enable when using self-signed certificates</small>
+                            </div>
+                            @if (_ss.Encryption == SqlServerEncryptionMode.Mandatory || _ss.Encryption == SqlServerEncryptionMode.Strict)
+                            {
+                                <div class="fg">
+                                    <label>Server Certificate</label>
+                                    <input class="fc" type="text" @bind="_ss.ServerCertificate" placeholder="Thumbprint or file path" />
+                                    <small>Required for Mandatory / Strict — leave empty to use system trust store</small>
+                                </div>
+                            }
+                        </div>
+                    }
+                    @if (_tab == "advanced")
+                    {
+                        <div class="config-section">
+                            <div class="section-label">Connection</div>
+                            <div class="form-row">
+                                <div class="fg flex1">
+                                    <label>Network Protocol</label>
+                                    <select class="fc" @bind="_ss.NetworkProtocol">
+                                        <option value="@SqlServerNetworkProtocol.Default">Default</option>
+                                        <option value="@SqlServerNetworkProtocol.TcpIp">TCP/IP</option>
+                                        <option value="@SqlServerNetworkProtocol.NamedPipes">Named Pipes</option>
+                                        <option value="@SqlServerNetworkProtocol.SharedMemory">Shared Memory</option>
+                                    </select>
+                                </div>
+                                <div class="fg flex1">
+                                    <label>Packet Size</label>
+                                    <input class="fc" type="number" @bind="_ss.PacketSize" min="512" max="32767" />
+                                    <small>512 – 32767 bytes (default 4096)</small>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="fg flex1">
+                                    <label>Connection Timeout (s)</label>
+                                    <input class="fc" type="number" @bind="_ss.ConnectionTimeout" min="0" />
+                                </div>
+                                <div class="fg flex1">
+                                    <label>Command Timeout (s)</label>
+                                    <input class="fc" type="number" @bind="_ss.CommandTimeout" min="0" />
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="fg flex1">
+                                    <label>Application Name</label>
+                                    <input class="fc" type="text" @bind="_ss.ApplicationName" />
+                                </div>
+                                <div class="fg flex1">
+                                    <label>Workstation ID</label>
+                                    <input class="fc" type="text" @bind="_ss.WorkstationId" placeholder="optional" />
+                                </div>
+                            </div>
+
+                            <hr class="section-sep" />
+                            <div class="section-label">Behaviour &amp; Pooling</div>
+
+                            <div class="form-row">
+                                <div class="fg flex1">
+                                    <label>Application Intent</label>
+                                    <select class="fc" @bind="_ss.ApplicationIntent">
+                                        <option value="@SqlServerApplicationIntent.ReadWrite">ReadWrite</option>
+                                        <option value="@SqlServerApplicationIntent.ReadOnly">ReadOnly</option>
+                                    </select>
+                                </div>
+                                <div class="fg flex1">
+                                    <label>Failover Partner</label>
+                                    <input class="fc" type="text" @bind="_ss.FailoverPartner" placeholder="optional" />
+                                </div>
+                            </div>
+                            <div class="check-row">
+                                <label class="check-label"><input type="checkbox" @bind="_ss.MultipleActiveResultSets" /> Multiple Active Result Sets (MARS)</label>
+                                <label class="check-label"><input type="checkbox" @bind="_ss.MultiSubnetFailover" /> Multi-Subnet Failover</label>
+                                <label class="check-label"><input type="checkbox" @bind="_ss.Pooling" /> Connection Pooling</label>
+                            </div>
+                            @if (_ss.Pooling)
+                            {
+                                <div class="form-row">
+                                    <div class="fg flex1">
+                                        <label>Min Pool Size</label>
+                                        <input class="fc" type="number" @bind="_ss.MinPoolSize" min="0" />
+                                    </div>
+                                    <div class="fg flex1">
+                                        <label>Max Pool Size</label>
+                                        <input class="fc" type="number" @bind="_ss.MaxPoolSize" min="1" />
+                                    </div>
+                                </div>
+                            }
+                            <div class="fg">
+                                <label>Additional Parameters</label>
+                                <textarea class="fc" rows="3" @bind="_ss.AdditionalParameters" placeholder="key=value;key2=value2 — appended verbatim to the connection string"></textarea>
+                            </div>
+                        </div>
+                    }
+                }
+
+                <!-- MySQL -->
+                @if (_provider == DatabaseProvider.MySql)
+                {
+                    <div class="config-tabs">
+                        <button class="ct @(_tab == "general" ? "active" : "")" @onclick='() => _tab = "general"'>General</button>
+                        <button class="ct @(_tab == "security" ? "active" : "")" @onclick='() => _tab = "security"'>SSL</button>
+                        <button class="ct @(_tab == "advanced" ? "active" : "")" @onclick='() => _tab = "advanced"'>Advanced</button>
+                    </div>
+
+                    @if (_tab == "general")
+                    {
+                        <div class="config-section">
+                            <div class="form-row">
+                                <div class="fg flex2">
+                                    <label>Server <span class="req">*</span></label>
+                                    <input class="fc" type="text" @bind="_my.Host" placeholder="localhost" />
+                                </div>
+                                <div class="fg port-field">
+                                    <label>Port</label>
+                                    <input class="fc" type="number" @bind="_my.Port" />
+                                </div>
+                            </div>
+                            <div class="fg">
+                                <label>Database <span class="req">*</span></label>
+                                <input class="fc" type="text" @bind="_my.Database" placeholder="PasswordManager" />
+                            </div>
+                            <div class="fg">
+                                <label>Username <span class="req">*</span></label>
+                                <input class="fc" type="text" @bind="_my.Username" />
+                            </div>
+                            <div class="fg">
+                                <label>Password</label>
+                                <input class="fc" type="password" @bind="_myPassword" />
+                            </div>
+                        </div>
+                    }
+                    @if (_tab == "security")
+                    {
+                        <div class="config-section">
+                            <div class="fg">
+                                <label>SSL Mode</label>
+                                <select class="fc" @bind="_my.SslMode">
+                                    <option value="@MySqlSslMode.None">None — no SSL</option>
+                                    <option value="@MySqlSslMode.Preferred">Preferred (default)</option>
+                                    <option value="@MySqlSslMode.Required">Required</option>
+                                    <option value="@MySqlSslMode.VerifyCA">VerifyCA — validate CA</option>
+                                    <option value="@MySqlSslMode.VerifyFull">VerifyFull — validate CA + hostname</option>
+                                </select>
+                            </div>
+                            @if (_my.SslMode is MySqlSslMode.VerifyCA or MySqlSslMode.VerifyFull)
+                            {
+                                <div class="fg">
+                                    <label>CA Certificate Path</label>
+                                    <input class="fc" type="text" @bind="_my.SslCaPath" placeholder="/path/to/ca-cert.pem" />
+                                </div>
+                                <div class="fg">
+                                    <label>Client Certificate Path</label>
+                                    <input class="fc" type="text" @bind="_my.SslCertPath" placeholder="/path/to/client-cert.pem" />
+                                </div>
+                                <div class="fg">
+                                    <label>Client Key Path</label>
+                                    <input class="fc" type="text" @bind="_my.SslKeyPath" placeholder="/path/to/client-key.pem" />
+                                </div>
+                            }
+                        </div>
+                    }
+                    @if (_tab == "advanced")
+                    {
+                        <div class="config-section">
+                            <div class="form-row">
+                                <div class="fg flex1">
+                                    <label>Connection Timeout (s)</label>
+                                    <input class="fc" type="number" @bind="_my.ConnectionTimeout" min="0" />
+                                </div>
+                                <div class="fg flex1">
+                                    <label>Command Timeout (s)</label>
+                                    <input class="fc" type="number" @bind="_my.CommandTimeout" min="0" />
+                                </div>
+                            </div>
+                            <div class="fg">
+                                <label>Character Set</label>
+                                <input class="fc" type="text" @bind="_my.CharacterSet" placeholder="utf8mb4" />
+                            </div>
+                            <div class="check-row">
+                                <label class="check-label"><input type="checkbox" @bind="_my.AllowZeroDateTime" /> Allow Zero DateTime</label>
+                                <label class="check-label"><input type="checkbox" @bind="_my.AllowUserVariables" /> Allow User Variables</label>
+                                <label class="check-label"><input type="checkbox" @bind="_my.Pooling" /> Connection Pooling</label>
+                            </div>
+                            @if (_my.Pooling)
+                            {
+                                <div class="form-row">
+                                    <div class="fg flex1">
+                                        <label>Min Pool Size</label>
+                                        <input class="fc" type="number" @bind="_my.MinPoolSize" min="0" />
+                                    </div>
+                                    <div class="fg flex1">
+                                        <label>Max Pool Size</label>
+                                        <input class="fc" type="number" @bind="_my.MaxPoolSize" min="1" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+
+                <!-- PostgreSQL -->
+                @if (_provider == DatabaseProvider.PostgreSql)
+                {
+                    <div class="config-tabs">
+                        <button class="ct @(_tab == "general" ? "active" : "")" @onclick='() => _tab = "general"'>General</button>
+                        <button class="ct @(_tab == "security" ? "active" : "")" @onclick='() => _tab = "security"'>SSL</button>
+                        <button class="ct @(_tab == "advanced" ? "active" : "")" @onclick='() => _tab = "advanced"'>Advanced</button>
+                    </div>
+
+                    @if (_tab == "general")
+                    {
+                        <div class="config-section">
+                            <div class="form-row">
+                                <div class="fg flex2">
+                                    <label>Server <span class="req">*</span></label>
+                                    <input class="fc" type="text" @bind="_pg.Host" placeholder="localhost" />
+                                </div>
+                                <div class="fg port-field">
+                                    <label>Port</label>
+                                    <input class="fc" type="number" @bind="_pg.Port" />
+                                </div>
+                            </div>
+                            <div class="fg">
+                                <label>Database <span class="req">*</span></label>
+                                <input class="fc" type="text" @bind="_pg.Database" placeholder="PasswordManager" />
+                            </div>
+                            <div class="fg">
+                                <label>Username <span class="req">*</span></label>
+                                <input class="fc" type="text" @bind="_pg.Username" />
+                            </div>
+                            <div class="fg">
+                                <label>Password</label>
+                                <input class="fc" type="password" @bind="_pgPassword" />
+                            </div>
+                        </div>
+                    }
+                    @if (_tab == "security")
+                    {
+                        <div class="config-section">
+                            <div class="fg">
+                                <label>SSL Mode</label>
+                                <select class="fc" @bind="_pg.SslMode">
+                                    <option value="@PostgreSqlSslMode.Disable">Disable</option>
+                                    <option value="@PostgreSqlSslMode.Allow">Allow</option>
+                                    <option value="@PostgreSqlSslMode.Prefer">Prefer (default)</option>
+                                    <option value="@PostgreSqlSslMode.Require">Require</option>
+                                    <option value="@PostgreSqlSslMode.VerifyCA">VerifyCA</option>
+                                    <option value="@PostgreSqlSslMode.VerifyFull">VerifyFull</option>
+                                </select>
+                            </div>
+                            @if (_pg.SslMode is PostgreSqlSslMode.VerifyCA or PostgreSqlSslMode.VerifyFull)
+                            {
+                                <div class="fg">
+                                    <label>SSL Certificate Path</label>
+                                    <input class="fc" type="text" @bind="_pg.SslCertPath" placeholder="/path/to/client.crt" />
+                                </div>
+                                <div class="fg">
+                                    <label>SSL Key Path</label>
+                                    <input class="fc" type="text" @bind="_pg.SslKeyPath" placeholder="/path/to/client.key" />
+                                </div>
+                                <div class="fg">
+                                    <label>Root Certificate Path</label>
+                                    <input class="fc" type="text" @bind="_pg.SslRootCertPath" placeholder="/path/to/root.crt" />
+                                </div>
+                            }
+                        </div>
+                    }
+                    @if (_tab == "advanced")
+                    {
+                        <div class="config-section">
+                            <div class="form-row">
+                                <div class="fg flex1">
+                                    <label>Connection Timeout (s)</label>
+                                    <input class="fc" type="number" @bind="_pg.ConnectionTimeout" min="0" />
+                                </div>
+                                <div class="fg flex1">
+                                    <label>Command Timeout (s)</label>
+                                    <input class="fc" type="number" @bind="_pg.CommandTimeout" min="0" />
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="fg flex1">
+                                    <label>Application Name</label>
+                                    <input class="fc" type="text" @bind="_pg.ApplicationName" />
+                                </div>
+                                <div class="fg flex1">
+                                    <label>Search Path</label>
+                                    <input class="fc" type="text" @bind="_pg.SearchPath" placeholder="public" />
+                                </div>
+                            </div>
+                            <div class="check-row">
+                                <label class="check-label"><input type="checkbox" @bind="_pg.Pooling" /> Connection Pooling</label>
+                            </div>
+                            @if (_pg.Pooling)
+                            {
+                                <div class="form-row">
+                                    <div class="fg flex1">
+                                        <label>Min Pool Size</label>
+                                        <input class="fc" type="number" @bind="_pg.MinPoolSize" min="0" />
+                                    </div>
+                                    <div class="fg flex1">
+                                        <label>Max Pool Size</label>
+                                        <input class="fc" type="number" @bind="_pg.MaxPoolSize" min="1" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+
+                <!-- Supabase -->
+                @if (_provider == DatabaseProvider.Supabase)
+                {
+                    <div class="config-section">
+                        <h3>Supabase Configuration</h3>
+                        <div class="fg">
+                            <label>Project URL <span class="req">*</span></label>
+                            <input class="fc" type="text" @bind="_supaUrl" placeholder="https://your-project.supabase.co" />
+                        </div>
+                        <div class="fg">
+                            <label>Service Key <span class="req">*</span></label>
+                            <input class="fc" type="password" @bind="_supaKey" />
+                            <small>Use your service role key for full database access</small>
+                        </div>
+                    </div>
+                }
+
+                <!-- Status -->
+                @if (!string.IsNullOrEmpty(_statusMessage))
+                {
+                    <div class="status-bar @(_statusOk ? "ok" : "err")">
+                        <i class="fas @(_statusOk ? "fa-check-circle" : "fa-exclamation-circle")"></i>
+                        @_statusMessage
+                    </div>
+                }
+
+                <!-- Actions -->
+                <div class="setup-actions spaced">
+                    <button class="btn-ghost" @onclick="() => _step = 1">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <div class="right-actions">
+                        <button class="btn-secondary" @onclick="TestConnection" disabled="@_busy">
+                            @if (_busy && _busyAction == "test")
+                            {
+                                <i class="fas fa-spinner fa-spin"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-plug"></i>
+                            }
+                            Test Connection
+                        </button>
+                        <button class="btn-primary" @onclick="Save" disabled="@_busy">
+                            @if (_busy && _busyAction == "save")
+                            {
+                                <i class="fas fa-spinner fa-spin"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-save"></i>
+                            }
+                            Save &amp; Continue
+                        </button>
+                    </div>
                 </div>
             </div>
+        }
 
-            @if (_selectedProvider == DatabaseProvider.Sqlite)
-            {
-                <div class="form-section">
-                    <h3>SQLite Configuration</h3>
-                    <div class="form-group">
-                        <label for="dbPath">Database File Path:</label>
-                        <input type="text" id="dbPath" class="form-control" @bind="_sqlitePath" 
-                               placeholder="passwordmanager.db" />
-                        <small class="form-text">Leave as default or specify a custom path</small>
-                    </div>
-                </div>
-            }
-            else if (_selectedProvider == DatabaseProvider.SqlServer)
-            {
-                <div class="form-section">
-                    <h3>SQL Server Configuration</h3>
-                    <div class="form-group">
-                        <label for="sqlHost">Server Host:</label>
-                        <input type="text" id="sqlHost" class="form-control" @bind="_sqlServerHost" 
-                               placeholder="localhost" />
-                    </div>
-                    <div class="form-group">
-                        <label for="sqlPort">Port:</label>
-                        <input type="number" id="sqlPort" class="form-control" @bind="_sqlServerPort" />
-                    </div>
-                    <div class="form-group">
-                        <label for="sqlDatabase">Database Name:</label>
-                        <input type="text" id="sqlDatabase" class="form-control" @bind="_sqlServerDatabase" 
-                               placeholder="PasswordManager" />
-                    </div>
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" @bind="_sqlServerUseWindowsAuth" />
-                            Use Windows Authentication
-                        </label>
-                    </div>
-                    @if (!_sqlServerUseWindowsAuth)
-                    {
-                        <div class="form-group">
-                            <label for="sqlUsername">Username:</label>
-                            <input type="text" id="sqlUsername" class="form-control" @bind="_sqlServerUsername" />
-                        </div>
-                        <div class="form-group">
-                            <label for="sqlPassword">Password:</label>
-                            <input type="password" id="sqlPassword" class="form-control" @bind="_sqlServerPassword" />
-                        </div>
-                    }
-                </div>
-            }
-            else if (_selectedProvider == DatabaseProvider.MySql)
-            {
-                <div class="form-section">
-                    <h3>MySQL Configuration</h3>
-                    <div class="form-group">
-                        <label for="mysqlHost">Server Host:</label>
-                        <input type="text" id="mysqlHost" class="form-control" @bind="_mysqlHost" 
-                               placeholder="localhost" />
-                    </div>
-                    <div class="form-group">
-                        <label for="mysqlPort">Port:</label>
-                        <input type="number" id="mysqlPort" class="form-control" @bind="_mysqlPort" />
-                    </div>
-                    <div class="form-group">
-                        <label for="mysqlDatabase">Database Name:</label>
-                        <input type="text" id="mysqlDatabase" class="form-control" @bind="_mysqlDatabase" 
-                               placeholder="PasswordManager" />
-                    </div>
-                    <div class="form-group">
-                        <label for="mysqlUsername">Username:</label>
-                        <input type="text" id="mysqlUsername" class="form-control" @bind="_mysqlUsername" />
-                    </div>
-                    <div class="form-group">
-                        <label for="mysqlPassword">Password:</label>
-                        <input type="password" id="mysqlPassword" class="form-control" @bind="_mysqlPassword" />
-                    </div>
-                </div>
-            }
-            else if (_selectedProvider == DatabaseProvider.PostgreSql)
-            {
-                <div class="form-section">
-                    <h3>PostgreSQL Configuration</h3>
-                    <div class="form-group">
-                        <label for="pgHost">Server Host:</label>
-                        <input type="text" id="pgHost" class="form-control" @bind="_postgresHost" 
-                               placeholder="localhost" />
-                    </div>
-                    <div class="form-group">
-                        <label for="pgPort">Port:</label>
-                        <input type="number" id="pgPort" class="form-control" @bind="_postgresPort" />
-                    </div>
-                    <div class="form-group">
-                        <label for="pgDatabase">Database Name:</label>
-                        <input type="text" id="pgDatabase" class="form-control" @bind="_postgresDatabase" 
-                               placeholder="PasswordManager" />
-                    </div>
-                    <div class="form-group">
-                        <label for="pgUsername">Username:</label>
-                        <input type="text" id="pgUsername" class="form-control" @bind="_postgresUsername" />
-                    </div>
-                    <div class="form-group">
-                        <label for="pgPassword">Password:</label>
-                        <input type="password" id="pgPassword" class="form-control" @bind="_postgresPassword" />
-                    </div>
-                </div>
-            }
-            else if (_selectedProvider == DatabaseProvider.Supabase)
-            {
-                <div class="form-section">
-                    <h3>Supabase Configuration</h3>
-                    <div class="form-group">
-                        <label for="supaUrl">Supabase Project URL:</label>
-                        <input type="text" id="supaUrl" class="form-control" @bind="_supabaseUrl" 
-                               placeholder="https://your-project.supabase.co" />
-                    </div>
-                    <div class="form-group">
-                        <label for="supaKey">Service Key:</label>
-                        <input type="password" id="supaKey" class="form-control" @bind="_supabaseKey" />
-                        <small class="form-text">Use your service role key for full access</small>
-                    </div>
-                </div>
-            }
-
-            <div class="button-group">
-                <button class="btn btn-secondary" @onclick="TestConnection" disabled="@_isTesting">
-                    @if (_isTesting)
-                    {
-                        <span>Testing...</span>
-                    }
-                    else
-                    {
-                        <span>🔌 Test Connection</span>
-                    }
-                </button>
-                <button class="btn btn-primary" @onclick="SaveConfiguration" disabled="@_isSaving">
-                    @if (_isSaving)
-                    {
-                        <span>Saving...</span>
-                    }
-                    else
-                    {
-                        <span>💾 Save & Continue</span>
-                    }
-                </button>
-            </div>
-        </div>
     </div>
 </div>
 
 <style>
-    .setup-container {
+    .setup-page {
         min-height: 100vh;
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 20px;
+        padding: 40px 20px 60px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
-
-    .setup-card {
-        background: white;
-        border-radius: 12px;
-        padding: 40px;
-        max-width: 600px;
+    .setup-shell {
+        background: #fff;
+        border-radius: 16px;
         width: 100%;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 720px;
+        box-shadow: 0 32px 64px rgba(0,0,0,0.4);
+        overflow: hidden;
     }
-
-    .setup-card h1 {
-        margin: 0 0 10px 0;
-        color: #333;
-        font-size: 28px;
+    .setup-header {
+        background: #007acc;
+        color: #fff;
+        padding: 32px;
+        text-align: center;
     }
-
-    .subtitle {
-        color: #666;
-        margin-bottom: 30px;
+    .setup-logo { font-size: 40px; margin-bottom: 12px; }
+    .setup-header h1 { margin: 0 0 6px; font-size: 24px; font-weight: 600; }
+    .setup-header p { margin: 0 0 20px; opacity: .85; font-size: 14px; }
+    .step-indicators { display: flex; align-items: center; justify-content: center; gap: 0; }
+    .step-dot {
+        width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.25);
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 600; font-size: 14px; transition: background .3s;
     }
+    .step-dot.active { background: #fff; color: #007acc; }
+    .step-dot.done { background: rgba(255,255,255,.6); }
+    .step-line { width: 60px; height: 2px; background: rgba(255,255,255,.3); margin: 0 4px; }
+    .step-line.done { background: rgba(255,255,255,.7); }
 
-    .alert {
-        padding: 12px 16px;
-        border-radius: 6px;
-        margin-bottom: 20px;
+    .setup-body { padding: 32px; }
+
+    /* Provider grid */
+    .provider-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 14px; margin-bottom: 28px; }
+    .provider-card {
+        border: 2px solid #e2e8f0; border-radius: 10px; padding: 18px 16px;
+        cursor: pointer; display: flex; align-items: center; gap: 14px;
+        transition: all .2s; position: relative; background: #fff;
     }
+    .provider-card:hover { border-color: #007acc; box-shadow: 0 4px 12px rgba(0,122,204,.15); transform: translateY(-1px); }
+    .provider-card.selected { border-color: #007acc; background: #f0f8ff; }
+    .provider-card.local { border-width: 3px; }
+    .provider-card.local.selected { border-color: #28a745; background: #f0fff4; }
+    .provider-card.local:hover { border-color: #28a745; }
+    .pc-icon { font-size: 24px; color: #007acc; flex-shrink: 0; }
+    .provider-card.local .pc-icon { color: #28a745; }
+    .pc-info { flex: 1; }
+    .pc-info strong { display: block; font-size: 15px; color: #1a202c; }
+    .pc-info span { font-size: 12px; color: #718096; }
+    .badge-rec { display: inline-block; background: #c6f6d5; color: #276749; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-style: normal; margin-top: 4px; }
+    .pc-check { color: #007acc; font-size: 18px; }
+    .provider-card.local .pc-check { color: #28a745; }
 
-    .alert-success {
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        color: #155724;
+    /* Tabs */
+    .config-tabs { display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; }
+    .ct {
+        padding: 10px 20px; border: none; background: none; cursor: pointer;
+        font-size: 14px; font-weight: 500; color: #718096;
+        border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .2s;
     }
+    .ct:hover { color: #007acc; }
+    .ct.active { color: #007acc; border-bottom-color: #007acc; }
 
-    .alert-danger {
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        color: #721c24;
+    /* Config section */
+    .config-section { margin-bottom: 8px; }
+    .config-section h3 { font-size: 16px; font-weight: 600; color: #2d3748; margin: 0 0 20px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+    .section-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #718096; margin-bottom: 14px; }
+    .section-sep { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
+
+    /* Form elements */
+    .fg { margin-bottom: 16px; }
+    .fg label { display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 6px; }
+    .fg small { display: block; font-size: 12px; color: #a0aec0; margin-top: 4px; }
+    .fc {
+        width: 100%; box-sizing: border-box; padding: 9px 12px;
+        border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px;
+        color: #2d3748; background: #fff; transition: border-color .15s, box-shadow .15s;
     }
+    .fc:focus { outline: none; border-color: #007acc; box-shadow: 0 0 0 3px rgba(0,122,204,.15); }
+    select.fc { appearance: auto; }
+    textarea.fc { resize: vertical; }
+    .req { color: #e53e3e; }
+    .form-row { display: flex; gap: 14px; }
+    .form-row .fg { margin-bottom: 16px; }
+    .flex1 { flex: 1; }
+    .flex2 { flex: 2; }
+    .port-field { width: 110px; flex: none; }
+    .check-row { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
+    .check-label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #4a5568; cursor: pointer; }
+    .check-label input[type=checkbox] { margin: 0; cursor: pointer; }
 
-    .form-section {
-        margin-bottom: 30px;
+    /* Status */
+    .status-bar {
+        display: flex; align-items: center; gap: 10px;
+        padding: 12px 16px; border-radius: 6px; font-size: 14px; margin-bottom: 20px;
     }
+    .status-bar.ok { background: #f0fff4; border: 1px solid #c6f6d5; color: #276749; }
+    .status-bar.err { background: #fff5f5; border: 1px solid #fed7d7; color: #c53030; }
 
-    .form-section h3 {
-        font-size: 18px;
-        margin-bottom: 15px;
-        color: #444;
-        border-bottom: 2px solid #667eea;
-        padding-bottom: 8px;
+    /* Actions */
+    .setup-actions { display: flex; justify-content: flex-end; padding-top: 20px; border-top: 1px solid #e2e8f0; margin-top: 24px; }
+    .setup-actions.spaced { justify-content: space-between; align-items: center; }
+    .right-actions { display: flex; gap: 12px; }
+    .btn-primary, .btn-secondary, .btn-ghost {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 22px; border-radius: 6px; font-size: 14px; font-weight: 500;
+        border: none; cursor: pointer; transition: all .2s;
     }
+    .btn-primary { background: #007acc; color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #005c99; box-shadow: 0 4px 12px rgba(0,122,204,.35); transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+    .btn-secondary { background: #edf2f7; color: #4a5568; }
+    .btn-secondary:hover:not(:disabled) { background: #e2e8f0; }
+    .btn-secondary:disabled { opacity: .6; cursor: not-allowed; }
+    .btn-ghost { background: none; color: #718096; padding-left: 0; }
+    .btn-ghost:hover { color: #2d3748; }
 
-    .form-group {
-        margin-bottom: 20px;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 500;
-        color: #555;
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        font-size: 14px;
-        transition: border-color 0.3s;
-    }
-
-    .form-control:focus {
-        outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-
-    .form-text {
-        display: block;
-        margin-top: 5px;
-        font-size: 12px;
-        color: #888;
-    }
-
-    .button-group {
-        display: flex;
-        gap: 12px;
-        margin-top: 30px;
-    }
-
-    .btn {
-        flex: 1;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 6px;
-        font-size: 16px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-    .btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    }
-
-    .btn-secondary {
-        background: #6c757d;
-        color: white;
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-        background: #5a6268;
+    @@media (max-width: 600px) {
+        .provider-grid { grid-template-columns: 1fr; }
+        .form-row { flex-direction: column; gap: 0; }
+        .port-field { width: 100%; }
+        .right-actions { flex-direction: column; }
     }
 </style>
 
 @code {
-    private DatabaseProvider _selectedProvider = DatabaseProvider.Sqlite;
-    private string _message = string.Empty;
-    private bool _isError = false;
-    private bool _isTesting = false;
-    private bool _isSaving = false;
+    private int _step = 1;
+    private string _tab = "general";
+    private DatabaseProvider _provider = DatabaseProvider.Sqlite;
+
+    private string _statusMessage = string.Empty;
+    private bool _statusOk;
+    private bool _busy;
+    private string _busyAction = string.Empty;
 
     // SQLite
-    private string _sqlitePath = "passwordmanager.db";
+    private string _sqlitePath = string.Empty;
 
     // SQL Server
-    private string _sqlServerHost = "localhost";
-    private int _sqlServerPort = 1433;
-    private string _sqlServerDatabase = "PasswordManager";
-    private string _sqlServerUsername = "";
-    private string _sqlServerPassword = "";
-    private bool _sqlServerUseWindowsAuth = false;
+    private SqlServerConfig _ss = new SqlServerConfig();
+    private string _ssPassword = string.Empty;
 
     // MySQL
-    private string _mysqlHost = "localhost";
-    private int _mysqlPort = 3306;
-    private string _mysqlDatabase = "PasswordManager";
-    private string _mysqlUsername = "";
-    private string _mysqlPassword = "";
+    private MySqlConfig _my = new MySqlConfig();
+    private string _myPassword = string.Empty;
 
     // PostgreSQL
-    private string _postgresHost = "localhost";
-    private int _postgresPort = 5432;
-    private string _postgresDatabase = "PasswordManager";
-    private string _postgresUsername = "";
-    private string _postgresPassword = "";
+    private PostgreSqlConfig _pg = new PostgreSqlConfig();
+    private string _pgPassword = string.Empty;
 
     // Supabase
-    private string _supabaseUrl = "";
-    private string _supabaseKey = "";
+    private string _supaUrl = string.Empty;
+    private string _supaKey = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        // Load existing configuration if available
         try
         {
-            var config = await DatabaseConfigService.GetConfigurationAsync();
-            if (config != null && !config.IsFirstRun)
+            var existing = await DatabaseConfigService.GetConfigurationAsync();
+            if (existing != null && !existing.IsFirstRun)
             {
-                _selectedProvider = config.Provider;
-                LoadConfigurationValues(config);
+                _provider = existing.Provider;
+                if (existing.Sqlite != null) _sqlitePath = existing.Sqlite.DatabasePath;
+                if (existing.SqlServer != null) _ss = existing.SqlServer;
+                if (existing.MySql != null) _my = existing.MySql;
+                if (existing.PostgreSql != null) _pg = existing.PostgreSql;
+                if (existing.Supabase != null) { _supaUrl = existing.Supabase.Url; _supaKey = existing.Supabase.ServiceKey; }
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading configuration: {ex.Message}");
-        }
+        catch { }
     }
 
-    private void LoadConfigurationValues(DatabaseConfiguration config)
+    private string GetStepSubtitle() => _step == 1
+        ? "Step 1 of 2 — Choose a database provider"
+        : "Step 2 of 2 — Configure your connection";
+
+    private void GoToStep2()
     {
-        switch (config.Provider)
-        {
-            case DatabaseProvider.Sqlite:
-                _sqlitePath = config.Sqlite?.DatabasePath ?? "passwordmanager.db";
-                break;
-            case DatabaseProvider.SqlServer:
-                if (config.SqlServer != null)
-                {
-                    _sqlServerHost = config.SqlServer.Host;
-                    _sqlServerPort = config.SqlServer.Port;
-                    _sqlServerDatabase = config.SqlServer.Database;
-                    _sqlServerUsername = config.SqlServer.Username ?? "";
-                    _sqlServerUseWindowsAuth = config.SqlServer.UseWindowsAuthentication;
-                }
-                break;
-            case DatabaseProvider.MySql:
-                if (config.MySql != null)
-                {
-                    _mysqlHost = config.MySql.Host;
-                    _mysqlPort = config.MySql.Port;
-                    _mysqlDatabase = config.MySql.Database;
-                    _mysqlUsername = config.MySql.Username;
-                }
-                break;
-            case DatabaseProvider.PostgreSql:
-                if (config.PostgreSql != null)
-                {
-                    _postgresHost = config.PostgreSql.Host;
-                    _postgresPort = config.PostgreSql.Port;
-                    _postgresDatabase = config.PostgreSql.Database;
-                    _postgresUsername = config.PostgreSql.Username;
-                }
-                break;
-            case DatabaseProvider.Supabase:
-                if (config.Supabase != null)
-                {
-                    _supabaseUrl = config.Supabase.Url;
-                    _supabaseKey = config.Supabase.ServiceKey;
-                }
-                break;
-        }
-    }
-
-    private async Task<DatabaseConfiguration> BuildConfigurationAsync()
-    {
-        var config = new DatabaseConfiguration
-        {
-            Provider = _selectedProvider,
-            IsFirstRun = false
-        };
-
-        switch (_selectedProvider)
-        {
-            case DatabaseProvider.Sqlite:
-                config.Sqlite = new SqliteConfig
-                {
-                    DatabasePath = _sqlitePath
-                };
-                break;
-
-            case DatabaseProvider.SqlServer:
-                config.SqlServer = new SqlServerConfig
-                {
-                    Host = _sqlServerHost,
-                    Port = _sqlServerPort,
-                    Database = _sqlServerDatabase,
-                    Username = _sqlServerUsername,
-                    UseWindowsAuthentication = _sqlServerUseWindowsAuth
-                };
-                if (!string.IsNullOrEmpty(_sqlServerPassword))
-                {
-                    config.SqlServer.EncryptedPassword = await DatabaseConfigService.EncryptPasswordAsync(_sqlServerPassword);
-                }
-                break;
-
-            case DatabaseProvider.MySql:
-                config.MySql = new MySqlConfig
-                {
-                    Host = _mysqlHost,
-                    Port = _mysqlPort,
-                    Database = _mysqlDatabase,
-                    Username = _mysqlUsername
-                };
-                if (!string.IsNullOrEmpty(_mysqlPassword))
-                {
-                    config.MySql.EncryptedPassword = await DatabaseConfigService.EncryptPasswordAsync(_mysqlPassword);
-                }
-                break;
-
-            case DatabaseProvider.PostgreSql:
-                config.PostgreSql = new PostgreSqlConfig
-                {
-                    Host = _postgresHost,
-                    Port = _postgresPort,
-                    Database = _postgresDatabase,
-                    Username = _postgresUsername
-                };
-                if (!string.IsNullOrEmpty(_postgresPassword))
-                {
-                    config.PostgreSql.EncryptedPassword = await DatabaseConfigService.EncryptPasswordAsync(_postgresPassword);
-                }
-                break;
-
-            case DatabaseProvider.Supabase:
-                config.Supabase = new SupabaseConfig
-                {
-                    Url = _supabaseUrl,
-                    ServiceKey = _supabaseKey
-                };
-                break;
-        }
-
-        return config;
+        _step = 2;
+        _tab = "general";
+        _statusMessage = string.Empty;
     }
 
     private async Task TestConnection()
     {
-        _isTesting = true;
-        _message = string.Empty;
+        _busy = true;
+        _busyAction = "test";
+        _statusMessage = string.Empty;
         StateHasChanged();
-
         try
         {
-            var config = await BuildConfigurationAsync();
-            var result = await DatabaseConfigService.TestConnectionAsync(config);
-
-            if (result.Success)
-            {
-                _message = "✅ Connection successful!";
-                _isError = false;
-            }
-            else
-            {
-                _message = $"❌ Connection failed: {result.ErrorMessage}";
-                _isError = true;
-            }
+            var cfg = await BuildConfig();
+            var result = await DatabaseConfigService.TestConnectionAsync(cfg);
+            _statusOk = result.Success;
+            _statusMessage = result.Success
+                ? "Connection successful!"
+                : $"Connection failed: {result.ErrorMessage}";
         }
         catch (Exception ex)
         {
-            _message = $"❌ Error testing connection: {ex.Message}";
-            _isError = true;
+            _statusOk = false;
+            _statusMessage = $"Error: {ex.Message}";
         }
         finally
         {
-            _isTesting = false;
+            _busy = false;
+            _busyAction = string.Empty;
             StateHasChanged();
         }
     }
 
-    private async Task SaveConfiguration()
+    private async Task Save()
     {
-        _isSaving = true;
-        _message = string.Empty;
+        _busy = true;
+        _busyAction = "save";
+        _statusMessage = string.Empty;
         StateHasChanged();
-
         try
         {
-            var config = await BuildConfigurationAsync();
-            
-            // Save configuration to file
-            await DatabaseConfigService.SaveConfigurationAsync(config);
-            
-            // Also update appsettings.json
-            await UpdateAppSettings(config);
-
-            _message = "✅ Configuration saved successfully! Redirecting...";
-            _isError = false;
+            var cfg = await BuildConfig();
+            await DatabaseConfigService.SaveConfigurationAsync(cfg);
+            _statusOk = true;
+            _statusMessage = "Configuration saved — redirecting...";
             StateHasChanged();
-
-            // Wait a moment for user to see the message
-            await Task.Delay(2000);
-            
-            // Redirect to home or login page
+            await Task.Delay(1200);
             NavigationManager.NavigateTo("/", forceLoad: true);
         }
         catch (Exception ex)
         {
-            _message = $"❌ Error saving configuration: {ex.Message}";
-            _isError = true;
+            _statusOk = false;
+            _statusMessage = $"Save failed: {ex.Message}";
         }
         finally
         {
-            _isSaving = false;
+            _busy = false;
+            _busyAction = string.Empty;
             StateHasChanged();
         }
     }
 
-    private async Task UpdateAppSettings(DatabaseConfiguration config)
+    private async Task<DatabaseConfiguration> BuildConfig()
     {
-        try
+        var cfg = new DatabaseConfiguration { Provider = _provider, IsFirstRun = false };
+        switch (_provider)
         {
-            var appSettingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
-            
-            if (File.Exists(appSettingsPath))
-            {
-                var json = await File.ReadAllTextAsync(appSettingsPath);
-                using var jsonDoc = System.Text.Json.JsonDocument.Parse(json);
-                var settings = new Dictionary<string, object>();
-                
-                // Copy existing settings
-                foreach (var property in jsonDoc.RootElement.EnumerateObject())
-                {
-                    settings[property.Name] = property.Value.Clone();
-                }
+            case DatabaseProvider.Sqlite:
+                cfg.Sqlite = new SqliteConfig { DatabasePath = string.IsNullOrWhiteSpace(_sqlitePath) ? "passwordmanager.db" : _sqlitePath };
+                break;
 
-                // Update DatabaseProvider
-                settings["DatabaseProvider"] = config.Provider.ToString();
+            case DatabaseProvider.SqlServer:
+                if (!string.IsNullOrEmpty(_ssPassword))
+                    _ss.EncryptedPassword = await DatabaseConfigService.EncryptPasswordAsync(_ssPassword);
+                cfg.SqlServer = _ss;
+                break;
 
-                // Update connection strings
-                var connectionStrings = new Dictionary<string, string>();
-                
-                // Copy existing connection strings if they exist
-                if (settings.ContainsKey("ConnectionStrings") && 
-                    settings["ConnectionStrings"] is System.Text.Json.JsonElement connectionStringsElement)
-                {
-                    foreach (var property in connectionStringsElement.EnumerateObject())
-                    {
-                        connectionStrings[property.Name] = property.Value.GetString() ?? "";
-                    }
-                }
+            case DatabaseProvider.MySql:
+                if (!string.IsNullOrEmpty(_myPassword))
+                    _my.EncryptedPassword = await DatabaseConfigService.EncryptPasswordAsync(_myPassword);
+                cfg.MySql = _my;
+                break;
 
-                var connectionString = await DatabaseConfigService.BuildConnectionStringAsync(config);
-                
-                switch (config.Provider)
-                {
-                    case DatabaseProvider.Sqlite:
-                        connectionStrings["SqliteConnection"] = connectionString;
-                        connectionStrings["DefaultConnection"] = connectionString;
-                        break;
-                    case DatabaseProvider.SqlServer:
-                        connectionStrings["DefaultConnection"] = connectionString;
-                        break;
-                    case DatabaseProvider.MySql:
-                        connectionStrings["MySqlConnection"] = connectionString;
-                        break;
-                    case DatabaseProvider.PostgreSql:
-                        connectionStrings["PostgresConnection"] = connectionString;
-                        break;
-                }
+            case DatabaseProvider.PostgreSql:
+                if (!string.IsNullOrEmpty(_pgPassword))
+                    _pg.EncryptedPassword = await DatabaseConfigService.EncryptPasswordAsync(_pgPassword);
+                cfg.PostgreSql = _pg;
+                break;
 
-                settings["ConnectionStrings"] = connectionStrings;
-
-                var options = new System.Text.Json.JsonSerializerOptions
-                {
-                    WriteIndented = true
-                };
-                var updatedJson = System.Text.Json.JsonSerializer.Serialize(settings, options);
-                await File.WriteAllTextAsync(appSettingsPath, updatedJson);
-            }
+            case DatabaseProvider.Supabase:
+                cfg.Supabase = new SupabaseConfig { Url = _supaUrl, ServiceKey = _supaKey };
+                break;
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Warning: Could not update appsettings.json: {ex.Message}");
-            // Don't throw - configuration is already saved in the app data directory
-        }
+        return cfg;
     }
 }

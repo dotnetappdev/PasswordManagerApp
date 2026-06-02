@@ -19,17 +19,16 @@
         </div>
 
         <div class="dialog-content">
-            <EditForm Model="Configuration" OnValidSubmit="HandleValidSubmit">
-                <DataAnnotationsValidator />
 
                 @if (CurrentStep == SetupWizardStep.ProviderSelection)
                 {
-                    <!-- Database Provider Selection -->
+                    <!-- Step 1: provider selection — no EditForm, plain buttons -->
                     <div class="provider-selection">
                         <h3>Select Database Provider</h3>
                         <div class="provider-grid">
-                            <div class="provider-card local-provider @(Configuration.Provider == DatabaseProvider.Sqlite ? "selected" : "")"
-                                 @onclick="() => SelectProvider(DatabaseProvider.Sqlite)">
+                            <button type="button"
+                                    class="provider-card local-provider @(Configuration.Provider == DatabaseProvider.Sqlite ? "selected" : "")"
+                                    @onclick="() => SelectProvider(DatabaseProvider.Sqlite)">
                                 <div class="provider-icon">
                                     <i class="fas fa-laptop"></i>
                                 </div>
@@ -38,10 +37,11 @@
                                     <p>Local file database - no server required</p>
                                     <span class="provider-badge recommended">Recommended</span>
                                 </div>
-                            </div>
+                            </button>
 
-                            <div class="provider-card @(Configuration.Provider == DatabaseProvider.SqlServer ? "selected" : "")"
-                                 @onclick="() => SelectProvider(DatabaseProvider.SqlServer)">
+                            <button type="button"
+                                    class="provider-card @(Configuration.Provider == DatabaseProvider.SqlServer ? "selected" : "")"
+                                    @onclick="() => SelectProvider(DatabaseProvider.SqlServer)">
                                 <div class="provider-icon">
                                     <i class="fas fa-server"></i>
                                 </div>
@@ -49,10 +49,11 @@
                                     <h4>MS SQL Server</h4>
                                     <p>Microsoft SQL Server</p>
                                 </div>
-                            </div>
+                            </button>
 
-                            <div class="provider-card @(Configuration.Provider == DatabaseProvider.MySql ? "selected" : "")"
-                                 @onclick="() => SelectProvider(DatabaseProvider.MySql)">
+                            <button type="button"
+                                    class="provider-card @(Configuration.Provider == DatabaseProvider.MySql ? "selected" : "")"
+                                    @onclick="() => SelectProvider(DatabaseProvider.MySql)">
                                 <div class="provider-icon">
                                     <i class="fas fa-database"></i>
                                 </div>
@@ -60,10 +61,11 @@
                                     <h4>MySQL</h4>
                                     <p>MySQL/MariaDB Server</p>
                                 </div>
-                            </div>
+                            </button>
 
-                            <div class="provider-card @(Configuration.Provider == DatabaseProvider.PostgreSql ? "selected" : "")"
-                                 @onclick="() => SelectProvider(DatabaseProvider.PostgreSql)">
+                            <button type="button"
+                                    class="provider-card @(Configuration.Provider == DatabaseProvider.PostgreSql ? "selected" : "")"
+                                    @onclick="() => SelectProvider(DatabaseProvider.PostgreSql)">
                                 <div class="provider-icon">
                                     <i class="fas fa-elephant"></i>
                                 </div>
@@ -71,205 +73,643 @@
                                     <h4>PostgreSQL</h4>
                                     <p>PostgreSQL Server</p>
                                 </div>
-                            </div>
+                            </button>
                         </div>
+                    </div>
+
+                    <div class="dialog-actions">
+                        <button type="button"
+                                class="btn btn-primary"
+                                @onclick="GoToConfigurationStep">
+                            Continue
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
                     </div>
                 }
                 else
                 {
-                    <!-- Configuration Forms -->
+                <!-- Step 2: configuration — EditForm only wraps this step -->
+                <EditForm Model="Configuration" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+                    <!-- Step 2: Configuration Forms -->
                     <div class="configuration-section">
-                    @if (Configuration.Provider == DatabaseProvider.Sqlite)
-                    {
-                        <div class="config-form">
-                            <h3>SQLite Configuration</h3>
-                            <div class="form-group">
-                                <label for="sqlitePath">Database File Path</label>
-                                <InputText @bind-Value="Configuration.Sqlite!.DatabasePath" 
-                                          id="sqlitePath" 
-                                          class="form-control" 
-                                          placeholder="Enter database file path" />
-                                <small class="form-text">Leave empty for default location</small>
-                            </div>
-                        </div>
-                    }
-                    else if (Configuration.Provider == DatabaseProvider.SqlServer)
-                    {
-                        <div class="config-form">
-                            <h3>SQL Server Configuration</h3>
-                            <div class="form-row">
-                                <div class="form-group col-md-8">
-                                    <label for="sqlServerHost">Server</label>
-                                    <InputText @bind-Value="Configuration.SqlServer!.Host" 
-                                              id="sqlServerHost" 
-                                              class="form-control" 
-                                              placeholder="localhost or server name" />
-                                    <ValidationMessage For="() => Configuration.SqlServer.Host" />
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label for="sqlServerPort">Port</label>
-                                    <InputNumber @bind-Value="Configuration.SqlServer!.Port" 
-                                                id="sqlServerPort" 
-                                                class="form-control" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="sqlServerDatabase">Database</label>
-                                <InputText @bind-Value="Configuration.SqlServer!.Database" 
-                                          id="sqlServerDatabase" 
-                                          class="form-control" 
-                                          placeholder="Database name" />
-                                <ValidationMessage For="() => Configuration.SqlServer.Database" />
-                            </div>
-                            <div class="form-group">
-                                <div class="form-check">
-                                    <InputCheckbox @bind-Value="Configuration.SqlServer!.UseWindowsAuthentication" 
-                                                  id="windowsAuth" 
-                                                  class="form-check-input" />
-                                    <label for="windowsAuth" class="form-check-label">Use Windows Authentication</label>
-                                </div>
-                            </div>
-                            @if (!Configuration.SqlServer.UseWindowsAuthentication)
-                            {
-                                <div class="form-group">
-                                    <label for="sqlServerUser">Username</label>
-                                    <InputText @bind-Value="Configuration.SqlServer!.Username" 
-                                              id="sqlServerUser" 
-                                              class="form-control" 
-                                              placeholder="Username" />
-                                </div>
-                                <div class="form-group">
-                                    <label for="sqlServerPass">Password</label>
-                                    <input type="password" 
-                                           @bind="SqlServerPassword" 
-                                           id="sqlServerPass" 
-                                           class="form-control" 
-                                           placeholder="Password" />
-                                </div>
-                            }
-                            <div class="form-group">
-                                <div class="form-check">
-                                    <InputCheckbox @bind-Value="Configuration.SqlServer!.TrustServerCertificate" 
-                                                  id="trustCert" 
-                                                  class="form-check-input" />
-                                    <label for="trustCert" class="form-check-label">Trust Server Certificate</label>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    else if (Configuration.Provider == DatabaseProvider.MySql)
-                    {
-                        <div class="config-form">
-                            <h3>MySQL Configuration</h3>
-                            <div class="form-row">
-                                <div class="form-group col-md-8">
-                                    <label for="mysqlHost">Server</label>
-                                    <InputText @bind-Value="Configuration.MySql!.Host" 
-                                              id="mysqlHost" 
-                                              class="form-control" 
-                                              placeholder="localhost or server name" />
-                                    <ValidationMessage For="() => Configuration.MySql.Host" />
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label for="mysqlPort">Port</label>
-                                    <InputNumber @bind-Value="Configuration.MySql!.Port" 
-                                                id="mysqlPort" 
-                                                class="form-control" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="mysqlDatabase">Database</label>
-                                <InputText @bind-Value="Configuration.MySql!.Database" 
-                                          id="mysqlDatabase" 
-                                          class="form-control" 
-                                          placeholder="Database name" />
-                                <ValidationMessage For="() => Configuration.MySql.Database" />
-                            </div>
-                            <div class="form-group">
-                                <label for="mysqlUser">Username</label>
-                                <InputText @bind-Value="Configuration.MySql!.Username" 
-                                          id="mysqlUser" 
-                                          class="form-control" 
-                                          placeholder="Username" />
-                                <ValidationMessage For="() => Configuration.MySql.Username" />
-                            </div>
-                            <div class="form-group">
-                                <label for="mysqlPass">Password</label>
-                                <input type="password" 
-                                       @bind="MySqlPassword" 
-                                       id="mysqlPass" 
-                                       class="form-control" 
-                                       placeholder="Password" />
-                            </div>
-                            <div class="form-group">
-                                <div class="form-check">
-                                    <InputCheckbox @bind-Value="Configuration.MySql!.UseSsl" 
-                                                  id="mysqlSsl" 
-                                                  class="form-check-input" />
-                                    <label for="mysqlSsl" class="form-check-label">Use SSL Connection</label>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    else if (Configuration.Provider == DatabaseProvider.PostgreSql)
-                    {
-                        <div class="config-form">
-                            <h3>PostgreSQL Configuration</h3>
-                            <div class="form-row">
-                                <div class="form-group col-md-8">
-                                    <label for="pgHost">Server</label>
-                                    <InputText @bind-Value="Configuration.PostgreSql!.Host" 
-                                              id="pgHost" 
-                                              class="form-control" 
-                                              placeholder="localhost or server name" />
-                                    <ValidationMessage For="() => Configuration.PostgreSql.Host" />
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label for="pgPort">Port</label>
-                                    <InputNumber @bind-Value="Configuration.PostgreSql!.Port" 
-                                                id="pgPort" 
-                                                class="form-control" />
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="pgDatabase">Database</label>
-                                <InputText @bind-Value="Configuration.PostgreSql!.Database" 
-                                          id="pgDatabase" 
-                                          class="form-control" 
-                                          placeholder="Database name" />
-                                <ValidationMessage For="() => Configuration.PostgreSql.Database" />
-                            </div>
-                            <div class="form-group">
-                                <label for="pgUser">Username</label>
-                                <InputText @bind-Value="Configuration.PostgreSql!.Username" 
-                                          id="pgUser" 
-                                          class="form-control" 
-                                          placeholder="Username" />
-                                <ValidationMessage For="() => Configuration.PostgreSql.Username" />
-                            </div>
-                            <div class="form-group">
-                                <label for="pgPass">Password</label>
-                                <input type="password" 
-                                       @bind="PostgreSqlPassword" 
-                                       id="pgPass" 
-                                       class="form-control" 
-                                       placeholder="Password" />
-                            </div>
-                            <div class="form-group">
-                                <div class="form-check">
-                                    <InputCheckbox @bind-Value="Configuration.PostgreSql!.UseSsl" 
-                                                  id="pgSsl" 
-                                                  class="form-check-input" />
-                                    <label for="pgSsl" class="form-check-label">Use SSL Connection</label>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    </div>
-                }
 
-                @if (CurrentStep == SetupWizardStep.Configuration)
-                {
+                        @if (Configuration.Provider == DatabaseProvider.Sqlite)
+                        {
+                            <!-- SQLite: no tabs needed -->
+                            <div class="config-form">
+                                <h3>SQLite Configuration</h3>
+                                <div class="form-group">
+                                    <label for="sqlitePath">Database File Path</label>
+                                    <input type="text"
+                                           @bind="Configuration.Sqlite!.DatabasePath"
+                                           id="sqlitePath"
+                                           class="form-control"
+                                           placeholder="Enter database file path" />
+                                    <small class="form-text">Leave empty to use the default location</small>
+                                </div>
+                            </div>
+                        }
+                        else if (Configuration.Provider == DatabaseProvider.SqlServer)
+                        {
+                            <!-- SQL Server: tabbed configuration -->
+                            <div class="config-form">
+                                <h3>SQL Server Configuration</h3>
+                                <div class="config-tabs">
+                                    <button type="button"
+                                            class="config-tab @(_activeTab == "general" ? "active" : "")"
+                                            @onclick='() => SetActiveTab("general")'>
+                                        General
+                                    </button>
+                                    <button type="button"
+                                            class="config-tab @(_activeTab == "security" ? "active" : "")"
+                                            @onclick='() => SetActiveTab("security")'>
+                                        Security
+                                    </button>
+                                    <button type="button"
+                                            class="config-tab @(_activeTab == "advanced" ? "active" : "")"
+                                            @onclick='() => SetActiveTab("advanced")'>
+                                        Advanced
+                                    </button>
+                                </div>
+
+                                <div class="config-tab-content">
+
+                                    @if (_activeTab == "general")
+                                    {
+                                        <div class="form-row">
+                                            <div class="form-group col-md-8">
+                                                <label for="sqlServerHost">Server</label>
+                                                <InputText @bind-Value="Configuration.SqlServer!.Host"
+                                                           id="sqlServerHost"
+                                                           class="form-control"
+                                                           placeholder="localhost or server name" />
+                                                <ValidationMessage For="() => Configuration.SqlServer.Host" />
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="sqlServerPort">Port</label>
+                                                <InputNumber @bind-Value="Configuration.SqlServer!.Port"
+                                                             id="sqlServerPort"
+                                                             class="form-control" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sqlServerInstance">Instance Name</label>
+                                            <InputText @bind-Value="Configuration.SqlServer!.InstanceName"
+                                                       id="sqlServerInstance"
+                                                       class="form-control"
+                                                       placeholder="optional named instance" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sqlServerDatabase">Database</label>
+                                            <InputText @bind-Value="Configuration.SqlServer!.Database"
+                                                       id="sqlServerDatabase"
+                                                       class="form-control"
+                                                       placeholder="Database name" />
+                                            <ValidationMessage For="() => Configuration.SqlServer.Database" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sqlServerAuthMode">Authentication</label>
+                                            <select @bind="Configuration.SqlServer!.AuthMode"
+                                                    id="sqlServerAuthMode"
+                                                    class="form-control">
+                                                <option value="@SqlServerAuthMode.WindowsAuthentication">Windows Authentication</option>
+                                                <option value="@SqlServerAuthMode.SqlServerAuthentication">SQL Server Authentication</option>
+                                            </select>
+                                        </div>
+                                        @if (Configuration.SqlServer!.AuthMode == SqlServerAuthMode.SqlServerAuthentication)
+                                        {
+                                            <div class="form-group">
+                                                <label for="sqlServerUser">Username</label>
+                                                <InputText @bind-Value="Configuration.SqlServer!.Username"
+                                                           id="sqlServerUser"
+                                                           class="form-control"
+                                                           placeholder="Username" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="sqlServerPass">Password</label>
+                                                <input type="password"
+                                                       @bind="SqlServerPassword"
+                                                       id="sqlServerPass"
+                                                       class="form-control"
+                                                       placeholder="Password" />
+                                            </div>
+                                        }
+                                    }
+
+                                    @if (_activeTab == "security")
+                                    {
+                                        <div class="form-group">
+                                            <label for="sqlServerEncryption">Encryption</label>
+                                            <select @bind="Configuration.SqlServer!.Encryption"
+                                                    id="sqlServerEncryption"
+                                                    class="form-control">
+                                                <option value="@SqlServerEncryptionMode.None">None</option>
+                                                <option value="@SqlServerEncryptionMode.Optional">Optional</option>
+                                                <option value="@SqlServerEncryptionMode.Mandatory">Mandatory</option>
+                                                <option value="@SqlServerEncryptionMode.Strict">Strict</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="form-check">
+                                                <InputCheckbox @bind-Value="Configuration.SqlServer!.TrustServerCertificate"
+                                                               id="trustCert"
+                                                               class="form-check-input" />
+                                                <label for="trustCert" class="form-check-label">Trust Server Certificate</label>
+                                            </div>
+                                        </div>
+                                        @if (Configuration.SqlServer!.Encryption == SqlServerEncryptionMode.Mandatory ||
+                                             Configuration.SqlServer!.Encryption == SqlServerEncryptionMode.Strict)
+                                        {
+                                            <div class="form-group">
+                                                <label for="sqlServerCert">Certificate thumbprint or path</label>
+                                                <InputText @bind-Value="Configuration.SqlServer!.ServerCertificate"
+                                                           id="sqlServerCert"
+                                                           class="form-control"
+                                                           placeholder="optional" />
+                                            </div>
+                                        }
+                                    }
+
+                                    @if (_activeTab == "advanced")
+                                    {
+                                        <!-- Connection sub-section -->
+                                        <div class="form-group">
+                                            <label for="sqlNetworkProtocol">Network Protocol</label>
+                                            <select @bind="Configuration.SqlServer!.NetworkProtocol"
+                                                    id="sqlNetworkProtocol"
+                                                    class="form-control">
+                                                <option value="@SqlServerNetworkProtocol.Default">Default</option>
+                                                <option value="@SqlServerNetworkProtocol.TcpIp">TCP/IP</option>
+                                                <option value="@SqlServerNetworkProtocol.NamedPipes">Named Pipes</option>
+                                                <option value="@SqlServerNetworkProtocol.SharedMemory">Shared Memory</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="sqlPacketSize">Packet Size</label>
+                                                <InputNumber @bind-Value="Configuration.SqlServer!.PacketSize"
+                                                             id="sqlPacketSize"
+                                                             class="form-control"
+                                                             min="512"
+                                                             max="32767" />
+                                            </div>
+                                            <div class="form-group col-md-6">
+                                                <label for="sqlConnTimeout">Connection Timeout (seconds)</label>
+                                                <InputNumber @bind-Value="Configuration.SqlServer!.ConnectionTimeout"
+                                                             id="sqlConnTimeout"
+                                                             class="form-control" />
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="sqlCmdTimeout">Command Timeout (seconds)</label>
+                                                <InputNumber @bind-Value="Configuration.SqlServer!.CommandTimeout"
+                                                             id="sqlCmdTimeout"
+                                                             class="form-control" />
+                                            </div>
+                                            <div class="form-group col-md-6">
+                                                <label for="sqlAppName">Application Name</label>
+                                                <InputText @bind-Value="Configuration.SqlServer!.ApplicationName"
+                                                           id="sqlAppName"
+                                                           class="form-control"
+                                                           placeholder="PasswordManager" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sqlWorkstationId">Workstation ID</label>
+                                            <InputText @bind-Value="Configuration.SqlServer!.WorkstationId"
+                                                       id="sqlWorkstationId"
+                                                       class="form-control"
+                                                       placeholder="optional" />
+                                        </div>
+
+                                        <hr class="section-divider" />
+
+                                        <!-- Pooling & Behavior sub-section -->
+                                        <div class="form-group">
+                                            <div class="form-check">
+                                                <InputCheckbox @bind-Value="Configuration.SqlServer!.MultipleActiveResultSets"
+                                                               id="sqlMars"
+                                                               class="form-check-input" />
+                                                <label for="sqlMars" class="form-check-label">Multiple Active Result Sets (MARS)</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sqlAppIntent">Application Intent</label>
+                                            <select @bind="Configuration.SqlServer!.ApplicationIntent"
+                                                    id="sqlAppIntent"
+                                                    class="form-control">
+                                                <option value="@SqlServerApplicationIntent.ReadWrite">ReadWrite</option>
+                                                <option value="@SqlServerApplicationIntent.ReadOnly">ReadOnly</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="form-check">
+                                                <InputCheckbox @bind-Value="Configuration.SqlServer!.MultiSubnetFailover"
+                                                               id="sqlMultiSubnet"
+                                                               class="form-check-input" />
+                                                <label for="sqlMultiSubnet" class="form-check-label">Multi-Subnet Failover</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sqlFailoverPartner">Failover Partner</label>
+                                            <InputText @bind-Value="Configuration.SqlServer!.FailoverPartner"
+                                                       id="sqlFailoverPartner"
+                                                       class="form-control"
+                                                       placeholder="optional" />
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="form-check">
+                                                <InputCheckbox @bind-Value="Configuration.SqlServer!.Pooling"
+                                                               id="sqlPooling"
+                                                               class="form-check-input" />
+                                                <label for="sqlPooling" class="form-check-label">Connection Pooling</label>
+                                            </div>
+                                        </div>
+                                        @if (Configuration.SqlServer!.Pooling)
+                                        {
+                                            <div class="form-row">
+                                                <div class="form-group col-md-6">
+                                                    <label for="sqlMinPool">Min Pool Size</label>
+                                                    <InputNumber @bind-Value="Configuration.SqlServer!.MinPoolSize"
+                                                                 id="sqlMinPool"
+                                                                 class="form-control" />
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label for="sqlMaxPool">Max Pool Size</label>
+                                                    <InputNumber @bind-Value="Configuration.SqlServer!.MaxPoolSize"
+                                                                 id="sqlMaxPool"
+                                                                 class="form-control" />
+                                                </div>
+                                            </div>
+                                        }
+                                        <div class="form-group">
+                                            <label for="sqlAdditionalParams">Additional Parameters</label>
+                                            <textarea @bind="Configuration.SqlServer!.AdditionalParameters"
+                                                      id="sqlAdditionalParams"
+                                                      class="form-control"
+                                                      rows="3"
+                                                      placeholder="key=value;key2=value2 — appended verbatim"></textarea>
+                                        </div>
+                                    }
+
+                                </div>
+                            </div>
+                        }
+                        else if (Configuration.Provider == DatabaseProvider.MySql)
+                        {
+                            <!-- MySQL: tabbed configuration -->
+                            <div class="config-form">
+                                <h3>MySQL Configuration</h3>
+                                <div class="config-tabs">
+                                    <button type="button"
+                                            class="config-tab @(_activeTab == "general" ? "active" : "")"
+                                            @onclick='() => SetActiveTab("general")'>
+                                        General
+                                    </button>
+                                    <button type="button"
+                                            class="config-tab @(_activeTab == "security" ? "active" : "")"
+                                            @onclick='() => SetActiveTab("security")'>
+                                        Security
+                                    </button>
+                                    <button type="button"
+                                            class="config-tab @(_activeTab == "advanced" ? "active" : "")"
+                                            @onclick='() => SetActiveTab("advanced")'>
+                                        Advanced
+                                    </button>
+                                </div>
+
+                                <div class="config-tab-content">
+
+                                    @if (_activeTab == "general")
+                                    {
+                                        <div class="form-row">
+                                            <div class="form-group col-md-8">
+                                                <label for="mysqlHost">Server</label>
+                                                <InputText @bind-Value="Configuration.MySql!.Host"
+                                                           id="mysqlHost"
+                                                           class="form-control"
+                                                           placeholder="localhost or server name" />
+                                                <ValidationMessage For="() => Configuration.MySql.Host" />
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="mysqlPort">Port</label>
+                                                <InputNumber @bind-Value="Configuration.MySql!.Port"
+                                                             id="mysqlPort"
+                                                             class="form-control" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="mysqlDatabase">Database</label>
+                                            <InputText @bind-Value="Configuration.MySql!.Database"
+                                                       id="mysqlDatabase"
+                                                       class="form-control"
+                                                       placeholder="Database name" />
+                                            <ValidationMessage For="() => Configuration.MySql.Database" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="mysqlUser">Username</label>
+                                            <InputText @bind-Value="Configuration.MySql!.Username"
+                                                       id="mysqlUser"
+                                                       class="form-control"
+                                                       placeholder="Username" />
+                                            <ValidationMessage For="() => Configuration.MySql.Username" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="mysqlPass">Password</label>
+                                            <input type="password"
+                                                   @bind="MySqlPassword"
+                                                   id="mysqlPass"
+                                                   class="form-control"
+                                                   placeholder="Password" />
+                                        </div>
+                                    }
+
+                                    @if (_activeTab == "security")
+                                    {
+                                        <div class="form-group">
+                                            <label for="mysqlSslMode">SSL Mode</label>
+                                            <select @bind="Configuration.MySql!.SslMode"
+                                                    id="mysqlSslMode"
+                                                    class="form-control">
+                                                <option value="@MySqlSslMode.None">None</option>
+                                                <option value="@MySqlSslMode.Preferred">Preferred</option>
+                                                <option value="@MySqlSslMode.Required">Required</option>
+                                                <option value="@MySqlSslMode.VerifyCA">VerifyCA</option>
+                                                <option value="@MySqlSslMode.VerifyFull">VerifyFull</option>
+                                            </select>
+                                        </div>
+                                        @if (Configuration.MySql!.SslMode == MySqlSslMode.VerifyCA ||
+                                             Configuration.MySql!.SslMode == MySqlSslMode.VerifyFull)
+                                        {
+                                            <div class="form-group">
+                                                <label for="mysqlSslCa">CA Certificate Path</label>
+                                                <InputText @bind-Value="Configuration.MySql!.SslCaPath"
+                                                           id="mysqlSslCa"
+                                                           class="form-control"
+                                                           placeholder="/path/to/ca-cert.pem" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="mysqlSslCert">Client Certificate Path</label>
+                                                <InputText @bind-Value="Configuration.MySql!.SslCertPath"
+                                                           id="mysqlSslCert"
+                                                           class="form-control"
+                                                           placeholder="/path/to/client-cert.pem" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="mysqlSslKey">Client Key Path</label>
+                                                <InputText @bind-Value="Configuration.MySql!.SslKeyPath"
+                                                           id="mysqlSslKey"
+                                                           class="form-control"
+                                                           placeholder="/path/to/client-key.pem" />
+                                            </div>
+                                        }
+                                    }
+
+                                    @if (_activeTab == "advanced")
+                                    {
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="mysqlConnTimeout">Connection Timeout (seconds)</label>
+                                                <InputNumber @bind-Value="Configuration.MySql!.ConnectionTimeout"
+                                                             id="mysqlConnTimeout"
+                                                             class="form-control" />
+                                            </div>
+                                            <div class="form-group col-md-6">
+                                                <label for="mysqlCmdTimeout">Command Timeout (seconds)</label>
+                                                <InputNumber @bind-Value="Configuration.MySql!.CommandTimeout"
+                                                             id="mysqlCmdTimeout"
+                                                             class="form-control" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="mysqlCharSet">Character Set</label>
+                                            <InputText @bind-Value="Configuration.MySql!.CharacterSet"
+                                                       id="mysqlCharSet"
+                                                       class="form-control"
+                                                       placeholder="utf8mb4" />
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="form-check">
+                                                <InputCheckbox @bind-Value="Configuration.MySql!.AllowZeroDateTime"
+                                                               id="mysqlZeroDateTime"
+                                                               class="form-check-input" />
+                                                <label for="mysqlZeroDateTime" class="form-check-label">Allow Zero DateTime</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="form-check">
+                                                <InputCheckbox @bind-Value="Configuration.MySql!.AllowUserVariables"
+                                                               id="mysqlUserVars"
+                                                               class="form-check-input" />
+                                                <label for="mysqlUserVars" class="form-check-label">Allow User Variables</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="form-check">
+                                                <InputCheckbox @bind-Value="Configuration.MySql!.Pooling"
+                                                               id="mysqlPooling"
+                                                               class="form-check-input" />
+                                                <label for="mysqlPooling" class="form-check-label">Connection Pooling</label>
+                                            </div>
+                                        </div>
+                                        @if (Configuration.MySql!.Pooling)
+                                        {
+                                            <div class="form-row">
+                                                <div class="form-group col-md-6">
+                                                    <label for="mysqlMinPool">Min Pool Size</label>
+                                                    <InputNumber @bind-Value="Configuration.MySql!.MinPoolSize"
+                                                                 id="mysqlMinPool"
+                                                                 class="form-control" />
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label for="mysqlMaxPool">Max Pool Size</label>
+                                                    <InputNumber @bind-Value="Configuration.MySql!.MaxPoolSize"
+                                                                 id="mysqlMaxPool"
+                                                                 class="form-control" />
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+
+                                </div>
+                            </div>
+                        }
+                        else if (Configuration.Provider == DatabaseProvider.PostgreSql)
+                        {
+                            <!-- PostgreSQL: tabbed configuration -->
+                            <div class="config-form">
+                                <h3>PostgreSQL Configuration</h3>
+                                <div class="config-tabs">
+                                    <button type="button"
+                                            class="config-tab @(_activeTab == "general" ? "active" : "")"
+                                            @onclick='() => SetActiveTab("general")'>
+                                        General
+                                    </button>
+                                    <button type="button"
+                                            class="config-tab @(_activeTab == "security" ? "active" : "")"
+                                            @onclick='() => SetActiveTab("security")'>
+                                        Security
+                                    </button>
+                                    <button type="button"
+                                            class="config-tab @(_activeTab == "advanced" ? "active" : "")"
+                                            @onclick='() => SetActiveTab("advanced")'>
+                                        Advanced
+                                    </button>
+                                </div>
+
+                                <div class="config-tab-content">
+
+                                    @if (_activeTab == "general")
+                                    {
+                                        <div class="form-row">
+                                            <div class="form-group col-md-8">
+                                                <label for="pgHost">Server</label>
+                                                <InputText @bind-Value="Configuration.PostgreSql!.Host"
+                                                           id="pgHost"
+                                                           class="form-control"
+                                                           placeholder="localhost or server name" />
+                                                <ValidationMessage For="() => Configuration.PostgreSql.Host" />
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="pgPort">Port</label>
+                                                <InputNumber @bind-Value="Configuration.PostgreSql!.Port"
+                                                             id="pgPort"
+                                                             class="form-control" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="pgDatabase">Database</label>
+                                            <InputText @bind-Value="Configuration.PostgreSql!.Database"
+                                                       id="pgDatabase"
+                                                       class="form-control"
+                                                       placeholder="Database name" />
+                                            <ValidationMessage For="() => Configuration.PostgreSql.Database" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="pgUser">Username</label>
+                                            <InputText @bind-Value="Configuration.PostgreSql!.Username"
+                                                       id="pgUser"
+                                                       class="form-control"
+                                                       placeholder="Username" />
+                                            <ValidationMessage For="() => Configuration.PostgreSql.Username" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="pgPass">Password</label>
+                                            <input type="password"
+                                                   @bind="PostgreSqlPassword"
+                                                   id="pgPass"
+                                                   class="form-control"
+                                                   placeholder="Password" />
+                                        </div>
+                                    }
+
+                                    @if (_activeTab == "security")
+                                    {
+                                        <div class="form-group">
+                                            <label for="pgSslMode">SSL Mode</label>
+                                            <select @bind="Configuration.PostgreSql!.SslMode"
+                                                    id="pgSslMode"
+                                                    class="form-control">
+                                                <option value="@PostgreSqlSslMode.Disable">Disable</option>
+                                                <option value="@PostgreSqlSslMode.Allow">Allow</option>
+                                                <option value="@PostgreSqlSslMode.Prefer">Prefer</option>
+                                                <option value="@PostgreSqlSslMode.Require">Require</option>
+                                                <option value="@PostgreSqlSslMode.VerifyCA">VerifyCA</option>
+                                                <option value="@PostgreSqlSslMode.VerifyFull">VerifyFull</option>
+                                            </select>
+                                        </div>
+                                        @if (Configuration.PostgreSql!.SslMode == PostgreSqlSslMode.VerifyCA ||
+                                             Configuration.PostgreSql!.SslMode == PostgreSqlSslMode.VerifyFull)
+                                        {
+                                            <div class="form-group">
+                                                <label for="pgSslCert">SSL Certificate Path</label>
+                                                <InputText @bind-Value="Configuration.PostgreSql!.SslCertPath"
+                                                           id="pgSslCert"
+                                                           class="form-control"
+                                                           placeholder="/path/to/client.crt" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="pgSslKey">SSL Key Path</label>
+                                                <InputText @bind-Value="Configuration.PostgreSql!.SslKeyPath"
+                                                           id="pgSslKey"
+                                                           class="form-control"
+                                                           placeholder="/path/to/client.key" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="pgSslRoot">Root Certificate Path</label>
+                                                <InputText @bind-Value="Configuration.PostgreSql!.SslRootCertPath"
+                                                           id="pgSslRoot"
+                                                           class="form-control"
+                                                           placeholder="/path/to/root.crt" />
+                                            </div>
+                                        }
+                                    }
+
+                                    @if (_activeTab == "advanced")
+                                    {
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="pgConnTimeout">Connection Timeout (seconds)</label>
+                                                <InputNumber @bind-Value="Configuration.PostgreSql!.ConnectionTimeout"
+                                                             id="pgConnTimeout"
+                                                             class="form-control" />
+                                            </div>
+                                            <div class="form-group col-md-6">
+                                                <label for="pgCmdTimeout">Command Timeout (seconds)</label>
+                                                <InputNumber @bind-Value="Configuration.PostgreSql!.CommandTimeout"
+                                                             id="pgCmdTimeout"
+                                                             class="form-control" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="pgAppName">Application Name</label>
+                                            <InputText @bind-Value="Configuration.PostgreSql!.ApplicationName"
+                                                       id="pgAppName"
+                                                       class="form-control"
+                                                       placeholder="PasswordManager" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="pgSearchPath">Search Path</label>
+                                            <InputText @bind-Value="Configuration.PostgreSql!.SearchPath"
+                                                       id="pgSearchPath"
+                                                       class="form-control"
+                                                       placeholder="public" />
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="form-check">
+                                                <InputCheckbox @bind-Value="Configuration.PostgreSql!.Pooling"
+                                                               id="pgPooling"
+                                                               class="form-check-input" />
+                                                <label for="pgPooling" class="form-check-label">Connection Pooling</label>
+                                            </div>
+                                        </div>
+                                        @if (Configuration.PostgreSql!.Pooling)
+                                        {
+                                            <div class="form-row">
+                                                <div class="form-group col-md-6">
+                                                    <label for="pgMinPool">Min Pool Size</label>
+                                                    <InputNumber @bind-Value="Configuration.PostgreSql!.MinPoolSize"
+                                                                 id="pgMinPool"
+                                                                 class="form-control" />
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label for="pgMaxPool">Max Pool Size</label>
+                                                    <InputNumber @bind-Value="Configuration.PostgreSql!.MaxPoolSize"
+                                                                 id="pgMaxPool"
+                                                                 class="form-control" />
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+
+                                </div>
+                            </div>
+                        }
+
+                    </div>
+
                     <!-- Migration Status -->
                     @if (MigrationStatus != null && MigrationStatus.HasPendingMigrations)
                     {
@@ -310,9 +750,9 @@
                         </div>
                     }
 
-                    <!-- Dialog Actions -->
+                    <!-- Dialog Actions (Step 2) -->
                     <div class="dialog-actions">
-                        <button type="button" 
+                        <button type="button"
                                 class="btn btn-outline-secondary"
                                 @onclick="GoToProviderStep"
                                 disabled="@IsProcessing">
@@ -320,9 +760,9 @@
                             Back
                         </button>
 
-                        <button type="button" 
-                                class="btn btn-secondary" 
-                                @onclick="TestConnection" 
+                        <button type="button"
+                                class="btn btn-secondary"
+                                @onclick="TestConnection"
                                 disabled="@IsProcessing">
                             @if (IsProcessing && CurrentAction == "testing")
                             {
@@ -337,9 +777,9 @@
 
                         @if (IsConnectionSuccessful && Configuration.Provider != DatabaseProvider.Sqlite)
                         {
-                            <button type="button" 
-                                    class="btn btn-success" 
-                                    @onclick="CreateDatabase" 
+                            <button type="button"
+                                    class="btn btn-success"
+                                    @onclick="CreateDatabase"
                                     disabled="@IsProcessing">
                                 @if (IsProcessing && CurrentAction == "creating")
                                 {
@@ -355,9 +795,9 @@
 
                         @if (MigrationStatus != null && MigrationStatus.HasPendingMigrations && IsConnectionSuccessful)
                         {
-                            <button type="button" 
-                                    class="btn btn-warning" 
-                                    @onclick="ApplyMigrations" 
+                            <button type="button"
+                                    class="btn btn-warning"
+                                    @onclick="ApplyMigrations"
                                     disabled="@IsProcessing">
                                 @if (IsProcessing && CurrentAction == "migrating")
                                 {
@@ -371,8 +811,8 @@
                             </button>
                         }
 
-                        <button type="submit" 
-                                class="btn btn-primary" 
+                        <button type="submit"
+                                class="btn btn-primary"
                                 disabled="@IsProcessing">
                             @if (IsProcessing && CurrentAction == "saving")
                             {
@@ -401,18 +841,10 @@
                         </button>
                     </div>
                 }
-                else
-                {
-                    <div class="dialog-actions">
-                        <button type="button"
-                                class="btn btn-primary"
-                                @onclick="GoToConfigurationStep">
-                            Continue
-                            <i class="fas fa-arrow-right"></i>
-                        </button>
-                    </div>
+
+                </EditForm>
                 }
-            </EditForm>
+
         </div>
     </div>
 </div>
@@ -436,7 +868,10 @@
     private string CurrentAction { get; set; } = string.Empty;
     private SetupWizardStep CurrentStep { get; set; } = SetupWizardStep.ProviderSelection;
 
-    // Password fields (not bound to model for security)
+    // Tab state — shared across all providers; reset when entering Step 2
+    private string _activeTab = "general";
+
+    // Password fields (not bound to model for security; encrypted before saving)
     private string SqlServerPassword { get; set; } = string.Empty;
     private string MySqlPassword { get; set; } = string.Empty;
     private string PostgreSqlPassword { get; set; } = string.Empty;
@@ -452,8 +887,9 @@
         Configuration.Provider = provider;
         EnsureProviderConfig();
         ConnectionStatus = string.Empty;
-        MigrationStatus = null; // Reset migration status when changing provider
-        IsConnectionSuccessful = false; // Reset connection status
+        MigrationStatus = null;
+        IsConnectionSuccessful = false;
+        StateHasChanged();
     }
 
     private string GetWizardSubtitle()
@@ -463,15 +899,26 @@
             : "Step 2: Configure your connection settings";
     }
 
-    private async Task GoToConfigurationStep()
+    private void GoToConfigurationStep()
     {
         CurrentStep = SetupWizardStep.Configuration;
-        await CheckMigrationStatus();
+        _activeTab = "general";
+        ConnectionStatus = string.Empty;
+        MigrationStatus = null;
+        IsConnectionSuccessful = false;
+        StateHasChanged();
     }
 
     private void GoToProviderStep()
     {
         CurrentStep = SetupWizardStep.ProviderSelection;
+    }
+
+    private void SetActiveTab(string tab)
+    {
+        _activeTab = tab;
+        ConnectionStatus = string.Empty;
+        IsConnectionSuccessful = false;
     }
 
     private void ToggleMigrationDetails()
@@ -481,21 +928,10 @@
 
     private void EnsureProviderConfig()
     {
-        switch (Configuration.Provider)
-        {
-            case DatabaseProvider.Sqlite:
-                Configuration.Sqlite ??= new SqliteConfig();
-                break;
-            case DatabaseProvider.SqlServer:
-                Configuration.SqlServer ??= new SqlServerConfig();
-                break;
-            case DatabaseProvider.MySql:
-                Configuration.MySql ??= new MySqlConfig();
-                break;
-            case DatabaseProvider.PostgreSql:
-                Configuration.PostgreSql ??= new PostgreSqlConfig();
-                break;
-        }
+        Configuration.Sqlite ??= new SqliteConfig();
+        Configuration.SqlServer ??= new SqlServerConfig();
+        Configuration.MySql ??= new MySqlConfig();
+        Configuration.PostgreSql ??= new PostgreSqlConfig();
     }
 
     private async Task TestConnection()
@@ -507,16 +943,14 @@
 
         try
         {
-            // Encrypt and set passwords before testing
             await SetEncryptedPasswords();
 
             var result = await DatabaseConfigService.TestConnectionAsync(Configuration);
             IsConnectionSuccessful = result.Success;
-            ConnectionStatus = result.Success 
-                ? "✅ Connection successful!" 
-                : $"❌ Connection failed: {result.ErrorMessage}";
+            ConnectionStatus = result.Success
+                ? "Connection successful!"
+                : $"Connection failed: {result.ErrorMessage}";
 
-            // Check migration status if connection successful
             if (result.Success)
             {
                 await CheckMigrationStatus();
@@ -525,7 +959,7 @@
         catch (Exception ex)
         {
             IsConnectionSuccessful = false;
-            ConnectionStatus = $"❌ Error testing connection: {ex.Message}";
+            ConnectionStatus = $"Error testing connection: {ex.Message}";
             MigrationStatus = null;
         }
         finally
@@ -539,11 +973,11 @@
     private async Task CreateDatabase()
     {
         if (Configuration.Provider == DatabaseProvider.Sqlite)
-            return; // SQLite doesn't need explicit database creation
+            return;
 
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
             $"Are you sure you want to create the database '{GetDatabaseName()}'? This will create a new database on the server.");
-        
+
         if (!confirmed) return;
 
         IsProcessing = true;
@@ -554,23 +988,23 @@
         try
         {
             var result = await MigrationService.CreateDatabaseAsync();
-            
+
             if (result.Success)
             {
-                ConnectionStatus = $"✅ Database created successfully: {result.Message}";
+                ConnectionStatus = $"Database created successfully: {result.Message}";
                 IsConnectionSuccessful = true;
-                await CheckMigrationStatus(); // Refresh migration status
+                await CheckMigrationStatus();
             }
             else
             {
-                ConnectionStatus = $"❌ Database creation failed: {result.Message}";
+                ConnectionStatus = $"Database creation failed: {result.Message}";
                 IsConnectionSuccessful = false;
             }
         }
         catch (Exception ex)
         {
             IsConnectionSuccessful = false;
-            ConnectionStatus = $"❌ Error creating database: {ex.Message}";
+            ConnectionStatus = $"Error creating database: {ex.Message}";
         }
         finally
         {
@@ -588,7 +1022,6 @@
         }
         catch (Exception ex)
         {
-            // Migration status check failed - this is not critical
             MigrationStatus = null;
             System.Diagnostics.Debug.WriteLine($"Migration status check failed: {ex.Message}");
         }
@@ -598,9 +1031,9 @@
     {
         if (MigrationStatus?.HasPendingMigrations != true) return;
 
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
             $"Are you sure you want to apply {MigrationStatus.PendingMigrations.Count()} pending migrations? This operation cannot be undone.");
-        
+
         if (!confirmed) return;
 
         IsProcessing = true;
@@ -611,23 +1044,23 @@
         try
         {
             var result = await MigrationService.ApplyPendingMigrationsAsync();
-            
+
             if (result.Success)
             {
-                ConnectionStatus = $"✅ {result.Message}";
+                ConnectionStatus = $"{result.Message}";
                 IsConnectionSuccessful = true;
-                await CheckMigrationStatus(); // Refresh migration status
+                await CheckMigrationStatus();
             }
             else
             {
-                ConnectionStatus = $"❌ Migration failed: {result.Message}";
+                ConnectionStatus = $"Migration failed: {result.Message}";
                 IsConnectionSuccessful = false;
             }
         }
         catch (Exception ex)
         {
             IsConnectionSuccessful = false;
-            ConnectionStatus = $"❌ Error applying migrations: {ex.Message}";
+            ConnectionStatus = $"Error applying migrations: {ex.Message}";
         }
         finally
         {
@@ -645,18 +1078,13 @@
 
         try
         {
-            // Encrypt and set passwords
             await SetEncryptedPasswords();
-
-            // Save the configuration
             await DatabaseConfigService.SaveConfigurationAsync(Configuration);
-
-            // Notify parent component
             await OnConfigurationSaved.InvokeAsync();
         }
         catch (Exception ex)
         {
-            ConnectionStatus = $"❌ Error saving configuration: {ex.Message}";
+            ConnectionStatus = $"Error saving configuration: {ex.Message}";
             IsConnectionSuccessful = false;
         }
         finally

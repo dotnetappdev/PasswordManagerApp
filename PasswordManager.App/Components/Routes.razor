@@ -58,7 +58,7 @@
     private bool IsOnStartupRoute()
     {
         var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Trim('/').ToLowerInvariant();
-        return string.IsNullOrEmpty(currentPath) || currentPath == "masterpassword" || currentPath == "unlock";
+        return string.IsNullOrEmpty(currentPath) || currentPath == "setup" || currentPath == "masterpassword" || currentPath == "unlock";
     }
 }
 

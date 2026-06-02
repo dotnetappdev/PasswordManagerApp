@@ -482,82 +482,208 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
 
     private async Task<string> BuildSqlServerConnectionStringAsync(SqlServerConfig config)
     {
-        var builder = new System.Text.StringBuilder();
-        builder.Append($"Server={config.Host}");
-        
-        if (config.Port != 1433)
-            builder.Append($",{config.Port}");
-            
-        builder.Append($";Database={config.Database}");
-        
-        if (config.UseWindowsAuthentication)
+        var b = new System.Text.StringBuilder();
+
+        // Server — support named instances (HOST\INSTANCE or HOST,PORT)
+        if (!string.IsNullOrWhiteSpace(config.InstanceName))
+            b.Append($"Server={config.Host}\\{config.InstanceName}");
+        else if (config.Port != 1433)
+            b.Append($"Server={config.Host},{config.Port}");
+        else
+            b.Append($"Server={config.Host}");
+
+        b.Append($";Database={config.Database}");
+
+        // Authentication
+        if (config.AuthMode == SqlServerAuthMode.WindowsAuthentication)
         {
-            builder.Append(";Integrated Security=true");
+            b.Append(";Integrated Security=true");
         }
-        else if (!string.IsNullOrEmpty(config.Username))
+        else
         {
-            builder.Append($";User Id={config.Username}");
+            if (!string.IsNullOrEmpty(config.Username))
+                b.Append($";User Id={config.Username}");
             if (!string.IsNullOrEmpty(config.EncryptedPassword))
             {
-                var password = await DecryptPasswordAsync(config.EncryptedPassword);
-                builder.Append($";Password={password}");
+                var pwd = await DecryptPasswordAsync(config.EncryptedPassword);
+                b.Append($";Password={pwd}");
             }
         }
-        
+
+        // Encryption
+        b.Append(config.Encryption switch
+        {
+            SqlServerEncryptionMode.None      => ";Encrypt=False",
+            SqlServerEncryptionMode.Optional  => ";Encrypt=Optional",
+            SqlServerEncryptionMode.Mandatory => ";Encrypt=True",
+            SqlServerEncryptionMode.Strict    => ";Encrypt=Strict",
+            _                                 => ";Encrypt=Optional"
+        });
+
         if (config.TrustServerCertificate)
-            builder.Append(";TrustServerCertificate=true");
-            
-        builder.Append($";Connection Timeout={config.ConnectionTimeout}");
-        
-        return builder.ToString();
+            b.Append(";TrustServerCertificate=true");
+
+        if (!string.IsNullOrWhiteSpace(config.ServerCertificate))
+            b.Append($";Server Certificate={config.ServerCertificate}");
+
+        // Network
+        if (config.NetworkProtocol != SqlServerNetworkProtocol.Default)
+        {
+            var proto = config.NetworkProtocol switch
+            {
+                SqlServerNetworkProtocol.TcpIp       => "dbmssocn",
+                SqlServerNetworkProtocol.NamedPipes   => "dbnmpntw",
+                SqlServerNetworkProtocol.SharedMemory => "dbmslpcn",
+                _                                     => null
+            };
+            if (proto != null) b.Append($";Network Library={proto}");
+        }
+
+        if (config.PacketSize != 4096)
+            b.Append($";Packet Size={config.PacketSize}");
+
+        b.Append($";Connection Timeout={config.ConnectionTimeout}");
+
+        if (!string.IsNullOrWhiteSpace(config.ApplicationName))
+            b.Append($";Application Name={config.ApplicationName}");
+
+        if (!string.IsNullOrWhiteSpace(config.WorkstationId))
+            b.Append($";Workstation Id={config.WorkstationId}");
+
+        if (config.MultipleActiveResultSets)
+            b.Append(";MultipleActiveResultSets=true");
+
+        if (config.ApplicationIntent == SqlServerApplicationIntent.ReadOnly)
+            b.Append(";ApplicationIntent=ReadOnly");
+
+        if (config.MultiSubnetFailover)
+            b.Append(";MultiSubnetFailover=true");
+
+        if (!string.IsNullOrWhiteSpace(config.FailoverPartner))
+            b.Append($";Failover Partner={config.FailoverPartner}");
+
+        if (!config.Pooling)
+            b.Append(";Pooling=false");
+        else
+        {
+            if (config.MinPoolSize > 0)
+                b.Append($";Min Pool Size={config.MinPoolSize}");
+            if (config.MaxPoolSize != 100)
+                b.Append($";Max Pool Size={config.MaxPoolSize}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(config.AdditionalParameters))
+            b.Append($";{config.AdditionalParameters.Trim(';')}");
+
+        return b.ToString();
     }
 
     private async Task<string> BuildMySqlConnectionStringAsync(MySqlConfig config)
     {
-        var builder = new System.Text.StringBuilder();
-        builder.Append($"Server={config.Host}");
-        builder.Append($";Port={config.Port}");
-        builder.Append($";Database={config.Database}");
-        builder.Append($";Uid={config.Username}");
-        
+        var b = new System.Text.StringBuilder();
+        b.Append($"Server={config.Host}");
+        b.Append($";Port={config.Port}");
+        b.Append($";Database={config.Database}");
+        b.Append($";Uid={config.Username}");
+
         if (!string.IsNullOrEmpty(config.EncryptedPassword))
         {
-            var password = await DecryptPasswordAsync(config.EncryptedPassword);
-            builder.Append($";Pwd={password}");
+            var pwd = await DecryptPasswordAsync(config.EncryptedPassword);
+            b.Append($";Pwd={pwd}");
         }
-        
-        if (config.UseSsl)
-            builder.Append(";SslMode=Required");
+
+        b.Append(config.SslMode switch
+        {
+            MySqlSslMode.None       => ";SslMode=None",
+            MySqlSslMode.Preferred  => ";SslMode=Preferred",
+            MySqlSslMode.Required   => ";SslMode=Required",
+            MySqlSslMode.VerifyCA   => ";SslMode=VerifyCA",
+            MySqlSslMode.VerifyFull => ";SslMode=VerifyFull",
+            _                       => ";SslMode=Preferred"
+        });
+
+        if (!string.IsNullOrWhiteSpace(config.SslCaPath))
+            b.Append($";SslCa={config.SslCaPath}");
+        if (!string.IsNullOrWhiteSpace(config.SslCertPath))
+            b.Append($";SslCert={config.SslCertPath}");
+        if (!string.IsNullOrWhiteSpace(config.SslKeyPath))
+            b.Append($";SslKey={config.SslKeyPath}");
+
+        b.Append($";Connection Timeout={config.ConnectionTimeout}");
+        b.Append($";Default Command Timeout={config.CommandTimeout}");
+
+        if (config.AllowZeroDateTime)
+            b.Append(";AllowZeroDateTime=true");
+        if (config.AllowUserVariables)
+            b.Append(";AllowUserVariables=true");
+        if (!string.IsNullOrWhiteSpace(config.CharacterSet) && config.CharacterSet != "utf8mb4")
+            b.Append($";CharSet={config.CharacterSet}");
+
+        if (!config.Pooling)
+            b.Append(";Pooling=false");
         else
-            builder.Append(";SslMode=None");
-            
-        builder.Append($";Connection Timeout={config.ConnectionTimeout}");
-        
-        return builder.ToString();
+        {
+            if (config.MinPoolSize > 0)
+                b.Append($";Minimum Pool Size={config.MinPoolSize}");
+            if (config.MaxPoolSize != 100)
+                b.Append($";Maximum Pool Size={config.MaxPoolSize}");
+        }
+
+        return b.ToString();
     }
 
     private async Task<string> BuildPostgreSqlConnectionStringAsync(PostgreSqlConfig config)
     {
-        var builder = new System.Text.StringBuilder();
-        builder.Append($"Host={config.Host}");
-        builder.Append($";Port={config.Port}");
-        builder.Append($";Database={config.Database}");
-        builder.Append($";Username={config.Username}");
-        
+        var b = new System.Text.StringBuilder();
+        b.Append($"Host={config.Host}");
+        b.Append($";Port={config.Port}");
+        b.Append($";Database={config.Database}");
+        b.Append($";Username={config.Username}");
+
         if (!string.IsNullOrEmpty(config.EncryptedPassword))
         {
-            var password = await DecryptPasswordAsync(config.EncryptedPassword);
-            builder.Append($";Password={password}");
+            var pwd = await DecryptPasswordAsync(config.EncryptedPassword);
+            b.Append($";Password={pwd}");
         }
-        
-        if (config.UseSsl)
-            builder.Append(";SSL Mode=Require");
+
+        b.Append(config.SslMode switch
+        {
+            PostgreSqlSslMode.Disable   => ";SSL Mode=Disable",
+            PostgreSqlSslMode.Allow     => ";SSL Mode=Allow",
+            PostgreSqlSslMode.Prefer    => ";SSL Mode=Prefer",
+            PostgreSqlSslMode.Require   => ";SSL Mode=Require",
+            PostgreSqlSslMode.VerifyCA  => ";SSL Mode=VerifyCA",
+            PostgreSqlSslMode.VerifyFull=> ";SSL Mode=VerifyFull",
+            _                           => ";SSL Mode=Prefer"
+        });
+
+        if (!string.IsNullOrWhiteSpace(config.SslCertPath))
+            b.Append($";SSL Certificate={config.SslCertPath}");
+        if (!string.IsNullOrWhiteSpace(config.SslKeyPath))
+            b.Append($";SSL Key={config.SslKeyPath}");
+        if (!string.IsNullOrWhiteSpace(config.SslRootCertPath))
+            b.Append($";Root Certificate={config.SslRootCertPath}");
+
+        b.Append($";Timeout={config.ConnectionTimeout}");
+        b.Append($";Command Timeout={config.CommandTimeout}");
+
+        if (!string.IsNullOrWhiteSpace(config.ApplicationName))
+            b.Append($";Application Name={config.ApplicationName}");
+
+        if (!string.IsNullOrWhiteSpace(config.SearchPath))
+            b.Append($";Search Path={config.SearchPath}");
+
+        if (!config.Pooling)
+            b.Append(";Pooling=false");
         else
-            builder.Append(";SSL Mode=Disable");
-            
-        builder.Append($";Timeout={config.ConnectionTimeout}");
-        
-        return builder.ToString();
+        {
+            if (config.MinPoolSize > 1)
+                b.Append($";Minimum Pool Size={config.MinPoolSize}");
+            if (config.MaxPoolSize != 100)
+                b.Append($";Maximum Pool Size={config.MaxPoolSize}");
+        }
+
+        return b.ToString();
     }
 
     private string BuildSupabaseConnectionString(SupabaseConfig config)

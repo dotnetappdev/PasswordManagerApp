@@ -105,11 +105,13 @@ public partial class App : Application
             if (isFirstRun)
             {
                 // Show the database configuration dialog on UI thread
-                await m_window.Dispatcher.InvokeAsync(async () =>
+                await m_window.Dispatcher.InvokeAsync(() =>
                 {
-                    // Show dialog in WPF
-                    var dialog = new Dialogs.DatabaseConfigurationDialog(platformService, databaseConfigService);
-                    await dialog.ShowAsync();
+                    var dialog = new Dialogs.DatabaseConfigurationDialog(databaseConfigService)
+                    {
+                        Owner = m_window
+                    };
+                    dialog.ShowDialog();
                 });
             }
         }
