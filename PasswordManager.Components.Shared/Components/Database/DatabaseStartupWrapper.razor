@@ -5,11 +5,65 @@
 @inject NavigationManager Navigation
 @inject ILogger<DatabaseStartupWrapper> Logger
 
-@ChildContent
+@if (_showContent)
+{
+    @ChildContent
+}
+else
+{
+    <div class="startup-loading">
+        <div class="startup-loading-card">
+            <div class="startup-spinner"></div>
+            <p>Loading setup…</p>
+        </div>
+    </div>
+}
+
+<style>
+    .startup-loading {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    }
+
+    .startup-loading-card {
+        min-width: 220px;
+        padding: 24px 28px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.22);
+        text-align: center;
+    }
+
+    .startup-loading-card p {
+        margin: 12px 0 0;
+        color: #2d3748;
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+
+    .startup-spinner {
+        width: 32px;
+        height: 32px;
+        margin: 0 auto;
+        border-radius: 50%;
+        border: 3px solid #dbe7f3;
+        border-top-color: #007acc;
+        animation: startup-spin 0.8s linear infinite;
+    }
+
+    @@keyframes startup-spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public EventCallback OnConfigurationComplete { get; set; }
+    private bool _showContent;
 
     protected override async Task OnInitializedAsync()
     {
@@ -31,7 +85,11 @@
 
             if (shouldShow && isFirstRun)
             {
-                Navigation.NavigateTo("/setup", replace: true);
+                if (!IsOnSetupRoute())
+                {
+                    Navigation.NavigateTo("/setup", replace: true);
+                    await Task.Yield();
+                }
             }
             else
             {
@@ -43,5 +101,15 @@
             Logger.LogError(ex, "Startup wrapper failed");
             await OnConfigurationComplete.InvokeAsync();
         }
+        finally
+        {
+            _showContent = true;
+        }
+    }
+
+    private bool IsOnSetupRoute()
+    {
+        var currentPath = Navigation.ToBaseRelativePath(Navigation.Uri).Trim('/').ToLowerInvariant();
+        return currentPath == "setup";
     }
 }
