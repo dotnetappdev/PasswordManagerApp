@@ -53,6 +53,7 @@ public class SetupFlowTests
         Assert.That(cut.Markup, Does.Contain("Database Type"));
         Assert.That(cut.Markup, Does.Contain("Connection Settings"));
         Assert.That(cut.FindAll("button").Any(button => button.TextContent.Trim() == "Continue"), Is.False);
+        Assert.That(cut.Markup, Does.Not.Contain("Save &amp; Continue"));
 
         var sqlitePathInput = cut.Find("input[placeholder='passwordmanager.db']");
         Assert.That(sqlitePathInput, Is.Not.Null);
@@ -84,6 +85,7 @@ public class SetupFlowTests
         {
             Assert.That(cut.Markup, Does.Contain("Project URL"));
             Assert.That(cut.FindAll("button").Any(button => button.TextContent.Trim() == "Continue"), Is.False);
+            Assert.That(cut.Markup, Does.Not.Contain("Save &amp; Continue"));
         });
     }
 }
