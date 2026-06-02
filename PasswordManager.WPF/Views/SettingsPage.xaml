@@ -329,7 +329,7 @@
                                            
                                 <TextBlock Text="{Binding NextScheduledBackupFormatted}"
                                           Style="{StaticResource ModernCaptionStyle}"
-                                          Foreground="{StaticResource SystemAccentColor}"
+                                          Foreground="{StaticResource ModernPrimaryBrush}"
                                           Visibility="{Binding NextScheduledBackupFormatted, Converter={StaticResource StringToVisibilityConverter}}"/>
                             </StackPanel>
                         </StackPanel>

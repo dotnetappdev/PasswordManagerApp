@@ -89,6 +89,10 @@
     <SolidColorBrush x:Key="ModernTextTertiaryBrush"   Color="{StaticResource ModernTextTertiaryColor}"/>
     <SolidColorBrush x:Key="ModernSecondaryBrush"      Color="{StaticResource ModernAccentColor}"/>
 
+    <!-- Fallback aliases for WinUI3 / system resource keys not provided by ModernWPF -->
+    <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="{StaticResource ModernSurfaceColor}"/>
+    <SolidColorBrush x:Key="TextFillColorSecondaryBrush"         Color="{StaticResource ModernTextSecondaryColor}"/>
+
     <!-- NavigationView pane background overrides -->
     <SolidColorBrush x:Key="ui:NavigationViewDefaultPaneBackground"
             Color="{StaticResource ModernSidebarBackgroundColor}"/>
@@ -378,6 +382,36 @@
         </Setter>
     </Style>
 
+    <!-- Danger button — red, used for destructive actions -->
+    <Style x:Key="ModernDangerButtonStyle" TargetType="Button">
+        <Setter Property="Background"     Value="{StaticResource ModernErrorBrush}"/>
+        <Setter Property="Foreground"     Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding"        Value="16,12"/>
+        <Setter Property="FontSize"       Value="14"/>
+        <Setter Property="FontWeight"     Value="SemiBold"/>
+        <Setter Property="MinWidth"       Value="120"/>
+        <Setter Property="MinHeight"      Value="36"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="RootBorder"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Content="{TemplateBinding Content}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ContentDialog button styles (PrimaryButtonStyle / SecondaryButtonStyle properties) -->
+    <Style x:Key="ContentDialogPrimaryButtonStyle"   BasedOn="{StaticResource ModernPrimaryButtonStyle}"   TargetType="Button"/>
+    <Style x:Key="ContentDialogSecondaryButtonStyle" BasedOn="{StaticResource ModernSecondaryButtonStyle}" TargetType="Button"/>
+
     <!-- Modern Card Style -->
     <Style x:Key="ModernCardStyle"
            TargetType="Border">
@@ -502,14 +536,22 @@
                 Value="{StaticResource ModernTextPrimaryBrush}"/>
     </Style>
 
-    <Style x:Key="ModernBodyStyle"
-           TargetType="TextBlock">
-        <Setter Property="FontSize"
-                Value="14"/>
-        <Setter Property="FontWeight"
-                Value="Normal"/>
-        <Setter Property="Foreground"
-                Value="{StaticResource ModernTextPrimaryBrush}"/>
+    <Style x:Key="ModernHeading4Style" TargetType="TextBlock">
+        <Setter Property="FontSize"    Value="14"/>
+        <Setter Property="FontWeight"  Value="SemiBold"/>
+        <Setter Property="Foreground"  Value="{StaticResource ModernTextPrimaryBrush}"/>
+    </Style>
+
+    <Style x:Key="ModernBodyStyle" TargetType="TextBlock">
+        <Setter Property="FontSize"   Value="14"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
+    </Style>
+
+    <Style x:Key="ModernBodyStrongStyle" TargetType="TextBlock">
+        <Setter Property="FontSize"   Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
     </Style>
 
     <Style x:Key="ModernCaptionStyle"

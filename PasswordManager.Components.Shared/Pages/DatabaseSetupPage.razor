@@ -282,6 +282,9 @@
                 }
 
                 <div class="dbs-actions">
+                    <button type="button" class="btn-ghost" @onclick="@(() => Navigation.NavigateTo("/masterpassword", replace: true))">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
                     <div class="action-right">
                         <button type="button" class="btn-secondary" @onclick="TestConnection" disabled="@_busy">
                             @if (_busy && _busyFor == "test") { <i class="fas fa-spinner fa-spin"></i> } else { <i class="fas fa-plug"></i> }

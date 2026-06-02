@@ -1,64 +1,18 @@
-﻿@using PasswordManager.Components.Shared.Components.Database
-
-<DatabaseStartupWrapper OnConfigurationComplete="OnDatabaseConfigured">
-    <Router AppAssembly="@typeof(MauiProgram).Assembly" 
-            AdditionalAssemblies="new[] { typeof(PasswordManager.Components.Shared._Imports).Assembly }">
-        <Found Context="routeData">
-            <RouteView RouteData="@routeData" DefaultLayout="@typeof(PasswordManager.Components.Shared.Components.Layout.MainLayout)" />
-            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-        </Found>
-        <NotFound>
-            <PageTitle>Not Found</PageTitle>
-            @{
-                NavigationManager.NavigateTo("/masterpassword", replace: true);
-            }
-        </NotFound>
-    </Router>
-</DatabaseStartupWrapper>
+<Router AppAssembly="@typeof(MauiProgram).Assembly"
+        AdditionalAssemblies="new[] { typeof(PasswordManager.Components.Shared._Imports).Assembly }">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(PasswordManager.Components.Shared.Components.Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not Found</PageTitle>
+        @{
+            NavigationManager.NavigateTo("/masterpassword", replace: true);
+        }
+    </NotFound>
+</Router>
 
 @code {
-    [Inject] 
+    [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
-    
-    private bool isDatabaseConfigured = false;
-    private bool hasHandledDatabaseConfiguration = false;
-    
-    protected override void OnInitialized()
-    {
-        // Initial navigation will be handled after database configuration
-    }
-    
-    private Task OnDatabaseConfigured()
-    {
-        try
-        {
-            if (hasHandledDatabaseConfiguration)
-            {
-                return Task.CompletedTask;
-            }
-
-            hasHandledDatabaseConfiguration = true;
-            isDatabaseConfigured = true;
-            
-            // Navigate to master password page only if we are not already on a startup route.
-            if (!IsOnStartupRoute())
-            {
-                NavigationManager.NavigateTo("/masterpassword", replace: true);
-                return Task.CompletedTask;
-            }
-        }
-        catch (Exception ex)
-        {
-            // Log error but don't let it break the app
-            System.Diagnostics.Debug.WriteLine($"Error during navigation after database configuration: {ex.Message}");
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private bool IsOnStartupRoute()
-    {
-        var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Trim('/').ToLowerInvariant();
-        return string.IsNullOrEmpty(currentPath) || currentPath == "setup" || currentPath == "masterpassword" || currentPath == "unlock";
-    }
 }

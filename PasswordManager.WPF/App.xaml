@@ -29,6 +29,7 @@
             <converters:DateToModifiedStringConverter x:Key="DateToModifiedStringConverter"/>
             <converters:NotNullToInvertedVisibilityConverter x:Key="NotNullToInvertedVisibilityConverter"/>
             <converters:BoolNegationConverter x:Key="BoolNegationConverter"/>
+            <converters:NotZeroToBoolConverter x:Key="NotZeroToBoolConverter"/>
 
             <!-- Removed WebsiteToColorConverter (likely already in ModernTheme.xaml) -->
         </ResourceDictionary>

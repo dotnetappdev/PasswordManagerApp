@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using PasswordManager.Models;
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
+using PasswordManager.Components.Shared.Services;
 
 namespace PasswordManager.App;
 
@@ -65,6 +66,7 @@ public static class MauiProgram
 		builder.Services.AddCryptographyServices();
 
 		// Register platform service
+		builder.Services.AddSingleton<ThemeService>();
 		builder.Services.AddSingleton<IPlatformService, MauiPlatformService>();
 		builder.Services.AddSingleton<ISecureStorageService, MauiSecureStorageService>();
 
