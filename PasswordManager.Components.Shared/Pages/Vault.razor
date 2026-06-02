@@ -103,7 +103,8 @@
                                                     @if (!string.IsNullOrWhiteSpace(GetBrandIconSource(password)))
                                                     {
                                                         <img src="@GetBrandIconSource(password)" alt="Brand icon"
-                                                             style="width:20px; height:20px; margin-right:8px; border-radius:4px; object-fit:contain; vertical-align:middle;" />
+                                                             style="width:20px; height:20px; margin-right:8px; border-radius:4px; object-fit:contain; vertical-align:middle;"
+                                                             onerror="this.onerror=null;this.src='https://unpkg.com/simple-icons@v15/icons/simpleicons.svg';" />
                                                     }
                                                     else
                                                     {
@@ -164,7 +165,8 @@
                                         @if (!string.IsNullOrWhiteSpace(GetBrandIconSource(context)))
                                         {
                                             <img src="@GetBrandIconSource(context)" alt="Brand icon"
-                                                 style="width:20px; height:20px; border-radius:4px; object-fit:contain;" />
+                                                 style="width:20px; height:20px; border-radius:4px; object-fit:contain;"
+                                                 onerror="this.onerror=null;this.src='https://unpkg.com/simple-icons@v15/icons/simpleicons.svg';" />
                                         }
                                         else
                                         {
