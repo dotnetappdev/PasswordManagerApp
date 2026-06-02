@@ -10,64 +10,66 @@
         <div class="dbs-header">
             <div class="dbs-icon"><i class="fas fa-database"></i></div>
             <h1>Database Setup</h1>
-            <p>Step @(_step) of 2 — @(_step == 1 ? "Choose a provider" : "Configure your connection")</p>
+            <p>Choose your database type and update the connection settings in one place.</p>
         </div>
 
-        <!-- ── STEP 1 ── -->
-        @if (_step == 1)
-        {
-            <div class="dbs-body">
-                <div class="provider-grid">
+        <div class="dbs-body dbs-layout">
+            <aside class="provider-panel">
+                <div class="provider-panel-header">
+                    <h2>Database Type</h2>
+                    <p>Choose a provider to update the connection settings on the right.</p>
+                </div>
 
+                <div class="provider-list">
                     <button type="button"
-                            class="pcard local @(_provider == DatabaseProvider.Sqlite ? "sel" : "")"
+                            class="pitem local @(_provider == DatabaseProvider.Sqlite ? "sel" : "")"
                             @onclick="() => Pick(DatabaseProvider.Sqlite)">
-                        <span class="pcard-icon"><i class="fas fa-laptop"></i></span>
-                        <span class="pcard-name">SQLite</span>
-                        <span class="pcard-desc">Local file · no server needed</span>
-                        <span class="pcard-badge">Recommended</span>
+                        <span class="pitem-icon"><i class="fas fa-laptop"></i></span>
+                        <span class="pitem-copy">
+                            <span class="pitem-name">SQLite</span>
+                            <span class="pitem-desc">Local file · recommended</span>
+                        </span>
                     </button>
 
                     <button type="button"
-                            class="pcard @(_provider == DatabaseProvider.SqlServer ? "sel" : "")"
+                            class="pitem @(_provider == DatabaseProvider.SqlServer ? "sel" : "")"
                             @onclick="() => Pick(DatabaseProvider.SqlServer)">
-                        <span class="pcard-icon"><i class="fas fa-server"></i></span>
-                        <span class="pcard-name">SQL Server</span>
-                        <span class="pcard-desc">Microsoft SQL Server</span>
+                        <span class="pitem-icon"><i class="fas fa-server"></i></span>
+                        <span class="pitem-copy">
+                            <span class="pitem-name">SQL Server</span>
+                            <span class="pitem-desc">Microsoft SQL Server</span>
+                        </span>
                     </button>
 
                     <button type="button"
-                            class="pcard @(_provider == DatabaseProvider.MySql ? "sel" : "")"
+                            class="pitem @(_provider == DatabaseProvider.MySql ? "sel" : "")"
                             @onclick="() => Pick(DatabaseProvider.MySql)">
-                        <span class="pcard-icon"><i class="fas fa-database"></i></span>
-                        <span class="pcard-name">MySQL</span>
-                        <span class="pcard-desc">MySQL / MariaDB</span>
+                        <span class="pitem-icon"><i class="fas fa-database"></i></span>
+                        <span class="pitem-copy">
+                            <span class="pitem-name">MySQL</span>
+                            <span class="pitem-desc">MySQL / MariaDB</span>
+                        </span>
                     </button>
 
                     <button type="button"
-                            class="pcard @(_provider == DatabaseProvider.PostgreSql ? "sel" : "")"
+                            class="pitem @(_provider == DatabaseProvider.PostgreSql ? "sel" : "")"
                             @onclick="() => Pick(DatabaseProvider.PostgreSql)">
-                        <span class="pcard-icon"><i class="fas fa-server"></i></span>
-                        <span class="pcard-name">PostgreSQL</span>
-                        <span class="pcard-desc">PostgreSQL server</span>
-                    </button>
-
-                </div>
-
-                <div class="dbs-actions">
-                    <button type="button" class="btn-primary" @onclick="GoStep2">
-                        Continue <i class="fas fa-arrow-right"></i>
+                        <span class="pitem-icon"><i class="fas fa-elephant"></i></span>
+                        <span class="pitem-copy">
+                            <span class="pitem-name">PostgreSQL</span>
+                            <span class="pitem-desc">PostgreSQL server</span>
+                        </span>
                     </button>
                 </div>
-            </div>
-        }
+            </aside>
 
-        <!-- ── STEP 2 ── -->
-        @if (_step == 2)
-        {
-            <div class="dbs-body">
+            <section class="config-panel">
+                <div class="config-intro">
+                    <span class="config-kicker">Connection Settings</span>
+                    <h2>@GetProviderTitle()</h2>
+                    <p>@GetProviderDescription()</p>
+                </div>
 
-                <!-- Tabs -->
                 @if (_provider != DatabaseProvider.Sqlite)
                 {
                     <div class="tabs">
@@ -77,7 +79,6 @@
                     </div>
                 }
 
-                <!-- SQLite -->
                 @if (_provider == DatabaseProvider.Sqlite)
                 {
                     <div class="fg">
@@ -86,7 +87,6 @@
                     </div>
                 }
 
-                <!-- SQL Server -->
                 @if (_provider == DatabaseProvider.SqlServer)
                 {
                     @if (_tab == "general")
@@ -165,7 +165,6 @@
                     }
                 }
 
-                <!-- MySQL -->
                 @if (_provider == DatabaseProvider.MySql)
                 {
                     @if (_tab == "general")
@@ -219,7 +218,6 @@
                     }
                 }
 
-                <!-- PostgreSQL -->
                 @if (_provider == DatabaseProvider.PostgreSql)
                 {
                     @if (_tab == "general")
@@ -275,7 +273,6 @@
                     }
                 }
 
-                <!-- Status -->
                 @if (!string.IsNullOrEmpty(_status))
                 {
                     <div class="status-bar @(_statusOk ? "ok" : "err")">
@@ -284,11 +281,7 @@
                     </div>
                 }
 
-                <!-- Actions -->
-                <div class="dbs-actions spaced">
-                    <button type="button" class="btn-ghost" @onclick="() => { _step = 1; _status = string.Empty; }">
-                        <i class="fas fa-arrow-left"></i> Back
-                    </button>
+                <div class="dbs-actions">
                     <div class="action-right">
                         <button type="button" class="btn-secondary" @onclick="TestConnection" disabled="@_busy">
                             @if (_busy && _busyFor == "test") { <i class="fas fa-spinner fa-spin"></i> } else { <i class="fas fa-plug"></i> }
@@ -300,9 +293,8 @@
                         </button>
                     </div>
                 </div>
-
-            </div>
-        }
+            </section>
+        </div>
 
     </div>
 </div>
@@ -324,26 +316,53 @@
     .dbs-header h1 { margin: 0 0 6px; font-size: 22px; font-weight: 600; }
     .dbs-header p { margin: 0; font-size: 13px; opacity: .85; }
     .dbs-body { padding: 24px 28px; }
+    .dbs-layout { display: grid; grid-template-columns: minmax(220px, 250px) minmax(0, 1fr); gap: 24px; align-items: start; }
 
-    /* Provider cards */
-    .provider-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-    .pcard {
-        display: flex; flex-direction: column; align-items: center; gap: 4px;
-        border: 2px solid #e2e8f0; border-radius: 10px; padding: 18px 12px;
-        background: #fff; cursor: pointer; transition: border-color .15s, box-shadow .15s;
+    .provider-panel {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 18px;
+    }
+    .provider-panel-header h2 { margin: 0 0 6px; font-size: 16px; color: #1a202c; }
+    .provider-panel-header p { margin: 0 0 16px; font-size: 13px; color: #718096; }
+    .provider-list { display: flex; flex-direction: column; gap: 10px; }
+    .pitem {
+        display: flex; align-items: center; gap: 12px; text-align: left;
+        border: 1px solid #d7e0ea; border-radius: 10px; padding: 12px 14px;
+        background: #fff; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s;
         font-family: inherit; width: 100%;
         -webkit-tap-highlight-color: transparent;
     }
-    .pcard:hover  { border-color: #007acc; box-shadow: 0 4px 12px rgba(0,122,204,.15); }
-    .pcard.sel    { border-color: #007acc; background: #f0f8ff; box-shadow: 0 4px 12px rgba(0,122,204,.2); }
-    .pcard.local  { border-width: 3px; }
-    .pcard.local:hover { border-color: #28a745; }
-    .pcard.local.sel   { border-color: #28a745; background: #f0fff4; }
-    .pcard-icon { font-size: 26px; color: #007acc; }
-    .pcard.local .pcard-icon { color: #28a745; }
-    .pcard-name { font-weight: 600; font-size: 15px; color: #1a202c; }
-    .pcard-desc { font-size: 12px; color: #718096; }
-    .pcard-badge { font-size: 11px; background: #c6f6d5; color: #276749; padding: 2px 8px; border-radius: 12px; margin-top: 2px; }
+    .pitem:hover  { border-color: #007acc; box-shadow: 0 4px 12px rgba(0,122,204,.12); transform: translateY(-1px); }
+    .pitem.sel    { border-color: #007acc; background: #f0f8ff; box-shadow: 0 4px 12px rgba(0,122,204,.14); }
+    .pitem.local  { border-width: 2px; }
+    .pitem.local:hover { border-color: #28a745; }
+    .pitem.local.sel   { border-color: #28a745; background: #f0fff4; }
+    .pitem-icon { font-size: 20px; color: #007acc; width: 24px; text-align: center; }
+    .pitem.local .pitem-icon { color: #28a745; }
+    .pitem-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .pitem-name { font-weight: 600; font-size: 14px; color: #1a202c; }
+    .pitem-desc { font-size: 12px; color: #718096; }
+
+    .config-panel {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        min-width: 0;
+    }
+    .config-intro { margin-bottom: 18px; }
+    .config-kicker {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #718096;
+    }
+    .config-intro h2 { margin: 0 0 6px; font-size: 20px; color: #1a202c; }
+    .config-intro p { margin: 0; font-size: 13px; color: #718096; }
 
     /* Tabs */
     .tabs { display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; }
@@ -388,7 +407,6 @@
 
     /* Actions */
     .dbs-actions { display: flex; justify-content: flex-end; padding-top: 20px; border-top: 1px solid #e2e8f0; margin-top: 20px; }
-    .dbs-actions.spaced { justify-content: space-between; align-items: center; }
     .action-right { display: flex; gap: 10px; }
     .btn-primary, .btn-secondary, .btn-ghost {
         display: inline-flex; align-items: center; gap: 7px;
@@ -406,7 +424,7 @@
     .btn-ghost:hover { color: #2d3748; }
 
     @@media (max-width: 480px) {
-        .provider-grid { grid-template-columns: 1fr; }
+        .dbs-layout { grid-template-columns: 1fr; }
         .frow { flex-direction: column; gap: 0; }
         .fport { width: 100%; }
         .action-right { flex-direction: column; }
@@ -414,7 +432,6 @@
 </style>
 
 @code {
-    private int _step = 1;
     private string _tab = "general";
     private DatabaseProvider _provider = DatabaseProvider.Sqlite;
 
@@ -437,12 +454,6 @@
     private void Pick(DatabaseProvider p)
     {
         _provider = p;
-        _status = string.Empty;
-    }
-
-    private void GoStep2()
-    {
-        _step = 2;
         _tab = "general";
         _status = string.Empty;
     }
@@ -452,6 +463,24 @@
         _tab = t;
         _status = string.Empty;
     }
+
+    private string GetProviderTitle() => _provider switch
+    {
+        DatabaseProvider.Sqlite => "SQLite",
+        DatabaseProvider.SqlServer => "SQL Server",
+        DatabaseProvider.MySql => "MySQL",
+        DatabaseProvider.PostgreSql => "PostgreSQL",
+        _ => "Database"
+    };
+
+    private string GetProviderDescription() => _provider switch
+    {
+        DatabaseProvider.Sqlite => "Use a local database file. Leave the path empty to use the default location.",
+        DatabaseProvider.SqlServer => "Enter the SQL Server host and any authentication, encryption, or pooling options you need.",
+        DatabaseProvider.MySql => "Configure the MySQL or MariaDB server details, credentials, and SSL options.",
+        DatabaseProvider.PostgreSql => "Configure the PostgreSQL server details, credentials, and SSL or pooling options.",
+        _ => "Update the connection settings for the selected provider."
+    };
 
     private async Task TestConnection()
     {

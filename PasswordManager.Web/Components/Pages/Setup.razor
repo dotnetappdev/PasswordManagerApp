@@ -15,104 +15,74 @@
                 <i class="fas fa-shield-alt"></i>
             </div>
             <h1>Password Manager Setup</h1>
-            <p>@GetStepSubtitle()</p>
-            <div class="step-indicators">
-                <span class="step-dot @(_step == 1 ? "active" : _step > 1 ? "done" : "")">1</span>
-                <span class="step-line @(_step > 1 ? "done" : "")"></span>
-                <span class="step-dot @(_step == 2 ? "active" : "")">2</span>
-            </div>
+            <p>Choose your database type and edit the matching connection settings on one screen.</p>
         </div>
 
-        <!-- Step 1 — Provider selection -->
-        @if (_step == 1)
-        {
-            <div class="setup-body">
-                <div class="provider-grid">
-                    <div class="provider-card @(_provider == DatabaseProvider.Sqlite ? "selected local" : "local")"
-                         @onclick="() => _provider = DatabaseProvider.Sqlite">
-                        <div class="pc-icon"><i class="fas fa-laptop"></i></div>
-                        <div class="pc-info">
-                            <strong>SQLite</strong>
-                            <span>Local file — no server needed</span>
-                            <em class="badge-rec">Recommended</em>
-                        </div>
-                        @if (_provider == DatabaseProvider.Sqlite)
-                        {
-                            <div class="pc-check"><i class="fas fa-check-circle"></i></div>
-                        }
-                    </div>
+        <div class="setup-body setup-layout">
+            <aside class="provider-panel">
+                <div class="provider-panel-header">
+                    <h2>Database Type</h2>
+                    <p>Pick a provider to update the connection form.</p>
+                </div>
 
-                    <div class="provider-card @(_provider == DatabaseProvider.SqlServer ? "selected" : "")"
-                         @onclick="() => _provider = DatabaseProvider.SqlServer">
-                        <div class="pc-icon"><i class="fas fa-server"></i></div>
-                        <div class="pc-info">
+                <div class="provider-list">
+                    <button type="button" class="provider-option @(_provider == DatabaseProvider.Sqlite ? "selected local" : "local")"
+                            @onclick="() => SelectProvider(DatabaseProvider.Sqlite)">
+                        <span class="provider-option-icon"><i class="fas fa-laptop"></i></span>
+                        <span class="provider-option-copy">
+                            <strong>SQLite</strong>
+                            <span>Local file — recommended</span>
+                        </span>
+                    </button>
+
+                    <button type="button" class="provider-option @(_provider == DatabaseProvider.SqlServer ? "selected" : "")"
+                            @onclick="() => SelectProvider(DatabaseProvider.SqlServer)">
+                        <span class="provider-option-icon"><i class="fas fa-server"></i></span>
+                        <span class="provider-option-copy">
                             <strong>SQL Server</strong>
                             <span>Microsoft SQL Server</span>
-                        </div>
-                        @if (_provider == DatabaseProvider.SqlServer)
-                        {
-                            <div class="pc-check"><i class="fas fa-check-circle"></i></div>
-                        }
-                    </div>
+                        </span>
+                    </button>
 
-                    <div class="provider-card @(_provider == DatabaseProvider.MySql ? "selected" : "")"
-                         @onclick="() => _provider = DatabaseProvider.MySql">
-                        <div class="pc-icon"><i class="fas fa-database"></i></div>
-                        <div class="pc-info">
+                    <button type="button" class="provider-option @(_provider == DatabaseProvider.MySql ? "selected" : "")"
+                            @onclick="() => SelectProvider(DatabaseProvider.MySql)">
+                        <span class="provider-option-icon"><i class="fas fa-database"></i></span>
+                        <span class="provider-option-copy">
                             <strong>MySQL</strong>
                             <span>MySQL / MariaDB</span>
-                        </div>
-                        @if (_provider == DatabaseProvider.MySql)
-                        {
-                            <div class="pc-check"><i class="fas fa-check-circle"></i></div>
-                        }
-                    </div>
+                        </span>
+                    </button>
 
-                    <div class="provider-card @(_provider == DatabaseProvider.PostgreSql ? "selected" : "")"
-                         @onclick="() => _provider = DatabaseProvider.PostgreSql">
-                        <div class="pc-icon"><i class="fas fa-elephant"></i></div>
-                        <div class="pc-info">
+                    <button type="button" class="provider-option @(_provider == DatabaseProvider.PostgreSql ? "selected" : "")"
+                            @onclick="() => SelectProvider(DatabaseProvider.PostgreSql)">
+                        <span class="provider-option-icon"><i class="fas fa-elephant"></i></span>
+                        <span class="provider-option-copy">
                             <strong>PostgreSQL</strong>
                             <span>PostgreSQL Server</span>
-                        </div>
-                        @if (_provider == DatabaseProvider.PostgreSql)
-                        {
-                            <div class="pc-check"><i class="fas fa-check-circle"></i></div>
-                        }
-                    </div>
+                        </span>
+                    </button>
 
-                    <div class="provider-card @(_provider == DatabaseProvider.Supabase ? "selected" : "")"
-                         @onclick="() => _provider = DatabaseProvider.Supabase">
-                        <div class="pc-icon"><i class="fas fa-cloud"></i></div>
-                        <div class="pc-info">
+                    <button type="button" class="provider-option @(_provider == DatabaseProvider.Supabase ? "selected" : "")"
+                            @onclick="() => SelectProvider(DatabaseProvider.Supabase)">
+                        <span class="provider-option-icon"><i class="fas fa-cloud"></i></span>
+                        <span class="provider-option-copy">
                             <strong>Supabase</strong>
                             <span>Hosted PostgreSQL</span>
-                        </div>
-                        @if (_provider == DatabaseProvider.Supabase)
-                        {
-                            <div class="pc-check"><i class="fas fa-check-circle"></i></div>
-                        }
-                    </div>
-                </div>
-
-                <div class="setup-actions">
-                    <button class="btn-primary" @onclick="GoToStep2">
-                        Continue <i class="fas fa-arrow-right"></i>
+                        </span>
                     </button>
                 </div>
-            </div>
-        }
+            </aside>
 
-        <!-- Step 2 — Configuration -->
-        @if (_step == 2)
-        {
-            <div class="setup-body">
+            <section class="config-panel">
+                <div class="config-panel-header">
+                    <span class="config-kicker">Connection Settings</span>
+                    <h2>@GetProviderTitle()</h2>
+                    <p>@GetProviderDescription()</p>
+                </div>
 
-                <!-- SQLite -->
                 @if (_provider == DatabaseProvider.Sqlite)
                 {
                     <div class="config-section">
-                        <h3>SQLite Configuration</h3>
                         <div class="fg">
                             <label>Database File Path</label>
                             <input class="fc" type="text" @bind="_sqlitePath" placeholder="passwordmanager.db" />
@@ -526,10 +496,7 @@
                 }
 
                 <!-- Actions -->
-                <div class="setup-actions spaced">
-                    <button class="btn-ghost" @onclick="() => _step = 1">
-                        <i class="fas fa-arrow-left"></i> Back
-                    </button>
+                <div class="setup-actions">
                     <div class="right-actions">
                         <button class="btn-secondary" @onclick="TestConnection" disabled="@_busy">
                             @if (_busy && _busyAction == "test")
@@ -555,8 +522,8 @@
                         </button>
                     </div>
                 </div>
-            </div>
-        }
+            </section>
+        </div>
 
     </div>
 </div>
@@ -587,40 +554,55 @@
     }
     .setup-logo { font-size: 40px; margin-bottom: 12px; }
     .setup-header h1 { margin: 0 0 6px; font-size: 24px; font-weight: 600; }
-    .setup-header p { margin: 0 0 20px; opacity: .85; font-size: 14px; }
-    .step-indicators { display: flex; align-items: center; justify-content: center; gap: 0; }
-    .step-dot {
-        width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.25);
-        display: flex; align-items: center; justify-content: center;
-        font-weight: 600; font-size: 14px; transition: background .3s;
-    }
-    .step-dot.active { background: #fff; color: #007acc; }
-    .step-dot.done { background: rgba(255,255,255,.6); }
-    .step-line { width: 60px; height: 2px; background: rgba(255,255,255,.3); margin: 0 4px; }
-    .step-line.done { background: rgba(255,255,255,.7); }
+    .setup-header p { margin: 0; opacity: .85; font-size: 14px; }
 
     .setup-body { padding: 32px; }
+    .setup-layout { display: grid; grid-template-columns: minmax(220px, 250px) minmax(0, 1fr); gap: 24px; align-items: start; }
 
-    /* Provider grid */
-    .provider-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 14px; margin-bottom: 28px; }
-    .provider-card {
-        border: 2px solid #e2e8f0; border-radius: 10px; padding: 18px 16px;
-        cursor: pointer; display: flex; align-items: center; gap: 14px;
-        transition: all .2s; position: relative; background: #fff;
+    .provider-panel {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 18px;
     }
-    .provider-card:hover { border-color: #007acc; box-shadow: 0 4px 12px rgba(0,122,204,.15); transform: translateY(-1px); }
-    .provider-card.selected { border-color: #007acc; background: #f0f8ff; }
-    .provider-card.local { border-width: 3px; }
-    .provider-card.local.selected { border-color: #28a745; background: #f0fff4; }
-    .provider-card.local:hover { border-color: #28a745; }
-    .pc-icon { font-size: 24px; color: #007acc; flex-shrink: 0; }
-    .provider-card.local .pc-icon { color: #28a745; }
-    .pc-info { flex: 1; }
-    .pc-info strong { display: block; font-size: 15px; color: #1a202c; }
-    .pc-info span { font-size: 12px; color: #718096; }
-    .badge-rec { display: inline-block; background: #c6f6d5; color: #276749; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-style: normal; margin-top: 4px; }
-    .pc-check { color: #007acc; font-size: 18px; }
-    .provider-card.local .pc-check { color: #28a745; }
+    .provider-panel-header h2 { margin: 0 0 6px; font-size: 16px; color: #1a202c; }
+    .provider-panel-header p { margin: 0 0 16px; font-size: 13px; color: #718096; }
+    .provider-list { display: flex; flex-direction: column; gap: 10px; }
+    .provider-option {
+        border: 1px solid #d7e0ea; border-radius: 10px; padding: 12px 14px;
+        cursor: pointer; display: flex; align-items: center; gap: 12px;
+        transition: all .2s; background: #fff; text-align: left;
+        font-family: inherit;
+    }
+    .provider-option:hover { border-color: #007acc; box-shadow: 0 4px 12px rgba(0,122,204,.12); transform: translateY(-1px); }
+    .provider-option.selected { border-color: #007acc; background: #f0f8ff; }
+    .provider-option.local { border-width: 2px; }
+    .provider-option.local.selected { border-color: #28a745; background: #f0fff4; }
+    .provider-option.local:hover { border-color: #28a745; }
+    .provider-option-icon { font-size: 20px; color: #007acc; width: 22px; text-align: center; flex-shrink: 0; }
+    .provider-option.local .provider-option-icon { color: #28a745; }
+    .provider-option-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .provider-option-copy strong { display: block; font-size: 14px; color: #1a202c; }
+    .provider-option-copy span { font-size: 12px; color: #718096; }
+
+    .config-panel {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        min-width: 0;
+    }
+    .config-panel-header { margin-bottom: 18px; }
+    .config-kicker {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #718096;
+    }
+    .config-panel-header h2 { margin: 0 0 6px; font-size: 20px; color: #1a202c; }
+    .config-panel-header p { margin: 0; font-size: 13px; color: #718096; }
 
     /* Tabs */
     .config-tabs { display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; }
@@ -670,7 +652,6 @@
 
     /* Actions */
     .setup-actions { display: flex; justify-content: flex-end; padding-top: 20px; border-top: 1px solid #e2e8f0; margin-top: 24px; }
-    .setup-actions.spaced { justify-content: space-between; align-items: center; }
     .right-actions { display: flex; gap: 12px; }
     .btn-primary, .btn-secondary, .btn-ghost {
         display: inline-flex; align-items: center; gap: 8px;
@@ -687,7 +668,7 @@
     .btn-ghost:hover { color: #2d3748; }
 
     @@media (max-width: 600px) {
-        .provider-grid { grid-template-columns: 1fr; }
+        .setup-layout { grid-template-columns: 1fr; }
         .form-row { flex-direction: column; gap: 0; }
         .port-field { width: 100%; }
         .right-actions { flex-direction: column; }
@@ -695,7 +676,6 @@
 </style>
 
 @code {
-    private int _step = 1;
     private string _tab = "general";
     private DatabaseProvider _provider = DatabaseProvider.Sqlite;
 
@@ -741,16 +721,32 @@
         catch { }
     }
 
-    private string GetStepSubtitle() => _step == 1
-        ? "Step 1 of 2 — Choose a database provider"
-        : "Step 2 of 2 — Configure your connection";
-
-    private void GoToStep2()
+    private void SelectProvider(DatabaseProvider provider)
     {
-        _step = 2;
+        _provider = provider;
         _tab = "general";
         _statusMessage = string.Empty;
     }
+
+    private string GetProviderTitle() => _provider switch
+    {
+        DatabaseProvider.Sqlite => "SQLite",
+        DatabaseProvider.SqlServer => "SQL Server",
+        DatabaseProvider.MySql => "MySQL",
+        DatabaseProvider.PostgreSql => "PostgreSQL",
+        DatabaseProvider.Supabase => "Supabase",
+        _ => "Database"
+    };
+
+    private string GetProviderDescription() => _provider switch
+    {
+        DatabaseProvider.Sqlite => "Use a local database file. Leave the path empty to use the default location.",
+        DatabaseProvider.SqlServer => "Enter the SQL Server host and any authentication, encryption, or pooling options you need.",
+        DatabaseProvider.MySql => "Configure the MySQL or MariaDB server details, credentials, and SSL options.",
+        DatabaseProvider.PostgreSql => "Configure the PostgreSQL server details, credentials, and SSL or pooling options.",
+        DatabaseProvider.Supabase => "Provide the hosted project URL and service role key for your Supabase database.",
+        _ => "Update the connection settings for the selected provider."
+    };
 
     private async Task TestConnection()
     {
