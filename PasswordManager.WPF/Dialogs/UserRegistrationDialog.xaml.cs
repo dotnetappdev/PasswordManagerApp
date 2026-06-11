@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Crypto.Interfaces;
@@ -24,6 +25,8 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
     private readonly ApplicationUser? _currentUser;
     private bool _canCreateAdminAccount = true;
     private bool _showRoleSelection = true;
+    private bool _showDlgMasterPassword;
+    private bool _showDlgConfirmPassword;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -138,7 +141,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
                 return;
             }
 
-            var isAdmin = AdminToggleSwitch.IsChecked == true;
+            var isAdmin = AdminToggleSwitch.IsOn;
             ShowRoleSelection = !isAdmin;
 
             if (isAdmin)
@@ -233,7 +236,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
 
             // Determine the role
             string selectedRole;
-            if (CanCreateAdminAccount && AdminToggleSwitch.IsChecked == true)
+            if (CanCreateAdminAccount && AdminToggleSwitch.IsOn)
             {
                 selectedRole = ApplicationRoles.Admin;
             }
@@ -487,6 +490,36 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         }
     }
 
+    private void DlgMasterRevealBtn_Click(object sender, RoutedEventArgs e)
+    {
+        _showDlgMasterPassword = !_showDlgMasterPassword;
+        TogglePasswordVisibility(MasterPasswordBox, MasterPasswordVisibleBox, DlgMasterRevealIcon, _showDlgMasterPassword);
+    }
+
+    private void DlgConfirmRevealBtn_Click(object sender, RoutedEventArgs e)
+    {
+        _showDlgConfirmPassword = !_showDlgConfirmPassword;
+        TogglePasswordVisibility(ConfirmPasswordBox, ConfirmPasswordVisibleBox, DlgConfirmRevealIcon, _showDlgConfirmPassword);
+    }
+
+    private static void TogglePasswordVisibility(PasswordBox pb, TextBox tb, TextBlock icon, bool show)
+    {
+        if (show)
+        {
+            tb.Text = pb.Password;
+            pb.Visibility = Visibility.Collapsed;
+            tb.Visibility = Visibility.Visible;
+            icon.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#7C3AED"));
+        }
+        else
+        {
+            tb.Visibility = Visibility.Collapsed;
+            pb.Visibility = Visibility.Visible;
+            tb.Text = string.Empty;
+            icon.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5A5F78"));
+        }
+    }
+
     private void FirstNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         SetFieldError(FirstNameBorder, false);
@@ -527,46 +560,48 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         SetReq(ReqNumberText,  pw.Any(char.IsDigit),                        "One number");
         SetReq(ReqSpecialText, pw.Any(ch => !char.IsLetterOrDigit(ch)),     "One special character");
 
-        // Strength bar
+        // Strength segments
         var score = CalculatePasswordStrength(pw);
-        PasswordStrengthBar.Value = score * 20;
-
         var (label, barColor) = score switch
         {
-            5 => ("Very Strong ✓", "#10B981"),
-            4 => ("Strong",        "#34D399"),
-            3 => ("Medium",        "#F59E0B"),
-            2 => ("Weak",          "#F97316"),
-            _ => ("Very Weak",     "#EF4444")
+            5 => ("Very Strong", "#10B981"),
+            4 => ("Strong",      "#34D399"),
+            3 => ("Medium",      "#F59E0B"),
+            2 => ("Weak",        "#F97316"),
+            _ => ("Too short",   "#EF4444")
         };
 
         PasswordStrengthText.Text = $"Strength: {label}";
-        PasswordStrengthBar.Foreground = new System.Windows.Media.SolidColorBrush(
-            (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(barColor));
+        var segs = new[] { DlgSeg1, DlgSeg2, DlgSeg3, DlgSeg4 };
+        var cappedScore = Math.Min(score, 4);
+        for (int i = 0; i < segs.Length; i++)
+        {
+            if (segs[i] == null) continue;
+            segs[i].Background = i < cappedScore
+                ? new SolidColorBrush((Color)ColorConverter.ConvertFromString(barColor))
+                : new SolidColorBrush(Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF));
+        }
     }
 
     private static void SetReq(TextBlock? tb, bool met, string label)
     {
         if (tb == null) return;
-        tb.Text = $"{(met ? "●" : "○")}  {label}";
+        tb.Text = $"{(met ? "✓" : "–")}  {label}";
         tb.Foreground = met
-            ? new System.Windows.Media.SolidColorBrush(
-                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#10B981"))
-            : new System.Windows.Media.SolidColorBrush(
-                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#5A5F78"));
+            ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"))
+            : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5A5F78"));
     }
 
     private void ResetRequirements()
     {
-        foreach (var tb in new[] { ReqLengthText, ReqUpperText, ReqLowerText, ReqNumberText, ReqSpecialText })
-        {
-            if (tb == null) continue;
-            var orig = tb.Text;
-            var label = orig.Length > 3 ? orig[3..] : orig; // strip leading bullet + spaces
-            tb.Text = $"○  {label}";
-            tb.Foreground = new System.Windows.Media.SolidColorBrush(
-                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#5A5F78"));
-        }
+        SetReq(ReqLengthText,  false, "At least 8 characters");
+        SetReq(ReqUpperText,   false, "One uppercase letter");
+        SetReq(ReqLowerText,   false, "One lowercase letter");
+        SetReq(ReqNumberText,  false, "One number");
+        SetReq(ReqSpecialText, false, "One special character");
+        var segs = new[] { DlgSeg1, DlgSeg2, DlgSeg3, DlgSeg4 };
+        foreach (var s in segs)
+            if (s != null) s.Background = new SolidColorBrush(Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF));
     }
 
     private int CalculatePasswordStrength(string password)

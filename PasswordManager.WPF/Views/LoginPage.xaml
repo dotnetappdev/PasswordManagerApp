@@ -350,9 +350,22 @@
                                     </PasswordBox.Background>
                                 </PasswordBox>
 
-                                <Button Grid.Column="1" Style="{StaticResource FlatButtonStyle}"
-                                        Width="32" Height="32" Padding="0">
-                                    <TextBlock Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets"
+                                <TextBox x:Name="MasterPasswordVisibleBox" x:FieldModifier="private"
+                                         Grid.Column="0"
+                                         BorderThickness="0" FontSize="15" FontFamily="Consolas"
+                                         Foreground="{DynamicResource ModernTextPrimaryBrush}"
+                                         IsReadOnly="True" Visibility="Collapsed">
+                                    <TextBox.Background>
+                                        <SolidColorBrush Color="Transparent"/>
+                                    </TextBox.Background>
+                                </TextBox>
+
+                                <Button x:Name="MasterPasswordRevealBtn" x:FieldModifier="private"
+                                        Grid.Column="1" Style="{StaticResource FlatButtonStyle}"
+                                        Width="32" Height="32" Padding="0"
+                                        Click="MasterPasswordRevealBtn_Click">
+                                    <TextBlock x:Name="MasterRevealIcon" x:FieldModifier="private"
+                                               Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets"
                                                FontSize="15"
                                                Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                                 </Button>
@@ -652,7 +665,9 @@
                                                          BorderThickness="0" FontSize="14"
                                                          Foreground="#F0F2FF"
                                                          ui:ControlHelper.PlaceholderText="Jane"
-                                                         TextChanged="RegField_TextChanged"/>
+                                                         TextChanged="RegField_TextChanged">
+                                                    <TextBox.Background><SolidColorBrush Color="#10131E"/></TextBox.Background>
+                                                </TextBox>
                                             </Border>
                                         </StackPanel>
 
@@ -667,7 +682,9 @@
                                                          BorderThickness="0" FontSize="14"
                                                          Foreground="#F0F2FF"
                                                          ui:ControlHelper.PlaceholderText="Doe"
-                                                         TextChanged="RegField_TextChanged"/>
+                                                         TextChanged="RegField_TextChanged">
+                                                    <TextBox.Background><SolidColorBrush Color="#10131E"/></TextBox.Background>
+                                                </TextBox>
                                             </Border>
                                         </StackPanel>
                                     </Grid>
@@ -684,7 +701,9 @@
                                                      BorderThickness="0" FontSize="14"
                                                      Foreground="#F0F2FF"
                                                      ui:ControlHelper.PlaceholderText="you@example.com"
-                                                     TextChanged="RegField_TextChanged"/>
+                                                     TextChanged="RegField_TextChanged">
+                                                <TextBox.Background><SolidColorBrush Color="#10131E"/></TextBox.Background>
+                                            </TextBox>
                                         </Border>
                                     </StackPanel>
 
@@ -729,11 +748,32 @@
                                                 CornerRadius="10" BorderThickness="1" Padding="14,12">
                                             <Border.Background><SolidColorBrush Color="#10131E"/></Border.Background>
                                             <Border.BorderBrush><SolidColorBrush Color="#FFFFFF" Opacity="0.09"/></Border.BorderBrush>
-                                            <PasswordBox x:Name="RegPasswordBox" x:FieldModifier="private"
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <PasswordBox x:Name="RegPasswordBox" x:FieldModifier="private"
+                                                             Grid.Column="0"
+                                                             BorderThickness="0" FontSize="14" FontFamily="Consolas"
+                                                             Foreground="#F0F2FF"
+                                                             ui:ControlHelper.PlaceholderText="Create a strong master password"
+                                                             PasswordChanged="RegPasswordBox_PasswordChanged"/>
+                                                <TextBox x:Name="RegPasswordVisibleBox" x:FieldModifier="private"
+                                                         Grid.Column="0"
                                                          BorderThickness="0" FontSize="14" FontFamily="Consolas"
-                                                         Foreground="#F0F2FF"
-                                                         ui:ControlHelper.PlaceholderText="Create a strong master password"
-                                                         PasswordChanged="RegPasswordBox_PasswordChanged"/>
+                                                         Foreground="#F0F2FF" IsReadOnly="True" Visibility="Collapsed">
+                                                    <TextBox.Background><SolidColorBrush Color="Transparent"/></TextBox.Background>
+                                                </TextBox>
+                                                <Button x:Name="RegPasswordRevealBtn" x:FieldModifier="private"
+                                                        Grid.Column="1" Style="{StaticResource FlatButtonStyle}"
+                                                        Width="28" Height="28" Padding="0"
+                                                        Click="RegPasswordRevealBtn_Click">
+                                                    <TextBlock x:Name="RegPasswordRevealIcon" x:FieldModifier="private"
+                                                               Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets"
+                                                               FontSize="13" Foreground="#5A6478"/>
+                                                </Button>
+                                            </Grid>
                                         </Border>
                                     </StackPanel>
 
@@ -794,11 +834,32 @@
                                                 CornerRadius="10" BorderThickness="1" Padding="14,12">
                                             <Border.Background><SolidColorBrush Color="#10131E"/></Border.Background>
                                             <Border.BorderBrush><SolidColorBrush Color="#FFFFFF" Opacity="0.09"/></Border.BorderBrush>
-                                            <PasswordBox x:Name="RegConfirmBox" x:FieldModifier="private"
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <PasswordBox x:Name="RegConfirmBox" x:FieldModifier="private"
+                                                             Grid.Column="0"
+                                                             BorderThickness="0" FontSize="14" FontFamily="Consolas"
+                                                             Foreground="#F0F2FF"
+                                                             ui:ControlHelper.PlaceholderText="Re-enter your master password"
+                                                             PasswordChanged="RegField_PasswordChanged"/>
+                                                <TextBox x:Name="RegConfirmVisibleBox" x:FieldModifier="private"
+                                                         Grid.Column="0"
                                                          BorderThickness="0" FontSize="14" FontFamily="Consolas"
-                                                         Foreground="#F0F2FF"
-                                                         ui:ControlHelper.PlaceholderText="Re-enter your master password"
-                                                         PasswordChanged="RegField_PasswordChanged"/>
+                                                         Foreground="#F0F2FF" IsReadOnly="True" Visibility="Collapsed">
+                                                    <TextBox.Background><SolidColorBrush Color="Transparent"/></TextBox.Background>
+                                                </TextBox>
+                                                <Button x:Name="RegConfirmRevealBtn" x:FieldModifier="private"
+                                                        Grid.Column="1" Style="{StaticResource FlatButtonStyle}"
+                                                        Width="28" Height="28" Padding="0"
+                                                        Click="RegConfirmRevealBtn_Click">
+                                                    <TextBlock x:Name="RegConfirmRevealIcon" x:FieldModifier="private"
+                                                               Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets"
+                                                               FontSize="13" Foreground="#5A6478"/>
+                                                </Button>
+                                            </Grid>
                                         </Border>
                                     </StackPanel>
 
@@ -818,7 +879,9 @@
                                             <TextBox x:Name="RegHintBox" x:FieldModifier="private"
                                                      BorderThickness="0" FontSize="14"
                                                      Foreground="#F0F2FF"
-                                                     ui:ControlHelper.PlaceholderText="A clue to help you remember"/>
+                                                     ui:ControlHelper.PlaceholderText="A clue to help you remember">
+                                                <TextBox.Background><SolidColorBrush Color="#10131E"/></TextBox.Background>
+                                            </TextBox>
                                         </Border>
                                         <TextBlock Text="Never include your actual password — this is stored in plain text."
                                                    FontSize="11" Foreground="#374151" Margin="0,6,0,0"

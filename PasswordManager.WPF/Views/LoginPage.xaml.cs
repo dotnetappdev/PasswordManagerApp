@@ -23,6 +23,9 @@ public sealed partial class LoginPage : Page
     private IServiceProvider? _serviceProvider;
     private LoginViewModel? _viewModel;
     private UserProfileSelectionViewModel? _profileSelectionViewModel;
+    private bool _showMasterPassword;
+    private bool _showRegPassword;
+    private bool _showRegConfirm;
 
     public LoginPage()
     {
@@ -185,6 +188,42 @@ public sealed partial class LoginPage : Page
 
     private void CreateProfileButton_Click(object sender, RoutedEventArgs e) => ShowRegistrationPanel();
     private void CreateAccountButton_Click(object sender, RoutedEventArgs e) => ShowRegistrationPanel();
+
+    private void MasterPasswordRevealBtn_Click(object sender, RoutedEventArgs e)
+    {
+        _showMasterPassword = !_showMasterPassword;
+        TogglePasswordVisibility(MasterPasswordBox, MasterPasswordVisibleBox, MasterRevealIcon, _showMasterPassword);
+    }
+
+    private void RegPasswordRevealBtn_Click(object sender, RoutedEventArgs e)
+    {
+        _showRegPassword = !_showRegPassword;
+        TogglePasswordVisibility(RegPasswordBox, RegPasswordVisibleBox, RegPasswordRevealIcon, _showRegPassword);
+    }
+
+    private void RegConfirmRevealBtn_Click(object sender, RoutedEventArgs e)
+    {
+        _showRegConfirm = !_showRegConfirm;
+        TogglePasswordVisibility(RegConfirmBox, RegConfirmVisibleBox, RegConfirmRevealIcon, _showRegConfirm);
+    }
+
+    private static void TogglePasswordVisibility(PasswordBox pb, TextBox tb, TextBlock icon, bool show)
+    {
+        if (show)
+        {
+            tb.Text = pb.Password;
+            pb.Visibility = Visibility.Collapsed;
+            tb.Visibility = Visibility.Visible;
+            icon.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#7C3AED"));
+        }
+        else
+        {
+            tb.Visibility = Visibility.Collapsed;
+            pb.Visibility = Visibility.Visible;
+            tb.Text = string.Empty;
+            icon.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5A6478"));
+        }
+    }
 
     private void ShowRegistrationPanel()
     {
@@ -389,7 +428,7 @@ public sealed partial class LoginPage : Page
     private static void UpdateReq(TextBlock? tb, bool met, string label)
     {
         if (tb == null) return;
-        tb.Text       = $"{(met ? "●" : "○")}  {label}";
+        tb.Text       = $"{(met ? "✓" : "–")}  {label}";
         tb.Foreground = new SolidColorBrush(met
             ? (Color)ColorConverter.ConvertFromString("#10B981")
             : (Color)ColorConverter.ConvertFromString("#5A6478"));
@@ -416,6 +455,15 @@ public sealed partial class LoginPage : Page
         if (RegPasswordBox   != null) RegPasswordBox.Password  = "";
         if (RegConfirmBox    != null) RegConfirmBox.Password   = "";
         if (RegHintBox       != null) RegHintBox.Text          = "";
+
+        // Reset reveal state
+        if (_showRegPassword && RegPasswordBox != null && RegPasswordVisibleBox != null && RegPasswordRevealIcon != null)
+            TogglePasswordVisibility(RegPasswordBox, RegPasswordVisibleBox, RegPasswordRevealIcon, false);
+        if (_showRegConfirm && RegConfirmBox != null && RegConfirmVisibleBox != null && RegConfirmRevealIcon != null)
+            TogglePasswordVisibility(RegConfirmBox, RegConfirmVisibleBox, RegConfirmRevealIcon, false);
+        _showRegPassword = false;
+        _showRegConfirm = false;
+
         HideRegError();
         ResetReqs();
         if (RegStrengthPanel != null) RegStrengthPanel.Visibility = Visibility.Collapsed;

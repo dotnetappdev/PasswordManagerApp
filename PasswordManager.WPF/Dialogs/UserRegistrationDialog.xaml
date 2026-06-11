@@ -55,6 +55,30 @@
             <Setter Property="Foreground" Value="#5A5F78"/>
             <Setter Property="Margin" Value="0,2"/>
         </Style>
+
+        <!-- Minimal flat button for icon toggles -->
+        <Style x:Key="RevealButtonStyle" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="4"
+                                Width="32" Height="32">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </ui:ContentDialog.Resources>
 
     <ScrollViewer MaxHeight="640" VerticalScrollBarVisibility="Auto"
@@ -64,11 +88,15 @@
             <!-- ── Personal Information ───────────────────────────────── -->
             <Border Style="{StaticResource SectionCardStyle}">
                 <StackPanel>
-                    <TextBlock Text="Personal Information"
-                               FontSize="13" FontWeight="SemiBold"
-                               Foreground="{DynamicResource ModernTextSecondaryBrush}"
-                               Margin="0,0,0,14"
-                               />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                        <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets"
+                                   FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Personal Information"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
 
                     <!-- First Name -->
                     <StackPanel Margin="0,0,0,10">
@@ -78,11 +106,12 @@
                         <Border x:Name="FirstNameBorder" x:FieldModifier="private"
                                 Style="{StaticResource FieldBorderStyle}">
                             <TextBox x:Name="FirstNameTextBox" x:FieldModifier="private"
-                                     Background="Transparent" BorderThickness="0"
-                                     Foreground="{DynamicResource ModernTextPrimaryBrush}"
-                                     FontSize="14"
+                                     BorderThickness="0" FontSize="14"
+                                     Foreground="#F0F2FF"
                                      ui:ControlHelper.PlaceholderText="Enter your first name"
-                                     TextChanged="FirstNameTextBox_TextChanged"/>
+                                     TextChanged="FirstNameTextBox_TextChanged">
+                                <TextBox.Background><SolidColorBrush Color="#1E2130"/></TextBox.Background>
+                            </TextBox>
                         </Border>
                     </StackPanel>
 
@@ -94,11 +123,12 @@
                         <Border x:Name="LastNameBorder" x:FieldModifier="private"
                                 Style="{StaticResource FieldBorderStyle}">
                             <TextBox x:Name="LastNameTextBox" x:FieldModifier="private"
-                                     Background="Transparent" BorderThickness="0"
-                                     Foreground="{DynamicResource ModernTextPrimaryBrush}"
-                                     FontSize="14"
+                                     BorderThickness="0" FontSize="14"
+                                     Foreground="#F0F2FF"
                                      ui:ControlHelper.PlaceholderText="Enter your last name"
-                                     TextChanged="LastNameTextBox_TextChanged"/>
+                                     TextChanged="LastNameTextBox_TextChanged">
+                                <TextBox.Background><SolidColorBrush Color="#1E2130"/></TextBox.Background>
+                            </TextBox>
                         </Border>
                     </StackPanel>
 
@@ -110,11 +140,12 @@
                         <Border x:Name="EmailBorder" x:FieldModifier="private"
                                 Style="{StaticResource FieldBorderStyle}">
                             <TextBox x:Name="EmailTextBox" x:FieldModifier="private"
-                                     Background="Transparent" BorderThickness="0"
-                                     Foreground="{DynamicResource ModernTextPrimaryBrush}"
-                                     FontSize="14"
+                                     BorderThickness="0" FontSize="14"
+                                     Foreground="#F0F2FF"
                                      ui:ControlHelper.PlaceholderText="you@example.com"
-                                     TextChanged="EmailTextBox_TextChanged"/>
+                                     TextChanged="EmailTextBox_TextChanged">
+                                <TextBox.Background><SolidColorBrush Color="#1E2130"/></TextBox.Background>
+                            </TextBox>
                         </Border>
                     </StackPanel>
                 </StackPanel>
@@ -151,23 +182,66 @@
                                    Margin="0,0,0,6"/>
                         <Border x:Name="MasterPasswordBorder" x:FieldModifier="private"
                                 Style="{StaticResource FieldBorderStyle}">
-                            <PasswordBox x:Name="MasterPasswordBox" x:FieldModifier="private"
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <PasswordBox x:Name="MasterPasswordBox" x:FieldModifier="private"
+                                             Grid.Column="0"
+                                             Background="Transparent" BorderThickness="0"
+                                             Foreground="{DynamicResource ModernTextPrimaryBrush}"
+                                             FontSize="14" FontFamily="Consolas"
+                                             ui:ControlHelper.PlaceholderText="Create a strong master password"
+                                             PasswordChanged="MasterPasswordBox_PasswordChanged"/>
+                                <TextBox x:Name="MasterPasswordVisibleBox" x:FieldModifier="private"
+                                         Grid.Column="0"
                                          Background="Transparent" BorderThickness="0"
                                          Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                          FontSize="14" FontFamily="Consolas"
-                                         ui:ControlHelper.PlaceholderText="Create a strong master password"
-                                         PasswordChanged="MasterPasswordBox_PasswordChanged"/>
+                                         IsReadOnly="True" Visibility="Collapsed"/>
+                                <Button x:Name="DlgMasterRevealBtn" x:FieldModifier="private"
+                                        Grid.Column="1"
+                                        Style="{StaticResource RevealButtonStyle}"
+                                        VerticalAlignment="Center"
+                                        Click="DlgMasterRevealBtn_Click">
+                                    <TextBlock x:Name="DlgMasterRevealIcon" x:FieldModifier="private"
+                                               Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="14" Foreground="#5A5F78"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Button>
+                            </Grid>
                         </Border>
                     </StackPanel>
 
-                    <!-- Strength bar -->
+                    <!-- Strength segments + label -->
                     <StackPanel x:Name="PasswordStrengthPanel" x:FieldModifier="private"
                                 Margin="0,0,0,12" Visibility="Collapsed">
-                        <ProgressBar x:Name="PasswordStrengthBar" x:FieldModifier="private"
-                                     Height="6" Minimum="0" Maximum="100" Value="0"
-                                     Margin="0,0,0,4"/>
+                        <Grid Height="4" Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="4"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="4"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="4"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="DlgSeg1" x:FieldModifier="private" Grid.Column="0" CornerRadius="2">
+                                <Border.Background><SolidColorBrush Color="#FFFFFF" Opacity="0.1"/></Border.Background>
+                            </Border>
+                            <Border x:Name="DlgSeg2" x:FieldModifier="private" Grid.Column="2" CornerRadius="2">
+                                <Border.Background><SolidColorBrush Color="#FFFFFF" Opacity="0.1"/></Border.Background>
+                            </Border>
+                            <Border x:Name="DlgSeg3" x:FieldModifier="private" Grid.Column="4" CornerRadius="2">
+                                <Border.Background><SolidColorBrush Color="#FFFFFF" Opacity="0.1"/></Border.Background>
+                            </Border>
+                            <Border x:Name="DlgSeg4" x:FieldModifier="private" Grid.Column="6" CornerRadius="2">
+                                <Border.Background><SolidColorBrush Color="#FFFFFF" Opacity="0.1"/></Border.Background>
+                            </Border>
+                        </Grid>
                         <TextBlock x:Name="PasswordStrengthText" x:FieldModifier="private"
-                                   FontSize="12" Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
+                                   FontSize="11" Foreground="#6B7280"/>
                     </StackPanel>
 
                     <!-- Requirements checklist -->
@@ -197,12 +271,35 @@
                                    Margin="0,0,0,6"/>
                         <Border x:Name="ConfirmPasswordBorder" x:FieldModifier="private"
                                 Style="{StaticResource FieldBorderStyle}">
-                            <PasswordBox x:Name="ConfirmPasswordBox" x:FieldModifier="private"
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <PasswordBox x:Name="ConfirmPasswordBox" x:FieldModifier="private"
+                                             Grid.Column="0"
+                                             Background="Transparent" BorderThickness="0"
+                                             Foreground="{DynamicResource ModernTextPrimaryBrush}"
+                                             FontSize="14" FontFamily="Consolas"
+                                             ui:ControlHelper.PlaceholderText="Re-enter your master password"
+                                             PasswordChanged="ConfirmPasswordBox_PasswordChanged"/>
+                                <TextBox x:Name="ConfirmPasswordVisibleBox" x:FieldModifier="private"
+                                         Grid.Column="0"
                                          Background="Transparent" BorderThickness="0"
                                          Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                          FontSize="14" FontFamily="Consolas"
-                                         ui:ControlHelper.PlaceholderText="Re-enter your master password"
-                                         PasswordChanged="ConfirmPasswordBox_PasswordChanged"/>
+                                         IsReadOnly="True" Visibility="Collapsed"/>
+                                <Button x:Name="DlgConfirmRevealBtn" x:FieldModifier="private"
+                                        Grid.Column="1"
+                                        Style="{StaticResource RevealButtonStyle}"
+                                        VerticalAlignment="Center"
+                                        Click="DlgConfirmRevealBtn_Click">
+                                    <TextBlock x:Name="DlgConfirmRevealIcon" x:FieldModifier="private"
+                                               Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="14" Foreground="#5A5F78"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Button>
+                            </Grid>
                         </Border>
                     </StackPanel>
 
@@ -213,10 +310,11 @@
                                    Margin="0,0,0,6"/>
                         <Border Style="{StaticResource FieldBorderStyle}">
                             <TextBox x:Name="PasswordHintTextBox" x:FieldModifier="private"
-                                     Background="Transparent" BorderThickness="0"
-                                     Foreground="{DynamicResource ModernTextPrimaryBrush}"
-                                     FontSize="14"
-                                     ui:ControlHelper.PlaceholderText="A clue to jog your memory"/>
+                                     BorderThickness="0" FontSize="14"
+                                     Foreground="#F0F2FF"
+                                     ui:ControlHelper.PlaceholderText="A clue to jog your memory">
+                                <TextBox.Background><SolidColorBrush Color="#1E2130"/></TextBox.Background>
+                            </TextBox>
                         </Border>
                         <TextBlock FontSize="11" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    Margin="2,4,0,0"
@@ -230,10 +328,15 @@
                     Visibility="{Binding CanCreateAdminAccount, Mode=OneWay,
                                  Converter={StaticResource BoolToVisibilityConverter}}">
                 <StackPanel>
-                    <TextBlock Text="Account Role"
-                               FontSize="13" FontWeight="SemiBold"
-                               Foreground="{DynamicResource ModernTextSecondaryBrush}"
-                               Margin="0,0,0,14"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                        <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets"
+                                   FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Account Role"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
 
                     <!-- Admin toggle -->
                     <Border Background="#1E2130" CornerRadius="8" BorderBrush="#FFFFFF1A"
@@ -251,10 +354,10 @@
                                            FontSize="12" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                            TextWrapping="Wrap"/>
                             </StackPanel>
-                            <CheckBox x:Name="AdminToggleSwitch" x:FieldModifier="private"
-                                      Grid.Column="1" VerticalAlignment="Center"
-                                      Checked="AdminToggleSwitch_Toggled"
-                                      Unchecked="AdminToggleSwitch_Toggled"/>
+                            <ui:ToggleSwitch x:Name="AdminToggleSwitch" x:FieldModifier="private"
+                                             Grid.Column="1" VerticalAlignment="Center"
+                                             OnContent="" OffContent=""
+                                             Toggled="AdminToggleSwitch_Toggled"/>
                         </Grid>
                     </Border>
 
