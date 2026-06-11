@@ -30,6 +30,9 @@
             <converters:NotNullToInvertedVisibilityConverter x:Key="NotNullToInvertedVisibilityConverter"/>
             <converters:BoolNegationConverter x:Key="BoolNegationConverter"/>
             <converters:NotZeroToBoolConverter x:Key="NotZeroToBoolConverter"/>
+            <converters:FirstLetterConverter x:Key="FirstLetterConverter"/>
+            <converters:InitialsMultiConverter x:Key="InitialsMultiConverter"/>
+            <converters:NameToAvatarBrushConverter x:Key="NameToAvatarBrushConverter"/>
 
             <!-- Removed WebsiteToColorConverter (likely already in ModernTheme.xaml) -->
         </ResourceDictionary>

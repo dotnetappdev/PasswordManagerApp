@@ -41,7 +41,7 @@
                                MaxWidth="400"
                                HorizontalAlignment="Left"
                                VerticalAlignment="Center"
-                               Style="{StaticResource Modernui:AutoSuggestBoxStyle}"
+                               Style="{StaticResource ModernAutoSuggestBoxStyle}"
                                TextChanged="SearchBox_TextChanged"
                                QuerySubmitted="SearchBox_QuerySubmitted"
                               />

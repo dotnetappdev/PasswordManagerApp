@@ -8,7 +8,9 @@
         <Frame x:Name="LoginFrame"
                x:FieldModifier="private"
                Background="{StaticResource ModernBackgroundBrush}"
-               Visibility="Visible"/>
+               NavigationUIVisibility="Hidden"
+               Visibility="Visible"
+               Navigated="Frame_Navigated"/>
 
         <!-- Main Navigation View (shown after authentication) -->
         <ui:NavigationView x:Name="MainNavigationView"
@@ -93,7 +95,7 @@
                                     ui:ControlHelper.PlaceholderText="Search passwords..."
                                     TextChanged="SearchBox_TextChanged"
                                     QuerySubmitted="SearchBox_QuerySubmitted"
-                                    Style="{StaticResource Modernui:AutoSuggestBoxStyle}"
+                                    Style="{StaticResource ModernAutoSuggestBoxStyle}"
                                     CornerRadius="8"
                                     Height="36"
                                     HorizontalAlignment="Stretch"/>
@@ -108,8 +110,7 @@
                                     Tag="AllItems"
                                     MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets"
-                                  FontSize="18"
+                        <ui:FontIcon Glyph="&#xE8A5;" FontSize="18"
                                   Foreground="{StaticResource ModernPrimaryBrush}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
@@ -118,7 +119,8 @@
             <!-- Content Frame for Navigation -->
             <Frame x:Name="ContentFrame"
                    Background="{StaticResource ModernBackgroundBrush}"
-                   NavigationUIVisibility="Hidden"/>
+                   NavigationUIVisibility="Hidden"
+                   Navigated="Frame_Navigated"/>
 
         </ui:NavigationView>
 

@@ -4,400 +4,886 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.modernwpf.com/2019"
       xmlns:converters="clr-namespace:PasswordManager.WPF.Converters"
-      Background="#2D2D2D"
+      Background="{DynamicResource ModernBackgroundBrush}"
       Loaded="Page_Loaded">
 
     <Page.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:NameToAvatarBrushConverter x:Key="NameToAvatarBrushConverter"/>
+        <converters:FirstLetterConverter x:Key="FirstLetterConverter"/>
+        <converters:InitialsMultiConverter x:Key="InitialsMultiConverter"/>
+
+        <!-- Profile card — completely custom template so ModernWPF's VSM animations
+             are NOT applied (they would animate Background.Color on a frozen brush
+             and throw InvalidOperationException). Hover uses opacity, not color path. -->
+        <Style x:Key="ProfileCardButtonStyle" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                CornerRadius="12"
+                                Padding="16,20"
+                                BorderThickness="2">
+                            <Border.Background>
+                                <SolidColorBrush Color="Transparent"/>
+                            </Border.Background>
+                            <Border.BorderBrush>
+                                <SolidColorBrush Color="Transparent"/>
+                            </Border.BorderBrush>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush">
+                                    <Setter.Value><SolidColorBrush Color="#7C3AED"/></Setter.Value>
+                                </Setter>
+                                <Setter TargetName="Root" Property="Background">
+                                    <Setter.Value><SolidColorBrush Color="#FFFFFF" Opacity="0.04"/></Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background">
+                                    <Setter.Value><SolidColorBrush Color="#FFFFFF" Opacity="0.09"/></Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Flat button — no ModernWPF animations, safe for dark surfaces.
+             Use this for any button that sits on the dark login background. -->
+        <Style x:Key="FlatButtonStyle" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root" Padding="{TemplateBinding Padding}" CornerRadius="6">
+                            <Border.Background>
+                                <SolidColorBrush Color="Transparent"/>
+                            </Border.Background>
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Page.Resources>
 
-    <!-- Full window dark background -->
-    <Grid HorizontalAlignment="Stretch" 
+    <Grid HorizontalAlignment="Stretch"
           VerticalAlignment="Stretch"
-          Background="#2D2D2D">
+          Background="{DynamicResource ModernBackgroundBrush}">
 
         <!-- Split Layout: Left side for branding, Right side for login -->
-        <Grid>
+        <Grid x:Name="SplitLayoutGrid">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="400"/>
             </Grid.ColumnDefinitions>
 
             <!-- Left Side: App Branding -->
-            <Grid Grid.Column="0" 
-                  Background="#2D2D2D">
+            <Grid Grid.Column="0"
+                  Background="{DynamicResource ModernSurfaceBrush}">
                 <StackPanel HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Margin="32">
-                    
+                            VerticalAlignment="Center"
+                            Margin="40">
+
                     <!-- Large App Icon -->
-                    <Border Background="#4A90E2"
-                           
-                            Width="120"
-                            Height="120"
+                    <Border Background="{DynamicResource ModernPrimaryGradientBrush}"
+                            Width="120" Height="120"
+                            CornerRadius="28"
                             HorizontalAlignment="Center">
                         <TextBlock Text="&#xE192;"
-                                  FontFamily="Segoe MDL2 Assets"
-                                  FontSize="60"
-                                  Foreground="White"
-                                  HorizontalAlignment="Center"
-                                  VerticalAlignment="Center"/>
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="60" Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
                     </Border>
 
                     <!-- App Title -->
-                    <StackPanel HorizontalAlignment="Center"
-                                Margin="8">
+                    <StackPanel HorizontalAlignment="Center" Margin="0,24,0,0">
                         <TextBlock Text="Password Manager"
-                                   FontSize="32"
-                                   FontWeight="Bold"
-                                   Foreground="White"
+                                   FontSize="28" FontWeight="Bold"
+                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                    HorizontalAlignment="Center"/>
                         <TextBlock Text="Secure your digital life"
-                                   FontSize="16"
-                                   Foreground="#B0B0B0"
-                                   HorizontalAlignment="Center"/>
+                                   FontSize="15"
+                                   Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,8,0,0"/>
+                    </StackPanel>
+
+                    <!-- Feature bullets -->
+                    <StackPanel Margin="0,40,0,0">
+                        <TextBlock Text="✓  End-to-end encrypted vault"
+                                   FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   Margin="0,0,0,8"/>
+                        <TextBlock Text="✓  Multi-profile support"
+                                   FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   Margin="0,0,0,8"/>
+                        <TextBlock Text="✓  Passkey &amp; 2FA ready"
+                                   FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
 
             <!-- Right Side: Login Form -->
             <Border Grid.Column="1"
-                    Background="#404040"
+                    Background="{DynamicResource ModernElevatedSurfaceBrush}"
                     Padding="0">
                 
                 <Grid>
-                    <!-- Profile Selection View -->
+                    <!-- Profile Selection View (Netflix-style avatar cards) -->
                     <StackPanel HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               MaxWidth="320"
-                               Margin="32"
-                               Visibility="{Binding ShowProfileSelection, Converter={StaticResource BoolToVisibilityConverter}}">
+                                VerticalAlignment="Center"
+                                MaxWidth="340"
+                                Margin="32"
+                                Visibility="{Binding ShowProfileSelection, Converter={StaticResource BoolToVisibilityConverter}}">
 
-                        <!-- Profile Selection Header -->
-                        <StackPanel HorizontalAlignment="Center"
-                                   Margin="16">
-                            <TextBlock Text="Choose Your Profile"
-                                       FontSize="24"
-                                       FontWeight="SemiBold"
-                                       Foreground="White"
-                                       HorizontalAlignment="Center"/>
-                        </StackPanel>
+                        <TextBlock Text="Who's unlocking?"
+                                   FontSize="22" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,28"/>
 
-                        <!-- User Profiles Grid -->
-                        <ScrollViewer MaxHeight="300" 
-                                     HorizontalScrollBarVisibility="Disabled"
-                                     VerticalScrollBarVisibility="Auto">
+                        <!-- Avatar grid -->
+                        <ScrollViewer MaxHeight="360"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      VerticalScrollBarVisibility="Auto">
                             <ItemsControl x:Name="UserProfilesList">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <StackPanel Margin="12"/>
+                                        <!-- 2-column wrapping grid of profile cards -->
+                                        <WrapPanel Orientation="Horizontal"
+                                                   HorizontalAlignment="Center"/>
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Button Background="#2D2D2D"
-                                               BorderBrush="#4A4A4A"
-                                               BorderThickness="1"
-                                              
-                                               HorizontalAlignment="Stretch"
-                                               Padding="16,12"
-                                               MinHeight="64"
-                                               Click="ProfileButton_Click">
-                                            <Button.Tag>
-                                                <Binding />
-                                            </Button.Tag>
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                
-                                                <!-- Profile Avatar -->
-                                                <Border Grid.Column="0"
-                                                       Background="#8B7355"
-                                                      
-                                                       Width="48"
-                                                       Height="48"
-                                                       Margin="0,0,12,0">
-                                                    <TextBlock x:Name="ProfileInitials"
-                                                              Text="👤"
-                                                              FontSize="20"
-                                                              Foreground="White"
-                                                              HorizontalAlignment="Center"
-                                                              VerticalAlignment="Center"/>
+                                        <Button Style="{StaticResource ProfileCardButtonStyle}"
+                                                Width="130" Margin="8"
+                                                Click="ProfileButton_Click"
+                                                Tag="{Binding}">
+                                            <StackPanel HorizontalAlignment="Center">
+
+                                                <!-- Circular avatar with initials -->
+                                                <Border Width="80" Height="80"
+                                                        CornerRadius="40"
+                                                        HorizontalAlignment="Center"
+                                                        Margin="0,0,0,10">
+                                                    <Border.Background>
+                                                        <Binding Path="FirstName"
+                                                                 Converter="{StaticResource NameToAvatarBrushConverter}"/>
+                                                    </Border.Background>
+                                                    <TextBlock FontSize="28" FontWeight="Bold"
+                                                               Foreground="White"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center">
+                                                        <TextBlock.Text>
+                                                            <MultiBinding Converter="{StaticResource InitialsMultiConverter}">
+                                                                <Binding Path="FirstName" FallbackValue=""/>
+                                                                <Binding Path="LastName"  FallbackValue=""/>
+                                                            </MultiBinding>
+                                                        </TextBlock.Text>
+                                                    </TextBlock>
                                                 </Border>
-                                                
-                                                <!-- Profile Info -->
-                                                <StackPanel Grid.Column="1"
-                                                           VerticalAlignment="Center">
-                                                    <TextBlock x:Name="ProfileName"
-                                                              Text="{Binding FirstName, FallbackValue='User'}"
-                                                              FontSize="16"
-                                                              FontWeight="SemiBold"
-                                                              Foreground="White"/>
-                                                    <TextBlock x:Name="ProfileEmail"
-                                                              Text="{Binding Email, FallbackValue='No email'}"
-                                                              FontSize="13"
-                                                              Foreground="#B0B0B0"/>
-                                                </StackPanel>
-                                            </Grid>
+
+                                                <!-- Name -->
+                                                <TextBlock HorizontalAlignment="Center"
+                                                           FontSize="13" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource ModernTextPrimaryBrush}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           MaxWidth="110"
+                                                           TextAlignment="Center">
+                                                    <TextBlock.Text>
+                                                        <MultiBinding StringFormat="{}{0} {1}">
+                                                            <Binding Path="FirstName" FallbackValue="User"/>
+                                                            <Binding Path="LastName"  FallbackValue=""/>
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
+
+                                                <!-- Email hint -->
+                                                <TextBlock Text="{Binding Email}"
+                                                           HorizontalAlignment="Center"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           MaxWidth="110"
+                                                           TextAlignment="Center"
+                                                           Margin="0,2,0,0"/>
+                                            </StackPanel>
                                         </Button>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </ScrollViewer>
 
-                        <!-- Add New Profile Button -->
-                        <Button Content="+ Create New Profile"
-                               Background="#4A90E2"
-                               Foreground="White"
-                               BorderThickness="0"
-                              
-                               HorizontalAlignment="Stretch"
-                               MinHeight="48"
-                               FontSize="16"
-                               Click="CreateProfileButton_Click"/>
+                        <!-- Add Profile button — FlatButtonStyle avoids ModernWPF's
+                             color-path animation on frozen brushes -->
+                        <Button Content="+ Add Profile"
+                                Style="{StaticResource FlatButtonStyle}"
+                                Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                Padding="24,10"
+                                FontSize="14"
+                                HorizontalAlignment="Center"
+                                Margin="0,20,0,0"
+                                Click="CreateProfileButton_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd" CornerRadius="8" Padding="{TemplateBinding Padding}"
+                                            BorderThickness="1" BorderBrush="{DynamicResource ModernBorderBrush}">
+                                        <Border.Background>
+                                            <SolidColorBrush Color="Transparent"/>
+                                        </Border.Background>
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                          TextBlock.Foreground="{TemplateBinding Foreground}"
+                                                          TextBlock.FontSize="{TemplateBinding FontSize}"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background">
+                                                <Setter.Value><SolidColorBrush Color="#FFFFFF" Opacity="0.06"/></Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
                     </StackPanel>
 
-                    <!-- Password Entry View -->
+                    <!-- ── Password / Setup Entry View ──────────────────── -->
                     <StackPanel HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               MaxWidth="320"
-                               Margin="32"
-                               Visibility="{Binding ShowPasswordEntry, Converter={StaticResource BoolToVisibilityConverter}}">
+                                VerticalAlignment="Center"
+                                MaxWidth="320"
+                                Margin="32"
+                                Visibility="{Binding ShowPasswordEntry, Converter={StaticResource BoolToVisibilityConverter}}">
 
-                        <!-- App Logo and Current User -->
-                        <StackPanel HorizontalAlignment="Center"
-                                   Margin="24">
-                            
-                            <!-- App Logo (similar to 1Password) -->
-                            <Border Background="#4A90E2"
-                                   
-                                    Width="80"
-                                    Height="80"
-                                    HorizontalAlignment="Center">
-                                <TextBlock Text="&#xE192;" FontFamily="Segoe MDL2 Assets"
-                                          FontSize="40"
-                                          Foreground="White"
-                                          HorizontalAlignment="Center"
-                                          VerticalAlignment="Center"/>
+                        <!-- Selected user avatar + name -->
+                        <StackPanel HorizontalAlignment="Center" Margin="0,0,0,28">
+
+                            <!-- Circular avatar for selected user (uses same converter as profile grid) -->
+                            <Border Width="72" Height="72"
+                                    CornerRadius="36"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,0,0,12">
+                                <Border.Background>
+                                    <Binding Path="SelectedUser.FirstName"
+                                             Converter="{StaticResource NameToAvatarBrushConverter}"
+                                             FallbackValue="#7C3AED"/>
+                                </Border.Background>
+                                <TextBlock FontSize="24" FontWeight="Bold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Text>
+                                        <MultiBinding Converter="{StaticResource InitialsMultiConverter}"
+                                                      FallbackValue="?">
+                                            <Binding Path="SelectedUser.FirstName" FallbackValue=""/>
+                                            <Binding Path="SelectedUser.LastName"  FallbackValue=""/>
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
                             </Border>
 
-                            <!-- Current User Profile Display -->
-                            <StackPanel HorizontalAlignment="Center"
-                                       Margin="12">
-                                <!-- User Avatar and Name -->
-                                <StackPanel Orientation="Horizontal"
-                                           HorizontalAlignment="Center"
-                                           Margin="12">
-                                    <Border Background="#8B7355"
-                                           
-                                            Width="40"
-                                            Height="40">
-                                        <TextBlock Text="👤"
-                                                  FontSize="20"
-                                                  HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center"/>
-                                    </Border>
-                                    
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding SelectedUser.FirstName, FallbackValue='User'}"
-                                                   FontSize="16"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="White"
-                                                   HorizontalAlignment="Left"/>
-                                        <TextBlock Text="{Binding SelectedUser.Email, FallbackValue='user@example.com'}"
-                                                   FontSize="12"
-                                                   Foreground="#B0B0B0"
-                                                   HorizontalAlignment="Left"/>
-                                    </StackPanel>
-                                </StackPanel>
-                                
-                                <!-- Discreet Switch Account Button -->
-                                <Button Content="Switch Account"
-                                       Background="Transparent"
-                                       Foreground="#B0B0B0"
-                                       BorderThickness="0"
+                            <TextBlock HorizontalAlignment="Center"
+                                       FontSize="18" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource ModernTextPrimaryBrush}">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0} {1}" FallbackValue="Welcome back">
+                                        <Binding Path="SelectedUser.FirstName" FallbackValue=""/>
+                                        <Binding Path="SelectedUser.LastName"  FallbackValue=""/>
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+
+                            <TextBlock Text="{Binding SelectedUser.Email}"
+                                       HorizontalAlignment="Center"
                                        FontSize="12"
-                                       Padding="8,4"
-                                       Click="BackToProfilesButton_Click"
-                                       HorizontalAlignment="Center"/>
-                            </StackPanel>
+                                       Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                       Margin="0,4,0,0"/>
+
+                            <!-- "Switch account" link -->
+                            <Button Style="{StaticResource FlatButtonStyle}"
+                                    Padding="8,4"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,8,0,0"
+                                    Click="BackToProfilesButton_Click">
+                                <TextBlock Text="Switch account"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
+                            </Button>
                         </StackPanel>
 
-                        <!-- Master Password Form -->
-                        <StackPanel Margin="20" 
-                                   HorizontalAlignment="Stretch">
+                        <!-- Master password field -->
+                        <Border Background="{DynamicResource ModernSurfaceBrush}"
+                                BorderBrush="{DynamicResource ModernBorderBrush}"
+                                BorderThickness="1" CornerRadius="10"
+                                Padding="16,12" Margin="0,0,0,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                            <!-- Password Input -->
-                            <StackPanel Margin="12">
-                                <Border Background="#3A3A3A"
-                                      
-                                       BorderBrush="#4A4A4A"
-                                       BorderThickness="1"
-                                       Padding="16,12"
-                                       MinHeight="48">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        
-                                        <PasswordBox x:Name="MasterPasswordBox"
-                                                    x:FieldModifier="private"
-                                                    Grid.Column="0"
-                                                    ui:ControlHelper.PlaceholderText="Enter your password"
-                                                    Background="Transparent"
-                                                    BorderThickness="0"
-                                                    Foreground="White"
-                                                    FontSize="16"
-                                                    KeyDown="MasterPasswordBox_KeyDown"/>
-                                        
-                                        <!-- Eye icon for password visibility (like in reference image) -->
-                                        <Button Grid.Column="1"
-                                               Background="Transparent"
-                                               BorderThickness="0"
-                                               Width="32"
-                                               Height="32"
-                                               Padding="0">
-                                            <TextBlock Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets"
-                                                      FontSize="16"
-                                                      Foreground="#B0B0B0"/>
-                                        </Button>
-                                    </Grid>
-                                </Border>
-                                
-                                <!-- Lock Status Text (like "1Password was locked manually.") -->
-                                <TextBlock Text="Password Manager was locked manually."
-                                          FontSize="13"
-                                          Foreground="#B0B0B0"
-                                          HorizontalAlignment="Center"
-                                          Visibility="{Binding ShowLockMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                <PasswordBox x:Name="MasterPasswordBox" x:FieldModifier="private"
+                                             Grid.Column="0"
+                                             ui:ControlHelper.PlaceholderText="Enter master password"
+                                             BorderThickness="0" FontSize="15"
+                                             Foreground="{DynamicResource ModernTextPrimaryBrush}"
+                                             KeyDown="MasterPasswordBox_KeyDown">
+                                    <PasswordBox.Background>
+                                        <SolidColorBrush Color="Transparent"/>
+                                    </PasswordBox.Background>
+                                </PasswordBox>
+
+                                <Button Grid.Column="1" Style="{StaticResource FlatButtonStyle}"
+                                        Width="32" Height="32" Padding="0">
+                                    <TextBlock Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="15"
+                                               Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <!-- Lock message (shown when locked manually) -->
+                        <TextBlock Text="Password Manager was locked."
+                                   FontSize="12"
+                                   Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,8"
+                                   Visibility="{Binding ShowLockMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                        <!-- Confirm password (first-time setup only) -->
+                        <Border Background="{DynamicResource ModernSurfaceBrush}"
+                                BorderBrush="{DynamicResource ModernBorderBrush}"
+                                BorderThickness="1" CornerRadius="10"
+                                Padding="16,12" Margin="0,0,0,8"
+                                Visibility="{Binding ShowConfirmPassword, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <PasswordBox x:Name="ConfirmPasswordBox" x:FieldModifier="private"
+                                         ui:ControlHelper.PlaceholderText="Confirm master password"
+                                         BorderThickness="0" FontSize="15"
+                                         Foreground="{DynamicResource ModernTextPrimaryBrush}">
+                                <PasswordBox.Background>
+                                    <SolidColorBrush Color="Transparent"/>
+                                </PasswordBox.Background>
+                            </PasswordBox>
+                        </Border>
+
+                        <!-- Password hint (first-time setup only) -->
+                        <Border Background="{DynamicResource ModernSurfaceBrush}"
+                                BorderBrush="{DynamicResource ModernBorderBrush}"
+                                BorderThickness="1" CornerRadius="10"
+                                Padding="16,12" Margin="0,0,0,8"
+                                Visibility="{Binding ShowPasswordHint, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBox x:Name="PasswordHintBox" x:FieldModifier="private"
+                                     ui:ControlHelper.PlaceholderText="Password hint (optional)"
+                                     Text="{Binding PasswordHint, Mode=TwoWay}"
+                                     BorderThickness="0" FontSize="15"
+                                     Foreground="{DynamicResource ModernTextPrimaryBrush}">
+                                <TextBox.Background>
+                                    <SolidColorBrush Color="Transparent"/>
+                                </TextBox.Background>
+                            </TextBox>
+                        </Border>
+
+                        <!-- Error banner -->
+                        <Border CornerRadius="8" BorderThickness="1"
+                                Padding="14,10" Margin="0,0,0,12"
+                                Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Border.Background>
+                                <SolidColorBrush Color="#3B0F0F"/>
+                            </Border.Background>
+                            <Border.BorderBrush>
+                                <SolidColorBrush Color="#EF4444" Opacity="0.5"/>
+                            </Border.BorderBrush>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE783;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="14" Foreground="#F87171"
+                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="{Binding ErrorMessage}"
+                                           Foreground="#FCA5A5" FontSize="13"
+                                           TextWrapping="Wrap" VerticalAlignment="Center"/>
                             </StackPanel>
+                        </Border>
 
-                            <!-- Confirm Password Input (First-time setup only) -->
-                            <StackPanel Margin="8"
-                                       Visibility="{Binding ShowConfirmPassword, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <Border Background="#3A3A3A"
-                                      
-                                       BorderBrush="#4A4A4A"
-                                       BorderThickness="1"
-                                       Padding="16,12"
-                                       MinHeight="48">
-                                    <PasswordBox x:Name="ConfirmPasswordBox"
-                                                x:FieldModifier="private"
-                                                ui:ControlHelper.PlaceholderText="Confirm your master password"
-                                                Background="Transparent"
-                                                BorderThickness="0"
-                                                Foreground="White"
-                                                FontSize="16"/>
-                                </Border>
-                            </StackPanel>
+                        <!-- Unlock / Create button -->
+                        <Button x:Name="PrimaryActionButton" x:FieldModifier="private"
+                                Content="{Binding PrimaryButtonText, FallbackValue='Unlock'}"
+                                Style="{StaticResource ModernPrimaryButtonStyle}"
+                                HorizontalAlignment="Stretch"
+                                MinHeight="48" FontSize="16"
+                                IsEnabled="{Binding IsButtonEnabled}"
+                                Click="PrimaryActionButton_Click"/>
 
-                            <!-- Password Hint Input (First-time setup only) -->
-                            <StackPanel Margin="8"
-                                       Visibility="{Binding ShowPasswordHint, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <Border Background="#3A3A3A"
-                                      
-                                       BorderBrush="#4A4A4A"
-                                       BorderThickness="1"
-                                       Padding="16,12"
-                                       MinHeight="48">
-                                    <TextBox x:Name="PasswordHintBox"
-                                            x:FieldModifier="private"
-                                            ui:ControlHelper.PlaceholderText="Enter a hint to help remember your password"
-                                            Text="{Binding PasswordHint, Mode=TwoWay}"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Foreground="White"
-                                            FontSize="16"/>
-                                </Border>
-                            </StackPanel>
-
-                            <!-- Error Message -->
-                            <Border Background="#5D2A2A"
-                                    BorderBrush="#DC2626"
-                                    BorderThickness="1"
-                                   
-                                    Padding="16,12"
-                                    Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <StackPanel Orientation="Horizontal"
-                                            Margin="8">
-                                    <TextBlock Text="&#xE783;" FontFamily="Segoe MDL2 Assets"
-                                              FontSize="16"
-                                              Foreground="#DC2626"/>
-                                    <TextBlock Text="{Binding ErrorMessage}"
-                                               Foreground="#FCA5A5"
-                                               TextWrapping="Wrap"
-                                               VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Action Button with Smiley Face -->
-                            <StackPanel Margin="16">
-                                <!-- Smiley face (like in reference image) -->
-                                <TextBlock Text="😊"
-                                          FontSize="24"
-                                          HorizontalAlignment="Center"
-                                          Visibility="{Binding ShowLockMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                
-                                <Button x:Name="PrimaryActionButton"
-                                        x:FieldModifier="private"
-                                        Content="{Binding PrimaryButtonText, FallbackValue='Unlock'}"
-                                        Style="{StaticResource ModernPrimaryButtonStyle}"
-                                        HorizontalAlignment="Stretch"
-                                        MinHeight="48"
-                                        FontSize="16"
-                                        IsEnabled="{Binding IsButtonEnabled}"
-                                        Click="PrimaryActionButton_Click"/>
-                            </StackPanel>
-
-                            <!-- Progress Ring -->
-                            <ui:ProgressRing x:Name="AuthProgressRing"
-                                         x:FieldModifier="private"
+                        <!-- Loading indicator -->
+                        <ui:ProgressRing x:Name="AuthProgressRing" x:FieldModifier="private"
                                          IsActive="{Binding IsLoading}"
                                          HorizontalAlignment="Center"
-                                         Width="32"
-                                         Height="32"
-                                         Foreground="#4A90E2"/>
+                                         Width="28" Height="28"
+                                         Margin="0,12,0,0"
+                                         Foreground="{DynamicResource ModernPrimaryBrush}"/>
 
-                            <!-- Additional Options -->
-                            <StackPanel Margin="12"
-                                       HorizontalAlignment="Center">
-                                
-                                <!-- Password Hint Display -->
-                                <Button Content="Show password hint"
-                                       Style="{StaticResource ModernSecondaryButtonStyle}"
-                                       HorizontalAlignment="Center"
-                                       FontSize="13"
-                                       Visibility="{Binding ShowHintButton, Converter={StaticResource BoolToVisibilityConverter}}"/>
-
-                                <!-- Create Account Button -->
-                                <Border x:Name="CreateAccountSection"
-                                        BorderBrush="#4A4A4A"
-                                        BorderThickness="0,1,0,0"
-                                        Padding="0,16,0,0"
-                                        Margin="0,16,0,0"
-                                        Visibility="{Binding ShowCreateAccountButton, Converter={StaticResource BoolToVisibilityConverter}}">
-                                    <StackPanel Margin="8">
-                                        <TextBlock Text="Don't have an account?"
-                                                   FontSize="13"
-                                                   Foreground="#B0B0B0"
-                                                   HorizontalAlignment="Center"/>
-                                        <Button x:Name="CreateAccountButton"
-                                                Content="Create New Account"
-                                                Style="{StaticResource ModernSecondaryButtonStyle}"
-                                                HorizontalAlignment="Center"
-                                                FontSize="14"
-                                                Click="CreateAccountButton_Click"/>
-                                    </StackPanel>
-                                </Border>
+                        <!-- "Create account" section (shown when no accounts exist) -->
+                        <Border BorderBrush="{DynamicResource ModernBorderBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,16,0,0"
+                                Margin="0,20,0,0"
+                                Visibility="{Binding ShowCreateAccountButton, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="New to Password Manager?"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,8"/>
+                                <Button x:Name="CreateAccountButton"
+                                        Content="Create Account"
+                                        Style="{StaticResource ModernSecondaryButtonStyle}"
+                                        HorizontalAlignment="Center"
+                                        FontSize="14"
+                                        Click="CreateAccountButton_Click"/>
                             </StackPanel>
-                        </StackPanel>
-
+                        </Border>
                     </StackPanel>
                 </Grid>
             </Border>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 Registration — full-screen two-column overlay.
+                 Last Grid child so it sits above the split layout.
+                 Every Background uses inline SolidColorBrush / gradient
+                 element syntax — never DynamicResource on Background —
+                 to prevent ModernWPF VSM from crashing on frozen brushes.
+            ══════════════════════════════════════════════════════════ -->
+            <Grid x:Name="RegistrationOverlay" x:FieldModifier="private"
+                  Grid.ColumnSpan="2"
+                  Visibility="{Binding ShowRegistrationForm, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid.Background><SolidColorBrush Color="#090C14"/></Grid.Background>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="400"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ══════════════════════════════════════════════
+                         LEFT — branded trust panel
+                    ══════════════════════════════════════════════════ -->
+                    <Grid Grid.Column="0">
+                        <Grid.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#0C0E1A" Offset="0"/>
+                                <GradientStop Color="#07090F" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Grid.Background>
+
+                        <!-- Subtle radial glow top-left -->
+                        <Border HorizontalAlignment="Left" VerticalAlignment="Top"
+                                Width="320" Height="320" Margin="-60,-60,0,0"
+                                IsHitTestVisible="False">
+                            <Border.Background>
+                                <RadialGradientBrush>
+                                    <GradientStop Color="#1E0A5C" Offset="0"/>
+                                    <GradientStop Color="#090C14" Offset="1"/>
+                                </RadialGradientBrush>
+                            </Border.Background>
+                        </Border>
+
+                        <!-- Right edge separator -->
+                        <Border Width="1" HorizontalAlignment="Right">
+                            <Border.Background>
+                                <SolidColorBrush Color="#FFFFFF" Opacity="0.06"/>
+                            </Border.Background>
+                        </Border>
+
+                        <StackPanel VerticalAlignment="Center" Margin="44,0,40,0">
+
+                            <!-- Logo -->
+                            <Border Width="64" Height="64" CornerRadius="18"
+                                    HorizontalAlignment="Left" Margin="0,0,0,28">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#7C3AED" Offset="0"/>
+                                        <GradientStop Color="#A78BFA" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <TextBlock Text="&#xE192;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="30" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+
+                            <!-- Headline -->
+                            <TextBlock Text="Your vault." FontSize="30" FontWeight="Bold"
+                                       Foreground="#F0F2FF" Margin="0,0,0,4"/>
+                            <TextBlock Text="Your rules." FontSize="30" FontWeight="Bold"
+                                       Margin="0,0,0,16">
+                                <TextBlock.Foreground>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#A78BFA" Offset="0"/>
+                                        <GradientStop Color="#EC4899" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </TextBlock.Foreground>
+                            </TextBlock>
+                            <TextBlock Text="One master password protects everything. We never see it — only you do."
+                                       FontSize="14" Foreground="#6B7280"
+                                       TextWrapping="Wrap" LineHeight="22"
+                                       Margin="0,0,0,40"/>
+
+                            <!-- Feature rows -->
+                            <StackPanel Margin="0,0,0,8">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                                    <Border Width="32" Height="32" CornerRadius="8" Margin="0,0,14,0">
+                                        <Border.Background><SolidColorBrush Color="#7C3AED" Opacity="0.18"/></Border.Background>
+                                        <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="14" Foreground="#A78BFA"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="End-to-end encrypted" FontSize="13"
+                                                   FontWeight="SemiBold" Foreground="#E5E7EB"/>
+                                        <TextBlock Text="AES-256 · zero-knowledge" FontSize="11"
+                                                   Foreground="#4B5563" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                                    <Border Width="32" Height="32" CornerRadius="8" Margin="0,0,14,0">
+                                        <Border.Background><SolidColorBrush Color="#7C3AED" Opacity="0.18"/></Border.Background>
+                                        <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="14" Foreground="#A78BFA"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Multi-profile support" FontSize="13"
+                                                   FontWeight="SemiBold" Foreground="#E5E7EB"/>
+                                        <TextBlock Text="Family, work, personal" FontSize="11"
+                                                   Foreground="#4B5563" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="32" Height="32" CornerRadius="8" Margin="0,0,14,0">
+                                        <Border.Background><SolidColorBrush Color="#7C3AED" Opacity="0.18"/></Border.Background>
+                                        <TextBlock Text="&#xEA18;" FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="14" Foreground="#A78BFA"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Local &amp; offline" FontSize="13"
+                                                   FontWeight="SemiBold" Foreground="#E5E7EB"/>
+                                        <TextBlock Text="Your data never leaves your device" FontSize="11"
+                                                   Foreground="#4B5563" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- ══════════════════════════════════════════════
+                         RIGHT — registration form
+                    ══════════════════════════════════════════════════ -->
+                    <Grid Grid.Column="1">
+                        <Grid.Background><SolidColorBrush Color="#090C14"/></Grid.Background>
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <Grid>
+                                <!-- Back button — top right of form area -->
+                                <Button x:Name="RegBackButton" x:FieldModifier="private"
+                                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                                        Margin="0,24,32,0"
+                                        Style="{StaticResource FlatButtonStyle}"
+                                        Padding="10,7"
+                                        Click="RegBackButton_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="11" Foreground="#4B5563"
+                                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="Sign in instead" FontSize="12"
+                                                   Foreground="#4B5563" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- Form content -->
+                                <StackPanel MaxWidth="420"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Margin="32,72,32,48">
+
+                                    <!-- Header -->
+                                    <TextBlock Text="Create your account"
+                                               FontSize="26" FontWeight="Bold"
+                                               Foreground="#F0F2FF"
+                                               Margin="0,0,0,6"/>
+                                    <TextBlock Text="Secure your digital life in minutes."
+                                               FontSize="14" Foreground="#4B5563"
+                                               Margin="0,0,0,36"/>
+
+                                    <!-- ── Name row ── -->
+                                    <Grid Margin="0,0,0,20">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="12"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="First name" FontSize="12" FontWeight="Medium"
+                                                       Foreground="#6B7280" Margin="0,0,0,7"/>
+                                            <Border x:Name="RegFirstNameBorder" x:FieldModifier="private"
+                                                    CornerRadius="10" BorderThickness="1" Padding="14,12">
+                                                <Border.Background><SolidColorBrush Color="#10131E"/></Border.Background>
+                                                <Border.BorderBrush><SolidColorBrush Color="#FFFFFF" Opacity="0.09"/></Border.BorderBrush>
+                                                <TextBox x:Name="RegFirstNameBox" x:FieldModifier="private"
+                                                         BorderThickness="0" FontSize="14"
+                                                         Foreground="#F0F2FF"
+                                                         ui:ControlHelper.PlaceholderText="Jane"
+                                                         TextChanged="RegField_TextChanged"/>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Last name" FontSize="12" FontWeight="Medium"
+                                                       Foreground="#6B7280" Margin="0,0,0,7"/>
+                                            <Border x:Name="RegLastNameBorder" x:FieldModifier="private"
+                                                    CornerRadius="10" BorderThickness="1" Padding="14,12">
+                                                <Border.Background><SolidColorBrush Color="#10131E"/></Border.Background>
+                                                <Border.BorderBrush><SolidColorBrush Color="#FFFFFF" Opacity="0.09"/></Border.BorderBrush>
+                                                <TextBox x:Name="RegLastNameBox" x:FieldModifier="private"
+                                                         BorderThickness="0" FontSize="14"
+                                                         Foreground="#F0F2FF"
+                                                         ui:ControlHelper.PlaceholderText="Doe"
+                                                         TextChanged="RegField_TextChanged"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- ── Email ── -->
+                                    <StackPanel Margin="0,0,0,20">
+                                        <TextBlock Text="Email address" FontSize="12" FontWeight="Medium"
+                                                   Foreground="#6B7280" Margin="0,0,0,7"/>
+                                        <Border x:Name="RegEmailBorder" x:FieldModifier="private"
+                                                CornerRadius="10" BorderThickness="1" Padding="14,12">
+                                            <Border.Background><SolidColorBrush Color="#10131E"/></Border.Background>
+                                            <Border.BorderBrush><SolidColorBrush Color="#FFFFFF" Opacity="0.09"/></Border.BorderBrush>
+                                            <TextBox x:Name="RegEmailBox" x:FieldModifier="private"
+                                                     BorderThickness="0" FontSize="14"
+                                                     Foreground="#F0F2FF"
+                                                     ui:ControlHelper.PlaceholderText="you@example.com"
+                                                     TextChanged="RegField_TextChanged"/>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- ── Divider with label ── -->
+                                    <Grid Margin="0,8,0,20">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Height="1" VerticalAlignment="Center">
+                                            <Border.Background><SolidColorBrush Color="#FFFFFF" Opacity="0.07"/></Border.Background>
+                                        </Border>
+                                        <TextBlock Grid.Column="1" Text="MASTER PASSWORD"
+                                                   FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="#374151" Margin="14,0"/>
+                                        <Border Grid.Column="2" Height="1" VerticalAlignment="Center">
+                                            <Border.Background><SolidColorBrush Color="#FFFFFF" Opacity="0.07"/></Border.Background>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Security callout -->
+                                    <Border CornerRadius="10" Padding="14,12" Margin="0,0,0,20"
+                                            BorderThickness="1">
+                                        <Border.Background><SolidColorBrush Color="#0A1F14"/></Border.Background>
+                                        <Border.BorderBrush><SolidColorBrush Color="#10B981" Opacity="0.2"/></Border.BorderBrush>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="13" Foreground="#34D399"
+                                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                            <TextBlock FontSize="12" Foreground="#6EE7B7" TextWrapping="Wrap">
+                                                This password encrypts your entire vault. We can never reset or recover it.
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- ── Master password ── -->
+                                    <StackPanel Margin="0,0,0,8">
+                                        <TextBlock Text="Master password" FontSize="12" FontWeight="Medium"
+                                                   Foreground="#6B7280" Margin="0,0,0,7"/>
+                                        <Border x:Name="RegPasswordBorder" x:FieldModifier="private"
+                                                CornerRadius="10" BorderThickness="1" Padding="14,12">
+                                            <Border.Background><SolidColorBrush Color="#10131E"/></Border.Background>
+                                            <Border.BorderBrush><SolidColorBrush Color="#FFFFFF" Opacity="0.09"/></Border.BorderBrush>
+                                            <PasswordBox x:Name="RegPasswordBox" x:FieldModifier="private"
+                                                         BorderThickness="0" FontSize="14" FontFamily="Consolas"
+                                                         Foreground="#F0F2FF"
+                                                         ui:ControlHelper.PlaceholderText="Create a strong master password"
+                                                         PasswordChanged="RegPasswordBox_PasswordChanged"/>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- Strength segments + label -->
+                                    <StackPanel x:Name="RegStrengthPanel" x:FieldModifier="private"
+                                                Margin="0,0,0,10" Visibility="Collapsed">
+                                        <Grid Height="4" Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="4"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="4"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="4"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border x:Name="RegSeg1" x:FieldModifier="private" Grid.Column="0" CornerRadius="2">
+                                                <Border.Background><SolidColorBrush Color="#FFFFFF" Opacity="0.1"/></Border.Background>
+                                            </Border>
+                                            <Border x:Name="RegSeg2" x:FieldModifier="private" Grid.Column="2" CornerRadius="2">
+                                                <Border.Background><SolidColorBrush Color="#FFFFFF" Opacity="0.1"/></Border.Background>
+                                            </Border>
+                                            <Border x:Name="RegSeg3" x:FieldModifier="private" Grid.Column="4" CornerRadius="2">
+                                                <Border.Background><SolidColorBrush Color="#FFFFFF" Opacity="0.1"/></Border.Background>
+                                            </Border>
+                                            <Border x:Name="RegSeg4" x:FieldModifier="private" Grid.Column="6" CornerRadius="2">
+                                                <Border.Background><SolidColorBrush Color="#FFFFFF" Opacity="0.1"/></Border.Background>
+                                            </Border>
+                                        </Grid>
+                                        <TextBlock x:Name="RegStrengthText" x:FieldModifier="private"
+                                                   FontSize="11" Foreground="#6B7280"/>
+                                    </StackPanel>
+
+                                    <!-- Requirements — inline pill row -->
+                                    <WrapPanel Margin="0,0,0,20" Orientation="Horizontal">
+                                        <TextBlock x:Name="RegReqLength"  x:FieldModifier="private"
+                                                   Text="○ 8+ chars" FontSize="11"
+                                                   Foreground="#374151" Margin="0,0,12,4"/>
+                                        <TextBlock x:Name="RegReqUpper"   x:FieldModifier="private"
+                                                   Text="○ Uppercase" FontSize="11"
+                                                   Foreground="#374151" Margin="0,0,12,4"/>
+                                        <TextBlock x:Name="RegReqLower"   x:FieldModifier="private"
+                                                   Text="○ Lowercase" FontSize="11"
+                                                   Foreground="#374151" Margin="0,0,12,4"/>
+                                        <TextBlock x:Name="RegReqNumber"  x:FieldModifier="private"
+                                                   Text="○ Number" FontSize="11"
+                                                   Foreground="#374151" Margin="0,0,12,4"/>
+                                        <TextBlock x:Name="RegReqSpecial" x:FieldModifier="private"
+                                                   Text="○ Symbol" FontSize="11"
+                                                   Foreground="#374151" Margin="0,0,0,4"/>
+                                    </WrapPanel>
+
+                                    <!-- ── Confirm password ── -->
+                                    <StackPanel Margin="0,0,0,20">
+                                        <TextBlock Text="Confirm master password" FontSize="12" FontWeight="Medium"
+                                                   Foreground="#6B7280" Margin="0,0,0,7"/>
+                                        <Border x:Name="RegConfirmBorder" x:FieldModifier="private"
+                                                CornerRadius="10" BorderThickness="1" Padding="14,12">
+                                            <Border.Background><SolidColorBrush Color="#10131E"/></Border.Background>
+                                            <Border.BorderBrush><SolidColorBrush Color="#FFFFFF" Opacity="0.09"/></Border.BorderBrush>
+                                            <PasswordBox x:Name="RegConfirmBox" x:FieldModifier="private"
+                                                         BorderThickness="0" FontSize="14" FontFamily="Consolas"
+                                                         Foreground="#F0F2FF"
+                                                         ui:ControlHelper.PlaceholderText="Re-enter your master password"
+                                                         PasswordChanged="RegField_PasswordChanged"/>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- ── Password hint ── -->
+                                    <StackPanel Margin="0,0,0,28">
+                                        <Grid Margin="0,0,0,7">
+                                            <TextBlock Text="Password hint" FontSize="12" FontWeight="Medium"
+                                                       Foreground="#6B7280" HorizontalAlignment="Left"/>
+                                            <Border HorizontalAlignment="Right" CornerRadius="4" Padding="7,2">
+                                                <Border.Background><SolidColorBrush Color="#FFFFFF" Opacity="0.05"/></Border.Background>
+                                                <TextBlock Text="optional" FontSize="10" Foreground="#374151"/>
+                                            </Border>
+                                        </Grid>
+                                        <Border CornerRadius="10" BorderThickness="1" Padding="14,12">
+                                            <Border.Background><SolidColorBrush Color="#10131E"/></Border.Background>
+                                            <Border.BorderBrush><SolidColorBrush Color="#FFFFFF" Opacity="0.09"/></Border.BorderBrush>
+                                            <TextBox x:Name="RegHintBox" x:FieldModifier="private"
+                                                     BorderThickness="0" FontSize="14"
+                                                     Foreground="#F0F2FF"
+                                                     ui:ControlHelper.PlaceholderText="A clue to help you remember"/>
+                                        </Border>
+                                        <TextBlock Text="Never include your actual password — this is stored in plain text."
+                                                   FontSize="11" Foreground="#374151" Margin="0,6,0,0"
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <!-- Error banner -->
+                                    <Border x:Name="RegErrorBorder" x:FieldModifier="private"
+                                            CornerRadius="10" BorderThickness="1"
+                                            Padding="14,12" Margin="0,0,0,20"
+                                            Visibility="Collapsed">
+                                        <Border.Background><SolidColorBrush Color="#2D0A0A"/></Border.Background>
+                                        <Border.BorderBrush><SolidColorBrush Color="#EF4444" Opacity="0.35"/></Border.BorderBrush>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE783;" FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="13" Foreground="#F87171"
+                                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                            <TextBlock x:Name="RegErrorText" x:FieldModifier="private"
+                                                       FontSize="13" Foreground="#FCA5A5"
+                                                       TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Submit -->
+                                    <Button x:Name="RegSubmitButton" x:FieldModifier="private"
+                                            HorizontalAlignment="Stretch" MinHeight="50"
+                                            Cursor="Hand" Click="RegSubmitButton_Click">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="Bd" CornerRadius="10">
+                                                    <Border.Background>
+                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                            <GradientStop Color="#7C3AED" Offset="0"/>
+                                                            <GradientStop Color="#6D28D9" Offset="1"/>
+                                                        </LinearGradientBrush>
+                                                    </Border.Background>
+                                                    <TextBlock Text="Create account" FontSize="15"
+                                                               FontWeight="SemiBold" Foreground="White"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="Bd" Property="Opacity" Value="0.72"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter TargetName="Bd" Property="Opacity" Value="0.38"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                </StackPanel>
+                            </Grid>
+                        </ScrollViewer>
+                    </Grid>
+
+                </Grid>
+            </Grid>
+            <!-- ══ end registration overlay ══ -->
+
         </Grid>
     </Grid>
 </Page>

@@ -56,11 +56,16 @@ public sealed partial class MainWindow : Window
 
     private void InitializeNavigation()
     {
-        // Show login frame initially
         SetAuthenticationState(false);
+        NavigateLoginFrame();
+    }
 
-        // Start with Login page in the dedicated login frame
-        LoginFrame.Navigate(typeof(Views.LoginPage), _serviceProvider);
+    // Creates a fresh LoginPage instance and navigates LoginFrame to it.
+    // Must use an instance — Frame.Navigate(Type, ...) renders the Type as text, not a page.
+    private void NavigateLoginFrame()
+    {
+        var page = new Views.LoginPage();
+        LoginFrame.Navigate(page, _serviceProvider);
     }
 
     private void SetAuthenticationState(bool isAuthenticated)
@@ -111,46 +116,36 @@ public sealed partial class MainWindow : Window
 
     public void NavigateToPage(string pageTag)
     {
-        // Only allow navigation if authenticated, except for login
         if (!_isAuthenticated && pageTag != "Login") return;
 
         try
         {
-            Type pageType = pageTag switch
+            // Create a fresh page INSTANCE — Frame.Navigate(Type, ...) renders the Type
+            // as text, not as a page, so we must instantiate explicitly.
+            System.Windows.Controls.Page page = pageTag switch
             {
-                "AllItems" => typeof(Views.PasswordItemsPage),
-                "Favorites" => typeof(Views.PasswordItemsPage), // Filter for favorites
-                "Profile" => typeof(Views.ProfilePage),
-                "LoginCategory" => typeof(Views.PasswordItemsPage), // Filter for login items
-                "CreditCardCategory" => typeof(Views.PasswordItemsPage), // Filter for credit cards
-                "SecureNotesCategory" => typeof(Views.PasswordItemsPage), // Filter for secure notes
-                "IdentityCategory" => typeof(Views.PasswordItemsPage), // Filter for identity items
-                "WiFiCategory" => typeof(Views.PasswordItemsPage), // Filter for WiFi items
-                "PasskeysCategory" => typeof(Views.PasswordItemsPage), // Filter for passkeys
-                "Categories" => typeof(Views.CategoriesPage),
-                "Vaults" => typeof(Views.VaultsPage),
-                "ManageItems" => typeof(Views.ManageItemsPage),
-                "SecurityDashboard" => typeof(Views.DashboardPage), // Could create security dashboard
-                "Archive" => typeof(Views.PasswordItemsPage), // Filter for archived items
-                "RecentlyDeleted" => typeof(Views.PasswordItemsPage), // Filter for deleted items
-                "Import" => typeof(Views.ImportPage),
-                "Settings" => typeof(Views.SettingsPage),
-                "Home" => typeof(Views.DashboardPage),
-                "Passwords" => typeof(Views.PasswordItemsPage),
-                "Login" => typeof(Views.LoginPage),
-                _ => typeof(Views.DashboardPage)
+                "AllItems" or "Favorites" or "LoginCategory" or "CreditCardCategory" or
+                "SecureNotesCategory" or "IdentityCategory" or "WiFiCategory" or
+                "PasskeysCategory" or "Archive" or "RecentlyDeleted" or "Passwords"
+                    => new Views.PasswordItemsPage(),
+                "Profile"           => new Views.ProfilePage(),
+                "Categories"        => new Views.CategoriesPage(),
+                "Vaults"            => new Views.VaultsPage(),
+                "ManageItems"       => new Views.ManageItemsPage(),
+                "SecurityDashboard" => new Views.DashboardPage(),
+                "Import"            => new Views.ImportPage(),
+                "Settings"          => new Views.SettingsPage(),
+                "Home"              => new Views.DashboardPage(),
+                "Login"             => new Views.LoginPage(),
+                _                   => pageTag.EndsWith("Category", StringComparison.OrdinalIgnoreCase)
+                                           ? new Views.PasswordItemsPage()
+                                           : (System.Windows.Controls.Page)new Views.DashboardPage()
             };
 
-            // Prepare navigation data with filters
             object navigationParameter = CreateNavigationParameter(pageTag);
 
-            // Ensure ContentFrame exists and navigate with service provider
             if (ContentFrame != null)
-            {
-                ContentFrame.Navigate(pageType, navigationParameter);
-            }
-            else
-            { }
+                ContentFrame.Navigate(page, navigationParameter);
         }
         catch (Exception ex)
         { }
@@ -375,6 +370,33 @@ public sealed partial class MainWindow : Window
         return null;
     }
 
+    // Called by both LoginFrame and ContentFrame after every navigation.
+    // WPF does not automatically call a page's OnNavigatedTo method — we must do it here.
+    private void Frame_Navigated(object sender, System.Windows.Navigation.NavigationEventArgs e)
+    {
+        switch (e.Content)
+        {
+            case Views.LoginPage p:          p.OnNavigatedTo(e);      break;
+            case Views.PasswordItemsPage p:  p.OnNavigatedTo(e);      break;
+            case Views.DashboardPage p:      p.OnNavigatedTo(e);      break;
+            case Views.ProfilePage p:        p.OnNavigatedTo(e);      break;
+            case Views.CategoriesPage p:     p.OnNavigatedTo(e);      break;
+            case Views.ImportPage p:         p.OnNavigatedTo(e);      break;
+            case Views.ManageItemsPage p:    p.OnNavigatedTo(e);      break;
+            case Views.SettingsPage p:       p.OnNavigatedTo(e);      break;
+            case Views.VaultsPage p:         p.OnNavigatedTo(e);      break;
+        }
+    }
+
+    // Called by App after the host and startup service have fully initialised the database.
+    // Re-navigates to LoginPage so profiles and auth checks run against a live DB.
+    public void OnDatabaseInitialized()
+    {
+        NavigateLoginFrame();
+        _ = RefreshCategoriesAsync();
+        _ = RefreshTagsAsync();
+    }
+
     // Public method to allow programmatic navigation (e.g., after login)
     public void NavigateToHome()
     {
@@ -405,7 +427,7 @@ public sealed partial class MainWindow : Window
         MainNavigationView.SelectedItem = null;
 
         // Navigate back to login
-        LoginFrame.Navigate(typeof(Views.LoginPage), _serviceProvider);
+        NavigateLoginFrame();
     }
 
     // Missing event handlers for XAML bindings

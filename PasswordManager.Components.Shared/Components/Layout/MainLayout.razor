@@ -30,6 +30,10 @@
                     <MudIcon Icon="@Icons.Material.Filled.Settings" />
                     Settings
                 </MudMenuItem>
+                <MudMenuItem OnClick="NavigateToDatabaseSetup">
+                    <MudIcon Icon="@Icons.Material.Filled.Storage" />
+                    Configure Database
+                </MudMenuItem>
                 <MudDivider />
                 <MudMenuItem OnClick="Logout">
                     <MudIcon Icon="@Icons.Material.Filled.Logout" />
@@ -80,6 +84,9 @@
                 Export
             </MudNavLink>
             <MudSpacer />
+            <MudNavLink Href="/setup" Icon="@Icons.Material.Filled.Storage" IconColor="Color.Info">
+                Configure Database
+            </MudNavLink>
             <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings" IconColor="Color.Warning">
                 Settings
             </MudNavLink>
@@ -191,6 +198,11 @@
     private void NavigateToSettings()
     {
         Navigation.NavigateTo("/settings");
+    }
+
+    private void NavigateToDatabaseSetup()
+    {
+        Navigation.NavigateTo("/setup");
     }
 
     private async Task Logout()

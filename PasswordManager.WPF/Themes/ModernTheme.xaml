@@ -93,6 +93,25 @@
     <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="{StaticResource ModernSurfaceColor}"/>
     <SolidColorBrush x:Key="TextFillColorSecondaryBrush"         Color="{StaticResource ModernTextSecondaryColor}"/>
 
+    <!-- ModernWPF TextControl resource overrides — keeps TextBox/PasswordBox dark on all states.
+         ModernWPF's built-in templates read these keys via DynamicResource so no custom Template needed. -->
+    <SolidColorBrush x:Key="TextControlBackground"                    Color="{StaticResource ModernSurfaceColor}"/>
+    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"         Color="#252836"/>
+    <SolidColorBrush x:Key="TextControlBackgroundFocused"             Color="{StaticResource ModernSurfaceColor}"/>
+    <SolidColorBrush x:Key="TextControlBackgroundDisabled"            Color="{StaticResource ModernSurfaceColor}"/>
+    <SolidColorBrush x:Key="TextControlForeground"                    Color="{StaticResource ModernTextPrimaryColor}"/>
+    <SolidColorBrush x:Key="TextControlForegroundPointerOver"         Color="{StaticResource ModernTextPrimaryColor}"/>
+    <SolidColorBrush x:Key="TextControlForegroundFocused"             Color="{StaticResource ModernTextPrimaryColor}"/>
+    <SolidColorBrush x:Key="TextControlForegroundDisabled"            Color="{StaticResource ModernTextTertiaryColor}"/>
+    <SolidColorBrush x:Key="TextControlPlaceholderForeground"         Color="{StaticResource ModernTextSecondaryColor}"/>
+    <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="{StaticResource ModernTextSecondaryColor}"/>
+    <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused"  Color="{StaticResource ModernTextSecondaryColor}"/>
+    <SolidColorBrush x:Key="TextControlPlaceholderForegroundDisabled" Color="{StaticResource ModernTextTertiaryColor}"/>
+    <SolidColorBrush x:Key="TextControlBorderBrush"                   Color="{StaticResource ModernBorderColor}"/>
+    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"        Color="{StaticResource ModernPrimaryLightColor}"/>
+    <SolidColorBrush x:Key="TextControlBorderBrushFocused"            Color="{StaticResource ModernPrimaryColor}"/>
+    <SolidColorBrush x:Key="TextControlBorderBrushDisabled"           Color="{StaticResource ModernBorderColor}"/>
+
     <!-- NavigationView pane background overrides -->
     <SolidColorBrush x:Key="ui:NavigationViewDefaultPaneBackground"
             Color="{StaticResource ModernSidebarBackgroundColor}"/>
@@ -155,15 +174,15 @@
         <Setter Property="Cursor"         Value="Hand"/>
     </Style>
 
-    <!-- Enhanced TextBox Style with 1Password-like behavior (simplified for WPF) -->
+    <!-- TextBox — let ModernWPF's template handle VSM animations; override only colours -->
     <Style TargetType="TextBox">
-        <Setter Property="Background" Value="{StaticResource ModernSurfaceBrush}"/>
-        <Setter Property="Foreground" Value="{StaticResource ModernTextPrimaryBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource ModernBorderBrush}"/>
+        <Setter Property="Foreground"      Value="{StaticResource ModernTextPrimaryBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Padding" Value="12,10"/>
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="MinHeight" Value="36"/>
+        <Setter Property="Padding"         Value="12,10"/>
+        <Setter Property="FontSize"        Value="14"/>
+        <Setter Property="MinHeight"       Value="36"/>
+        <Setter Property="CaretBrush"      Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="SelectionBrush"  Value="{StaticResource ModernPrimaryBrush}"/>
     </Style>
 
     <!-- Enhanced ComboBox Style with 1Password-like behavior -->
@@ -217,12 +236,10 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="BorderElement" Property="Background" Value="#F5F3FF"/>
                             <Setter TargetName="BorderElement" Property="BorderBrush" Value="{StaticResource ModernPrimaryLightBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="BorderElement" Property="Background" Value="#F8F9FA"/>
-                            <Setter TargetName="BorderElement" Property="BorderBrush" Value="#E9ECEF"/>
+                            <Setter TargetName="BorderElement" Property="Opacity" Value="0.4"/>
                             <Setter TargetName="ContentPresenter" Property="TextBlock.Foreground" Value="{StaticResource ModernTextTertiaryBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -241,7 +258,6 @@
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
                 Value="1"/>
-        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
@@ -252,20 +268,25 @@
             <Setter.Value>
                 <ControlTemplate TargetType="PasswordBox">
                     <Border x:Name="BorderElement"
-                            Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}">
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="8">
+                        <!-- Inline brush creates a fresh, non-frozen instance per control so
+                             WPF animations can safely target Background.Color without throwing
+                             InvalidOperationException on a frozen StaticResource brush. -->
+                        <Border.Background>
+                            <SolidColorBrush Color="{StaticResource ModernSurfaceColor}"/>
+                        </Border.Background>
                         <Grid>
-                            <ScrollViewer x:Name="ContentElement"
+                            <!-- PART_ContentHost is the required template part name for PasswordBox -->
+                            <ScrollViewer x:Name="PART_ContentHost"
                                           Margin="{TemplateBinding Padding}"
-                                          
+                                          Foreground="{TemplateBinding Foreground}"
                                           HorizontalScrollBarVisibility="Hidden"
-                                          
                                           VerticalScrollBarVisibility="Hidden"
-                                          IsTabStop="False"
-                                          />
+                                          IsTabStop="False"/>
                             <TextBlock x:Name="PlaceholderText"
-                                       Foreground="{StaticResource ModernTextTertiaryBrush}"
+                                       Foreground="{StaticResource ModernTextSecondaryBrush}"
                                        Margin="{TemplateBinding Padding}"
                                        VerticalAlignment="Center"
                                        IsHitTestVisible="False"/>
@@ -273,18 +294,15 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="BorderElement" Property="Background" Value="#F5F3FF"/>
                             <Setter TargetName="BorderElement" Property="BorderBrush" Value="{StaticResource ModernPrimaryLightBrush}"/>
                         </Trigger>
                         <Trigger Property="IsFocused" Value="True">
-                            <Setter TargetName="BorderElement" Property="Background" Value="#F5F3FF"/>
                             <Setter TargetName="BorderElement" Property="BorderBrush" Value="{StaticResource ModernPrimaryBrush}"/>
-                            <Setter TargetName="BorderElement" Property="BorderThickness" Value="1"/>
-                            <Setter TargetName="PlaceholderText" Property="Foreground" Value="{StaticResource ModernPrimaryBrush}"/>
+                            <Setter TargetName="BorderElement" Property="BorderThickness" Value="2"/>
+                            <Setter TargetName="PlaceholderText" Property="Foreground" Value="{StaticResource ModernPrimaryLightBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="BorderElement" Property="Background" Value="#F8F9FA"/>
-                            <Setter TargetName="BorderElement" Property="BorderBrush" Value="#E9ECEF"/>
+                            <Setter TargetName="BorderElement" Property="Opacity" Value="0.4"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -565,7 +583,7 @@
     </Style>
 
     <!-- Modern Navigation Styles -->
-    <Style x:Key="Modernui:NavigationViewStyle"
+    <Style x:Key="ModernNavigationViewStyle"
            TargetType="ui:NavigationView">
         <Setter Property="Background"
                 Value="{StaticResource ModernSurfaceBrush}"/>
@@ -588,14 +606,14 @@
     </Style>
 
     <!-- Enhanced ui:NavigationViewItem Style -->
-    <Style x:Key="Modernui:NavigationViewItemStyle"
+    <Style x:Key="ModernNavigationViewItemStyle"
            TargetType="ui:NavigationViewItem">
         <Setter Property="Foreground"
                 Value="{StaticResource ModernTextPrimaryBrush}"/>
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="FontSize"
-                Value="0"/>
+                Value="14"/>
         <Setter Property="Margin"
                 Value="8,4"/>
         <!-- <Setter Property="CornerRadius" Value="0"/>-->
@@ -803,13 +821,13 @@
         <Setter Property="Padding"
                 Value="16,10"/>
         <Setter Property="FontSize"
-                Value="0"/>
+                Value="14"/>
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="0"/>
+                Value="120"/>
         <Setter Property="MinHeight"
-                Value="0"/>
+                Value="36"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -849,13 +867,13 @@
         <Setter Property="CloseButtonStyle"
                 Value="{StaticResource ui:ContentDialogSecondaryButtonStyle}"/>
         <Setter Property="MaxWidth"
-                Value="0"/>
+                Value="600"/>
         <Setter Property="MaxHeight"
-                Value="0"/>
+                Value="800"/>
         <Setter Property="MinWidth"
-                Value="0"/>
+                Value="400"/>
         <Setter Property="MinHeight"
-                Value="0"/>
+                Value="200"/>
         <!-- Enhanced centering with proper positioning for all screen sizes -->
         <Setter Property="HorizontalAlignment"
                 Value="Center"/>
@@ -982,7 +1000,7 @@
     <Style x:Key="FormLabelStyle"
             TargetType="TextBlock">
         <Setter Property="FontSize"
-                Value="0"/>
+                Value="13"/>
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="Foreground"
@@ -997,7 +1015,7 @@
     <Style x:Key="ValidationMessageStyle"
             TargetType="TextBlock">
         <Setter Property="FontSize"
-                Value="0"/>
+                Value="12"/>
         <Setter Property="Foreground"
                 Value="{StaticResource ModernErrorBrush}"/>
         <Setter Property="Margin"
@@ -1010,7 +1028,7 @@
     <Style x:Key="SuccessMessageStyle"
             TargetType="TextBlock">
         <Setter Property="FontSize"
-                Value="0"/>
+                Value="12"/>
         <Setter Property="Foreground"
                 Value="{StaticResource ModernSuccessBrush}"/>
         <Setter Property="Margin"
@@ -1032,13 +1050,13 @@
         <Setter Property="Padding"
                 Value="16,12"/>
         <Setter Property="FontSize"
-                Value="0"/>
+                Value="14"/>
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="0"/>
+                Value="120"/>
         <Setter Property="MinHeight"
-                Value="0"/>
+                Value="36"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -1168,7 +1186,7 @@
         <Setter Property="Foreground"
                 Value="{StaticResource ModernErrorBrush}"/>
         <Setter Property="FontSize"
-                Value="0"/>
+                Value="12"/>
         <Setter Property="Margin"
                 Value="0,4,0,0"/>
         <Setter Property="TextWrapping"
@@ -1176,21 +1194,21 @@
     </Style>
 
     <!-- Loading Indicator Style -->
-    <Style x:Key="Modernui:ProgressRingStyle"
+    <Style x:Key="ModernProgressRingStyle"
             TargetType="ui:ProgressRing">
         <Setter Property="Foreground"
                 Value="{StaticResource ModernPrimaryBrush}"/>
         <Setter Property="Width"
-                Value="0"/>
+                Value="40"/>
         <Setter Property="Height"
-                Value="0"/>
+                Value="40"/>
     </Style>
 
     <!-- Success Message Style -->
     <!-- Removed duplicate SuccessMessageStyle (kept enhanced version later) -->
 
     <!-- Enhanced ui:AutoSuggestBox Style -->
-    <Style x:Key="Modernui:AutoSuggestBoxStyle"
+    <Style x:Key="ModernAutoSuggestBoxStyle"
             TargetType="ui:AutoSuggestBox">
         <Setter Property="Background"
                 Value="{StaticResource ModernSurfaceBrush}"/>
@@ -1204,9 +1222,9 @@
         <Setter Property="Padding"
                 Value="12,10"/>
         <Setter Property="FontSize"
-                Value="0"/>
+                Value="14"/>
         <Setter Property="MinHeight"
-                Value="0"/>
+                Value="36"/>
     </Style>
 
 </ResourceDictionary>

@@ -83,6 +83,11 @@ public partial class App : Application
                 using var scope = _host.Services.CreateScope();
                 var startupService = scope.ServiceProvider.GetRequiredService<IAppStartupService>();
                 await startupService.InitializeAsync();
+
+                // Re-navigate to the login page now that the database is fully initialised.
+                // The LoginPage that loaded at startup ran before the DB was ready, so
+                // profiles and auth checks would have failed silently.
+                m_window?.Dispatcher.Invoke(() => (m_window as MainWindow)?.OnDatabaseInitialized());
             }
             catch (Exception ex)
             {
@@ -95,29 +100,79 @@ public partial class App : Application
     {
         try
         {
+            // Ensure window is initialized
+            if (m_window == null)
+            {
+                System.Diagnostics.Debug.WriteLine("Main window not initialized, skipping database configuration dialog.");
+                return;
+            }
+
             using var scope = _host.Services.CreateScope();
             var databaseConfigService = scope.ServiceProvider.GetRequiredService<IDatabaseConfigurationService>();
             var platformService = scope.ServiceProvider.GetRequiredService<IPlatformService>();
-            
-            // Check if this is first run
-            var isFirstRun = await databaseConfigService.IsFirstRunAsync();
-            
+
+            // Check if this is first run with timeout
+            var isFirstRunTask = databaseConfigService.IsFirstRunAsync();
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
+            var completedTask = await Task.WhenAny(isFirstRunTask, timeoutTask);
+
+            bool isFirstRun = false;
+            if (completedTask == isFirstRunTask)
+            {
+                isFirstRun = await isFirstRunTask;
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("IsFirstRunAsync timed out, assuming not first run.");
+                return;
+            }
+
             if (isFirstRun)
             {
-                // Show the database configuration dialog on UI thread
-                await m_window.Dispatcher.InvokeAsync(() =>
+                System.Diagnostics.Debug.WriteLine("First run detected, showing database configuration dialog.");
+
+                // Show the database configuration dialog on UI thread with error handling
+                try
                 {
-                    var dialog = new Dialogs.DatabaseConfigurationDialog(databaseConfigService)
+                    await m_window.Dispatcher.InvokeAsync(() =>
                     {
-                        Owner = m_window
-                    };
-                    dialog.ShowDialog();
-                });
+                        try
+                        {
+                            var dialog = new Dialogs.DatabaseConfigurationDialog(databaseConfigService)
+                            {
+                                Owner = m_window
+                            };
+                            var result = dialog.ShowDialog();
+                            System.Diagnostics.Debug.WriteLine($"Database configuration dialog result: {result}");
+                        }
+                        catch (Exception dialogEx)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error in dialog construction/display: {dialogEx.Message}");
+                            SentrySdk.CaptureException(dialogEx);
+                            MessageBox.Show(
+                                $"Failed to show database configuration dialog: {dialogEx.Message}\n\nThe application will continue with default settings.",
+                                "Configuration Error",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                        }
+                    });
+                }
+                catch (Exception dispatcherEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error invoking on dispatcher: {dispatcherEx.Message}");
+                    SentrySdk.CaptureException(dispatcherEx);
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("Not first run, skipping database configuration dialog.");
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             // Continue with startup even if dialog fails
+            System.Diagnostics.Debug.WriteLine($"Error in ShowDatabaseConfigurationIfNeededAsync: {ex.Message}\nStackTrace: {ex.StackTrace}");
+            SentrySdk.CaptureException(ex);
         }
     }
 

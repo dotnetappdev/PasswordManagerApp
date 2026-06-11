@@ -8,255 +8,416 @@
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-0 ma-0" Style="min-height: 100vh;">
-    <MudGrid Spacing="0" Style="height: 100vh;">
-        <!-- Categories Sidebar -->
-        <MudItem xs="3" Class="d-flex flex-column" Style="border-right: 1px solid var(--mud-palette-divider);">
-            <MudPaper Elevation="0" Class="pa-4" Style="border-bottom: 1px solid var(--mud-palette-divider);">
-                <MudText Typo="Typo.h6">Categories</MudText>
-            </MudPaper>
-            <MudPaper Elevation="0" Class="flex-grow-1 overflow-y-auto pa-2">
-                <MudStack>
-                    <MudButton Variant="@(string.IsNullOrEmpty(selectedCategory) ? Variant.Filled : Variant.Text)"
-                              Color="Color.Primary"
-                              StartIcon="@Icons.Material.Filled.ViewList"
-                              FullWidth="true"
-                              OnClick="@(() => SelectCategory(""))">
-                        All Items
-                    </MudButton>
-                    @foreach (var category in categories)
+<div style="display: flex; height: 100vh; overflow: hidden;">
+
+    @* ── Column 1: Type / Collection Sidebar (240 px) ─────────────────────── *@
+    <div style="width: 240px; min-width: 240px; border-right: 1px solid var(--mud-palette-divider); display: flex; flex-direction: column; overflow-y: auto; background: var(--mud-palette-surface);">
+
+        <div style="padding: 16px 12px 8px; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase;">
+            Vault
+        </div>
+
+        <MudNavMenu>
+            <MudNavLink Icon="@Icons.Material.Filled.ViewList"
+                        IconColor="@(IsActive(null, false) ? Color.Primary : Color.Default)"
+                        Style="@SidebarItemStyle(IsActive(null, false))"
+                        OnClick="@(() => SetFilter(null, false))">
+                All Items <MudBadge Content="@allItems.Count" Color="Color.Default" Class="ml-auto" Overlap="false" Visible="@(allItems.Count > 0)" />
+            </MudNavLink>
+
+            <MudNavLink Icon="@Icons.Material.Filled.Star"
+                        IconColor="@(showFavorites ? Color.Warning : Color.Default)"
+                        Style="@SidebarItemStyle(showFavorites)"
+                        OnClick="@(() => SetFilter(null, true))">
+                Favorites
+            </MudNavLink>
+        </MudNavMenu>
+
+        <div style="padding: 12px 12px 4px; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-top: 8px;">
+            Categories
+        </div>
+
+        <MudNavMenu>
+            @foreach (var (type, icon, label, color) in TypeDefinitions)
+            {
+                var count = allItems.Count(i => i.Type == type);
+                var active = IsActive(type, false);
+                <MudNavLink Icon="@icon"
+                            IconColor="@(active ? color : Color.Default)"
+                            Style="@SidebarItemStyle(active)"
+                            OnClick="@(() => SetFilter(type, false))">
+                    @label
+                    @if (count > 0)
                     {
-                        <MudButton Variant="@(selectedCategory == category ? Variant.Filled : Variant.Text)"
-                                  Color="Color.Primary"
-                                  StartIcon="@Icons.Material.Filled.Category"
-                                  FullWidth="true"
-                                  OnClick="@(() => SelectCategory(category))">
-                            @category
-                        </MudButton>
+                        <MudText Typo="Typo.caption" Style="margin-left: auto; opacity: 0.6;">@count</MudText>
                     }
+                </MudNavLink>
+            }
+        </MudNavMenu>
+
+        @if (collections.Any())
+        {
+            <div style="padding: 12px 12px 4px; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-top: 8px;">
+                Collections
+            </div>
+            <MudNavMenu>
+                @foreach (var col in collections)
+                {
+                    var active = selectedCollection == col;
+                    <MudNavLink Icon="@Icons.Material.Filled.FolderOpen"
+                                IconColor="@(active ? Color.Secondary : Color.Default)"
+                                Style="@SidebarItemStyle(active)"
+                                OnClick="@(() => SetCollection(col))">
+                        @col
+                    </MudNavLink>
+                }
+            </MudNavMenu>
+        }
+    </div>
+
+    @* ── Column 2: Items List (300 px) ────────────────────────────────────── *@
+    <div style="width: 300px; min-width: 300px; border-right: 1px solid var(--mud-palette-divider); display: flex; flex-direction: column;">
+
+        @* List header *@
+        <div style="padding: 12px; border-bottom: 1px solid var(--mud-palette-divider); background: var(--mud-palette-surface);">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                <MudText Typo="Typo.subtitle2" Style="flex: 1; font-weight: 700;">@SectionTitle</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               Title="New Item"
+                               OnClick="AddNewItem" />
+            </div>
+            <MudTextField T="string"
+                          Value="@searchQuery"
+                          ValueChanged="@(v => { searchQuery = v ?? ""; ApplyFilter(); })"
+                          Placeholder="Search..."
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Clearable="true"
+                          Immediate="true"
+                          Style="font-size: 13px;" />
+        </div>
+
+        @* Scrollable items *@
+        <div style="flex: 1; overflow-y: auto;">
+            @if (isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height: 200px;">
+                    <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
                 </MudStack>
-            </MudPaper>
-        </MudItem>
-
-        <!-- Main Content -->
-        <MudItem xs="9" Class="d-flex flex-column">
-            <!-- Header -->
-            <MudPaper Elevation="0" Class="pa-4" Style="border-bottom: 1px solid var(--mud-palette-divider);">
-                <MudGrid AlignItems="Center">
-                    <MudItem xs="6">
-                        <MudText Typo="Typo.h4">
-                            <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Large" Class="mr-3" />
-                            Password Vault
-                        </MudText>
-                    </MudItem>
-                    <MudItem xs="6" Class="d-flex justify-end">
-                        <MudButtonGroup>
-                            <MudToggleIconButton @bind-Toggled="isCardView"
-                                               Icon="@Icons.Material.Filled.ViewModule" 
-                                               ToggledIcon="@Icons.Material.Filled.ViewList"
-                                               Title="@(isCardView ? "Switch to List View" : "Switch to Card View")"
-                                               Color="Color.Primary" />
-                            <MudButton Variant="Variant.Filled" 
-                                      Color="Color.Success" 
-                                      StartIcon="@Icons.Material.Filled.Add"
-                                      OnClick="AddNewPassword">
-                                Add Password
-                            </MudButton>
-                        </MudButtonGroup>
-                    </MudItem>
-                </MudGrid>
-            </MudPaper>
-
-            <!-- Search Bar -->
-            <MudPaper Elevation="0" Class="pa-4" Style="border-bottom: 1px solid var(--mud-palette-divider);">
-                <MudTextField T="string" @bind-value="searchQuery" 
-                             Label="Search passwords" 
-                             Variant="Variant.Outlined"
-                             Adornment="Adornment.Start"
-                             AdornmentIcon="@Icons.Material.Filled.Search"
-                             @onkeyup="OnSearchChanged" />
-            </MudPaper>
-
-            <!-- Content Area -->
-            <MudPaper Elevation="0" Class="flex-grow-1 overflow-y-auto pa-4">
-                @if (isLoading)
+            }
+            else if (!filteredItems.Any())
+            {
+                <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height: 200px; padding: 24px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Inbox" Size="Size.Large" Color="Color.Secondary" Style="opacity: 0.4;" />
+                    <MudText Color="Color.Secondary" Align="MudBlazor.Align.Center" Style="opacity: 0.6;">No items found</MudText>
+                </MudStack>
+            }
+            else
+            {
+                @foreach (var item in filteredItems)
                 {
-                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height: 200px;">
-                        <MudProgressCircular Indeterminate="true" />
-                        <MudText>Loading passwords...</MudText>
-                    </MudStack>
-                }
-                else if (filteredPasswords.Any())
-                {
-                    @if (isCardView)
-                    {
-                        <!-- Card View -->
-                        <MudGrid>
-                            @foreach (var password in filteredPasswords)
+                    var isSelected = selectedItem?.Id == item.Id;
+                    var capturedItem = item;
+                    <div class="vault-list-item @(isSelected ? "vault-list-item--selected" : "")"
+                         @onclick="@(() => SelectItem(capturedItem))"
+                         style="display: flex; align-items: center; padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--mud-palette-divider); background: @(isSelected ? "var(--mud-palette-primary-lighten)" : "transparent");">
+
+                        @* Icon *@
+                        <div style="@($"width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0; background: {GetItemColorHex(item)};")">
+                            @if (!string.IsNullOrWhiteSpace(GetBrandIconSource(item)))
                             {
-                                <MudItem xs="12" md="6" lg="4">
-                                    <MudCard Elevation="1" Class="mb-4" Style="height: 180px;">
-                                        <MudCardContent>
-                                            <MudStack Spacing="2">
-                                                <MudText Typo="Typo.h6">
-                                                    @if (!string.IsNullOrWhiteSpace(GetBrandIconSource(password)))
-                                                    {
-                                                        <img src="@GetBrandIconSource(password)" alt="Brand icon"
-                                                             style="width:20px; height:20px; margin-right:8px; border-radius:4px; object-fit:contain; vertical-align:middle;"
-                                                             onerror="this.onerror=null;this.src='https://unpkg.com/simple-icons@v15/icons/simpleicons.svg';" />
-                                                    }
-                                                    else
-                                                    {
-                                                        <MudIcon Icon="@GetPasswordIcon(password)" Size="Size.Small" Class="mr-2" />
-                                                    }
-                                                    @password.Title
-                                                </MudText>
-                                                <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                                    @password.Username
-                                                </MudText>
-                                                <MudText Typo="Typo.body2" Color="Color.Tertiary">
-                                                    @password.WebsiteUrl
-                                                </MudText>
-                                                @if (password.Category != null)
-                                                {
-                                                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">
-                                                        @password.Category.Name
-                                                    </MudChip>
-                                                }
-                                            </MudStack>
-                                        </MudCardContent>
-                                        <MudCardActions>
-                                            <MudButton Size="Size.Small" 
-                                                      Color="Color.Primary" 
-                                                      OnClick="() => ViewPassword(password)">
-                                                View
-                                            </MudButton>
-                                            <MudButton Size="Size.Small" 
-                                                      Color="Color.Secondary" 
-                                                      OnClick="() => CopyPassword(password)">
-                                                Copy
-                                            </MudButton>
-                                            <MudButton Size="Size.Small" 
-                                                      Color="Color.Tertiary" 
-                                                      OnClick="() => EditPassword(password)">
-                                                Edit
-                                            </MudButton>
-                                        </MudCardActions>
-                                    </MudCard>
-                                </MudItem>
+                                <img src="@GetBrandIconSource(item)"
+                                     style="width: 22px; height: 22px; border-radius: 4px; object-fit: contain;"
+                                     onerror="this.style.display='none'; this.nextSibling.style.display='flex';" />
+                                <MudIcon Icon="@GetItemIcon(item.Type)" Style="color: white; font-size: 18px; display: none;" />
                             }
-                        </MudGrid>
-                    }
-                    else
-                    {
-                        <!-- List View -->
-                        <MudTable Items="filteredPasswords" Hover="true" Striped="true" Dense="true">
-                            <HeaderContent>
-                                <MudTh>Title</MudTh>
-                                <MudTh>Username</MudTh>
-                                <MudTh>Website</MudTh>
-                                <MudTh>Category</MudTh>
-                                <MudTh>Actions</MudTh>
-                            </HeaderContent>
-                            <RowTemplate>
-                                <MudTd DataLabel="Title">
-                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
-                                        @if (!string.IsNullOrWhiteSpace(GetBrandIconSource(context)))
-                                        {
-                                            <img src="@GetBrandIconSource(context)" alt="Brand icon"
-                                                 style="width:20px; height:20px; border-radius:4px; object-fit:contain;"
-                                                 onerror="this.onerror=null;this.src='https://unpkg.com/simple-icons@v15/icons/simpleicons.svg';" />
-                                        }
-                                        else
-                                        {
-                                            <MudIcon Icon="@GetPasswordIcon(context)" Size="Size.Small" />
-                                        }
-                                        <MudText>@context.Title</MudText>
-                                    </MudStack>
-                                </MudTd>
-                                <MudTd DataLabel="Username">@context.Username</MudTd>
-                                <MudTd DataLabel="Website">
-                                    @if (!string.IsNullOrEmpty(context.WebsiteUrl))
-                                    {
-                                        <MudLink Href="@context.WebsiteUrl" Target="_blank">@context.WebsiteUrl</MudLink>
-                                    }
-                                </MudTd>
-                                <MudTd DataLabel="Category">
-                                    @if (context.Category != null)
-                                    {
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">
-                                            @context.Category.Name
-                                        </MudChip>
-                                    }
-                                </MudTd>
-                                <MudTd DataLabel="Actions">
-                                    <MudButtonGroup Size="Size.Small">
-                                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
-                                                      Size="Size.Small" 
-                                                      Color="Color.Primary"
-                                                      OnClick="() => ViewPassword(context)" />
-                                        <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" 
-                                                      Size="Size.Small" 
-                                                      Color="Color.Secondary"
-                                                      OnClick="() => CopyPassword(context)" />
-                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" 
-                                                      Size="Size.Small" 
-                                                      Color="Color.Tertiary"
-                                                      OnClick="() => EditPassword(context)" />
-                                    </MudButtonGroup>
-                                </MudTd>
-                            </RowTemplate>
-                        </MudTable>
-                    }
+                            else
+                            {
+                                <MudIcon Icon="@GetItemIcon(item.Type)" Style="color: white; font-size: 18px;" />
+                            }
+                        </div>
+
+                        @* Title + subtitle *@
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--mud-palette-text-primary);">
+                                @item.Title
+                                @if (item.IsFavorite)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Color="Color.Warning" Style="font-size: 12px; margin-left: 4px; vertical-align: middle;" />
+                                }
+                            </div>
+                            <div style="font-size: 12px; color: var(--mud-palette-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                @GetItemSubtitle(item)
+                            </div>
+                        </div>
+                    </div>
                 }
-                else
+            }
+        </div>
+    </div>
+
+    @* ── Column 3: Item Detail Panel (fills remaining width) ──────────────── *@
+    <div style="flex: 1; overflow-y: auto; background: var(--mud-palette-background);">
+        @if (selectedItem == null)
+        {
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height: 100%; padding: 48px;">
+                <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Large" Style="font-size: 80px; opacity: 0.15; color: var(--mud-palette-text-primary);" />
+                <MudText Typo="Typo.h6" Style="opacity: 0.35; margin-top: 16px;">Select an item to view details</MudText>
+            </MudStack>
+        }
+        else
+        {
+            <div style="padding: 32px; max-width: 680px;">
+
+                @* ── Detail header ── *@
+                <div style="display: flex; align-items: flex-start; margin-bottom: 28px; gap: 16px;">
+                    <div style="@($"width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: {GetItemColorHex(selectedItem)};")">
+                        @if (!string.IsNullOrWhiteSpace(GetBrandIconSource(selectedItem)))
+                        {
+                            <img src="@GetBrandIconSource(selectedItem)"
+                                 style="width: 32px; height: 32px; border-radius: 6px; object-fit: contain;"
+                                 onerror="this.style.display='none'; this.nextSibling.style.display='flex';" />
+                            <MudIcon Icon="@GetItemIcon(selectedItem.Type)" Style="color: white; font-size: 28px; display: none;" />
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@GetItemIcon(selectedItem.Type)" Style="color: white; font-size: 28px;" />
+                        }
+                    </div>
+
+                    <div style="flex: 1; min-width: 0; padding-top: 4px;">
+                        <MudText Typo="Typo.h5" Style="font-weight: 700; margin-bottom: 6px; word-break: break-word;">@selectedItem.Title</MudText>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">@GetTypeName(selectedItem.Type)</MudChip>
+                            @if (selectedItem.IsFavorite)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text" Icon="@Icons.Material.Filled.Star">Favorite</MudChip>
+                            }
+                            @{var cat = selectedItem.CategoryId.HasValue ? selectedItem.Category : null;}
+                            @if (cat != null)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Variant="Variant.Text">@cat.Name</MudChip>
+                            }
+                        </div>
+                    </div>
+
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Title="Edit" OnClick="@(() => EditItem(selectedItem))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Title="Delete" OnClick="@(() => DeleteItem(selectedItem))" />
+                </div>
+
+                @* ── Type-specific fields ── *@
+                @if (selectedItem.Type is ItemType.Login or ItemType.Password)
                 {
-                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height: 200px;">
-                        <MudIcon Icon="@Icons.Material.Filled.SecurityUpdate" Size="Size.Large" Color="Color.Secondary" />
-                        <MudText Typo="Typo.h6" Color="Color.Secondary">No passwords found</MudText>
-                        <MudText Color="Color.Tertiary">Click "Add Password" to create your first entry.</MudText>
-                    </MudStack>
+                    @DetailField("Username", selectedItem.Username, copyable: true)
+                    @DetailPasswordField("Password", selectedItem.Password, "pw")
+                    @if (!string.IsNullOrEmpty(selectedItem.WebsiteUrl))
+                    {
+                        @DetailLinkField("Website", selectedItem.WebsiteUrl)
+                    }
+                    @if (!string.IsNullOrEmpty(selectedItem.LoginItem?.Email))
+                    {
+                        @DetailField("Email", selectedItem.LoginItem!.Email, copyable: true)
+                    }
+                    @if (!string.IsNullOrEmpty(selectedItem.LoginItem?.TotpSecret))
+                    {
+                        @DetailField("TOTP Secret", selectedItem.LoginItem!.TotpSecret, copyable: true)
+                    }
                 }
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
-</MudContainer>
+                else if (selectedItem.Type == ItemType.CreditCard)
+                {
+                    var card = selectedItem.CreditCardItem;
+                    @DetailField("Cardholder Name", card?.CardholderName)
+                    @DetailPasswordField("Card Number", card?.CardNumber, "cn")
+                    @DetailField("Expiry", card?.ExpiryDate)
+                    @DetailPasswordField("CVV", card?.CVV, "cvv")
+                    @if (!string.IsNullOrEmpty(card?.PIN))
+                    {
+                        @DetailPasswordField("PIN", card!.PIN, "pin")
+                    }
+                    @DetailField("Card Type", card?.CardType.ToString())
+                    @DetailField("Issuing Bank", card?.IssuingBank)
+                    @DetailLinkField("Online Banking", card?.OnlineBankingUrl)
+                    @DetailField("Notes", card?.Notes)
+                }
+                else if (selectedItem.Type == ItemType.SecureNote)
+                {
+                    @DetailNoteField("Notes", selectedItem.Description ?? selectedItem.SecureNoteItem?.Content)
+                }
+                else if (selectedItem.Type == ItemType.WiFi)
+                {
+                    var wifi = selectedItem.WiFiItem;
+                    @DetailField("Network Name (SSID)", wifi?.NetworkName ?? selectedItem.Title)
+                    @DetailPasswordField("Password", wifi?.Password, "wifi")
+                    @DetailField("Security", wifi?.SecurityType.ToString())
+                    @DetailField("Router IP", wifi?.RouterIP)
+                    @DetailField("Router Username", wifi?.RouterUsername)
+                    @if (!string.IsNullOrEmpty(wifi?.RouterPassword))
+                    {
+                        @DetailPasswordField("Router Password", wifi!.RouterPassword, "router")
+                    }
+                    @if (!string.IsNullOrEmpty(wifi?.GuestNetworkName))
+                    {
+                        @DetailField("Guest Network", wifi!.GuestNetworkName)
+                        @DetailPasswordField("Guest Password", wifi!.GuestNetworkPassword, "guest")
+                    }
+                    @DetailField("Notes", wifi?.Notes)
+                }
+                else if (selectedItem.Type == ItemType.Passkey)
+                {
+                    var pk = selectedItem.PasskeyItem;
+                    @DetailField("Username / Display Name", pk?.Username ?? pk?.DisplayName)
+                    @DetailLinkField("Website", pk?.WebsiteUrl ?? pk?.Website)
+                    @DetailField("Device", pk?.DeviceType)
+                    @DetailField("Platform", pk?.PlatformName)
+                    @DetailField("Backed Up", pk?.IsBackedUp == true ? "Yes" : "No")
+                    @if (pk?.LastUsedAt != null)
+                    {
+                        @DetailField("Last Used", pk.LastUsedAt.Value.ToLocalTime().ToString("MMM d, yyyy HH:mm"))
+                    }
+                    @DetailField("Notes", pk?.Notes)
+                }
+                else if (selectedItem.Type == ItemType.Identity)
+                {
+                    @DetailField("Username", selectedItem.Username, copyable: true)
+                    @DetailLinkField("Website", selectedItem.WebsiteUrl)
+                    @DetailField("Notes", selectedItem.Description)
+                }
+
+                @* ── Shared: description / notes (non-SecureNote) ── *@
+                @if (selectedItem.Type != ItemType.SecureNote && !string.IsNullOrEmpty(selectedItem.Description))
+                {
+                    @DetailNoteField("Notes", selectedItem.Description)
+                }
+
+                @* ── Tags ── *@
+                @if (selectedItem.Tags.Any())
+                {
+                    <div style="margin-top: 20px;">
+                        <div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 8px;">Tags</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                            @foreach (var tag in selectedItem.Tags)
+                            {
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@tag.Name</MudChip>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @* ── Custom fields ── *@
+                @if (selectedItem.CustomFields.Any())
+                {
+                    <div style="margin-top: 20px;">
+                        <div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 12px;">Custom Fields</div>
+                        @foreach (var field in selectedItem.CustomFields)
+                        {
+                            @DetailField(field.Name ?? "Field", field.Value)
+                        }
+                    </div>
+                }
+
+                @* ── Timestamps ── *@
+                <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--mud-palette-divider);">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Modified @selectedItem.LastModified.ToLocalTime().ToString("MMM d, yyyy 'at' HH:mm")
+                        &nbsp;·&nbsp;
+                        Created @selectedItem.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")
+                    </MudText>
+                </div>
+
+            </div>
+        }
+    </div>
+
+</div>
+
+@* ── Inline CSS ────────────────────────────────────────────────────────────── *@
+<style>
+    .vault-list-item:hover {
+        background: var(--mud-palette-action-hover) !important;
+    }
+    .vault-list-item--selected {
+        background: color-mix(in srgb, var(--mud-palette-primary) 12%, transparent) !important;
+    }
+</style>
 
 @code {
-    private List<PasswordItem> passwords = new();
-    private List<PasswordItem> filteredPasswords = new();
-    private List<string> categories = new();
+    // ── Data ─────────────────────────────────────────────────────────────────
+
+    private List<PasswordItem> allItems = new();
+    private List<PasswordItem> filteredItems = new();
+    private List<string> collections = new();
+
+    // ── Filter state ──────────────────────────────────────────────────────────
+
+    private ItemType? selectedType;
+    private bool showFavorites;
+    private string selectedCollection = "";
     private string searchQuery = "";
-    private string selectedCategory = "";
+
+    // ── UI state ──────────────────────────────────────────────────────────────
+
     private bool isLoading = true;
-    private bool isCardView = true; // Default to card view
+    private PasswordItem? selectedItem;
+
+    // Keys of currently-revealed masked fields (cleared when a new item is selected)
+    private readonly HashSet<string> revealedFields = new();
+
+    // ── Type metadata ────────────────────────────────────────────────────────
+
+    private static readonly (ItemType Type, string Icon, string Label, Color Color)[] TypeDefinitions =
+    {
+        (ItemType.Login,      Icons.Material.Filled.Key,         "Logins",       Color.Primary),
+        (ItemType.CreditCard, Icons.Material.Filled.CreditCard,  "Credit Cards", Color.Warning),
+        (ItemType.SecureNote, Icons.Material.Filled.StickyNote2, "Secure Notes", Color.Success),
+        (ItemType.WiFi,       Icons.Material.Filled.Wifi,         "Wi-Fi",        Color.Info),
+        (ItemType.Passkey,    Icons.Material.Filled.Fingerprint,  "Passkeys",     Color.Secondary),
+        (ItemType.Identity,   Icons.Material.Filled.Person,       "Identities",   Color.Error),
+        (ItemType.Password,   Icons.Material.Filled.Password,     "Passwords",    Color.Primary),
+    };
+
+    // ── Lifecycle ────────────────────────────────────────────────────────────
 
     protected override async Task OnInitializedAsync()
     {
-        // Check authentication
-        var isAuthenticated = await AuthService.IsAuthenticatedAsync();
-        if (!isAuthenticated)
+        if (!await AuthService.IsAuthenticatedAsync())
         {
             Navigation.NavigateTo("/masterpassword");
             return;
         }
-
-        await LoadPasswords();
+        await LoadItemsAsync();
     }
 
-    private async Task LoadPasswords()
+    private async Task LoadItemsAsync()
     {
         try
         {
             isLoading = true;
-            passwords = (await PasswordItemService.GetAllAsync()).ToList();
-            filteredPasswords = passwords;
-            categories = passwords.Select(p => p.Category?.Name ?? "Uncategorized").Distinct().Where(c => !string.IsNullOrEmpty(c)).ToList();
+            StateHasChanged();
+
+            allItems = (await PasswordItemService.GetAllAsync())
+                .Where(i => !i.IsDeleted)
+                .OrderBy(i => i.Title)
+                .ToList();
+
+            collections = allItems
+                .Where(i => i.CategoryId.HasValue && i.Category != null)
+                .Select(i => i.Category!.Name)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
+
+            ApplyFilter();
         }
         catch (Exception ex)
         {
-            // Handle error
+            Snackbar.Add($"Failed to load items: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -264,79 +425,286 @@
         }
     }
 
-    private void OnSearchChanged()
+    // ── Filter / selection ───────────────────────────────────────────────────
+
+    private void SetFilter(ItemType? type, bool favorites)
     {
-        FilterPasswords();
+        selectedType = type;
+        showFavorites = favorites;
+        selectedCollection = "";
+        searchQuery = "";
+        SelectItem(null);
+        ApplyFilter();
     }
 
-    private void SelectCategory(string category)
+    private void SetCollection(string col)
     {
-        selectedCategory = category;
-        FilterPasswords();
+        selectedCollection = col;
+        selectedType = null;
+        showFavorites = false;
+        searchQuery = "";
+        SelectItem(null);
+        ApplyFilter();
     }
 
-    private void FilterPasswords()
+    private void ApplyFilter()
     {
-        filteredPasswords = passwords.Where(p => 
-            (string.IsNullOrEmpty(searchQuery) || 
-             p.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
-             (p.Username?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
-             (p.WebsiteUrl?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)) &&
-            (string.IsNullOrEmpty(selectedCategory) || 
-             (p.Category?.Name ?? "Uncategorized") == selectedCategory)
-        ).ToList();
-    }
+        var q = searchQuery.Trim();
 
-    private string GetPasswordIcon(PasswordItem password)
-    {
-        if (string.IsNullOrEmpty(password.WebsiteUrl))
-            return Icons.Material.Filled.Password;
-
-        return password.WebsiteUrl.ToLower() switch
+        filteredItems = allItems.Where(i =>
         {
-            var url when url.Contains("google") => Icons.Material.Filled.Language,
-            var url when url.Contains("facebook") => Icons.Material.Filled.Language,
-            var url when url.Contains("twitter") => Icons.Material.Filled.Language,
-            var url when url.Contains("github") => Icons.Material.Filled.Code,
-            var url when url.Contains("microsoft") => Icons.Material.Filled.Business,
-            var url when url.Contains("amazon") => Icons.Material.Filled.ShoppingCart,
-            var url when url.Contains("bank") => Icons.Material.Filled.AccountBalance,
-            var url when url.Contains("paypal") => Icons.Material.Filled.Payment,
-            _ => Icons.Material.Filled.Language
-        };
+            if (showFavorites && !i.IsFavorite) return false;
+            if (selectedType.HasValue && i.Type != selectedType) return false;
+            if (!string.IsNullOrEmpty(selectedCollection) &&
+                (i.Category?.Name != selectedCollection)) return false;
+
+            if (!string.IsNullOrEmpty(q))
+            {
+                return i.Title.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                       (i.Username?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                       (i.WebsiteUrl?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                       (i.Description?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false);
+            }
+            return true;
+        }).ToList();
     }
 
-    private string? GetBrandIconSource(PasswordItem password)
-        => password.Type == ItemType.Login ? BrandIconHelper.GetBrandIconSource(password) : null;
-
-    private async Task ViewPassword(PasswordItem password)
+    private void SelectItem(PasswordItem? item)
     {
-        Navigation.NavigateTo($"/password/{password.Id}");
+        selectedItem = item;
+        revealedFields.Clear();
     }
 
-    private async Task CopyPassword(PasswordItem password)
+    // ── Navigation ───────────────────────────────────────────────────────────
+
+    private void AddNewItem()    => Navigation.NavigateTo("/password/new");
+    private void EditItem(PasswordItem item) => Navigation.NavigateTo($"/password/{item.Id}/edit");
+
+    private async Task DeleteItem(PasswordItem item)
     {
         try
         {
-            if (!string.IsNullOrEmpty(password.Password))
-            {
-                await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", password.Password);
-                // Show success notification - could add snackbar here
-            }
+            await PasswordItemService.DeleteAsync(item.Id);
+            allItems.Remove(item);
+            if (selectedItem?.Id == item.Id) SelectItem(null);
+            ApplyFilter();
+            Snackbar.Add("Item deleted.", Severity.Success);
         }
         catch (Exception ex)
         {
-            // Handle error
+            Snackbar.Add($"Delete failed: {ex.Message}", Severity.Error);
         }
     }
 
-    private void EditPassword(PasswordItem password)
+    // ── Clipboard ────────────────────────────────────────────────────────────
+
+    private async Task CopyAsync(string? value, string label = "Copied")
     {
-        Navigation.NavigateTo($"/password/{password.Id}/edit");
+        if (string.IsNullOrEmpty(value)) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", value);
+            Snackbar.Add($"{label} copied to clipboard.", Severity.Success);
+        }
+        catch
+        {
+            Snackbar.Add("Copy failed — clipboard access may be blocked.", Severity.Warning);
+        }
     }
 
-    private void AddNewPassword()
+    // ── Display helpers ──────────────────────────────────────────────────────
+
+    private bool IsActive(ItemType? type, bool favorites)
+        => showFavorites == favorites && selectedType == type && string.IsNullOrEmpty(selectedCollection);
+
+    private static string SidebarItemStyle(bool active)
+        => active ? "font-weight: 700; background: color-mix(in srgb, var(--mud-palette-primary) 12%, transparent);" : "";
+
+    private string SectionTitle => showFavorites ? "Favorites"
+        : selectedType.HasValue ? GetTypeName(selectedType.Value)
+        : !string.IsNullOrEmpty(selectedCollection) ? selectedCollection
+        : "All Items";
+
+    private static string GetTypeName(ItemType type) => type switch
     {
-        Navigation.NavigateTo("/password/new");
+        ItemType.Login      => "Logins",
+        ItemType.CreditCard => "Credit Cards",
+        ItemType.SecureNote => "Secure Notes",
+        ItemType.WiFi       => "Wi-Fi",
+        ItemType.Passkey    => "Passkeys",
+        ItemType.Identity   => "Identities",
+        ItemType.Password   => "Passwords",
+        _                   => type.ToString()
+    };
+
+    private static string GetItemIcon(ItemType type) => type switch
+    {
+        ItemType.Login      => Icons.Material.Filled.Key,
+        ItemType.CreditCard => Icons.Material.Filled.CreditCard,
+        ItemType.SecureNote => Icons.Material.Filled.StickyNote2,
+        ItemType.WiFi       => Icons.Material.Filled.Wifi,
+        ItemType.Passkey    => Icons.Material.Filled.Fingerprint,
+        ItemType.Identity   => Icons.Material.Filled.Person,
+        _                   => Icons.Material.Filled.Password
+    };
+
+    private static string GetItemColorHex(PasswordItem item) => item.Type switch
+    {
+        ItemType.Login      => "#1976D2",
+        ItemType.CreditCard => "#F57C00",
+        ItemType.SecureNote => "#388E3C",
+        ItemType.WiFi       => "#0288D1",
+        ItemType.Passkey    => "#7B1FA2",
+        ItemType.Identity   => "#C62828",
+        _                   => "#455A64"
+    };
+
+    private static string GetItemSubtitle(PasswordItem item) => item.Type switch
+    {
+        ItemType.Login      => item.Username ?? item.WebsiteUrl ?? "",
+        ItemType.CreditCard => item.CreditCardItem?.CardholderName ?? "",
+        ItemType.SecureNote => item.Description ?? "",
+        ItemType.WiFi       => item.WiFiItem?.NetworkName ?? item.Title,
+        ItemType.Passkey    => item.PasskeyItem?.Username ?? item.PasskeyItem?.WebsiteUrl ?? "",
+        _                   => item.Username ?? ""
+    };
+
+    private static string? GetBrandIconSource(PasswordItem item)
+        => item.Type == ItemType.Login ? BrandIconHelper.GetBrandIconSource(item) : null;
+
+    // ── Detail field render fragments ────────────────────────────────────────
+
+    private RenderFragment DetailField(string label, string? value, bool copyable = false) => b =>
+    {
+        if (string.IsNullOrEmpty(value)) return;
+        b.OpenElement(0, "div");
+        b.AddAttribute(1, "style", "margin-bottom: 18px;");
+
+        // label
+        b.OpenElement(2, "div");
+        b.AddAttribute(3, "style", "font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 4px;");
+        b.AddContent(4, label);
+        b.CloseElement();
+
+        // value row
+        b.OpenElement(5, "div");
+        b.AddAttribute(6, "style", "display: flex; align-items: center; gap: 8px;");
+        b.OpenElement(7, "div");
+        b.AddAttribute(8, "style", "font-size: 14px; word-break: break-all;");
+        b.AddContent(9, value);
+        b.CloseElement();
+        if (copyable)
+        {
+            b.OpenComponent<MudIconButton>(10);
+            b.AddAttribute(11, "Icon", Icons.Material.Filled.ContentCopy);
+            b.AddAttribute(12, "Size", Size.Small);
+            b.AddAttribute(13, "Color", Color.Default);
+            b.AddAttribute(14, "Title", $"Copy {label}");
+            b.AddAttribute(15, "OnClick", EventCallback.Factory.Create(this, async () => await CopyAsync(value, label)));
+            b.CloseComponent();
+        }
+        b.CloseElement();
+
+        b.CloseElement();
+    };
+
+    private RenderFragment DetailNoteField(string label, string? value) => b =>
+    {
+        if (string.IsNullOrEmpty(value)) return;
+        b.OpenElement(0, "div");
+        b.AddAttribute(1, "style", "margin-bottom: 18px;");
+
+        b.OpenElement(2, "div");
+        b.AddAttribute(3, "style", "font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 4px;");
+        b.AddContent(4, label);
+        b.CloseElement();
+
+        b.OpenElement(5, "div");
+        b.AddAttribute(6, "style", "font-size: 14px; white-space: pre-wrap; word-break: break-word; padding: 12px; background: var(--mud-palette-surface); border-radius: 8px; border: 1px solid var(--mud-palette-divider);");
+        b.AddContent(7, value);
+        b.CloseElement();
+
+        b.CloseElement();
+    };
+
+    private RenderFragment DetailLinkField(string label, string? url) => b =>
+    {
+        if (string.IsNullOrEmpty(url)) return;
+        b.OpenElement(0, "div");
+        b.AddAttribute(1, "style", "margin-bottom: 18px;");
+
+        b.OpenElement(2, "div");
+        b.AddAttribute(3, "style", "font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 4px;");
+        b.AddContent(4, label);
+        b.CloseElement();
+
+        b.OpenElement(5, "div");
+        b.AddAttribute(6, "style", "display: flex; align-items: center; gap: 8px;");
+
+        b.OpenComponent<MudLink>(7);
+        b.AddAttribute(8, "Href", url);
+        b.AddAttribute(9, "Target", "_blank");
+        b.AddAttribute(10, "Style", "font-size: 14px; word-break: break-all;");
+        b.AddContent(11, url);
+        b.CloseComponent();
+
+        b.OpenComponent<MudIconButton>(12);
+        b.AddAttribute(13, "Icon", Icons.Material.Filled.ContentCopy);
+        b.AddAttribute(14, "Size", Size.Small);
+        b.AddAttribute(15, "Color", Color.Default);
+        b.AddAttribute(16, "Title", "Copy URL");
+        b.AddAttribute(17, "OnClick", EventCallback.Factory.Create(this, async () => await CopyAsync(url, label)));
+        b.CloseComponent();
+
+        b.CloseElement();
+        b.CloseElement();
+    };
+
+    private RenderFragment DetailPasswordField(string label, string? value, string key) => b =>
+    {
+        if (string.IsNullOrEmpty(value)) return;
+        var capturedShow = revealedFields.Contains(key);
+        b.OpenElement(0, "div");
+        b.AddAttribute(1, "style", "margin-bottom: 18px;");
+
+        b.OpenElement(2, "div");
+        b.AddAttribute(3, "style", "font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 4px;");
+        b.AddContent(4, label);
+        b.CloseElement();
+
+        b.OpenElement(5, "div");
+        b.AddAttribute(6, "style", "display: flex; align-items: center; gap: 8px;");
+
+        b.OpenElement(7, "div");
+        b.AddAttribute(8, "style", "font-size: 14px; font-family: monospace; word-break: break-all;");
+        b.AddContent(9, capturedShow ? value : new string('•', Math.Min(value.Length, 12)));
+        b.CloseElement();
+
+        // reveal toggle
+        b.OpenComponent<MudIconButton>(10);
+        b.AddAttribute(11, "Icon", capturedShow ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility);
+        b.AddAttribute(12, "Size", Size.Small);
+        b.AddAttribute(13, "Color", Color.Default);
+        b.AddAttribute(14, "Title", capturedShow ? "Hide" : "Show");
+        b.AddAttribute(15, "OnClick", EventCallback.Factory.Create(this, () => ToggleReveal(key)));
+        b.CloseComponent();
+
+        // copy
+        b.OpenComponent<MudIconButton>(16);
+        b.AddAttribute(17, "Icon", Icons.Material.Filled.ContentCopy);
+        b.AddAttribute(18, "Size", Size.Small);
+        b.AddAttribute(19, "Color", Color.Default);
+        b.AddAttribute(20, "Title", $"Copy {label}");
+        b.AddAttribute(21, "OnClick", EventCallback.Factory.Create(this, async () => await CopyAsync(value, label)));
+        b.CloseComponent();
+
+        b.CloseElement();
+        b.CloseElement();
+    };
+
+    private void ToggleReveal(string key)
+    {
+        if (!revealedFields.Remove(key))
+            revealedFields.Add(key);
     }
 }

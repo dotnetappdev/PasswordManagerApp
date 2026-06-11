@@ -33,7 +33,6 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
 
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         _userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        _role_manager_null_check: ;
         _roleManager = serviceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         _cryptoService = serviceProvider.GetRequiredService<IPasswordCryptoService>();
         _currentUser = currentUser;
@@ -129,6 +128,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         }
     }
 
+    // Handles both Checked and Unchecked events from AdminToggleSwitch
     private void AdminToggleSwitch_Toggled(object sender, RoutedEventArgs e)
     {
         try
@@ -508,32 +508,65 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
     private void MasterPasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
     {
         SetFieldError(MasterPasswordBorder, false);
-        // ValidationInfoBar.IsOpen = false;
 
-        // Update password strength indicator
-        var password = MasterPasswordBox.Password;
-        if (string.IsNullOrEmpty(password))
+        var pw = MasterPasswordBox.Password;
+
+        if (string.IsNullOrEmpty(pw))
         {
             PasswordStrengthPanel.Visibility = Visibility.Collapsed;
+            ResetRequirements();
             return;
         }
 
         PasswordStrengthPanel.Visibility = Visibility.Visible;
 
-        var score = CalculatePasswordStrength(password);
-        PasswordStrengthBar.Value = score * 20; // Convert 0-5 to 0-100
+        // Requirements checklist
+        SetReq(ReqLengthText,  pw.Length >= 8,                              "At least 8 characters");
+        SetReq(ReqUpperText,   pw.Any(char.IsUpper),                        "One uppercase letter");
+        SetReq(ReqLowerText,   pw.Any(char.IsLower),                        "One lowercase letter");
+        SetReq(ReqNumberText,  pw.Any(char.IsDigit),                        "One number");
+        SetReq(ReqSpecialText, pw.Any(ch => !char.IsLetterOrDigit(ch)),     "One special character");
 
-        var (strength, color) = score switch
+        // Strength bar
+        var score = CalculatePasswordStrength(pw);
+        PasswordStrengthBar.Value = score * 20;
+
+        var (label, barColor) = score switch
         {
-            5 => ("Very Strong", System.Windows.Media.Colors.Green),
-            4 => ("Strong", System.Windows.Media.Colors.LightGreen),
-            3 => ("Medium", System.Windows.Media.Colors.Orange),
-            2 => ("Weak", System.Windows.Media.Colors.OrangeRed),
-            _ => ("Very Weak", System.Windows.Media.Colors.Red)
+            5 => ("Very Strong ✓", "#10B981"),
+            4 => ("Strong",        "#34D399"),
+            3 => ("Medium",        "#F59E0B"),
+            2 => ("Weak",          "#F97316"),
+            _ => ("Very Weak",     "#EF4444")
         };
 
-        PasswordStrengthText.Text = $"Password strength: {strength}";
-        PasswordStrengthBar.Foreground = new System.Windows.Media.SolidColorBrush(color);
+        PasswordStrengthText.Text = $"Strength: {label}";
+        PasswordStrengthBar.Foreground = new System.Windows.Media.SolidColorBrush(
+            (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(barColor));
+    }
+
+    private static void SetReq(TextBlock? tb, bool met, string label)
+    {
+        if (tb == null) return;
+        tb.Text = $"{(met ? "●" : "○")}  {label}";
+        tb.Foreground = met
+            ? new System.Windows.Media.SolidColorBrush(
+                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#10B981"))
+            : new System.Windows.Media.SolidColorBrush(
+                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#5A5F78"));
+    }
+
+    private void ResetRequirements()
+    {
+        foreach (var tb in new[] { ReqLengthText, ReqUpperText, ReqLowerText, ReqNumberText, ReqSpecialText })
+        {
+            if (tb == null) continue;
+            var orig = tb.Text;
+            var label = orig.Length > 3 ? orig[3..] : orig; // strip leading bullet + spaces
+            tb.Text = $"○  {label}";
+            tb.Foreground = new System.Windows.Media.SolidColorBrush(
+                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#5A5F78"));
+        }
     }
 
     private int CalculatePasswordStrength(string password)

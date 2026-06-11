@@ -216,9 +216,6 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
-// Add setup redirect middleware before authentication
-app.UseSetupRedirect();
-
 app.UseAuthentication();
 app.UseAuthorization();
 

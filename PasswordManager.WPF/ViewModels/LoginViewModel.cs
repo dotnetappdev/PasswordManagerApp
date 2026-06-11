@@ -29,6 +29,7 @@ public class LoginViewModel : BaseViewModel
     private UserDto? _selectedUser;
     private bool _showProfileSelection = true;
     private bool _showLockMessage = false;
+    private bool _showRegistrationForm = false;
 
     public LoginViewModel(IServiceProvider serviceProvider)
     {
@@ -289,6 +290,24 @@ public class LoginViewModel : BaseViewModel
     {
         get => _showLockMessage;
         set => SetProperty(ref _showLockMessage, value);
+    }
+
+    public bool ShowRegistrationForm
+    {
+        get => _showRegistrationForm;
+        set => SetProperty(ref _showRegistrationForm, value);
+    }
+
+    public void GoToRegistration()
+    {
+        ShowRegistrationForm = true;
+        OnPropertyChanged(nameof(ShowRegistrationForm));
+    }
+
+    public void GoBackFromRegistration()
+    {
+        ShowRegistrationForm = false;
+        OnPropertyChanged(nameof(ShowRegistrationForm));
     }
 
     // Legacy properties for backward compatibility (not used in new flow)

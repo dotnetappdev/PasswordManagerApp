@@ -27,7 +27,7 @@
            <ui:AutoSuggestBox x:Name="ItemSearchBox"
                             ui:ControlHelper.PlaceholderText="Try searching anything"
                             QueryIcon="Find"
-                            Style="{StaticResource Modernui:AutoSuggestBoxStyle}"
+                            Style="{StaticResource ModernAutoSuggestBoxStyle}"
                             CornerRadius="8"
                             Height="40"
                             FontSize="16"/>

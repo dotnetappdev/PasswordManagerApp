@@ -297,3 +297,52 @@ public class NotZeroToBoolConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => throw new NotSupportedException();
 }
+
+// Returns the first letter of a name as uppercase, e.g. "David" → "D"
+public class FirstLetterConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is string s && s.Length > 0 ? s[0].ToString().ToUpperInvariant() : "?";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+// Returns two initials: first letter of FirstName + first letter of LastName (via MultiBinding)
+public class InitialsMultiConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        var first = values.ElementAtOrDefault(0) as string ?? "";
+        var last  = values.ElementAtOrDefault(1) as string ?? "";
+        var a = first.Length > 0 ? first[0].ToString().ToUpperInvariant() : "";
+        var b = last.Length  > 0 ? last[0].ToString().ToUpperInvariant()  : "";
+        return a + b;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+// Deterministic avatar color based on the first non-empty string value passed to it
+public class NameToAvatarBrushConverter : IValueConverter
+{
+    private static readonly string[] Palette =
+    {
+        "#7C3AED", "#EC4899", "#0284C7", "#059669",
+        "#D97706", "#DC2626", "#7C3AED", "#0891B2",
+    };
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var key = (value as string) ?? "";
+        var idx = key.Length > 0
+            ? Math.Abs(string.GetHashCode(key, StringComparison.Ordinal)) % Palette.Length
+            : 0;
+        var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(Palette[idx]);
+        return new System.Windows.Media.SolidColorBrush(color);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}

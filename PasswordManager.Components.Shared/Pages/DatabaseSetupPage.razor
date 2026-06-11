@@ -2,6 +2,7 @@
 @using PasswordManager.Models.Configuration
 @using PasswordManager.Services.Interfaces
 @inject IDatabaseConfigurationService DatabaseConfigService
+@inject IServiceProvider ServiceProvider
 @inject NavigationManager Navigation
 
 <div class="dbs-page">
@@ -508,6 +509,16 @@
         {
             var cfg = await BuildConfig();
             await DatabaseConfigService.SaveConfigurationAsync(cfg);
+
+            // Initialize the DB schema so the app is ready immediately after setup.
+            // Failures are non-fatal — the user can still proceed and will see a clear
+            // "database not ready" state if the schema couldn't be created.
+            try
+            {
+                await DatabaseConfigService.EnsureBasicSqliteDatabaseAsync(ServiceProvider);
+            }
+            catch { /* non-fatal */ }
+
             _statusOk = true;
             _status = "Saved — loading app…";
             StateHasChanged();
