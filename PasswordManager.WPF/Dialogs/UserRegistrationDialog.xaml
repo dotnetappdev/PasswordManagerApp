@@ -158,7 +158,7 @@
                     <!-- Header -->
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                         <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets"
-                                   FontSize="20" Foreground="{DynamicResource ModernPrimaryBrush}"
+                                   FontSize="20" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBlock Text="Your Master Password"
                                    FontSize="16" FontWeight="SemiBold"
@@ -189,17 +189,21 @@
                                 </Grid.ColumnDefinitions>
                                 <PasswordBox x:Name="MasterPasswordBox" x:FieldModifier="private"
                                              Grid.Column="0"
-                                             Background="Transparent" BorderThickness="0"
+                                             BorderThickness="0"
                                              Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                              FontSize="14" FontFamily="Consolas"
                                              ui:ControlHelper.PlaceholderText="Create a strong master password"
-                                             PasswordChanged="MasterPasswordBox_PasswordChanged"/>
+                                             PasswordChanged="MasterPasswordBox_PasswordChanged">
+                                    <PasswordBox.Background><SolidColorBrush Color="Transparent"/></PasswordBox.Background>
+                                </PasswordBox>
                                 <TextBox x:Name="MasterPasswordVisibleBox" x:FieldModifier="private"
                                          Grid.Column="0"
-                                         Background="Transparent" BorderThickness="0"
+                                         BorderThickness="0"
                                          Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                          FontSize="14" FontFamily="Consolas"
-                                         IsReadOnly="True" Visibility="Collapsed"/>
+                                         IsReadOnly="True" Visibility="Collapsed">
+                                    <TextBox.Background><SolidColorBrush Color="Transparent"/></TextBox.Background>
+                                </TextBox>
                                 <Button x:Name="DlgMasterRevealBtn" x:FieldModifier="private"
                                         Grid.Column="1"
                                         Style="{StaticResource RevealButtonStyle}"
@@ -278,17 +282,21 @@
                                 </Grid.ColumnDefinitions>
                                 <PasswordBox x:Name="ConfirmPasswordBox" x:FieldModifier="private"
                                              Grid.Column="0"
-                                             Background="Transparent" BorderThickness="0"
+                                             BorderThickness="0"
                                              Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                              FontSize="14" FontFamily="Consolas"
                                              ui:ControlHelper.PlaceholderText="Re-enter your master password"
-                                             PasswordChanged="ConfirmPasswordBox_PasswordChanged"/>
+                                             PasswordChanged="ConfirmPasswordBox_PasswordChanged">
+                                    <PasswordBox.Background><SolidColorBrush Color="Transparent"/></PasswordBox.Background>
+                                </PasswordBox>
                                 <TextBox x:Name="ConfirmPasswordVisibleBox" x:FieldModifier="private"
                                          Grid.Column="0"
-                                         Background="Transparent" BorderThickness="0"
+                                         BorderThickness="0"
                                          Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                          FontSize="14" FontFamily="Consolas"
-                                         IsReadOnly="True" Visibility="Collapsed"/>
+                                         IsReadOnly="True" Visibility="Collapsed">
+                                    <TextBox.Background><SolidColorBrush Color="Transparent"/></TextBox.Background>
+                                </TextBox>
                                 <Button x:Name="DlgConfirmRevealBtn" x:FieldModifier="private"
                                         Grid.Column="1"
                                         Style="{StaticResource RevealButtonStyle}"
@@ -370,10 +378,11 @@
                                    Margin="0,0,0,6"/>
                         <Border Style="{StaticResource FieldBorderStyle}">
                             <ComboBox x:Name="RoleComboBox" x:FieldModifier="private"
-                                      Background="Transparent" BorderThickness="0"
+                                      BorderThickness="0"
                                       Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                       HorizontalAlignment="Stretch"
                                       SelectionChanged="RoleComboBox_SelectionChanged">
+                                <ComboBox.Background><SolidColorBrush Color="Transparent"/></ComboBox.Background>
                                 <ComboBoxItem Content="Parent User"   Tag="Parent"/>
                                 <ComboBoxItem Content="Standard User" Tag="User" IsSelected="True"/>
                                 <ComboBoxItem Content="Child User"    Tag="Child"/>

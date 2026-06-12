@@ -12,10 +12,11 @@
             <Border Style="{StaticResource ModernCardStyle}">
                 <StackPanel Margin="8">
                     <StackPanel Orientation="Horizontal" Margin="12">
-                        <Border Background="{StaticResource ModernTextSecondaryBrush}"
-                              
+                        <Border Background="{StaticResource ModernElevatedSurfaceBrush}"
+                               CornerRadius="8"
                                Width="32"
-                               Height="32">
+                               Height="32"
+                               Margin="0,0,10,0">
                             <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" 
                                      FontSize="16"
                                      Foreground="White"
@@ -38,7 +39,9 @@
                         <Border Background="{StaticResource ModernErrorBrush}"
                               
                                Width="24"
-                               Height="24">
+                               Height="24"
+                               CornerRadius="6"
+                               Margin="0,0,10,0">
                             <TextBlock Text="&#xE1A3;" FontFamily="Segoe MDL2 Assets" 
                                      FontSize="12"
                                      Foreground="White"
@@ -52,15 +55,17 @@
                     
                     <StackPanel Margin="16">
                         <CheckBox x:Name="TwoFactorToggle"
-                                     
+                                     Content="Enable Two-Factor Authentication"
                                      IsChecked="{Binding EnableTwoFactor, Mode=TwoWay}"
                                      Checked="TwoFactorToggle_Toggled"
-                                     Unchecked="TwoFactorToggle_Toggled"/>
-                        
+                                     Unchecked="TwoFactorToggle_Toggled"
+                                     Margin="0,0,0,8"/>
+
                         <CheckBox x:Name="PasscodeToggle"
-                                     
+                                     Content="Require Passcode on Launch"
                                      IsChecked="{Binding RequirePasscode, Mode=TwoWay}"
-                                     Checked="PasscodeToggle_Toggled"/>
+                                     Checked="PasscodeToggle_Toggled"
+                                     Margin="0,0,0,8"/>
                         
                         <Button x:Name="ChangePasswordButton"
                                Style="{StaticResource ModernSecondaryButtonStyle}"
@@ -94,7 +99,9 @@
                         <Border Background="{StaticResource ModernWarningBrush}"
                               
                                Width="24"
-                               Height="24">
+                               Height="24"
+                               CornerRadius="6"
+                               Margin="0,0,10,0">
                             <TextBlock Text="&#xE8F7;" FontFamily="Segoe MDL2 Assets" 
                                      FontSize="12"
                                      Foreground="White"
@@ -121,7 +128,7 @@
                         
                         <Border x:Name="ApiSettingsPanel"
                                Style="{StaticResource ModernCardStyle}"
-                               BorderBrush="{StaticResource ModernPrimaryBrush}"
+                               BorderBrush="{StaticResource ModernBorderBrush}"
                                Visibility="{Binding AuthenticationMode, Converter={StaticResource ApiModeToVisibilityConverter}}">
                             <StackPanel Margin="16">
                                 <TextBlock Text="API Configuration" 
@@ -234,9 +241,10 @@
                         </Button>
                         
                         <CheckBox x:Name="SyncToggle"
-                                     
+                                     Content="Enable Cloud Sync"
                                      IsChecked="{Binding EnableSync, Mode=TwoWay}"
-                                     Checked="SyncToggle_Toggled"/>
+                                     Checked="SyncToggle_Toggled"
+                                     Margin="0,8,0,0"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -245,10 +253,12 @@
             <Border Style="{StaticResource ModernCardStyle}">
                 <StackPanel Margin="20">
                     <StackPanel Orientation="Horizontal" Margin="12">
-                        <Border Background="{StaticResource ModernPrimaryBrush}"
+                        <Border Background="#1F2937"
                               
                                Width="24"
-                               Height="24">
+                               Height="24"
+                               CornerRadius="6"
+                               Margin="0,0,10,0">
                             <TextBlock Text="&#xE753;" FontFamily="Segoe MDL2 Assets" 
                                      FontSize="12"
                                      Foreground="White"
@@ -262,9 +272,10 @@
                     
                     <StackPanel Margin="16">
                         <CheckBox x:Name="CloudBackupToggle"
-                                     
+                                     Content="Enable Automatic Cloud Backup"
                                      IsChecked="{Binding EnableCloudBackup, Mode=TwoWay}"
-                                     Checked="CloudBackupToggle_Toggled"/>
+                                     Checked="CloudBackupToggle_Toggled"
+                                     Margin="0,0,0,8"/>
                         
                         <StackPanel Margin="8" Visibility="{Binding EnableCloudBackup, Converter={StaticResource BoolToVisibilityConverter}}">
                             <TextBlock Text="Cloud Provider" 
@@ -329,7 +340,7 @@
                                            
                                 <TextBlock Text="{Binding NextScheduledBackupFormatted}"
                                           Style="{StaticResource ModernCaptionStyle}"
-                                          Foreground="{StaticResource ModernPrimaryBrush}"
+                                          Foreground="{StaticResource ModernTextSecondaryBrush}"
                                           Visibility="{Binding NextScheduledBackupFormatted, Converter={StaticResource StringToVisibilityConverter}}"/>
                             </StackPanel>
                         </StackPanel>
@@ -391,7 +402,7 @@
                                                           Style="{StaticResource ModernCaptionStyle}"/>
                                                 <TextBlock Text="{Binding ServiceName}" 
                                                           Style="{StaticResource ModernCaptionStyle}"
-                                                          Foreground="{StaticResource ModernPrimaryBrush}"/>
+                                                          Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                                             </StackPanel>
                                             
                                             <Button Grid.Column="1" 
@@ -427,7 +438,9 @@
                         <Border Background="{StaticResource ModernWarningBrush}"
                               
                                Width="24"
-                               Height="24">
+                               Height="24"
+                               CornerRadius="6"
+                               Margin="0,0,10,0">
                             <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" 
                                      FontSize="12"
                                      Foreground="White"
@@ -476,7 +489,9 @@
                         <Border Background="{StaticResource ModernSuccessBrush}"
                               
                                Width="24"
-                               Height="24">
+                               Height="24"
+                               CornerRadius="6"
+                               Margin="0,0,10,0">
                             <TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets" 
                                      FontSize="12"
                                      Foreground="White"
@@ -650,7 +665,7 @@
                         <!-- Import Status -->
                         <Border x:Name="ImportStatusBorder"
                                Background="{StaticResource ModernSurfaceBrush}"
-                               BorderBrush="{StaticResource ModernPrimaryBrush}"
+                               BorderBrush="#374151"
                                BorderThickness="1"
                               
                                Padding="16"
@@ -704,10 +719,12 @@
             <Border Style="{StaticResource ModernCardStyle}">
                 <StackPanel Margin="20">
                     <StackPanel Orientation="Horizontal" Margin="12">
-                        <Border Background="{StaticResource ModernPrimaryBrush}"
+                        <Border Background="#1F2937"
                               
                                Width="24"
-                               Height="24">
+                               Height="24"
+                               CornerRadius="6"
+                               Margin="0,0,10,0">
                             <TextBlock Text="&#xE790;" FontFamily="Segoe MDL2 Assets" 
                                      FontSize="12"
                                      Foreground="White"
@@ -740,7 +757,9 @@
                         <Border Background="{StaticResource ModernWarningBrush}"
                               
                                Width="24"
-                               Height="24">
+                               Height="24"
+                               CornerRadius="6"
+                               Margin="0,0,10,0">
                             <TextBlock Text="&#xE8F7;" FontFamily="Segoe MDL2 Assets" 
                                      FontSize="12"
                                      Foreground="White"
@@ -860,12 +879,12 @@
                         <!-- Reseed Sample Data -->
                         <Border Style="{StaticResource ModernCardStyle}"
                                Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
-                               BorderBrush="{StaticResource ModernPrimaryBrush}">
+                               BorderBrush="#374151">
                             <StackPanel Margin="12">
                                 <StackPanel Orientation="Horizontal" Margin="8">
                                     <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" 
                                              FontSize="16"
-                                             Foreground="{StaticResource ModernPrimaryBrush}"/>
+                                             Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                                     <TextBlock Text="Reseed Sample Data" 
                                               FontWeight="SemiBold"
                                               FontSize="14"/>
@@ -877,7 +896,7 @@
                                 
                                 <Button x:Name="ReseedSampleButton"
                                        Style="{StaticResource ModernSecondaryButtonStyle}"
-                                       Background="{StaticResource ModernPrimaryBrush}"
+                                       Background="#1F2937"
                                        Foreground="White"
                                        HorizontalAlignment="Left"
                                        Click="ReseedSampleButton_Click">

@@ -18,7 +18,7 @@
                         IsSettingsVisible="False"
                         IsPaneToggleButtonVisible="False"
                         PaneDisplayMode="Left"
-                        OpenPaneLength="280"
+                        OpenPaneLength="260"
                         CompactModeThresholdWidth="0"
                         ExpandedModeThresholdWidth="0"
                         SelectionChanged="MainNavigationView_SelectionChanged"
@@ -26,104 +26,277 @@
                         Margin="0"
                         Padding="0">
 
-            <!-- Custom Pane Header with Profile -->
+            <!-- Pane Header: App name + profile + search + new item -->
             <ui:NavigationView.PaneHeader>
-                <Grid Margin="16,12">
-                    <!-- Profile Section -->
-                    <Border Grid.Row="0"
+                <StackPanel Margin="0,0,0,4">
+
+                    <!-- App branding -->
+                    <Border Padding="16,14,16,10">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="28" Height="28" CornerRadius="6"
+                                    Background="#1F2937"
+                                    BorderBrush="#374151" BorderThickness="1"
+                                    Margin="0,0,10,0">
+                                <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="14" Foreground="#D1D5DB"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Password Manager"
+                                       FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- hairline divider -->
+                    <Border Height="1" Background="#FFFFFF14" Margin="12,0"/>
+
+                    <!-- Profile button -->
+                    <Button x:Name="ProfileButton"
                             Background="Transparent"
-                            CornerRadius="8"
-                            Padding="12,8">
-                        <Button x:Name="ProfileButton"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                HorizontalAlignment="Stretch"
-                                HorizontalContentAlignment="Left"
-                                Click="ProfileButton_Click">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
+                            BorderThickness="0"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left"
+                            Padding="16,10"
+                            Click="ProfileButton_Click">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="32" Height="32" CornerRadius="16"
+                                    Background="#374151"
+                                    Margin="0,0,10,0">
+                                <TextBlock x:Name="UserAvatarText" Text="?"
+                                           FontSize="13" FontWeight="SemiBold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock x:Name="UserNameText"
+                                           Text="My Account"
+                                           FontSize="13" FontWeight="Medium"
+                                           Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                <TextBlock Text="Personal Vault"
+                                           FontSize="11"
+                                           Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="2" Text="&#xE019;"
+                                       FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                       Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </Button>
 
-                                <!-- Profile Picture -->
-                                <Border Grid.Column="0"
-                                        Width="32"
-                                        Height="32"
-                                        CornerRadius="16"
-                                        Background="{StaticResource ModernPrimaryGradientBrush}"
-                                        Margin="0,0,12,0">
-                                    <TextBlock Text="👤"
-                                               FontSize="16"
-                                               Foreground="White"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"/>
-                                </Border>
+                    <!-- Search -->
+                    <Border Padding="12,6">
+                        <ui:AutoSuggestBox x:Name="SearchBox"
+                                        QueryIcon="Find"
+                                        ui:ControlHelper.PlaceholderText="Search..."
+                                        TextChanged="SearchBox_TextChanged"
+                                        QuerySubmitted="SearchBox_QuerySubmitted"
+                                        Style="{StaticResource ModernAutoSuggestBoxStyle}"
+                                        Height="34"/>
+                    </Border>
 
-                                <!-- User Info -->
-                                <StackPanel Grid.Column="1"
-                                            VerticalAlignment="Center"
-                                            Margin="2">
-                                    <TextBlock x:Name="UserNameText"
-                                               Text="David Smith"
-                                               FontSize="14"
-                                               FontWeight="SemiBold"
-                                               Foreground="{StaticResource ModernTextPrimaryBrush}"/>
-                                    <TextBlock Text="Personal"
-                                               FontSize="12"
-                                               Foreground="{StaticResource ModernTextSecondaryBrush}"/>
-                                </StackPanel>
-
-                                <!-- Dropdown Arrow -->
-                                <TextBlock Grid.Column="2"
-                                          Text="&#xE019;"
-                                          FontFamily="Segoe MDL2 Assets"
-                                          FontSize="12"
-                                          Foreground="{StaticResource ModernTextSecondaryBrush}"/>
-                            </Grid>
+                    <!-- New Item button -->
+                    <Border Padding="12,0,12,10">
+                        <Button HorizontalAlignment="Stretch"
+                                Height="34"
+                                Click="NewItemButton_Click"
+                                Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd"
+                                            CornerRadius="6" Padding="10,6"
+                                            BorderThickness="1">
+                                        <Border.Background><SolidColorBrush Color="#2D2D2D"/></Border.Background>
+                                        <Border.BorderBrush><SolidColorBrush Color="#454545"/></Border.BorderBrush>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <TextBlock Text="&#xE109;" FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="12" Foreground="#B0B0B0" Margin="0,0,6,0"/>
+                                            <TextBlock Text="New Item" Foreground="#E5E5E5"
+                                                       FontSize="13" FontWeight="Medium"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background">
+                                                <Setter.Value><SolidColorBrush Color="#3A3A3A"/></Setter.Value>
+                                            </Setter>
+                                            <Setter TargetName="Bd" Property="BorderBrush">
+                                                <Setter.Value><SolidColorBrush Color="#555555"/></Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="Bd" Property="Background">
+                                                <Setter.Value><SolidColorBrush Color="#272727"/></Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
                         </Button>
                     </Border>
-                </Grid>
+
+                    <!-- hairline divider -->
+                    <Border Height="1" Background="#FFFFFF14" Margin="0,0"/>
+
+                </StackPanel>
             </ui:NavigationView.PaneHeader>
 
-            <!-- Header Content with Search Box -->
-            <ui:NavigationView.Header>
-                <Grid Margin="0">
-                    <ui:AutoSuggestBox x:Name="SearchBox"
-                                    QueryIcon="Find"
-                                    ui:ControlHelper.PlaceholderText="Search passwords..."
-                                    TextChanged="SearchBox_TextChanged"
-                                    QuerySubmitted="SearchBox_QuerySubmitted"
-                                    Style="{StaticResource ModernAutoSuggestBoxStyle}"
-                                    CornerRadius="8"
-                                    Height="36"
-                                    HorizontalAlignment="Stretch"/>
-                </Grid>
-            </ui:NavigationView.Header>
-
-            <!-- Navigation Menu Items -->
+            <!-- Nav items -->
             <ui:NavigationView.MenuItems>
-                <!-- All Items -->
                 <ui:NavigationViewItem x:Name="AllItemsNavItem"
                                     Content="All Items"
                                     Tag="AllItems"
                                     MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE8A5;" FontSize="18"
-                                  Foreground="{StaticResource ModernPrimaryBrush}"/>
+                        <ui:FontIcon Glyph="&#xE8A5;" FontSize="16"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItem Content="Favourites" Tag="Favorites"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE734;" FontSize="16"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItemSeparator Background="#FFFFFF14"/>
+                <ui:NavigationViewItemHeader Foreground="#6B7280" Content="Categories"/>
+
+                <ui:NavigationViewItem Content="Logins" Tag="LoginCategory"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE72E;" FontSize="16"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItem Content="Credit Cards" Tag="CreditCardCategory"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE8C7;" FontSize="16"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItem Content="Secure Notes" Tag="SecureNotesCategory"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE70B;" FontSize="16"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItem Content="Wi-Fi" Tag="WiFiCategory"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE701;" FontSize="16"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItem Content="Passkeys" Tag="PasskeysCategory"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE928;" FontSize="16"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItemSeparator Background="#FFFFFF14"/>
+                <ui:NavigationViewItemHeader Foreground="#6B7280" Content="Manage"/>
+
+                <ui:NavigationViewItem Content="Categories" Tag="Categories"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE8FD;" FontSize="16"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItem Content="Import" Tag="Import"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE8B5;" FontSize="16"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
 
-            <!-- Content Frame for Navigation -->
+            <!-- Footer nav items -->
+            <ui:NavigationView.FooterMenuItems>
+                <ui:NavigationViewItem Content="Archive" Tag="Archive"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE7B8;" FontSize="16"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItem Content="Recently Deleted" Tag="RecentlyDeleted"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE74D;" FontSize="16"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItem Content="Settings" Tag="Settings"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE713;" FontSize="16"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+            </ui:NavigationView.FooterMenuItems>
+
+            <!-- Pane footer: dynamic vaults + tags -->
+            <ui:NavigationView.PaneFooter>
+                <StackPanel Margin="0,0,0,8">
+                    <!-- hairline divider -->
+                    <Border Height="1" Background="#FFFFFF14" Margin="0,4"/>
+
+                    <!-- Dynamic favourite categories -->
+                    <Grid Margin="16,6,8,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="VAULTS" FontSize="10" FontWeight="SemiBold"
+                                   Foreground="{StaticResource ModernTextTertiaryBrush}"
+                                   VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" Background="Transparent" BorderThickness="0"
+                                Padding="4" MinWidth="0" MinHeight="0"
+                                ToolTipService.ToolTip="Add Category"
+                                Click="AddCategoryNavButton_Click">
+                            <TextBlock Text="&#xE109;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                       Foreground="{StaticResource ModernTextTertiaryBrush}"/>
+                        </Button>
+                    </Grid>
+                    <StackPanel x:Name="FavoriteCategoriesPanel"/>
+
+                    <!-- Dynamic tags -->
+                    <Grid Margin="16,10,8,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="TAGS" FontSize="10" FontWeight="SemiBold"
+                                   Foreground="{StaticResource ModernTextTertiaryBrush}"
+                                   VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" Background="Transparent" BorderThickness="0"
+                                Padding="4" MinWidth="0" MinHeight="0"
+                                ToolTipService.ToolTip="Add Tag"
+                                Click="AddTagNavButton_Click">
+                            <TextBlock Text="&#xE109;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                       Foreground="{StaticResource ModernTextTertiaryBrush}"/>
+                        </Button>
+                    </Grid>
+                    <StackPanel x:Name="SidebarTagsPanel"/>
+                </StackPanel>
+            </ui:NavigationView.PaneFooter>
+
+            <!-- Content Frame -->
             <Frame x:Name="ContentFrame"
                    Background="{StaticResource ModernBackgroundBrush}"
                    NavigationUIVisibility="Hidden"
                    Navigated="Frame_Navigated"/>
 
         </ui:NavigationView>
-
     </Grid>
-
 </Window>

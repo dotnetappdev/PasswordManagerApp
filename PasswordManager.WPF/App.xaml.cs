@@ -26,9 +26,59 @@ public partial class App : Application
     /// </summary>
     public App()
     {
+        // Force ModernWPF dark mode before any UI is created
+        ModernWpf.ThemeManager.Current.ApplicationTheme = ModernWpf.ApplicationTheme.Dark;
+
         this.InitializeComponent();
+
+        // Override NavigationView resources after InitializeComponent so they sit
+        // above ModernWPF's injected theme dictionary in the resource lookup chain.
+        ApplyNavigationViewDarkResources();
+
         _host = CreateHostBuilder().Build();
         InitializeSentry();
+
+        // ModernWpf bug: ScrollBarHelper animates a frozen brush's Color when IsEnabled
+        // changes, causing Storyboard.VerifyPathIsAnimatable to throw on .NET 6+.
+        DispatcherUnhandledException += (_, args) =>
+        {
+            if (args.Exception is InvalidOperationException
+                && args.Exception.StackTrace?.Contains("VerifyPathIsAnimatable") == true)
+            {
+                args.Handled = true;
+            }
+        };
+    }
+
+    private static void ApplyNavigationViewDarkResources()
+    {
+        var r = Application.Current.Resources;
+        var sidebar   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x0D, 0x11, 0x17));
+        var content   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x11, 0x18, 0x27));
+        var textNorm  = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xD1, 0xD5, 0xDB));
+        var textSel   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.White);
+        var bgSel     = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0x37, 0x99, 0xEF));
+        var bgHover   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x18, 0xFF, 0xFF, 0xFF));
+        var separator = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x18, 0xFF, 0xFF, 0xFF));
+        var header    = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x6B, 0x72, 0x80));
+
+        r["NavigationViewDefaultPaneBackground"]             = sidebar;
+        r["NavigationViewExpandedPaneBackground"]            = sidebar;
+        r["NavigationViewTopPaneBackground"]                 = sidebar;
+        r["NavigationViewContentBackground"]                 = content;
+        r["NavigationViewContentGridBackground"]             = content;
+        r["NavigationViewItemForeground"]                    = textNorm;
+        r["NavigationViewItemForegroundSelected"]            = textSel;
+        r["NavigationViewItemForegroundPointerOver"]         = textSel;
+        r["NavigationViewItemForegroundPressed"]             = textNorm;
+        r["NavigationViewItemForegroundDisabled"]            = header;
+        r["NavigationViewItemBackground"]                    = System.Windows.Media.Brushes.Transparent;
+        r["NavigationViewItemBackgroundSelected"]            = bgSel;
+        r["NavigationViewItemBackgroundPointerOver"]         = bgHover;
+        r["NavigationViewItemBackgroundPressed"]             = bgHover;
+        r["NavigationViewItemBackgroundSelectedPointerOver"] = bgSel;
+        r["NavigationViewItemSeparatorForeground"]           = separator;
+        r["NavigationViewItemHeaderForeground"]              = header;
     }
 
     private void InitializeSentry()

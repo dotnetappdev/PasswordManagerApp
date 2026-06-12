@@ -16,44 +16,44 @@
          Colour Tokens
     ═══════════════════════════════════════════ -->
 
-    <!-- Brand / Primary -->
-    <Color x:Key="ModernPrimaryColor">#7C3AED</Color>
-    <Color x:Key="ModernPrimaryLightColor">#A78BFA</Color>
-    <Color x:Key="ModernPrimaryDarkColor">#5B21B6</Color>
+    <!-- Brand / Primary — steel blue, no purple -->
+    <Color x:Key="ModernPrimaryColor">#2563EB</Color>
+    <Color x:Key="ModernPrimaryLightColor">#60A5FA</Color>
+    <Color x:Key="ModernPrimaryDarkColor">#1D4ED8</Color>
 
-    <!-- Accent (pink) -->
-    <Color x:Key="ModernAccentColor">#EC4899</Color>
-    <Color x:Key="ModernAccentLightColor">#F472B6</Color>
+    <!-- Accent — subtle indigo, used sparingly -->
+    <Color x:Key="ModernAccentColor">#6366F1</Color>
+    <Color x:Key="ModernAccentLightColor">#818CF8</Color>
 
     <!-- Semantic -->
     <Color x:Key="ModernSuccessColor">#10B981</Color>
     <Color x:Key="ModernWarningColor">#F59E0B</Color>
     <Color x:Key="ModernErrorColor">#EF4444</Color>
-    <Color x:Key="ModernInfoColor">#A78BFA</Color>
+    <Color x:Key="ModernInfoColor">#60A5FA</Color>
 
-    <!-- Dark theme surfaces (deeper, richer) -->
-    <Color x:Key="ModernBackgroundColor">#0F1117</Color>
-    <Color x:Key="ModernSurfaceColor">#1A1D27</Color>
-    <Color x:Key="ModernCardColor">#1A1D27</Color>
-    <Color x:Key="ModernElevatedSurfaceColor">#232635</Color>
-    <Color x:Key="ModernOverlayColor">#2C2F42</Color>
-    <Color x:Key="ModernBorderColor">#FFFFFF14</Color>   <!-- rgba(255,255,255,0.08) -->
-    <Color x:Key="ModernFormBackgroundColor">#1A1D27</Color>
+    <!-- Windows 11 dark mode neutral grey — zero blue tint -->
+    <Color x:Key="ModernBackgroundColor">#1A1A1A</Color>
+    <Color x:Key="ModernSurfaceColor">#2D2D2D</Color>
+    <Color x:Key="ModernCardColor">#242424</Color>
+    <Color x:Key="ModernElevatedSurfaceColor">#3A3A3A</Color>
+    <Color x:Key="ModernOverlayColor">#484848</Color>
+    <Color x:Key="ModernBorderColor">#FFFFFF1C</Color>
+    <Color x:Key="ModernFormBackgroundColor">#141414</Color>
 
     <!-- Sidebar -->
-    <Color x:Key="ModernSidebarBackgroundColor">#0B0D14</Color>
-    <Color x:Key="ModernNewItemButtonColor">#7C3AED</Color>
+    <Color x:Key="ModernSidebarBackgroundColor">#141414</Color>
+    <Color x:Key="ModernNewItemButtonColor">#2563EB</Color>
 
     <!-- Light theme variants -->
-    <Color x:Key="ModernLightBackgroundColor">#F0F2FF</Color>
+    <Color x:Key="ModernLightBackgroundColor">#F3F4F6</Color>
     <Color x:Key="ModernLightSurfaceColor">#FFFFFF</Color>
     <Color x:Key="ModernLightCardColor">#FFFFFF</Color>
-    <Color x:Key="ModernLightFormBackgroundColor">#F5F7FF</Color>
+    <Color x:Key="ModernLightFormBackgroundColor">#F9FAFB</Color>
 
-    <!-- Text (dark theme) -->
-    <Color x:Key="ModernTextPrimaryColor">#F0F2FF</Color>
-    <Color x:Key="ModernTextSecondaryColor">#8B90A7</Color>
-    <Color x:Key="ModernTextTertiaryColor">#5A5F78</Color>
+    <!-- Text — Windows 11 dark mode white / grey -->
+    <Color x:Key="ModernTextPrimaryColor">#E5E5E5</Color>
+    <Color x:Key="ModernTextSecondaryColor">#9D9D9D</Color>
+    <Color x:Key="ModernTextTertiaryColor">#6A6A6A</Color>
 
     <!-- ═══════════════════════════════════════════
          Solid Brushes
@@ -81,8 +81,8 @@
                      Color="{StaticResource ModernNewItemButtonColor}"/>
 
     <!-- Button state brushes -->
-    <SolidColorBrush x:Key="ModernButtonPointerOverBrush" Color="#232635" />
-    <SolidColorBrush x:Key="ModernButtonPressedBrush"     Color="#1A1D27" />
+    <SolidColorBrush x:Key="ModernButtonPointerOverBrush" Color="#283141" />
+    <SolidColorBrush x:Key="ModernButtonPressedBrush"     Color="#1F2937" />
 
     <SolidColorBrush x:Key="ModernTextPrimaryBrush"    Color="{StaticResource ModernTextPrimaryColor}"/>
     <SolidColorBrush x:Key="ModernTextSecondaryBrush"  Color="{StaticResource ModernTextSecondaryColor}"/>
@@ -95,10 +95,10 @@
 
     <!-- ModernWPF TextControl resource overrides — keeps TextBox/PasswordBox dark on all states.
          ModernWPF's built-in templates read these keys via DynamicResource so no custom Template needed. -->
-    <SolidColorBrush x:Key="TextControlBackground"                    Color="{StaticResource ModernSurfaceColor}"/>
-    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"         Color="#252836"/>
-    <SolidColorBrush x:Key="TextControlBackgroundFocused"             Color="{StaticResource ModernSurfaceColor}"/>
-    <SolidColorBrush x:Key="TextControlBackgroundDisabled"            Color="{StaticResource ModernSurfaceColor}"/>
+    <SolidColorBrush x:Key="TextControlBackground"                    Color="#1F2937"/>
+    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"         Color="#283141"/>
+    <SolidColorBrush x:Key="TextControlBackgroundFocused"             Color="#1F2937"/>
+    <SolidColorBrush x:Key="TextControlBackgroundDisabled"            Color="#1C2433"/>
     <SolidColorBrush x:Key="TextControlForeground"                    Color="{StaticResource ModernTextPrimaryColor}"/>
     <SolidColorBrush x:Key="TextControlForegroundPointerOver"         Color="{StaticResource ModernTextPrimaryColor}"/>
     <SolidColorBrush x:Key="TextControlForegroundFocused"             Color="{StaticResource ModernTextPrimaryColor}"/>
@@ -112,38 +112,65 @@
     <SolidColorBrush x:Key="TextControlBorderBrushFocused"            Color="{StaticResource ModernPrimaryColor}"/>
     <SolidColorBrush x:Key="TextControlBorderBrushDisabled"           Color="{StaticResource ModernBorderColor}"/>
 
-    <!-- NavigationView pane background overrides -->
-    <SolidColorBrush x:Key="ui:NavigationViewDefaultPaneBackground"
-            Color="{StaticResource ModernSidebarBackgroundColor}"/>
-    <SolidColorBrush x:Key="ui:NavigationViewExpandedPaneBackground"
-            Color="{StaticResource ModernSidebarBackgroundColor}"/>
-    <SolidColorBrush x:Key="ui:NavigationViewTopPaneBackground"
-            Color="{StaticResource ModernSidebarBackgroundColor}"/>
-    <SolidColorBrush x:Key="ui:NavigationViewContentBackground"
-            Color="{StaticResource ModernBackgroundColor}"/>
-    <SolidColorBrush x:Key="ui:NavigationViewContentGridBackground"
-            Color="{StaticResource ModernBackgroundColor}"/>
+    <!-- ═══════════════════════════════════════════
+         NavigationView overrides — keys WITHOUT ui: prefix so ModernWPF picks them up
+    ═══════════════════════════════════════════ -->
 
-    <!-- NavigationView margins -->
+    <!-- Pane backgrounds -->
+    <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground"      Color="#0D1117"/>
+    <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground"     Color="#0D1117"/>
+    <SolidColorBrush x:Key="NavigationViewTopPaneBackground"          Color="#0D1117"/>
+    <SolidColorBrush x:Key="NavigationViewContentBackground"          Color="#111827"/>
+    <SolidColorBrush x:Key="NavigationViewContentGridBackground"      Color="#111827"/>
+
+    <!-- Item foregrounds -->
+    <SolidColorBrush x:Key="NavigationViewItemForeground"             Color="#D1D5DB"/>
+    <SolidColorBrush x:Key="NavigationViewItemForegroundSelected"     Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver"  Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="NavigationViewItemForegroundPressed"      Color="#E5E7EB"/>
+    <SolidColorBrush x:Key="NavigationViewItemForegroundDisabled"     Color="#4B5563"/>
+
+    <!-- Item backgrounds -->
+    <SolidColorBrush x:Key="NavigationViewItemBackground"                    Color="Transparent"/>
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected"             Color="#1E3A5F"/>
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver"          Color="#1F2937"/>
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundPressed"              Color="#374151"/>
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver"  Color="#1E3A5F"/>
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPressed"      Color="#1A3355"/>
+
+    <!-- Separator — thin translucent white line, not yellow -->
+    <SolidColorBrush x:Key="NavigationViewItemSeparatorForeground"    Color="#FFFFFF18"/>
+
+    <!-- Section header text -->
+    <SolidColorBrush x:Key="NavigationViewItemHeaderForeground"       Color="#6B7280"/>
+
+    <!-- NavigationView margins — zero so content fills properly -->
+    <Thickness x:Key="NavigationViewContentMargin">0</Thickness>
+    <Thickness x:Key="NavigationViewMinimalContentGridMargin">0</Thickness>
+    <Thickness x:Key="NavigationViewHeaderMargin">0</Thickness>
+    <Thickness x:Key="NavigationViewTopHeaderMargin">0</Thickness>
+    <Thickness x:Key="NavigationViewContentGridMargin">0</Thickness>
+
+    <!-- Keep the ui: prefixed versions too for any path that reads them -->
+    <SolidColorBrush x:Key="ui:NavigationViewDefaultPaneBackground"   Color="#0D1117"/>
+    <SolidColorBrush x:Key="ui:NavigationViewExpandedPaneBackground"  Color="#0D1117"/>
+    <SolidColorBrush x:Key="ui:NavigationViewTopPaneBackground"       Color="#0D1117"/>
+    <SolidColorBrush x:Key="ui:NavigationViewContentBackground"       Color="#111827"/>
+    <SolidColorBrush x:Key="ui:NavigationViewContentGridBackground"   Color="#111827"/>
     <Thickness x:Key="ui:NavigationViewContentMargin">0</Thickness>
-    <Thickness x:Key="ui:NavigationViewMinimalContentGridMargin">0</Thickness>
-    <Thickness x:Key="ui:NavigationViewHeaderMargin">0</Thickness>
-    <Thickness x:Key="ui:NavigationViewTopHeaderMargin">0</Thickness>
     <Thickness x:Key="ui:NavigationViewContentGridMargin">0</Thickness>
-    <Thickness x:Key="Topui:NavigationViewContentMargin">0</Thickness>
-    <Thickness x:Key="Topui:NavigationViewContentGridMargin">0</Thickness>
 
     <!-- ═══════════════════════════════════════════
          Gradient Brushes
     ═══════════════════════════════════════════ -->
 
-    <!-- Brand gradient: violet → light violet (135°) -->
+    <!-- Brand gradient: blue → indigo -->
     <LinearGradientBrush x:Key="ModernBrandGradientBrush" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="{StaticResource ModernPrimaryColor}"  Offset="0"/>
         <GradientStop Color="{StaticResource ModernAccentColor}"   Offset="1"/>
     </LinearGradientBrush>
 
-    <!-- Primary-only gradient (for buttons) -->
+    <!-- Primary gradient: steel blue tones -->
     <LinearGradientBrush x:Key="ModernPrimaryGradientBrush" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="{StaticResource ModernPrimaryColor}"      Offset="0"/>
         <GradientStop Color="{StaticResource ModernPrimaryLightColor}" Offset="1"/>
@@ -155,23 +182,23 @@
         <GradientStop Color="{StaticResource ModernAccentLightColor}" Offset="1"/>
     </LinearGradientBrush>
 
-    <!-- Card surface gradient (subtle top-to-bottom depth) -->
+    <!-- Card surface gradient -->
     <LinearGradientBrush x:Key="ModernCardGradientBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#1E2130" Offset="0"/>
-        <GradientStop Color="#1A1D27" Offset="1"/>
+        <GradientStop Color="#252F3F" Offset="0"/>
+        <GradientStop Color="#1F2937" Offset="1"/>
     </LinearGradientBrush>
 
-    <!-- Default Button Style for consistency -->
+    <!-- Default Button Style — Windows 11 dark mode neutral grey -->
     <Style TargetType="Button">
-        <Setter Property="Background"     Value="{StaticResource ModernBrandGradientBrush}"/>
-        <Setter Property="Foreground"     Value="White"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Padding"        Value="18,10"/>
-        <Setter Property="FontSize"       Value="14"/>
-        <Setter Property="FontWeight"     Value="SemiBold"/>
-        <Setter Property="MinWidth"       Value="120"/>
-        <Setter Property="MinHeight"      Value="38"/>
-        <Setter Property="Cursor"         Value="Hand"/>
+        <Setter Property="Background"      Value="#2D2D2D"/>
+        <Setter Property="Foreground"      Value="#E5E5E5"/>
+        <Setter Property="BorderBrush"     Value="#454545"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding"         Value="12,8"/>
+        <Setter Property="FontSize"        Value="14"/>
+        <Setter Property="FontWeight"      Value="Normal"/>
+        <Setter Property="MinHeight"       Value="34"/>
+        <Setter Property="Cursor"          Value="Hand"/>
     </Style>
 
     <!-- TextBox — let ModernWPF's template handle VSM animations; override only colours -->
@@ -310,76 +337,57 @@
         </Setter>
     </Style>
 
-    <!-- Enhanced Modern Primary Button Style with 1Password-like behavior -->
+    <!-- Enhanced Modern Primary Button Style -->
     <Style x:Key="ModernPrimaryButtonStyle"
            TargetType="Button">
-        <Setter Property="Background"
-                Value="{StaticResource ModernPrimaryBrush}"/>
-        <Setter Property="Foreground"
-                Value="White"/>
-        <Setter Property="BorderThickness"
-                Value="0"/>
-        <!-- <Setter Property="CornerRadius" Value="0"/>-->
-        <Setter Property="Padding"
-                Value="16,12"/>
-        <Setter Property="FontSize"
-                Value="14"/>
-        <Setter Property="FontWeight"
-                Value="SemiBold"/>
-        <Setter Property="MinWidth"
-                Value="120"/>
-        <Setter Property="MinHeight"
-                Value="36"/>
+        <Setter Property="Background"      Value="{StaticResource ModernPrimaryBrush}"/>
+        <Setter Property="Foreground"      Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Cursor"          Value="Hand"/>
+        <Setter Property="Padding"         Value="16,10"/>
+        <Setter Property="FontSize"        Value="14"/>
+        <Setter Property="FontWeight"      Value="SemiBold"/>
+        <Setter Property="MinWidth"        Value="100"/>
+        <Setter Property="MinHeight"       Value="36"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="RootBorder"
                             Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6"
                             Padding="{TemplateBinding Padding}">
-                        <Grid>
-                            <ContentPresenter x:Name="ContentPresenter"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Content="{TemplateBinding Content}"
-                                              />
-                            <ui:ProgressRing x:Name="LoadingIndicator"
-                                          Width="20"
-                                          Height="20"
-                                          IsActive="False"
-                                          Visibility="Collapsed"
-                                          Foreground="White"/>
-                        </Grid>
-                        
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Content="{TemplateBinding Content}"/>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource ModernPrimaryDarkBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="RootBorder" Property="Opacity" Value="0.85"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="RootBorder" Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
 
-    <!-- Enhanced Modern Secondary Button Style with 1Password-like behavior -->
+    <!-- Modern Secondary Button Style — Windows 11 dark neutral -->
     <Style x:Key="ModernSecondaryButtonStyle"
            TargetType="Button">
-        <Setter Property="Background"
-                Value="Transparent"/>
-        <Setter Property="Foreground"
-                Value="{StaticResource ModernTextPrimaryBrush}"/>
-        <Setter Property="BorderBrush"
-                Value="{StaticResource ModernBorderBrush}"/>
-        <Setter Property="BorderThickness"
-                Value="0"/>
-        <!-- <Setter Property="CornerRadius" Value="0"/>-->
-        <Setter Property="Padding"
-                Value="16,12"/>
-        <Setter Property="FontSize"
-                Value="14"/>
-        <Setter Property="FontWeight"
-                Value="SemiBold"/>
-        <Setter Property="MinWidth"
-                Value="120"/>
-        <Setter Property="MinHeight"
-                Value="36"/>
+        <Setter Property="Background"      Value="#2D2D2D"/>
+        <Setter Property="Foreground"      Value="#E5E5E5"/>
+        <Setter Property="BorderBrush"     Value="#454545"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Cursor"          Value="Hand"/>
+        <Setter Property="Padding"         Value="16,10"/>
+        <Setter Property="FontSize"        Value="14"/>
+        <Setter Property="FontWeight"      Value="Medium"/>
+        <Setter Property="MinWidth"        Value="80"/>
+        <Setter Property="MinHeight"       Value="36"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -387,14 +395,23 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6"
                             Padding="{TemplateBinding Padding}">
-                        <ContentPresenter x:Name="ContentPresenter"
-                                          HorizontalAlignment="Center"
-                                          VerticalAlignment="Center"
-                                          Content="{TemplateBinding Content}"
-                                          />
-                        
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Content="{TemplateBinding Content}"/>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="RootBorder" Property="Background" Value="#3A3A3A"/>
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="#555555"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="RootBorder" Property="Opacity" Value="0.8"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="RootBorder" Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -481,28 +498,18 @@
                 Value="36"/>
     </Style>
 
-    <!-- Card Button Style for Item Type Selection -->
-    <Style x:Key="CardButtonStyle"
-            TargetType="Button">
-        <Setter Property="Background"
-                Value="{StaticResource ModernSurfaceBrush}"/>
-        <Setter Property="Foreground"
-                Value="{StaticResource ModernTextPrimaryBrush}"/>
-        <Setter Property="BorderBrush"
-                Value="{StaticResource ModernBorderBrush}"/>
-        <Setter Property="BorderThickness"
-                Value="0"/>
-        <!-- <Setter Property="CornerRadius" Value="0"/>-->
-        <Setter Property="Padding"
-                Value="12"/>
-        <Setter Property="HorizontalAlignment"
-                Value="Stretch"/>
-        <Setter Property="VerticalAlignment"
-                Value="Stretch"/>
-        <Setter Property="HorizontalContentAlignment"
-                Value="Center"/>
-        <Setter Property="VerticalContentAlignment"
-                Value="Center"/>
+    <!-- Card Button Style for Item Type Selection — dark surface with hover -->
+    <Style x:Key="CardButtonStyle" TargetType="Button">
+        <Setter Property="Background"              Value="#1A2234"/>
+        <Setter Property="Foreground"              Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush"             Value="#2D3748"/>
+        <Setter Property="BorderThickness"         Value="1"/>
+        <Setter Property="Cursor"                  Value="Hand"/>
+        <Setter Property="Padding"                 Value="12"/>
+        <Setter Property="HorizontalAlignment"     Value="Stretch"/>
+        <Setter Property="VerticalAlignment"       Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment"   Value="Center"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -510,14 +517,21 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="10"
                             Padding="{TemplateBinding Padding}">
-                        <ContentPresenter x:Name="ContentPresenter"
-                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                          Content="{TemplateBinding Content}"
-                                          />
-                        
+                                          Content="{TemplateBinding Content}"/>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="RootBorder" Property="Background" Value="#22304A"/>
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="#3B4D6A"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="RootBorder" Property="Opacity" Value="0.8"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -580,6 +594,21 @@
                 Value="Normal"/>
         <Setter Property="Foreground"
                 Value="{StaticResource ModernTextSecondaryBrush}"/>
+    </Style>
+
+    <!-- Implicit dark-mode styles for NavigationView sub-controls.
+         These bypass the resource-key lookup entirely and always apply. -->
+    <Style TargetType="ui:NavigationViewItemHeader">
+        <Setter Property="Foreground" Value="#6B7280"/>
+        <Setter Property="FontSize"   Value="10"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Margin"     Value="0,8,0,2"/>
+    </Style>
+
+    <Style TargetType="ui:NavigationViewItemSeparator">
+        <Setter Property="Background" Value="#FFFFFF14"/>
+        <Setter Property="Margin"     Value="12,4"/>
+        <Setter Property="Height"     Value="1"/>
     </Style>
 
     <!-- Modern Navigation Styles -->
@@ -772,7 +801,7 @@
         <Setter Property="Padding"
                 Value="16,10"/>
         <Setter Property="FontSize"
-                Value="0"/>
+                Value="14"/>
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
@@ -888,13 +917,14 @@
                     <Grid x:Name="Container">
                         <!-- Backdrop -->
                         <Rectangle x:Name="SmokeLayerBackground"
-                                   Fill="{DynamicResource ui:ContentDialogSmokeFill}"/>
+                                   Fill="#99000000"/>
                         
                         <!-- Dialog container with absolute centering -->
                         <Border x:Name="BackgroundElement"
                                 Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
+                                BorderBrush="#3A3F4E"
+                                BorderThickness="1"
+                                CornerRadius="12"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 MaxWidth="{TemplateBinding MaxWidth}"
@@ -902,6 +932,9 @@
                                 MinWidth="{TemplateBinding MinWidth}"
                                 MinHeight="{TemplateBinding MinHeight}"
                                 Margin="{TemplateBinding Margin}">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#000000" BlurRadius="40" ShadowDepth="8" Opacity="0.6" Direction="270"/>
+                            </Border.Effect>
                             
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -948,10 +981,11 @@
                                 <!-- Button area -->
                                 <Border x:Name="CommandSpace"
                                         Grid.Row="1"
-                                        Background="{DynamicResource LayerFillColorDefaultBrush}"
-                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        Background="#252F3F"
+                                        BorderBrush="#3A3F4E"
                                         BorderThickness="0,1,0,0"
-                                        Padding="24,16">
+                                        Padding="24,16"
+                                        CornerRadius="0,0,12,12">
                                     <Grid x:Name="CommandAreaGrid">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -1037,107 +1071,83 @@
                 Value="Wrap"/>
     </Style>
 
-    <!-- New Item Button Style with 1Password #C08FDA color -->
-    <Style x:Key="NewItemButtonStyle"
-            TargetType="Button">
-        <Setter Property="Background"
-                Value="{StaticResource ModernNewItemButtonBrush}"/>
-        <Setter Property="Foreground"
-                Value="White"/>
-        <Setter Property="BorderThickness"
-                Value="0"/>
-        <!-- <Setter Property="CornerRadius" Value="0"/>-->
-        <Setter Property="Padding"
-                Value="16,12"/>
-        <Setter Property="FontSize"
-                Value="14"/>
-        <Setter Property="FontWeight"
-                Value="SemiBold"/>
-        <Setter Property="MinWidth"
-                Value="120"/>
-        <Setter Property="MinHeight"
-                Value="36"/>
+    <!-- New Item Button Style -->
+    <Style x:Key="NewItemButtonStyle" TargetType="Button">
+        <Setter Property="Background"      Value="{StaticResource ModernPrimaryBrush}"/>
+        <Setter Property="Foreground"      Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Cursor"          Value="Hand"/>
+        <Setter Property="Padding"         Value="12,8"/>
+        <Setter Property="FontSize"        Value="14"/>
+        <Setter Property="FontWeight"      Value="SemiBold"/>
+        <Setter Property="MinHeight"       Value="36"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="RootBorder"
                             Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6"
                             Padding="{TemplateBinding Padding}">
-                        <Grid>
-                            <ContentPresenter x:Name="ContentPresenter"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Content="{TemplateBinding Content}"
-                                              />
-                            <ui:ProgressRing x:Name="LoadingIndicator"
-                                          Width="20"
-                                          Height="20"
-                                          IsActive="False"
-                                          Visibility="Collapsed"
-                                          Foreground="White"/>
-                        </Grid>
-                        
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Content="{TemplateBinding Content}"/>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource ModernPrimaryDarkBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="RootBorder" Property="Opacity" Value="0.85"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
 
-    <!-- Enhanced Button Styles for Better Visual Feedback -->
-    <Style x:Key="ModernIconButtonStyle"
-            TargetType="Button">
-        <Setter Property="Background"
-                Value="Transparent"/>
-        <Setter Property="Foreground"
-                Value="{StaticResource ModernTextSecondaryBrush}"/>
-        <Setter Property="BorderThickness"
-                Value="0"/>
-        <!-- <Setter Property="CornerRadius" Value="0"/>-->
-        <Setter Property="Padding"
-                Value="0"/>
-        <Setter Property="MinWidth"
-                Value="0"/>
-        <Setter Property="MinHeight"
-                Value="0"/>
+    <!-- Icon Button Style — transparent with hover feedback -->
+    <Style x:Key="ModernIconButtonStyle" TargetType="Button">
+        <Setter Property="Background"      Value="Transparent"/>
+        <Setter Property="Foreground"      Value="{StaticResource ModernTextSecondaryBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Cursor"          Value="Hand"/>
+        <Setter Property="Padding"         Value="6"/>
+        <Setter Property="MinWidth"        Value="0"/>
+        <Setter Property="MinHeight"       Value="0"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="RootBorder"
                             Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="4"
                             Padding="{TemplateBinding Padding}">
-                        <ContentPresenter x:Name="ContentPresenter"
-                                          Content="{TemplateBinding Content}"
+                        <ContentPresenter Content="{TemplateBinding Content}"
                                           HorizontalAlignment="Center"
                                           VerticalAlignment="Center"/>
-                        
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="RootBorder" Property="Background" Value="#2A3142"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="RootBorder" Property="Opacity" Value="0.7"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
 
-    <!-- Enhanced TextBox Style with better validation feedback -->
+    <!-- Enhanced TextBox Style -->
     <Style x:Key="ModernTextBoxStyle"
             TargetType="TextBox">
-        <Setter Property="Background"
-                Value="{StaticResource ModernSurfaceBrush}"/>
-        <Setter Property="Foreground"
-                Value="{StaticResource ModernTextPrimaryBrush}"/>
-        <Setter Property="BorderBrush"
-                Value="{StaticResource ModernBorderBrush}"/>
-        <Setter Property="BorderThickness"
-                Value="0"/>
-        <!-- <Setter Property="CornerRadius" Value="0"/>-->
-        <Setter Property="Padding"
-                Value="12,10"/>
-        <Setter Property="FontSize"
-                Value="0"/>
-        <Setter Property="MinHeight"
-                Value="0"/>
+        <Setter Property="Background"      Value="#252F3F"/>
+        <Setter Property="Foreground"      Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush"     Value="#3A3F4E"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding"         Value="12,10"/>
+        <Setter Property="FontSize"        Value="14"/>
+        <Setter Property="MinHeight"       Value="36"/>
+        <Setter Property="CaretBrush"      Value="{StaticResource ModernTextPrimaryBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
@@ -1145,15 +1155,11 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}">
-                        <ScrollViewer x:Name="ContentElement"
+                        <ScrollViewer x:Name="PART_ContentHost"
                                       Margin="{TemplateBinding Padding}"
                                       VerticalAlignment="Center"
-                                      
-                                      HorizontalScrollBarVisibility="Auto"
-                                      
-                                      VerticalScrollBarVisibility="Auto"
-                                      />
-                        
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Hidden"/>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -1163,21 +1169,13 @@
     <!-- Enhanced ComboBox Style -->
     <Style x:Key="ModernComboBoxStyle"
             TargetType="ComboBox">
-        <Setter Property="Background"
-                Value="{StaticResource ModernSurfaceBrush}"/>
-        <Setter Property="Foreground"
-                Value="{StaticResource ModernTextPrimaryBrush}"/>
-        <Setter Property="BorderBrush"
-                Value="{StaticResource ModernBorderBrush}"/>
-        <Setter Property="BorderThickness"
-                Value="0"/>
-        <!-- <Setter Property="CornerRadius" Value="0"/>-->
-        <Setter Property="Padding"
-                Value="12,10"/>
-        <Setter Property="FontSize"
-                Value="0"/>
-        <Setter Property="MinHeight"
-                Value="0"/>
+        <Setter Property="Background"      Value="#252F3F"/>
+        <Setter Property="Foreground"      Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush"     Value="#3A3F4E"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding"         Value="12,10"/>
+        <Setter Property="FontSize"        Value="14"/>
+        <Setter Property="MinHeight"       Value="36"/>
     </Style>
 
     <!-- Validation Error Message Style -->

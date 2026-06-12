@@ -135,11 +135,24 @@ public static class TestDataSeeder
         }
     }
 
+    // Public entry point used by SampleDataSeeder — skips the global Any() guard so
+    // each user can get their own seed data independently.
+    public static void SeedPasswordItemsForUser(PasswordManagerDbContext db, string userId)
+    {
+        SeedPasswordItemsCore(db, userId);
+    }
+
     private static void SeedPasswordItems(PasswordManagerDbContext db, string testUserId)
     {
         if (!db.PasswordItems.Any())
         {
-            var categories = db.Categories.ToList();
+            SeedPasswordItemsCore(db, testUserId);
+        }
+    }
+
+    private static void SeedPasswordItemsCore(PasswordManagerDbContext db, string testUserId)
+    {
+        var categories = db.Categories.ToList();
             var tags = db.Tags.ToList();
             var collections = db.Collections.ToList();
             
@@ -179,9 +192,8 @@ public static class TestDataSeeder
             // Password Items
             passwordItems.AddRange(CreatePasswordItems(testUserId, passwordCategoryId, personalCollectionId, workCollectionId, tags));
 
-            db.PasswordItems.AddRange(passwordItems);
-            db.SaveChanges();
-        }
+        db.PasswordItems.AddRange(passwordItems);
+        db.SaveChanges();
     }
 
     private static List<PasswordItem> CreateLoginItems(string testUserId, int loginCategoryId, 

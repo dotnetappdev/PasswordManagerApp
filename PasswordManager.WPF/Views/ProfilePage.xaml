@@ -290,7 +290,7 @@
                                 Margin="0,0,0,12">
                             <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets"
                                       FontSize="16"
-                                      Foreground="{StaticResource ModernPrimaryBrush}"/>
+                                      Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                             <TextBlock Text="Master Password"
                                        Style="{StaticResource ModernBodyStyle}"
                                        VerticalAlignment="Center"/>
@@ -363,7 +363,7 @@
                                 Margin="4">
                             <TextBlock Text="47"
                                        Style="{StaticResource ModernHeading2Style}"
-                                       Foreground="{StaticResource ModernPrimaryBrush}"
+                                       Foreground="{StaticResource ModernTextSecondaryBrush}"
                                        HorizontalAlignment="Center"/>
                             <TextBlock Text="Total Items"
                                        Style="{StaticResource ModernCaptionStyle}"

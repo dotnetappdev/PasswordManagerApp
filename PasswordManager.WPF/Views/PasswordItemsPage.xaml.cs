@@ -2,6 +2,7 @@ using ModernWpf.Controls;
 using System.Windows;
 using System.Windows.Controls;
 using ListView = System.Windows.Controls.ListView;
+using Controls = PasswordManager.WPF.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.WPF.ViewModels;
 using PasswordManager.WPF.Helpers;
@@ -67,7 +68,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
         if (_serviceProvider != null)
         {
-            // Seed sample data if needed (only runs once)
+            // Seed sample data for this user if they have none yet
             await SampleDataSeeder.SeedSampleDataAsync(_serviceProvider);
 
             // Load categories from database
@@ -386,20 +387,23 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         var selected = _selectedItem ?? (list?.SelectedItem as PasswordItem);
         if (selected == null) return;
 
-        var detailPassword = GetElement<TextBlock>("DetailPassword");
+        var detailPassword = GetElement<Controls.ReadOnlyField>("DetailPassword");
         if (detailPassword == null) return;
 
         // Toggle between masked and plain text
         if (!string.IsNullOrEmpty(detailPassword.Text) && detailPassword.Text.StartsWith("•"))
         {
             // Show actual password if available
-            detailPassword.Text = selected.Password ?? selected.LoginItem?.Password ?? "";
+            var plain = selected.Password ?? selected.LoginItem?.Password ?? "";
+            detailPassword.Text = plain;
+            detailPassword.CopyText = plain;
         }
         else
         {
             // Mask
             var pwd = selected.Password ?? selected.LoginItem?.Password ?? "";
             detailPassword.Text = string.IsNullOrEmpty(pwd) ? "" : new string('•', Math.Max(8, pwd.Length));
+            detailPassword.CopyText = pwd;
         }
     }
 
@@ -485,14 +489,14 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (item == null) return;
 
         // Safe lookups for all named XAML elements to avoid compile-time errors when XAML g.i.cs is missing
-        var detailPanel = GetElement<Grid>("DetailPanel");
+        var detailPanel = GetElement<StackPanel>("DetailPanel");
         var detailTitle = GetElement<TextBlock>("DetailTitle");
         var detailSubtitle = GetElement<TextBlock>("DetailSubtitle");
         var detailItemTitle = GetElement<TextBlock>("DetailItemTitle");
         var detailItemSubtitle = GetElement<TextBlock>("DetailItemSubtitle");
-        var detailUsername = GetElement<TextBlock>("DetailUsername");
-        var detailWebsite = GetElement<TextBlock>("DetailWebsite");
-        var detailPassword = GetElement<TextBlock>("DetailPassword");
+        var detailUsername = GetElement<Controls.ReadOnlyField>("DetailUsername");
+        var detailWebsite = GetElement<Controls.ReadOnlyField>("DetailWebsite");
+        var detailPassword = GetElement<Controls.ReadOnlyField>("DetailPassword");
         var detailIcon = GetElement<TextBlock>("DetailIcon");
         var detailCategory = GetElement<TextBlock>("DetailCategory");
 
@@ -529,11 +533,15 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         }
 
         if (detailItemSubtitle != null) detailItemSubtitle.Text = item.Description ?? (!string.IsNullOrEmpty(username) ? username : "No additional information");
-        if (detailUsername != null) detailUsername.Text = username;
-        if (detailWebsite != null) detailWebsite.Text = website;
+        if (detailUsername != null) { detailUsername.Text = username; detailUsername.CopyText = username; }
+        if (detailWebsite != null) { detailWebsite.Text = website; detailWebsite.CopyText = website; }
 
         // Show masked password if there is one
-        if (detailPassword != null) detailPassword.Text = string.IsNullOrEmpty(pwd) ? string.Empty : new string('•', Math.Max(8, pwd.Length));
+        if (detailPassword != null)
+        {
+            detailPassword.Text = string.IsNullOrEmpty(pwd) ? string.Empty : new string('•', Math.Max(8, pwd.Length));
+            detailPassword.CopyText = pwd;
+        }
 
         // Update icon based on type
         if (detailIcon != null) detailIcon.Text = GetTypeIcon(item.Type.ToString());

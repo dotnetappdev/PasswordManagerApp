@@ -146,8 +146,10 @@ public class OnePasswordImportPlugin : IPasswordImportPlugin
             
             return new List<PasswordItem>();
         }
-        catch
+        catch (Exception ex)
         {
+            // Surface the error so callers know the preview failed
+            System.Diagnostics.Debug.WriteLine($"[1Password] GetImportPreviewAsync failed: {ex.Message}");
             return new List<PasswordItem>();
         }
     }

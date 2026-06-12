@@ -11,24 +11,19 @@ namespace PasswordManager.DAL.Migrations.PasswordManagerDb
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
-                name: "QrLoginTokens",
-                columns: table => new
-                {
-                    Token = table.Column<string>(type: "TEXT", maxLength: 32, nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", nullable: false),
-                    ExpiresAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    IsUsed = table.Column<bool>(type: "INTEGER", nullable: false),
-                    UsedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    UserAgent = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
-                    IpAddress = table.Column<string>(type: "TEXT", maxLength: 45, nullable: true),
-                    Status = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_QrLoginTokens", x => x.Token);
-                });
+            // QrLoginTokens is already created by PasswordManagerDbContextApp's firstmigration
+            // when both contexts share the same SQLite file. Use IF NOT EXISTS to be idempotent.
+            migrationBuilder.Sql(@"CREATE TABLE IF NOT EXISTS ""QrLoginTokens"" (
+    ""Token"" TEXT NOT NULL CONSTRAINT ""PK_QrLoginTokens"" PRIMARY KEY,
+    ""UserId"" TEXT NOT NULL,
+    ""ExpiresAt"" TEXT NOT NULL,
+    ""CreatedAt"" TEXT NOT NULL,
+    ""IsUsed"" INTEGER NOT NULL,
+    ""UsedAt"" TEXT NULL,
+    ""UserAgent"" TEXT NULL,
+    ""IpAddress"" TEXT NULL,
+    ""Status"" INTEGER NOT NULL
+);");
 
             migrationBuilder.CreateTable(
                 name: "Users",

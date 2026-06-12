@@ -124,10 +124,17 @@ cd PasswordManager.Web
 dotnet run
 ```
 
-Navigate to `http://localhost:5169` and log in with the seeded credentials:
+Navigate to `http://localhost:5169` and log in with any of the seeded accounts (all share the same master password):
 
-- **Email**: `admin@passwordmanager.local`
-- **Password**: `CommonMaster123!`
+| Role | Email | Master Password |
+|------|-------|-----------------|
+| Admin | `admin@passwordmanager.local` | `CommonMaster123!` |
+| Parent | `parent@passwordmanager.local` | `CommonMaster123!` |
+| Standard User | `user@passwordmanager.local` | `CommonMaster123!` |
+| Child | `child@passwordmanager.local` | `CommonMaster123!` |
+
+> **WPF app only** — if no users exist yet, a demo account is auto-created:
+> `demo@local` / `DemoPassword123!`
 
 ---
 

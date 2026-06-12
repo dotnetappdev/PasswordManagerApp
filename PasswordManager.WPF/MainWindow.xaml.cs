@@ -402,11 +402,19 @@ public sealed partial class MainWindow : Window
     {
         _isAuthenticated = true;
 
-        // Capture current user ID from auth service
+        // Capture current user from auth service and update sidebar
         var authService = _serviceProvider.GetService<IAuthService>();
         if (authService?.CurrentUser != null)
         {
             _currentUserId = authService.CurrentUser.Id;
+            var user = authService.CurrentUser;
+            var displayName = $"{user.FirstName} {user.LastName}".Trim();
+            if (string.IsNullOrEmpty(displayName)) displayName = user.UserName ?? user.Email ?? "User";
+
+            if (this.FindName("UserNameText") is System.Windows.Controls.TextBlock nameText)
+                nameText.Text = displayName;
+            if (this.FindName("UserAvatarText") is System.Windows.Controls.TextBlock avatarText)
+                avatarText.Text = displayName.Length > 0 ? displayName[0].ToString().ToUpper() : "?";
         }
 
         SetAuthenticationState(true);
@@ -543,6 +551,20 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private void NewItemButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Navigate to AllItems page; the page's Add button handles the dialog
+        NavigateToPage("AllItems");
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (ContentFrame.Content is Views.PasswordItemsPage page)
+            {
+                var addBtn = FindChildControl<Button>(page, "AddButton");
+                addBtn?.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+        }));
+    }
+
     // Populate the DynamicCategoriesPanel with categories from the service
     public async Task RefreshCategoriesAsync()
     {
@@ -550,16 +572,15 @@ public sealed partial class MainWindow : Window
         {
             using var scope = _serviceProvider.CreateScope();
             var categoryService = scope.ServiceProvider.GetRequiredService<ICategoryInterface>();
-            
+
             // Get all favorite categories
             var categories = await categoryService.GetAllAsync();
             var favoriteCategories = categories.Where(c => c.IsFavorite).ToList();
-            
+
             // Update UI on dispatcher thread
             Dispatcher.Invoke(() =>
             {
-                var favPanel = this.Content as FrameworkElement;
-                var categoriesPanel = favPanel?.FindName("FavoriteCategoriesPanel") as StackPanel;
+                var categoriesPanel = this.FindName("FavoriteCategoriesPanel") as StackPanel;
                 if (categoriesPanel == null) return;
                 
                 categoriesPanel.Children.Clear();
@@ -605,8 +626,7 @@ public sealed partial class MainWindow : Window
 
             Dispatcher.Invoke(() =>
             {
-                var fe = this.Content as FrameworkElement;
-                var tagsPanel = fe?.FindName("SidebarTagsPanel") as StackPanel;
+                var tagsPanel = this.FindName("SidebarTagsPanel") as StackPanel;
                 if (tagsPanel == null) return;
 
                 tagsPanel.Children.Clear();

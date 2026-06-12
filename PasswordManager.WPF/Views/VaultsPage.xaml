@@ -16,7 +16,7 @@
                     
                     <StackPanel Grid.Column="0" Margin="8">
                         <StackPanel Orientation="Horizontal" Margin="12">
-                            <Border Background="{StaticResource ModernPrimaryBrush}"
+                            <Border Background="#1F2937"
                                   
                                    Width="32"
                                    Height="32">
@@ -80,7 +80,7 @@
                                         
                                         <!-- Vault Icon -->
                                         <Border Grid.Column="0"
-                                               Background="{StaticResource ModernPrimaryBrush}"
+                                               Background="#1F2937"
                                               
                                                Width="40"
                                                Height="40"

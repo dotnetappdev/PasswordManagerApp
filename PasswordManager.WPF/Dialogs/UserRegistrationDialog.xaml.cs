@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.Crypto.Interfaces;
@@ -232,6 +233,14 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
             if (!ValidateInput())
             {
                 return false;
+            }
+
+            // Ensure the database schema is fully migrated before writing.
+            // Guards against the startup race condition and missing-column issues.
+            using (var migScope = _serviceProvider.CreateScope())
+            {
+                var dbCtxApp = migScope.ServiceProvider.GetRequiredService<PasswordManager.DAL.PasswordManagerDbContextApp>();
+                await dbCtxApp.Database.MigrateAsync();
             }
 
             // Determine the role

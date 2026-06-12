@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PasswordManager.DAL;
 
@@ -10,9 +11,11 @@ using PasswordManager.DAL;
 namespace PasswordManager.DAL.Migrations
 {
     [DbContext(typeof(PasswordManagerDbContextApp))]
-    partial class PasswordManagerDbContextAppModelSnapshot : ModelSnapshot
+    [Migration("20260611175512_AddMissingUserColumns")]
+    partial class AddMissingUserColumns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.0");

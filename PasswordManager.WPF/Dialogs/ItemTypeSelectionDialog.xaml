@@ -54,7 +54,7 @@
                         Margin="8"
                         MinHeight="100">
                     <StackPanel Margin="8">
-                        <Border Background="#4facfe"
+                        <Border Background="#2563EB"
                                 CornerRadius="12"
                                 Width="48"
                                 Height="48">
@@ -210,8 +210,8 @@
             </Grid>
 
             <TextBlock Text="Show more"
-                       FontSize="18"
-                       Foreground="{StaticResource ModernAccentBrush}"
+                       FontSize="14"
+                       Foreground="{StaticResource ModernTextSecondaryBrush}"
                        HorizontalAlignment="Center"
                        Margin="0,12,0,0"/>
 

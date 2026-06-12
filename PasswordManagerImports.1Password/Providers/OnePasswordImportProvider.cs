@@ -70,10 +70,10 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             var headerLine = lines[0].Trim();
             var headers = headerLine.Split(',').Select(h => h.Trim().Trim('"')).ToArray();
 
-            // New format has "URL" (capital) and "Type" columns, no "OTPAuth"
-            bool isNewFormat = headers.Contains("URL") &&
-                              headers.Contains("Type") &&
-                              !headers.Contains("OTPAuth");
+            // New format has "URL" and "Type" columns, no "OTPAuth" — case-insensitive
+            bool isNewFormat = headers.Any(h => h.Equals("URL", StringComparison.OrdinalIgnoreCase)) &&
+                              headers.Any(h => h.Equals("Type", StringComparison.OrdinalIgnoreCase)) &&
+                              !headers.Any(h => h.Equals("OTPAuth", StringComparison.OrdinalIgnoreCase));
 
             OnePasswordCsvRecord[]? records = null;
             OnePasswordCsvRecordNew[]? recordsNew = null;
@@ -158,7 +158,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                         var passwordItem = new PasswordItem
                         {
                             Title = record.Title?.Trim() ?? string.Empty,
-                            Type = ItemType.Login,
+                            Type = MapCsvTypeToItemType(record.Type),
                             CollectionId = collection.Id,
                             CategoryId = category.Id,
                             CreatedAt = DateTime.UtcNow,
@@ -358,6 +358,45 @@ public class OnePasswordImportProvider : IPasswordImportProvider
 
         return result;
     }
+
+    private static ItemType MapCsvTypeToItemType(string? csvType) =>
+        csvType?.Trim().ToLowerInvariant() switch
+        {
+            "login"          => ItemType.Login,
+            "credit card"    => ItemType.CreditCard,
+            "secure note"    => ItemType.SecureNote,
+            "password"       => ItemType.Password,
+            "wifi" or "wireless router" => ItemType.WiFi,
+            "passkey"        => ItemType.Passkey,
+            _                => ItemType.Login
+        };
+
+    // 1PUX CategoryUuid values from 1Password's schema
+    private static ItemType MapPuxCategoryToItemType(string? categoryUuid) =>
+        categoryUuid?.ToLowerInvariant() switch
+        {
+            "001" => ItemType.Login,
+            "002" => ItemType.CreditCard,
+            "003" => ItemType.SecureNote,
+            "004" => ItemType.Login,          // Identity — closest to Login
+            "005" => ItemType.Password,
+            "006" => ItemType.Login,          // Document
+            "101" => ItemType.Login,          // Software License
+            "102" => ItemType.Login,          // Email Account
+            "103" => ItemType.Login,          // Database
+            "104" => ItemType.Login,          // Server
+            "105" => ItemType.WiFi,           // Wireless Router
+            "106" => ItemType.SecureNote,     // Secure Note
+            "107" => ItemType.CreditCard,     // Bank Account
+            "108" => ItemType.Login,          // Membership
+            "110" => ItemType.Login,          // Passport
+            "111" => ItemType.Login,          // Driver License
+            "112" => ItemType.Login,          // Outdoor License
+            "113" => ItemType.Login,          // Reward Program
+            "114" => ItemType.Login,          // Social Security Number
+            "115" => ItemType.Login,          // API Credentials
+            _     => ItemType.Login
+        };
 
     private string DetermineCollection(string url, string title)
     {
@@ -710,7 +749,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                             var passwordItem = new PasswordItem
                             {
                                 Title = item.Overview.Title?.Trim() ?? "Untitled",
-                                Type = ItemType.Login,
+                                Type = MapPuxCategoryToItemType(item.CategoryUuid),
                                 CollectionId = collection.Id,
                                 CategoryId = category.Id,
                                 CreatedAt = DateTimeOffset.FromUnixTimeSeconds(item.CreatedAt).UtcDateTime,

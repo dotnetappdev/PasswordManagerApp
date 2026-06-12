@@ -37,10 +37,10 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Root" Property="BorderBrush">
-                                    <Setter.Value><SolidColorBrush Color="#7C3AED"/></Setter.Value>
+                                    <Setter.Value><SolidColorBrush Color="#4B5563"/></Setter.Value>
                                 </Setter>
                                 <Setter TargetName="Root" Property="Background">
-                                    <Setter.Value><SolidColorBrush Color="#FFFFFF" Opacity="0.04"/></Setter.Value>
+                                    <Setter.Value><SolidColorBrush Color="#FFFFFF" Opacity="0.05"/></Setter.Value>
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
@@ -102,10 +102,10 @@
                             Margin="40">
 
                     <!-- Large App Icon -->
-                    <Border Background="{DynamicResource ModernPrimaryGradientBrush}"
-                            Width="120" Height="120"
+                    <Border Width="120" Height="120"
                             CornerRadius="28"
                             HorizontalAlignment="Center">
+                        <Border.Background><SolidColorBrush Color="#1F2937"/></Border.Background>
                         <TextBlock Text="&#xE192;"
                                    FontFamily="Segoe MDL2 Assets"
                                    FontSize="60" Foreground="White"
@@ -283,7 +283,7 @@
                                 <Border.Background>
                                     <Binding Path="SelectedUser.FirstName"
                                              Converter="{StaticResource NameToAvatarBrushConverter}"
-                                             FallbackValue="#7C3AED"/>
+                                             FallbackValue="#374151"/>
                                 </Border.Background>
                                 <TextBlock FontSize="24" FontWeight="Bold"
                                            Foreground="White"
@@ -448,7 +448,7 @@
                                          HorizontalAlignment="Center"
                                          Width="28" Height="28"
                                          Margin="0,12,0,0"
-                                         Foreground="{DynamicResource ModernPrimaryBrush}"/>
+                                         Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
 
                         <!-- "Create account" section (shown when no accounts exist) -->
                         <Border BorderBrush="{DynamicResource ModernBorderBrush}"

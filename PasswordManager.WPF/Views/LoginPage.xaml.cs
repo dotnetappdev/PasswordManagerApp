@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
 using PasswordManager.WPF.ViewModels;
@@ -106,7 +107,7 @@ public sealed partial class LoginPage : Page
 
         // Resolve UI elements once for this handler
         var primaryActionButton = this.FindName("PrimaryActionButton") as Button;
-        var authProgressRing = this.FindName("AuthProgressRing") as System.Windows.Controls.ProgressBar;
+        var authProgressRing = this.FindName("AuthProgressRing") as ModernWpf.Controls.ProgressRing;
         var masterPasswordBox = this.FindName("MasterPasswordBox") as PasswordBox;
         var confirmPasswordBox = this.FindName("ConfirmPasswordBox") as PasswordBox;
         var passwordHintBox = this.FindName("PasswordHintBox") as TextBox;
@@ -114,7 +115,7 @@ public sealed partial class LoginPage : Page
         try
         {
             if (primaryActionButton != null) primaryActionButton.IsEnabled = false;
-            if (authProgressRing != null) authProgressRing.IsIndeterminate = true;
+            if (authProgressRing != null) authProgressRing.IsActive = true;
 
             // Update ViewModel with current values
             _viewModel.MasterPassword = masterPasswordBox?.Password ?? string.Empty;
@@ -147,7 +148,7 @@ public sealed partial class LoginPage : Page
         finally
         {
             if (primaryActionButton != null) primaryActionButton.IsEnabled = true;
-            if (authProgressRing != null) authProgressRing.IsIndeterminate = false;
+            if (authProgressRing != null) authProgressRing.IsActive = false;
         }
     }
 
@@ -304,6 +305,16 @@ public sealed partial class LoginPage : Page
 
         try
         {
+            // Ensure migrations have run before attempting to create a user.
+            // This guards against the race condition where the user registers
+            // before the background startup has finished initialising the DB,
+            // and also fixes existing databases that are missing columns.
+            using (var migScope = _serviceProvider.CreateScope())
+            {
+                var dbCtxApp = migScope.ServiceProvider.GetRequiredService<PasswordManager.DAL.PasswordManagerDbContextApp>();
+                await dbCtxApp.Database.MigrateAsync();
+            }
+
             using var scope = _serviceProvider.CreateScope();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();

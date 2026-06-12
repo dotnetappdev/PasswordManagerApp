@@ -389,9 +389,8 @@
                                           Foreground="{StaticResource ModernTextSecondaryBrush}"
                                           VerticalAlignment="Center"/>
                                 
-                                <PasswordBox Grid.Column="1" 
+                                <PasswordBox Grid.Column="1"
                                             x:Name="PasswordField"
-                                            Password="{Binding SelectedPasswordItem.Password, Mode=TwoWay}"
                                             Style="{StaticResource ModernPasswordBoxStyle}"
                                             Margin="0,0,8,0"/>
                                 

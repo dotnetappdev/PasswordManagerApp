@@ -59,7 +59,12 @@ namespace PasswordManager.WPF.Services
 
             var actualTheme = theme == AppTheme.System ? GetSystemTheme() : theme;
 
-            // Update resource dictionaries
+            // Keep ModernWPF's own controls in sync (NavigationView, ListView, etc.)
+            ModernWpf.ThemeManager.Current.ApplicationTheme = actualTheme == AppTheme.Dark
+                ? ModernWpf.ApplicationTheme.Dark
+                : ModernWpf.ApplicationTheme.Light;
+
+            // Update our custom resource dictionaries
             UpdateThemeResources(actualTheme);
         }
 

@@ -123,7 +123,7 @@
                                                Padding="8"
                                               
                                                Click="EditCollectionButton_Click">
-                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource ModernPrimaryBrush}"/>
+                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                                         </Button>
                                         <Button Background="Transparent"
                                                BorderThickness="0"
@@ -181,7 +181,7 @@
                                     </Grid.ColumnDefinitions>
                                     
                                     <Border Grid.Column="0"
-                                           Background="{StaticResource ModernPrimaryBrush}"
+                                           Background="#1F2937"
                                           
                                            Width="24"
                                            Height="24"
@@ -212,7 +212,7 @@
                                                Padding="8"
                                               
                                                Click="EditTypeButton_Click">
-                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource ModernPrimaryBrush}"/>
+                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                                         </Button>
                                         <Button Background="Transparent"
                                                BorderThickness="0"
@@ -305,7 +305,7 @@
                                                Padding="8"
                                               
                                                Click="EditTagButton_Click">
-                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource ModernPrimaryBrush}"/>
+                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                                         </Button>
                                         <Button Background="Transparent"
                                                BorderThickness="0"

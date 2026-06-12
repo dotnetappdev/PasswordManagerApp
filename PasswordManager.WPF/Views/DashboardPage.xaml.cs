@@ -107,6 +107,11 @@ public sealed partial class DashboardPage : System.Windows.Controls.Page
             if (selectedItem is not null)
             {
                 _viewModel?.SelectPasswordItem(selectedItem);
+
+                // PasswordBox.Password is not a DependencyProperty so binding doesn't work;
+                // populate it manually when selection changes.
+                if (FindName("PasswordField") is PasswordBox passwordField)
+                    passwordField.Password = selectedItem.Password ?? string.Empty;
             }
         }
     }
