@@ -14,5 +14,8 @@ namespace PasswordManager.Services.Interfaces
         Task<Vault?> GetDefaultVaultAsync();
         Task SetAsDefaultAsync(int id);
         Task<Vault> GetOrCreateDefaultVaultAsync(string userId);
+        Task<List<PasswordItem>> GetItemsAsync(int vaultId);
+        Task MoveItemToVaultAsync(int passwordItemId, int targetVaultId);
+        Task SeedDefaultVaultsAsync(string userId);
     }
 }

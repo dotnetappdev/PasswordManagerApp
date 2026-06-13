@@ -5,12 +5,12 @@ html, body {
 }
 
 a, .btn-link {
-    color: #7C3AED;
+    color: #2563EB;
 }
 
 .btn-primary {
     color: #fff;
-    background-color: #7C3AED;
+    background-color: #2563EB;
     border-color: #5B21B6;
 }
 
@@ -118,7 +118,7 @@ h1:focus {
 }
 
 .search-input:focus {
-    border-color: #7C3AED;
+    border-color: #2563EB;
     background-color: #ffffff;
 }
 
@@ -166,7 +166,7 @@ h1:focus {
 }
 
 .section-toggle:hover {
-    color: #374151;
+    color: #6A6A6A;
 }
 
 .section-title {
@@ -185,7 +185,7 @@ h1:focus {
 }
 
 .add-btn:hover {
-    color: #374151;
+    color: #6A6A6A;
     background-color: #f3f4f6;
 }
 
@@ -214,7 +214,7 @@ h1:focus {
 
 .nav-item.active {
     background-color: rgba(124, 58, 237, 0.08);
-    border-right: 3px solid #7C3AED;
+    border-right: 3px solid #2563EB;
     color: #5B21B6;
 }
 
@@ -234,7 +234,7 @@ h1:focus {
     flex: 1;
     font-size: 14px;
     font-weight: 500;
-    color: #374151;
+    color: #6A6A6A;
 }
 
 .nav-item.active .nav-text {

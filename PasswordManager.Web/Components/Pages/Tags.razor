@@ -43,7 +43,7 @@ else if (filteredTags?.Any() == true)
             {
                 var localTag = tag;
                 <MudChip T="Tag" Value="@localTag"
-                         Style="@($"background-color:{localTag.Color ?? "#7C3AED"}22; border: 1px solid {localTag.Color ?? "#7C3AED"}; color:{localTag.Color ?? "#7C3AED"}; cursor:pointer;")"
+                         Style="@($"background-color:{localTag.Color ?? "#2563EB"}22; border: 1px solid {localTag.Color ?? "#2563EB"}; color:{localTag.Color ?? "#2563EB"}; cursor:pointer;")"
                          OnClick="@(() => OpenEditDialog(localTag))"
                          CloseIcon="@Icons.Material.Filled.Close"
                          OnClose="@((MudChip<Tag> _) => DeleteTag(localTag))">
@@ -63,7 +63,7 @@ else if (filteredTags?.Any() == true)
             <TemplateColumn Title="" CellStyle="width:48px; padding-left:16px;">
                 <CellTemplate>
                     <MudIcon Icon="@Icons.Material.Filled.Tag"
-                             Style="@($"color:{context.Item.Color ?? "#7C3AED"}")" />
+                             Style="@($"color:{context.Item.Color ?? "#2563EB"}")" />
                 </CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.Name" Title="Name" Sortable="true" />
@@ -112,7 +112,7 @@ else if (filteredTags?.Any() == true)
 else
 {
     <MudPaper Class="pa-12 text-center" Elevation="1">
-        <MudIcon Icon="@Icons.Material.Filled.Tag" Style="font-size:4rem; color:#7C3AED; opacity:0.4;" />
+        <MudIcon Icon="@Icons.Material.Filled.Tag" Style="font-size:4rem; color:#2563EB; opacity:0.4;" />
         <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No tags found</MudText>
         <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
             Tags help you organize and find your passwords quickly.
@@ -138,7 +138,7 @@ else
                               Variant="Variant.Outlined"
                               Placeholder="Optional description" />
                 <MudTextField @bind-Value="_editingTag.Color" Label="Color (hex)"
-                              Variant="Variant.Outlined" Placeholder="#7C3AED"
+                              Variant="Variant.Outlined" Placeholder="#2563EB"
                               Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Palette" />
                 @if (!string.IsNullOrEmpty(_editingTag.Color))
@@ -209,7 +209,7 @@ else
         _editingTag = new Tag
         {
             UserId = AuthService.CurrentUser?.Id,
-            Color = "#7C3AED",
+            Color = "#2563EB",
             CreatedAt = DateTime.UtcNow
         };
         _dialogVisible = true;

@@ -9,7 +9,7 @@
 <MudLayout>
     <MudAppBar Elevation="0" Color="Color.Transparent" Style="background: var(--mud-palette-drawer-background); border-bottom: 1px solid rgba(255,255,255,0.08);">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Style="font-weight:700; background: linear-gradient(135deg, #7C3AED, #A78BFA); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">🔐 VaultGuard</MudText>
+        <MudText Typo="Typo.h6" Style="font-weight:700; background: linear-gradient(135deg, #2563EB, #60A5FA); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">🔐 Password Manager</MudText>
         <MudSpacer />
         <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" Color="Color.Inherit" OnClick="@ToggleDarkMode" />
         <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" Direction="Direction.Bottom" OffsetY="true">
@@ -45,34 +45,34 @@
 
 @code {
     bool _drawerOpen = true;
-    bool _isDarkMode = false;
+    bool _isDarkMode = true;
 
     MudTheme _theme = new MudTheme()
     {
         PaletteLight = new PaletteLight()
         {
-            Primary = "#7C3AED",
-            PrimaryLighten = "#A78BFA",
-            PrimaryDarken = "#5B21B6",
-            Secondary = "#EC4899",
-            AppbarBackground = "#7C3AED",
+            Primary = "#2563EB",
+            PrimaryLighten = "#60A5FA",
+            PrimaryDarken = "#1D4ED8",
+            Secondary = "#6366F1",
+            AppbarBackground = "#2563EB",
             AppbarText = "#FFFFFF",
         },
         PaletteDark = new PaletteDark()
         {
-            Primary = "#7C3AED",
-            PrimaryLighten = "#A78BFA",
-            PrimaryDarken = "#5B21B6",
-            Secondary = "#EC4899",
-            AppbarBackground = "#0B0D14",
-            AppbarText = "#F0F2FF",
-            Background = "#0F1117",
-            BackgroundGray = "#0B0D14",
-            Surface = "#1A1D27",
-            DrawerBackground = "#0B0D14",
-            DrawerText = "#F0F2FF",
-            TextPrimary = "#F0F2FF",
-            TextSecondary = "#8B90A7",
+            Primary = "#2563EB",
+            PrimaryLighten = "#60A5FA",
+            PrimaryDarken = "#1D4ED8",
+            Secondary = "#6366F1",
+            AppbarBackground = "#141414",
+            AppbarText = "#E5E5E5",
+            Background = "#1A1A1A",
+            BackgroundGray = "#141414",
+            Surface = "#2D2D2D",
+            DrawerBackground = "#141414",
+            DrawerText = "#E5E5E5",
+            TextPrimary = "#E5E5E5",
+            TextSecondary = "#9D9D9D",
         }
     };
 

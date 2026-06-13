@@ -63,12 +63,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
                   .IsRequired(false)
                   .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure Vault relationship (optional)
-            entity.HasOne(e => e.Vault)
-                  .WithMany(v => v.PasswordItems)
-                  .HasForeignKey(e => e.VaultId)
-                  .IsRequired(false)
-                  .OnDelete(DeleteBehavior.Restrict);
+            // VaultId and Vault are marked [NotMapped] on PasswordItem — no Ignore needed here.
 
             // Configure Tags (many-to-many)
             entity.HasMany(e => e.Tags)
@@ -204,19 +199,8 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
                   .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
 
-            // Configure Categories relationship
-            entity.HasMany(e => e.Categories)
-                  .WithOne(c => c.Vault)
-                  .HasForeignKey(c => c.VaultId)
-                  .IsRequired(false)
-                  .OnDelete(DeleteBehavior.Restrict);
-
-            // Configure PasswordItems relationship
-            entity.HasMany(e => e.PasswordItems)
-                  .WithOne(p => p.Vault)
-                  .HasForeignKey(p => p.VaultId)
-                  .IsRequired(false)
-                  .OnDelete(DeleteBehavior.Restrict);
+            // Vault.Categories and Vault.PasswordItems use VaultId which is [NotMapped]
+            // on Category and PasswordItem — no FK configuration needed here.
         });
 
         // Configure Tag
@@ -253,12 +237,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
                   .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
 
-            // Configure Vault relationship (optional)
-            entity.HasOne(e => e.Vault)
-                  .WithMany(v => v.Categories)
-                  .HasForeignKey(e => e.VaultId)
-                  .IsRequired(false)
-                  .OnDelete(DeleteBehavior.Restrict);
+            // Category.VaultId and Category.Vault are [NotMapped] — no FK configuration.
         });
 
         // Configure Collection
@@ -267,8 +246,8 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Description).HasMaxLength(500);
-            entity.Property(e => e.Icon).HasMaxLength(100); // Optional - removed IsRequired()
-            entity.Property(e => e.Color).HasMaxLength(7); // Optional - removed IsRequired()
+            entity.Property(e => e.Icon).HasMaxLength(100);
+            entity.Property(e => e.Color).HasMaxLength(7);
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
 
@@ -278,6 +257,14 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
                   .WithMany(u => u.Collections)
                   .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
+
+            // Vault relationship — nullable so existing collections without a vault still work
+            entity.Property(e => e.VaultId).IsRequired(false);
+            entity.HasOne(e => e.Vault)
+                  .WithMany()
+                  .HasForeignKey(e => e.VaultId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configure ApiKey

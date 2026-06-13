@@ -20,7 +20,7 @@ public class PasswordItemsViewModel : BaseViewModel
     {
         _passwordItemService = serviceProvider.GetRequiredService<IPasswordItemService>();
         PasswordItems = new ObservableCollection<PasswordItem>();
-        LoadPasswordItemsAsync();
+        // Do NOT fire-and-forget here — caller invokes RefreshAsync() explicitly after seeding
     }
 
     public ObservableCollection<PasswordItem> PasswordItems { get; }
@@ -115,7 +115,9 @@ public class PasswordItemsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            // Handle error - could show a message to user
+            System.Diagnostics.Debug.WriteLine($"[PasswordItemsViewModel] LoadPasswordItemsAsync failed: {ex}");
+            ErrorMessage = $"Could not load items: {ex.Message}";
+            OnPropertyChanged(nameof(HasError));
         }
         finally
         {
@@ -128,9 +130,13 @@ public class PasswordItemsViewModel : BaseViewModel
     {
         try
         {
+            // Snapshot to a plain List on the UI thread before going to Task.Run.
+            // ObservableCollection must not be accessed from a background thread.
+            var snapshot = _allItems.ToList();
+
             var filteredItems = await Task.Run(() =>
             {
-                var items = _allItems.AsEnumerable();
+                var items = snapshot.AsEnumerable();
 
                 // Apply default filters first (exclude deleted and archived unless specifically requested)
                 if (FilterType != "Archive" && FilterType != "RecentlyDeleted")

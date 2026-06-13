@@ -34,6 +34,7 @@ public partial class App : Application
         // Override NavigationView resources after InitializeComponent so they sit
         // above ModernWPF's injected theme dictionary in the resource lookup chain.
         ApplyNavigationViewDarkResources();
+        ApplyComboBoxDarkResources();
 
         _host = CreateHostBuilder().Build();
         InitializeSentry();
@@ -53,12 +54,12 @@ public partial class App : Application
     private static void ApplyNavigationViewDarkResources()
     {
         var r = Application.Current.Resources;
-        var sidebar   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x0D, 0x11, 0x17));
-        var content   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x11, 0x18, 0x27));
+        var sidebar   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x11, 0x11, 0x11));
+        var content   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x18, 0x18, 0x18));
         var textNorm  = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xD1, 0xD5, 0xDB));
         var textSel   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.White);
-        var bgSel     = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0x37, 0x99, 0xEF));
-        var bgHover   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x18, 0xFF, 0xFF, 0xFF));
+        var bgSel     = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x2B, 0x2B, 0x2B));
+        var bgHover   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x28, 0x28, 0x28));
         var separator = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x18, 0xFF, 0xFF, 0xFF));
         var header    = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x6B, 0x72, 0x80));
 
@@ -79,6 +80,55 @@ public partial class App : Application
         r["NavigationViewItemBackgroundSelectedPointerOver"] = bgSel;
         r["NavigationViewItemSeparatorForeground"]           = separator;
         r["NavigationViewItemHeaderForeground"]              = header;
+    }
+
+    private static void ApplyComboBoxDarkResources()
+    {
+        var r = Application.Current.Resources;
+        static System.Windows.Media.SolidColorBrush Hex(string hex)
+        {
+            var c = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex);
+            return new System.Windows.Media.SolidColorBrush(c);
+        }
+
+        r["ComboBoxBackground"]                          = Hex("#2D2D2D");
+        r["ComboBoxBackgroundPointerOver"]               = Hex("#3A3A3A");
+        r["ComboBoxBackgroundPressed"]                   = Hex("#272727");
+        r["ComboBoxBackgroundDisabled"]                  = Hex("#1C1C1C");
+        r["ComboBoxBackgroundFocused"]                   = Hex("#2D2D2D");
+        r["ComboBoxBackgroundOpen"]                      = Hex("#2D2D2D");
+        r["ComboBoxEditableBackground"]                  = Hex("#2D2D2D");
+        r["ComboBoxEditableBackgroundPointerOver"]       = Hex("#3A3A3A");
+        r["ComboBoxEditableBackgroundPressed"]           = Hex("#272727");
+        r["ComboBoxEditableBackgroundFocused"]           = Hex("#2D2D2D");
+        r["ComboBoxForeground"]                          = Hex("#E5E5E5");
+        r["ComboBoxForegroundDisabled"]                  = Hex("#6A6A6A");
+        r["ComboBoxForegroundFocused"]                   = Hex("#E5E5E5");
+        r["ComboBoxPlaceholderForeground"]               = Hex("#9D9D9D");
+        r["ComboBoxPlaceholderForegroundPointerOver"]    = Hex("#9D9D9D");
+        r["ComboBoxPlaceholderForegroundFocused"]        = Hex("#9D9D9D");
+        r["ComboBoxPlaceholderForegroundDisabled"]       = Hex("#6A6A6A");
+        r["ComboBoxBorderBrush"]                         = Hex("#3A3A3A");
+        r["ComboBoxBorderBrushPointerOver"]              = Hex("#3A3A3A");
+        r["ComboBoxBorderBrushPressed"]                  = Hex("#3A3A3A");
+        r["ComboBoxBorderBrushFocused"]                  = Hex("#3A3A3A");
+        r["ComboBoxBorderBrushDisabled"]                 = Hex("#333333");
+        r["ComboBoxDropDownBackground"]                  = Hex("#1E1E1E");
+        r["ComboBoxDropDownBorderBrush"]                 = Hex("#3A3A3A");
+        r["ComboBoxDropDownGlyphForeground"]             = Hex("#9D9D9D");
+        r["ComboBoxItemBackground"]                      = System.Windows.Media.Brushes.Transparent;
+        r["ComboBoxItemBackgroundPointerOver"]           = Hex("#383838");
+        r["ComboBoxItemBackgroundPressed"]               = Hex("#2D2D2D");
+        r["ComboBoxItemBackgroundSelected"]              = Hex("#3A3A3A");
+        r["ComboBoxItemBackgroundSelectedPointerOver"]   = Hex("#3A3A3A");
+        r["ComboBoxItemBackgroundSelectedPressed"]       = Hex("#3A3A3A");
+        r["ComboBoxItemBackgroundDisabled"]              = System.Windows.Media.Brushes.Transparent;
+        r["ComboBoxItemForeground"]                      = Hex("#E5E5E5");
+        r["ComboBoxItemForegroundPointerOver"]           = Hex("#FFFFFF");
+        r["ComboBoxItemForegroundPressed"]               = Hex("#E5E5E5");
+        r["ComboBoxItemForegroundSelected"]              = Hex("#FFFFFF");
+        r["ComboBoxItemForegroundSelectedPointerOver"]   = Hex("#FFFFFF");
+        r["ComboBoxItemForegroundDisabled"]              = Hex("#6A6A6A");
     }
 
     private void InitializeSentry()
@@ -119,6 +169,7 @@ public partial class App : Application
         ThemeHelper.Initialize(m_window, this);
         _ = LoadSavedTheme();
 
+        InitTrayIcon();
         m_window.Show();
 
         _ = Task.Run(async () =>
@@ -273,7 +324,73 @@ public partial class App : Application
     }
 
     private Window? m_window;
+    private System.Windows.Forms.NotifyIcon? _trayIcon;
 
     public MainWindow? MainWindow => m_window as MainWindow;
     public IServiceProvider Services => _host.Services;
+
+    // ── System Tray ─────────────────────────────────────────────────────────────
+
+    private void InitTrayIcon()
+    {
+        _trayIcon = new System.Windows.Forms.NotifyIcon
+        {
+            Text    = "VaultGuard Password Manager",
+            Visible = true,
+            Icon    = System.Drawing.SystemIcons.Shield
+        };
+
+        var menu = new System.Windows.Forms.ContextMenuStrip();
+        menu.Items.Add("Open VaultGuard", null, (_, _) => ShowMainWindow());
+        menu.Items.Add("Lock Vault",       null, (_, _) => LockVault());
+        menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
+        menu.Items.Add("Settings",         null, (_, _) => OpenSettings());
+        menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
+        menu.Items.Add("Exit",             null, (_, _) => ExitApp());
+
+        _trayIcon.ContextMenuStrip = menu;
+        _trayIcon.DoubleClick += (_, _) => ShowMainWindow();
+
+        _trayIcon.ShowBalloonTip(
+            timeout: 2000,
+            tipTitle: "VaultGuard",
+            tipText: "VaultGuard is running in the background.",
+            tipIcon: System.Windows.Forms.ToolTipIcon.Info);
+    }
+
+    private void ShowMainWindow()
+    {
+        if (m_window == null) return;
+        m_window.Dispatcher.Invoke(() =>
+        {
+            m_window.Show();
+            m_window.WindowState = WindowState.Normal;
+            m_window.Activate();
+        });
+    }
+
+    private void LockVault()
+    {
+        m_window?.Dispatcher.Invoke(() => (m_window as MainWindow)?.HandleLogout());
+        _trayIcon?.ShowBalloonTip(1500, "VaultGuard", "Vault locked.", System.Windows.Forms.ToolTipIcon.Info);
+    }
+
+    private void OpenSettings()
+    {
+        ShowMainWindow();
+        m_window?.Dispatcher.Invoke(() => (m_window as MainWindow)?.NavigateToPage("Settings"));
+    }
+
+    private void ExitApp()
+    {
+        _trayIcon?.Dispose();
+        _trayIcon = null;
+        Current.Shutdown();
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        _trayIcon?.Dispose();
+        base.OnExit(e);
+    }
 }

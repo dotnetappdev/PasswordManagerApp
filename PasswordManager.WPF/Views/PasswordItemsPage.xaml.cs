@@ -9,6 +9,9 @@ using PasswordManager.WPF.Helpers;
 using PasswordManager.WPF.Models;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
+using PasswordManager.DAL.Seed;
+using PasswordManager.WPF.Services;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -421,7 +424,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             }
 
             System.Windows.Clipboard.SetText(pwd);
-            await ShowTemporaryMessageAsync("Password copied to clipboard");
+            ToastService.Instance.Success("Password copied to clipboard");
         }
         catch (Exception ex)
         { }
@@ -450,38 +453,11 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         { }
     }
 
-    private async Task ShowTemporaryMessageAsync(string message)
+    private Task ShowTemporaryMessageAsync(string message)
     {
-        try
-        {
-            // Try to show a subtle notification instead of a dialog
-            var contentSubtitle = GetElement<TextBlock>("ContentSubtitle");
-            if (contentSubtitle != null)
-            {
-                var originalText = contentSubtitle.Text;
-                contentSubtitle.Text = $"✓ {message}";
-                contentSubtitle.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Green);
-
-                // Reset after a delay
-                await Task.Delay(2000);
-                contentSubtitle.Text = originalText;
-                contentSubtitle.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Gray);
-            }
-            else
-            {
-                // Fallback to dialog if we can't find the subtitle element
-                var dialog = new ModernWpf.Controls.ContentDialog
-                {
-                    Title = "",
-                    Content = message,
-                    CloseButtonText = "OK"};
-                await dialog.ShowAsync();
-            }
-        }
-        catch
-        {
-            // Fallback to debug output if UI updates fail
-        }
+        // Route through the global toast service
+        ToastService.Instance.Info(message);
+        return Task.CompletedTask;
     }
 
     private void ShowItemDetails(PasswordItem item)
@@ -514,61 +490,101 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (item.LoginItem != null)
         {
             username = item.LoginItem.Username ?? item.Username ?? string.Empty;
-            website = item.LoginItem.WebsiteUrl ?? item.Website ?? string.Empty;
-            pwd = item.LoginItem.Password ?? item.Password ?? string.Empty;
+            website  = item.LoginItem.WebsiteUrl ?? item.LoginItem.Website ?? item.Website ?? string.Empty;
+            // Password is [NotMapped]; fall back to EncryptedPassword (stored as plaintext in demo data)
+            pwd = item.LoginItem.Password
+                  ?? item.Password
+                  ?? item.LoginItem.EncryptedPassword
+                  ?? string.Empty;
         }
-        else if (item.Category != null && item.Category.Name != null && item.Category.Name.IndexOf("Identity", StringComparison.OrdinalIgnoreCase) >= 0)
+        else if (item.WiFiItem != null)
         {
-            // Treat identity category as login-style: prefer passkey username/website where available
+            username = item.WiFiItem.NetworkName ?? string.Empty;
+            website  = item.WiFiItem.RouterAdminUrl ?? item.WiFiItem.RouterIP ?? string.Empty;
+            pwd      = item.WiFiItem.Password ?? string.Empty;
+        }
+        else if (item.Category != null && item.Category.Name != null &&
+                 item.Category.Name.IndexOf("Identity", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
             username = item.PasskeyItem?.Username ?? item.Username ?? string.Empty;
-            website = item.PasskeyItem?.WebsiteUrl ?? item.Website ?? string.Empty;
-            // Identity items typically don't have a password; prefer stored Password field if present
-            pwd = item.Password ?? string.Empty;
+            website  = item.PasskeyItem?.WebsiteUrl ?? item.Website ?? string.Empty;
+            pwd      = item.Password ?? string.Empty;
         }
         else
         {
             username = item.Username ?? string.Empty;
-            website = item.Website ?? string.Empty;
-            pwd = item.Password ?? string.Empty;
+            website  = item.Website  ?? string.Empty;
+            pwd      = item.Password ?? item.LoginItem?.EncryptedPassword ?? string.Empty;
         }
 
-        if (detailItemSubtitle != null) detailItemSubtitle.Text = item.Description ?? (!string.IsNullOrEmpty(username) ? username : "No additional information");
-        if (detailUsername != null) { detailUsername.Text = username; detailUsername.CopyText = username; }
-        if (detailWebsite != null) { detailWebsite.Text = website; detailWebsite.CopyText = website; }
+        if (detailItemSubtitle != null)
+            detailItemSubtitle.Text = !string.IsNullOrEmpty(username) ? username
+                                      : !string.IsNullOrEmpty(website) ? website
+                                      : item.Description ?? "No additional information";
 
-        // Show masked password if there is one
+        if (detailUsername != null) { detailUsername.Text = username; detailUsername.CopyText = username; }
+        if (detailWebsite  != null) { detailWebsite.Text  = website;  detailWebsite.CopyText  = website; }
+
+        // Show masked password; real value copied to clipboard on click
         if (detailPassword != null)
         {
-            detailPassword.Text = string.IsNullOrEmpty(pwd) ? string.Empty : new string('•', Math.Max(8, pwd.Length));
+            detailPassword.Text     = string.IsNullOrEmpty(pwd) ? "—" : new string('•', Math.Max(8, pwd.Length));
             detailPassword.CopyText = pwd;
         }
 
         // Update icon based on type
         if (detailIcon != null) detailIcon.Text = GetTypeIcon(item.Type.ToString());
 
-        // Category
+        // Category badge
         var cat = item.Category;
-        if (detailCategory != null) detailCategory.Text = cat != null ? cat.Name : "Uncategorized";
+        if (detailCategory != null)
+            detailCategory.Text = cat != null ? $"  {cat.Icon}  {cat.Name}" : "Uncategorized";
 
-        // Populate tags UI
+        // Notes
+        try
+        {
+            var notesText = GetElement<System.Windows.Controls.TextBlock>("DetailNotesText");
+            if (notesText != null)
+            {
+                var notes = item.Description
+                            ?? item.SecureNoteItem?.Content
+                            ?? item.LoginItem?.Notes
+                            ?? string.Empty;
+                notesText.Text = string.IsNullOrWhiteSpace(notes) ? "No notes" : notes;
+                notesText.Foreground = string.IsNullOrWhiteSpace(notes)
+                    ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0x4A, 0x4A))
+                    : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xC8, 0xC8, 0xC8));
+            }
+        }
+        catch { }
+
+        // Custom fields
+        try
+        {
+            var cfList = GetElement<ItemsControl>("DetailCustomFieldsList");
+            var cfSection = GetElement<StackPanel>("DetailCustomFieldsView");
+            if (cfList != null && item.CustomFields?.Any() == true)
+            {
+                cfList.ItemsSource = item.CustomFields;
+                if (cfSection != null) cfSection.Visibility = Visibility.Visible;
+            }
+            else if (cfSection != null)
+            {
+                cfSection.Visibility = Visibility.Collapsed;
+            }
+        }
+        catch { }
+
+        // Tags
         try
         {
             var detailTags = GetElement<ItemsControl>("DetailTagsPanel");
-            if (detailTags != null)
-            {
-                detailTags.ItemsSource = item.Tags ?? new List<Tag>();
-            }
+            if (detailTags != null) detailTags.ItemsSource = item.Tags ?? new List<Tag>();
 
             var editTagsPanel = GetElement<ItemsControl>("EditTagsPanel");
-            var editTagsSection = GetElement<StackPanel>("EditTagsSection");
-            if (editTagsPanel != null && editTagsSection != null)
-            {
-                // Populate edit tags panel with current tags
-                editTagsPanel.ItemsSource = item.Tags ?? new List<Tag>();
-            }
+            if (editTagsPanel != null) editTagsPanel.ItemsSource = item.Tags ?? new List<Tag>();
         }
-        catch (Exception ex)
-        { }
+        catch { }
     }
 
     private string GetTypeIcon(string type)
@@ -591,9 +607,67 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
     private void AddButton_Click(object sender, RoutedEventArgs e)
     {
-        // Navigate to add password page
-        // Frame.Navigate(typeof(AddPasswordItemPage), serviceProvider);
         ShowAddPasswordDialog();
+    }
+
+    private async void SeedDataButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_serviceProvider == null) return;
+
+        var dialog = new ModernWpf.Controls.ContentDialog
+        {
+            Title = "Seed Demo Data",
+            Content = "This will add ~100 demo password items (logins, credit cards, secure notes, WiFi) to your vault. Existing demo items will be replaced. Continue?",
+            PrimaryButtonText = "Seed Data",
+            CloseButtonText = "Cancel",
+            DefaultButton = ModernWpf.Controls.ContentDialogButton.Primary
+        };
+        ConfigureDialogForCentering(dialog);
+        var result = await dialog.ShowAsync();
+        if (result != ModernWpf.Controls.ContentDialogResult.Primary) return;
+
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var sp = scope.ServiceProvider;
+            var db = sp.GetRequiredService<PasswordManager.DAL.PasswordManagerDbContext>();
+            var authService = sp.GetService<IAuthService>();
+            var userId = authService?.CurrentUser?.Id;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                var firstUser = await db.Users.FirstOrDefaultAsync();
+                userId = firstUser?.Id;
+            }
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                await ShowTemporaryMessageAsync("No user found — please sign in first");
+                return;
+            }
+
+            // Force re-seed: clear existing items and re-seed
+            TestDataSeeder.SeedCollections(db, userId);
+            TestDataSeeder.SeedCategories(db, userId);
+            TestDataSeeder.SeedTags(db, userId);
+            TestDataSeeder.ForceSeedPasswordItems(db, userId);
+
+            if (_viewModel != null)
+                await _viewModel.RefreshAsync();
+
+            await ShowTemporaryMessageAsync($"Seeded demo data successfully");
+        }
+        catch (Exception ex)
+        {
+            var errorDialog = new ModernWpf.Controls.ContentDialog
+            {
+                Title = "Seed Error",
+                Content = $"Failed to seed data: {ex.Message}",
+                CloseButtonText = "OK"
+            };
+            ConfigureDialogForCentering(errorDialog);
+            await errorDialog.ShowAsync();
+        }
     }
 
     private async void ShowAddPasswordDialog()
@@ -632,14 +706,12 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                     dialog.SetInitialItemType(typeSelectionDialog.SelectedItemType.Value, typeSelectionDialog.SelectedCategoryName);
                 }
 
-                var result = await dialog.ShowAsync();
-                if (result == ModernWpf.Controls.ContentDialogResult.Primary && dialog.Result != null)
+                await dialog.ShowAsync();
+                if (dialog.Result != null)
                 {
-                    // Refresh the list to show the new item
                     if (_viewModel != null)
-                    {
                         await _viewModel.RefreshAsync();
-                    }
+                    ToastService.Instance.Success("Item saved successfully");
                 }
             }
         }
@@ -674,6 +746,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             if (result == ModernWpf.Controls.ContentDialogResult.Primary)
             {
                 await _viewModel.DeleteItemAsync(item);
+                ToastService.Instance.Success($"'{item.Title}' deleted");
             }
         }
     }
@@ -716,10 +789,9 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, item);
             ConfigureDialogForCentering(dialog);
 
-            var result = await dialog.ShowAsync();
-            if (result == ModernWpf.Controls.ContentDialogResult.Primary && dialog.Result != null)
+            await dialog.ShowAsync();
+            if (dialog.Result != null)
             {
-                // Refresh the list to show the updated item and re-display details
                 if (_viewModel != null)
                 {
                     await _viewModel.RefreshAsync();
@@ -1185,7 +1257,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             }
 
             System.Windows.Clipboard.SetText(username);
-            await ShowTemporaryMessageAsync("Username copied to clipboard");
+            ToastService.Instance.Success("Username copied to clipboard");
         }
         catch (Exception ex)
         { }

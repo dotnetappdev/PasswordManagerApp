@@ -421,8 +421,6 @@ public class VaultApiService : IVaultApiService
         try
         {
             var vaults = await _context.Vaults
-                .Include(v => v.Categories)
-                .Include(v => v.PasswordItems)
                 .ToListAsync();
 
             return vaults.Select(v => v.ToDto()).ToList();
@@ -439,8 +437,6 @@ public class VaultApiService : IVaultApiService
         try
         {
             var vault = await _context.Vaults
-                .Include(v => v.Categories)
-                .Include(v => v.PasswordItems)
                 .FirstOrDefaultAsync(v => v.Id == id);
 
             return vault?.ToDto();
@@ -513,8 +509,6 @@ public class VaultApiService : IVaultApiService
         try
         {
             var vault = await _context.Vaults
-                .Include(v => v.Categories)
-                .Include(v => v.PasswordItems)
                 .FirstOrDefaultAsync(v => v.IsDefault);
 
             return vault?.ToDto();

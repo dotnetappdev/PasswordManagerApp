@@ -218,7 +218,7 @@ public class LoginViewModel : BaseViewModel
         set => SetProperty(ref _passwordHint, value);
     }
 
-    public string ErrorMessage
+    public new string ErrorMessage
     {
         get => _errorMessage;
         set => SetProperty(ref _errorMessage, value);
@@ -254,7 +254,7 @@ public class LoginViewModel : BaseViewModel
         set => SetProperty(ref _passwordPlaceholder, value);
     }
 
-    public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
+    public new bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     public bool ShowConfirmPassword => IsFirstTimeSetup;
 

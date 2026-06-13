@@ -23,310 +23,289 @@ namespace PasswordManager.Services.Services
         public async Task<List<Vault>> GetAllAsync()
         {
             var userId = _authService.CurrentUser?.Id;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return new List<Vault>();
-            }
+            if (string.IsNullOrEmpty(userId)) return new List<Vault>();
 
-            return await _db.Vaults
+            var vaults = await _db.Vaults
                 .Where(v => v.UserId == userId)
-                .Include(v => v.Categories)
-                .Include(v => v.PasswordItems)
+                .OrderByDescending(v => v.IsDefault)
+                .ThenBy(v => v.Name)
                 .ToListAsync();
+
+            await PopulateItemCountsAsync(vaults, userId);
+            return vaults;
         }
 
         public async Task<Vault?> GetByIdAsync(int id)
         {
             var userId = _authService.CurrentUser?.Id;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return null;
-            }
+            if (string.IsNullOrEmpty(userId)) return null;
 
-            return await _db.Vaults
-                .Where(v => v.UserId == userId)
-                .Include(v => v.Categories)
-                .Include(v => v.PasswordItems)
-                .FirstOrDefaultAsync(v => v.Id == id);
+            var vault = await _db.Vaults
+                .FirstOrDefaultAsync(v => v.Id == id && v.UserId == userId);
+
+            if (vault != null)
+                await PopulateItemCountsAsync(new List<Vault> { vault }, userId);
+
+            return vault;
         }
 
         public async Task<Vault> CreateAsync(Vault vault)
         {
-            // If this is the first vault for the user, mark it as default
             if (!await _db.Vaults.AnyAsync(v => v.UserId == vault.UserId))
-            {
                 vault.IsDefault = true;
-            }
 
-            // Ensure Icon is not null to satisfy DB constraints / UI expectations
-            if (string.IsNullOrWhiteSpace(vault.Icon))
-            {
-                vault.Icon = "🔐"; // default vault icon
-            }
-
+            vault.Icon = string.IsNullOrWhiteSpace(vault.Icon) ? "🔐" : vault.Icon;
             vault.CreatedAt = DateTime.UtcNow;
             vault.UpdatedAt = DateTime.UtcNow;
 
             _db.Vaults.Add(vault);
             await _db.SaveChangesAsync();
+
+            // Create a default collection for this vault so items can be assigned to it
+            var defaultCollection = new Collection
+            {
+                Name = vault.Name,
+                Description = vault.Description,
+                Icon = vault.Icon,
+                Color = vault.Color,
+                IsDefault = true,
+                VaultId = vault.Id,
+                UserId = vault.UserId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                LastModified = DateTime.UtcNow
+            };
+            _db.Collections.Add(defaultCollection);
+            await _db.SaveChangesAsync();
+
             return vault;
         }
 
         public async Task<Vault> UpdateAsync(Vault vault)
         {
-            // Find the existing entity to avoid tracking conflicts
-            var existingVault = await _db.Vaults.FindAsync(vault.Id);
-            if (existingVault != null)
-            {
-                // Update the properties manually
-                existingVault.Name = vault.Name;
-                existingVault.Description = vault.Description;
-                existingVault.Icon = string.IsNullOrWhiteSpace(vault.Icon) ? existingVault.Icon ?? "🔐" : vault.Icon;
-                existingVault.Color = vault.Color;
-                existingVault.IsDefault = vault.IsDefault;
-                existingVault.UpdatedAt = DateTime.UtcNow;
+            var existing = await _db.Vaults.FindAsync(vault.Id)
+                ?? throw new InvalidOperationException($"Vault {vault.Id} not found.");
 
-                await _db.SaveChangesAsync();
-                return existingVault;
-            }
+            existing.Name = vault.Name;
+            existing.Description = vault.Description;
+            existing.Icon = string.IsNullOrWhiteSpace(vault.Icon) ? existing.Icon ?? "🔐" : vault.Icon;
+            existing.Color = vault.Color;
+            existing.IsDefault = vault.IsDefault;
+            existing.UpdatedAt = DateTime.UtcNow;
 
-            // If not found, throw an exception
-            throw new InvalidOperationException($"Unable to update vault: Vault with ID {vault.Id} not found.");
+            await _db.SaveChangesAsync();
+            return existing;
         }
 
         public async Task DeleteAsync(int id)
         {
             var vault = await _db.Vaults.FindAsync(id);
-            if (vault != null)
+            if (vault == null) return;
+
+            if (vault.IsDefault)
             {
-                // Check if it's the default vault
-                if (vault.IsDefault)
-                {
-                    // Find another vault to mark as default
-                    var newDefault = await _db.Vaults
-                        .Where(v => v.Id != id && v.UserId == vault.UserId)
-                        .FirstOrDefaultAsync();
-
-                    if (newDefault != null)
-                    {
-                        newDefault.IsDefault = true;
-                    }
-                }
-
-                // Get all password items in this vault
-                var passwordItems = await _db.PasswordItems
-                    .Where(p => p.VaultId == id)
-                    .ToListAsync();
-
-                // Move them to default vault if exists
-                var defaultVault = await _db.Vaults
-                    .Where(v => v.IsDefault && v.Id != id && v.UserId == vault.UserId)
-                    .FirstOrDefaultAsync();
-
-                if (defaultVault != null)
-                {
-                    foreach (var item in passwordItems)
-                    {
-                        item.VaultId = defaultVault.Id;
-                    }
-                }
-                else
-                {
-                    // If no default vault, just clear the VaultId
-                    foreach (var item in passwordItems)
-                    {
-                        item.VaultId = null;
-                    }
-                }
-
-                // Get all categories in this vault
-                var categories = await _db.Categories
-                    .Where(c => c.VaultId == id)
-                    .ToListAsync();
-
-                if (defaultVault != null)
-                {
-                    foreach (var category in categories)
-                    {
-                        category.VaultId = defaultVault.Id;
-                    }
-                }
-                else
-                {
-                    // If no default vault, just clear the VaultId
-                    foreach (var category in categories)
-                    {
-                        category.VaultId = null;
-                    }
-                }
-
-                _db.Vaults.Remove(vault);
-                await _db.SaveChangesAsync();
+                var newDefault = await _db.Vaults
+                    .FirstOrDefaultAsync(v => v.Id != id && v.UserId == vault.UserId);
+                if (newDefault != null) { newDefault.IsDefault = true; }
             }
+
+            // Collections with VaultId = id will get VaultId = NULL via SetNull cascade
+            // Items inside those collections keep their CollectionId (items are not deleted)
+            _db.Vaults.Remove(vault);
+            await _db.SaveChangesAsync();
         }
 
         public async Task<Vault?> GetDefaultVaultAsync()
         {
             var userId = _authService.CurrentUser?.Id;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return null;
-            }
+            if (string.IsNullOrEmpty(userId)) return null;
 
-            return await _db.Vaults
-                .Where(v => v.UserId == userId)
-                .Include(v => v.Categories)
-                .Include(v => v.PasswordItems)
-                .FirstOrDefaultAsync(v => v.IsDefault);
+            var vault = await _db.Vaults
+                .FirstOrDefaultAsync(v => v.UserId == userId && v.IsDefault)
+                ?? await _db.Vaults.FirstOrDefaultAsync(v => v.UserId == userId);
+
+            if (vault != null)
+                await PopulateItemCountsAsync(new List<Vault> { vault }, userId);
+
+            return vault;
         }
 
         public async Task SetAsDefaultAsync(int id)
         {
             var userId = _authService.CurrentUser?.Id;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return;
-            }
+            if (string.IsNullOrEmpty(userId)) return;
 
-            var vault = await _db.Vaults
-                .FirstOrDefaultAsync(v => v.Id == id && v.UserId == userId);
-            if (vault != null)
-            {
-                // Clear any existing default vault for this user
-                var existingDefaults = await _db.Vaults
-                    .Where(v => v.IsDefault && v.UserId == vault.UserId)
-                    .ToListAsync();
+            var vault = await _db.Vaults.FirstOrDefaultAsync(v => v.Id == id && v.UserId == userId);
+            if (vault == null) return;
 
-                foreach (var existingDefault in existingDefaults)
-                {
-                    existingDefault.IsDefault = false;
-                }
-
-                vault.IsDefault = true;
-                await _db.SaveChangesAsync();
-            }
+            var existing = await _db.Vaults.Where(v => v.IsDefault && v.UserId == userId).ToListAsync();
+            foreach (var v in existing) v.IsDefault = false;
+            vault.IsDefault = true;
+            await _db.SaveChangesAsync();
         }
 
         public async Task<Vault> GetOrCreateDefaultVaultAsync(string userId)
         {
-            // Try to get existing default vault for user
-            var defaultVault = await _db.Vaults
-                .FirstOrDefaultAsync(v => v.UserId == userId && v.IsDefault);
+            var vault = await _db.Vaults.FirstOrDefaultAsync(v => v.UserId == userId && v.IsDefault)
+                     ?? await _db.Vaults.FirstOrDefaultAsync(v => v.UserId == userId);
 
-            if (defaultVault != null)
+            if (vault != null)
             {
-                return defaultVault;
+                if (!vault.IsDefault) { vault.IsDefault = true; await _db.SaveChangesAsync(); }
+                return vault;
             }
 
-            // Try to get any vault for user
-            var anyVault = await _db.Vaults
-                .FirstOrDefaultAsync(v => v.UserId == userId);
-
-            if (anyVault != null)
-            {
-                anyVault.IsDefault = true;
-                await _db.SaveChangesAsync();
-                return anyVault;
-            }
-
-            // Create a new default "Personal" vault
+            // Create the user's first vault
             var newVault = new Vault
             {
                 Name = "Personal",
                 Description = "Your personal password vault",
                 IsDefault = true,
                 Icon = "🔐",
+                Color = "#2563EB",
                 UserId = userId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-
             _db.Vaults.Add(newVault);
             await _db.SaveChangesAsync();
 
-            // Seed default categories for this vault
-            await SeedDefaultCategoriesAsync(newVault.Id, userId);
+            // Create matching default collection
+            _db.Collections.Add(new Collection
+            {
+                Name = "Personal",
+                Description = "Default personal collection",
+                Icon = "🔐",
+                Color = "#2563EB",
+                IsDefault = true,
+                VaultId = newVault.Id,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                LastModified = DateTime.UtcNow
+            });
+            await _db.SaveChangesAsync();
 
             return newVault;
         }
 
-        /// <summary>
-        /// Seeds default categories for a vault (Login, Credit Card, Secure Notes, WiFi, Passkeys, Identity)
-        /// </summary>
-        private async Task SeedDefaultCategoriesAsync(int vaultId, string userId)
+        // Get items belonging to a specific vault (via its collections)
+        public async Task<List<PasswordItem>> GetItemsAsync(int vaultId)
         {
-            var defaultCategories = new[]
-            {
-                new Category 
-                { 
-                    Name = "Logins", 
-                    Description = "Login credentials for websites and apps",
-                    Icon = "🔑",
-                    Color = "#4A90E2",
-                    VaultId = vaultId,
-                    UserId = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new Category 
-                { 
-                    Name = "Credit Cards", 
-                    Description = "Credit and debit card information",
-                    Icon = "💳",
-                    Color = "#E94B3C",
-                    VaultId = vaultId,
-                    UserId = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new Category 
-                { 
-                    Name = "Secure Notes", 
-                    Description = "Encrypted notes and documents",
-                    Icon = "📝",
-                    Color = "#F5A623",
-                    VaultId = vaultId,
-                    UserId = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new Category 
-                { 
-                    Name = "WiFi Networks", 
-                    Description = "WiFi network passwords",
-                    Icon = "📶",
-                    Color = "#7ED321",
-                    VaultId = vaultId,
-                    UserId = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new Category 
-                { 
-                    Name = "Passkeys", 
-                    Description = "Passkey credentials for passwordless authentication",
-                    Icon = "🔐",
-                    Color = "#9013FE",
-                    VaultId = vaultId,
-                    UserId = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new Category 
-                { 
-                    Name = "Identities", 
-                    Description = "Personal identification information",
-                    Icon = "👤",
-                    Color = "#50E3C2",
-                    VaultId = vaultId,
-                    UserId = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                }
-            };
+            var userId = _authService.CurrentUser?.Id;
+            if (string.IsNullOrEmpty(userId)) return new List<PasswordItem>();
 
-            _db.Categories.AddRange(defaultCategories);
+            var collectionIds = await _db.Collections
+                .Where(c => c.VaultId == vaultId && c.UserId == userId)
+                .Select(c => c.Id)
+                .ToListAsync();
+
+            return await _db.PasswordItems
+                .Include(p => p.LoginItem)
+                .Include(p => p.CreditCardItem)
+                .Include(p => p.SecureNoteItem)
+                .Include(p => p.Tags)
+                .Include(p => p.Category)
+                .Where(p => p.UserId == userId
+                         && !p.IsDeleted
+                         && p.CollectionId != null
+                         && collectionIds.Contains(p.CollectionId.Value))
+                .OrderByDescending(p => p.LastModified)
+                .ToListAsync();
+        }
+
+        // Move an item to a vault by assigning it to the vault's default collection
+        public async Task MoveItemToVaultAsync(int passwordItemId, int targetVaultId)
+        {
+            var userId = _authService.CurrentUser?.Id;
+            if (string.IsNullOrEmpty(userId)) return;
+
+            var targetCollection = await _db.Collections
+                .FirstOrDefaultAsync(c => c.VaultId == targetVaultId
+                                       && c.UserId == userId
+                                       && c.IsDefault);
+            if (targetCollection == null) return;
+
+            var item = await _db.PasswordItems
+                .FirstOrDefaultAsync(p => p.Id == passwordItemId && p.UserId == userId);
+            if (item == null) return;
+
+            item.CollectionId = targetCollection.Id;
+            item.LastModified = DateTime.UtcNow;
             await _db.SaveChangesAsync();
+        }
+
+        // Seed default vaults (Personal + Work) for a new user
+        public async Task SeedDefaultVaultsAsync(string userId)
+        {
+            if (await _db.Vaults.AnyAsync(v => v.UserId == userId)) return;
+
+            var defaults = new[]
+            {
+                new Vault { Name = "Personal",  Description = "Personal passwords and logins",   Icon = "🔐", Color = "#2563EB", IsDefault = true,  UserId = userId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Vault { Name = "Work",       Description = "Work credentials and tools",      Icon = "💼", Color = "#7C3AED", IsDefault = false, UserId = userId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Vault { Name = "Finance",    Description = "Banking and financial accounts",  Icon = "🏦", Color = "#059669", IsDefault = false, UserId = userId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            };
+            _db.Vaults.AddRange(defaults);
+            await _db.SaveChangesAsync();
+
+            // Create matching collections for each vault
+            foreach (var vault in defaults)
+            {
+                _db.Collections.Add(new Collection
+                {
+                    Name = vault.Name,
+                    Description = vault.Description,
+                    Icon = vault.Icon,
+                    Color = vault.Color,
+                    IsDefault = true,
+                    VaultId = vault.Id,
+                    UserId = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    LastModified = DateTime.UtcNow
+                });
+            }
+            await _db.SaveChangesAsync();
+        }
+
+        // ── Private helpers ─────────────────────────────────────────────────────
+
+        private async Task PopulateItemCountsAsync(List<Vault> vaults, string userId)
+        {
+            if (!vaults.Any()) return;
+
+            var vaultIds = vaults.Select(v => v.Id).ToList();
+
+            // Get collection IDs grouped by vault
+            var collectionsByVault = await _db.Collections
+                .Where(c => c.UserId == userId && c.VaultId != null && vaultIds.Contains(c.VaultId.Value))
+                .Select(c => new { c.VaultId, c.Id })
+                .ToListAsync();
+
+            // Get item counts for each collection
+            var collectionIds = collectionsByVault.Select(c => c.Id).ToList();
+            var itemCounts = await _db.PasswordItems
+                .Where(p => p.UserId == userId
+                         && !p.IsDeleted
+                         && p.CollectionId != null
+                         && collectionIds.Contains(p.CollectionId.Value))
+                .GroupBy(p => p.CollectionId!.Value)
+                .Select(g => new { CollectionId = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            // Map back to vaults
+            foreach (var vault in vaults)
+            {
+                var vaultCollectionIds = collectionsByVault
+                    .Where(c => c.VaultId == vault.Id)
+                    .Select(c => c.Id)
+                    .ToHashSet();
+
+                vault.ItemCount = itemCounts
+                    .Where(ic => vaultCollectionIds.Contains(ic.CollectionId))
+                    .Sum(ic => ic.Count);
+            }
         }
     }
 }

@@ -44,5 +44,6 @@ public enum CustomFieldType
     Url = 6,
     TextArea = 7,
     Phone = 8,
-    File = 9
+    File = 9,
+    Toggle = 10,    // Yes / No radio button pair
 }

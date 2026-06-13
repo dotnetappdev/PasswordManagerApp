@@ -57,10 +57,20 @@
                         </Grid.ColumnDefinitions>
                         
                         <StackPanel Grid.Column="0" Margin="4">
-                            <TextBlock Text="Collections" 
-                                      Style="{StaticResource ModernHeading4Style}"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="3" CornerRadius="1.5"
+                                        Background="{StaticResource ModernSuccessBrush}"
+                                        Margin="0,1,10,1" VerticalAlignment="Stretch"/>
+                                <TextBlock Grid.Column="1" Text="Collections"
+                                           FontSize="16" FontWeight="SemiBold"
+                                           Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                            </Grid>
                             <TextBlock Text="Categories to organize your password items"
-                                      Style="{StaticResource ModernCaptionStyle}"/>
+                                      Style="{StaticResource ModernCaptionStyle}" Margin="13,0,0,0"/>
                         </StackPanel>
                         
                         <Button x:Name="AddCollectionButton"
@@ -150,10 +160,20 @@
                         </Grid.ColumnDefinitions>
                         
                         <StackPanel Grid.Column="0" Margin="4">
-                            <TextBlock Text="Types" 
-                                      Style="{StaticResource ModernHeading4Style}"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="3" CornerRadius="1.5"
+                                        Background="{StaticResource ModernPrimaryBrush}"
+                                        Margin="0,1,10,1" VerticalAlignment="Stretch"/>
+                                <TextBlock Grid.Column="1" Text="Types"
+                                           FontSize="16" FontWeight="SemiBold"
+                                           Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                            </Grid>
                             <TextBlock Text="Item types like Login, Credit Card, Secure Note, etc."
-                                      Style="{StaticResource ModernCaptionStyle}"/>
+                                      Style="{StaticResource ModernCaptionStyle}" Margin="13,0,0,0"/>
                         </StackPanel>
                         
                         <Button x:Name="AddTypeButton"
@@ -181,7 +201,7 @@
                                     </Grid.ColumnDefinitions>
                                     
                                     <Border Grid.Column="0"
-                                           Background="#1F2937"
+                                           Background="#2D2D2D"
                                           
                                            Width="24"
                                            Height="24"
@@ -239,10 +259,20 @@
                         </Grid.ColumnDefinitions>
                         
                         <StackPanel Grid.Column="0" Margin="4">
-                            <TextBlock Text="Tags" 
-                                      Style="{StaticResource ModernHeading4Style}"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="3" CornerRadius="1.5"
+                                        Background="{StaticResource ModernWarningBrush}"
+                                        Margin="0,1,10,1" VerticalAlignment="Stretch"/>
+                                <TextBlock Grid.Column="1" Text="Tags"
+                                           FontSize="16" FontWeight="SemiBold"
+                                           Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                            </Grid>
                             <TextBlock Text="Labels to organize items like Work, Personal, Finance, etc."
-                                      Style="{StaticResource ModernCaptionStyle}"/>
+                                      Style="{StaticResource ModernCaptionStyle}" Margin="13,0,0,0"/>
                         </StackPanel>
                         
                         <Button x:Name="AddTagButton"

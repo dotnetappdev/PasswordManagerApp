@@ -40,13 +40,13 @@ else
             @foreach (var col in filteredCollections)
             {
                 <MudItem xs="12" sm="6" md="4" lg="3">
-                    <MudCard Elevation="2" Style="@($"border-left: 4px solid {(col.Color ?? "#7C3AED")}; height:100%;")">
+                    <MudCard Elevation="2" Style="@($"border-left: 4px solid {(col.Color ?? "#2563EB")}; height:100%;")">
                         <MudCardContent>
                             <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween">
                                 <MudStack Spacing="1">
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                                         <MudIcon Icon="@Icons.Material.Filled.FolderSpecial"
-                                                 Style="@($"color:{(col.Color ?? "#7C3AED")}; font-size:1.5rem;")" />
+                                                 Style="@($"color:{(col.Color ?? "#2563EB")}; font-size:1.5rem;")" />
                                         <MudText Typo="Typo.h6" Style="font-weight:600; font-size:1rem;">@col.Name</MudText>
                                         @if (col.IsDefault)
                                         {
@@ -103,7 +103,7 @@ else
             <MudItem xs="12">
                 <MudPaper Class="pa-12 text-center" Elevation="1">
                     <MudIcon Icon="@Icons.Material.Filled.FolderSpecial"
-                             Style="font-size:4rem; color:#7C3AED; opacity:0.4;" />
+                             Style="font-size:4rem; color:#2563EB; opacity:0.4;" />
                     <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No collections found</MudText>
                     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
                         Create a collection to group your password categories.
@@ -132,7 +132,7 @@ else
                               Variant="Variant.Outlined" Lines="2"
                               Placeholder="Optional description" />
                 <MudTextField @bind-Value="_editingCollection.Color" Label="Color (hex)"
-                              Variant="Variant.Outlined" Placeholder="#7C3AED"
+                              Variant="Variant.Outlined" Placeholder="#2563EB"
                               Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Palette" />
                 <MudTextField @bind-Value="_editingCollection.Icon" Label="Icon (emoji or name)"
@@ -200,7 +200,7 @@ else
         _editingCollection = new Collection
         {
             UserId = AuthService.CurrentUser?.Id,
-            Color = "#7C3AED",
+            Color = "#2563EB",
             CreatedAt = DateTime.UtcNow
         };
         _dialogVisible = true;

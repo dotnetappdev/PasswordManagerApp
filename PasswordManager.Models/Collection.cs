@@ -22,10 +22,14 @@ namespace PasswordManager.Models
         public int? ParentCollectionId { get; set; }
         public Collection? ParentCollection { get; set; }
         public List<Collection> Children { get; set; } = new();
+
+        // Vault relationship — a collection can belong to a vault
+        public int? VaultId { get; set; }
+        public Vault? Vault { get; set; }
+
         // Navigation properties
         public List<Category> Categories { get; set; } = new();
         public List<PasswordItem> PasswordItems { get; set; } = new();
         public int? ParentId { get => ParentCollectionId; set => ParentCollectionId = value; } // For mapping
-        // public Collection? Parent { get => ParentCollection; set => ParentCollection = value; } // For mapping - Commented out to fix EF mapping issue
     }
 }

@@ -27,9 +27,9 @@ else
 {
     <MudGrid Class="mb-6">
         <MudItem xs="12" sm="6" md="3">
-            <MudPaper Class="pa-4 rounded-lg" Elevation="2" Style="border-left: 4px solid #7C3AED;">
+            <MudPaper Class="pa-4 rounded-lg" Elevation="2" Style="border-left: 4px solid #2563EB;">
                 <MudStack Row="true" AlignItems="AlignItems.Center">
-                    <MudIcon Icon="@Icons.Material.Filled.Lock" Style="color:#7C3AED; font-size:2rem;" />
+                    <MudIcon Icon="@Icons.Material.Filled.Lock" Style="color:#2563EB; font-size:2rem;" />
                     <MudStack Spacing="0">
                         <MudText Typo="Typo.h4" Style="font-weight:700">@totalPasswords</MudText>
                         <MudText Typo="Typo.body2" Color="Color.Secondary">Total Items</MudText>
@@ -179,7 +179,7 @@ else
 
     string GetItemColor(ItemType type) => type switch
     {
-        ItemType.Login => "#7C3AED",
+        ItemType.Login => "#2563EB",
         ItemType.CreditCard => "#EC4899",
         ItemType.SecureNote => "#10B981",
         ItemType.WiFi => "#3B82F6",

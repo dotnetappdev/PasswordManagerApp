@@ -16,7 +16,7 @@
         <MudItem xs="12" sm="6" md="4" lg="3">
             <MudCard @onclick="@(() => SelectManager(pm.Key))" Class="cursor-pointer"
                      Style="@(selectedManager == pm.Key
-                               ? "border: 2px solid #7C3AED; transition: all 0.2s;"
+                               ? "border: 2px solid #2563EB; transition: all 0.2s;"
                                : "border: 2px solid transparent; transition: all 0.2s;")"
                      Elevation="@(selectedManager == pm.Key ? 4 : 1)">
                 <MudCardContent Class="text-center pa-3">
@@ -50,7 +50,7 @@
                           Style="border: 2px dashed rgba(124,58,237,0.5); cursor:pointer; transition: background 0.2s;"
                           Elevation="0">
                     <MudIcon Icon="@Icons.Material.Filled.CloudUpload"
-                             Style="font-size:3rem; color:#7C3AED; opacity:0.8;" />
+                             Style="font-size:3rem; color:#2563EB; opacity:0.8;" />
                     <MudText Typo="Typo.body1" Class="mt-2" Style="font-weight:500;">
                         Drop your export file here or click to browse
                     </MudText>

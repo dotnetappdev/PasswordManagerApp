@@ -37,7 +37,7 @@
     <Color x:Key="ModernCardColor">#242424</Color>
     <Color x:Key="ModernElevatedSurfaceColor">#3A3A3A</Color>
     <Color x:Key="ModernOverlayColor">#484848</Color>
-    <Color x:Key="ModernBorderColor">#FFFFFF1C</Color>
+    <Color x:Key="ModernBorderColor">#FF3A3A3A</Color>
     <Color x:Key="ModernFormBackgroundColor">#141414</Color>
 
     <!-- Sidebar -->
@@ -80,9 +80,20 @@
     <SolidColorBrush x:Key="ModernNewItemButtonBrush"
                      Color="{StaticResource ModernNewItemButtonColor}"/>
 
-    <!-- Button state brushes -->
-    <SolidColorBrush x:Key="ModernButtonPointerOverBrush" Color="#283141" />
-    <SolidColorBrush x:Key="ModernButtonPressedBrush"     Color="#1F2937" />
+    <!-- Button state brushes — neutral grey, no blue tint -->
+    <SolidColorBrush x:Key="ModernButtonPointerOverBrush" Color="#3A3A3A" />
+    <SolidColorBrush x:Key="ModernButtonPressedBrush"     Color="#272727" />
+
+    <!-- Suppress the default WPF dotted focus rectangle on all controls -->
+    <Style x:Key="{x:Static SystemParameters.FocusVisualStyleKey}">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Rectangle StrokeThickness="0" IsHitTestVisible="False"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
     <SolidColorBrush x:Key="ModernTextPrimaryBrush"    Color="{StaticResource ModernTextPrimaryColor}"/>
     <SolidColorBrush x:Key="ModernTextSecondaryBrush"  Color="{StaticResource ModernTextSecondaryColor}"/>
@@ -95,10 +106,10 @@
 
     <!-- ModernWPF TextControl resource overrides — keeps TextBox/PasswordBox dark on all states.
          ModernWPF's built-in templates read these keys via DynamicResource so no custom Template needed. -->
-    <SolidColorBrush x:Key="TextControlBackground"                    Color="#1F2937"/>
-    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"         Color="#283141"/>
-    <SolidColorBrush x:Key="TextControlBackgroundFocused"             Color="#1F2937"/>
-    <SolidColorBrush x:Key="TextControlBackgroundDisabled"            Color="#1C2433"/>
+    <SolidColorBrush x:Key="TextControlBackground"                    Color="#242424"/>
+    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"         Color="#2D2D2D"/>
+    <SolidColorBrush x:Key="TextControlBackgroundFocused"             Color="#242424"/>
+    <SolidColorBrush x:Key="TextControlBackgroundDisabled"            Color="#1E1E1E"/>
     <SolidColorBrush x:Key="TextControlForeground"                    Color="{StaticResource ModernTextPrimaryColor}"/>
     <SolidColorBrush x:Key="TextControlForegroundPointerOver"         Color="{StaticResource ModernTextPrimaryColor}"/>
     <SolidColorBrush x:Key="TextControlForegroundFocused"             Color="{StaticResource ModernTextPrimaryColor}"/>
@@ -117,11 +128,11 @@
     ═══════════════════════════════════════════ -->
 
     <!-- Pane backgrounds -->
-    <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground"      Color="#0D1117"/>
-    <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground"     Color="#0D1117"/>
-    <SolidColorBrush x:Key="NavigationViewTopPaneBackground"          Color="#0D1117"/>
-    <SolidColorBrush x:Key="NavigationViewContentBackground"          Color="#111827"/>
-    <SolidColorBrush x:Key="NavigationViewContentGridBackground"      Color="#111827"/>
+    <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground"      Color="#111111"/>
+    <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground"     Color="#111111"/>
+    <SolidColorBrush x:Key="NavigationViewTopPaneBackground"          Color="#111111"/>
+    <SolidColorBrush x:Key="NavigationViewContentBackground"          Color="#181818"/>
+    <SolidColorBrush x:Key="NavigationViewContentGridBackground"      Color="#181818"/>
 
     <!-- Item foregrounds -->
     <SolidColorBrush x:Key="NavigationViewItemForeground"             Color="#D1D5DB"/>
@@ -132,11 +143,11 @@
 
     <!-- Item backgrounds -->
     <SolidColorBrush x:Key="NavigationViewItemBackground"                    Color="Transparent"/>
-    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected"             Color="#1E3A5F"/>
-    <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver"          Color="#1F2937"/>
-    <SolidColorBrush x:Key="NavigationViewItemBackgroundPressed"              Color="#374151"/>
-    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver"  Color="#1E3A5F"/>
-    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPressed"      Color="#1A3355"/>
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected"             Color="#2B2B2B"/>
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver"          Color="#282828"/>
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundPressed"              Color="#363636"/>
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver"  Color="#2B2B2B"/>
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPressed"      Color="#202020"/>
 
     <!-- Separator — thin translucent white line, not yellow -->
     <SolidColorBrush x:Key="NavigationViewItemSeparatorForeground"    Color="#FFFFFF18"/>
@@ -152,11 +163,11 @@
     <Thickness x:Key="NavigationViewContentGridMargin">0</Thickness>
 
     <!-- Keep the ui: prefixed versions too for any path that reads them -->
-    <SolidColorBrush x:Key="ui:NavigationViewDefaultPaneBackground"   Color="#0D1117"/>
-    <SolidColorBrush x:Key="ui:NavigationViewExpandedPaneBackground"  Color="#0D1117"/>
-    <SolidColorBrush x:Key="ui:NavigationViewTopPaneBackground"       Color="#0D1117"/>
-    <SolidColorBrush x:Key="ui:NavigationViewContentBackground"       Color="#111827"/>
-    <SolidColorBrush x:Key="ui:NavigationViewContentGridBackground"   Color="#111827"/>
+    <SolidColorBrush x:Key="ui:NavigationViewDefaultPaneBackground"   Color="#111111"/>
+    <SolidColorBrush x:Key="ui:NavigationViewExpandedPaneBackground"  Color="#111111"/>
+    <SolidColorBrush x:Key="ui:NavigationViewTopPaneBackground"       Color="#111111"/>
+    <SolidColorBrush x:Key="ui:NavigationViewContentBackground"       Color="#181818"/>
+    <SolidColorBrush x:Key="ui:NavigationViewContentGridBackground"   Color="#181818"/>
     <Thickness x:Key="ui:NavigationViewContentMargin">0</Thickness>
     <Thickness x:Key="ui:NavigationViewContentGridMargin">0</Thickness>
 
@@ -184,15 +195,15 @@
 
     <!-- Card surface gradient -->
     <LinearGradientBrush x:Key="ModernCardGradientBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#252F3F" Offset="0"/>
-        <GradientStop Color="#1F2937" Offset="1"/>
+        <GradientStop Color="#2D2D2D" Offset="0"/>
+        <GradientStop Color="#242424" Offset="1"/>
     </LinearGradientBrush>
 
     <!-- Default Button Style — Windows 11 dark mode neutral grey -->
     <Style TargetType="Button">
-        <Setter Property="Background"      Value="#2D2D2D"/>
-        <Setter Property="Foreground"      Value="#E5E5E5"/>
-        <Setter Property="BorderBrush"     Value="#454545"/>
+        <Setter Property="Background"      Value="#2B2B2B"/>
+        <Setter Property="Foreground"      Value="#FFFFFF"/>
+        <Setter Property="BorderBrush"     Value="#464646"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding"         Value="12,8"/>
         <Setter Property="FontSize"        Value="14"/>
@@ -212,62 +223,100 @@
         <Setter Property="SelectionBrush"  Value="{StaticResource ModernPrimaryBrush}"/>
     </Style>
 
-    <!-- Enhanced ComboBox Style with 1Password-like behavior -->
-    <Style TargetType="ComboBox">
-        <Setter Property="Background"
-                Value="{StaticResource ModernSurfaceBrush}"/>
-        <Setter Property="Foreground"
-                Value="{StaticResource ModernTextPrimaryBrush}"/>
-        <Setter Property="BorderBrush"
-                Value="{StaticResource ModernBorderBrush}"/>
-        <Setter Property="BorderThickness"
-                Value="0"/>
-        <!-- <Setter Property="CornerRadius" Value="0"/>-->
-        <Setter Property="Padding"
-                Value="12,10"/>
-        <Setter Property="FontSize"
-                Value="14"/>
-        <Setter Property="MinHeight"
-                Value="36"/>
+    <!-- ModernWPF's ComboBoxHelper.UpdateCornerRadius calls ResourceLookup("OverlayCornerRadius")
+         and unboxes the result to CornerRadius with no null guard.  If the key is absent
+         TryFindResource returns null, and unboxing null → struct throws NullReferenceException.
+         Defining it here guarantees the lookup always succeeds. -->
+    <CornerRadius x:Key="OverlayCornerRadius">8</CornerRadius>
+    <!-- Also define the related corner-radius keys ModernWPF may look up. -->
+    <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
+    <CornerRadius x:Key="ComboBoxDropDownCornerRadius">8</CornerRadius>
+
+    <!-- ═══════════════════════════════════════════
+         ComboBox Win11 dark mode — DynamicResource keys read by ModernWPF's internal template.
+         These must live in the merged App ResourceDictionary so ModernWPF picks them up.
+    ═══════════════════════════════════════════ -->
+    <SolidColorBrush x:Key="ComboBoxBackground"                         Color="#2D2D2D"/>
+    <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver"              Color="#3A3A3A"/>
+    <SolidColorBrush x:Key="ComboBoxBackgroundPressed"                  Color="#272727"/>
+    <SolidColorBrush x:Key="ComboBoxBackgroundDisabled"                 Color="#1C1C1C"/>
+    <SolidColorBrush x:Key="ComboBoxBackgroundFocused"                  Color="#2D2D2D"/>
+    <SolidColorBrush x:Key="ComboBoxBackgroundOpen"                     Color="#2D2D2D"/>
+    <SolidColorBrush x:Key="ComboBoxEditableBackground"                 Color="#2D2D2D"/>
+    <SolidColorBrush x:Key="ComboBoxEditableBackgroundPointerOver"      Color="#3A3A3A"/>
+    <SolidColorBrush x:Key="ComboBoxEditableBackgroundPressed"          Color="#272727"/>
+    <SolidColorBrush x:Key="ComboBoxEditableBackgroundFocused"          Color="#2D2D2D"/>
+    <SolidColorBrush x:Key="ComboBoxForeground"                         Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="ComboBoxForegroundDisabled"                 Color="#6A6A6A"/>
+    <SolidColorBrush x:Key="ComboBoxForegroundFocused"                  Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="ComboBoxBorderBrush"                        Color="#3A3A3A"/>
+    <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver"             Color="#FF3A3A3A"/>
+    <SolidColorBrush x:Key="ComboBoxBorderBrushPressed"                 Color="#FF3A3A3A"/>
+    <SolidColorBrush x:Key="ComboBoxBorderBrushFocused"                 Color="#FF3A3A3A"/>
+    <SolidColorBrush x:Key="ComboBoxBorderBrushDisabled"                Color="#333333"/>
+    <SolidColorBrush x:Key="ComboBoxPlaceholderForeground"              Color="#9D9D9D"/>
+    <SolidColorBrush x:Key="ComboBoxPlaceholderForegroundPointerOver"   Color="#9D9D9D"/>
+    <SolidColorBrush x:Key="ComboBoxPlaceholderForegroundFocused"       Color="#9D9D9D"/>
+    <SolidColorBrush x:Key="ComboBoxPlaceholderForegroundDisabled"      Color="#6A6A6A"/>
+    <!-- Dropdown popup -->
+    <SolidColorBrush x:Key="ComboBoxDropDownBackground"                 Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush"                Color="#3A3A3A"/>
+    <SolidColorBrush x:Key="ComboBoxDropDownGlyphForeground"            Color="#9D9D9D"/>
+    <!-- Dropdown items -->
+    <SolidColorBrush x:Key="ComboBoxItemBackground"                     Color="Transparent"/>
+    <SolidColorBrush x:Key="ComboBoxItemBackgroundPointerOver"          Color="#383838"/>
+    <SolidColorBrush x:Key="ComboBoxItemBackgroundPressed"              Color="#2D2D2D"/>
+    <SolidColorBrush x:Key="ComboBoxItemBackgroundSelected"             Color="#FF3A3A3A"/>
+    <SolidColorBrush x:Key="ComboBoxItemBackgroundSelectedPointerOver"  Color="#FF3A3A3A"/>
+    <SolidColorBrush x:Key="ComboBoxItemBackgroundSelectedPressed"      Color="#FF3A3A3A"/>
+    <SolidColorBrush x:Key="ComboBoxItemBackgroundDisabled"             Color="Transparent"/>
+    <SolidColorBrush x:Key="ComboBoxItemForeground"                     Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="ComboBoxItemForegroundPointerOver"          Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ComboBoxItemForegroundPressed"              Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="ComboBoxItemForegroundSelected"             Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ComboBoxItemForegroundSelectedPointerOver"  Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ComboBoxItemForegroundDisabled"             Color="#6A6A6A"/>
+
+    <!-- ComboBox — colour-only overrides via DynamicResource keys above.
+         NO default Style is defined here because a keyless Style replaces ModernWPF's template
+         entirely, reverting the popup to WPF's built-in white one.
+         Colours are injected at the highest priority in App.xaml.cs ApplyComboBoxDarkResources(). -->
+
+    <!-- Dark ComboBoxItem — covers both data-generated and explicitly-added items. -->
+    <Style TargetType="ComboBoxItem">
+        <Setter Property="Foreground"               Value="#E5E5E5"/>
+        <Setter Property="Background"               Value="Transparent"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Padding"                  Value="12,8"/>
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="ComboBox">
-                    <Border x:Name="BorderElement"
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="Bd"
                             Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ContentPresenter Grid.Column="0"
-                                              x:Name="ContentPresenter"
-                                              Content="{TemplateBinding SelectionBoxItem}"
-                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                              Margin="{TemplateBinding Padding}"
-                                              VerticalAlignment="Center"
-                                              HorizontalAlignment="Left"/>
-                            <ui:FontIcon Grid.Column="1"
-                                      Glyph="&#xE70D;"
-                                      FontSize="12"
-                                      Foreground="{StaticResource ModernTextSecondaryBrush}"
-                                      Margin="0,0,12,0"/>
-                            <TextBlock x:Name="PlaceholderText"
-                                       Grid.Column="0"
-                                       Foreground="{StaticResource ModernTextTertiaryBrush}"
-                                       Margin="{TemplateBinding Padding}"
-                                       VerticalAlignment="Center"
-                                       IsHitTestVisible="False"/>
-                        </Grid>
+                            BorderThickness="0"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="BorderElement" Property="BorderBrush" Value="{StaticResource ModernPrimaryLightBrush}"/>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#383838"/>
+                            <Setter Property="Foreground" Value="#FFFFFF"/>
                         </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#2563EB"/>
+                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected"     Value="True"/>
+                                <Condition Property="IsHighlighted"  Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Bd" Property="Background" Value="#1D4ED8"/>
+                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                        </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="BorderElement" Property="Opacity" Value="0.4"/>
-                            <Setter TargetName="ContentPresenter" Property="TextBlock.Foreground" Value="{StaticResource ModernTextTertiaryBrush}"/>
+                            <Setter Property="Foreground" Value="#6A6A6A"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -291,6 +340,8 @@
                 Value="14"/>
         <Setter Property="MinHeight"
                 Value="36"/>
+        <Setter Property="VerticalContentAlignment"
+                Value="Center"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="PasswordBox">
@@ -309,6 +360,7 @@
                             <ScrollViewer x:Name="PART_ContentHost"
                                           Margin="{TemplateBinding Padding}"
                                           Foreground="{TemplateBinding Foreground}"
+                                          VerticalAlignment="Center"
                                           HorizontalScrollBarVisibility="Hidden"
                                           VerticalScrollBarVisibility="Hidden"
                                           IsTabStop="False"/>
@@ -325,7 +377,6 @@
                         </Trigger>
                         <Trigger Property="IsFocused" Value="True">
                             <Setter TargetName="BorderElement" Property="BorderBrush" Value="{StaticResource ModernPrimaryBrush}"/>
-                            <Setter TargetName="BorderElement" Property="BorderThickness" Value="2"/>
                             <Setter TargetName="PlaceholderText" Property="Foreground" Value="{StaticResource ModernPrimaryLightBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
@@ -355,6 +406,7 @@
                     <Border x:Name="RootBorder"
                             Background="{TemplateBinding Background}"
                             CornerRadius="6"
+                           
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                           Content="{TemplateBinding Content}"/>
@@ -375,12 +427,12 @@
         </Setter>
     </Style>
 
-    <!-- Modern Secondary Button Style — Windows 11 dark neutral -->
+    <!-- Modern Secondary Button Style — exact Win11 dark mode neutral palette -->
     <Style x:Key="ModernSecondaryButtonStyle"
            TargetType="Button">
-        <Setter Property="Background"      Value="#2D2D2D"/>
-        <Setter Property="Foreground"      Value="#E5E5E5"/>
-        <Setter Property="BorderBrush"     Value="#454545"/>
+        <Setter Property="Background"      Value="#2B2B2B"/>
+        <Setter Property="Foreground"      Value="#FFFFFF"/>
+        <Setter Property="BorderBrush"     Value="#464646"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Cursor"          Value="Hand"/>
         <Setter Property="Padding"         Value="16,10"/>
@@ -397,19 +449,23 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="6"
                             Padding="{TemplateBinding Padding}">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
-                                          Content="{TemplateBinding Content}"/>
+                        <ContentPresenter x:Name="Content"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Content="{TemplateBinding Content}"
+                                          TextBlock.Foreground="{TemplateBinding Foreground}"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="#3A3A3A"/>
-                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="#555555"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="#323232"/>
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="#464646"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="RootBorder" Property="Opacity" Value="0.8"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="#1E1E1E"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="RootBorder" Property="Opacity" Value="0.4"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="#1C1C1C"/>
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="#333333"/>
+                            <Setter TargetName="Content" Property="TextBlock.Foreground" Value="#666666"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -452,13 +508,20 @@
            TargetType="Border">
         <Setter Property="Background"
                 Value="{StaticResource ModernCardBrush}"/>
-        <!-- <Setter Property="CornerRadius" Value="0"/>-->
         <Setter Property="Padding"
                 Value="12"/>
         <Setter Property="BorderBrush"
                 Value="{StaticResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness"
                 Value="1"/>
+    </Style>
+
+    <!-- Settings section card — same as ModernCardStyle but adds bottom margin between sections -->
+    <Style x:Key="SettingsSectionStyle"
+           BasedOn="{StaticResource ModernCardStyle}"
+           TargetType="Border">
+        <Setter Property="Margin"       Value="0,0,0,8"/>
+        <Setter Property="CornerRadius" Value="8"/>
     </Style>
 
     <!-- Modern Elevated Card Style -->
@@ -498,11 +561,11 @@
                 Value="36"/>
     </Style>
 
-    <!-- Card Button Style for Item Type Selection — dark surface with hover -->
+    <!-- Card Button Style for Item Type Selection — neutral dark surface with hover -->
     <Style x:Key="CardButtonStyle" TargetType="Button">
-        <Setter Property="Background"              Value="#1A2234"/>
+        <Setter Property="Background"              Value="#242424"/>
         <Setter Property="Foreground"              Value="{StaticResource ModernTextPrimaryBrush}"/>
-        <Setter Property="BorderBrush"             Value="#2D3748"/>
+        <Setter Property="BorderBrush"             Value="#333333"/>
         <Setter Property="BorderThickness"         Value="1"/>
         <Setter Property="Cursor"                  Value="Hand"/>
         <Setter Property="Padding"                 Value="12"/>
@@ -525,8 +588,8 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="#22304A"/>
-                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="#3B4D6A"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="#2D2D2D"/>
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="#444444"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="RootBorder" Property="Opacity" Value="0.8"/>
@@ -797,7 +860,8 @@
                 Value="White"/>
         <Setter Property="BorderThickness"
                 Value="0"/>
-        <!-- <Setter Property="CornerRadius" Value="0"/>-->
+        <Setter Property="Cursor"
+                Value="Hand"/>
         <Setter Property="Padding"
                 Value="16,10"/>
         <Setter Property="FontSize"
@@ -805,7 +869,7 @@
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="MinWidth"
-                Value="0"/>
+                Value="100"/>
         <Setter Property="MinHeight"
                 Value="36"/>
         <Setter Property="Template">
@@ -815,13 +879,14 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6"
                             Padding="{TemplateBinding Padding}">
                         <Grid>
                             <ContentPresenter x:Name="ContentPresenter"
                                               HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
                                               Content="{TemplateBinding Content}"
-                                              />
+                                              TextBlock.Foreground="White"/>
                             <ui:ProgressRing x:Name="LoadingIndicator"
                                           Width="18"
                                           Height="18"
@@ -829,8 +894,18 @@
                                           Visibility="Collapsed"
                                           Foreground="White"/>
                         </Grid>
-                        
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource ModernPrimaryDarkBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="RootBorder" Property="Opacity" Value="0.85"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="RootBorder" Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -922,7 +997,7 @@
                         <!-- Dialog container with absolute centering -->
                         <Border x:Name="BackgroundElement"
                                 Background="{TemplateBinding Background}"
-                                BorderBrush="#3A3F4E"
+                                BorderBrush="#2A2A2A"
                                 BorderThickness="1"
                                 CornerRadius="12"
                                 HorizontalAlignment="Center"
@@ -981,8 +1056,8 @@
                                 <!-- Button area -->
                                 <Border x:Name="CommandSpace"
                                         Grid.Row="1"
-                                        Background="#252F3F"
-                                        BorderBrush="#3A3F4E"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="#2A2A2A"
                                         BorderThickness="0,1,0,0"
                                         Padding="24,16"
                                         CornerRadius="0,0,12,12">
@@ -1126,7 +1201,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="#2A3142"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="#333333"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="RootBorder" Property="Opacity" Value="0.7"/>
@@ -1140,9 +1215,9 @@
     <!-- Enhanced TextBox Style -->
     <Style x:Key="ModernTextBoxStyle"
             TargetType="TextBox">
-        <Setter Property="Background"      Value="#252F3F"/>
+        <Setter Property="Background"      Value="#252525"/>
         <Setter Property="Foreground"      Value="{StaticResource ModernTextPrimaryBrush}"/>
-        <Setter Property="BorderBrush"     Value="#3A3F4E"/>
+        <Setter Property="BorderBrush"     Value="#333333"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding"         Value="12,10"/>
         <Setter Property="FontSize"        Value="14"/>
@@ -1169,13 +1244,105 @@
     <!-- Enhanced ComboBox Style -->
     <Style x:Key="ModernComboBoxStyle"
             TargetType="ComboBox">
-        <Setter Property="Background"      Value="#252F3F"/>
+        <Setter Property="Background"      Value="#252525"/>
         <Setter Property="Foreground"      Value="{StaticResource ModernTextPrimaryBrush}"/>
-        <Setter Property="BorderBrush"     Value="#3A3F4E"/>
+        <Setter Property="BorderBrush"     Value="#333333"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding"         Value="12,10"/>
         <Setter Property="FontSize"        Value="14"/>
         <Setter Property="MinHeight"       Value="36"/>
+    </Style>
+
+    <!-- Dark Slider style -->
+    <Style TargetType="Slider">
+        <Setter Property="Foreground"    Value="{StaticResource ModernPrimaryBrush}"/>
+        <Setter Property="Background"    Value="#3A3A3A"/>
+        <Setter Property="MinHeight"     Value="20"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Track x:Name="PART_Track" Grid.Row="1">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="Slider.DecreaseLarge" Focusable="False">
+                                    <RepeatButton.Template>
+                                        <ControlTemplate TargetType="RepeatButton">
+                                            <Border Height="4" Background="{StaticResource ModernPrimaryBrush}" CornerRadius="2"/>
+                                        </ControlTemplate>
+                                    </RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="Slider.IncreaseLarge" Focusable="False">
+                                    <RepeatButton.Template>
+                                        <ControlTemplate TargetType="RepeatButton">
+                                            <Border Height="4" Background="#3A3A3A" CornerRadius="2"/>
+                                        </ControlTemplate>
+                                    </RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb>
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Ellipse Width="16" Height="16"
+                                                     Fill="{StaticResource ModernPrimaryBrush}"
+                                                     Stroke="#1D4ED8" StrokeThickness="2"/>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Password generator option chip toggle -->
+    <Style x:Key="PasswordOptionChipStyle" TargetType="ToggleButton">
+        <Setter Property="Background"   Value="{StaticResource ModernSurfaceBrush}"/>
+        <Setter Property="Foreground"   Value="{StaticResource ModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush"  Value="{StaticResource ModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding"      Value="10,5"/>
+        <Setter Property="FontSize"     Value="12"/>
+        <Setter Property="Cursor"       Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource ModernPrimaryBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource ModernPrimaryBrush}"/>
+                            <Setter Property="Foreground" Value="White"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource ModernElevatedSurfaceBrush}"/>
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True"/>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource ModernPrimaryDarkBrush}"/>
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- Validation Error Message Style -->

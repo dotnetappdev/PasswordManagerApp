@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PasswordManager.Models
 {
@@ -24,9 +25,9 @@ namespace PasswordManager.Models
         public int? CollectionId { get; set; }
         public Collection? Collection { get; set; }
 
-        // Vault relationship
-        public int? VaultId { get; set; }
-        public Vault? Vault { get; set; }
+        // Vault relationship — [NotMapped] until migration is applied
+        [NotMapped] public int? VaultId { get; set; }
+        [NotMapped] public Vault? Vault { get; set; }
 
         // Navigation property for related PasswordItems
         public List<PasswordItem> PasswordItems { get; set; } = new();

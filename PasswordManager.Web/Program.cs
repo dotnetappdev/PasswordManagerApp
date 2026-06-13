@@ -44,30 +44,45 @@ builder.Services.AddRazorComponents()
 // Add MudBlazor services
 builder.Services.AddMudServices(config =>
 {
-    config.SnackbarConfiguration.PositionClass = MudBlazor.Defaults.Classes.Position.BottomRight;
+    config.SnackbarConfiguration.PositionClass    = MudBlazor.Defaults.Classes.Position.BottomRight;
+    config.SnackbarConfiguration.MaxDisplayedSnackbars = 4;
+    config.SnackbarConfiguration.PreventDuplicates  = false;
+    config.SnackbarConfiguration.NewestOnTop        = true;
+    config.SnackbarConfiguration.SnackbarVariant    = MudBlazor.Variant.Filled;
+    config.SnackbarConfiguration.VisibleStateDuration = 4000;
+    config.SnackbarConfiguration.HideTransitionDuration = 400;
+    config.SnackbarConfiguration.ShowTransitionDuration = 300;
 });
 
-// Configure MudBlazor theme with purple branding
+// Register AppNotificationService (thin toast wrapper)
+builder.Services.AddScoped<PasswordManager.Web.Services.AppNotificationService>();
+
+// Configure MudBlazor theme — steel blue, matches WPF brand
 builder.Services.AddScoped(sp => new MudBlazor.MudTheme()
 {
     PaletteLight = new MudBlazor.PaletteLight()
     {
-        Primary = "#7C3AED",
-        PrimaryLighten = "#A78BFA",
-        PrimaryDarken = "#5B21B6",
-        Secondary = "#EC4899",
-        AppbarBackground = "#7C3AED",
+        Primary = "#2563EB",
+        PrimaryLighten = "#60A5FA",
+        PrimaryDarken = "#1D4ED8",
+        Secondary = "#6366F1",
+        AppbarBackground = "#2563EB",
     },
     PaletteDark = new MudBlazor.PaletteDark()
     {
-        Primary = "#7C3AED",
-        PrimaryLighten = "#A78BFA",
-        PrimaryDarken = "#5B21B6",
-        Secondary = "#EC4899",
-        AppbarBackground = "#1A1D27",
-        Background = "#0F1117",
-        Surface = "#1A1D27",
-        DrawerBackground = "#0B0D14",
+        Primary = "#2563EB",
+        PrimaryLighten = "#60A5FA",
+        PrimaryDarken = "#1D4ED8",
+        Secondary = "#6366F1",
+        AppbarBackground = "#141414",
+        AppbarText = "#E5E5E5",
+        Background = "#1A1A1A",
+        BackgroundGray = "#141414",
+        Surface = "#2D2D2D",
+        DrawerBackground = "#141414",
+        DrawerText = "#E5E5E5",
+        TextPrimary = "#E5E5E5",
+        TextSecondary = "#9D9D9D",
     }
 });
 

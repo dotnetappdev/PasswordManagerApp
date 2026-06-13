@@ -1,0 +1,14 @@
+<UserControl x:Class="PasswordManager.WPF.Controls.ToastHost"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             IsHitTestVisible="False">
+    <!-- IsHitTestVisible=False so toasts don't eat mouse events below them -->
+    <Grid>
+        <!-- Toasts anchor to bottom-right -->
+        <StackPanel x:Name="ToastPanel"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Right"
+                    Margin="0,0,20,20"
+                    IsHitTestVisible="True"/>
+    </Grid>
+</UserControl>

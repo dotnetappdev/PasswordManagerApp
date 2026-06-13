@@ -10,6 +10,9 @@ using PasswordManager.Services.Utilities;
 using PasswordManager.Imports.Interfaces;
 using System.Linq;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using PasswordManager.DAL;
+using PasswordManager.DAL.Seed;
 
 namespace PasswordManager.WPF.Views;
 
@@ -949,75 +952,136 @@ public sealed partial class SettingsPage : Page
     {
         try
         {
-            // Show confirmation dialog
             var confirmDialog = new ModernWpf.Controls.ContentDialog
             {
-                Title = "Seed Essential Data",
-                Content = "This will seed categories, collections, and tags into the database if they are missing.\n\nThis is useful if the category dropdown is empty or you need to restore default data.\n\nContinue?",
+                Title = "Seed Sample Data",
+                Content = "This will seed categories, collections, tags, and sample password items for your account.\n\nExisting data is not duplicated.\n\nContinue?",
                 PrimaryButtonText = "Yes, Seed Data",
                 CloseButtonText = "Cancel",
                 DefaultButton = ModernWpf.Controls.ContentDialogButton.Primary,
-                // WPF: XamlRoot not needed
             };
 
             var result = await confirmDialog.ShowAsync();
-            if (result == ModernWpf.Controls.ContentDialogResult.Primary && _serviceProvider != null)
+            if (result != ModernWpf.Controls.ContentDialogResult.Primary || _serviceProvider == null)
+                return;
+
+            var progressDialog = new ModernWpf.Controls.ContentDialog
             {
-                // Show progress indicator
-                var progressDialog = new ModernWpf.Controls.ContentDialog
-                {
-                    Title = "Seeding Data",
-                    Content = new ModernWpf.Controls.ProgressRing { IsActive = true, Width = 50, Height = 50 },
-                    // WPF: XamlRoot not needed
-                };
+                Title = "Seeding Data",
+                Content = new ModernWpf.Controls.ProgressRing { IsActive = true, Width = 50, Height = 50 },
+            };
+            var progressTask = progressDialog.ShowAsync();
 
-                // Show progress dialog (fire and forget)
-                var progressTask = progressDialog.ShowAsync();
-
-                try
+            try
+            {
+                // Seed for the currently logged-in user so items appear in the lists
+                string? currentUserId = null;
+                if (_authService != null)
                 {
-                    // Get the AppStartupService to trigger seeding
+                    currentUserId = _authService.CurrentUser?.Id ?? await _authService.GetCurrentUserIdAsync();
+                }
+
+                var scopeFactory = _serviceProvider.GetService<IServiceScopeFactory>();
+                if (scopeFactory != null && !string.IsNullOrEmpty(currentUserId))
+                {
+                    await System.Threading.Tasks.Task.Run(() =>
+                    {
+                        using var scope = scopeFactory.CreateScope();
+                        var db = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+                        TestDataSeeder.SeedTestData(db, currentUserId);
+                    });
+                    await _logger.LogAsync("SettingsPage", $"Seeded data for user {currentUserId}");
+                }
+                else
+                {
+                    // Fallback: run general database initialisation (seeds for test user)
                     var startupService = _serviceProvider.GetService<IAppStartupService>();
                     if (startupService != null)
-                    {
-                        await _logger.LogAsync("SettingsPage", "Manually triggering essential data seeding");
-                        
-                        // Call the database initialization which includes essential data seeding
                         await startupService.InitializeDatabaseAsync();
-                        
-                        await _logger.LogAsync("SettingsPage", "Essential data seeding completed");
-
-                        // Close progress dialog
-                        progressDialog.Hide();
-
-                        // Show success message
-                        var successDialog = new ModernWpf.Controls.ContentDialog
-                        {
-                            Title = "✓ Success",
-                            Content = "Essential data has been seeded successfully!\n\n• Categories\n• Collections\n• Tags\n\nYou can now add new items with the category dropdown populated.",
-                            CloseButtonText = "OK",
-                            // WPF: XamlRoot not needed
-                        };
-                        await successDialog.ShowAsync();
-                    }
-                    else
-                    {
-                        progressDialog.Hide();
-                        await ShowErrorDialog("Startup service not available. Please restart the application.");
-                    }
                 }
-                catch (Exception ex)
+
+                progressDialog.Hide();
+
+                var successDialog = new ModernWpf.Controls.ContentDialog
                 {
-                    progressDialog.Hide();
-                    await _logger.LogErrorAsync("SettingsPage", "Error seeding data", ex);
-                    await ShowErrorDialog($"Failed to seed data: {ex.Message}");
-                }
+                    Title = "Success",
+                    Content = "Sample data seeded successfully!\n\n• Categories\n• Collections\n• Tags\n• Sample password items\n\nYour lists should now be populated.",
+                    CloseButtonText = "OK",
+                };
+                await successDialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                progressDialog.Hide();
+                await _logger.LogErrorAsync("SettingsPage", "Error seeding data", ex);
+                await ShowErrorDialog($"Failed to seed data: {ex.Message}");
             }
         }
         catch (Exception ex)
         {
             await _logger.LogErrorAsync("SettingsPage", "Error in SeedDataButton_Click", ex);
             await ShowErrorDialog($"An error occurred: {ex.Message}");
+        }
+    }
+
+    private async void ClearSeedDataButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var confirmDialog = new ModernWpf.Controls.ContentDialog
+            {
+                Title = "Clear Seed Data",
+                Content = "This will permanently remove all categories, collections, tags, and password items for your account.\n\nThis cannot be undone. Continue?",
+                PrimaryButtonText = "Yes, Clear Data",
+                CloseButtonText = "Cancel",
+                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
+            };
+
+            var result = await confirmDialog.ShowAsync();
+            if (result != ModernWpf.Controls.ContentDialogResult.Primary || _serviceProvider == null)
+                return;
+
+            string? currentUserId = null;
+            if (_authService != null)
+                currentUserId = _authService.CurrentUser?.Id ?? await _authService.GetCurrentUserIdAsync();
+
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                await ShowErrorDialog("Could not determine the current user. Please log in again.");
+                return;
+            }
+
+            var scopeFactory = _serviceProvider.GetService<IServiceScopeFactory>();
+            if (scopeFactory == null)
+            {
+                await ShowErrorDialog("Service scope factory not available.");
+                return;
+            }
+
+            await System.Threading.Tasks.Task.Run(() =>
+            {
+                using var scope = scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+                TestDataSeeder.ClearSeedData(db, currentUserId);
+                // Also clear the built-in test user's data
+                if (currentUserId != TestDataSeeder.TestUserId)
+                    TestDataSeeder.ClearSeedData(db, TestDataSeeder.TestUserId);
+            });
+
+            await _logger.LogAsync("SettingsPage", $"Cleared seed data for user {currentUserId}");
+
+            var successDialog = new ModernWpf.Controls.ContentDialog
+            {
+                Title = "Done",
+                Content = "All seed data has been removed.",
+                CloseButtonText = "OK",
+            };
+            await successDialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Error clearing seed data", ex);
+            await ShowErrorDialog($"Failed to clear seed data: {ex.Message}");
         }
     }
 
@@ -1569,5 +1633,100 @@ public sealed partial class SettingsPage : Page
         {
             await ShowErrorDialog($"Reseed failed: {ex.Message}");
         }
+    }
+
+    // ── New settings handlers ───────────────────────────────────────────────────
+
+    private void ManageVaultsButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var mainWindow = (Application.Current as App)?.MainWindow;
+            mainWindow?.NavigateToPage("Vaults");
+        }
+        catch { }
+    }
+
+    private async void SeedVaultsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_serviceProvider == null) return;
+        try
+        {
+            var authService = _serviceProvider.GetService<IAuthService>();
+            var vaultService = _serviceProvider.GetService<IVaultService>();
+            var userId = authService?.CurrentUser?.Id;
+            if (string.IsNullOrEmpty(userId) || vaultService == null)
+            {
+                await ShowErrorDialog("Not signed in. Please sign in first.");
+                return;
+            }
+            await vaultService.SeedDefaultVaultsAsync(userId);
+            var dlg = new ModernWpf.Controls.ContentDialog
+            {
+                Title = "Vaults Created",
+                Content = "Default vaults (Personal, Work, Finance) have been created for your account.",
+                CloseButtonText = "OK"
+            };
+            await dlg.ShowAsync();
+        }
+        catch (Exception ex) { await ShowErrorDialog($"Failed to seed vaults: {ex.Message}"); }
+    }
+
+    private void PasswordLengthSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (PasswordLengthLabel != null)
+            PasswordLengthLabel.Text = ((int)e.NewValue).ToString();
+    }
+
+    private void GeneratePreviewPassword_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            int length = (int)(PasswordLengthSlider?.Value ?? 20);
+            bool upper   = PwdUppercase?.IsChecked == true;
+            bool lower   = PwdLowercase?.IsChecked == true;
+            bool numbers = PwdNumbers?.IsChecked  == true;
+            bool symbols = PwdSymbols?.IsChecked  == true;
+
+            var chars = new System.Text.StringBuilder();
+            if (upper)   chars.Append("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+            if (lower)   chars.Append("abcdefghijklmnopqrstuvwxyz");
+            if (numbers) chars.Append("0123456789");
+            if (symbols) chars.Append("!@#$%^&*()-_=+[]{}|;:,.<>?");
+            if (chars.Length == 0) chars.Append("abcdefghijklmnopqrstuvwxyz");
+
+            var charSet = chars.ToString();
+            var bytes = new byte[length];
+            System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
+            var pwd = new string(bytes.Select(b => charSet[b % charSet.Length]).ToArray());
+            if (GeneratedPasswordPreview != null) GeneratedPasswordPreview.Text = pwd;
+        }
+        catch { }
+    }
+
+    private void CheckUpdatesButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "https://github.com/dotnetappdev/vaultguard/releases",
+                UseShellExecute = true
+            });
+        }
+        catch { }
+    }
+
+    private void OpenDocumentationButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "https://github.com/dotnetappdev/vaultguard/wiki",
+                UseShellExecute = true
+            });
+        }
+        catch { }
     }
 }

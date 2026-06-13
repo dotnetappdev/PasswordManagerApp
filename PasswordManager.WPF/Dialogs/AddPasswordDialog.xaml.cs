@@ -18,7 +18,6 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 {
     private readonly IPasswordItemService _passwordItemService;
     private readonly ICategoryInterface _categoryService;
-    private readonly ICollectionService _collectionService;
     private readonly IPasskeyService _passkeyService;
     private readonly IAuthService _authService;
     private PasswordItem? _editingItem;
@@ -34,7 +33,6 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 
         _passwordItemService = serviceProvider.GetRequiredService<IPasswordItemService>();
         _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
-        _collectionService = serviceProvider.GetRequiredService<ICollectionService>();
         _passkeyService = serviceProvider.GetRequiredService<IPasskeyService>();
         _authService = serviceProvider.GetRequiredService<IAuthService>();
         _editingItem = editingItem;
@@ -146,7 +144,6 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         // Disable or hide editing-related controls
         TypeComboBox.IsEnabled = !readOnly;
         CategoryComboBox.IsEnabled = !readOnly;
-        CollectionComboBox.IsEnabled = !readOnly;
         IsFavoriteCheckBox.IsEnabled = !readOnly;
 
         // Hide buttons used for editing/generation
@@ -238,29 +235,25 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
     {
         try
         {
-            // Load categories
-            var categories = await _categoryService.GetAllAsync();
+            var textBrush = Application.Current.Resources.Contains("ModernTextPrimaryBrush")
+                ? (System.Windows.Media.Brush)Application.Current.Resources["ModernTextPrimaryBrush"]
+                : System.Windows.Media.Brushes.White;
+
+            // The Category dropdown is a TYPE selector, not a DB-category browser.
+            // GetAllAsync() returns every row the seeder ever inserted (24+) and can
+            // also contain duplicates if the seeder ran more than once.
+            // We always use the fixed 6-item list that mirrors the navigation sidebar.
             CategoryComboBox.Items.Clear();
-            foreach (var category in categories)
+            foreach (var category in GetDefaultCategories())
             {
                 CategoryComboBox.Items.Add(new ComboBoxItem
                 {
-                    Content = category.Name,
-                    Tag = category
+                    Content = $"{category.Icon} {category.Name}".Trim(),
+                    Tag = category,
+                    Foreground = textBrush
                 });
             }
 
-            // Load collections
-            var collections = await _collectionService.GetAllAsync();
-            CollectionComboBox.Items.Clear();
-            foreach (var collection in collections)
-            {
-                CollectionComboBox.Items.Add(new ComboBoxItem
-                {
-                    Content = collection.Name,
-                    Tag = collection
-                });
-            }
 
             // GeneratePasswordButton may not have an x:Name in XAML (older markup). Find safely and apply visibility based on current read-only state.
             var genBtnObj = this.FindName("GeneratePasswordButton");
@@ -360,20 +353,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             }
         }
 
-        // Select collection
-        if (_editingItem.CollectionId.HasValue)
-        {
-            for (int i = 0; i < CollectionComboBox.Items.Count; i++)
-            {
-                if (CollectionComboBox.Items[i] is ComboBoxItem item &&
-                    item.Tag is Collection col &&
-                    col.Id == _editingItem.CollectionId)
-                {
-                    CollectionComboBox.SelectedIndex = i;
-                    break;
-                }
-            }
-        }
+
 
         // If in read-only mode, populate the display TextBlocks
         if (_isReadOnly)
@@ -404,46 +384,42 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             var selectedType = (ItemType)(TypeComboBox.SelectedIndex + 1);
 
             // Show/hide fields based on type
-            LoginFieldsPanel.Visibility = selectedType == ItemType.Login ? Visibility.Visible : Visibility.Collapsed;
-            CreditCardFieldsPanel.Visibility = selectedType == ItemType.CreditCard ? Visibility.Visible : Visibility.Collapsed;
-            SecureNoteFieldsPanel.Visibility = selectedType == ItemType.SecureNote ? Visibility.Visible : Visibility.Collapsed;
-            WiFiFieldsPanel.Visibility = selectedType == ItemType.WiFi ? Visibility.Visible : Visibility.Collapsed;
-            PasskeyFieldsPanel.Visibility = selectedType == ItemType.Passkey ? Visibility.Visible : Visibility.Collapsed;
-
-            // Handle special form types using SecureNote as base
-            IdentityFieldsPanel.Visibility = Visibility.Collapsed;
+            LoginFieldsPanel.Visibility         = selectedType is ItemType.Login or ItemType.Password ? Visibility.Visible : Visibility.Collapsed;
+            CreditCardFieldsPanel.Visibility    = selectedType == ItemType.CreditCard  ? Visibility.Visible : Visibility.Collapsed;
+            SecureNoteFieldsPanel.Visibility    = selectedType == ItemType.SecureNote  ? Visibility.Visible : Visibility.Collapsed;
+            WiFiFieldsPanel.Visibility          = selectedType == ItemType.WiFi        ? Visibility.Visible : Visibility.Collapsed;
+            PasskeyFieldsPanel.Visibility       = selectedType == ItemType.Passkey     ? Visibility.Visible : Visibility.Collapsed;
+            IdentityFieldsPanel.Visibility      = selectedType == ItemType.Identity    ? Visibility.Visible : Visibility.Collapsed;
             APICredentialsFieldsPanel.Visibility = Visibility.Collapsed;
 
-            // Show Identity panel for Identity-related categories
-            if (selectedType == ItemType.SecureNote)
+            // API Credentials panel replaces SecureNote when category contains "API"
+            if (selectedType == ItemType.SecureNote &&
+                CategoryComboBox.SelectedItem is ComboBoxItem catItem && catItem.Tag is Category cat2 &&
+                cat2.Name.Contains("API", StringComparison.OrdinalIgnoreCase))
             {
-                // Check if this is an Identity or API Credentials item by looking at the category
-                if (CategoryComboBox.SelectedItem is ComboBoxItem categoryItem && categoryItem.Tag is Category category)
-                {
-                    if (category.Name.Contains("Identity"))
-                    {
-                        SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
-                        IdentityFieldsPanel.Visibility = Visibility.Visible;
-                    }
-                    else if (category.Name.Contains("API"))
-                    {
-                        SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
-                        APICredentialsFieldsPanel.Visibility = Visibility.Visible;
-                    }
-                }
+                SecureNoteFieldsPanel.Visibility     = Visibility.Collapsed;
+                APICredentialsFieldsPanel.Visibility = Visibility.Visible;
             }
         }
     }
 
     private void GeneratePasswordButton_Click(object sender, RoutedEventArgs e)
     {
-        // Generate a random password
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-        var random = new Random();
-        var password = new string(Enumerable.Repeat(chars, 16)
-            .Select(s => s[random.Next(s.Length)]).ToArray());
+        if (InlinePasswordGeneratorPanel.Visibility == Visibility.Visible)
+        {
+            InlinePasswordGeneratorPanel.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            InlinePasswordGeneratorPanel.Visibility = Visibility.Visible;
+            GenerateNewPassword();
+        }
+    }
 
-        PasswordTextBox.Password = password;
+    private void PasswordOption_Changed(object sender, RoutedEventArgs e)
+    {
+        if (InlinePasswordGeneratorPanel?.Visibility == Visibility.Visible)
+            GenerateNewPassword();
     }
 
     private void TogglePasswordVisibility_Click(object sender, RoutedEventArgs e)
@@ -453,13 +429,15 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             PasswordTextBox.Visibility = Visibility.Collapsed;
             PasswordDisplayTextBox.Visibility = Visibility.Visible;
             PasswordDisplayTextBox.Text = PasswordTextBox.Password;
-            TogglePasswordVisibilityButton.Content = "🙈";
+            if (TogglePasswordVisibilityButton.Content is TextBlock tb1)
+                tb1.Text = ""; // EyeHide
         }
         else
         {
             PasswordTextBox.Visibility = Visibility.Visible;
             PasswordDisplayTextBox.Visibility = Visibility.Collapsed;
-            TogglePasswordVisibilityButton.Content = "👁️";
+            if (TogglePasswordVisibilityButton.Content is TextBlock tb2)
+                tb2.Text = ""; // Eye
         }
     }
 
@@ -493,12 +471,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                 isValid = false;
             }
 
+            // TypeComboBox is auto-driven by category selection — if still unset, default to Login
             if (TypeComboBox.SelectedIndex < 0)
-            {
-                TypeValidationMessage.Text = "Please select a type";
-                TypeValidationMessage.Visibility = Visibility.Visible;
-                isValid = false;
-            }
+                TypeComboBox.SelectedIndex = 0;
 
             // Show additional validation for login items
             if (TypeComboBox.SelectedIndex == 0 && LoginFieldsPanel.Visibility == Visibility.Visible)
@@ -554,27 +529,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                 item.CategoryId = category.Id;
             }
 
-            // Set collection with better fallback handling
-            if (CollectionComboBox.SelectedItem is ComboBoxItem collectionItem && collectionItem.Tag is Collection collection)
-            {
-                item.CollectionId = collection.Id;
-            }
-            else if (_editingItem == null) // Only set default for new items
-            {
-                // If no collection selected, fallback to default collection to satisfy DB constraints
-                try
-                {
-                    var defaultCollection = await _collectionService.GetDefaultCollectionAsync();
-                    if (defaultCollection != null)
-                    {
-                        item.CollectionId = defaultCollection.Id;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Continue without collection ID - let the service handle it
-                }
-            }
+
 
             // Handle type-specific fields
             await PopulateTypeSpecificFields(item, selectedType);
@@ -810,16 +765,6 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         // For now, just a placeholder
     }
 
-    private void PasswordTextBox_MouseRightButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
-    {
-        // Show password generator on right-click
-        if (PasswordGeneratorPopup != null)
-        {
-            PasswordGeneratorPopup.Visibility = Visibility.Visible;
-            GenerateNewPassword();
-        }
-    }
-
     private void RefreshPassword_Click(object sender, RoutedEventArgs e)
     {
         GenerateNewPassword();
@@ -827,60 +772,93 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 
     private void ClosePasswordGenerator_Click(object sender, RoutedEventArgs e)
     {
-        PasswordGeneratorPopup.Visibility = Visibility.Collapsed;
+        InlinePasswordGeneratorPanel.Visibility = Visibility.Collapsed;
     }
 
     private void CancelPasswordGenerator_Click(object sender, RoutedEventArgs e)
     {
-        PasswordGeneratorPopup.Visibility = Visibility.Collapsed;
+        InlinePasswordGeneratorPanel.Visibility = Visibility.Collapsed;
     }
 
     private void UseGeneratedPassword_Click(object sender, RoutedEventArgs e)
     {
-        if (GeneratedPasswordText?.Text is string password)
+        if (GeneratedPasswordText?.Text is string password &&
+            password != "Click Regenerate to generate a password")
         {
             PasswordTextBox.Password = password;
+            if (PasswordDisplayTextBox.Visibility == Visibility.Visible)
+                PasswordDisplayTextBox.Text = password;
         }
-        PasswordGeneratorPopup.Visibility = Visibility.Collapsed;
+        InlinePasswordGeneratorPanel.Visibility = Visibility.Collapsed;
     }
 
     private void GenerateNewPassword()
     {
-        // Get password settings from the UI
-        int length = (int)(PasswordLengthSlider?.Value ?? 13);
-        bool includeNumbers = NumbersToggle?.IsChecked ?? true;
-        bool includeSymbols = SymbolsToggle?.IsChecked ?? false;
+        int length = (int)(PasswordLengthSlider?.Value ?? 20);
+        bool upper   = UppercaseToggle?.IsChecked ?? true;
+        bool lower   = LowercaseToggle?.IsChecked ?? true;
+        bool numbers = NumbersToggle?.IsChecked  ?? true;
+        bool symbols = SymbolsToggle?.IsChecked  ?? true;
 
-        string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-        if (includeNumbers)
-            chars += "0123456789";
-
-        if (includeSymbols)
-            chars += "!@#$%^&*()-_=+[]{}|;:,.<>?";
+        string chars = "";
+        if (upper)   chars += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        if (lower)   chars += "abcdefghijklmnopqrstuvwxyz";
+        if (numbers) chars += "0123456789";
+        if (symbols) chars += "!@#$%^&*()-_=+[]{}|;:,.<>?";
+        if (string.IsNullOrEmpty(chars)) chars = "abcdefghijklmnopqrstuvwxyz";
 
         var random = new Random();
         var password = new string(Enumerable.Repeat(chars, length)
             .Select(s => s[random.Next(s.Length)]).ToArray());
 
         if (GeneratedPasswordText != null)
-        {
             GeneratedPasswordText.Text = password;
-        }
 
-        // Update the length display
         if (PasswordLengthText != null)
-        {
             PasswordLengthText.Text = length.ToString();
-        }
     }
 
     private void PasswordLengthSlider_ValueChanged(object sender, System.Windows.RoutedPropertyChangedEventArgs<double> e)
     {
         if (PasswordLengthText != null)
-        {
             PasswordLengthText.Text = ((int)e.NewValue).ToString();
-        }
+        if (InlinePasswordGeneratorPanel?.Visibility == Visibility.Visible)
+            GenerateNewPassword();
+    }
+
+    // Matches the 5 type-based nav items plus Identity — used only when DB has no categories
+    private static List<Category> GetDefaultCategories() =>
+    [
+        new() { Id = 1, Name = "Login",       Icon = "🔐", Color = "#3b82f6" },
+        new() { Id = 2, Name = "Credit Card", Icon = "💳", Color = "#10b981" },
+        new() { Id = 3, Name = "Secure Note", Icon = "📝", Color = "#f59e0b" },
+        new() { Id = 4, Name = "Wi-Fi",       Icon = "📶", Color = "#06b6d4" },
+        new() { Id = 5, Name = "Passkey",     Icon = "🔑", Color = "#ec4899" },
+        new() { Id = 6, Name = "Identity",    Icon = "👤", Color = "#10b981" },
+    ];
+
+    private void CategoryComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (CategoryComboBox.SelectedItem is not ComboBoxItem ci || ci.Tag is not Category cat)
+            return;
+
+        // Map category name → item type so the correct field panels show
+        var name = cat.Name ?? string.Empty;
+        int typeIndex = name.ToLower() switch
+        {
+            var n when n.Contains("card") || n.Contains("credit") || n.Contains("payment") || n.Contains("debit") => 1,   // CreditCard
+            var n when n.Contains("note") || n.Contains("memo") || n.Contains("document") || n.Contains("text") => 2,     // SecureNote
+            var n when n.Contains("wifi") || n.Contains("network") || n.Contains("wireless") || n.Contains("router") => 3,// WiFi
+            var n when n.Contains("password") || n.Contains("pwd") || n.Contains("credential") => 4,                      // Password
+            var n when n.Contains("passkey") || n.Contains("biometric") || n.Contains("fido") => 5,                       // Passkey
+            var n when n.Contains("identity") || n.Contains("person") || n.Contains("profile") => 6,                      // Identity
+            _ => 0 // Login (default — covers "login", "social", "email", "banking", "work", etc.)
+        };
+
+        if (TypeComboBox.SelectedIndex != typeIndex)
+            TypeComboBox.SelectedIndex = typeIndex;
+        else
+            TypeComboBox_SelectionChanged(TypeComboBox, null!); // force refresh if same index
     }
 
     // Custom Fields Methods
@@ -899,18 +877,42 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 
     private void AddCustomField_Click(object sender, RoutedEventArgs e)
     {
-        var newField = new CustomField
-        {
-            Name = $"Custom Field {_customFields.Count + 1}",
-            Value = "",
-            Type = CustomFieldType.Text,
-            DisplayOrder = _customFields.Count,
-            PasswordItemId = _editingItem?.Id ?? 0
-        };
-
-        _customFields.Add(newField);
-        RefreshCustomFieldsUI();
+        // Toggle the type picker panel
+        FieldTypePickerPanel.Visibility = FieldTypePickerPanel.Visibility == Visibility.Visible
+            ? Visibility.Collapsed
+            : Visibility.Visible;
     }
+
+    private void FieldTypeButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string typeStr && Enum.TryParse<CustomFieldType>(typeStr, out var fieldType))
+        {
+            var newField = new CustomField
+            {
+                Name = GetDefaultFieldName(fieldType),
+                Value = "",
+                Type = fieldType,
+                DisplayOrder = _customFields.Count,
+                PasswordItemId = _editingItem?.Id ?? 0
+            };
+            _customFields.Add(newField);
+            RefreshCustomFieldsUI();
+            FieldTypePickerPanel.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private static string GetDefaultFieldName(CustomFieldType type) => type switch
+    {
+        CustomFieldType.Password => "Password",
+        CustomFieldType.Email    => "Email",
+        CustomFieldType.Url      => "URL",
+        CustomFieldType.Phone    => "Phone",
+        CustomFieldType.Number   => "Number",
+        CustomFieldType.Date     => "Date",
+        CustomFieldType.Toggle   => "Yes / No",
+        CustomFieldType.TextArea => "Notes",
+        _                        => "Text Field",
+    };
 
     private void RefreshCustomFieldsUI()
     {
@@ -929,7 +931,6 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 
     private void OnCustomFieldChanged(CustomField field)
     {
-        // Update timestamp
         field.LastModified = DateTime.UtcNow;
     }
 
@@ -941,20 +942,36 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 
     private void UpdateCustomFieldsInPasswordItem(PasswordItem item)
     {
-        // Clear existing custom fields
-        item.CustomFields.Clear();
+        int order = 0;
+        foreach (var f in _customFields)
+            f.DisplayOrder = order++;
 
-        // Add current custom fields
-        foreach (var field in _customFields)
+        if (item.Id == 0)
         {
-            field.PasswordItemId = item.Id;
-            item.CustomFields.Add(field);
+            // New item: populate the empty list; EF Core assigns PasswordItemId after the parent INSERT
+            foreach (var field in _customFields)
+                item.CustomFields.Add(field);
+        }
+        else
+        {
+            // Edit item: sync the tracked collection
+            // Remove fields the user deleted
+            var toRemove = item.CustomFields
+                .Where(existing => !_customFields.Any(cf => cf.Id > 0 && cf.Id == existing.Id))
+                .ToList();
+            foreach (var f in toRemove)
+                item.CustomFields.Remove(f);
+
+            // Add brand-new fields (Id == 0)
+            foreach (var field in _customFields.Where(cf => cf.Id == 0))
+            {
+                field.PasswordItemId = item.Id;
+                item.CustomFields.Add(field);
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(_brandIconDataUrl))
-        {
             BrandIconHelper.SetCustomBrandIcon(item, _brandIconDataUrl);
-        }
     }
 
     private void UpdateBrandIconStatus()

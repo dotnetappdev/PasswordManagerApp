@@ -1,0 +1,36 @@
+@* Reusable styled alert with icon — wraps MudBlazor for consistent branding *@
+@using MudBlazor
+
+@if (!string.IsNullOrWhiteSpace(Message))
+{
+    <MudAlert Severity="@Severity"
+              Variant="@Variant.Filled"
+              Dense="@Dense"
+              Class="@($"app-alert rounded-xl mb-3 {Class}")"
+              Style="@Style"
+              ShowCloseIcon="@Dismissible"
+              CloseIconClicked="@OnDismiss">
+        @if (!string.IsNullOrWhiteSpace(Title))
+        {
+            <div>
+                <MudText Typo="Typo.subtitle2" Style="font-weight:700;">@Title</MudText>
+                <MudText Typo="Typo.body2" Style="opacity:0.9;">@Message</MudText>
+            </div>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2">@Message</MudText>
+        }
+    </MudAlert>
+}
+
+@code {
+    [Parameter] public string? Title   { get; set; }
+    [Parameter] public string  Message { get; set; } = "";
+    [Parameter] public Severity Severity { get; set; } = Severity.Info;
+    [Parameter] public bool Dense      { get; set; } = true;
+    [Parameter] public bool Dismissible{ get; set; } = false;
+    [Parameter] public string? Class   { get; set; }
+    [Parameter] public string? Style   { get; set; }
+    [Parameter] public EventCallback OnDismiss { get; set; }
+}

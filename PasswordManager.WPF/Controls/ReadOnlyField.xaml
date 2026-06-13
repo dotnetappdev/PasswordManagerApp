@@ -12,38 +12,50 @@
     GotFocus="Root_GotFocus"
     LostFocus="Root_LostFocus">
 
+    <Border Background="#1A1A1A" CornerRadius="6" Padding="10,8" Margin="0,4,0,0"
+            BorderBrush="#2A2A2A" BorderThickness="1">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-    <Grid Background="Transparent"
-          Margin="0,8,0,8">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
+            <!-- Displayed value — crisp white text on dark background -->
+            <TextBlock x:Name="ValueTextBlock"
+                       Text="{Binding Text, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                       TextTrimming="CharacterEllipsis"
+                       VerticalAlignment="Center"
+                       Foreground="#E5E5E5"
+                       FontSize="14"
+                       FontFamily="Segoe UI"
+                       FontWeight="Normal"/>
 
-        <!-- Displayed value styled as label -->
-        <TextBlock x:Name="ValueTextBlock"
-                   Text="{Binding Text, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                   TextTrimming="CharacterEllipsis"
-                   VerticalAlignment="Center"
-                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                   FontSize="18"
-                   FontWeight="SemiBold"
-                   Margin="0,0,0,0"/>
-
-        <!-- Copy button - subtle, only on hover -->
-        <Button x:Name="CopyButton"
-                Grid.Column="1"
-                Visibility="Collapsed"
-                Click="CopyButton_Click"
-                Margin="12,0,0,0"
-                Padding="6,0"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Background="Transparent"
-                BorderThickness="0">
-            <TextBlock Text="📋"
-                      FontSize="16"
-                      Margin="4"/>
-        </Button>
-    </Grid>
+            <!-- Inline copy button (shown on focus/hover via code-behind) -->
+            <Button x:Name="CopyButton"
+                    Grid.Column="1"
+                    Visibility="Collapsed"
+                    Click="CopyButton_Click"
+                    Margin="8,0,0,0"
+                    Padding="6,2"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="#2A2A2A"
+                    BorderThickness="0">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="CopyBd" CornerRadius="4" Padding="6,2"
+                                Background="#2A2A2A">
+                            <TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets"
+                                       FontSize="12" Foreground="#6A6A6A"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CopyBd" Property="Background" Value="#3A3A3A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </Grid>
+    </Border>
 </UserControl>

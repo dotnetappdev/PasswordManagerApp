@@ -28,6 +28,11 @@ public sealed partial class LoginPage : Page
     private bool _showRegPassword;
     private bool _showRegConfirm;
 
+    private static readonly string _prefFile =
+        System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "PasswordManager", "show_pw_pref.txt");
+
     public LoginPage()
     {
         this.InitializeComponent();
@@ -35,11 +40,28 @@ public sealed partial class LoginPage : Page
 
     private void Page_Loaded(object sender, RoutedEventArgs e)
     {
-        // Focus the master password field when the page loads
-        if (this.FindName("MasterPasswordBox") is PasswordBox masterPasswordBox)
+        // Restore persistent show-password preference
+        try
         {
-            masterPasswordBox.Focus();
+            if (System.IO.File.Exists(_prefFile) &&
+                System.IO.File.ReadAllText(_prefFile).Trim() == "1")
+            {
+                _showMasterPassword = true;
+                if (KeepVisibleCheckBox != null) KeepVisibleCheckBox.IsChecked = true;
+                TogglePasswordVisibility(MasterPasswordBox, MasterPasswordVisibleBox, MasterRevealIcon, true);
+            }
         }
+        catch { /* preference read failure is non-fatal */ }
+
+        FocusActivePasswordField();
+    }
+
+    private void FocusActivePasswordField()
+    {
+        if (_showMasterPassword)
+            MasterPasswordVisibleBox?.Focus();
+        else
+            MasterPasswordBox?.Focus();
     }
 
     private async void MasterPasswordBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -117,8 +139,10 @@ public sealed partial class LoginPage : Page
             if (primaryActionButton != null) primaryActionButton.IsEnabled = false;
             if (authProgressRing != null) authProgressRing.IsActive = true;
 
-            // Update ViewModel with current values
-            _viewModel.MasterPassword = masterPasswordBox?.Password ?? string.Empty;
+            // Read from whichever field is active (hidden PasswordBox or visible TextBox)
+            _viewModel.MasterPassword = _showMasterPassword
+                ? (MasterPasswordVisibleBox?.Text ?? string.Empty)
+                : (masterPasswordBox?.Password ?? string.Empty);
             _viewModel.ConfirmMasterPassword = confirmPasswordBox?.Password ?? string.Empty;
             _viewModel.PasswordHint = passwordHintBox?.Text ?? string.Empty;
 
@@ -129,21 +153,23 @@ public sealed partial class LoginPage : Page
 
             if (success)
             {
-                // Clear password fields for security
+                // Clear password fields for security before navigating away
                 if (masterPasswordBox != null) masterPasswordBox.Password = string.Empty;
                 if (confirmPasswordBox != null) confirmPasswordBox.Password = string.Empty;
                 if (passwordHintBox != null) passwordHintBox.Text = string.Empty;
 
-                // Navigate to main dashboard via MainWindow
                 if (GetMainWindow() is MainWindow mainWindow)
-                {
                     mainWindow.NavigateToHome();
-                }
+            }
+            else
+            {
+                // Auth failed — return focus to whichever field is active.
+                FocusActivePasswordField();
             }
         }
         catch (Exception ex)
         {
-            // Error handling is done in ViewModel
+            FocusActivePasswordField();
         }
         finally
         {
@@ -194,6 +220,46 @@ public sealed partial class LoginPage : Page
     {
         _showMasterPassword = !_showMasterPassword;
         TogglePasswordVisibility(MasterPasswordBox, MasterPasswordVisibleBox, MasterRevealIcon, _showMasterPassword);
+        FocusActivePasswordField();
+    }
+
+    // Sync plain-text box → PasswordBox so auth reads the correct value
+    private void MasterPasswordVisibleBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (MasterPasswordBox != null)
+            MasterPasswordBox.Password = MasterPasswordVisibleBox.Text;
+    }
+
+    // Allow Enter key in the visible TextBox to trigger unlock
+    private async void MasterPasswordVisibleBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter)
+            await DoPrimaryActionAsync();
+    }
+
+    // Persist the "always show" preference to disk
+    private void KeepVisibleCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        bool keep = KeepVisibleCheckBox.IsChecked == true;
+        try
+        {
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_prefFile)!);
+            System.IO.File.WriteAllText(_prefFile, keep ? "1" : "0");
+        }
+        catch { }
+
+        if (keep && !_showMasterPassword)
+        {
+            _showMasterPassword = true;
+            TogglePasswordVisibility(MasterPasswordBox, MasterPasswordVisibleBox, MasterRevealIcon, true);
+            FocusActivePasswordField();
+        }
+        else if (!keep && _showMasterPassword)
+        {
+            _showMasterPassword = false;
+            TogglePasswordVisibility(MasterPasswordBox, MasterPasswordVisibleBox, MasterRevealIcon, false);
+            FocusActivePasswordField();
+        }
     }
 
     private void RegPasswordRevealBtn_Click(object sender, RoutedEventArgs e)

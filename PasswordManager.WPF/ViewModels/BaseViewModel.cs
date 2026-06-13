@@ -6,6 +6,15 @@ namespace PasswordManager.WPF.ViewModels;
 public class BaseViewModel : INotifyPropertyChanged
 {
     private bool _isLoading = false;
+    private string _errorMessage = string.Empty;
+
+    public string ErrorMessage
+    {
+        get => _errorMessage;
+        set => SetProperty(ref _errorMessage, value);
+    }
+
+    public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     public bool IsLoading
     {

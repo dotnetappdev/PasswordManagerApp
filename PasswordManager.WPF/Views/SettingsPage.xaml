@@ -9,7 +9,7 @@
         <StackPanel Margin="0,0,0,24">
             
             <!-- Page Header -->
-            <Border Style="{StaticResource ModernCardStyle}">
+            <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="8">
                     <StackPanel Orientation="Horizontal" Margin="12">
                         <Border Background="{StaticResource ModernElevatedSurfaceBrush}"
@@ -33,7 +33,7 @@
             </Border>
             
             <!-- Security Settings -->
-            <Border Style="{StaticResource ModernCardStyle}">
+            <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">
                     <StackPanel Orientation="Horizontal" Margin="12">
                         <Border Background="{StaticResource ModernErrorBrush}"
@@ -93,7 +93,7 @@
             </Border>
             
             <!-- Database Settings -->
-            <Border Style="{StaticResource ModernCardStyle}">
+            <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">
                     <StackPanel Orientation="Horizontal" Margin="12">
                         <Border Background="{StaticResource ModernWarningBrush}"
@@ -127,7 +127,7 @@
                         </StackPanel>
                         
                         <Border x:Name="ApiSettingsPanel"
-                               Style="{StaticResource ModernCardStyle}"
+                               Style="{StaticResource SettingsSectionStyle}"
                                BorderBrush="{StaticResource ModernBorderBrush}"
                                Visibility="{Binding AuthenticationMode, Converter={StaticResource ApiModeToVisibilityConverter}}">
                             <StackPanel Margin="16">
@@ -227,18 +227,32 @@
                             </StackPanel>
                         </Button>
                         
-                        <!-- Seed Data Button -->
-                        <Button x:Name="SeedDataButton"
-                               Style="{StaticResource ModernSecondaryButtonStyle}"
-                               HorizontalAlignment="Left"
-                               IsEnabled="{Binding AuthenticationMode, Converter={StaticResource LocalModeToEnabledConverter}}"
-                               Click="SeedDataButton_Click"
-                               ToolTipService.ToolTip="Manually seed categories, collections, and tags into the database">
-                            <StackPanel Orientation="Horizontal" Margin="8">
-                                <TextBlock Text="&#xE8A1;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
-                                <TextBlock Text="Seed Essential Data"/>
-                            </StackPanel>
-                        </Button>
+                        <!-- Seed Data Buttons -->
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <Button x:Name="SeedDataButton"
+                                   Style="{StaticResource ModernSecondaryButtonStyle}"
+                                   HorizontalAlignment="Left"
+                                   IsEnabled="{Binding AuthenticationMode, Converter={StaticResource LocalModeToEnabledConverter}}"
+                                   Click="SeedDataButton_Click"
+                                   ToolTipService.ToolTip="Seed categories, collections, and tags for the current user">
+                                <StackPanel Orientation="Horizontal" Margin="8">
+                                    <TextBlock Text="&#xE8A1;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Seed Sample Data"/>
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="ClearSeedDataButton"
+                                   Style="{StaticResource ModernSecondaryButtonStyle}"
+                                   HorizontalAlignment="Left"
+                                   Margin="8,0,0,0"
+                                   IsEnabled="{Binding AuthenticationMode, Converter={StaticResource LocalModeToEnabledConverter}}"
+                                   Click="ClearSeedDataButton_Click"
+                                   ToolTipService.ToolTip="Remove all seed/test data for the current user">
+                                <StackPanel Orientation="Horizontal" Margin="8">
+                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Clear Seed Data"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                         
                         <CheckBox x:Name="SyncToggle"
                                      Content="Enable Cloud Sync"
@@ -250,10 +264,10 @@
             </Border>
             
             <!-- Cloud Backup Settings -->
-            <Border Style="{StaticResource ModernCardStyle}">
+            <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">
                     <StackPanel Orientation="Horizontal" Margin="12">
-                        <Border Background="#1F2937"
+                        <Border Background="#2D2D2D"
                               
                                Width="24"
                                Height="24"
@@ -432,7 +446,7 @@
             </Border>
             
             <!-- Browser Export Settings -->
-            <Border Style="{StaticResource ModernCardStyle}">
+            <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">
                     <StackPanel Orientation="Horizontal" Margin="12">
                         <Border Background="{StaticResource ModernWarningBrush}"
@@ -483,7 +497,7 @@
             </Border>
             
             <!-- Import/Export Settings -->
-            <Border Style="{StaticResource ModernCardStyle}">
+            <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">
                     <StackPanel Orientation="Horizontal" Margin="12">
                         <Border Background="{StaticResource ModernSuccessBrush}"
@@ -665,7 +679,7 @@
                         <!-- Import Status -->
                         <Border x:Name="ImportStatusBorder"
                                Background="{StaticResource ModernSurfaceBrush}"
-                               BorderBrush="#374151"
+                               BorderBrush="#333333"
                                BorderThickness="1"
                               
                                Padding="16"
@@ -716,42 +730,136 @@
             </Border>
             
             <!-- Appearance Settings -->
-            <Border Style="{StaticResource ModernCardStyle}">
+            <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">
                     <StackPanel Orientation="Horizontal" Margin="12">
-                        <Border Background="#1F2937"
-                              
-                               Width="24"
-                               Height="24"
-                               CornerRadius="6"
-                               Margin="0,0,10,0">
-                            <TextBlock Text="&#xE790;" FontFamily="Segoe MDL2 Assets" 
-                                     FontSize="12"
-                                     Foreground="White"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center"/>
+                        <Border Background="#5B4FCF" Width="24" Height="24" CornerRadius="6" Margin="0,0,10,0">
+                            <TextBlock Text="&#xE790;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="Appearance" 
-                                  Style="{StaticResource ModernHeading3Style}"
-                                  VerticalAlignment="Center"/>
+                        <TextBlock Text="Appearance" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
                     </StackPanel>
-                    
-                    <StackPanel Margin="8">
-                        <TextBlock Text="Theme" 
-                                  Style="{StaticResource ModernCaptionStyle}"
-                                  FontWeight="SemiBold"/>
-                        <ComboBox x:Name="ThemeComboBox"
-                                 ItemsSource="{Binding AvailableThemes}"
-                                 SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
-                                 SelectionChanged="ThemeComboBox_SelectionChanged"
-                                 Style="{StaticResource ModernComboBoxStyle}"
-                                 MinWidth="200"/>
+                    <StackPanel Margin="16">
+                        <StackPanel Margin="8">
+                            <TextBlock Text="Theme" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                            <ComboBox x:Name="ThemeComboBox"
+                                     ItemsSource="{Binding AvailableThemes}"
+                                     SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
+                                     SelectionChanged="ThemeComboBox_SelectionChanged"
+                                     Style="{StaticResource ModernComboBoxStyle}" MinWidth="200"/>
+                            <TextBlock Text="Changes take effect immediately across the application."
+                                      Style="{StaticResource ModernCaptionStyle}" Opacity="0.7"/>
+                        </StackPanel>
+                        <StackPanel Margin="8">
+                            <TextBlock Text="Default View" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                            <ComboBox x:Name="DefaultViewComboBox"
+                                     Style="{StaticResource ModernComboBoxStyle}" MinWidth="200">
+                                <ComboBoxItem Content="All Items" IsSelected="True"/>
+                                <ComboBoxItem Content="Logins"/>
+                                <ComboBoxItem Content="Credit Cards"/>
+                                <ComboBoxItem Content="Favorites"/>
+                            </ComboBox>
+                        </StackPanel>
+                        <CheckBox Content="Show item count in navigation sidebar"
+                                  IsChecked="True" Margin="8,4,8,4"/>
+                        <CheckBox Content="Animate list transitions"
+                                  IsChecked="True" Margin="8,4,8,4"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Vault Management -->
+            <Border Style="{StaticResource SettingsSectionStyle}">
+                <StackPanel Margin="20">
+                    <StackPanel Orientation="Horizontal" Margin="12">
+                        <Border Background="#059669" Width="24" Height="24" CornerRadius="6" Margin="0,0,10,0">
+                            <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Vaults" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Margin="16">
+                        <TextBlock Text="Vaults let you organise your passwords into separate, named buckets — for example Personal, Work, and Finance. Each vault has its own colour and icon."
+                                  Style="{StaticResource ModernCaptionStyle}" TextWrapping="Wrap" Margin="8,0,8,8"/>
+                        <StackPanel Orientation="Horizontal" Margin="8">
+                            <Button Style="{StaticResource ModernPrimaryButtonStyle}"
+                                    Click="ManageVaultsButton_Click">
+                                <StackPanel Orientation="Horizontal" Margin="8">
+                                    <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                    <TextBlock Text="Manage Vaults"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource ModernSecondaryButtonStyle}"
+                                    Margin="8,0,0,0" Click="SeedVaultsButton_Click">
+                                <StackPanel Orientation="Horizontal" Margin="8">
+                                    <TextBlock Text="&#xE74C;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                    <TextBlock Text="Seed Default Vaults"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Password Generator -->
+            <Border Style="{StaticResource SettingsSectionStyle}">
+                <StackPanel Margin="20">
+                    <StackPanel Orientation="Horizontal" Margin="12">
+                        <Border Background="#DC2626" Width="24" Height="24" CornerRadius="6" Margin="0,0,10,0">
+                            <TextBlock Text="&#xE1A3;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Password Generator" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Margin="16">
+                        <TextBlock Text="Configure the default settings for the built-in password generator."
+                                  Style="{StaticResource ModernCaptionStyle}" TextWrapping="Wrap" Margin="8,0,8,8"/>
+                        <StackPanel Margin="8">
+                            <TextBlock Text="Default Password Length" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Slider x:Name="PasswordLengthSlider" Minimum="8" Maximum="64" Value="20"
+                                        Width="240" VerticalAlignment="Center"
+                                        ValueChanged="PasswordLengthSlider_ValueChanged"/>
+                                <TextBlock x:Name="PasswordLengthLabel" Text="20" Margin="12,0,0,0"
+                                          FontWeight="SemiBold" FontSize="16"
+                                          Foreground="{StaticResource ModernAccentBrush}"
+                                          VerticalAlignment="Center"/>
+                                <TextBlock Text=" characters" VerticalAlignment="Center"
+                                          Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <WrapPanel Margin="8">
+                            <CheckBox x:Name="PwdUppercase"  Content="Uppercase (A-Z)"   IsChecked="True" Margin="0,0,16,4"/>
+                            <CheckBox x:Name="PwdLowercase"  Content="Lowercase (a-z)"   IsChecked="True" Margin="0,0,16,4"/>
+                            <CheckBox x:Name="PwdNumbers"    Content="Numbers (0-9)"      IsChecked="True" Margin="0,0,16,4"/>
+                            <CheckBox x:Name="PwdSymbols"    Content="Symbols (!@#$...)"  IsChecked="True" Margin="0,0,16,4"/>
+                        </WrapPanel>
+                        <StackPanel Margin="8">
+                            <TextBlock Text="Preview" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="GeneratedPasswordPreview"
+                                         Grid.Column="0"
+                                         IsReadOnly="True"
+                                         FontFamily="Consolas" FontSize="13"
+                                         Style="{StaticResource ModernTextBoxStyle}"
+                                         Text="Click Generate to preview"/>
+                                <Button Grid.Column="1" Margin="8,0,0,0"
+                                        Style="{StaticResource ModernPrimaryButtonStyle}"
+                                        Click="GeneratePreviewPassword_Click">
+                                    <TextBlock Text="&#xE895;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </Border>
             
             <!-- Database Management -->
-            <Border Style="{StaticResource ModernCardStyle}">
+            <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">
                     <StackPanel Orientation="Horizontal" Margin="12">
                         <Border Background="{StaticResource ModernWarningBrush}"
@@ -773,9 +881,9 @@
                     
                     <StackPanel Margin="16">
                         <!-- Reset Password Data -->
-                        <Border Style="{StaticResource ModernCardStyle}"
+                        <Border Style="{StaticResource SettingsSectionStyle}"
                                Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
-                               BorderBrush="{StaticResource ModernWarningBrush}">
+                               BorderBrush="{StaticResource ModernErrorBrush}">
                             <StackPanel Margin="12">
                                 <StackPanel Orientation="Horizontal" Margin="8">
                                     <TextBlock Text="&#xE7A7;" FontFamily="Segoe MDL2 Assets" 
@@ -805,7 +913,7 @@
                         </Border>
                         
                         <!-- Reset All Data -->
-                        <Border Style="{StaticResource ModernCardStyle}"
+                        <Border Style="{StaticResource SettingsSectionStyle}"
                                Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
                                BorderBrush="{StaticResource ModernErrorBrush}">
                             <StackPanel Margin="12">
@@ -840,7 +948,7 @@
                         </Border>
                         
                         <!-- Secure Wipe Database -->
-                        <Border Style="{StaticResource ModernCardStyle}"
+                        <Border Style="{StaticResource SettingsSectionStyle}"
                                Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
                                BorderBrush="#dc2626"
                                BorderThickness="2">
@@ -877,9 +985,9 @@
                         </Border>
                         
                         <!-- Reseed Sample Data -->
-                        <Border Style="{StaticResource ModernCardStyle}"
+                        <Border Style="{StaticResource SettingsSectionStyle}"
                                Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
-                               BorderBrush="#374151">
+                               BorderBrush="#333333">
                             <StackPanel Margin="12">
                                 <StackPanel Orientation="Horizontal" Margin="8">
                                     <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" 
@@ -896,7 +1004,7 @@
                                 
                                 <Button x:Name="ReseedSampleButton"
                                        Style="{StaticResource ModernSecondaryButtonStyle}"
-                                       Background="#1F2937"
+                                       Background="#2D2D2D"
                                        Foreground="White"
                                        HorizontalAlignment="Left"
                                        Click="ReseedSampleButton_Click">
@@ -911,9 +1019,83 @@
                 </StackPanel>
             </Border>
             
+            <!-- About -->
+            <Border Style="{StaticResource SettingsSectionStyle}">
+                <StackPanel Margin="20">
+                    <StackPanel Orientation="Horizontal" Margin="12">
+                        <Border Background="#1D4ED8" Width="24" Height="24" CornerRadius="6" Margin="0,0,10,0">
+                            <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="About VaultGuard" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <Grid Margin="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- Logo -->
+                        <Border Grid.Column="0" Width="64" Height="64" CornerRadius="16" Margin="0,0,20,0"
+                                Background="{StaticResource ModernPrimaryGradientBrush}" VerticalAlignment="Top">
+                            <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="32"
+                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="VaultGuard Password Manager"
+                                      FontSize="18" FontWeight="SemiBold"
+                                      Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                            <TextBlock x:Name="AppVersionText" Text="Version 1.0.0 · Windows Desktop"
+                                      Style="{StaticResource ModernCaptionStyle}" Margin="0,4,0,0"/>
+                            <TextBlock Text="The best open-source password manager for Windows and Web."
+                                      Style="{StaticResource ModernCaptionStyle}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                            <Separator Margin="0,12" Background="#333"/>
+                            <Grid Margin="0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Build"
+                                          Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="BuildDateText"
+                                          Text="2025" Style="{StaticResource ModernCaptionStyle}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Platform"
+                                          Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text=".NET 10 · WPF"
+                                          Style="{StaticResource ModernCaptionStyle}"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Encryption"
+                                          Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="AES-256-GCM"
+                                          Style="{StaticResource ModernCaptionStyle}"/>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <Button Style="{StaticResource ModernSecondaryButtonStyle}"
+                                        Click="CheckUpdatesButton_Click">
+                                    <StackPanel Orientation="Horizontal" Margin="6">
+                                        <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                        <TextBlock Text="Check for Updates"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource ModernSecondaryButtonStyle}" Margin="8,0,0,0"
+                                        Click="OpenDocumentationButton_Click">
+                                    <StackPanel Orientation="Horizontal" Margin="6">
+                                        <TextBlock Text="&#xE82D;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                        <TextBlock Text="Documentation"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
             <!-- Loading Indicator -->
-            <Border Style="{StaticResource ModernCardStyle}"
-                   HorizontalAlignment="Center" 
+            <Border Style="{StaticResource SettingsSectionStyle}"
+                   HorizontalAlignment="Center"
                    Padding="32"
                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
                 <StackPanel Margin="16" HorizontalAlignment="Center">

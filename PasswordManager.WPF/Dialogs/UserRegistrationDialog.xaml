@@ -391,7 +391,7 @@
                     </StackPanel>
 
                     <!-- Role description -->
-                    <Border Background="#1E2A3A" CornerRadius="8" BorderBrush="#4A90E230"
+                    <Border Background="{StaticResource ModernSurfaceBrush}" CornerRadius="8" BorderBrush="{StaticResource ModernBorderBrush}"
                             BorderThickness="1" Padding="12,10">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets"

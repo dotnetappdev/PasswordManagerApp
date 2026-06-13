@@ -33,6 +33,9 @@
             <converters:FirstLetterConverter x:Key="FirstLetterConverter"/>
             <converters:InitialsMultiConverter x:Key="InitialsMultiConverter"/>
             <converters:NameToAvatarBrushConverter x:Key="NameToAvatarBrushConverter"/>
+            <converters:HexColorToBrushConverter x:Key="HexColorToBrushConverter"/>
+            <converters:BoolToVisibleConverter x:Key="BoolToVisibleConverter"/>
+            <converters:BoolToHiddenConverter x:Key="BoolToHiddenConverter"/>
 
             <!-- Removed WebsiteToColorConverter (likely already in ModernTheme.xaml) -->
         </ResourceDictionary>

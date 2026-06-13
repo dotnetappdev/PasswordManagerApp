@@ -324,6 +324,48 @@ public class InitialsMultiConverter : IMultiValueConverter
         => throw new NotSupportedException();
 }
 
+// Converts a "#RRGGBB" hex color string to a SolidColorBrush; falls back to a default dark colour
+public class HexColorToBrushConverter : IValueConverter
+{
+    private static readonly SolidColorBrush Fallback =
+        new(Color.FromRgb(0x37, 0x37, 0x37));
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        try
+        {
+            if (value is string hex && !string.IsNullOrWhiteSpace(hex))
+            {
+                var color = (Color)ColorConverter.ConvertFromString(hex);
+                return new SolidColorBrush(color);
+            }
+        }
+        catch { }
+        return Fallback;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+// Converts bool IsDefault → Visibility.Visible when true
+public class BoolToVisibleConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool b && b ? Visibility.Visible : Visibility.Collapsed;
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+// Converts bool IsDefault → Visibility.Visible when FALSE (inverse)
+public class BoolToHiddenConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool b && !b ? Visibility.Visible : Visibility.Collapsed;
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
 // Deterministic avatar color based on the first non-empty string value passed to it
 public class NameToAvatarBrushConverter : IValueConverter
 {

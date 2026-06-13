@@ -131,6 +131,7 @@ public sealed partial class MainWindow : Window
                 "Profile"           => new Views.ProfilePage(),
                 "Categories"        => new Views.CategoriesPage(),
                 "Vaults"            => new Views.VaultsPage(),
+                "Passkeys"          => new Views.PasskeysPage(),
                 "ManageItems"       => new Views.ManageItemsPage(),
                 "SecurityDashboard" => new Views.DashboardPage(),
                 "Import"            => new Views.ImportPage(),
@@ -385,6 +386,7 @@ public sealed partial class MainWindow : Window
             case Views.ManageItemsPage p:    p.OnNavigatedTo(e);      break;
             case Views.SettingsPage p:       p.OnNavigatedTo(e);      break;
             case Views.VaultsPage p:         p.OnNavigatedTo(e);      break;
+            case Views.PasskeysPage p:       p.OnNavigatedTo(e);      break;
         }
     }
 

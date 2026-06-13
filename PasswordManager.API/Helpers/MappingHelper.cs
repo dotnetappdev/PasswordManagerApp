@@ -347,8 +347,8 @@ public static class MappingHelper
             CreatedAt = entity.CreatedAt,
             UpdatedAt = entity.UpdatedAt,
             UserId = entity.UserId,
-            Categories = entity.Categories?.Select(c => c.ToDto()).ToList() ?? new List<CategoryDto>(),
-            PasswordItemsCount = entity.PasswordItems?.Count ?? 0
+            Categories = new List<CategoryDto>(),
+            PasswordItemsCount = entity.ItemCount
         };
     }
 

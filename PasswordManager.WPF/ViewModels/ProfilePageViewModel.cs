@@ -62,7 +62,7 @@ public class ProfilePageViewModel : BaseViewModel
         set => SetProperty(ref _email, value);
     }
 
-    public string ErrorMessage
+    public new string ErrorMessage
     {
         get => _errorMessage;
         set => SetProperty(ref _errorMessage, value);
@@ -80,7 +80,7 @@ public class ProfilePageViewModel : BaseViewModel
         set => SetProperty(ref _showProfileManagement, value);
     }
 
-    public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
+    public new bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     public string CurrentUserDisplayName => GetDisplayName(CurrentUser);
 

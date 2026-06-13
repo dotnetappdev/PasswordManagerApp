@@ -89,29 +89,27 @@ public class VaultsViewModel : BaseViewModel
         }
     }
 
-    public async Task<bool> CreateVaultAsync(string name, string? description = null, bool isDefault = false)
+    public async Task<bool> CreateVaultAsync(
+        string name, string? description = null,
+        string? color = null, string? icon = null, bool isDefault = false)
     {
         try
         {
             IsLoading = true;
-            
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                return false;
-            }
+
+            if (string.IsNullOrWhiteSpace(name)) return false;
 
             var vault = new Vault
             {
                 Name = name.Trim(),
                 Description = description?.Trim(),
+                Color = color,
+                Icon = icon,
                 IsDefault = isDefault
             };
 
-            // Set user ID from current authenticated user
             if (_authService.CurrentUser != null)
-            {
                 vault.UserId = _authService.CurrentUser.Id;
-            }
 
             var createdVault = await _vaultService.CreateAsync(vault);
             
@@ -187,6 +185,19 @@ public class VaultsViewModel : BaseViewModel
         {
             IsLoading = false;
         }
+    }
+
+    public async Task SetDefaultVaultAsync(Vault vault)
+    {
+        try
+        {
+            await _vaultService.SetAsDefaultAsync(vault.Id);
+            // Update IsDefault flags locally
+            foreach (var v in Vaults)
+                v.IsDefault = (v.Id == vault.Id);
+            OnPropertyChanged(nameof(Vaults));
+        }
+        catch { }
     }
 
     public async Task RefreshAsync()

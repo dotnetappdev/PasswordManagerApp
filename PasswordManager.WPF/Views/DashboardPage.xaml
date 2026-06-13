@@ -139,7 +139,7 @@
                         <TextBlock Text="All Items" 
                                   FontWeight="SemiBold" 
                                   FontSize="14"
-                                  Foreground="#374151"/>
+                                  Foreground="{StaticResource ModernTextTertiaryBrush}"/>
                     </Border>
                     
                     <!-- Items List -->
@@ -194,7 +194,7 @@
                                             <TextBlock Text="{Binding Title}" 
                                                       FontWeight="SemiBold" 
                                                       FontSize="14"
-                                                      Foreground="#374151"
+                                                      Foreground="{StaticResource ModernTextTertiaryBrush}"
                                                       TextTrimming="CharacterEllipsis"/>
                                             <TextBlock Text="{Binding Username, FallbackValue='No username'}" 
                                                       FontSize="12"

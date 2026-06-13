@@ -110,6 +110,23 @@ Login items can now render an automatically resolved company icon in the item li
 
 ---
 
+## 🌙 Design
+
+Both the **WPF desktop app** and the **Blazor web app** share the same dark-mode design system:
+
+| Token | Value |
+|-------|-------|
+| Background | `#1A1A1A` |
+| Surface | `#2D2D2D` |
+| Primary (blue) | `#2563EB` |
+| Text Primary | `#E5E5E5` |
+| Text Secondary | `#9D9D9D` |
+| Border | `rgba(255,255,255,0.11)` |
+
+The Blazor app defaults to **dark mode** and uses the same steel-blue primary colour as the WPF app. The dark-mode toggle in the top-right of the Blazor UI lets you switch between light and dark.
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -117,14 +134,14 @@ Login items can now render an automatically resolved company icon in the item li
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - SQLite (bundled via EF Core)
 
-### Run Locally
+### Run the Blazor Web App
 
 ```bash
 cd PasswordManager.Web
 dotnet run
 ```
 
-Navigate to `http://localhost:5169` and log in with any of the seeded accounts (all share the same master password):
+Navigate to `http://localhost:5169` and log in with any of the seeded accounts:
 
 | Role | Email | Master Password |
 |------|-------|-----------------|
@@ -133,8 +150,45 @@ Navigate to `http://localhost:5169` and log in with any of the seeded accounts (
 | Standard User | `user@passwordmanager.local` | `CommonMaster123!` |
 | Child | `child@passwordmanager.local` | `CommonMaster123!` |
 
-> **WPF app only** — if no users exist yet, a demo account is auto-created:
-> `demo@local` / `DemoPassword123!`
+### Run the WPF Desktop App
+
+```bash
+cd PasswordManager.WPF
+dotnet run
+```
+
+On first launch the setup wizard runs to configure the database. After setup, log in — demo data is seeded automatically for your account on first login.
+
+> If no users exist yet a demo account is auto-created: `demo@local` / `DemoPassword123!`
+
+---
+
+## 🌱 Seeding Demo Data
+
+Demo data (categories, collections, tags, and sample password items) is seeded automatically **per user** the first time they log in to either app. No manual steps are required.
+
+### How it works
+
+| What | When | Where |
+|------|------|-------|
+| Categories, Collections, Tags | App startup (for the system test user) and on first page load per real user | `TestDataSeeder` + `SampleDataSeeder` |
+| Sample password items | First visit to **All Items** page when the user has no items | `SampleDataSeeder.SeedSampleDataAsync` |
+
+### Manual re-seed (WPF)
+
+If you need to wipe and re-seed all data:
+
+1. Delete the SQLite database file (`PasswordManager.db` in the app data folder, or wherever configured).
+2. Restart the app — the setup wizard will re-run and fresh seed data will be created on first login.
+
+### Manual re-seed (Blazor / EF CLI)
+
+```bash
+# Drop and re-create the database
+dotnet ef database drop --project PasswordManager.DAL --startup-project PasswordManager.Web
+dotnet ef database update --project PasswordManager.DAL --startup-project PasswordManager.Web
+# The Identity seeder runs automatically on next app start
+```
 
 ---
 

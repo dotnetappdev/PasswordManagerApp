@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PasswordManager.Models;
 
@@ -38,7 +39,9 @@ public class Vault
     public string UserId { get; set; } = string.Empty;
     public ApplicationUser? User { get; set; }
 
-    // Navigation properties
-    public List<Category> Categories { get; set; } = new();
-    public List<PasswordItem> PasswordItems { get; set; } = new();
+    // Item count populated at query time via the Collection bridge — not stored in DB
+    [NotMapped] public int ItemCount { get; set; }
+
+    // Display-only category list populated by VaultService — not stored in DB
+    [NotMapped] public List<string> CategoryNames { get; set; } = new();
 }

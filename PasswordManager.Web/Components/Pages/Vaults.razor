@@ -7,6 +7,7 @@
 @inject IAuthService AuthService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject AppNotificationService Notify
 
 <PageTitle>Vaults - VaultGuard</PageTitle>
 
@@ -36,12 +37,12 @@ else if (vaults?.Any() == true)
         @foreach (var vault in vaults)
         {
             <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="2" Style="@($"border-top: 4px solid {(vault.Color ?? "#7C3AED")}; height:100%;")">
+                <MudCard Elevation="2" Style="@($"border-top: 4px solid {(vault.Color ?? "#2563EB")}; height:100%;")">
                     <MudCardContent>
                         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
                             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                                 <MudIcon Icon="@Icons.Material.Filled.Shield"
-                                         Style="@($"color:{(vault.Color ?? "#7C3AED")}; font-size:1.8rem;")" />
+                                         Style="@($"color:{(vault.Color ?? "#2563EB")}; font-size:1.8rem;")" />
                                 <div>
                                     <MudText Typo="Typo.h6" Style="font-weight:600;">@vault.Name</MudText>
                                     @if (vault.IsDefault)
@@ -87,7 +88,7 @@ else if (vaults?.Any() == true)
                             <MudStack Spacing="0">
                                 <MudText Typo="Typo.caption" Color="Color.Secondary">Items</MudText>
                                 <MudText Typo="Typo.body1" Style="font-weight:600;">
-                                    @(vault.PasswordItems?.Count ?? 0)
+                                    @vault.ItemCount
                                 </MudText>
                             </MudStack>
                             <MudStack Spacing="0">
@@ -105,7 +106,7 @@ else
 {
     <MudPaper Class="pa-12 text-center" Elevation="0">
         <MudIcon Icon="@Icons.Material.Filled.Shield"
-                 Style="font-size:4rem; color:#7C3AED; opacity:0.3;" />
+                 Style="font-size:4rem; color:#2563EB; opacity:0.3;" />
         <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No vaults yet</MudText>
         <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
             Create a vault to start organizing your passwords.
@@ -134,7 +135,7 @@ else
                               Variant="Variant.Outlined" Lines="2"
                               Placeholder="Optional description for this vault" />
                 <MudTextField @bind-Value="_editingVault.Color" Label="Color (hex)"
-                              Variant="Variant.Outlined" Placeholder="#7C3AED"
+                              Variant="Variant.Outlined" Placeholder="#2563EB"
                               Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Palette" />
                 <MudCheckBox @bind-Value="_editingVault.IsDefault" Label="Set as default vault"
@@ -173,7 +174,7 @@ else
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading vaults: {ex.Message}", Severity.Error);
+            Notify.Error($"Error loading vaults: {ex.Message}");
         }
         finally
         {
@@ -186,7 +187,7 @@ else
         _editingVault = new Vault
         {
             UserId = AuthService.CurrentUser?.Id ?? string.Empty,
-            Color = "#7C3AED"
+            Color = "#2563EB"
         };
         _dialogVisible = true;
     }
@@ -210,7 +211,7 @@ else
     {
         if (_editingVault == null || string.IsNullOrWhiteSpace(_editingVault.Name))
         {
-            Snackbar.Add("Vault name is required.", Severity.Warning);
+            Notify.Warning("Vault name is required.");
             return;
         }
         isSaving = true;
@@ -219,20 +220,20 @@ else
             if (_editingVault.Id > 0)
             {
                 await VaultService.UpdateAsync(_editingVault);
-                Snackbar.Add("Vault updated successfully.", Severity.Success);
+                Notify.Success("Vault updated successfully.");
             }
             else
             {
                 _editingVault.UserId = AuthService.CurrentUser?.Id ?? string.Empty;
                 await VaultService.CreateAsync(_editingVault);
-                Snackbar.Add("Vault created successfully.", Severity.Success);
+                Notify.Success("Vault created successfully.");
             }
             _dialogVisible = false;
             await LoadVaults();
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error saving vault: {ex.Message}", Severity.Error);
+            Notify.Error($"Error saving vault: {ex.Message}");
         }
         finally
         {
@@ -245,12 +246,12 @@ else
         try
         {
             await VaultService.SetAsDefaultAsync(vault.Id);
-            Snackbar.Add($"\"{vault.Name}\" set as default vault.", Severity.Success);
+            Notify.Success($"\"{vault.Name}\" set as default vault.");
             await LoadVaults();
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Notify.Error($"Error: {ex.Message}");
         }
     }
 
@@ -266,12 +267,12 @@ else
             try
             {
                 await VaultService.DeleteAsync(vault.Id);
-                Snackbar.Add("Vault deleted.", Severity.Success);
+                Notify.Success("Vault deleted.");
                 await LoadVaults();
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Error deleting vault: {ex.Message}", Severity.Error);
+                Notify.Error($"Error deleting vault: {ex.Message}");
             }
         }
     }
