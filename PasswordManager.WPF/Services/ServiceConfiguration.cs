@@ -215,6 +215,10 @@ public static class ServiceConfiguration
         services.AddScoped<ITwoFactorService, TwoFactorService>();
         services.AddScoped<IDeviceService, DeviceService>();
 
+        // Shared, stateless feature services (strength meter + TOTP authenticator codes)
+        services.AddSingleton<IPasswordStrengthService, PasswordStrengthService>();
+        services.AddSingleton<ITotpService, TotpService>();
+
         services.AddScoped<Fido2NetLib.IFido2>(provider =>
         {
             var config = new Fido2NetLib.Fido2Configuration

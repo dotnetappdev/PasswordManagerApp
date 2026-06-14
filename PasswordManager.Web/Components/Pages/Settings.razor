@@ -436,9 +436,70 @@
             </MudItem>
         </MudGrid>
     </MudTabPanel>
+
+    <MudTabPanel Text="Shortcuts" Icon="@Icons.Material.Filled.Keyboard">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Keyboard Shortcuts — General</MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var sc in _generalShortcuts)
+                        {
+                            <MudListItem T="string">
+                                <div class="d-flex align-center justify-space-between" style="width:100%;">
+                                    <MudText Typo="Typo.body2">@sc.Action</MudText>
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Text="@sc.Keys" />
+                                </div>
+                            </MudListItem>
+                        }
+                    </MudList>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Keyboard Shortcuts — Selected Item</MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var sc in _itemShortcuts)
+                        {
+                            <MudListItem T="string">
+                                <div class="d-flex align-center justify-space-between" style="width:100%;">
+                                    <MudText Typo="Typo.body2">@sc.Action</MudText>
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Success" Text="@sc.Keys" />
+                                </div>
+                            </MudListItem>
+                        }
+                    </MudList>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-3">
+                        These shortcuts are fully active in the VaultGuard desktop app. In the browser,
+                        keys reserved by your browser (e.g. Ctrl+N, Ctrl+F) are handled by the browser itself.
+                        Custom rebinding is coming soon.
+                    </MudText>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
 </MudTabs>
 
 @code {
+    // Keyboard shortcuts (reference)
+    private record Shortcut(string Action, string Keys);
+    private readonly Shortcut[] _generalShortcuts =
+    {
+        new("New item", "Ctrl + N"),
+        new("Focus / run search", "Ctrl + F · Enter"),
+        new("Clear search", "Esc"),
+        new("Open Settings", "Ctrl + ,"),
+        new("Lock vault", "Ctrl + L"),
+    };
+    private readonly Shortcut[] _itemShortcuts =
+    {
+        new("Copy password", "Ctrl + C"),
+        new("Copy username", "Ctrl + Shift + C"),
+        new("Open & fill in browser", "Ctrl + O"),
+        new("Edit item", "Ctrl + E"),
+        new("Delete item", "Del"),
+    };
+
     // Security
     string _currentPassword = string.Empty;
     string _newPassword = string.Empty;

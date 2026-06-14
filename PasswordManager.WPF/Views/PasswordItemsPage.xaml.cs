@@ -28,7 +28,10 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     private List<Category> _categories = new();
     private ITagService? _tagService;
     private IPasswordItemService? _passwordItemService;
+    private ITotpService? _totpService;
     private List<Tag> _allTags = new();
+    private System.Windows.Threading.DispatcherTimer? _totpTimer;
+    private string? _currentTotpSecret;
 
     public PasswordItemsPage()
     {
@@ -45,6 +48,13 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         {
             return null;
         }
+    }
+
+    // Sets the Text of a named TextBlock if it exists (safe no-op otherwise)
+    private void SetText(string elementName, string value)
+    {
+        var tb = GetElement<TextBlock>(elementName);
+        if (tb != null) tb.Text = value;
     }
 
     public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
@@ -82,6 +92,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             {
                 _tagService = _serviceProvider.GetService<ITagService>();
                 _passwordItemService = _serviceProvider.GetService<IPasswordItemService>();
+                _totpService = _serviceProvider.GetService<ITotpService>();
                 if (_tagService != null)
                 {
                     _allTags = (await _tagService.GetAllAsync()).ToList();
@@ -161,6 +172,14 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         { }
     }
 
+    // De-duplicates categories by trimmed, case-insensitive name so the dropdown never repeats
+    // entries (e.g. when sample data has been seeded more than once).
+    private static IEnumerable<Category> DistinctCategories(IEnumerable<Category> source)
+        => source
+            .Where(c => c != null)
+            .GroupBy(c => (c.Name ?? string.Empty).Trim().ToLowerInvariant())
+            .Select(g => g.First());
+
     private async Task PopulateCategoryDropdownAsync()
     {
 
@@ -179,16 +198,18 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         {
             Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.LightGray),
             CornerRadius = new CornerRadius(4),
-            Width = 16,
-            Height = 16
+            Width = 14,
+            Height = 14,
+            Margin = new Thickness(0, 0, 8, 0),
+            VerticalAlignment = VerticalAlignment.Center
         });
-        allStackPanel.Children.Add(new TextBlock { Text = "All Categories", FontWeight = FontWeights.Medium });
+        allStackPanel.Children.Add(new TextBlock { Text = "All Categories", FontWeight = FontWeights.Medium, VerticalAlignment = VerticalAlignment.Center });
         allCategoriesItem.Content = allStackPanel;
         allCategoriesItem.Tag = "all";
         categoryDropdown.Items.Add(allCategoriesItem);
 
-        // Add categories from database
-        foreach (var category in _categories)
+        // Add categories from database (de-duplicated by name to avoid repeats)
+        foreach (var category in DistinctCategories(_categories))
         {
             var item = new ComboBoxItem();
             var stackPanel = new StackPanel { Orientation = Orientation.Horizontal };
@@ -210,15 +231,18 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             {
                 Background = colorBrush,
                 CornerRadius = new CornerRadius(4),
-                Width = 16,
-                Height = 16
+                Width = 14,
+                Height = 14,
+                Margin = new Thickness(0, 0, 8, 0),
+                VerticalAlignment = VerticalAlignment.Center
             });
 
             // Add category name and count
             var categoryText = new TextBlock
             {
                 Text = category.Name,
-                FontWeight = FontWeights.Medium
+                FontWeight = FontWeights.Medium,
+                VerticalAlignment = VerticalAlignment.Center
             };
             stackPanel.Children.Add(categoryText);
 
@@ -259,6 +283,126 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (_viewModel != null && sender is TextBox textBox)
         {
             _viewModel.SearchText = textBox.Text;
+        }
+    }
+
+    // ── Global search bar (items list) ──────────────────────────────────────
+    private void GlobalSearch_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (sender is not TextBox tb) return;
+
+        // Toggle placeholder + clear button
+        var placeholder = GetElement<TextBlock>("SearchPlaceholder");
+        if (placeholder != null)
+            placeholder.Visibility = string.IsNullOrEmpty(tb.Text) ? Visibility.Visible : Visibility.Collapsed;
+
+        var clearBtn = GetElement<Button>("ClearSearchButton");
+        if (clearBtn != null)
+            clearBtn.Visibility = string.IsNullOrEmpty(tb.Text) ? Visibility.Collapsed : Visibility.Visible;
+
+        // Live filter as you type (still global within the current view).
+        if (_viewModel != null)
+            _viewModel.SearchText = tb.Text;
+    }
+
+    private void GlobalSearch_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter)
+        {
+            RunGlobalSearch();
+            e.Handled = true;
+        }
+        else if (e.Key == System.Windows.Input.Key.Escape)
+        {
+            ClearGlobalSearch();
+            e.Handled = true;
+        }
+    }
+
+    private void RunSearchButton_Click(object sender, RoutedEventArgs e) => RunGlobalSearch();
+
+    private void ClearSearchButton_Click(object sender, RoutedEventArgs e) => ClearGlobalSearch();
+
+    /// <summary>
+    /// Runs a global search like VS Code: searches across ALL items regardless of the currently
+    /// selected category (the category filter is reset so nothing is hidden from the results).
+    /// </summary>
+    private void RunGlobalSearch()
+    {
+        if (_viewModel == null) return;
+
+        var box = GetElement<TextBox>("GlobalSearchTextBox");
+        var query = box?.Text ?? string.Empty;
+
+        // Make it global: drop any active category filter so all items are searched.
+        _viewModel.SelectedCategoryId = null;
+        var dropdown = GetElement<ComboBox>("CategoryDropdown");
+        if (dropdown != null && dropdown.Items.Count > 0)
+            dropdown.SelectedIndex = 0;
+
+        _viewModel.SearchText = query;
+    }
+
+    private void ClearGlobalSearch()
+    {
+        var box = GetElement<TextBox>("GlobalSearchTextBox");
+        if (box != null) box.Text = string.Empty;
+        if (_viewModel != null) _viewModel.SearchText = string.Empty;
+    }
+
+    // ── Public entry points for application keyboard shortcuts (wired in MainWindow) ──
+    public void TriggerAddNew() => ShowAddPasswordDialog();
+
+    public void FocusSearch()
+    {
+        var box = GetElement<TextBox>("GlobalSearchTextBox");
+        if (box != null)
+        {
+            box.Focus();
+            System.Windows.Input.Keyboard.Focus(box);
+            box.SelectAll();
+        }
+    }
+
+    public void CopyPasswordShortcut()
+    {
+        if (_selectedItem != null) CopyPasswordButton_Click(this, new RoutedEventArgs());
+    }
+
+    public void CopyUsernameShortcut()
+    {
+        if (_selectedItem != null) CopyUsernameButton_Click(this, new RoutedEventArgs());
+    }
+
+    public void OpenAndFillShortcut()
+    {
+        if (_selectedItem != null) OpenAndFillButton_Click(this, new RoutedEventArgs());
+    }
+
+    public void EditSelectedShortcut()
+    {
+        if (_selectedItem != null) EditDetailButton_Click(this, new RoutedEventArgs());
+    }
+
+    public async void DeleteSelectedShortcut()
+    {
+        if (_selectedItem == null || _viewModel == null) return;
+
+        var dialog = new ModernWpf.Controls.ContentDialog
+        {
+            Title = "Delete Item",
+            Content = $"Are you sure you want to delete '{_selectedItem.Title}'?",
+            PrimaryButtonText = "Delete",
+            CloseButtonText = "Cancel",
+            DefaultButton = ModernWpf.Controls.ContentDialogButton.Close
+        };
+        ConfigureDialogForCentering(dialog);
+
+        if (await dialog.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary)
+        {
+            var title = _selectedItem.Title;
+            await _viewModel.DeleteItemAsync(_selectedItem);
+            ToastService.Instance.Success($"'{title}' deleted");
         }
     }
 
@@ -386,28 +530,18 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
     private void RevealPasswordButton_Click(object sender, RoutedEventArgs e)
     {
-        var list = GetElement<ListView>("ItemsList");
-        var selected = _selectedItem ?? (list?.SelectedItem as PasswordItem);
-        if (selected == null) return;
-
         var detailPassword = GetElement<Controls.ReadOnlyField>("DetailPassword");
         if (detailPassword == null) return;
 
-        // Toggle between masked and plain text
+        // CopyText always holds the real value (set in ShowItemDetails for every type)
+        var real = detailPassword.CopyText ?? string.Empty;
+        if (string.IsNullOrEmpty(real)) return;
+
+        // Toggle between masked and revealed
         if (!string.IsNullOrEmpty(detailPassword.Text) && detailPassword.Text.StartsWith("•"))
-        {
-            // Show actual password if available
-            var plain = selected.Password ?? selected.LoginItem?.Password ?? "";
-            detailPassword.Text = plain;
-            detailPassword.CopyText = plain;
-        }
+            detailPassword.Text = real;                                   // reveal
         else
-        {
-            // Mask
-            var pwd = selected.Password ?? selected.LoginItem?.Password ?? "";
-            detailPassword.Text = string.IsNullOrEmpty(pwd) ? "" : new string('•', Math.Max(8, pwd.Length));
-            detailPassword.CopyText = pwd;
-        }
+            detailPassword.Text = new string('•', Math.Max(8, real.Length)); // mask
     }
 
     private async void CopyPasswordButton_Click(object sender, RoutedEventArgs e)
@@ -428,6 +562,73 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         }
         catch (Exception ex)
         { }
+    }
+
+    /// <summary>
+    /// Opens the selected item's website in the default browser and copies the username, then the
+    /// password, to the clipboard in sequence so the user can paste them into the sign-in form.
+    /// (True in-page autofill requires a browser extension; this is the standard clipboard fallback.)
+    /// </summary>
+    private async void OpenAndFillButton_Click(object sender, RoutedEventArgs e)
+    {
+        var item = _selectedItem;
+        if (item == null)
+        {
+            await ShowTemporaryMessageAsync("No item selected");
+            return;
+        }
+
+        var url = item.Website
+                  ?? item.LoginItem?.WebsiteUrl
+                  ?? item.LoginItem?.Website;
+        var username = item.Username ?? item.LoginItem?.Username;
+        var password = item.Password ?? item.LoginItem?.Password ?? item.LoginItem?.EncryptedPassword;
+
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            await ShowTemporaryMessageAsync("This item has no website to open");
+            return;
+        }
+
+        var launchUrl = url.Trim();
+        if (!launchUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+            !launchUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            launchUrl = "https://" + launchUrl;
+        }
+
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = launchUrl,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            await ShowTemporaryMessageAsync($"Couldn't open the website: {ex.Message}");
+            return;
+        }
+
+        // Copy username now, then the password a few seconds later so each is ready to paste in turn.
+        if (!string.IsNullOrEmpty(username))
+        {
+            try { System.Windows.Clipboard.SetText(username); } catch { }
+            ToastService.Instance.Info("Username copied — paste it (Ctrl+V), then Tab to the password field.");
+
+            if (!string.IsNullOrEmpty(password))
+            {
+                await Task.Delay(9000);
+                try { System.Windows.Clipboard.SetText(password); } catch { }
+                ToastService.Instance.Success("Password copied — paste it into the password field.");
+            }
+        }
+        else if (!string.IsNullOrEmpty(password))
+        {
+            try { System.Windows.Clipboard.SetText(password); } catch { }
+            ToastService.Instance.Success("Password copied — paste it into the password field.");
+        }
     }
 
     private async void OpenWebsiteButton_Click(object sender, RoutedEventArgs e)
@@ -487,50 +688,115 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         string website = string.Empty;
         string pwd = string.Empty;
 
-        if (item.LoginItem != null)
+        // Field section + label references for type-aware display
+        var usernameSection = GetElement<StackPanel>("DetailUsernameSection");
+        var passwordSection = GetElement<StackPanel>("DetailPasswordSection");
+        var websiteSection  = GetElement<StackPanel>("DetailWebsiteSection");
+        var creditCardSection = GetElement<StackPanel>("DetailCreditCardSection");
+        var usernameLabel   = GetElement<TextBlock>("UsernameLabel");
+        var passwordLabel   = GetElement<TextBlock>("PasswordLabel");
+        var websiteLabel    = GetElement<TextBlock>("WebsiteLabel");
+
+        // Default: all login sections visible, CC section hidden
+        if (usernameSection   != null) usernameSection.Visibility   = Visibility.Visible;
+        if (passwordSection   != null) passwordSection.Visibility   = Visibility.Visible;
+        if (websiteSection    != null) websiteSection.Visibility    = Visibility.Visible;
+        if (creditCardSection != null) creditCardSection.Visibility = Visibility.Collapsed;
+
+        if (item.Type == ItemType.CreditCard)
         {
-            username = item.LoginItem.Username ?? item.Username ?? string.Empty;
-            website  = item.LoginItem.WebsiteUrl ?? item.LoginItem.Website ?? item.Website ?? string.Empty;
-            // Password is [NotMapped]; fall back to EncryptedPassword (stored as plaintext in demo data)
-            pwd = item.LoginItem.Password
-                  ?? item.Password
-                  ?? item.LoginItem.EncryptedPassword
-                  ?? string.Empty;
+            // ── Credit card layout (always, even if CreditCardItem failed to load) ──
+            var cc = item.CreditCardItem;
+            if (usernameLabel != null) usernameLabel.Text = "CARD NUMBER";
+            if (passwordLabel != null) passwordLabel.Text = "CARDHOLDER";
+            if (websiteSection != null) websiteSection.Visibility = Visibility.Collapsed;
+            if (creditCardSection != null) creditCardSection.Visibility = Visibility.Visible;
+
+            var cardNumber = cc?.CardNumber ?? string.Empty;
+            username = cardNumber;
+            pwd      = string.Empty; // not used for CC; cardholder shown as plain text below
+
+            if (detailUsername != null) { detailUsername.Text = string.IsNullOrEmpty(cardNumber) ? "—" : cardNumber; detailUsername.CopyText = cardNumber; }
+            // Reuse the "password" field row to show cardholder name in plain text
+            if (detailPassword != null)
+            {
+                detailPassword.Text     = cc?.CardholderName ?? "—";
+                detailPassword.CopyText = cc?.CardholderName ?? string.Empty;
+            }
+
+            // Extra CC fields
+            SetText("DetailCardExpiry", string.IsNullOrWhiteSpace(cc?.ExpiryDate) ? "—" : cc!.ExpiryDate!);
+            SetText("DetailCardCvv",    string.IsNullOrWhiteSpace(cc?.CVV) ? "—" : new string('•', cc!.CVV!.Length));
+            SetText("DetailCardType",   cc?.CardType.ToString() ?? "—");
+            SetText("DetailCardBank",   string.IsNullOrWhiteSpace(cc?.IssuingBank) ? "—" : cc!.IssuingBank!);
+
+            website = cc?.BankWebsite ?? string.Empty;
         }
         else if (item.WiFiItem != null)
         {
+            // ── WiFi layout ─────────────────────────────────────────────────
+            if (usernameLabel != null) usernameLabel.Text = "NETWORK NAME";
+            if (passwordLabel != null) passwordLabel.Text = "PASSWORD";
+            if (websiteLabel  != null) websiteLabel.Text  = "ROUTER URL";
+
             username = item.WiFiItem.NetworkName ?? string.Empty;
             website  = item.WiFiItem.RouterAdminUrl ?? item.WiFiItem.RouterIP ?? string.Empty;
             pwd      = item.WiFiItem.Password ?? string.Empty;
+
+            if (detailUsername != null) { detailUsername.Text = username; detailUsername.CopyText = username; }
+            if (detailWebsite  != null) { detailWebsite.Text  = website;  detailWebsite.CopyText  = website; }
+            if (detailPassword != null)
+            {
+                detailPassword.Text     = string.IsNullOrEmpty(pwd) ? "—" : new string('•', Math.Max(8, pwd.Length));
+                detailPassword.CopyText = pwd;
+            }
         }
-        else if (item.Category != null && item.Category.Name != null &&
-                 item.Category.Name.IndexOf("Identity", StringComparison.OrdinalIgnoreCase) >= 0)
+        else if (item.Type == ItemType.SecureNote)
         {
+            // ── Secure note: hide credential fields, notes section carries content ──
+            if (usernameSection != null) usernameSection.Visibility = Visibility.Collapsed;
+            if (passwordSection != null) passwordSection.Visibility = Visibility.Collapsed;
+            if (websiteSection  != null) websiteSection.Visibility  = Visibility.Collapsed;
+        }
+        else if (item.PasskeyItem != null || item.Type == ItemType.Passkey)
+        {
+            // ── Passkey layout ──────────────────────────────────────────────
+            if (usernameLabel != null) usernameLabel.Text = "USERNAME";
+            if (passwordLabel != null) passwordLabel.Text = "DISPLAY NAME";
+            if (websiteLabel  != null) websiteLabel.Text  = "WEBSITE";
+
             username = item.PasskeyItem?.Username ?? item.Username ?? string.Empty;
-            website  = item.PasskeyItem?.WebsiteUrl ?? item.Website ?? string.Empty;
-            pwd      = item.Password ?? string.Empty;
+            website  = item.PasskeyItem?.WebsiteUrl ?? item.PasskeyItem?.Website ?? item.Website ?? string.Empty;
+            var display = item.PasskeyItem?.DisplayName ?? string.Empty;
+
+            if (detailUsername != null) { detailUsername.Text = username; detailUsername.CopyText = username; }
+            if (detailWebsite  != null) { detailWebsite.Text  = website;  detailWebsite.CopyText  = website; }
+            if (detailPassword != null) { detailPassword.Text = string.IsNullOrEmpty(display) ? "—" : display; detailPassword.CopyText = display; }
         }
         else
         {
-            username = item.Username ?? string.Empty;
-            website  = item.Website  ?? string.Empty;
-            pwd      = item.Password ?? item.LoginItem?.EncryptedPassword ?? string.Empty;
+            // ── Login / generic password layout (default) ───────────────────
+            if (usernameLabel != null) usernameLabel.Text = "USERNAME";
+            if (passwordLabel != null) passwordLabel.Text = "PASSWORD";
+            if (websiteLabel  != null) websiteLabel.Text  = "WEBSITE";
+
+            username = item.LoginItem?.Username ?? item.Username ?? string.Empty;
+            website  = item.LoginItem?.WebsiteUrl ?? item.LoginItem?.Website ?? item.Website ?? string.Empty;
+            pwd      = item.LoginItem?.Password ?? item.Password ?? item.LoginItem?.EncryptedPassword ?? string.Empty;
+
+            if (detailUsername != null) { detailUsername.Text = username; detailUsername.CopyText = username; }
+            if (detailWebsite  != null) { detailWebsite.Text  = website;  detailWebsite.CopyText  = website; }
+            if (detailPassword != null)
+            {
+                detailPassword.Text     = string.IsNullOrEmpty(pwd) ? "—" : new string('•', Math.Max(8, pwd.Length));
+                detailPassword.CopyText = pwd;
+            }
         }
 
         if (detailItemSubtitle != null)
             detailItemSubtitle.Text = !string.IsNullOrEmpty(username) ? username
                                       : !string.IsNullOrEmpty(website) ? website
                                       : item.Description ?? "No additional information";
-
-        if (detailUsername != null) { detailUsername.Text = username; detailUsername.CopyText = username; }
-        if (detailWebsite  != null) { detailWebsite.Text  = website;  detailWebsite.CopyText  = website; }
-
-        // Show masked password; real value copied to clipboard on click
-        if (detailPassword != null)
-        {
-            detailPassword.Text     = string.IsNullOrEmpty(pwd) ? "—" : new string('•', Math.Max(8, pwd.Length));
-            detailPassword.CopyText = pwd;
-        }
 
         // Update icon based on type
         if (detailIcon != null) detailIcon.Text = GetTypeIcon(item.Type.ToString());
@@ -546,15 +812,23 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             var notesText = GetElement<System.Windows.Controls.TextBlock>("DetailNotesText");
             if (notesText != null)
             {
-                var notes = item.Description
-                            ?? item.SecureNoteItem?.Content
-                            ?? item.LoginItem?.Notes
-                            ?? string.Empty;
+                var notes = item.Type == ItemType.CreditCard
+                            ? (item.CreditCardItem?.Notes ?? item.Description)
+                            : (item.Description
+                               ?? item.SecureNoteItem?.Content
+                               ?? item.LoginItem?.Notes);
+                notes ??= string.Empty;
                 notesText.Text = string.IsNullOrWhiteSpace(notes) ? "No notes" : notes;
                 notesText.Foreground = string.IsNullOrWhiteSpace(notes)
                     ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0x4A, 0x4A))
                     : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xC8, 0xC8, 0xC8));
             }
+
+            // Credit cards typically carry richer notes (billing address, PINs, support numbers) —
+            // give the notes display more room.
+            var notesBorder = GetElement<System.Windows.Controls.Border>("DetailNotesBorder");
+            if (notesBorder != null)
+                notesBorder.MinHeight = item.Type == ItemType.CreditCard ? 160 : 64;
         }
         catch { }
 
@@ -583,6 +857,76 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
             var editTagsPanel = GetElement<ItemsControl>("EditTagsPanel");
             if (editTagsPanel != null) editTagsPanel.ItemsSource = item.Tags ?? new List<Tag>();
+        }
+        catch { }
+
+        // Live verification code (TOTP)
+        SetupTotp(item);
+    }
+
+    /// <summary>
+    /// Shows a live, auto-refreshing TOTP verification code for items that carry an authenticator
+    /// secret; hides the section (and stops the timer) for everything else.
+    /// </summary>
+    private void SetupTotp(PasswordItem item)
+    {
+        var section = GetElement<StackPanel>("DetailTotpSection");
+        _currentTotpSecret = PasswordManager.Services.Utilities.TotpHelper.GetSecret(item);
+
+        bool usable = !string.IsNullOrEmpty(_currentTotpSecret)
+                      && _totpService != null
+                      && _totpService.TryParse(_currentTotpSecret, out _, out _, out _);
+
+        if (!usable)
+        {
+            if (section != null) section.Visibility = Visibility.Collapsed;
+            _totpTimer?.Stop();
+            return;
+        }
+
+        if (section != null) section.Visibility = Visibility.Visible;
+
+        _totpTimer ??= new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(1)
+        };
+        _totpTimer.Tick -= TotpTimer_Tick;
+        _totpTimer.Tick += TotpTimer_Tick;
+
+        UpdateTotpDisplay();
+        _totpTimer.Start();
+    }
+
+    private void TotpTimer_Tick(object? sender, EventArgs e) => UpdateTotpDisplay();
+
+    private void UpdateTotpDisplay()
+    {
+        if (_totpService == null || string.IsNullOrEmpty(_currentTotpSecret)) return;
+
+        var code = _totpService.GenerateCode(_currentTotpSecret);
+        var remaining = _totpService.GetRemainingSeconds(30);
+
+        var codeTb = GetElement<TextBlock>("DetailTotpCode");
+        var cdTb = GetElement<TextBlock>("DetailTotpCountdown");
+
+        if (codeTb != null)
+            codeTb.Text = string.IsNullOrEmpty(code)
+                ? "——————"
+                : (code.Length == 6 ? code.Insert(3, " ") : code);
+        if (cdTb != null)
+            cdTb.Text = remaining.ToString();
+    }
+
+    private void CopyTotpButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var code = _totpService?.GenerateCode(_currentTotpSecret);
+            if (!string.IsNullOrEmpty(code))
+            {
+                System.Windows.Clipboard.SetText(code);
+                ToastService.Instance.Success("Verification code copied to clipboard");
+            }
         }
         catch { }
     }
@@ -1189,10 +1533,12 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         {
             Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.LightGray),
             CornerRadius = new CornerRadius(4),
-            Width = 16,
-            Height = 16
+            Width = 14,
+            Height = 14,
+            Margin = new Thickness(0, 0, 8, 0),
+            VerticalAlignment = VerticalAlignment.Center
         });
-        allStackPanel.Children.Add(new TextBlock { Text = "All Categories", FontWeight = FontWeights.Medium });
+        allStackPanel.Children.Add(new TextBlock { Text = "All Categories", FontWeight = FontWeights.Medium, VerticalAlignment = VerticalAlignment.Center });
         allCategoriesItem.Content = allStackPanel;
         allCategoriesItem.Tag = "all";
         categoryDropdown.Items.Add(allCategoriesItem);
@@ -1202,8 +1548,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             ? _categories
             : _categories.Where(c => c.Name.ToLower().Contains(searchText)).ToList();
 
-        // Add filtered categories to dropdown
-        foreach (var category in filteredCategories)
+        // Add filtered categories to dropdown (de-duplicated by name)
+        foreach (var category in DistinctCategories(filteredCategories))
         {
             var item = new ComboBoxItem();
             var stackPanel = new StackPanel { Orientation = Orientation.Horizontal };
@@ -1225,15 +1571,18 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             {
                 Background = colorBrush,
                 CornerRadius = new CornerRadius(4),
-                Width = 16,
-                Height = 16
+                Width = 14,
+                Height = 14,
+                Margin = new Thickness(0, 0, 8, 0),
+                VerticalAlignment = VerticalAlignment.Center
             });
 
             // Add category name
             stackPanel.Children.Add(new TextBlock
             {
                 Text = category.Name,
-                FontWeight = FontWeights.Medium
+                FontWeight = FontWeights.Medium,
+                VerticalAlignment = VerticalAlignment.Center
             });
 
             item.Content = stackPanel;

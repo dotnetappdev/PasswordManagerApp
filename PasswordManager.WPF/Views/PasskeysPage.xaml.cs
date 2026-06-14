@@ -8,6 +8,7 @@ using System.Windows.Media;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Models;
 using PasswordManager.Services.Interfaces;
+using PasswordManager.WPF.Services;
 
 namespace PasswordManager.WPF.Views;
 
@@ -23,13 +24,18 @@ public sealed class PasskeyDisplayItem
     public string LastUsedText { get; init; } = "Never used";
     public bool   IsBackedUp   { get; init; }
 
-    public Brush BackupBadgeBackground => IsBackedUp
+    // True when a matching key exists in the native Windows credential store (Windows Hello).
+    public bool   IsInWindows  { get; set; }
+
+    public Brush BackupBadgeBackground => (IsBackedUp || IsInWindows)
         ? new SolidColorBrush(Color.FromRgb(0x14, 0x53, 0x2D))
         : new SolidColorBrush(Color.FromRgb(0x2A, 0x1A, 0x1A));
-    public Brush BackupBadgeForeground => IsBackedUp
+    public Brush BackupBadgeForeground => (IsBackedUp || IsInWindows)
         ? new SolidColorBrush(Color.FromRgb(0x4A, 0xDE, 0x80))
         : new SolidColorBrush(Color.FromRgb(0x9D, 0x9D, 0x9D));
-    public string BackupBadgeText => IsBackedUp ? "✓ Backed Up" : "Not Backed Up";
+    public string BackupBadgeText => IsInWindows
+        ? "✓ In Windows"
+        : IsBackedUp ? "✓ Backed Up" : "Local only";
 }
 
 public sealed partial class PasskeysPage : Page
@@ -40,6 +46,8 @@ public sealed partial class PasskeysPage : Page
 
     public PasskeysPage() => InitializeComponent();
 
+    private readonly Services.IWindowsHelloService _hello = new Services.WindowsHelloService();
+
     public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
         if (e.ExtraData is IServiceProvider sp)
@@ -47,8 +55,39 @@ public sealed partial class PasskeysPage : Page
             _serviceProvider = sp;
             _passwordItemService = sp.GetService<IPasswordItemService>();
             await LoadPasskeysAsync();
+            await RefreshHelloStatusAsync();
         }
     }
+
+    private async Task RefreshHelloStatusAsync()
+    {
+        try
+        {
+            var available = await _hello.IsAvailableAsync();
+            var badge = GetElement<System.Windows.Controls.TextBlock>("HelloStatusText");
+            var border = GetElement<System.Windows.Controls.Border>("HelloStatusBadge");
+            if (badge == null || border == null) return;
+
+            if (available)
+            {
+                var configured = await _hello.KeyExistsAsync(Services.WindowsHelloService.DefaultKeyName);
+                badge.Text = configured ? "Active" : "Available";
+                badge.Foreground = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromRgb(0x4A, 0xDE, 0x80));
+                border.Background = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromRgb(0x14, 0x53, 0x2D));
+            }
+            else
+            {
+                badge.Text = "Not set up in Windows";
+                badge.Foreground = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromRgb(0x9D, 0x9D, 0x9D));
+            }
+        }
+        catch { }
+    }
+
+    private T? GetElement<T>(string name) where T : class => this.FindName(name) as T;
 
     private async Task LoadPasskeysAsync()
     {
@@ -59,9 +98,26 @@ public sealed partial class PasskeysPage : Page
             var all = await _passwordItemService.GetByTypeAsync(ItemType.Passkey);
             _passkeys = all.Select(ToDisplay).ToList();
 
+            // Reflect which passkeys are actually present in the native Windows credential store.
+            // (Windows intentionally does not let apps enumerate or read other passkeys' secrets, so
+            // we can only confirm the keys this app registered via Windows Hello.)
+            try
+            {
+                if (await _hello.IsAvailableAsync())
+                {
+                    foreach (var pk in _passkeys)
+                    {
+                        var credentialId = pk.Source.PasskeyItem?.CredentialId;
+                        if (!string.IsNullOrWhiteSpace(credentialId))
+                            pk.IsInWindows = await _hello.KeyExistsAsync(credentialId!);
+                    }
+                }
+            }
+            catch { }
+
             PasskeysList.ItemsSource = _passkeys;
             TotalCount.Text = _passkeys.Count.ToString();
-            BackedUpCount.Text = _passkeys.Count(p => p.IsBackedUp).ToString();
+            BackedUpCount.Text = _passkeys.Count(p => p.IsBackedUp || p.IsInWindows).ToString();
             EmptyStateBorder.Visibility = _passkeys.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
         catch { }
@@ -174,6 +230,58 @@ public sealed partial class PasskeysPage : Page
             }
         }
         catch (Exception ex) { await ShowMsgAsync("Error", ex.Message); }
+    }
+
+    private async void SetupHelloButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!await _hello.IsAvailableAsync())
+        {
+            ToastService.Instance.Warning(
+                "Windows Hello isn't set up on this PC. Add a PIN or fingerprint in Windows Settings → Accounts → Sign-in options.",
+                "Windows Hello unavailable");
+            return;
+        }
+
+        var result = await _hello.RegisterKeyAsync(Services.WindowsHelloService.DefaultKeyName);
+        switch (result)
+        {
+            case Services.HelloResult.Success:
+                ToastService.Instance.Success("Windows Hello is now linked to VaultGuard.", "Set up complete");
+                break;
+            case Services.HelloResult.Cancelled:
+                ToastService.Instance.Info("Windows Hello setup was cancelled.");
+                break;
+            default:
+                ToastService.Instance.Error("Could not set up Windows Hello. Please try again.");
+                break;
+        }
+        await RefreshHelloStatusAsync();
+    }
+
+    private async void VerifyHelloButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!await _hello.IsAvailableAsync())
+        {
+            ToastService.Instance.Warning("Windows Hello isn't available on this PC.");
+            return;
+        }
+
+        var result = await _hello.VerifyAsync("Confirm your identity for VaultGuard");
+        switch (result)
+        {
+            case Services.HelloResult.Success:
+                ToastService.Instance.Success("Identity verified with Windows Hello.", "Verified");
+                break;
+            case Services.HelloResult.Cancelled:
+                ToastService.Instance.Info("Verification cancelled.");
+                break;
+            case Services.HelloResult.NotAvailable:
+                ToastService.Instance.Warning("Windows Hello isn't available on this PC.");
+                break;
+            default:
+                ToastService.Instance.Error("Verification failed.");
+                break;
+        }
     }
 
     private void LearnMoreButton_Click(object sender, RoutedEventArgs e)

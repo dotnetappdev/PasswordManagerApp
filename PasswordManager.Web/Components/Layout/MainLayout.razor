@@ -21,18 +21,23 @@
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" Elevation="0" Variant="DrawerVariant.Responsive" Color="Color.Transparent">
         <MudNavMenu>
+            <!-- Quick Access -->
             <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
             <MudNavLink Href="/passwords" Icon="@Icons.Material.Filled.Lock">All Items</MudNavLink>
+
+            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">SECURITY</MudText>
+            <MudNavLink Href="/passkeys" Icon="@Icons.Material.Filled.Fingerprint">Passkeys</MudNavLink>
             <MudNavLink Href="/vaults" Icon="@Icons.Material.Filled.Shield">Vaults</MudNavLink>
+            <MudNavLink Href="/api-keys" Icon="@Icons.Material.Filled.Key">API Keys</MudNavLink>
+
+            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">ORGANISE</MudText>
             <MudNavLink Href="/categories" Icon="@Icons.Material.Filled.Category">Categories</MudNavLink>
             <MudNavLink Href="/collections" Icon="@Icons.Material.Filled.FolderSpecial">Collections</MudNavLink>
             <MudNavLink Href="/tags" Icon="@Icons.Material.Filled.Tag">Tags</MudNavLink>
-            <MudDivider Class="my-2" />
-            <MudNavLink Href="/import" Icon="@Icons.Material.Filled.Download">Import</MudNavLink>
+
+            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">MORE</MudText>
+            <MudNavLink Href="/import" Icon="@Icons.Material.Filled.ImportExport">Import / Export</MudNavLink>
             <MudNavLink Href="/audit-logs" Icon="@Icons.Material.Filled.History">Audit Logs</MudNavLink>
-            <MudDivider Class="my-2" />
-            <MudNavLink Href="/passkeys" Icon="@Icons.Material.Filled.Fingerprint">Passkeys</MudNavLink>
-            <MudNavLink Href="/api-keys" Icon="@Icons.Material.Filled.Key">API Keys</MudNavLink>
             <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
         </MudNavMenu>
     </MudDrawer>

@@ -14,6 +14,8 @@
 
             <!-- Value Converters -->
             <converters:TypeToIconConverter x:Key="TypeToIconConverter"/>
+            <converters:ItemToBrandBrushConverter x:Key="ItemToBrandBrushConverter"/>
+            <converters:ItemToBrandImageConverter x:Key="ItemToBrandImageConverter"/>
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
             <converters:BoolToInvertedVisibilityConverter x:Key="BoolToInvertedVisibilityConverter"/>

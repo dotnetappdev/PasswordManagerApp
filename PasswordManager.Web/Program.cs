@@ -163,6 +163,10 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 builder.Services.AddScoped<IPasswordItemService, PasswordManager.Services.PasswordItemService>();
 builder.Services.AddScoped<ITagService, PasswordManager.Services.TagService>();
 builder.Services.AddScoped<ICategoryInterface, PasswordManager.Services.Services.CategoryService>();
+
+// Shared, stateless feature services (strength meter + TOTP authenticator codes)
+builder.Services.AddSingleton<IPasswordStrengthService, PasswordManager.Services.Services.PasswordStrengthService>();
+builder.Services.AddSingleton<ITotpService, PasswordManager.Services.Services.TotpService>();
 builder.Services.AddScoped<ICollectionService, PasswordManager.Services.Services.CollectionService>();
 builder.Services.AddScoped<IAuthService, PasswordManager.Services.Services.AuthService>();
 builder.Services.AddScoped<IUserProfileService, PasswordManager.Services.Services.UserProfileService>();

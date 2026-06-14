@@ -20,6 +20,8 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
     private readonly ICategoryInterface _categoryService;
     private readonly IPasskeyService _passkeyService;
     private readonly IAuthService _authService;
+    private readonly IPasswordStrengthService _strengthService;
+    private readonly Services.IWindowsHelloService _windowsHello = new Services.WindowsHelloService();
     private PasswordItem? _editingItem;
     private bool _isReadOnly = false;
     private List<CustomField> _customFields = new();
@@ -35,6 +37,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
         _passkeyService = serviceProvider.GetRequiredService<IPasskeyService>();
         _authService = serviceProvider.GetRequiredService<IAuthService>();
+        _strengthService = serviceProvider.GetRequiredService<IPasswordStrengthService>();
         _editingItem = editingItem;
         _isReadOnly = isReadOnly;
 
@@ -68,8 +71,54 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             ToggleReadOnlyUI(true);
         }
 
+        // Live password strength meter
+        PasswordTextBox.PasswordChanged += (_, _) => UpdateStrengthMeter();
+        PasswordDisplayTextBox.TextChanged += (_, _) => UpdateStrengthMeter();
+        UpdateStrengthMeter();
+
         // Ensure the dialog is centered on the main window
         TryConfigureCentering();
+    }
+
+    /// <summary>
+    /// Recomputes and renders the password strength meter from the shared strength service.
+    /// </summary>
+    private void UpdateStrengthMeter()
+    {
+        try
+        {
+            if (PasswordStrengthPanel == null) return;
+
+            var pwd = PasswordDisplayTextBox.Visibility == Visibility.Visible
+                ? PasswordDisplayTextBox.Text
+                : PasswordTextBox.Password;
+
+            if (string.IsNullOrEmpty(pwd) || _isReadOnly)
+            {
+                PasswordStrengthPanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var result = _strengthService.Evaluate(pwd);
+            PasswordStrengthPanel.Visibility = Visibility.Visible;
+
+            var onBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(result.ColorHex));
+            var offBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#333333"));
+
+            int filled = Math.Max(1, result.Score); // 0..4 → always light at least one segment
+            StrengthSeg1.Background = filled >= 1 ? onBrush : offBrush;
+            StrengthSeg2.Background = filled >= 2 ? onBrush : offBrush;
+            StrengthSeg3.Background = filled >= 3 ? onBrush : offBrush;
+            StrengthSeg4.Background = filled >= 4 ? onBrush : offBrush;
+
+            StrengthLabel.Text = result.Label;
+            StrengthLabel.Foreground = onBrush;
+            StrengthCrackTime.Text = $"Crack time: {result.CrackTimeDisplay}";
+        }
+        catch
+        {
+            // Non-fatal cosmetic feature.
+        }
     }
 
     private void TryConfigureCentering()
@@ -306,6 +355,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             UrlTextBox.Text = _editingItem.LoginItem.WebsiteUrl ?? string.Empty;
         }
 
+        // Authenticator (TOTP) secret stored on the item
+        TotpSecretTextBox.Text = TotpHelper.GetSecret(_editingItem) ?? string.Empty;
+
         // Set passkey-specific fields if applicable
         if (_editingItem.PasskeyItem != null)
         {
@@ -317,6 +369,27 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             PasskeyRequiresVerificationCheckBox.IsChecked = _editingItem.PasskeyItem.RequiresUserVerification;
             PasskeyIsBackedUpCheckBox.IsChecked = _editingItem.PasskeyItem.IsBackedUp;
             PasskeyNotesTextBox.Text = _editingItem.PasskeyItem.Notes ?? string.Empty;
+        }
+
+        // Set credit card-specific fields if applicable
+        if (_editingItem.CreditCardItem != null)
+        {
+            CardholderNameTextBox.Text = _editingItem.CreditCardItem.CardholderName ?? string.Empty;
+            CardNumberTextBox.Text = _editingItem.CreditCardItem.CardNumber ?? string.Empty;
+            CVVTextBox.Text = _editingItem.CreditCardItem.CVV ?? string.Empty;
+            ExpiryDateTextBox.Text = _editingItem.CreditCardItem.ExpiryDate ?? string.Empty;
+            ValidFromTextBox.Text = _editingItem.CreditCardItem.ValidFrom ?? string.Empty;
+            CreditCardNotesTextBox.Text = _editingItem.CreditCardItem.Notes ?? string.Empty;
+
+            var cardTypeName = _editingItem.CreditCardItem.CardType.ToString();
+            foreach (var obj in CardTypeComboBox.Items)
+            {
+                if (obj is ComboBoxItem cbi && string.Equals(cbi.Content?.ToString(), cardTypeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    CardTypeComboBox.SelectedItem = cbi;
+                    break;
+                }
+            }
         }
 
         // If this item belongs to an "Identity" category, prefer the login-style layout
@@ -611,8 +684,29 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                 item.PasskeyItem.UserId = _authService.CurrentUser.Id;
             }
 
-            // For now, use a placeholder credential ID (in real implementation, this would come from WebAuthn)
-            item.PasskeyItem.CredentialId = "placeholder_credential_id_" + DateTime.Now.Ticks;
+            // Persist the passkey into the native Windows 10/11 credential store (Windows Hello /
+            // KeyCredentialManager — the same secure subsystem Windows uses for platform passkeys).
+            // The resulting device-bound key name is stored as the CredentialId so the passkey can
+            // be re-opened/verified later.
+            var keyName = BuildPasskeyKeyName(item.PasskeyItem);
+            item.PasskeyItem.CredentialId = keyName;
+
+            try
+            {
+                if (await _windowsHello.IsAvailableAsync())
+                {
+                    var registration = await _windowsHello.RegisterKeyAsync(keyName);
+                    item.PasskeyItem.DeviceType = string.IsNullOrWhiteSpace(item.PasskeyItem.DeviceType)
+                        ? "Windows Hello"
+                        : item.PasskeyItem.DeviceType;
+                    item.PasskeyItem.IsBackedUp = registration == Services.HelloResult.Success
+                        || (PasskeyIsBackedUpCheckBox.IsChecked ?? false);
+                }
+            }
+            catch
+            {
+                // Non-fatal: if the Windows credential store is unavailable we still save the item.
+            }
         }
 
         // Handle credit card-specific fields
@@ -627,7 +721,19 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                 item.CreditCardItem.UserId = _authService.CurrentUser.Id;
             }
 
-            // Additional credit card fields would be set here when UI is implemented
+            item.CreditCardItem.CardholderName = CardholderNameTextBox.Text?.Trim();
+            item.CreditCardItem.CardNumber = CardNumberTextBox.Text?.Trim();
+            item.CreditCardItem.CVV = CVVTextBox.Text?.Trim();
+            item.CreditCardItem.ExpiryDate = ExpiryDateTextBox.Text?.Trim();
+            item.CreditCardItem.ValidFrom = ValidFromTextBox.Text?.Trim();
+            item.CreditCardItem.Notes = CreditCardNotesTextBox.Text?.Trim();
+            item.CreditCardItem.LastModified = DateTime.UtcNow;
+
+            if (CardTypeComboBox.SelectedItem is ComboBoxItem cardTypeItem &&
+                Enum.TryParse<CardType>((cardTypeItem.Content?.ToString() ?? string.Empty).Replace(" ", string.Empty), true, out var parsedCardType))
+            {
+                item.CreditCardItem.CardType = parsedCardType;
+            }
         }
 
         // Handle secure note-specific fields
@@ -701,15 +807,73 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             }
 
             // Set device type automatically
-            PasskeyDeviceTypeTextBox.Text = "Windows PC";
+            PasskeyDeviceTypeTextBox.Text = "Windows Hello";
 
-            // Show success message for now (actual WebAuthn integration would happen here)
-            await ShowSuccessMessage("Passkey registration initiated. In a full implementation, this would use WebAuthn to register the passkey with the browser/OS.");
+            if (!await _windowsHello.IsAvailableAsync())
+            {
+                await ShowErrorDialog("Windows Hello isn't set up on this PC. Add a PIN or fingerprint in Windows Settings → Accounts → Sign-in options, then try again.");
+                return;
+            }
+
+            // Register the passkey credential with the native Windows credential store.
+            var keyName = BuildPasskeyKeyName(new PasskeyItem
+            {
+                Username = PasskeyUsernameTextBox.Text?.Trim(),
+                Website = PasskeyWebsiteTextBox.Text?.Trim(),
+                WebsiteUrl = PasskeyUrlTextBox.Text?.Trim()
+            });
+
+            var result = await _windowsHello.RegisterKeyAsync(keyName);
+            switch (result)
+            {
+                case Services.HelloResult.Success:
+                    PasskeyIsBackedUpCheckBox.IsChecked = true;
+                    await ShowSuccessMessage("Passkey saved to the Windows credential store via Windows Hello.");
+                    break;
+                case Services.HelloResult.Cancelled:
+                    await ShowErrorDialog("Windows Hello prompt was cancelled.");
+                    break;
+                default:
+                    await ShowErrorDialog("Could not save the passkey to Windows. Please try again.");
+                    break;
+            }
         }
         catch (Exception ex)
         {
             await ShowErrorDialog($"Error registering passkey: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Builds a stable, unique Windows credential key name for a passkey so it can be stored in and
+    /// later opened from the native Windows 10/11 credential (Windows Hello) subsystem.
+    /// </summary>
+    private static string BuildPasskeyKeyName(PasskeyItem passkey)
+    {
+        var site = passkey.WebsiteUrl ?? passkey.Website ?? "site";
+        var user = passkey.Username ?? "user";
+
+        static string Clean(string value)
+        {
+            var cleaned = new string(value.Where(c => char.IsLetterOrDigit(c) || c is '.' or '-' or '_').ToArray());
+            return string.IsNullOrWhiteSpace(cleaned) ? "x" : cleaned;
+        }
+
+        return $"VaultGuard.Passkey.{Clean(site)}.{Clean(user)}";
+    }
+
+    /// <summary>
+    /// Routes mouse-wheel input straight to the dialog's ScrollViewer. Without this the wheel is
+    /// swallowed by inner controls (ComboBox, TextBox, the password generator panel, etc.) and the
+    /// long form barely scrolls.
+    /// </summary>
+    private void DialogScrollViewer_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+    {
+        if (e.Handled) return;
+        if (sender is not ScrollViewer scrollViewer) return;
+
+        scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - (e.Delta / 2.0));
+        e.Handled = true;
     }
 
     private async Task ShowErrorDialog(string message)
@@ -868,7 +1032,8 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         {
             _brandIconDataUrl = BrandIconHelper.GetCustomBrandIconDataUrl(_editingItem);
             _customFields = _editingItem.CustomFields
-                .Where(field => !string.Equals(field.Name, BrandIconHelper.BrandIconCustomFieldName, StringComparison.OrdinalIgnoreCase))
+                .Where(field => !string.Equals(field.Name, BrandIconHelper.BrandIconCustomFieldName, StringComparison.OrdinalIgnoreCase)
+                             && !string.Equals(field.Name, TotpHelper.TotpCustomFieldName, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
 
@@ -972,6 +1137,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 
         if (!string.IsNullOrWhiteSpace(_brandIconDataUrl))
             BrandIconHelper.SetCustomBrandIcon(item, _brandIconDataUrl);
+
+        // Persist the authenticator (TOTP) secret (empty clears it).
+        TotpHelper.SetSecret(item, TotpSecretTextBox?.Text);
     }
 
     private void UpdateBrandIconStatus()

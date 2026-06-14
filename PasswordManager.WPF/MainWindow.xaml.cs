@@ -114,6 +114,54 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Application-wide keyboard shortcuts. Global actions (Settings, Lock) work anywhere; the
+    /// item actions (copy, open &amp; fill, edit, delete) are dispatched to the items page when shown.
+    /// Mirrors the reference list on the Settings → Shortcuts tab.
+    /// </summary>
+    private void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (!_isAuthenticated) return;
+
+        var mods  = System.Windows.Input.Keyboard.Modifiers;
+        bool ctrl  = (mods & System.Windows.Input.ModifierKeys.Control) != 0;
+        bool shift = (mods & System.Windows.Input.ModifierKeys.Shift) != 0;
+
+        // ── Global ──
+        if (ctrl && e.Key == System.Windows.Input.Key.OemComma) { NavigateToPage("Settings"); e.Handled = true; return; }
+        if (ctrl && e.Key == System.Windows.Input.Key.L)        { HandleLogout();              e.Handled = true; return; }
+
+        var itemsPage = ContentFrame?.Content as Views.PasswordItemsPage;
+
+        if (ctrl && e.Key == System.Windows.Input.Key.N)
+        {
+            if (itemsPage != null) itemsPage.TriggerAddNew();
+            else NavigateToPage("AllItems");
+            e.Handled = true;
+            return;
+        }
+
+        if (ctrl && e.Key == System.Windows.Input.Key.F)
+        {
+            if (itemsPage != null) { itemsPage.FocusSearch(); e.Handled = true; }
+            else NavigateToPage("AllItems");
+            return;
+        }
+
+        if (itemsPage == null) return;
+
+        // Don't hijack Ctrl+C / Delete while the user is typing in an input control.
+        var focused = System.Windows.Input.Keyboard.FocusedElement;
+        bool editing = focused is System.Windows.Controls.Primitives.TextBoxBase
+                       || focused is System.Windows.Controls.PasswordBox;
+
+        if (ctrl && shift && e.Key == System.Windows.Input.Key.C && !editing) { itemsPage.CopyUsernameShortcut(); e.Handled = true; }
+        else if (ctrl && e.Key == System.Windows.Input.Key.C && !editing)     { itemsPage.CopyPasswordShortcut(); e.Handled = true; }
+        else if (ctrl && e.Key == System.Windows.Input.Key.O)                 { itemsPage.OpenAndFillShortcut();  e.Handled = true; }
+        else if (ctrl && e.Key == System.Windows.Input.Key.E)                 { itemsPage.EditSelectedShortcut(); e.Handled = true; }
+        else if (e.Key == System.Windows.Input.Key.Delete && !editing)        { itemsPage.DeleteSelectedShortcut(); e.Handled = true; }
+    }
+
     public void NavigateToPage(string pageTag)
     {
         if (!_isAuthenticated && pageTag != "Login") return;

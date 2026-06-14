@@ -5,11 +5,14 @@
       xmlns:ui="http://schemas.modernwpf.com/2019"
       Background="{StaticResource ModernBackgroundBrush}">
 
-    <ScrollViewer>
-        <StackPanel Margin="0,0,0,24">
-            
+    <Grid Margin="16,8,8,8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
             <!-- Page Header -->
-            <Border Style="{StaticResource SettingsSectionStyle}">
+            <Border Grid.Row="0" Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="8">
                     <StackPanel Orientation="Horizontal" Margin="12">
                         <Border Background="{StaticResource ModernElevatedSurfaceBrush}"
@@ -31,7 +34,15 @@
                               Style="{StaticResource ModernCaptionStyle}"/>
                 </StackPanel>
             </Border>
-            
+
+            <!-- Tabbed settings: groups sections so each screen needs little or no scrolling.
+                 Within each tab the cards flow into two columns on wide windows. -->
+            <TabControl Grid.Row="1" Margin="0,8,0,0"
+                        Style="{StaticResource SettingsTabControlStyle}">
+                <TabItem Header="Security">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,0,0">
+                    <WrapPanel Orientation="Horizontal" ItemWidth="560" MaxWidth="1132" HorizontalAlignment="Left">
+
             <!-- Security Settings -->
             <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">
@@ -72,7 +83,7 @@
                                HorizontalAlignment="Left"
                                Click="ChangePasswordButton_Click">
                             <StackPanel Orientation="Horizontal" Margin="8">
-                                <TextBlock Text="&#xE192;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                <TextBlock Text="&#xE192;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Change Master Password"/>
                             </StackPanel>
                         </Button>
@@ -92,6 +103,14 @@
                 </StackPanel>
             </Border>
             
+                    </WrapPanel>
+                  </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="Storage">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,0,0">
+                    <WrapPanel Orientation="Horizontal" ItemWidth="560" MaxWidth="1132" HorizontalAlignment="Left">
+
             <!-- Database Settings -->
             <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">
@@ -185,7 +204,7 @@
                                        Click="OpenDatabaseFolderButton_Click"
                                        ToolTipService.ToolTip="Open the database folder in File Explorer">
                                     <StackPanel Orientation="Horizontal" Margin="6">
-                                        <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                        <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="Open Folder"/>
                                     </StackPanel>
                                 </Button>
@@ -193,7 +212,7 @@
                                        Click="CopyDatabasePathButton_Click"
                                        ToolTipService.ToolTip="Copy database path to clipboard">
                                     <StackPanel Orientation="Horizontal" Margin="6">
-                                        <TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                        <TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="Copy Path"/>
                                     </StackPanel>
                                 </Button>
@@ -222,7 +241,7 @@
                                IsEnabled="{Binding AuthenticationMode, Converter={StaticResource LocalModeToEnabledConverter}}"
                                Click="ConfigureDatabaseButton_Click">
                             <StackPanel Orientation="Horizontal" Margin="8">
-                                <TextBlock Text="&#xE8F7;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                <TextBlock Text="&#xE8F7;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Configure Database Connection"/>
                             </StackPanel>
                         </Button>
@@ -263,6 +282,14 @@
                 </StackPanel>
             </Border>
             
+                    </WrapPanel>
+                  </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="Backup &amp; Import">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,0,0">
+                    <WrapPanel Orientation="Horizontal" ItemWidth="560" MaxWidth="1132" HorizontalAlignment="Left">
+
             <!-- Cloud Backup Settings -->
             <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">
@@ -323,7 +350,7 @@
                                        Click="ChooseNetworkLocationButton_Click"
                                        VerticalAlignment="Bottom">
                                     <StackPanel Orientation="Horizontal" Margin="8">
-                                        <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                        <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="Browse"/>
                                     </StackPanel>
                                 </Button>
@@ -370,7 +397,7 @@
                                        Click="CreateBackupButton_Click"
                                        IsEnabled="{Binding IsLoading, Converter={StaticResource BoolNegationConverter}}">
                                     <StackPanel Orientation="Horizontal" Margin="8">
-                                        <TextBlock Text="&#xE753;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                        <TextBlock Text="&#xE753;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="Create Backup"/>
                                     </StackPanel>
                                 </Button>
@@ -380,7 +407,7 @@
                                        Click="RefreshBackupsButton_Click"
                                        IsEnabled="{Binding IsLoading, Converter={StaticResource BoolNegationConverter}}">
                                     <StackPanel Orientation="Horizontal" Margin="8">
-                                        <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                        <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="Refresh"/>
                                     </StackPanel>
                                 </Button>
@@ -390,7 +417,7 @@
                                        Click="RestoreFromFileButton_Click"
                                        IsEnabled="{Binding IsLoading, Converter={StaticResource BoolNegationConverter}}">
                                     <StackPanel Orientation="Horizontal" Margin="8">
-                                        <TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                        <TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="Restore from File"/>
                                     </StackPanel>
                                 </Button>
@@ -477,7 +504,7 @@
                                    Click="ExportToBrowserButton_Click"
                                    Tag="Chrome">
                                 <StackPanel Orientation="Horizontal" Margin="8">
-                                    <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                    <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                     <TextBlock Text="Export to Chrome"/>
                                 </StackPanel>
                             </Button>
@@ -487,7 +514,7 @@
                                    Click="ExportToBrowserButton_Click"
                                    Tag="Edge">
                                 <StackPanel Orientation="Horizontal" Margin="8">
-                                    <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                    <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                     <TextBlock Text="Export to Edge"/>
                                 </StackPanel>
                             </Button>
@@ -535,7 +562,7 @@
                                 <Button Grid.Column="1" 
                                        Style="{StaticResource ModernSecondaryButtonStyle}"
                                        Click="ChooseExportFolderButton_Click">
-                                    <TextBlock Text="&#xE8DA;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                    <TextBlock Text="&#xE8DA;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                 </Button>
                             </Grid>
                         </StackPanel>
@@ -546,7 +573,7 @@
                                 HorizontalAlignment="Left"
                                 IsEnabled="{Binding IsLoading, Converter={StaticResource BoolNegationConverter}}">
                             <StackPanel Orientation="Horizontal" Margin="8">
-                                <TextBlock Text="&#xE8C5;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                <TextBlock Text="&#xE8C5;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Export All Passwords"/>
                             </StackPanel>
                         </Button>
@@ -564,14 +591,17 @@
                                      SelectionChanged="ImportUserModeComboBox_SelectionChanged"
                                      AutomationProperties.Name="Select import target mode"
                                      AutomationProperties.HelpText="Choose how to distribute imported passwords to users">
-                                <ComboBoxItem 
-                                            Tag="current" 
+                                <ComboBoxItem
+                                            Content="Current User (your account only)"
+                                            Tag="current"
                                             IsSelected="True"
                                             AutomationProperties.Name="Current User - Import passwords only for your account"/>
-                                <ComboBoxItem 
+                                <ComboBoxItem
+                                            Content="All Users"
                                             Tag="all"
                                             AutomationProperties.Name="All Users - Import passwords accessible to all system users"/>
-                                <ComboBoxItem 
+                                <ComboBoxItem
+                                            Content="Select Multiple Users…"
                                             Tag="multiple"
                                             AutomationProperties.Name="Select Multiple Users - Choose specific users to import passwords for"/>
                             </ComboBox>
@@ -640,7 +670,7 @@
                                        AutomationProperties.Name="Browse for import file"
                                        AutomationProperties.HelpText="Open file picker to select a password export file to import">
                                     <StackPanel Orientation="Horizontal" Margin="8">
-                                        <TextBlock Text="&#xE8DA;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                        <TextBlock Text="&#xE8DA;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="Browse"/>
                                     </StackPanel>
                                 </Button>
@@ -657,7 +687,7 @@
                                    AutomationProperties.Name="Start password import"
                                    AutomationProperties.HelpText="Begin importing passwords from the selected file">
                                 <StackPanel Orientation="Horizontal" Margin="10">
-                                    <TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
+                                    <TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                     <TextBlock Text="Start Import" FontSize="14" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </Button>
@@ -670,7 +700,7 @@
                                    AutomationProperties.Name="Clear import selections"
                                    AutomationProperties.HelpText="Reset all import selections and start over">
                                 <StackPanel Orientation="Horizontal" Margin="10">
-                                    <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
+                                    <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                     <TextBlock Text="Clear" FontSize="14" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </Button>
@@ -729,6 +759,14 @@
                 </StackPanel>
             </Border>
             
+                    </WrapPanel>
+                  </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="Appearance">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,0,0">
+                    <WrapPanel Orientation="Horizontal" ItemWidth="560" MaxWidth="1132" HorizontalAlignment="Left">
+
             <!-- Appearance Settings -->
             <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">
@@ -785,14 +823,14 @@
                             <Button Style="{StaticResource ModernPrimaryButtonStyle}"
                                     Click="ManageVaultsButton_Click">
                                 <StackPanel Orientation="Horizontal" Margin="8">
-                                    <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                    <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                     <TextBlock Text="Manage Vaults"/>
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource ModernSecondaryButtonStyle}"
                                     Margin="8,0,0,0" Click="SeedVaultsButton_Click">
                                 <StackPanel Orientation="Horizontal" Margin="8">
-                                    <TextBlock Text="&#xE74C;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                    <TextBlock Text="&#xE74C;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                     <TextBlock Text="Seed Default Vaults"/>
                                 </StackPanel>
                             </Button>
@@ -850,7 +888,7 @@
                                 <Button Grid.Column="1" Margin="8,0,0,0"
                                         Style="{StaticResource ModernPrimaryButtonStyle}"
                                         Click="GeneratePreviewPassword_Click">
-                                    <TextBlock Text="&#xE895;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                    <TextBlock Text="&#xE895;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                 </Button>
                             </Grid>
                         </StackPanel>
@@ -858,6 +896,14 @@
                 </StackPanel>
             </Border>
             
+                    </WrapPanel>
+                  </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="Maintenance">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,0,0">
+                    <WrapPanel Orientation="Horizontal" ItemWidth="560" MaxWidth="1132" HorizontalAlignment="Left">
+
             <!-- Database Management -->
             <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">
@@ -905,7 +951,7 @@
                                        HorizontalAlignment="Left"
                                        Click="ResetDataButton_Click">
                                     <StackPanel Orientation="Horizontal" Margin="8">
-                                        <TextBlock Text="&#xE7A7;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                        <TextBlock Text="&#xE7A7;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="Reset Password Data"/>
                                     </StackPanel>
                                 </Button>
@@ -940,7 +986,7 @@
                                        HorizontalAlignment="Left"
                                        Click="ResetAllButton_Click">
                                     <StackPanel Orientation="Horizontal" Margin="8">
-                                        <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                        <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="Reset All Tables"/>
                                     </StackPanel>
                                 </Button>
@@ -977,7 +1023,7 @@
                                        HorizontalAlignment="Left"
                                        Click="SecureWipeButton_Click">
                                     <StackPanel Orientation="Horizontal" Margin="8">
-                                        <TextBlock Text="&#xE107;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                        <TextBlock Text="&#xE107;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="Secure Wipe"/>
                                     </StackPanel>
                                 </Button>
@@ -1009,7 +1055,7 @@
                                        HorizontalAlignment="Left"
                                        Click="ReseedSampleButton_Click">
                                     <StackPanel Orientation="Horizontal" Margin="8">
-                                        <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                        <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="Reseed Sample Data"/>
                                     </StackPanel>
                                 </Button>
@@ -1019,6 +1065,124 @@
                 </StackPanel>
             </Border>
             
+                    </WrapPanel>
+                  </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="Shortcuts">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,0,0">
+                    <WrapPanel Orientation="Horizontal" ItemWidth="560" MaxWidth="1132" HorizontalAlignment="Left">
+
+                        <!-- Key Bindings: General -->
+                        <Border Style="{StaticResource SettingsSectionStyle}">
+                            <StackPanel Margin="20">
+                                <StackPanel Orientation="Horizontal" Margin="12">
+                                    <Border Background="#5B4FCF" Width="24" Height="24" CornerRadius="6" Margin="0,0,10,0">
+                                        <TextBlock Text="&#xE765;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                                   Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Keyboard Shortcuts — General" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Margin="16,8,16,4">
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="New item" Foreground="{StaticResource ModernTextPrimaryBrush}" FontSize="13" VerticalAlignment="Center"/>
+                                        <Border Grid.Column="1" Background="#2A2A2A" CornerRadius="5" BorderBrush="#3A3A3A" BorderThickness="1" Padding="8,3">
+                                            <TextBlock Text="Ctrl + N" FontFamily="Consolas" FontSize="12" Foreground="#E5E5E5"/>
+                                        </Border>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Focus / run search" Foreground="{StaticResource ModernTextPrimaryBrush}" FontSize="13" VerticalAlignment="Center"/>
+                                        <Border Grid.Column="1" Background="#2A2A2A" CornerRadius="5" BorderBrush="#3A3A3A" BorderThickness="1" Padding="8,3">
+                                            <TextBlock Text="Ctrl + F  ·  Enter" FontFamily="Consolas" FontSize="12" Foreground="#E5E5E5"/>
+                                        </Border>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Clear search" Foreground="{StaticResource ModernTextPrimaryBrush}" FontSize="13" VerticalAlignment="Center"/>
+                                        <Border Grid.Column="1" Background="#2A2A2A" CornerRadius="5" BorderBrush="#3A3A3A" BorderThickness="1" Padding="8,3">
+                                            <TextBlock Text="Esc" FontFamily="Consolas" FontSize="12" Foreground="#E5E5E5"/>
+                                        </Border>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Open Settings" Foreground="{StaticResource ModernTextPrimaryBrush}" FontSize="13" VerticalAlignment="Center"/>
+                                        <Border Grid.Column="1" Background="#2A2A2A" CornerRadius="5" BorderBrush="#3A3A3A" BorderThickness="1" Padding="8,3">
+                                            <TextBlock Text="Ctrl + ," FontFamily="Consolas" FontSize="12" Foreground="#E5E5E5"/>
+                                        </Border>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Lock vault" Foreground="{StaticResource ModernTextPrimaryBrush}" FontSize="13" VerticalAlignment="Center"/>
+                                        <Border Grid.Column="1" Background="#2A2A2A" CornerRadius="5" BorderBrush="#3A3A3A" BorderThickness="1" Padding="8,3">
+                                            <TextBlock Text="Ctrl + L" FontFamily="Consolas" FontSize="12" Foreground="#E5E5E5"/>
+                                        </Border>
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Key Bindings: Selected item -->
+                        <Border Style="{StaticResource SettingsSectionStyle}">
+                            <StackPanel Margin="20">
+                                <StackPanel Orientation="Horizontal" Margin="12">
+                                    <Border Background="#059669" Width="24" Height="24" CornerRadius="6" Margin="0,0,10,0">
+                                        <TextBlock Text="&#xE8FD;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                                   Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Keyboard Shortcuts — Selected Item" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Margin="16,8,16,4">
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Copy password" Foreground="{StaticResource ModernTextPrimaryBrush}" FontSize="13" VerticalAlignment="Center"/>
+                                        <Border Grid.Column="1" Background="#2A2A2A" CornerRadius="5" BorderBrush="#3A3A3A" BorderThickness="1" Padding="8,3">
+                                            <TextBlock Text="Ctrl + C" FontFamily="Consolas" FontSize="12" Foreground="#E5E5E5"/>
+                                        </Border>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Copy username" Foreground="{StaticResource ModernTextPrimaryBrush}" FontSize="13" VerticalAlignment="Center"/>
+                                        <Border Grid.Column="1" Background="#2A2A2A" CornerRadius="5" BorderBrush="#3A3A3A" BorderThickness="1" Padding="8,3">
+                                            <TextBlock Text="Ctrl + Shift + C" FontFamily="Consolas" FontSize="12" Foreground="#E5E5E5"/>
+                                        </Border>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Open &amp; fill in browser" Foreground="{StaticResource ModernTextPrimaryBrush}" FontSize="13" VerticalAlignment="Center"/>
+                                        <Border Grid.Column="1" Background="#2A2A2A" CornerRadius="5" BorderBrush="#3A3A3A" BorderThickness="1" Padding="8,3">
+                                            <TextBlock Text="Ctrl + O" FontFamily="Consolas" FontSize="12" Foreground="#E5E5E5"/>
+                                        </Border>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Edit item" Foreground="{StaticResource ModernTextPrimaryBrush}" FontSize="13" VerticalAlignment="Center"/>
+                                        <Border Grid.Column="1" Background="#2A2A2A" CornerRadius="5" BorderBrush="#3A3A3A" BorderThickness="1" Padding="8,3">
+                                            <TextBlock Text="Ctrl + E" FontFamily="Consolas" FontSize="12" Foreground="#E5E5E5"/>
+                                        </Border>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Delete item" Foreground="{StaticResource ModernTextPrimaryBrush}" FontSize="13" VerticalAlignment="Center"/>
+                                        <Border Grid.Column="1" Background="#2A2A2A" CornerRadius="5" BorderBrush="#3A3A3A" BorderThickness="1" Padding="8,3">
+                                            <TextBlock Text="Del" FontFamily="Consolas" FontSize="12" Foreground="#E5E5E5"/>
+                                        </Border>
+                                    </Grid>
+                                    <TextBlock Text="These shortcuts are active throughout the app. Item actions apply to the currently selected item. Custom rebinding is coming soon."
+                                               Style="{StaticResource ModernCaptionStyle}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                    </WrapPanel>
+                  </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="About">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,0,0">
+                    <WrapPanel Orientation="Horizontal" ItemWidth="560" MaxWidth="1132" HorizontalAlignment="Left">
+
             <!-- About -->
             <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">
@@ -1093,9 +1257,15 @@
                 </StackPanel>
             </Border>
 
+                    </WrapPanel>
+                  </ScrollViewer>
+                </TabItem>
+            </TabControl>
+
             <!-- Loading Indicator -->
-            <Border Style="{StaticResource SettingsSectionStyle}"
+            <Border Grid.Row="1" Style="{StaticResource SettingsSectionStyle}"
                    HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
                    Padding="32"
                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
                 <StackPanel Margin="16" HorizontalAlignment="Center">
@@ -1105,7 +1275,6 @@
                               HorizontalAlignment="Center"/>
                 </StackPanel>
             </Border>
-            
-        </StackPanel>
-    </ScrollViewer>
+
+        </Grid>
 </Page>
