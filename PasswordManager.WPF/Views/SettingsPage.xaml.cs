@@ -1048,45 +1048,59 @@ public sealed partial class SettingsPage : Page
             if (result != ModernWpf.Controls.ContentDialogResult.Primary || _serviceProvider == null)
                 return;
 
-            string? currentUserId = null;
-            if (_authService != null)
-                currentUserId = _authService.CurrentUser?.Id ?? await _authService.GetCurrentUserIdAsync();
-
-            if (string.IsNullOrEmpty(currentUserId))
-            {
-                await ShowErrorDialog("Could not determine the current user. Please log in again.");
-                return;
-            }
-
+            // STEP 1 — delete every password item through the *same* service the items page uses. This
+            // is guaranteed to remove exactly what the user sees and correctly handles the child item
+            // rows (login/card/note/wifi/passkey), which the old EF RemoveRange path failed on.
+            var itemsDeleted = 0;
             var scopeFactory = _serviceProvider.GetService<IServiceScopeFactory>();
-            if (scopeFactory == null)
-            {
-                await ShowErrorDialog("Service scope factory not available.");
-                return;
-            }
-
-            await System.Threading.Tasks.Task.Run(() =>
+            if (scopeFactory != null)
             {
                 using var scope = scopeFactory.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
-                TestDataSeeder.ClearSeedData(db, currentUserId);
-                // Also clear the built-in test user's data (the demo data is owned by this account)
-                if (currentUserId != TestDataSeeder.TestUserId)
-                    TestDataSeeder.ClearSeedData(db, TestDataSeeder.TestUserId);
+                var itemService = scope.ServiceProvider.GetService<PasswordManager.Services.Interfaces.IPasswordItemService>();
+                if (itemService != null)
+                {
+                    var items = (await itemService.GetAllAsync()).ToList();
+                    foreach (var item in items)
+                    {
+                        try { await itemService.DeleteAsync(item.Id); itemsDeleted++; }
+                        catch (Exception delEx) { await _logger.LogErrorAsync("SettingsPage", $"Failed to delete item {item.Id}", delEx); }
+                    }
+                }
+            }
 
-                // Mark the database as seeded so startup does NOT re-add the demo data on next launch.
-                TryMarkSeedComplete(db);
-            });
+            // STEP 2 — clear categories, collections, tags and any leftover rows (FK constraints off),
+            // then mark the database as seeded so startup never re-adds the demo data.
+            var resetService = _serviceProvider.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+            PasswordManager.Services.Interfaces.DatabaseResetResult? reset = null;
+            if (resetService != null)
+                reset = await resetService.ResetDataTablesAsync();
 
-            await _logger.LogAsync("SettingsPage", $"Cleared seed data for user {currentUserId}");
-
-            var successDialog = new ModernWpf.Controls.ContentDialog
+            try
             {
-                Title = "Done",
-                Content = "All seed data has been removed.",
-                CloseButtonText = "OK",
-            };
-            await successDialog.ShowAsync();
+                if (scopeFactory != null)
+                {
+                    await System.Threading.Tasks.Task.Run(() =>
+                    {
+                        using var scope = scopeFactory.CreateScope();
+                        var db = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+                        TestDataSeeder.ClearSeedData(db, TestDataSeeder.TestUserId);
+                        TryMarkSeedComplete(db);
+                    });
+                }
+            }
+            catch (Exception inner)
+            {
+                await _logger.LogErrorAsync("SettingsPage", "Per-user seed cleanup failed (items already deleted)", inner);
+            }
+
+            await _logger.LogAsync("SettingsPage", $"Delete seed data: {itemsDeleted} items deleted; reset: {reset?.Message}");
+
+            // Tell the live items / dashboard views to reload so the cleared data disappears immediately.
+            PasswordManager.WPF.Services.AppEvents.RaiseVaultDataChanged();
+
+            PasswordManager.WPF.Services.ToastService.Instance.Success(
+                $"Removed {itemsDeleted} item(s) plus their categories, collections & tags. Your accounts were kept.",
+                "Seed data deleted");
         }
         catch (Exception ex)
         {
@@ -1629,17 +1643,14 @@ public sealed partial class SettingsPage : Page
             }
 
             var result = await resetService.ClearNonAdminUsersAsync();
-            var dlg = new ModernWpf.Controls.ContentDialog
-            {
-                Title = result.Success ? "Done" : "Completed with errors",
-                Content = result.Message,
-                CloseButtonText = "OK",
-            };
-            await dlg.ShowAsync();
+            if (result.Success)
+                PasswordManager.WPF.Services.ToastService.Instance.Success(result.Message, "Users deleted");
+            else
+                PasswordManager.WPF.Services.ToastService.Instance.Warning(result.Message, "Completed with errors");
         }
         catch (Exception ex)
         {
-            await ShowErrorDialog($"Failed to delete users: {ex.Message}");
+            PasswordManager.WPF.Services.ToastService.Instance.Error($"Failed to delete users: {ex.Message}", "Error");
         }
     }
 

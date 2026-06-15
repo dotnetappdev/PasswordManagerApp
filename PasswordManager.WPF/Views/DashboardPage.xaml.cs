@@ -23,6 +23,24 @@ public sealed partial class DashboardPage : System.Windows.Controls.Page
     public DashboardPage()
     {
         InitializeComponent();
+
+        // Refresh when vault data is cleared/changed elsewhere (e.g. Settings → Delete Seed Data).
+        Loaded += (_, _) =>
+        {
+            Services.AppEvents.VaultDataChanged -= OnVaultDataChanged;
+            Services.AppEvents.VaultDataChanged += OnVaultDataChanged;
+        };
+        Unloaded += (_, _) => Services.AppEvents.VaultDataChanged -= OnVaultDataChanged;
+    }
+
+    private async void OnVaultDataChanged()
+    {
+        try
+        {
+            if (_viewModel != null)
+                await _viewModel.RefreshAsync();
+        }
+        catch { /* refresh is best-effort */ }
     }
 
     public void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)

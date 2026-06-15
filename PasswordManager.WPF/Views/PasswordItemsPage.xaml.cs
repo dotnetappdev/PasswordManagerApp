@@ -40,6 +40,26 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     public PasswordItemsPage()
     {
         this.InitializeComponent();
+
+        // Refresh the live list when data is cleared/changed elsewhere (e.g. Settings → Delete Seed Data).
+        Loaded += (_, _) =>
+        {
+            PasswordManager.WPF.Services.AppEvents.VaultDataChanged -= OnVaultDataChanged;
+            PasswordManager.WPF.Services.AppEvents.VaultDataChanged += OnVaultDataChanged;
+        };
+        Unloaded += (_, _) =>
+            PasswordManager.WPF.Services.AppEvents.VaultDataChanged -= OnVaultDataChanged;
+    }
+
+    private async void OnVaultDataChanged()
+    {
+        try
+        {
+            if (_viewModel != null)
+                await _viewModel.RefreshAsync();
+            await LoadCategoriesAsync();
+        }
+        catch { /* refresh is best-effort */ }
     }
 
     private T? GetElement<T>(string name) where T : class

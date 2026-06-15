@@ -87,6 +87,7 @@ namespace PasswordManager.WPF.Services
                     UpdateResourceIfExists(resources, "ModernTextPrimaryBrush", "#FFFFFF");
                     UpdateResourceIfExists(resources, "ModernTextSecondaryBrush", "#B0B0B0");
                     UpdateResourceIfExists(resources, "ModernTextTertiaryBrush", "#808080");
+                    UpdateResourceIfExists(resources, "ModernBorderBrush", "#3A3A3A");
 
                     // NavigationView overrides - sidebar should be #141414
                     UpdateResourceIfExists(resources, "NavigationViewDefaultPaneBackground", "#141414");
@@ -104,6 +105,7 @@ namespace PasswordManager.WPF.Services
                     UpdateResourceIfExists(resources, "ModernTextPrimaryBrush", "#1E293B");
                     UpdateResourceIfExists(resources, "ModernTextSecondaryBrush", "#64748B");
                     UpdateResourceIfExists(resources, "ModernTextTertiaryBrush", "#94A3B8");
+                    UpdateResourceIfExists(resources, "ModernBorderBrush", "#E2E8F0");
 
                     // NavigationView overrides
                     UpdateResourceIfExists(resources, "NavigationViewDefaultPaneBackground", "#F8FAFC");
@@ -129,7 +131,17 @@ namespace PasswordManager.WPF.Services
 
                 var color = (Color)ColorConverter.ConvertFromString(colorString);
 
-                if (resources.Contains(key))
+                if (!resources.Contains(key))
+                    return;
+
+                // IMPORTANT: controls reference these brushes via {StaticResource ...}, which captures the
+                // brush *instance* at load time. Replacing the dictionary entry would NOT update them. Instead
+                // mutate the Color of the existing (non-frozen) brush so every control using it repaints live.
+                if (resources[key] is SolidColorBrush existing && !existing.IsFrozen)
+                {
+                    existing.Color = color;
+                }
+                else
                 {
                     resources[key] = new SolidColorBrush(color);
                 }

@@ -36,6 +36,11 @@ namespace PasswordManager.WPF.Helpers
                 // Ensure vault schema exists on this connection before any Collection INSERT
                 await EnsureVaultSchemaOnConnectionAsync(db);
 
+                // If the user deliberately cleared their data (seed marker present), do NOT re-add any
+                // demo content. This is what made cleared data reappear when returning to the items page.
+                if (SeedMarkerExists(db))
+                    return;
+
                 // Seed shared lookup data (categories, collections, tags) only once globally.
                 TestDataSeeder.SeedCollections(db, seedUserId);
                 TestDataSeeder.SeedCategories(db, seedUserId);
@@ -58,6 +63,36 @@ namespace PasswordManager.WPF.Helpers
             {
                 System.Diagnostics.Debug.WriteLine($"[SampleDataSeeder] Failed: {ex.Message}\n{ex.StackTrace}");
             }
+        }
+
+        // True when a "<db>.seeded" marker exists next to the SQLite database, meaning demo data has
+        // already been seeded once (or was deliberately cleared) and must not be re-added.
+        private static bool SeedMarkerExists(PasswordManager.DAL.PasswordManagerDbContext db)
+        {
+            try
+            {
+                var providerName = db.Database.ProviderName ?? string.Empty;
+                if (!providerName.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+                    return false;
+
+                var connectionString = db.Database.GetConnectionString();
+                if (string.IsNullOrEmpty(connectionString)) return false;
+
+                foreach (var part in connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var trimmed = part.Trim();
+                    if (trimmed.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("DataSource=", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var path = trimmed[(trimmed.IndexOf('=') + 1)..].Trim();
+                        if (string.IsNullOrEmpty(path) || path.Equals(":memory:", StringComparison.OrdinalIgnoreCase))
+                            return false;
+                        return System.IO.File.Exists(path + ".seeded");
+                    }
+                }
+            }
+            catch { /* best-effort */ }
+            return false;
         }
 
         /// <summary>

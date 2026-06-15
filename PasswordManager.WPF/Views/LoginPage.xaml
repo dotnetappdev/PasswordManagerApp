@@ -585,8 +585,8 @@
                                        Margin="0,0,0,16">
                                 <TextBlock.Foreground>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Color="#60A5FA" Offset="0"/>
-                                        <GradientStop Color="#EC4899" Offset="1"/>
+                                        <GradientStop Color="#93C5FD" Offset="0"/>
+                                        <GradientStop Color="#2563EB" Offset="1"/>
                                     </LinearGradientBrush>
                                 </TextBlock.Foreground>
                             </TextBlock>
