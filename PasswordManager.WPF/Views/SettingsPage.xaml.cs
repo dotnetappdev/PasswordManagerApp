@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using PasswordManager.DAL;
 using PasswordManager.DAL.Seed;
+using Microsoft.EntityFrameworkCore;
 
 namespace PasswordManager.WPF.Views;
 
@@ -1024,15 +1025,21 @@ public sealed partial class SettingsPage : Page
         }
     }
 
-    private async void ClearSeedDataButton_Click(object sender, RoutedEventArgs e)
+    private async void ClearSeedDataButton_Click(object sender, RoutedEventArgs e) => await RunClearSeedDataAsync();
+
+    private async void DeleteSeedDataButton_Click(object sender, RoutedEventArgs e) => await RunClearSeedDataAsync();
+
+    // Removes the demo/seed data (categories, collections, tags, password items) for the current user
+    // and the built-in test user. User accounts are NOT touched.
+    private async System.Threading.Tasks.Task RunClearSeedDataAsync()
     {
         try
         {
             var confirmDialog = new ModernWpf.Controls.ContentDialog
             {
-                Title = "Clear Seed Data",
-                Content = "This will permanently remove all categories, collections, tags, and password items for your account.\n\nThis cannot be undone. Continue?",
-                PrimaryButtonText = "Yes, Clear Data",
+                Title = "Delete Seed Data",
+                Content = "This will permanently remove all categories, collections, tags, and password items (including the built-in demo data).\n\nYour user accounts are kept. This cannot be undone. Continue?",
+                PrimaryButtonText = "Yes, Delete Seed Data",
                 CloseButtonText = "Cancel",
                 DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
             };
@@ -1063,9 +1070,12 @@ public sealed partial class SettingsPage : Page
                 using var scope = scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
                 TestDataSeeder.ClearSeedData(db, currentUserId);
-                // Also clear the built-in test user's data
+                // Also clear the built-in test user's data (the demo data is owned by this account)
                 if (currentUserId != TestDataSeeder.TestUserId)
                     TestDataSeeder.ClearSeedData(db, TestDataSeeder.TestUserId);
+
+                // Mark the database as seeded so startup does NOT re-add the demo data on next launch.
+                TryMarkSeedComplete(db);
             });
 
             await _logger.LogAsync("SettingsPage", $"Cleared seed data for user {currentUserId}");
@@ -1083,6 +1093,39 @@ public sealed partial class SettingsPage : Page
             await _logger.LogErrorAsync("SettingsPage", "Error clearing seed data", ex);
             await ShowErrorDialog($"Failed to clear seed data: {ex.Message}");
         }
+    }
+
+    // Writes a "<db>.seeded" marker next to the SQLite database (matching AppStartupService) so the
+    // startup demo-data seeder treats the now-empty vault as intentionally cleared, not brand new.
+    private static void TryMarkSeedComplete(PasswordManagerDbContext db)
+    {
+        try
+        {
+            var providerName = db.Database.ProviderName ?? string.Empty;
+            if (!providerName.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var connectionString = db.Database.GetConnectionString();
+            if (string.IsNullOrEmpty(connectionString)) return;
+
+            foreach (var part in connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var trimmed = part.Trim();
+                if (trimmed.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase) ||
+                    trimmed.StartsWith("DataSource=", StringComparison.OrdinalIgnoreCase))
+                {
+                    var path = trimmed[(trimmed.IndexOf('=') + 1)..].Trim();
+                    if (string.IsNullOrEmpty(path) || path.Equals(":memory:", StringComparison.OrdinalIgnoreCase))
+                        return;
+
+                    var marker = path + ".seeded";
+                    if (!File.Exists(marker))
+                        File.WriteAllText(marker, DateTime.UtcNow.ToString("o"));
+                    return;
+                }
+            }
+        }
+        catch { /* best-effort */ }
     }
 
     private async void ClearDataButton_Click(object sender, RoutedEventArgs e)
@@ -1559,6 +1602,44 @@ public sealed partial class SettingsPage : Page
             {
                 await ShowErrorDialog($"Reset failed: {ex.Message}");
             }
+        }
+    }
+
+    private async void DeleteUsersButton_Click(object sender, RoutedEventArgs e)
+    {
+        var confirm = new ModernWpf.Controls.ContentDialog
+        {
+            Title = "Delete User Accounts",
+            Content = "This permanently deletes all non-admin user accounts (including the built-in demo/test user) and the data they own. Admin accounts are kept. Continue?",
+            PrimaryButtonText = "Yes, Delete Users",
+            CloseButtonText = "Cancel",
+            DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
+        };
+
+        if (await confirm.ShowAsync() != ModernWpf.Controls.ContentDialogResult.Primary)
+            return;
+
+        try
+        {
+            var resetService = _serviceProvider?.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+            if (resetService == null)
+            {
+                await ShowErrorDialog("Database reset service is not available.");
+                return;
+            }
+
+            var result = await resetService.ClearNonAdminUsersAsync();
+            var dlg = new ModernWpf.Controls.ContentDialog
+            {
+                Title = result.Success ? "Done" : "Completed with errors",
+                Content = result.Message,
+                CloseButtonText = "OK",
+            };
+            await dlg.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog($"Failed to delete users: {ex.Message}");
         }
     }
 

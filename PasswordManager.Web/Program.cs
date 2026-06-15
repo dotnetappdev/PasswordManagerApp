@@ -164,9 +164,12 @@ builder.Services.AddScoped<IPasswordItemService, PasswordManager.Services.Passwo
 builder.Services.AddScoped<ITagService, PasswordManager.Services.TagService>();
 builder.Services.AddScoped<ICategoryInterface, PasswordManager.Services.Services.CategoryService>();
 
-// Shared, stateless feature services (strength meter + TOTP authenticator codes)
+// Shared, stateless feature services (strength meter + TOTP authenticator codes + QR)
 builder.Services.AddSingleton<IPasswordStrengthService, PasswordManager.Services.Services.PasswordStrengthService>();
 builder.Services.AddSingleton<ITotpService, PasswordManager.Services.Services.TotpService>();
+builder.Services.AddSingleton<IQrCodeService, PasswordManager.Services.Services.QrCodeService>();
+builder.Services.AddSingleton<ISecurityAuditService, PasswordManager.Services.Services.SecurityAuditService>();
+builder.Services.AddSingleton<IPassphraseGenerator, PasswordManager.Services.Services.PassphraseGenerator>();
 builder.Services.AddScoped<ICollectionService, PasswordManager.Services.Services.CollectionService>();
 builder.Services.AddScoped<IAuthService, PasswordManager.Services.Services.AuthService>();
 builder.Services.AddScoped<IUserProfileService, PasswordManager.Services.Services.UserProfileService>();
@@ -186,6 +189,10 @@ builder.Services.AddScoped<IVaultService, PasswordManager.Services.Services.Vaul
 builder.Services.AddScoped<IAuditLogService, PasswordManager.Services.Services.AuditLogService>();
 builder.Services.AddScoped<ITwoFactorService, PasswordManager.Services.Services.TwoFactorService>();
 builder.Services.AddScoped<IDeviceService, PasswordManager.Services.Services.DeviceService>();
+
+// Register password import services (1Password 1pux/CSV, Bitwarden, etc.)
+builder.Services.AddSingleton<PasswordManager.Imports.Services.PluginDiscoveryService>();
+builder.Services.AddScoped<PasswordManager.Imports.Interfaces.IImportService, PasswordManager.Imports.Services.ImportService>();
 
 // Register crypto services
 builder.Services.AddCryptographyServices();

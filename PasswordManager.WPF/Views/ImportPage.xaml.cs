@@ -101,4 +101,59 @@ public sealed partial class ImportPage : Page
             _viewModel.ClearResults();
         }
     }
+
+    private async void ClearDataButton_Click(object sender, RoutedEventArgs e)
+    {
+        await RunMaintenanceAsync(
+            "Clear Vault Data",
+            "This permanently deletes all vault items, categories, collections and tags. User accounts are kept. Continue?",
+            service => service.ResetDataTablesAsync());
+    }
+
+    private async System.Threading.Tasks.Task RunMaintenanceAsync(
+        string title,
+        string message,
+        Func<PasswordManager.Services.Interfaces.IDatabaseResetService,
+             System.Threading.Tasks.Task<PasswordManager.Services.Interfaces.DatabaseResetResult>> operation)
+    {
+        var serviceProvider = _serviceProvider ?? (App.Current as App)?.Services;
+        if (serviceProvider == null) return;
+
+        var confirm = new ModernWpf.Controls.ContentDialog
+        {
+            Title = title,
+            Content = message,
+            PrimaryButtonText = "Yes, continue",
+            CloseButtonText = "Cancel"
+        };
+
+        if (await confirm.ShowAsync() != ModernWpf.Controls.ContentDialogResult.Primary)
+            return;
+
+        try
+        {
+            using var scope = serviceProvider.CreateScope();
+            var resetService = scope.ServiceProvider
+                .GetRequiredService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+            var result = await operation(resetService);
+
+            var resultDialog = new ModernWpf.Controls.ContentDialog
+            {
+                Title = result.Success ? "Done" : "Completed with errors",
+                Content = result.Message,
+                CloseButtonText = "OK"
+            };
+            await resultDialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            var errorDialog = new ModernWpf.Controls.ContentDialog
+            {
+                Title = "Error",
+                Content = ex.Message,
+                CloseButtonText = "OK"
+            };
+            await errorDialog.ShowAsync();
+        }
+    }
 }

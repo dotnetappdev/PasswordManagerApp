@@ -99,6 +99,202 @@ public sealed partial class LoginPage : Page
         { }
     }
 
+    // Recovery action: (re)create the built-in default accounts on demand — handy when a fresh /
+    // cleared database has no accounts to sign in with.
+    private async void SeedAccountsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_serviceProvider == null) return;
+
+        var button = sender as Button;
+        var originalContent = button?.Content;
+        try
+        {
+            if (button != null)
+            {
+                button.IsEnabled = false;
+                button.Content = "Creating accounts…";
+            }
+
+            using var scope = _serviceProvider.CreateScope();
+
+            // The Identity tables (AspNetRoles / AspNetUsers …) live in the App DbContext. On a freshly
+            // created or partially-migrated database they may not exist yet, which is what crashes the
+            // seeder ("no such table: AspNetRoles"). Make sure the schema is in place first.
+            await EnsureIdentitySchemaAsync(scope.ServiceProvider);
+
+            var seeder = scope.ServiceProvider.GetService<PasswordManager.DAL.Seed.IdentityDataSeeder>();
+            if (seeder == null)
+            {
+                await ShowLoginMessageAsync("Unavailable", "The account seeder could not be loaded.");
+                return;
+            }
+
+            await seeder.SeedAsync();
+
+            // The seeder creates users via the App context/UserManager; in this project's dual-context
+            // setup the master-key crypto fields don't always land where login reads them. Ensure the
+            // four default accounts exist and are unlockable with the common master key.
+            await EnsureDefaultAccountsLoginableAsync(scope.ServiceProvider);
+
+            // Refresh the on-screen profile list so the new accounts appear immediately.
+            try
+            {
+                _profileSelectionViewModel = new UserProfileSelectionViewModel(_serviceProvider);
+                if (this.FindName("UserProfilesList") is ItemsControl userProfilesList)
+                    userProfilesList.ItemsSource = _profileSelectionViewModel.UserProfiles;
+            }
+            catch { /* refresh is best-effort */ }
+
+            await ShowLoginMessageAsync(
+                "Default accounts ready",
+                "The built-in accounts were created.\n\nSign in with:\n" +
+                "admin@passwordmanager.local\n\nMaster key: CommonMaster123!");
+        }
+        catch (Exception ex)
+        {
+            await ShowLoginMessageAsync("Couldn't create accounts", ex.Message);
+        }
+        finally
+        {
+            if (button != null)
+            {
+                button.IsEnabled = true;
+                button.Content = originalContent ?? "Create default accounts";
+            }
+        }
+    }
+
+    // Ensures the ASP.NET Identity tables (AspNetRoles / AspNetUsers / …) exist before seeding.
+    // They live in the App DbContext and may be missing on a fresh or partially-migrated database.
+    private static async Task EnsureIdentitySchemaAsync(IServiceProvider scopedProvider)
+    {
+        try
+        {
+            var appCtx = scopedProvider.GetService<PasswordManager.DAL.PasswordManagerDbContextApp>();
+            if (appCtx == null) return;
+
+            if (await TableExistsAsync(appCtx, "AspNetRoles")) return;
+
+            // 1) Try the normal migration path first.
+            try { await appCtx.Database.MigrateAsync(); } catch { }
+            if (await TableExistsAsync(appCtx, "AspNetRoles")) return;
+
+            // 2) Migration didn't create the Identity tables (this project's dual-context setup leaves
+            //    the App context's migrations unapplied when the main context created the file). Fall
+            //    back to running EF's own CREATE script statement-by-statement and ignore any object
+            //    that already exists - that creates just the missing Identity tables with correct columns.
+            var script = appCtx.Database.GenerateCreateScript();
+            foreach (var statement in SplitSqlStatements(script))
+            {
+                try { await appCtx.Database.ExecuteSqlRawAsync(statement); }
+                catch { /* table/index already exists - ignore */ }
+            }
+        }
+        catch { /* best-effort; the seeder surfaces a clear error if schema is still missing */ }
+    }
+
+    private static System.Collections.Generic.IEnumerable<string> SplitSqlStatements(string script)
+    {
+        foreach (var raw in script.Split(';'))
+        {
+            var statement = raw.Trim();
+            if (statement.Length > 0)
+                yield return statement;
+        }
+    }
+
+    private static async Task<bool> TableExistsAsync(Microsoft.EntityFrameworkCore.DbContext ctx, string table)
+    {
+        try
+        {
+            var conn = ctx.Database.GetDbConnection();
+            if (conn.State != System.Data.ConnectionState.Open)
+                await conn.OpenAsync();
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name=@n";
+            var p = cmd.CreateParameter();
+            p.ParameterName = "@n";
+            p.Value = table;
+            cmd.Parameters.Add(p);
+            return await cmd.ExecuteScalarAsync() != null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    // Guarantees the four default accounts exist and can be unlocked with the common master key, by
+    // writing their master-key crypto directly through the context the login flow reads (mirrors the
+    // working SetupMasterPasswordAsync path). Safe to run repeatedly.
+    private static async Task EnsureDefaultAccountsLoginableAsync(IServiceProvider scopedProvider)
+    {
+        const string masterKey = "CommonMaster123!";
+        var defaults = new (string Email, string First, string Last)[]
+        {
+            ("admin@passwordmanager.local",  "Administrator", "User"),
+            ("parent@passwordmanager.local", "Parent",        "User"),
+            ("user@passwordmanager.local",   "Regular",       "User"),
+            ("child@passwordmanager.local",  "Child",         "User"),
+        };
+
+        try
+        {
+            var ctx = scopedProvider.GetService<PasswordManager.DAL.PasswordManagerDbContext>();
+            var crypto = scopedProvider.GetService<PasswordManager.Crypto.Interfaces.IPasswordCryptoService>();
+            if (ctx == null || crypto == null) return;
+
+            foreach (var (email, first, last) in defaults)
+            {
+                var normalized = email.ToUpperInvariant();
+                var user = await ctx.Users.FirstOrDefaultAsync(u => u.NormalizedEmail == normalized || u.Email == email);
+
+                if (user == null)
+                {
+                    user = new ApplicationUser
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        UserName = email,
+                        NormalizedUserName = normalized,
+                        Email = email,
+                        NormalizedEmail = normalized,
+                        EmailConfirmed = true,
+                        FirstName = first,
+                        LastName = last,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        SecurityStamp = Guid.NewGuid().ToString(),
+                        ConcurrencyStamp = Guid.NewGuid().ToString()
+                    };
+                    ctx.Users.Add(user);
+                }
+
+                // Always (re)set these well-known default accounts to the common master key so the
+                // button reliably makes them unlockable with CommonMaster123!.
+                var salt = crypto.GenerateUserSalt();
+                user.UserSalt = Convert.ToBase64String(salt);
+                user.MasterPasswordHash = crypto.CreateMasterPasswordHash(masterKey, salt);
+                user.MasterKeyIdentifier = crypto.CreateMasterKeyIdentifier(masterKey, salt);
+                user.IsActive = true;
+            }
+
+            await ctx.SaveChangesAsync();
+        }
+        catch { /* best-effort; if it still fails the login error will make it clear */ }
+    }
+
+    private static async Task ShowLoginMessageAsync(string title, string message)
+    {
+        var dialog = new ModernWpf.Controls.ContentDialog
+        {
+            Title = title,
+            Content = message,
+            CloseButtonText = "OK"
+        };
+        await dialog.ShowAsync();
+    }
+
     private async Task CheckAuthenticationStatusAsync()
     {
         try

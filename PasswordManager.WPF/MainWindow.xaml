@@ -227,7 +227,7 @@
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
-                <ui:NavigationViewItem Content="Security Dashboard" Tag="SecurityDashboard"
+                <ui:NavigationViewItem Content="Security Dashboard" Tag="Security"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE8E1;" FontSize="16"/>
@@ -274,6 +274,12 @@
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE713;" FontSize="16"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItem Content="About" Tag="About">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE946;" FontSize="16"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 

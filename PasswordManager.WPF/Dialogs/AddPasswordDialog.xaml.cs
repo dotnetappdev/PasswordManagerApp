@@ -258,8 +258,8 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         // Handle special category-based forms
         if (!string.IsNullOrEmpty(categoryName))
         {
-            // If the category is "Identity" we prefer using the Login fields layout
-            if (categoryName.Contains("Identity", StringComparison.OrdinalIgnoreCase))
+            // If the category is "Identity"/"Identities" we prefer using the Login fields layout
+            if (categoryName.Contains("Identit", StringComparison.OrdinalIgnoreCase))
             {
                 // Show login fields instead of identity-specific layout
                 LoginFieldsPanel.Visibility = Visibility.Visible;
@@ -271,7 +271,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                 SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
                 APICredentialsFieldsPanel.Visibility = Visibility.Visible;
             }
-            else if (categoryName.Contains("Identity") && itemType == ItemType.SecureNote)
+            else if (categoryName.Contains("Identit") && itemType == ItemType.SecureNote)
             {
                 // Fallback to previous behavior
                 SecureNoteFieldsPanel.Visibility = Visibility.Collapsed;
@@ -357,6 +357,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 
         // Authenticator (TOTP) secret stored on the item
         TotpSecretTextBox.Text = TotpHelper.GetSecret(_editingItem) ?? string.Empty;
+
+        // Protected-note flag
+        ProtectNoteCheckBox.IsChecked = ProtectedItemHelper.IsProtected(_editingItem);
 
         // Set passkey-specific fields if applicable
         if (_editingItem.PasskeyItem != null)
@@ -990,15 +993,17 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             GenerateNewPassword();
     }
 
-    // Matches the 5 type-based nav items plus Identity — used only when DB has no categories
+    // Matches the type-based nav items — uses the same plural names as the seeders
+    // (TestDataSeeder / IdentityDataSeeder) so the type selector and the DB-backed
+    // category filter never show singular/plural duplicates.
     private static List<Category> GetDefaultCategories() =>
     [
-        new() { Id = 1, Name = "Login",       Icon = "🔐", Color = "#3b82f6" },
-        new() { Id = 2, Name = "Credit Card", Icon = "💳", Color = "#10b981" },
-        new() { Id = 3, Name = "Secure Note", Icon = "📝", Color = "#f59e0b" },
-        new() { Id = 4, Name = "Wi-Fi",       Icon = "📶", Color = "#06b6d4" },
-        new() { Id = 5, Name = "Passkey",     Icon = "🔑", Color = "#ec4899" },
-        new() { Id = 6, Name = "Identity",    Icon = "👤", Color = "#10b981" },
+        new() { Id = 1, Name = "Logins",        Icon = "🔐", Color = "#3b82f6" },
+        new() { Id = 2, Name = "Credit Cards",  Icon = "💳", Color = "#10b981" },
+        new() { Id = 3, Name = "Secure Notes",  Icon = "📝", Color = "#f59e0b" },
+        new() { Id = 4, Name = "WiFi Networks", Icon = "📶", Color = "#06b6d4" },
+        new() { Id = 5, Name = "Passkeys",      Icon = "🔑", Color = "#ec4899" },
+        new() { Id = 6, Name = "Identities",    Icon = "👤", Color = "#10b981" },
     ];
 
     private void CategoryComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1015,7 +1020,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             var n when n.Contains("wifi") || n.Contains("network") || n.Contains("wireless") || n.Contains("router") => 3,// WiFi
             var n when n.Contains("password") || n.Contains("pwd") || n.Contains("credential") => 4,                      // Password
             var n when n.Contains("passkey") || n.Contains("biometric") || n.Contains("fido") => 5,                       // Passkey
-            var n when n.Contains("identity") || n.Contains("person") || n.Contains("profile") => 6,                      // Identity
+            var n when n.Contains("identit") || n.Contains("person") || n.Contains("profile") => 6,                      // Identity
             _ => 0 // Login (default — covers "login", "social", "email", "banking", "work", etc.)
         };
 
@@ -1033,7 +1038,8 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             _brandIconDataUrl = BrandIconHelper.GetCustomBrandIconDataUrl(_editingItem);
             _customFields = _editingItem.CustomFields
                 .Where(field => !string.Equals(field.Name, BrandIconHelper.BrandIconCustomFieldName, StringComparison.OrdinalIgnoreCase)
-                             && !string.Equals(field.Name, TotpHelper.TotpCustomFieldName, StringComparison.OrdinalIgnoreCase))
+                             && !string.Equals(field.Name, TotpHelper.TotpCustomFieldName, StringComparison.OrdinalIgnoreCase)
+                             && !string.Equals(field.Name, ProtectedItemHelper.ProtectedCustomFieldName, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
 
@@ -1140,6 +1146,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 
         // Persist the authenticator (TOTP) secret (empty clears it).
         TotpHelper.SetSecret(item, TotpSecretTextBox?.Text);
+
+        // Persist the "protected note" flag.
+        ProtectedItemHelper.SetProtected(item, ProtectNoteCheckBox?.IsChecked == true);
     }
 
     private void UpdateBrandIconStatus()

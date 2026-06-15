@@ -98,6 +98,14 @@ public sealed partial class MainWindow : Window
         {
             string tag = selectedItem.Tag?.ToString() ?? "";
 
+            // "About" opens a dialog rather than navigating to a page.
+            if (tag == "About")
+            {
+                sender.SelectedItem = null;
+                _ = ShowAboutDialogAsync();
+                return;
+            }
+
             // Only navigate if the item has a tag (leaf items, not parent categories)
             if (!string.IsNullOrEmpty(tag))
             {
@@ -162,6 +170,97 @@ public sealed partial class MainWindow : Window
         else if (e.Key == System.Windows.Input.Key.Delete && !editing)        { itemsPage.DeleteSelectedShortcut(); e.Handled = true; }
     }
 
+    private async Task ShowAboutDialogAsync()
+    {
+        try
+        {
+            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
+
+            var content = new StackPanel { Margin = new Thickness(4) };
+
+            var logo = new Border
+            {
+                Width = 64,
+                Height = 64,
+                CornerRadius = new CornerRadius(16),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 12),
+                Background = TryFindResource("ModernPrimaryGradientBrush") as Brush
+                             ?? new SolidColorBrush(Color.FromRgb(0x25, 0x63, 0xEB))
+            };
+            logo.Child = new TextBlock
+            {
+                Text = "",
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
+                FontSize = 32,
+                Foreground = Brushes.White,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            content.Children.Add(logo);
+
+            content.Children.Add(new TextBlock
+            {
+                Text = "VaultGuard Password Manager",
+                FontSize = 18,
+                FontWeight = FontWeights.SemiBold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Foreground = TryFindResource("ModernTextPrimaryBrush") as Brush ?? Brushes.White
+            });
+            content.Children.Add(new TextBlock
+            {
+                Text = $"Version {version} · Windows Desktop (.NET 10 · WPF)",
+                FontSize = 12,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 4, 0, 0),
+                Foreground = TryFindResource("ModernTextSecondaryBrush") as Brush ?? Brushes.Gray
+            });
+            content.Children.Add(new TextBlock
+            {
+                Text = "The best open-source password manager for Windows and Web.\nEnd-to-end encrypted with AES-256-GCM.",
+                FontSize = 12,
+                TextAlignment = TextAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 12, 0, 0),
+                Foreground = TryFindResource("ModernTextSecondaryBrush") as Brush ?? Brushes.Gray
+            });
+            content.Children.Add(new TextBlock
+            {
+                Text = $"© {DateTime.Now.Year} VaultGuard",
+                FontSize = 11,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 12, 0, 0),
+                Foreground = TryFindResource("ModernTextTertiaryBrush") as Brush ?? Brushes.Gray
+            });
+
+            var dialog = new ModernWpf.Controls.ContentDialog
+            {
+                Title = "About",
+                Content = content,
+                PrimaryButtonText = "Documentation",
+                CloseButtonText = "Close",
+                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close
+            };
+
+            if (Application.Current.Resources.Contains("Modern1PasswordDialogStyle"))
+                dialog.Style = Application.Current.Resources["Modern1PasswordDialogStyle"] as Style;
+
+            if (await dialog.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary)
+            {
+                try
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "https://github.com/dotnetappdev/passwordmanager",
+                        UseShellExecute = true
+                    });
+                }
+                catch { }
+            }
+        }
+        catch { }
+    }
+
     public void NavigateToPage(string pageTag)
     {
         if (!_isAuthenticated && pageTag != "Login") return;
@@ -182,6 +281,7 @@ public sealed partial class MainWindow : Window
                 "Passkeys"          => new Views.PasskeysPage(),
                 "ManageItems"       => new Views.ManageItemsPage(),
                 "SecurityDashboard" => new Views.DashboardPage(),
+                "Security"          => new Views.SecurityPage(),
                 "Import"            => new Views.ImportPage(),
                 "Settings"          => new Views.SettingsPage(),
                 "Home"              => new Views.DashboardPage(),
@@ -435,6 +535,7 @@ public sealed partial class MainWindow : Window
             case Views.SettingsPage p:       p.OnNavigatedTo(e);      break;
             case Views.VaultsPage p:         p.OnNavigatedTo(e);      break;
             case Views.PasskeysPage p:       p.OnNavigatedTo(e);      break;
+            case Views.SecurityPage p:       p.OnNavigatedTo(e);      break;
         }
     }
 

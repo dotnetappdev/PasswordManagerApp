@@ -1,11 +1,15 @@
 @page "/settings"
 @using PasswordManager.Services.Interfaces
 @using PasswordManager.Models
+@using PasswordManager.Models.DTOs.Auth
 @inject IAuthService AuthService
 @inject IUserProfileService UserProfileService
 @inject IVaultService VaultService
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
+@inject ITwoFactorService TwoFactorService
+@inject IQrCodeService QrCodeService
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>Settings - VaultGuard</PageTitle>
@@ -55,10 +59,25 @@
                                    Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true">
                             Manage Passkeys
                         </MudButton>
-                        <MudButton StartIcon="@Icons.Material.Filled.Smartphone"
-                                   Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">
-                            Setup Authenticator App
-                        </MudButton>
+                        @if (_twoFactorEnabled)
+                        {
+                            <MudAlert Severity="Severity.Success" Dense="true" Icon="@Icons.Material.Filled.VerifiedUser">
+                                Authenticator app is enabled (@_backupCodesRemaining backup codes left).
+                            </MudAlert>
+                            <MudButton StartIcon="@Icons.Material.Filled.NoEncryption"
+                                       Variant="Variant.Outlined" Color="Color.Error" FullWidth="true"
+                                       OnClick="@OpenTwoFactorSetup">
+                                Manage / Disable Authenticator
+                            </MudButton>
+                        }
+                        else
+                        {
+                            <MudButton StartIcon="@Icons.Material.Filled.Smartphone"
+                                       Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true"
+                                       OnClick="@OpenTwoFactorSetup">
+                                Setup Authenticator App
+                            </MudButton>
+                        }
                     </MudStack>
                 </MudPaper>
 
@@ -74,7 +93,7 @@
                     </MudSelect>
                     <MudSwitch T="bool" @bind-Value="_lockOnBrowserClose" Label="Lock when browser closes"
                                Color="Color.Primary" />
-                    <MudButton Variant="Variant.Filled" Color="Color.Default" Class="mt-3"
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3"
                                OnClick="@SaveSecuritySettings"
                                StartIcon="@Icons.Material.Filled.Save">Save</MudButton>
                 </MudPaper>
@@ -183,7 +202,7 @@
                     <MudStack Row="true" Spacing="2">
                         <MudButton Variant="Variant.Outlined" Color="Color.Primary"
                                    StartIcon="@Icons.Material.Filled.Backup">Backup Now</MudButton>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
                                    StartIcon="@Icons.Material.Filled.Restore">Restore</MudButton>
                     </MudStack>
                 </MudPaper>
@@ -209,7 +228,7 @@
                         <MudButton StartIcon="@Icons.Material.Filled.Sync" Variant="Variant.Filled"
                                    Color="Color.Primary">Sync Now</MudButton>
                         <MudButton StartIcon="@Icons.Material.Filled.Save" Variant="Variant.Outlined"
-                                   Color="Color.Default" OnClick="@SaveSyncSettings">Save</MudButton>
+                                   Color="Color.Primary" OnClick="@SaveSyncSettings">Save</MudButton>
                     </MudStack>
                 </MudPaper>
             </MudItem>
@@ -480,7 +499,275 @@
     </MudTabPanel>
 </MudTabs>
 
+<MudDialog @bind-Visible="_2faDialogOpen" Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Smartphone" Class="mr-2" Style="vertical-align:middle;" />
+            Authenticator App (2FA)
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_twoFactorEnabled && _setup is null)
+        {
+            <MudAlert Severity="Severity.Success" Dense="true" Class="mb-3">
+                Two-factor authentication is currently <b>enabled</b>.
+            </MudAlert>
+            <MudText Typo="Typo.body2" Class="mb-2">Confirm your master password and a current code to manage 2FA.</MudText>
+            <MudTextField @bind-Value="_2faMasterPassword" Label="Master password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-2" />
+            <MudTextField @bind-Value="_2faCode" Label="Current 6-digit code" Variant="Variant.Outlined" />
+
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.subtitle2" Style="font-weight:600;">Recovery (backup) codes</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
+                @_backupCodesRemaining codes remaining. Regenerating replaces all existing codes.
+            </MudText>
+            <MudSelect T="int" @bind-Value="_regenExpiryDays" Label="New codes expire" Variant="Variant.Outlined" Dense="true" Class="mb-2">
+                <MudSelectItem T="int" Value="0">Never</MudSelectItem>
+                <MudSelectItem T="int" Value="30">After 30 days</MudSelectItem>
+                <MudSelectItem T="int" Value="90">After 90 days</MudSelectItem>
+                <MudSelectItem T="int" Value="180">After 180 days</MudSelectItem>
+                <MudSelectItem T="int" Value="365">After 1 year</MudSelectItem>
+            </MudSelect>
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Autorenew" OnClick="@RegenerateBackupCodes" Disabled="@_2faBusy">
+                Regenerate backup codes
+            </MudButton>
+
+            @if (_regeneratedCodes?.Any() == true)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3 mb-2" Icon="@Icons.Material.Filled.Key">
+                    <b>New backup codes — save these now.</b> Your previous codes no longer work@(_regenExpiryDays > 0 ? $"; these expire in {_regenExpiryDays} days." : ".")
+                </MudAlert>
+                <MudPaper Outlined="true" Class="pa-3 mb-1">
+                    <div style="font-family:monospace; columns:2; column-gap:24px; line-height:2;">
+                        @foreach (var c in _regeneratedCodes)
+                        {
+                            <div>@c</div>
+                        }
+                    </div>
+                </MudPaper>
+                <MudButton Size="Size.Small" StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="@CopyRegeneratedCodes">Copy codes</MudButton>
+            }
+        }
+        else if (_setup is null)
+        {
+            <MudText Typo="Typo.body2" Class="mb-3">
+                Protect your vault with Google Authenticator, Microsoft Authenticator, or Authy.
+                Enter your master password to begin.
+            </MudText>
+            <MudTextField @bind-Value="_2faMasterPassword" Label="Master password" InputType="InputType.Password" Variant="Variant.Outlined" />
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mb-2">1. Scan this QR code with your authenticator app:</MudText>
+            <div class="d-flex justify-center mb-3">
+                <img src="@_qrDataUrl" alt="Authenticator QR code"
+                     style="width:208px; height:208px; border-radius:8px; background:#fff; padding:8px;" />
+            </div>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Or enter this key manually:</MudText>
+            <MudText Typo="Typo.body2" Style="font-family:monospace; word-break:break-all;" Class="mb-3">@_setup.SecretKey</MudText>
+            <MudText Typo="Typo.body2" Class="mb-1">2. Enter the 6-digit code to confirm:</MudText>
+            <MudTextField @bind-Value="_2faCode" Label="6-digit code" Variant="Variant.Outlined" Class="mb-2" />
+            @if (_setup.BackupCodes?.Any() == true)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3 mb-2" Icon="@Icons.Material.Filled.Key">
+                    <b>Save these backup codes now.</b> Each can be used once to sign in if you lose access
+                    to your authenticator app — they're your way back in.
+                </MudAlert>
+                <MudPaper Outlined="true" Class="pa-3 mb-1">
+                    <div style="font-family:monospace; columns:2; column-gap:24px; line-height:2;">
+                        @foreach (var c in _setup.BackupCodes)
+                        {
+                            <div>@c</div>
+                        }
+                    </div>
+                </MudPaper>
+                <MudButton Size="Size.Small" StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="@CopyBackupCodes">Copy codes</MudButton>
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@CloseTwoFactor">Cancel</MudButton>
+        @if (_twoFactorEnabled && _setup is null)
+        {
+            <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="@DisableTwoFactor" Disabled="@_2faBusy">Disable 2FA</MudButton>
+        }
+        else if (_setup is null)
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@StartTwoFactor" Disabled="@_2faBusy">Continue</MudButton>
+        }
+        else
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@VerifyTwoFactor" Disabled="@_2faBusy">Verify &amp; Enable</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
 @code {
+    // ── Two-factor (authenticator app) ──
+    bool _2faDialogOpen, _twoFactorEnabled, _2faBusy;
+    int _backupCodesRemaining;
+    string _2faMasterPassword = "", _2faCode = "";
+    TwoFactorSetupResponseDto? _setup;
+    string? _qrDataUrl;
+    int _regenExpiryDays = 0;
+    List<string>? _regeneratedCodes;
+
+    async Task<string?> CurrentUserIdAsync()
+        => AuthService.CurrentUser?.Id ?? await AuthService.GetCurrentUserIdAsync();
+
+    async Task LoadTwoFactorStatusAsync()
+    {
+        var uid = await CurrentUserIdAsync();
+        if (string.IsNullOrEmpty(uid)) return;
+        var status = await TwoFactorService.GetTwoFactorStatusAsync(uid);
+        _twoFactorEnabled = status.IsEnabled;
+        _backupCodesRemaining = status.BackupCodesRemaining;
+    }
+
+    async Task OpenTwoFactorSetup()
+    {
+        _setup = null; _qrDataUrl = null; _2faMasterPassword = ""; _2faCode = "";
+        await LoadTwoFactorStatusAsync();
+        _2faDialogOpen = true;
+    }
+
+    void CloseTwoFactor()
+    {
+        _2faDialogOpen = false;
+        _setup = null; _qrDataUrl = null; _2faMasterPassword = ""; _2faCode = "";
+        _regeneratedCodes = null; _regenExpiryDays = 0;
+    }
+
+    async Task RegenerateBackupCodes()
+    {
+        if (string.IsNullOrWhiteSpace(_2faMasterPassword) || string.IsNullOrWhiteSpace(_2faCode))
+        {
+            Snackbar.Add("Enter your master password and a current 6-digit code.", Severity.Warning);
+            return;
+        }
+        _2faBusy = true;
+        try
+        {
+            var uid = await CurrentUserIdAsync();
+            if (string.IsNullOrEmpty(uid)) return;
+
+            var codes = await TwoFactorService.RegenerateBackupCodesAsync(uid, new RegenerateBackupCodesDto
+            {
+                MasterPassword = _2faMasterPassword,
+                Code = _2faCode.Trim(),
+                ExpiryDays = _regenExpiryDays > 0 ? _regenExpiryDays : null
+            });
+
+            if (codes is { Count: > 0 })
+            {
+                _regeneratedCodes = codes;
+                await LoadTwoFactorStatusAsync();
+                Snackbar.Add("New backup codes generated.", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Couldn't regenerate — check your master password and current code.", Severity.Error);
+            }
+        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+        finally { _2faBusy = false; }
+    }
+
+    async Task CopyRegeneratedCodes()
+    {
+        if (_regeneratedCodes is null || _regeneratedCodes.Count == 0) return;
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", string.Join(Environment.NewLine, _regeneratedCodes));
+            Snackbar.Add("Backup codes copied — store them somewhere safe.", Severity.Success);
+        }
+        catch { Snackbar.Add("Couldn't copy automatically — select and copy them manually.", Severity.Info); }
+    }
+
+    async Task CopyBackupCodes()
+    {
+        if (_setup?.BackupCodes is null || _setup.BackupCodes.Count == 0) return;
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", string.Join(Environment.NewLine, _setup.BackupCodes));
+            Snackbar.Add("Backup codes copied — store them somewhere safe.", Severity.Success);
+        }
+        catch { Snackbar.Add("Couldn't copy automatically — select and copy them manually.", Severity.Info); }
+    }
+
+    async Task StartTwoFactor()
+    {
+        if (string.IsNullOrWhiteSpace(_2faMasterPassword)) { Snackbar.Add("Enter your master password.", Severity.Warning); return; }
+        _2faBusy = true;
+        try
+        {
+            var uid = await CurrentUserIdAsync();
+            if (string.IsNullOrEmpty(uid)) { Snackbar.Add("Not signed in.", Severity.Error); return; }
+
+            var result = await TwoFactorService.StartTwoFactorSetupAsync(uid, _2faMasterPassword);
+            if (result is null) { Snackbar.Add("Could not start setup — check your master password.", Severity.Error); return; }
+
+            _setup = result;
+            _qrDataUrl = QrCodeService.GeneratePngDataUrl(result.QrCodeUri);
+        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+        finally { _2faBusy = false; }
+    }
+
+    async Task VerifyTwoFactor()
+    {
+        if (_setup is null || string.IsNullOrWhiteSpace(_2faCode)) { Snackbar.Add("Enter the 6-digit code.", Severity.Warning); return; }
+        _2faBusy = true;
+        try
+        {
+            var uid = await CurrentUserIdAsync();
+            if (string.IsNullOrEmpty(uid)) return;
+
+            var ok = await TwoFactorService.VerifyAndCompleteTwoFactorSetupAsync(uid,
+                new TwoFactorVerifySetupDto { Code = _2faCode.Trim(), SecretKey = _setup.SecretKey });
+
+            if (ok)
+            {
+                Snackbar.Add("Authenticator app enabled.", Severity.Success);
+                await LoadTwoFactorStatusAsync();
+                CloseTwoFactor();
+            }
+            else
+            {
+                Snackbar.Add("That code didn't match. Try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+        finally { _2faBusy = false; }
+    }
+
+    async Task DisableTwoFactor()
+    {
+        _2faBusy = true;
+        try
+        {
+            var uid = await CurrentUserIdAsync();
+            if (string.IsNullOrEmpty(uid)) return;
+
+            var ok = await TwoFactorService.DisableTwoFactorAsync(uid,
+                new TwoFactorDisableDto { MasterPassword = _2faMasterPassword, Code = _2faCode.Trim() });
+
+            if (ok)
+            {
+                Snackbar.Add("Two-factor authentication disabled.", Severity.Success);
+                await LoadTwoFactorStatusAsync();
+                CloseTwoFactor();
+            }
+            else
+            {
+                Snackbar.Add("Could not disable — check your password and code.", Severity.Error);
+            }
+        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+        finally { _2faBusy = false; }
+    }
+
     // Keyboard shortcuts (reference)
     private record Shortcut(string Action, string Keys);
     private readonly Shortcut[] _generalShortcuts =
@@ -621,6 +908,8 @@
         }
         catch { }
         finally { _vaultsLoading = false; }
+
+        try { await LoadTwoFactorStatusAsync(); } catch { }
     }
 
     // ── Generator ────────────────────────────────────────────────────────────────

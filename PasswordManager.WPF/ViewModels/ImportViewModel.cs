@@ -45,7 +45,26 @@ public class ImportViewModel : BaseViewModel
         set
         {
             SetProperty(ref _selectedFilePath, value);
+            OnPropertyChanged(nameof(SelectedFileFormat));
             UpdateCanImport();
+        }
+    }
+
+    // Short bracketed format label (e.g. "(1PUX)" / "(CSV)") so 1PUX and CSV files are easy to tell apart.
+    public string SelectedFileFormat
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_selectedFilePath))
+                return string.Empty;
+
+            var ext = Path.GetExtension(_selectedFilePath).TrimStart('.').ToUpperInvariant();
+            return ext switch
+            {
+                "1PUX" or "1PU" => "(1PUX)",
+                "" => string.Empty,
+                _ => $"({ext})"
+            };
         }
     }
 

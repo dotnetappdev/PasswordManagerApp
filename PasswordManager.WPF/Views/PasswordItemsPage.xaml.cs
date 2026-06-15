@@ -32,6 +32,10 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     private List<Tag> _allTags = new();
     private System.Windows.Threading.DispatcherTimer? _totpTimer;
     private string? _currentTotpSecret;
+    private string? _currentCardCvv;
+    private string? _protectedNotesPlain;
+    private bool _notesRevealed;
+    private readonly Services.IWindowsHelloService _hello = new Services.WindowsHelloService();
 
     public PasswordItemsPage()
     {
@@ -661,6 +665,80 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         return Task.CompletedTask;
     }
 
+    private void SetRevealNotesButtonState(bool revealed)
+    {
+        var icon = GetElement<TextBlock>("RevealNotesIcon");
+        var label = GetElement<TextBlock>("RevealNotesLabel");
+        if (icon != null) icon.Text = revealed ? "" : ""; // eye / shield
+        if (label != null) label.Text = revealed ? "Hide" : "Reveal";
+    }
+
+    /// <summary>
+    /// Reveals (or re-hides) a protected note. The first reveal requires a Windows Hello check
+    /// when Hello is available on the device.
+    /// </summary>
+    private async void RevealNotesButton_Click(object sender, RoutedEventArgs e)
+    {
+        var notesText = GetElement<TextBlock>("DetailNotesText");
+        if (notesText == null) return;
+
+        if (_notesRevealed)
+        {
+            // Hide again.
+            _notesRevealed = false;
+            notesText.Text = "•••••••  Protected note — click Reveal to view";
+            notesText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x6A, 0x6A, 0x6A));
+            SetRevealNotesButtonState(false);
+            return;
+        }
+
+        // Gate the reveal behind Windows Hello when it's set up.
+        try
+        {
+            if (await _hello.IsAvailableAsync())
+            {
+                var result = await _hello.VerifyAsync("Verify it's you to view this protected note");
+                if (result != Services.HelloResult.Success)
+                {
+                    ToastService.Instance.Warning("Verification required to view this protected note.");
+                    return;
+                }
+            }
+        }
+        catch { /* If Hello errors, fall through and still allow reveal. */ }
+
+        _notesRevealed = true;
+        notesText.Text = string.IsNullOrWhiteSpace(_protectedNotesPlain) ? "No notes" : _protectedNotesPlain;
+        notesText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xC8, 0xC8, 0xC8));
+        SetRevealNotesButtonState(true);
+    }
+
+    private void CopyWebsiteButton_Click(object sender, RoutedEventArgs e)
+    {
+        var field = GetElement<Controls.ReadOnlyField>("DetailWebsite");
+        var url = field?.CopyText;
+        if (string.IsNullOrEmpty(url)) url = _selectedItem?.Website ?? _selectedItem?.LoginItem?.WebsiteUrl;
+        if (!string.IsNullOrEmpty(url))
+        {
+            try { System.Windows.Clipboard.SetText(url); ToastService.Instance.Success("Website copied to clipboard"); } catch { }
+        }
+    }
+
+    private void RevealCvvButton_Click(object sender, RoutedEventArgs e)
+    {
+        var tb = GetElement<TextBlock>("DetailCardCvv");
+        if (tb == null || string.IsNullOrEmpty(_currentCardCvv)) return;
+
+        // Toggle between masked dots and the real CVV.
+        tb.Text = tb.Text.StartsWith("•") ? _currentCardCvv : new string('•', _currentCardCvv.Length);
+    }
+
+    private void CopyCvvButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_currentCardCvv)) return;
+        try { System.Windows.Clipboard.SetText(_currentCardCvv); ToastService.Instance.Success("CVV copied to clipboard"); } catch { }
+    }
+
     private void ShowItemDetails(PasswordItem item)
     {
         if (item == null) return;
@@ -726,6 +804,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
             // Extra CC fields
             SetText("DetailCardExpiry", string.IsNullOrWhiteSpace(cc?.ExpiryDate) ? "—" : cc!.ExpiryDate!);
+            _currentCardCvv = cc?.CVV;
             SetText("DetailCardCvv",    string.IsNullOrWhiteSpace(cc?.CVV) ? "—" : new string('•', cc!.CVV!.Length));
             SetText("DetailCardType",   cc?.CardType.ToString() ?? "—");
             SetText("DetailCardBank",   string.IsNullOrWhiteSpace(cc?.IssuingBank) ? "—" : cc!.IssuingBank!);
@@ -818,10 +897,29 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                                ?? item.SecureNoteItem?.Content
                                ?? item.LoginItem?.Notes);
                 notes ??= string.Empty;
-                notesText.Text = string.IsNullOrWhiteSpace(notes) ? "No notes" : notes;
-                notesText.Foreground = string.IsNullOrWhiteSpace(notes)
-                    ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0x4A, 0x4A))
-                    : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xC8, 0xC8, 0xC8));
+
+                // Protected notes are masked until the user reveals them (Windows Hello gated).
+                _notesRevealed = false;
+                _protectedNotesPlain = notes;
+                var isProtected = PasswordManager.Services.Utilities.ProtectedItemHelper.IsProtected(item)
+                                  && !string.IsNullOrWhiteSpace(notes);
+
+                var revealBtn = GetElement<Button>("RevealNotesButton");
+                if (revealBtn != null) revealBtn.Visibility = isProtected ? Visibility.Visible : Visibility.Collapsed;
+                SetRevealNotesButtonState(false);
+
+                if (isProtected)
+                {
+                    notesText.Text = "•••••••  Protected note — click Reveal to view";
+                    notesText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x6A, 0x6A, 0x6A));
+                }
+                else
+                {
+                    notesText.Text = string.IsNullOrWhiteSpace(notes) ? "No notes" : notes;
+                    notesText.Foreground = string.IsNullOrWhiteSpace(notes)
+                        ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0x4A, 0x4A))
+                        : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xC8, 0xC8, 0xC8));
+                }
             }
 
             // Credit cards typically carry richer notes (billing address, PINs, support numbers) —

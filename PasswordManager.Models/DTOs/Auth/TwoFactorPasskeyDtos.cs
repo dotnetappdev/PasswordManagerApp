@@ -55,9 +55,14 @@ public class RegenerateBackupCodesDto
 {
     [Required]
     public string MasterPassword { get; set; } = string.Empty;
-    
+
     [Required]
     public string Code { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional number of days until the new backup codes expire. Null = never expire.
+    /// </summary>
+    public int? ExpiryDays { get; set; }
 }
 
 // Passkey DTOs

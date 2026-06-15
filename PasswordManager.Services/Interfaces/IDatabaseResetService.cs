@@ -14,7 +14,14 @@ public interface IDatabaseResetService
     /// Clears all tables including user tables and reseeds default data
     /// </summary>
     Task<DatabaseResetResult> ResetAllTablesAsync(bool reseedData = true);
-    
+
+    /// <summary>
+    /// Deletes all non-admin user accounts (and their owned data) while leaving
+    /// any account in the Admin role intact. Vault data belonging to admin
+    /// accounts is preserved.
+    /// </summary>
+    Task<DatabaseResetResult> ClearNonAdminUsersAsync();
+
     /// <summary>
     /// Securely wipes the database by clearing all tables and, for SQLite, securely deleting the database file
     /// </summary>

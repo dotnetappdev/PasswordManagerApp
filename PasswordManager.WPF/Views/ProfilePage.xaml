@@ -53,6 +53,7 @@
                             VerticalAlignment="Center">
                     <Button Content="Switch Profile"
                             Style="{StaticResource ModernSecondaryButtonStyle}"
+                            Margin="0,0,8,0"
                             Click="SwitchProfileButton_Click"/>
                     <Button x:Name="EditProfileButton"
                             Content="Edit Profile"
@@ -62,6 +63,7 @@
                     <Button x:Name="SaveProfileButton"
                             Content="Save"
                             Style="{StaticResource ModernPrimaryButtonStyle}"
+                            Margin="0,0,8,0"
                             Click="SaveProfileButton_Click"
                             Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     <Button x:Name="CancelEditButton"
@@ -275,7 +277,8 @@
             <Border Style="{StaticResource ModernCardStyle}">
                 <StackPanel Margin="16">
                     <TextBlock Text="Security"
-                               Style="{StaticResource ModernHeading3Style}"/>
+                               Style="{StaticResource ModernHeading3Style}"
+                               Margin="0,0,0,12"/>
 
                     <Grid>
                         <Grid.RowDefinitions>
@@ -285,62 +288,68 @@
                         </Grid.RowDefinitions>
 
                         <!-- Master Password -->
-                        <StackPanel Grid.Row="0"
-                                Orientation="Horizontal"
-                                Margin="0,0,0,12">
-                            <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets"
-                                      FontSize="16"
+                        <Grid Grid.Row="0" Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets"
+                                      FontSize="18" VerticalAlignment="Center"
                                       Foreground="{StaticResource ModernTextSecondaryBrush}"/>
-                            <TextBlock Text="Master Password"
-                                       Style="{StaticResource ModernBodyStyle}"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Text="Last changed 30 days ago"
-                                       Style="{StaticResource ModernCaptionStyle}"
-                                       VerticalAlignment="Center"/>
-                            <Button Content="Change"
+                            <StackPanel Grid.Column="1" Margin="14,0,14,0" VerticalAlignment="Center">
+                                <TextBlock Text="Master Password"
+                                           Style="{StaticResource ModernBodyStyle}"/>
+                                <TextBlock Text="Last changed 30 days ago"
+                                           Style="{StaticResource ModernCaptionStyle}"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="Change"
                                     Style="{StaticResource ModernSecondaryButtonStyle}"
-                                    Margin="0"
-                                    HorizontalAlignment="Right"/>
-                        </StackPanel>
+                                    VerticalAlignment="Center"/>
+                        </Grid>
 
                         <!-- Two-Factor Authentication -->
-                        <StackPanel Grid.Row="1"
-                                Orientation="Horizontal"
-                                Margin="0,0,0,12">
-                            <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
-                                      FontSize="16"
+                        <Grid Grid.Row="1" Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
+                                      FontSize="18" VerticalAlignment="Center"
                                       Foreground="{StaticResource ModernSuccessBrush}"/>
-                            <TextBlock Text="Two-Factor Authentication"
-                                       Style="{StaticResource ModernBodyStyle}"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Text="Enabled"
-                                       Style="{StaticResource ModernCaptionStyle}"
-                                       Foreground="{StaticResource ModernSuccessBrush}"
-                                       VerticalAlignment="Center"/>
-                            <Button Content="Manage"
+                            <StackPanel Grid.Column="1" Margin="14,0,14,0" VerticalAlignment="Center">
+                                <TextBlock Text="Two-Factor Authentication"
+                                           Style="{StaticResource ModernBodyStyle}"/>
+                                <TextBlock Text="Enabled"
+                                           Style="{StaticResource ModernCaptionStyle}"
+                                           Foreground="{StaticResource ModernSuccessBrush}"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="Manage"
                                     Style="{StaticResource ModernSecondaryButtonStyle}"
-                                    Margin="0"
-                                    HorizontalAlignment="Right"/>
-                        </StackPanel>
+                                    VerticalAlignment="Center"/>
+                        </Grid>
 
                         <!-- Biometric Authentication -->
-                        <StackPanel Grid.Row="2"
-                                Orientation="Horizontal"
-                                Margin="12">
-                            <TextBlock Text="&#xE8F1;" FontFamily="Segoe MDL2 Assets"
-                                      FontSize="16"
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="&#xE8F1;" FontFamily="Segoe MDL2 Assets"
+                                      FontSize="18" VerticalAlignment="Center"
                                       Foreground="{StaticResource ModernSuccessBrush}"/>
-                            <TextBlock Text="Biometric Authentication"
-                                       Style="{StaticResource ModernBodyStyle}"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Text="Windows Hello enabled"
-                                       Style="{StaticResource ModernCaptionStyle}"
-                                       Foreground="{StaticResource ModernSuccessBrush}"
-                                       VerticalAlignment="Center"/>
-                            <CheckBox IsChecked="True"
-                                          Margin="0"
-                                          HorizontalAlignment="Right"/>
-                        </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="14,0,14,0" VerticalAlignment="Center">
+                                <TextBlock Text="Biometric Authentication"
+                                           Style="{StaticResource ModernBodyStyle}"/>
+                                <TextBlock Text="Windows Hello enabled"
+                                           Style="{StaticResource ModernCaptionStyle}"
+                                           Foreground="{StaticResource ModernSuccessBrush}"/>
+                            </StackPanel>
+                            <CheckBox Grid.Column="2" IsChecked="True"
+                                      VerticalAlignment="Center"/>
+                        </Grid>
                     </Grid>
                 </StackPanel>
             </Border>

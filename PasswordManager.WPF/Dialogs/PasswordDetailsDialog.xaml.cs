@@ -122,6 +122,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
             // Populate basic details
             TitleText.Text = _passwordItem.Title;
             TypeText.Text = _passwordItem.Type.ToString();
+            CategoryText.Text = _passwordItem.Category?.Name ?? "Uncategorized";
             CreatedText.Text = _passwordItem.CreatedAt.ToString("g");
             ModifiedText.Text = _passwordItem.LastModified.ToString("g");
 
@@ -129,6 +130,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
             {
                 DescriptionText.Text = _passwordItem.Description;
                 DescriptionText.Visibility = Visibility.Visible;
+                DescriptionLabel.Visibility = Visibility.Visible;
             }
 
             // Load type-specific details

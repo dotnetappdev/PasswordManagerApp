@@ -63,8 +63,31 @@ public class TwoFactorService : ITwoFactorService
             var qrCodeUri = GenerateQrCodeUri(user.Email ?? "", secretKey, DefaultIssuer);
             var backupCodes = GenerateBackupCodes(DefaultBackupCodeCount);
 
-            // Store the secret key temporarily (will be permanent after verification)
+            // Store the secret key temporarily (becomes permanent after verification)
             user.TwoFactorSecretKey = secretKey;
+
+            // Persist the SAME backup codes we are about to show the user (hashed), so the codes
+            // they save actually work for recovery. They stay unusable until 2FA is enabled on
+            // verification. Re-running setup replaces any previous pending codes.
+            var pendingCodes = await _context.UserTwoFactorBackupCodes
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
+            _context.UserTwoFactorBackupCodes.RemoveRange(pendingCodes);
+
+            foreach (var code in backupCodes)
+            {
+                var salt = GenerateRandomBytes(32);
+                var hash = HashBackupCode(code, salt);
+                await _context.UserTwoFactorBackupCodes.AddAsync(new UserTwoFactorBackupCode
+                {
+                    UserId = userId,
+                    CodeHash = Convert.ToBase64String(hash),
+                    CodeSalt = Convert.ToBase64String(salt),
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            user.TwoFactorBackupCodesRemaining = backupCodes.Count;
+
             await _context.SaveChangesAsync();
 
             return new TwoFactorSetupResponseDto
@@ -99,36 +122,15 @@ public class TwoFactorService : ITwoFactorService
                 return false;
             }
 
-            // Enable 2FA
+            // Enable 2FA. The backup codes were already persisted (hashed) when setup started, so
+            // the codes shown to the user are exactly the ones that will work for recovery. We do
+            // NOT regenerate them here — doing so previously stored a different set and locked
+            // users out of their own recovery codes.
             user.TwoFactorEnabled = true;
             user.TwoFactorEnabledAt = DateTime.UtcNow;
-            
-            // Clear any existing backup codes and create new ones
-            var existingCodes = await _context.UserTwoFactorBackupCodes
-                .Where(c => c.UserId == userId)
-                .ToListAsync();
-            _context.UserTwoFactorBackupCodes.RemoveRange(existingCodes);
 
-            // Create new backup codes
-            var backupCodes = GenerateBackupCodes(DefaultBackupCodeCount);
-            var backupCodeEntities = new List<UserTwoFactorBackupCode>();
-
-            foreach (var code in backupCodes)
-            {
-                var salt = GenerateRandomBytes(32);
-                var hash = HashBackupCode(code, salt);
-
-                backupCodeEntities.Add(new UserTwoFactorBackupCode
-                {
-                    UserId = userId,
-                    CodeHash = Convert.ToBase64String(hash),
-                    CodeSalt = Convert.ToBase64String(salt),
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
-
-            await _context.UserTwoFactorBackupCodes.AddRangeAsync(backupCodeEntities);
-            user.TwoFactorBackupCodesRemaining = backupCodes.Count;
+            user.TwoFactorBackupCodesRemaining = await _context.UserTwoFactorBackupCodes
+                .CountAsync(c => c.UserId == userId);
 
             await _context.SaveChangesAsync();
 
@@ -249,7 +251,11 @@ public class TwoFactorService : ITwoFactorService
                 .ToListAsync();
             _context.UserTwoFactorBackupCodes.RemoveRange(existingCodes);
 
-            // Generate new backup codes
+            // Generate new backup codes, honouring an optional expiry window.
+            var expiresAt = regenerateDto.ExpiryDays is > 0
+                ? DateTime.UtcNow.AddDays(regenerateDto.ExpiryDays.Value)
+                : (DateTime?)null;
+
             var backupCodes = GenerateBackupCodes(DefaultBackupCodeCount);
             var backupCodeEntities = new List<UserTwoFactorBackupCode>();
 
@@ -263,7 +269,8 @@ public class TwoFactorService : ITwoFactorService
                     UserId = userId,
                     CodeHash = Convert.ToBase64String(hash),
                     CodeSalt = Convert.ToBase64String(salt),
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    ExpiresAt = expiresAt
                 });
             }
 
@@ -374,8 +381,9 @@ public class TwoFactorService : ITwoFactorService
 
     private async Task<bool> VerifyBackupCodeAsync(string userId, string code, string? clientIp)
     {
+        var now = DateTime.UtcNow;
         var backupCodes = await _context.UserTwoFactorBackupCodes
-            .Where(c => c.UserId == userId && !c.IsUsed)
+            .Where(c => c.UserId == userId && !c.IsUsed && (c.ExpiresAt == null || c.ExpiresAt > now))
             .ToListAsync();
 
         foreach (var backupCode in backupCodes)

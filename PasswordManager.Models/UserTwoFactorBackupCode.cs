@@ -47,6 +47,12 @@ public class UserTwoFactorBackupCode
     public DateTime? UsedAt { get; set; }
 
     /// <summary>
+    /// Optional expiry. When set and in the past, the code can no longer be used for recovery.
+    /// Null means the code never expires.
+    /// </summary>
+    public DateTime? ExpiresAt { get; set; }
+
+    /// <summary>
     /// IP address from which the backup code was used (if used)
     /// </summary>
     [MaxLength(45)] // IPv6 max length

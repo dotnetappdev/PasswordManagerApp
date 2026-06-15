@@ -107,6 +107,10 @@ public class AppStartupService : IAppStartupService
                             await dbContextApp.Database.EnsureCreatedAsync();
                         }
 
+                        // Brand-new database: clear any stale seed marker left over from a previously
+                        // deleted database so this fresh install is fully seeded (accounts + demo data).
+                        TryDeleteSeedMarker(dbContext);
+
                         // Seed everything for new installations
                         await SeedIdentityDataIfNeeded(scope);
                         await SeedEssentialDataIfNeeded(dbContext);
@@ -467,6 +471,13 @@ public class AppStartupService : IAppStartupService
                     CreatedAt           TEXT    NOT NULL DEFAULT '',
                     UpdatedAt           TEXT    NOT NULL DEFAULT '')");
             }
+
+            // ── 8. ExpiresAt column on UserTwoFactorBackupCodes (recovery-code expiry) ──
+            if (await TableExists("UserTwoFactorBackupCodes") && !await ColumnExists("UserTwoFactorBackupCodes", "ExpiresAt"))
+            {
+                _logger.LogInformation("Schema fix: adding ExpiresAt to UserTwoFactorBackupCodes");
+                await Exec("ALTER TABLE UserTwoFactorBackupCodes ADD COLUMN ExpiresAt TEXT NULL");
+            }
         }
         catch (Exception ex)
         {
@@ -549,15 +560,28 @@ public class AppStartupService : IAppStartupService
     {
         try
         {
-            // Check if we already have data
+            var markerPath = GetSeedMarkerPath(dbContext);
+
+            // Already populated: record that this database has been seeded (so a later manual
+            // "Clear Vault Data" stays cleared) and skip.
             if (await dbContext.PasswordItems.AnyAsync())
             {
+                TryWriteSeedMarker(markerPath);
                 _logger.LogDebug("Database already contains password items, skipping test data seeding");
+                return;
+            }
+
+            // Empty vault: only auto-seed demo data the FIRST time a database is created. If the
+            // marker already exists the user deliberately cleared their data, so leave it empty.
+            if (markerPath != null && System.IO.File.Exists(markerPath))
+            {
+                _logger.LogInformation("Vault is empty but seed marker present (data was cleared) - skipping re-seed");
                 return;
             }
 
             _logger.LogInformation("Seeding test data to populate empty database");
             TestDataSeeder.SeedTestData(dbContext);
+            TryWriteSeedMarker(markerPath);
             _logger.LogInformation("Test data seeding completed successfully");
         }
         catch (Exception ex)
@@ -567,27 +591,108 @@ public class AppStartupService : IAppStartupService
         }
     }
 
-    private async Task SeedIdentityDataIfNeeded(IServiceScope scope)
+    // Path of a small marker file next to the SQLite database that records the demo data has
+    // already been seeded once. Returns null for non-file databases (server providers / in-memory).
+    private string? GetSeedMarkerPath(PasswordManagerDbContext dbContext)
     {
         try
         {
-            // Try to get the Identity seeder (may not be available in all configurations)
-            var identitySeeder = scope.ServiceProvider.GetService<PasswordManager.DAL.Seed.IdentityDataSeeder>();
-            if (identitySeeder != null)
+            var providerName = dbContext.Database.ProviderName ?? string.Empty;
+            if (!providerName.Contains("Sqlite", System.StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            var connectionString = dbContext.Database.GetConnectionString();
+            if (string.IsNullOrEmpty(connectionString)) return null;
+
+            foreach (var part in connectionString.Split(';', System.StringSplitOptions.RemoveEmptyEntries))
             {
-                _logger.LogInformation("Seeding Identity data (roles and default users)");
-                await identitySeeder.SeedAsync();
-                _logger.LogInformation("Identity data seeding completed successfully");
+                var trimmed = part.Trim();
+                if (trimmed.StartsWith("Data Source=", System.StringComparison.OrdinalIgnoreCase) ||
+                    trimmed.StartsWith("DataSource=", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    var path = trimmed[(trimmed.IndexOf('=') + 1)..].Trim();
+                    if (string.IsNullOrEmpty(path) || path.Equals(":memory:", System.StringComparison.OrdinalIgnoreCase))
+                        return null;
+                    return path + ".seeded";
+                }
             }
-            else
-            {
-                _logger.LogDebug("Identity seeder not available, skipping Identity data seeding");
-            }
+        }
+        catch { /* best-effort */ }
+        return null;
+    }
+
+    private void TryWriteSeedMarker(string? markerPath)
+    {
+        try
+        {
+            if (markerPath != null && !System.IO.File.Exists(markerPath))
+                System.IO.File.WriteAllText(markerPath, System.DateTime.UtcNow.ToString("o"));
+        }
+        catch { /* marker is best-effort; never block startup */ }
+    }
+
+    // Removes a stale "<db>.seeded" marker (e.g. left behind after the database file was deleted)
+    // so a brand-new database is seeded normally instead of being treated as already-seeded.
+    private void TryDeleteSeedMarker(PasswordManagerDbContext dbContext)
+    {
+        try
+        {
+            var markerPath = GetSeedMarkerPath(dbContext);
+            if (markerPath != null && System.IO.File.Exists(markerPath))
+                System.IO.File.Delete(markerPath);
+        }
+        catch { /* best-effort */ }
+    }
+
+    private async Task SeedIdentityDataIfNeeded(IServiceScope scope)
+    {
+        // Try to get the Identity seeder (may not be available in all configurations)
+        var identitySeeder = scope.ServiceProvider.GetService<PasswordManager.DAL.Seed.IdentityDataSeeder>();
+        if (identitySeeder == null)
+        {
+            _logger.LogWarning("IdentityDataSeeder could not be resolved - default accounts (admin/parent/user/child) were NOT created");
+            return;
+        }
+
+        try
+        {
+            _logger.LogInformation("Seeding Identity data (roles and default users)");
+            await identitySeeder.SeedAsync();
+            _logger.LogInformation("Identity data seeding completed successfully");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error seeding Identity data");
             // Don't throw - seeding failure shouldn't prevent app startup
+        }
+
+        // Verify the default accounts actually landed. If the Identity schema wasn't ready the first
+        // time (a known dual-context migration timing issue), ensure it and retry the seed once.
+        try
+        {
+            var ctx = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+            var userCount = await ctx.Users.CountAsync();
+            if (userCount == 0)
+            {
+                _logger.LogWarning("No user accounts found after identity seeding - ensuring Identity schema and retrying once");
+                try
+                {
+                    await scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>().Database.MigrateAsync();
+                }
+                catch (Exception migEx)
+                {
+                    _logger.LogWarning(migEx, "Could not apply Identity migrations before retry");
+                }
+
+                await identitySeeder.SeedAsync();
+                userCount = await ctx.Users.CountAsync();
+            }
+
+            _logger.LogInformation("Default account check complete. User accounts in database: {Count}", userCount);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not verify default accounts after seeding");
         }
     }
 

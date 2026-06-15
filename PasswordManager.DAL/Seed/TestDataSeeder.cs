@@ -76,28 +76,28 @@ public static class TestDataSeeder
         if (!db.Categories.Any(c => c.UserId == testUserId))
         {
             db.Categories.AddRange(
-                new Category { Name = "Login",                  Icon = "🔐", Color = "#3b82f6", UserId = testUserId },
-                new Category { Name = "Secure Note",            Icon = "📝", Color = "#f59e0b", UserId = testUserId },
-                new Category { Name = "Credit Card",            Icon = "💳", Color = "#10b981", UserId = testUserId },
-                new Category { Name = "Identity",               Icon = "👤", Color = "#10b981", UserId = testUserId },
-                new Category { Name = "Password",               Icon = "🔑", Color = "#06b6d4", UserId = testUserId },
-                new Category { Name = "Document",               Icon = "📄", Color = "#3b82f6", UserId = testUserId },
-                new Category { Name = "SSH Key",                Icon = "🔗", Color = "#f59e0b", UserId = testUserId },
+                new Category { Name = "Logins",                 Icon = "🔐", Color = "#3b82f6", UserId = testUserId },
+                new Category { Name = "Secure Notes",           Icon = "📝", Color = "#f59e0b", UserId = testUserId },
+                new Category { Name = "Credit Cards",           Icon = "💳", Color = "#10b981", UserId = testUserId },
+                new Category { Name = "Identities",             Icon = "👤", Color = "#10b981", UserId = testUserId },
+                new Category { Name = "Passwords",              Icon = "🔑", Color = "#06b6d4", UserId = testUserId },
+                new Category { Name = "Documents",              Icon = "📄", Color = "#3b82f6", UserId = testUserId },
+                new Category { Name = "SSH Keys",               Icon = "🔗", Color = "#f59e0b", UserId = testUserId },
                 new Category { Name = "API Credentials",        Icon = "</>", Color = "#06b6d4", UserId = testUserId },
-                new Category { Name = "Bank Account",           Icon = "🏦", Color = "#f59e0b", UserId = testUserId },
-                new Category { Name = "Crypto Wallet",          Icon = "₿",  Color = "#8b5cf6", UserId = testUserId },
-                new Category { Name = "Database",               Icon = "🗄️", Color = "#6b7280", UserId = testUserId },
-                new Category { Name = "Driver License",         Icon = "🪪", Color = "#ec4899", UserId = testUserId },
-                new Category { Name = "Email",                  Icon = "📧", Color = "#ec4899", UserId = testUserId },
-                new Category { Name = "Medical Record",         Icon = "❤️", Color = "#ef4444", UserId = testUserId },
-                new Category { Name = "Membership",             Icon = "🎫", Color = "#8b5cf6", UserId = testUserId },
-                new Category { Name = "Outdoor License",        Icon = "🏞️", Color = "#10b981", UserId = testUserId },
-                new Category { Name = "Passport",               Icon = "🌐", Color = "#3b82f6", UserId = testUserId },
+                new Category { Name = "Bank Accounts",          Icon = "🏦", Color = "#f59e0b", UserId = testUserId },
+                new Category { Name = "Crypto Wallets",         Icon = "₿",  Color = "#8b5cf6", UserId = testUserId },
+                new Category { Name = "Databases",              Icon = "🗄️", Color = "#6b7280", UserId = testUserId },
+                new Category { Name = "Driver Licenses",        Icon = "🪪", Color = "#ec4899", UserId = testUserId },
+                new Category { Name = "Emails",                 Icon = "📧", Color = "#ec4899", UserId = testUserId },
+                new Category { Name = "Medical Records",        Icon = "❤️", Color = "#ef4444", UserId = testUserId },
+                new Category { Name = "Memberships",            Icon = "🎫", Color = "#8b5cf6", UserId = testUserId },
+                new Category { Name = "Outdoor Licenses",       Icon = "🏞️", Color = "#10b981", UserId = testUserId },
+                new Category { Name = "Passports",              Icon = "🌐", Color = "#3b82f6", UserId = testUserId },
                 new Category { Name = "Rewards",                Icon = "🎁", Color = "#ec4899", UserId = testUserId },
-                new Category { Name = "Server",                 Icon = "🖥️", Color = "#6b7280", UserId = testUserId },
-                new Category { Name = "Social Security Number", Icon = "🆔", Color = "#3b82f6", UserId = testUserId },
-                new Category { Name = "Software License",       Icon = "💿", Color = "#3b82f6", UserId = testUserId },
-                new Category { Name = "Wireless Router",        Icon = "📶", Color = "#06b6d4", UserId = testUserId },
+                new Category { Name = "Servers",                Icon = "🖥️", Color = "#6b7280", UserId = testUserId },
+                new Category { Name = "Social Security Numbers",Icon = "🆔", Color = "#3b82f6", UserId = testUserId },
+                new Category { Name = "Software Licenses",      Icon = "💿", Color = "#3b82f6", UserId = testUserId },
+                new Category { Name = "Wireless Routers",       Icon = "📶", Color = "#06b6d4", UserId = testUserId },
                 new Category { Name = "WiFi Networks",          Icon = "📶", Color = "#06b6d4", UserId = testUserId },
                 new Category { Name = "Passkeys",               Icon = "🔐", Color = "#ec4899", UserId = testUserId }
             );
@@ -172,12 +172,12 @@ public static class TestDataSeeder
         int workCol     = Col("Work");
         int personalCol = Col("Personal");
 
-        int loginCat    = Cat("Login");
-        int cardCat     = Cat("Credit Card");
-        int noteCat     = Cat("Secure Note");
+        int loginCat    = Cat("Logins");
+        int cardCat     = Cat("Credit Cards");
+        int noteCat     = Cat("Secure Notes");
         int wifiCat     = Cat("WiFi Networks");
         int passkeyCat  = Cat("Passkeys");
-        int pwdCat      = Cat("Password");
+        int pwdCat      = Cat("Passwords");
 
         var all = new List<PasswordItem>();
 
@@ -345,12 +345,12 @@ public static class TestDataSeeder
         all.Add(PK("Microsoft Passkey",      "john.doe@company.com", "John Doe", "https://login.microsoft.com",  passkeyCat, workCol,     uid, T("Work","Biometric")));
 
         // ── Generic Passwords ─────────────────────────────────────────────────────
-        all.Add(GP("MacBook Pro Login",       "M@cB00kPr0#L0g1n!",  "Main user account — MacBook Pro 14-inch M3",        pwdCat, personalCol, uid, T("Personal","Daily Use")));
-        all.Add(GP("Windows Work Laptop",     "W1nd0ws#L0g1n!",      "HP EliteBook login — Windows 11 Pro",               pwdCat, workCol,     uid, T("Work","Daily Use")));
-        all.Add(GP("Router Admin",            "R0ut3r@dm1n#!",       "ASUS AX6000 admin — https://192.168.1.1",           pwdCat, personalCol, uid, T("Important","Rarely Used")));
-        all.Add(GP("Backup Drive Encryption", "B@ckupDr1v3#!",       "FileVault encryption — WD 4TB external drive",       pwdCat, personalCol, uid, T("High Security","Backup Account")));
-        all.Add(GP("iPhone PIN",              "847293",              "6-digit passcode for iPhone 15 Pro",                 pwdCat, personalCol, uid, T("Personal","Daily Use")));
-        all.Add(GP("Home Safe Combination",   "15-32-07",            "SentrySafe wall safe behind master bedroom mirror",  pwdCat, personalCol, uid, T("Important","High Security","Rarely Used")));
+        all.Add(GP("MacBook Pro Login",       "johndoe",     "M@cB00kPr0#L0g1n!",  "Main user account — MacBook Pro 14-inch M3",        pwdCat, personalCol, uid, T("Personal","Daily Use")));
+        all.Add(GP("Windows Work Laptop",     "john.doe",    "W1nd0ws#L0g1n!",      "HP EliteBook login — Windows 11 Pro",               pwdCat, workCol,     uid, T("Work","Daily Use")));
+        all.Add(GP("Router Admin",            "admin",       "R0ut3r@dm1n#!",       "ASUS AX6000 admin — https://192.168.1.1",           pwdCat, personalCol, uid, T("Important","Rarely Used")));
+        all.Add(GP("Backup Drive Encryption", "johndoe",     "B@ckupDr1v3#!",       "FileVault encryption — WD 4TB external drive",       pwdCat, personalCol, uid, T("High Security","Backup Account")));
+        all.Add(GP("iPhone PIN",              "john.doe",    "847293",              "6-digit passcode for iPhone 15 Pro",                 pwdCat, personalCol, uid, T("Personal","Daily Use")));
+        all.Add(GP("Home Safe Combination",   "John Doe",    "15-32-07",            "SentrySafe wall safe behind master bedroom mirror",  pwdCat, personalCol, uid, T("Important","High Security","Rarely Used")));
 
         db.PasswordItems.AddRange(all);
         db.SaveChanges();
@@ -455,7 +455,7 @@ public static class TestDataSeeder
         };
 
     private static PasswordItem GP(
-        string title, string password, string description,
+        string title, string username, string password, string description,
         int catId, int colId, string uid, List<Tag> tags) =>
         new()
         {
@@ -465,7 +465,7 @@ public static class TestDataSeeder
             CreatedAt = DateTime.UtcNow, LastModified = DateTime.UtcNow,
             LoginItem = new LoginItem
             {
-                Username = string.Empty,          // required by DB constraint
+                Username = username,
                 EncryptedPassword = password, UserId = uid,
                 CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow
             },

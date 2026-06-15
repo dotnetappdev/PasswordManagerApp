@@ -29,11 +29,17 @@ public class DatabaseResetService : IDatabaseResetService
         "VaultSessions"
     };
 
-    // Data tables that will be cleared in data reset
+    // Data tables that will be cleared in data reset. Includes every per-item child table so
+    // nothing (credit cards, secure notes, wifi, passkeys, …) is left orphaned behind a deleted item.
     private readonly List<string> _dataTables = new()
     {
         "PasswordItems",
         "LoginItems",
+        "CreditCardItems",
+        "SecureNoteItems",
+        "WiFiItems",
+        "PasskeyItem",
+        "PasskeyItems",
         "Collections",
         "Categories",
         "Tags",
@@ -82,7 +88,8 @@ public class DatabaseResetService : IDatabaseResetService
 
             try
             {
-                // Clear data tables in order (respecting dependencies)
+                // Clear data tables in order (respecting dependencies). All per-item child
+                // tables are cleared before PasswordItems so no orphaned rows linger.
                 var tablesToClear = new[]
                 {
                     "PasswordItemTags",       // Junction table first
@@ -92,6 +99,11 @@ public class DatabaseResetService : IDatabaseResetService
                     "CustomFields",
                     "Passkeys",
                     "LoginItems",
+                    "CreditCardItems",
+                    "SecureNoteItems",
+                    "WiFiItems",
+                    "PasskeyItem",
+                    "PasskeyItems",
                     "PasswordItems",          // Main items after dependencies
                     "Categories",
                     "Tags",
@@ -128,7 +140,11 @@ public class DatabaseResetService : IDatabaseResetService
                 result.TablesCleared = tablesCleared;
                 result.RecordsDeleted = recordsDeleted;
                 result.Message = $"Successfully cleared {tablesCleared} data tables, deleted {recordsDeleted} records. User accounts preserved.";
-                
+
+                // Record that this database has been seeded so startup does not re-add demo data
+                // after the user has deliberately cleared their vault.
+                TryMarkSeedComplete();
+
                 _logger.LogInformation("Data tables reset completed successfully");
             }
             finally
@@ -243,6 +259,113 @@ public class DatabaseResetService : IDatabaseResetService
             _logger.LogError(ex, "Error during full database reset");
             result.Success = false;
             result.Message = $"Failed to reset database: {ex.Message}";
+            result.Errors.Add(ex.Message);
+        }
+
+        return result;
+    }
+
+    public async Task<DatabaseResetResult> ClearNonAdminUsersAsync()
+    {
+        var result = new DatabaseResetResult();
+
+        // Set of user ids that are NOT in the Admin role. Reused as a sub-query
+        // in every DELETE so admin accounts (and their data) are never touched.
+        const string nonAdminFilter =
+            "SELECT Id FROM AspNetUsers WHERE Id NOT IN (" +
+            "SELECT ur.UserId FROM AspNetUserRoles ur " +
+            "INNER JOIN AspNetRoles r ON ur.RoleId = r.Id " +
+            "WHERE r.NormalizedName = 'ADMIN')";
+
+        try
+        {
+            _logger.LogInformation("Starting non-admin user purge (preserving Admin accounts)");
+
+            var recordsDeleted = 0;
+
+            // Local helper: run a DELETE, swallow failures for tables/columns that
+            // may not exist on every provider/schema, and accumulate the row count.
+            async Task DeleteAsync(string sql, string label)
+            {
+                try
+                {
+                    var count = await _dbContext.Database.ExecuteSqlRawAsync(sql);
+                    recordsDeleted += count;
+                    _logger.LogInformation("Cleared {Label}, deleted {Count} records", label, count);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not clear {Label}", label);
+                    result.Errors.Add($"Failed to clear {label}: {ex.Message}");
+                }
+            }
+
+            await DisableForeignKeyConstraintsAsync();
+            try
+            {
+                // Junction rows for the affected users' password items first.
+                await DeleteAsync(
+                    $"DELETE FROM PasswordItemTags WHERE PasswordItemId IN " +
+                    $"(SELECT Id FROM PasswordItems WHERE UserId IN ({nonAdminFilter}))",
+                    "PasswordItemTags");
+
+                // Vault data and other rows owned directly by a UserId column.
+                var userScopedTables = new[]
+                {
+                    "SharedPasswordPermissions", "SharedPasswords", "PasswordHistory",
+                    "CustomFields", "Passkeys", "PasskeyItem", "PasskeyItems",
+                    "LoginItems", "CreditCardItems",
+                    "SecureNoteItems", "WiFiItems", "PasswordItems",
+                    "Categories", "Tags", "Collections", "Vaults",
+                    "AuditLogs", "Devices", "ApiKeys", "SmsSettings",
+                    "UserPasskeys", "UserTwoFactorBackupCodes",
+                    "VaultSessions", "UserProfiles"
+                };
+                foreach (var table in userScopedTables)
+                {
+                    await DeleteAsync(
+                        $"DELETE FROM {table} WHERE UserId IN ({nonAdminFilter})", table);
+                }
+
+                // Identity link rows for the affected users.
+                foreach (var table in new[] { "AspNetUserRoles", "AspNetUserClaims", "AspNetUserLogins", "AspNetUserTokens" })
+                {
+                    await DeleteAsync(
+                        $"DELETE FROM {table} WHERE UserId IN ({nonAdminFilter})", table);
+                }
+
+                // Finally the user accounts themselves.
+                int usersDeleted = 0;
+                try
+                {
+                    usersDeleted = await _dbContext.Database.ExecuteSqlRawAsync(
+                        $"DELETE FROM AspNetUsers WHERE Id IN ({nonAdminFilter})");
+                    recordsDeleted += usersDeleted;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Could not delete non-admin user accounts");
+                    result.Errors.Add($"Failed to delete user accounts: {ex.Message}");
+                }
+
+                result.Success = result.Errors.Count == 0;
+                result.RecordsDeleted = recordsDeleted;
+                result.Message = result.Success
+                    ? $"Removed {usersDeleted} non-admin user account(s) and {recordsDeleted - usersDeleted} related record(s). Admin accounts preserved."
+                    : $"Removed {usersDeleted} non-admin user account(s), but some related data could not be cleared.";
+
+                _logger.LogInformation("Non-admin user purge completed. Users removed: {Users}", usersDeleted);
+            }
+            finally
+            {
+                await EnableForeignKeyConstraintsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during non-admin user purge");
+            result.Success = false;
+            result.Message = $"Failed to clear non-admin users: {ex.Message}";
             result.Errors.Add(ex.Message);
         }
 
@@ -590,6 +713,33 @@ public class DatabaseResetService : IDatabaseResetService
         {
             _logger.LogError(ex, "Error during secure file deletion: {FilePath}", filePath);
             throw;
+        }
+    }
+
+    // Writes a "<db>.seeded" marker next to the SQLite database (matching AppStartupService) so the
+    // startup demo-data seeder treats the now-empty vault as intentionally cleared, not brand new.
+    private void TryMarkSeedComplete()
+    {
+        try
+        {
+            var providerName = _dbContext.Database.ProviderName ?? string.Empty;
+            if (!providerName.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var connectionString = _dbContext.Database.GetConnectionString();
+            if (string.IsNullOrEmpty(connectionString)) return;
+
+            var path = ExtractSqlitePath(connectionString);
+            if (string.IsNullOrEmpty(path) || path.Equals(":memory:", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var marker = path + ".seeded";
+            if (!File.Exists(marker))
+                File.WriteAllText(marker, DateTime.UtcNow.ToString("o"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not write seed-complete marker");
         }
     }
 

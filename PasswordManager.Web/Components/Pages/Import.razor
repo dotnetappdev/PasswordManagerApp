@@ -1,5 +1,12 @@
 @page "/import"
 @using Microsoft.AspNetCore.Components.Forms
+@using PasswordManager.Services.Interfaces
+@using PasswordManager.Imports.Interfaces
+@inject IDatabaseResetService ResetService
+@inject IImportService ImportService
+@inject IAuthService AuthService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
 <PageTitle>Import - VaultGuard</PageTitle>
@@ -68,6 +75,9 @@
                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                         <MudIcon Icon="@Icons.Material.Filled.AttachFile" Style="font-size:1rem;" />
                         <MudText Typo="Typo.body2" Style="font-weight:500;">@selectedFile.Name</MudText>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                                 Color="@(FormatLabel(selectedFile.Name) == "1PUX" ? Color.Primary : Color.Default)"
+                                 Text="@($"({FormatLabel(selectedFile.Name)})")" />
                     </MudStack>
                     <MudText Typo="Typo.caption">@((selectedFile.Size / 1024.0).ToString("F1")) KB</MudText>
                 </MudStack>
@@ -115,7 +125,68 @@
     </MudAlert>
 }
 
+<MudPaper Class="pa-6 rounded-xl mt-6" Elevation="2" Style="border: 1px solid rgba(239,68,68,0.3);">
+    <MudText Typo="Typo.h6" Style="font-weight:600; color:#EF4444;" Class="mb-1">Maintenance</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+        Reset the vault before importing a fresh export. These actions cannot be undone.
+    </MudText>
+    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+        <MudButton StartIcon="@Icons.Material.Filled.DeleteSweep" Variant="Variant.Filled"
+                   Color="Color.Error" OnClick="@ClearVaultData" Disabled="@isClearing">
+            Clear Vault Data
+        </MudButton>
+        <MudButton StartIcon="@Icons.Material.Filled.PersonRemove" Variant="Variant.Outlined"
+                   Color="Color.Error" OnClick="@ClearUsers" Disabled="@isClearing">
+            Clear Users (keep admins)
+        </MudButton>
+    </MudStack>
+</MudPaper>
+
 @code {
+    bool isClearing = false;
+
+    async Task ClearVaultData()
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Clear Vault Data",
+            "This permanently deletes all vault items, categories, collections and tags. User accounts are kept. Continue?",
+            yesText: "Yes, continue", cancelText: "Cancel");
+        if (confirmed != true) return;
+
+        isClearing = true;
+        try
+        {
+            var result = await ResetService.ResetDataTablesAsync();
+            Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to clear vault data: {ex.Message}", Severity.Error);
+        }
+        finally { isClearing = false; }
+    }
+
+    async Task ClearUsers()
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Clear Users",
+            "This permanently deletes all non-admin user accounts and the data they own. Admin accounts are left intact. Continue?",
+            yesText: "Yes, continue", cancelText: "Cancel");
+        if (confirmed != true) return;
+
+        isClearing = true;
+        try
+        {
+            var result = await ResetService.ClearNonAdminUsersAsync();
+            Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to clear users: {ex.Message}", Severity.Error);
+        }
+        finally { isClearing = false; }
+    }
+
     string? selectedManager;
     IBrowserFile? selectedFile;
     bool isImporting = false;
@@ -191,6 +262,36 @@
         importResult = null;
     }
 
+    protected override void OnInitialized()
+    {
+        // Register the built-in providers explicitly. Referencing the provider types forces their
+        // assemblies to load so ImportService can resolve them by name.
+        ImportService.RegisterProvider(new PasswordManagerImports.OnePassword.Providers.OnePasswordImportProvider());
+        ImportService.RegisterProvider(new PasswordManagerImports.Bitwarden.BitwardenImportPlugin());
+    }
+
+    // Returns a short, upper-case format label from a file name so 1PUX and CSV are easy to tell apart.
+    static string FormatLabel(string? fileName)
+    {
+        var ext = System.IO.Path.GetExtension(fileName ?? string.Empty).TrimStart('.').ToUpperInvariant();
+        return ext switch
+        {
+            "1PUX" or "1PU" => "1PUX",
+            "" => "FILE",
+            _ => ext
+        };
+    }
+
+    // Maps a password-manager card key to a registered import provider name (null = not yet supported).
+    static string? MapProvider(string key) => key switch
+    {
+        "1password" => "1Password",
+        "bitwarden" => "bitwarden",
+        _ => null
+    };
+
+    const long MaxImportBytes = 10 * 1024 * 1024;
+
     async Task RunImport()
     {
         if (selectedFile == null || selectedManager == null) return;
@@ -199,18 +300,44 @@
         try
         {
             // Validate file size (max 10 MB)
-            if (selectedFile.Size > 10 * 1024 * 1024)
+            if (selectedFile.Size > MaxImportBytes)
             {
                 importResult = (false, "File is too large. Maximum size is 10 MB.");
                 return;
             }
 
-            // Simulate import processing
-            await Task.Delay(1500);
+            var providerName = MapProvider(selectedManager);
+            if (providerName is null)
+            {
+                importResult = (false,
+                    $"{passwordManagers[selectedManager].Name} import isn't available in the web app yet. " +
+                    "1Password (1PUX/CSV) and Bitwarden (CSV) are supported.");
+                return;
+            }
 
-            importResult = (true,
-                $"Successfully processed {selectedFile.Name} from {passwordManagers[selectedManager].Name}. " +
-                $"Your passwords will appear in All Items shortly.");
+            // Copy to a seekable MemoryStream — required for .1pux (zip) parsing.
+            using var ms = new MemoryStream();
+            await using (var rs = selectedFile.OpenReadStream(MaxImportBytes))
+            {
+                await rs.CopyToAsync(ms);
+            }
+            ms.Position = 0;
+
+            var userId = AuthService.CurrentUser?.Id;
+            var result = await ImportService.ImportPasswordsAsync(providerName, ms, selectedFile.Name, userId);
+
+            if (result.Success)
+            {
+                var msg = $"Imported {result.SuccessfulImports} of {result.TotalItemsProcessed} item(s) from {selectedFile.Name}. " +
+                          "They're now in All Items.";
+                if (result.FailedImports > 0)
+                    msg += $" {result.FailedImports} item(s) could not be imported.";
+                importResult = (true, msg);
+            }
+            else
+            {
+                importResult = (false, result.ErrorMessage ?? "Import failed. Please check the file and try again.");
+            }
         }
         catch (Exception ex)
         {

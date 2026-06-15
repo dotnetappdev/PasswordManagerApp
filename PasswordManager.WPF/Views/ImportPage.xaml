@@ -52,9 +52,16 @@
                     
                     <!-- File Selection -->
                     <StackPanel Margin="8">
-                        <TextBlock Text="Select File" 
-                                  Style="{StaticResource ModernCaptionStyle}"
-                                  FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Select File"
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding SelectedFileFormat}"
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"
+                                      Foreground="{StaticResource ModernPrimaryBrush}"
+                                      Margin="8,0,0,0"/>
+                        </StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -110,6 +117,34 @@
                 </StackPanel>
             </Border>
             
+            <!-- Maintenance / Danger Zone -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Margin="20">
+                    <TextBlock Text="Maintenance"
+                              Style="{StaticResource ModernHeading3Style}"/>
+                    <TextBlock Text="Reset the vault before importing a fresh export. These actions cannot be undone."
+                              Style="{StaticResource ModernCaptionStyle}"
+                              Margin="0,0,0,12"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="ClearDataButton"
+                               Style="{StaticResource ModernDangerButtonStyle}"
+                               MinWidth="160"
+                               Height="40"
+                               Click="ClearDataButton_Click">
+                            <StackPanel Orientation="Horizontal" Margin="8">
+                                <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="16" Margin="0,0,8,0"/>
+                                <TextBlock Text="Clear Vault Data" FontSize="14" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <TextBlock Text="To delete user accounts, use Settings → Maintenance → Delete User Accounts."
+                              Style="{StaticResource ModernCaptionStyle}"
+                              Opacity="0.7"
+                              Margin="0,10,0,0"/>
+                </StackPanel>
+            </Border>
+
             <!-- Import Results -->
             <Grid MinHeight="400">
                 
@@ -208,16 +243,26 @@
                     <Border Style="{StaticResource ModernCardStyle}"
                            Visibility="{Binding HasResults, Converter={StaticResource BoolToVisibilityConverter}}">
                         <StackPanel Margin="16">
-                            <StackPanel Orientation="Horizontal" Margin="12">
-                                <TextBlock Text="Import Details" 
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                          Text="Import Details"
+                                          VerticalAlignment="Center"
                                           Style="{StaticResource ModernHeading3Style}"/>
-                                <Button x:Name="ClearResultsButton"
+                                <Button Grid.Column="1"
+                                       x:Name="ClearResultsButton"
                                        Style="{StaticResource ModernSecondaryButtonStyle}"
-                                       Padding="8"
-                                       Click="ClearResultsButton_Click">
-                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                                       Click="ClearResultsButton_Click"
+                                       ToolTip="Clear the import results below">
+                                    <StackPanel Orientation="Horizontal" Margin="8,4">
+                                        <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Clear Results" FontSize="14" FontWeight="SemiBold"/>
+                                    </StackPanel>
                                 </Button>
-                            </StackPanel>
+                            </Grid>
                             
                             <ListView ItemsSource="{Binding ImportResults}"
                                      MaxHeight="300"

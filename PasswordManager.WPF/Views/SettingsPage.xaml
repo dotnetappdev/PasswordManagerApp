@@ -286,7 +286,7 @@
                   </ScrollViewer>
                 </TabItem>
 
-                <TabItem Header="Backup &amp; Import">
+                <TabItem Header="Backup, Import &amp; Export">
                   <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,0,0">
                     <WrapPanel Orientation="Horizontal" ItemWidth="560" MaxWidth="1132" HorizontalAlignment="Left">
 
@@ -446,22 +446,31 @@
                                                           Foreground="{StaticResource ModernTextSecondaryBrush}"/>
                                             </StackPanel>
                                             
-                                            <Button Grid.Column="1" 
-                                                   
+                                            <Button Grid.Column="1"
                                                    Style="{StaticResource ModernSecondaryButtonStyle}"
                                                    Margin="8,0"
                                                    Click="RestoreBackupButton_Click"
-                                                   Tag="{Binding}"/>
-                                            
-                                            <Button Grid.Column="2" 
-                                                   
+                                                   ToolTipService.ToolTip="Restore this backup"
+                                                   Tag="{Binding}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="&#xE777;" FontFamily="Segoe MDL2 Assets" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="Restore" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+
+                                            <Button Grid.Column="2"
                                                    Background="{StaticResource ModernErrorBrush}"
                                                    Foreground="White"
                                                    BorderThickness="0"
-                                                  
-                                                   Padding="8,4"
+                                                   Padding="10,4"
                                                    Click="DeleteBackupButton_Click"
-                                                   Tag="{Binding}"/>
+                                                   ToolTipService.ToolTip="Delete this backup"
+                                                   Tag="{Binding}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="Delete" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
                                         </Grid>
                                         </Border>
                                     </DataTemplate>
@@ -945,29 +954,100 @@
                                           Opacity="0.8"/>
                                 
                                 <Button x:Name="ResetDataButton"
-                                       Style="{StaticResource ModernSecondaryButtonStyle}"
-                                       Background="{StaticResource ModernWarningBrush}"
-                                       Foreground="White"
+                                       Background="Transparent"
+                                       BorderBrush="{StaticResource ModernWarningBrush}"
+                                       BorderThickness="1"
+                                       Foreground="{StaticResource ModernWarningBrush}"
+                                       Padding="16,10"
                                        HorizontalAlignment="Left"
                                        Click="ResetDataButton_Click">
                                     <StackPanel Orientation="Horizontal" Margin="8">
-                                        <TextBlock Text="&#xE7A7;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Reset Password Data"/>
+                                        <TextBlock Text="&#xE7A7;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource ModernWarningBrush}"/>
+                                        <TextBlock Text="Reset Password Data" Foreground="{StaticResource ModernWarningBrush}"/>
                                     </StackPanel>
                                 </Button>
                             </StackPanel>
                         </Border>
-                        
-                        <!-- Reset All Data -->
+
+                        <!-- Delete Seed Data (keeps user accounts) -->
+                        <Border Style="{StaticResource SettingsSectionStyle}"
+                               Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
+                               BorderBrush="{StaticResource ModernWarningBrush}">
+                            <StackPanel Margin="12">
+                                <StackPanel Orientation="Horizontal" Margin="8">
+                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets"
+                                             FontSize="16"
+                                             Foreground="{StaticResource ModernWarningBrush}"/>
+                                    <TextBlock Text="Delete Seed Data"
+                                              FontWeight="SemiBold"
+                                              FontSize="14"/>
+                                </StackPanel>
+                                <TextBlock Text="Removes the built-in demo data (password items, categories, collections, tags) and stops it being re-added on next launch. Your user accounts are kept."
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          TextWrapping="Wrap"
+                                          Opacity="0.8"/>
+
+                                <Button x:Name="DeleteSeedDataButton"
+                                       Background="Transparent"
+                                       BorderBrush="{StaticResource ModernWarningBrush}"
+                                       BorderThickness="1"
+                                       Foreground="{StaticResource ModernWarningBrush}"
+                                       Padding="16,10"
+                                       HorizontalAlignment="Left"
+                                       Click="DeleteSeedDataButton_Click">
+                                    <StackPanel Orientation="Horizontal" Margin="8">
+                                        <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource ModernWarningBrush}"/>
+                                        <TextBlock Text="Delete Seed Data" Foreground="{StaticResource ModernWarningBrush}"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Delete User Accounts (keep admins) -->
                         <Border Style="{StaticResource SettingsSectionStyle}"
                                Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
                                BorderBrush="{StaticResource ModernErrorBrush}">
                             <StackPanel Margin="12">
                                 <StackPanel Orientation="Horizontal" Margin="8">
-                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" 
+                                    <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets"
                                              FontSize="16"
                                              Foreground="{StaticResource ModernErrorBrush}"/>
-                                    <TextBlock Text="Reset All Database Tables" 
+                                    <TextBlock Text="Delete User Accounts"
+                                              FontWeight="SemiBold"
+                                              FontSize="14"/>
+                                </StackPanel>
+                                <TextBlock Text="Permanently deletes all non-admin user accounts (including the built-in demo/test user) and the data they own. Accounts in the Admin role are kept."
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          TextWrapping="Wrap"
+                                          Opacity="0.8"/>
+
+                                <Button x:Name="DeleteUsersButton"
+                                       Background="Transparent"
+                                       BorderBrush="{StaticResource ModernErrorBrush}"
+                                       BorderThickness="1"
+                                       Foreground="{StaticResource ModernErrorBrush}"
+                                       Padding="16,10"
+                                       HorizontalAlignment="Left"
+                                       Click="DeleteUsersButton_Click">
+                                    <StackPanel Orientation="Horizontal" Margin="8">
+                                        <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource ModernErrorBrush}"/>
+                                        <TextBlock Text="Delete Users (keep admins)" Foreground="{StaticResource ModernErrorBrush}"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Reset All Data — master/account-destroying danger zone -->
+                        <Border Style="{StaticResource SettingsSectionStyle}"
+                               Background="#1A0F0F"
+                               BorderBrush="#DA3633"
+                               BorderThickness="2">
+                            <StackPanel Margin="12">
+                                <StackPanel Orientation="Horizontal" Margin="8">
+                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets"
+                                             FontSize="16"
+                                             Foreground="#F85149"/>
+                                    <TextBlock Text="Reset All Database Tables"
                                               FontWeight="SemiBold"
                                               FontSize="14"/>
                                 </StackPanel>
