@@ -47,6 +47,7 @@ public sealed partial class PasskeysPage : Page
     public PasskeysPage() => InitializeComponent();
 
     private readonly Services.IWindowsHelloService _hello = new Services.WindowsHelloService();
+    private bool _suppressToggle;
 
     public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
     {
@@ -64,13 +65,24 @@ public sealed partial class PasskeysPage : Page
         try
         {
             var available = await _hello.IsAvailableAsync();
+            var configured = available && await _hello.KeyExistsAsync(Services.WindowsHelloService.DefaultKeyName);
+
+            // Reflect the on/off toggle from the Windows credential store (the source of truth).
+            var toggle = GetElement<ModernWpf.Controls.ToggleSwitch>("PasskeyToggle");
+            if (toggle != null)
+            {
+                _suppressToggle = true;
+                toggle.IsEnabled = available;
+                toggle.IsOn = configured;
+                _suppressToggle = false;
+            }
+
             var badge = GetElement<System.Windows.Controls.TextBlock>("HelloStatusText");
             var border = GetElement<System.Windows.Controls.Border>("HelloStatusBadge");
             if (badge == null || border == null) return;
 
             if (available)
             {
-                var configured = await _hello.KeyExistsAsync(Services.WindowsHelloService.DefaultKeyName);
                 badge.Text = configured ? "Active" : "Available";
                 badge.Foreground = new System.Windows.Media.SolidColorBrush(
                     System.Windows.Media.Color.FromRgb(0x4A, 0xDE, 0x80));
@@ -230,6 +242,74 @@ public sealed partial class PasskeysPage : Page
             }
         }
         catch (Exception ex) { await ShowMsgAsync("Error", ex.Message); }
+    }
+
+    // Master on/off toggle for passkeys. Turning it on registers a key in the Windows credential
+    // store, which raises the native Windows Hello PIN / fingerprint / face dialog.
+    private async void PasskeyToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_suppressToggle) return;
+        if (sender is not ModernWpf.Controls.ToggleSwitch toggle) return;
+
+        if (!await _hello.IsAvailableAsync())
+        {
+            ToastService.Instance.Warning(
+                "Windows Hello isn't set up on this PC. Add a PIN or fingerprint in Windows Settings → Accounts → Sign-in options.",
+                "Windows Hello unavailable");
+            _suppressToggle = true; toggle.IsOn = false; _suppressToggle = false;
+            return;
+        }
+
+        if (toggle.IsOn)
+        {
+            // Enable — this call raises the Windows Hello dialog.
+            var result = await _hello.RegisterKeyAsync(Services.WindowsHelloService.DefaultKeyName);
+            if (result == Services.HelloResult.Success)
+            {
+                await SetPasskeysEnabledAsync(true);
+                ToastService.Instance.Success("Passkeys enabled — Windows Hello is now linked to VaultGuard.", "Passkeys on");
+            }
+            else
+            {
+                _suppressToggle = true; toggle.IsOn = false; _suppressToggle = false;
+                if (result == Services.HelloResult.Cancelled)
+                    ToastService.Instance.Info("Windows Hello setup was cancelled.");
+                else
+                    ToastService.Instance.Error("Could not set up Windows Hello. Please try again.");
+            }
+        }
+        else
+        {
+            await _hello.DeleteKeyAsync(Services.WindowsHelloService.DefaultKeyName);
+            await SetPasskeysEnabledAsync(false);
+            ToastService.Instance.Info("Passkeys disabled. Windows Hello is no longer linked.", "Passkeys off");
+        }
+
+        await RefreshHelloStatusAsync();
+    }
+
+    // Best-effort persistence of the user's passkey preference.
+    private async Task SetPasskeysEnabledAsync(bool enabled)
+    {
+        try
+        {
+            if (_serviceProvider == null) return;
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetService<PasswordManager.DAL.PasswordManagerDbContext>();
+            var auth = scope.ServiceProvider.GetService<IAuthService>();
+            var userId = auth?.CurrentUser?.Id;
+            if (db == null || string.IsNullOrEmpty(userId)) return;
+
+            var user = await db.Users.FindAsync(userId);
+            if (user != null)
+            {
+                user.PasskeysEnabled = enabled;
+                if (enabled && user.PasskeysEnabledAt == null)
+                    user.PasskeysEnabledAt = DateTime.UtcNow;
+                await db.SaveChangesAsync();
+            }
+        }
+        catch { /* preference persistence is best-effort */ }
     }
 
     private async void SetupHelloButton_Click(object sender, RoutedEventArgs e)

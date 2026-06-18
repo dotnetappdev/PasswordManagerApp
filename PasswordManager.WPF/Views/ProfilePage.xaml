@@ -3,7 +3,7 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:converters="clr-namespace:PasswordManager.WPF.Converters"
-      Background="#2D2D2D">
+      Background="{DynamicResource ModernSurfaceBrush}">
 
     <Page.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
@@ -95,8 +95,8 @@
 
             <!-- Profile Management Dialog -->
             <Border x:Name="ProfileManagementDialog"
-                    Background="#1A1A1A"
-                    BorderBrush="#4A4A4A"
+                    Background="{DynamicResource ModernCardBrush}"
+                    BorderBrush="{DynamicResource ModernBorderBrush}"
                     BorderThickness="1"
                    
                     Padding="24"
@@ -116,7 +116,7 @@
                                 Content="✕"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                Foreground="#B0B0B0"
+                                Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                 Click="CloseProfileManagementButton_Click"/>
                     </Grid>
 
@@ -133,8 +133,8 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button Background="#2D2D2D"
-                                            BorderBrush="#4A4A4A"
+                                    <Button Background="{DynamicResource ModernSurfaceBrush}"
+                                            BorderBrush="{DynamicResource ModernBorderBrush}"
                                             BorderThickness="1"
                                            
                                             HorizontalAlignment="Left"
@@ -156,7 +156,7 @@
                                                            Foreground="White"/>
                                                 <TextBlock Text="{Binding Email}"
                                                            FontSize="12"
-                                                           Foreground="#B0B0B0"/>
+                                                           Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                                             </StackPanel>
 
                                             <!-- Admin badge (visible when IsAdmin == true) -->
@@ -296,7 +296,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets"
                                       FontSize="18" VerticalAlignment="Center"
-                                      Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                      Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                             <StackPanel Grid.Column="1" Margin="14,0,14,0" VerticalAlignment="Center">
                                 <TextBlock Text="Master Password"
                                            Style="{StaticResource ModernBodyStyle}"/>
@@ -372,7 +372,7 @@
                                 Margin="4">
                             <TextBlock Text="47"
                                        Style="{StaticResource ModernHeading2Style}"
-                                       Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                       Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                        HorizontalAlignment="Center"/>
                             <TextBlock Text="Total Items"
                                        Style="{StaticResource ModernCaptionStyle}"

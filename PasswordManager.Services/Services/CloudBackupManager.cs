@@ -15,6 +15,9 @@ public class CloudBackupManager
     private readonly IiCloudBackupService _iCloudService;
     private readonly INetworkLocationBackupService _networkLocationService;
     private readonly IBackupSettingsService _backupSettingsService;
+    private readonly IGoogleDriveBackupService _googleDriveService;
+
+    public IGoogleDriveBackupService GoogleDrive => _googleDriveService;
 
     public CloudBackupManager(
         ILogger<CloudBackupManager> logger,
@@ -22,7 +25,8 @@ public class CloudBackupManager
         IOneDriveBackupService oneDriveService,
         IiCloudBackupService iCloudService,
         INetworkLocationBackupService networkLocationService,
-        IBackupSettingsService backupSettingsService)
+        IBackupSettingsService backupSettingsService,
+        IGoogleDriveBackupService googleDriveService)
     {
         _logger = logger;
         _databaseBackupService = databaseBackupService;
@@ -30,6 +34,7 @@ public class CloudBackupManager
         _iCloudService = iCloudService;
         _networkLocationService = networkLocationService;
         _backupSettingsService = backupSettingsService;
+        _googleDriveService = googleDriveService;
     }
 
     /// <summary>
@@ -44,8 +49,15 @@ public class CloudBackupManager
             {
                 Provider = CloudBackupProvider.OneDrive,
                 DisplayName = _oneDriveService.ServiceName,
-                IsAvailable = true, // Always show as available (authentication happens later)
+                IsAvailable = true,
                 MaxBackupSizeMB = _oneDriveService.MaxBackupSizeBytes / (1024 * 1024)
+            },
+            new CloudProviderInfo
+            {
+                Provider = CloudBackupProvider.GoogleDrive,
+                DisplayName = _googleDriveService.ServiceName,
+                IsAvailable = true,
+                MaxBackupSizeMB = _googleDriveService.MaxBackupSizeBytes / (1024 * 1024)
             },
             new CloudProviderInfo
             {
@@ -58,8 +70,8 @@ public class CloudBackupManager
             {
                 Provider = CloudBackupProvider.NetworkLocation,
                 DisplayName = _networkLocationService.ServiceName,
-                IsAvailable = true, // Always show as available (path can be configured)
-                MaxBackupSizeMB = 1000 // No specific limit for network locations
+                IsAvailable = true,
+                MaxBackupSizeMB = 1000
             }
         };
     }
@@ -187,6 +199,31 @@ public class CloudBackupManager
             return false;
         }
     }
+
+    /// <summary>
+    /// Download raw (still-encrypted) backup bytes for browse/selective restore.
+    /// </summary>
+    public async Task<byte[]?> DownloadBackupDataAsync(CloudBackupInfo backup)
+    {
+        try
+        {
+            var cloudService = GetCloudService(backup.Provider);
+            if (cloudService == null) return null;
+            var result = await cloudService.DownloadBackupAsync(backup.Id);
+            return result.Success ? result.BackupData : null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "DownloadBackupDataAsync failed");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Convenience overload: download + full restore using a CloudBackupInfo.
+    /// </summary>
+    public async Task<bool> DownloadAndRestoreBackupAsync(CloudBackupInfo backup, string masterPassword)
+        => await DownloadAndRestoreBackupAsync(backup.Provider, backup.Id, masterPassword);
 
     /// <summary>
     /// List backups from all providers
@@ -321,6 +358,7 @@ public class CloudBackupManager
         return provider switch
         {
             CloudBackupProvider.OneDrive => _oneDriveService,
+            CloudBackupProvider.GoogleDrive => _googleDriveService,
             CloudBackupProvider.iCloud => _iCloudService,
             CloudBackupProvider.NetworkLocation => _networkLocationService,
             _ => null

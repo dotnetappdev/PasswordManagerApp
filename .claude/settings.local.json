@@ -8,7 +8,9 @@
       "Bash(PLAYWRIGHT_BASE_URL=http://127.0.0.1:5099 dotnet test PasswordManager.Tests.Playwright/PasswordManager.Tests.Playwright.csproj --filter \"FullyQualifiedName~ApplicationWorkflowTests\" --logger \"console;verbosity=minimal\")",
       "Bash(Remove-Item -Recurse -Force \"E:/sassproducts/passwordmanagermergec/PasswordManagerApp/PasswordManager.App/obj\" -ErrorAction SilentlyContinue)",
       "Bash(Remove-Item -Recurse -Force \"E:/sassproducts/passwordmanagermergec/PasswordManagerApp/PasswordManager.Components.Shared/obj\" -ErrorAction SilentlyContinue)",
-      "Bash(Write-Host \"Done\")"
+      "Bash(Write-Host \"Done\")",
+      "PowerShell(Get-Process | Where-Object { $_.Name -match \"PasswordManager|dotnet\" } | Select-Object Id, Name, MainWindowTitle)",
+      "PowerShell(cd E:\\\\sassproducts\\\\passwordmanagermergec\\\\PasswordManagerApp; Stop-Process -Name \"PasswordManager.WPF\" -Force -ErrorAction SilentlyContinue; Start-Sleep 1; dotnet build PasswordManager.WPF/PasswordManager.WPF.csproj --no-restore -v quiet 2>&1 | Where-Object { $_ -match \"error CS\" } | Select-Object -First 15)"
     ]
   }
 }

@@ -190,6 +190,16 @@ builder.Services.AddScoped<IAuditLogService, PasswordManager.Services.Services.A
 builder.Services.AddScoped<ITwoFactorService, PasswordManager.Services.Services.TwoFactorService>();
 builder.Services.AddScoped<IDeviceService, PasswordManager.Services.Services.DeviceService>();
 
+// Cloud backup services
+builder.Services.AddScoped<PasswordManager.Services.Interfaces.IBackupEncryptionService, PasswordManager.Services.Services.BackupEncryptionService>();
+builder.Services.AddScoped<PasswordManager.Services.Interfaces.IDatabaseBackupService, PasswordManager.Services.Services.DatabaseBackupService>();
+builder.Services.AddScoped<PasswordManager.Services.Interfaces.IOneDriveBackupService, PasswordManager.Services.Services.OneDriveBackupService>();
+builder.Services.AddScoped<PasswordManager.Services.Interfaces.IiCloudBackupService, PasswordManager.Services.Services.iCloudBackupService>();
+builder.Services.AddScoped<PasswordManager.Services.Interfaces.INetworkLocationBackupService, PasswordManager.Services.Services.NetworkLocationBackupService>();
+builder.Services.AddSingleton<PasswordManager.Services.Interfaces.IGoogleDriveBackupService, PasswordManager.Services.Services.GoogleDriveBackupService>();
+builder.Services.AddScoped<PasswordManager.Services.Interfaces.IBackupSettingsService, PasswordManager.Services.Services.BackupSettingsService>();
+builder.Services.AddScoped<PasswordManager.Services.Services.CloudBackupManager>();
+
 // Register password import services (1Password 1pux/CSV, Bitwarden, etc.)
 builder.Services.AddSingleton<PasswordManager.Imports.Services.PluginDiscoveryService>();
 builder.Services.AddScoped<PasswordManager.Imports.Interfaces.IImportService, PasswordManager.Imports.Services.ImportService>();

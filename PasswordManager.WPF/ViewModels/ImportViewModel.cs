@@ -3,12 +3,14 @@ using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Imports.Interfaces;
 using PasswordManager.Models;
+using PasswordManager.Services.Interfaces;
 
 namespace PasswordManager.WPF.ViewModels;
 
 public class ImportViewModel : BaseViewModel
 {
     private readonly IImportService _importService;
+    private readonly IServiceProvider _serviceProvider;
     private string _selectedFilePath = string.Empty;
     private string _importStatus = string.Empty;
     private string _selectedImportType = string.Empty;
@@ -16,9 +18,11 @@ public class ImportViewModel : BaseViewModel
     private int _importedItemsCount = 0;
     private int _skippedItemsCount = 0;
     private int _errorItemsCount = 0;
+    private int _importProgress = 0;
 
     public ImportViewModel(IServiceProvider serviceProvider)
     {
+        _serviceProvider = serviceProvider;
         _importService = serviceProvider.GetRequiredService<IImportService>();
 
         ImportResults = new ObservableCollection<ImportResultItem>();
@@ -108,12 +112,55 @@ public class ImportViewModel : BaseViewModel
         set => SetProperty(ref _errorItemsCount, value);
     }
 
+    public int ImportProgress
+    {
+        get => _importProgress;
+        set
+        {
+            SetProperty(ref _importProgress, value);
+            OnPropertyChanged(nameof(ImportProgressText));
+        }
+    }
+
+    public string ImportProgressText => _importProgress > 0 ? $"{_importProgress}%" : string.Empty;
+
     public ObservableCollection<ImportResultItem> ImportResults { get; }
     public List<string> AvailableImportTypes { get; }
 
     public bool HasResults => ImportResults.Count > 0;
     public bool HasImportCompleted => ImportedItemsCount > 0 || SkippedItemsCount > 0 || ErrorItemsCount > 0;
     public bool HasNoImport => !IsLoading && !HasImportCompleted && ImportResults.Count == 0;
+
+    // Completion banner properties
+    public string CompletionBannerColor => ErrorItemsCount > 0 && ImportedItemsCount == 0
+        ? "#EF4444"  // red — all failed
+        : ErrorItemsCount > 0
+            ? "#F59E0B"  // amber — partial
+            : "#10B981"; // green — all good
+
+    public string CompletionIcon => ErrorItemsCount > 0 && ImportedItemsCount == 0
+        ? ""   // Error
+        : ErrorItemsCount > 0
+            ? ""  // Warning
+            : ""; // CheckMark
+
+    public string CompletionTitle => ErrorItemsCount > 0 && ImportedItemsCount == 0
+        ? "Import failed"
+        : ErrorItemsCount > 0
+            ? $"Import completed with {ErrorItemsCount} error{(ErrorItemsCount == 1 ? "" : "s")}"
+            : $"Import complete — {ImportedItemsCount} item{(ImportedItemsCount == 1 ? "" : "s")} added";
+
+    public string CompletionSubtitle
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (ImportedItemsCount > 0) parts.Add($"{ImportedItemsCount} imported");
+            if (SkippedItemsCount > 0)  parts.Add($"{SkippedItemsCount} skipped");
+            if (ErrorItemsCount > 0)    parts.Add($"{ErrorItemsCount} failed");
+            return string.Join(" · ", parts);
+        }
+    }
 
     private void UpdateCanImport()
     {
@@ -130,6 +177,7 @@ public class ImportViewModel : BaseViewModel
             IsLoading = true;
             CanImport = false;
             ImportStatus = "Starting import...";
+            ImportProgress = 0;
 
             // Clear previous results
             ImportResults.Clear();
@@ -159,29 +207,74 @@ public class ImportViewModel : BaseViewModel
 
             ImportStatus = $"Importing from {SelectedImportType}...";
 
-            // Perform import
+            // Resolve the current user so imported items are owned by (and visible to) them.
+            // Without this the items are saved with no UserId and never appear in the user-filtered list.
+            string? userId = null;
+            try
+            {
+                var authService = _serviceProvider.GetService<PasswordManager.Services.Interfaces.IAuthService>();
+                userId = authService?.CurrentUser?.Id;
+                if (string.IsNullOrEmpty(userId) && authService != null)
+                    userId = await authService.GetCurrentUserIdAsync();
+            }
+            catch { /* fall back to null — import still runs */ }
+
+            // Perform import (report a live percentage in the status text)
             using var fileStream = new FileStream(SelectedFilePath, FileMode.Open, FileAccess.Read);
             var fileName = Path.GetFileName(SelectedFilePath);
-            var result = await _importService.ImportPasswordsAsync(providerName, fileStream, fileName);
+            var progress = new System.Progress<int>(p =>
+            {
+                ImportProgress = p;
+                ImportStatus = p >= 100 ? "Saving to vault…" : $"Processing items… {p}%";
+            });
+            // Get the current vault session so the import service can encrypt passwords
+            string? sessionId = null;
+            try
+            {
+                var secureStorage = _serviceProvider.GetService<ISecureStorageService>();
+                if (secureStorage != null)
+                    sessionId = await secureStorage.GetAsync("sessionId");
+            }
+            catch { }
+
+            var result = await _importService.ImportPasswordsAsync(providerName, fileStream, fileName, userId, progress, sessionId);
 
             // Process results
             if (result.Success)
             {
+                // Show successfully saved items
+                var successCount = result.SuccessfulImports;
+                var itemIndex = 0;
                 foreach (var item in result.ImportedItems)
                 {
-                    var resultItem = new ImportResultItem
+                    if (itemIndex < successCount)
                     {
-                        Title = item.Title ?? "Unknown",
-                        Status = "Success",
-                        Message = "Imported successfully",
-                        ItemType = item.Type.ToString()
-                    };
-                    ImportResults.Add(resultItem);
+                        ImportResults.Add(new ImportResultItem
+                        {
+                            Title = item.Title ?? "Unknown",
+                            Status = "Success",
+                            Message = "Imported successfully",
+                            ItemType = item.Type.ToString()
+                        });
+                    }
+                    itemIndex++;
+                }
+
+                // Show per-item failures from warnings
+                foreach (var warning in result.Warnings)
+                {
+                    ImportResults.Add(new ImportResultItem
+                    {
+                        Title = ExtractTitleFromWarning(warning),
+                        Status = "Error",
+                        Message = warning,
+                        ItemType = "N/A"
+                    });
                 }
 
                 ImportedItemsCount = result.SuccessfulImports;
                 ErrorItemsCount = result.FailedImports;
-                SkippedItemsCount = result.TotalItemsProcessed - result.SuccessfulImports - result.FailedImports;
+                SkippedItemsCount = Math.Max(0, result.TotalItemsProcessed - result.SuccessfulImports - result.FailedImports);
             }
             else
             {
@@ -196,10 +289,15 @@ public class ImportViewModel : BaseViewModel
                 ErrorItemsCount = 1;
             }
 
-            ImportStatus = $"Import completed. {ImportedItemsCount} imported, {SkippedItemsCount} skipped, {ErrorItemsCount} errors.";
+            ImportProgress = 100;
+            ImportStatus = $"Done — {ImportedItemsCount} imported, {SkippedItemsCount} skipped, {ErrorItemsCount} errors.";
 
             OnPropertyChanged(nameof(HasResults));
             OnPropertyChanged(nameof(HasImportCompleted));
+            OnPropertyChanged(nameof(CompletionBannerColor));
+            OnPropertyChanged(nameof(CompletionIcon));
+            OnPropertyChanged(nameof(CompletionTitle));
+            OnPropertyChanged(nameof(CompletionSubtitle));
 
             return ImportedItemsCount > 0;
         }
@@ -221,11 +319,22 @@ public class ImportViewModel : BaseViewModel
         ImportedItemsCount = 0;
         SkippedItemsCount = 0;
         ErrorItemsCount = 0;
+        ImportProgress = 0;
         ImportStatus = string.Empty;
 
         OnPropertyChanged(nameof(HasResults));
         OnPropertyChanged(nameof(HasImportCompleted));
         OnPropertyChanged(nameof(HasNoImport));
+    }
+
+    private static string ExtractTitleFromWarning(string warning)
+    {
+        // Warnings look like "Failed to import 'Title': reason"
+        var start = warning.IndexOf('\'');
+        var end = warning.IndexOf('\'', start + 1);
+        if (start >= 0 && end > start)
+            return warning[(start + 1)..end];
+        return "Item";
     }
 }
 

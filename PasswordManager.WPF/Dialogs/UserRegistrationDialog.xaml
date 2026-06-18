@@ -107,7 +107,7 @@
                                 Style="{StaticResource FieldBorderStyle}">
                             <TextBox x:Name="FirstNameTextBox" x:FieldModifier="private"
                                      BorderThickness="0" FontSize="14"
-                                     Foreground="#F0F2FF"
+                                     Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                      ui:ControlHelper.PlaceholderText="Enter your first name"
                                      TextChanged="FirstNameTextBox_TextChanged">
                                 <TextBox.Background><SolidColorBrush Color="#1E2130"/></TextBox.Background>
@@ -124,7 +124,7 @@
                                 Style="{StaticResource FieldBorderStyle}">
                             <TextBox x:Name="LastNameTextBox" x:FieldModifier="private"
                                      BorderThickness="0" FontSize="14"
-                                     Foreground="#F0F2FF"
+                                     Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                      ui:ControlHelper.PlaceholderText="Enter your last name"
                                      TextChanged="LastNameTextBox_TextChanged">
                                 <TextBox.Background><SolidColorBrush Color="#1E2130"/></TextBox.Background>
@@ -141,7 +141,7 @@
                                 Style="{StaticResource FieldBorderStyle}">
                             <TextBox x:Name="EmailTextBox" x:FieldModifier="private"
                                      BorderThickness="0" FontSize="14"
-                                     Foreground="#F0F2FF"
+                                     Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                      ui:ControlHelper.PlaceholderText="you@example.com"
                                      TextChanged="EmailTextBox_TextChanged">
                                 <TextBox.Background><SolidColorBrush Color="#1E2130"/></TextBox.Background>
@@ -245,7 +245,7 @@
                             </Border>
                         </Grid>
                         <TextBlock x:Name="PasswordStrengthText" x:FieldModifier="private"
-                                   FontSize="11" Foreground="#6B7280"/>
+                                   FontSize="11" Foreground="{DynamicResource ModernTextTertiaryBrush}"/>
                     </StackPanel>
 
                     <!-- Requirements checklist -->
@@ -319,7 +319,7 @@
                         <Border Style="{StaticResource FieldBorderStyle}">
                             <TextBox x:Name="PasswordHintTextBox" x:FieldModifier="private"
                                      BorderThickness="0" FontSize="14"
-                                     Foreground="#F0F2FF"
+                                     Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                      ui:ControlHelper.PlaceholderText="A clue to jog your memory">
                                 <TextBox.Background><SolidColorBrush Color="#1E2130"/></TextBox.Background>
                             </TextBox>
@@ -391,7 +391,7 @@
                     </StackPanel>
 
                     <!-- Role description -->
-                    <Border Background="{StaticResource ModernSurfaceBrush}" CornerRadius="8" BorderBrush="{StaticResource ModernBorderBrush}"
+                    <Border Background="{DynamicResource ModernSurfaceBrush}" CornerRadius="8" BorderBrush="{DynamicResource ModernBorderBrush}"
                             BorderThickness="1" Padding="12,10">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets"

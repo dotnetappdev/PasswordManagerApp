@@ -336,10 +336,10 @@ public sealed partial class LoginPage : Page
             if (authProgressRing != null) authProgressRing.IsActive = true;
 
             // Read from whichever field is active (hidden PasswordBox or visible TextBox)
-            _viewModel.MasterPassword = _showMasterPassword
+            _viewModel.MasterPassword = (_showMasterPassword
                 ? (MasterPasswordVisibleBox?.Text ?? string.Empty)
-                : (masterPasswordBox?.Password ?? string.Empty);
-            _viewModel.ConfirmMasterPassword = confirmPasswordBox?.Password ?? string.Empty;
+                : (masterPasswordBox?.Password ?? string.Empty)).Trim();
+            _viewModel.ConfirmMasterPassword = (confirmPasswordBox?.Password ?? string.Empty).Trim();
             _viewModel.PasswordHint = passwordHintBox?.Text ?? string.Empty;
 
 

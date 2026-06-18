@@ -2,7 +2,7 @@
 <Page x:Class="PasswordManager.WPF.Views.ManageItemsPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Background="{StaticResource ModernBackgroundBrush}">
+      Background="{DynamicResource ModernBackgroundBrush}">
 
     <ScrollViewer>
         <StackPanel Margin="0,0,0,24">
@@ -67,7 +67,7 @@
                                         Margin="0,1,10,1" VerticalAlignment="Stretch"/>
                                 <TextBlock Grid.Column="1" Text="Collections"
                                            FontSize="16" FontWeight="SemiBold"
-                                           Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                           Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                             </Grid>
                             <TextBlock Text="Categories to organize your password items"
                                       Style="{StaticResource ModernCaptionStyle}" Margin="13,0,0,0"/>
@@ -117,10 +117,10 @@
                                         <TextBlock Text="{Binding Name}" 
                                                   FontSize="14"
                                                   FontWeight="SemiBold"
-                                                  Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                                  Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                                         <TextBlock Text="{Binding Description}" 
                                                   FontSize="12"
-                                                  Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                                  Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                                   Visibility="{Binding Description, Converter={StaticResource StringToVisibilityConverter}}"/>
                                     </StackPanel>
                                     
@@ -133,7 +133,7 @@
                                                Padding="8"
                                               
                                                Click="EditCollectionButton_Click">
-                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                                         </Button>
                                         <Button Background="Transparent"
                                                BorderThickness="0"
@@ -170,7 +170,7 @@
                                         Margin="0,1,10,1" VerticalAlignment="Stretch"/>
                                 <TextBlock Grid.Column="1" Text="Types"
                                            FontSize="16" FontWeight="SemiBold"
-                                           Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                           Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                             </Grid>
                             <TextBlock Text="Item types like Login, Credit Card, Secure Note, etc."
                                       Style="{StaticResource ModernCaptionStyle}" Margin="13,0,0,0"/>
@@ -201,7 +201,7 @@
                                     </Grid.ColumnDefinitions>
                                     
                                     <Border Grid.Column="0"
-                                           Background="#2D2D2D"
+                                           Background="{DynamicResource ModernSurfaceBrush}"
                                           
                                            Width="24"
                                            Height="24"
@@ -220,7 +220,7 @@
                                         <TextBlock Text="{Binding}" 
                                                   FontSize="14"
                                                   FontWeight="SemiBold"
-                                                  Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                                  Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                                     </StackPanel>
                                     
                                     <StackPanel Grid.Column="2" 
@@ -232,7 +232,7 @@
                                                Padding="8"
                                               
                                                Click="EditTypeButton_Click">
-                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                                         </Button>
                                         <Button Background="Transparent"
                                                BorderThickness="0"
@@ -269,7 +269,7 @@
                                         Margin="0,1,10,1" VerticalAlignment="Stretch"/>
                                 <TextBlock Grid.Column="1" Text="Tags"
                                            FontSize="16" FontWeight="SemiBold"
-                                           Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                           Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                             </Grid>
                             <TextBlock Text="Labels to organize items like Work, Personal, Finance, etc."
                                       Style="{StaticResource ModernCaptionStyle}" Margin="13,0,0,0"/>
@@ -319,10 +319,10 @@
                                         <TextBlock Text="{Binding Name}" 
                                                   FontSize="14"
                                                   FontWeight="SemiBold"
-                                                  Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                                  Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                                         <TextBlock Text="{Binding Description}" 
                                                   FontSize="12"
-                                                  Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                                  Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                                   Visibility="{Binding Description, Converter={StaticResource StringToVisibilityConverter}}"/>
                                     </StackPanel>
                                     
@@ -335,7 +335,7 @@
                                                Padding="8"
                                               
                                                Click="EditTagButton_Click">
-                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                                         </Button>
                                         <Button Background="Transparent"
                                                BorderThickness="0"

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  VaultGuard Password Manager — WiX v4 MSI
+  Build with:
+    wix build setup.wxs -ext WixToolset.UI.wixext \
+        -d Version=1.0.0 -d PublishDir=..\publish\wpf \
+        -o output\VaultGuardSetup-1.0.0.msi
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package Name="VaultGuard Password Manager"
+           Manufacturer="VaultGuard"
+           Version="$(var.Version)"
+           UpgradeCode="7F2B3A4C-9E5D-4F6B-B8C1-3D0E2A5F7B90"
+           Language="1033"
+           Codepage="1252"
+           InstallerVersion="500"
+           Scope="perUser">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of VaultGuard is already installed." />
+
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="INSTALLFOLDER" Name="VaultGuard" />
+    </StandardDirectory>
+
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Component Id="MainExecutable">
+        <File Id="MainExe"
+              Source="$(var.PublishDir)\PasswordManager.WPF.exe"
+              KeyPath="yes">
+          <Shortcut Id="DesktopShortcut"
+                    Directory="DesktopFolder"
+                    Name="VaultGuard"
+                    Advertise="no"
+                    WorkingDirectory="INSTALLFOLDER" />
+          <Shortcut Id="StartMenuShortcut"
+                    Directory="ProgramMenuFolder"
+                    Name="VaultGuard"
+                    Advertise="no"
+                    WorkingDirectory="INSTALLFOLDER" />
+        </File>
+      </Component>
+      <!-- Harvest remaining publish output files via heat / build tooling.
+           For CI use the Wix heat tool to auto-harvest or list files here. -->
+      <Component Id="AllOtherFiles" Guid="*">
+        <File Source="$(var.PublishDir)\PasswordManager.WPF.dll" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <Feature Id="ProductFeature" Title="VaultGuard" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+    </Feature>
+
+  </Package>
+</Wix>

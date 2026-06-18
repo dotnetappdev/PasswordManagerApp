@@ -5,7 +5,7 @@
       xmlns:ui="http://schemas.modernwpf.com/2019"
       xmlns:converters="clr-namespace:PasswordManager.WPF.Converters"
       xmlns:models="clr-namespace:PasswordManager.Models;assembly=PasswordManager.Models"
-      Background="{StaticResource ModernBackgroundBrush}">
+      Background="{DynamicResource ModernBackgroundBrush}">
 
     <Page.Resources>
         <converters:WebsiteToColorConverter x:Key="WebsiteToColorConverter"/>
@@ -22,9 +22,9 @@
 
         <!-- Toolbar Row -->
     <Border Grid.Row="0" 
-        Background="{StaticResource ModernCardBrush}" 
+        Background="{DynamicResource ModernCardBrush}" 
                 BorderThickness="0,0,0,1" 
-                BorderBrush="{StaticResource ModernBorderBrush}">
+                BorderBrush="{DynamicResource ModernBorderBrush}">
             <Grid Margin="16,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -82,8 +82,8 @@
                       IsEnabled="{Binding AllPasswordItems.Count, Converter={StaticResource NotZeroToBoolConverter}}">
                   <!-- Note: WPF doesn't support Button.Flyout. Functionality moved to Click event handler -->
                   <StackPanel Orientation="Horizontal" Margin="8">
-                      <TextBlock Text="&#xE71D;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource ModernTextPrimaryBrush}"/>
-                      <TextBlock Text="Sort" Foreground="{StaticResource ModernTextPrimaryBrush}" />
+                      <TextBlock Text="&#xE71D;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                      <TextBlock Text="Sort" Foreground="{DynamicResource ModernTextPrimaryBrush}" />
                   </StackPanel>
               </Button>
 
@@ -98,11 +98,11 @@
                    
                     Padding="16,8">
                 <StackPanel Orientation="Horizontal" Margin="8">
-                    <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                    <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                     <TextBlock Text="Edit" 
                               FontWeight="SemiBold" 
                               FontSize="14"
-                              Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                              Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                 </StackPanel>
             </Border>
         </ControlTemplate>
@@ -139,7 +139,7 @@
                         <TextBlock Text="All Items" 
                                   FontWeight="SemiBold" 
                                   FontSize="14"
-                                  Foreground="{StaticResource ModernTextTertiaryBrush}"/>
+                                  Foreground="{DynamicResource ModernTextTertiaryBrush}"/>
                     </Border>
                     
                     <!-- Items List -->
@@ -194,7 +194,7 @@
                                             <TextBlock Text="{Binding Title}" 
                                                       FontWeight="SemiBold" 
                                                       FontSize="14"
-                                                      Foreground="{StaticResource ModernTextTertiaryBrush}"
+                                                      Foreground="{DynamicResource ModernTextTertiaryBrush}"
                                                       TextTrimming="CharacterEllipsis"/>
                                             <TextBlock Text="{Binding Username, FallbackValue='No username'}" 
                                                       FontSize="12"
@@ -229,7 +229,7 @@
 
             <!-- Column 2: Password Detail / Edit Form -->
             <Border Grid.Column="1" 
-                    Background="{StaticResource ModernBackgroundBrush}">
+                    Background="{DynamicResource ModernBackgroundBrush}">
                 
                 <ScrollViewer VerticalScrollBarVisibility="Auto" 
                              HorizontalScrollBarVisibility="Disabled"
@@ -242,7 +242,7 @@
 
                             <!-- Title -->
                             <StackPanel Margin="8">
-                                <TextBlock Text="Title" FontSize="12" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                <TextBlock Text="Title" FontSize="12" Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                                 <TextBox Text="{Binding EditItem.Title, Mode=TwoWay}" Style="{StaticResource ModernTextBoxStyle}"/>
                             </StackPanel>
 
@@ -253,7 +253,7 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" Margin="8">
-                                    <TextBlock Text="Type" FontSize="12" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                    <TextBlock Text="Type" FontSize="12" Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                                     <ComboBox SelectedValue="{Binding EditItem.Type, Mode=TwoWay}" SelectedValuePath="Tag" Style="{StaticResource ModernComboBoxStyle}">
                                         <ComboBoxItem Content="Login" Tag="{Binding models:ItemType.Login, Mode=OneTime}"/>
                                         <ComboBoxItem Content="Credit Card" Tag="{Binding models:ItemType.CreditCard, Mode=OneTime}"/>
@@ -268,19 +268,19 @@
 
                             <!-- Username -->
                             <StackPanel Margin="8">
-                                <TextBlock Text="Username" FontSize="12" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                <TextBlock Text="Username" FontSize="12" Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                                 <TextBox Text="{Binding EditItem.Username, Mode=TwoWay}" Style="{StaticResource ModernTextBoxStyle}"/>
                             </StackPanel>
 
                             <!-- Password -->
                             <StackPanel Margin="8">
-                                <TextBlock Text="Password" FontSize="12" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                <TextBlock Text="Password" FontSize="12" Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                                 <PasswordBox x:Name="InlinePasswordBox" PasswordChanged="InlinePasswordBox_PasswordChanged" Style="{StaticResource ModernPasswordBoxStyle}"/>
                             </StackPanel>
 
                             <!-- Website -->
                             <StackPanel Margin="8">
-                                <TextBlock Text="Website" FontSize="12" Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                <TextBlock Text="Website" FontSize="12" Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                                 <TextBox Text="{Binding EditItem.Website, Mode=TwoWay}" Style="{StaticResource ModernTextBoxStyle}"/>
                             </StackPanel>
 
@@ -332,10 +332,10 @@
                                 <TextBlock Text="{Binding SelectedPasswordItem.Title}" 
                                           FontWeight="Bold" 
                                           FontSize="18"
-                                          Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                          Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                                 <TextBlock Text="{Binding SelectedPasswordItem.Website, FallbackValue='No website'}" 
                                           FontSize="14"
-                                          Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                          Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                             </StackPanel>
                             
                             <!-- Favorite Toggle -->
@@ -360,7 +360,7 @@
                                 <TextBlock Grid.Column="0" 
                                           Text="username" 
                                           FontSize="12"
-                                          Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                          Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                           VerticalAlignment="Center"/>
                                 
                                 <TextBox Grid.Column="1" 
@@ -386,7 +386,7 @@
                                 <TextBlock Grid.Column="0" 
                                           Text="password" 
                                           FontSize="12"
-                                          Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                          Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                           VerticalAlignment="Center"/>
                                 
                                 <PasswordBox Grid.Column="1"
@@ -417,7 +417,7 @@
                                 <TextBlock Grid.Column="0" 
                                           Text="website" 
                                           FontSize="12"
-                                          Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                          Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                           VerticalAlignment="Center"/>
                                 
                                 <TextBox Grid.Column="1" 
@@ -436,12 +436,12 @@
                         <!-- Metadata -->
                         <StackPanel Margin="8">
                             <Rectangle Height="1" 
-                                      Fill="{StaticResource ModernBorderBrush}"/>
+                                      Fill="{DynamicResource ModernBorderBrush}"/>
                             
                             <TextBlock Text="ITEM INFORMATION" 
                                       FontSize="12" 
                                       FontWeight="SemiBold"
-                                      Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                      Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                             
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -452,19 +452,19 @@
                                 <StackPanel Grid.Column="0" Margin="4">
                                     <TextBlock Text="Created" 
                                               FontSize="12" 
-                                              Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                              Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                                     <TextBlock Text="{Binding SelectedPasswordItem.CreatedAt, Converter={StaticResource DateFormatConverter}}" 
                                               FontSize="12"
-                                              Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                              Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                                 </StackPanel>
                                 
                                 <StackPanel Grid.Column="1" Margin="4">
                                     <TextBlock Text="Modified" 
                                               FontSize="12" 
-                                              Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                              Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                                     <TextBlock Text="{Binding SelectedPasswordItem.LastModified, Converter={StaticResource DateFormatConverter}}" 
                                               FontSize="12"
-                                              Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                              Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
@@ -478,10 +478,10 @@
                                Visibility="{Binding SelectedPasswordItem, Converter={StaticResource NotNullToInvertedVisibilityConverter}}">
                         <TextBlock Text="&#xE8F1;" FontFamily="Segoe MDL2 Assets" 
                                  FontSize="48" 
-                                 Foreground="{StaticResource ModernTextTertiaryBrush}"/>
+                                 Foreground="{DynamicResource ModernTextTertiaryBrush}"/>
                         <TextBlock Text="Select an item to view details" 
                                   FontSize="16"
-                                  Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                  Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                   HorizontalAlignment="Center"/>
                     </StackPanel>
                     

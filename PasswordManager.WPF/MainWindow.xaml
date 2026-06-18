@@ -5,11 +5,11 @@
         xmlns:controls="clr-namespace:PasswordManager.WPF.Controls"
         PreviewKeyDown="MainWindow_PreviewKeyDown">
 
-    <Grid Background="{StaticResource ModernBackgroundBrush}">
+    <Grid Background="{DynamicResource ModernBackgroundBrush}">
         <!-- Login Frame (shown during authentication) -->
         <Frame x:Name="LoginFrame"
                x:FieldModifier="private"
-               Background="{StaticResource ModernBackgroundBrush}"
+               Background="{DynamicResource ModernBackgroundBrush}"
                NavigationUIVisibility="Hidden"
                Visibility="Visible"
                Navigated="Frame_Navigated"/>
@@ -36,22 +36,22 @@
                     <Border Padding="16,14,16,10">
                         <StackPanel Orientation="Horizontal">
                             <Border Width="28" Height="28" CornerRadius="6"
-                                    Background="#2D2D2D"
-                                    BorderBrush="#3A3A3A" BorderThickness="1"
+                                    Background="{DynamicResource ModernSurfaceBrush}"
+                                    BorderBrush="{DynamicResource ModernBorderBrush}" BorderThickness="1"
                                     Margin="0,0,10,0">
                                 <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
-                                           FontSize="14" Foreground="#D1D5DB"
+                                           FontSize="14" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Password Manager"
                                        FontSize="14" FontWeight="SemiBold"
-                                       Foreground="{StaticResource ModernTextPrimaryBrush}"
+                                       Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
 
                     <!-- hairline divider -->
-                    <Border Height="1" Background="#FF3A3A3A" Margin="12,0"/>
+                    <Border Height="1" Background="{DynamicResource ModernBorderBrush}" Margin="12,0"/>
 
                     <!-- Profile button -->
                     <Button x:Name="ProfileButton"
@@ -68,7 +68,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <Border Grid.Column="0" Width="32" Height="32" CornerRadius="16"
-                                    Background="#383838"
+                                    Background="{DynamicResource ModernElevatedSurfaceBrush}"
                                     Margin="0,0,10,0">
                                 <TextBlock x:Name="UserAvatarText" Text="?"
                                            FontSize="13" FontWeight="SemiBold"
@@ -80,14 +80,14 @@
                                 <TextBlock x:Name="UserNameText"
                                            Text="My Account"
                                            FontSize="13" FontWeight="Medium"
-                                           Foreground="{StaticResource ModernTextPrimaryBrush}"/>
+                                           Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                                 <TextBlock Text="Personal Vault"
                                            FontSize="11"
-                                           Foreground="{StaticResource ModernTextSecondaryBrush}"/>
+                                           Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                             </StackPanel>
                             <TextBlock Grid.Column="2" Text="&#xE019;"
                                        FontFamily="Segoe MDL2 Assets" FontSize="10"
-                                       Foreground="{StaticResource ModernTextSecondaryBrush}"
+                                       Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                        VerticalAlignment="Center"/>
                         </Grid>
                     </Button>
@@ -113,29 +113,21 @@
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="Bd"
                                             CornerRadius="6" Padding="10,6"
-                                            BorderThickness="1">
-                                        <Border.Background><SolidColorBrush Color="#2D2D2D"/></Border.Background>
-                                        <Border.BorderBrush><SolidColorBrush Color="#454545"/></Border.BorderBrush>
+                                            BorderThickness="0"
+                                            Background="{DynamicResource ModernPrimaryBrush}">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                             <TextBlock Text="&#xE109;" FontFamily="Segoe MDL2 Assets"
-                                                       FontSize="12" Foreground="#B0B0B0" Margin="0,0,6,0"/>
-                                            <TextBlock Text="New Item" Foreground="#E5E5E5"
+                                                       FontSize="12" Foreground="White" Margin="0,0,6,0"/>
+                                            <TextBlock Text="New Item" Foreground="White"
                                                        FontSize="13" FontWeight="Medium"/>
                                         </StackPanel>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="Background">
-                                                <Setter.Value><SolidColorBrush Color="#3A3A3A"/></Setter.Value>
-                                            </Setter>
-                                            <Setter TargetName="Bd" Property="BorderBrush">
-                                                <Setter.Value><SolidColorBrush Color="#555555"/></Setter.Value>
-                                            </Setter>
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ModernPrimaryDarkBrush}"/>
                                         </Trigger>
                                         <Trigger Property="IsPressed" Value="True">
-                                            <Setter TargetName="Bd" Property="Background">
-                                                <Setter.Value><SolidColorBrush Color="#272727"/></Setter.Value>
-                                            </Setter>
+                                            <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -144,7 +136,7 @@
                     </Border>
 
                     <!-- hairline divider -->
-                    <Border Height="1" Background="#FF2B2B2B" Margin="0,0"/>
+                    <Border Height="1" Background="{DynamicResource ModernBorderBrush}" Margin="0,0"/>
 
                 </StackPanel>
             </ui:NavigationView.PaneHeader>
@@ -155,7 +147,7 @@
                 <!-- ── Quick Access ── -->
                 <ui:NavigationViewItem x:Name="AllItemsNavItem"
                                        Content="All Items"
-                                       Background="#FF2B2B2B"
+                                       Background="{DynamicResource ModernBorderBrush}"
                                        Tag="AllItems"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
@@ -171,8 +163,8 @@
                 </ui:NavigationViewItem>
 
                 <!-- ── Categories ── -->
-                <ui:NavigationViewItemSeparator Background="#FF2B2B2B"/>
-                <ui:NavigationViewItemHeader Foreground="#6B7280" Content="Categories"/>
+                <ui:NavigationViewItemSeparator Background="{DynamicResource ModernBorderBrush}"/>
+                <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="Categories"/>
 
                 <ui:NavigationViewItem Content="Logins" Tag="LoginCategory"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
@@ -210,8 +202,8 @@
                 </ui:NavigationViewItem>
 
                 <!-- ── Security ── -->
-                <ui:NavigationViewItemSeparator Background="#FF2B2B2B"/>
-                <ui:NavigationViewItemHeader Foreground="#6B7280" Content="Security"/>
+                <ui:NavigationViewItemSeparator Background="{DynamicResource ModernBorderBrush}"/>
+                <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="Security"/>
 
                 <ui:NavigationViewItem Content="Passkeys" Tag="Passkeys"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
@@ -235,8 +227,8 @@
                 </ui:NavigationViewItem>
 
                 <!-- ── Manage ── -->
-                <ui:NavigationViewItemSeparator Background="#FF2B2B2B"/>
-                <ui:NavigationViewItemHeader Foreground="#6B7280" Content="Manage"/>
+                <ui:NavigationViewItemSeparator Background="{DynamicResource ModernBorderBrush}"/>
+                <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="Manage"/>
 
                 <ui:NavigationViewItem Content="Manage Categories" Tag="Categories"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
@@ -253,8 +245,8 @@
                 </ui:NavigationViewItem>
 
                 <!-- ── More (moved from pinned footer so everything scrolls together) ── -->
-                <ui:NavigationViewItemSeparator Background="#FF2B2B2B"/>
-                <ui:NavigationViewItemHeader Foreground="#6B7280" Content="More"/>
+                <ui:NavigationViewItemSeparator Background="{DynamicResource ModernBorderBrush}"/>
+                <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="More"/>
 
                 <ui:NavigationViewItem Content="Archive" Tag="Archive"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
@@ -290,7 +282,7 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="170" Margin="0,0,0,4">
                 <StackPanel Margin="0,0,0,8">
                     <!-- hairline divider -->
-                    <Border Height="1" Background="#FF3A3A3A" Margin="0,4"/>
+                    <Border Height="1" Background="{DynamicResource ModernBorderBrush}" Margin="0,4"/>
 
                     <!-- Dynamic favourite categories -->
                     <Grid Margin="16,6,8,2">
@@ -299,14 +291,14 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="VAULTS" FontSize="10" FontWeight="SemiBold"
-                                   Foreground="{StaticResource ModernTextTertiaryBrush}"
+                                   Foreground="{DynamicResource ModernTextTertiaryBrush}"
                                    VerticalAlignment="Center"/>
                         <Button Grid.Column="1" Background="Transparent" BorderThickness="0"
                                 Padding="4" MinWidth="0" MinHeight="0"
                                 ToolTipService.ToolTip="Add Category"
                                 Click="AddCategoryNavButton_Click">
                             <TextBlock Text="&#xE109;" FontFamily="Segoe MDL2 Assets" FontSize="12"
-                                       Foreground="{StaticResource ModernTextTertiaryBrush}"/>
+                                       Foreground="{DynamicResource ModernTextTertiaryBrush}"/>
                         </Button>
                     </Grid>
                     <StackPanel x:Name="FavoriteCategoriesPanel"/>
@@ -318,14 +310,14 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="TAGS" FontSize="10" FontWeight="SemiBold"
-                                   Foreground="{StaticResource ModernTextTertiaryBrush}"
+                                   Foreground="{DynamicResource ModernTextTertiaryBrush}"
                                    VerticalAlignment="Center"/>
                         <Button Grid.Column="1" Background="Transparent" BorderThickness="0"
                                 Padding="4" MinWidth="0" MinHeight="0"
                                 ToolTipService.ToolTip="Add Tag"
                                 Click="AddTagNavButton_Click">
                             <TextBlock Text="&#xE109;" FontFamily="Segoe MDL2 Assets" FontSize="12"
-                                       Foreground="{StaticResource ModernTextTertiaryBrush}"/>
+                                       Foreground="{DynamicResource ModernTextTertiaryBrush}"/>
                         </Button>
                     </Grid>
                     <StackPanel x:Name="SidebarTagsPanel"/>
@@ -335,7 +327,7 @@
 
             <!-- Content Frame -->
             <Frame x:Name="ContentFrame"
-                   Background="{StaticResource ModernBackgroundBrush}"
+                   Background="{DynamicResource ModernBackgroundBrush}"
                    NavigationUIVisibility="Hidden"
                    Navigated="Frame_Navigated"/>
 

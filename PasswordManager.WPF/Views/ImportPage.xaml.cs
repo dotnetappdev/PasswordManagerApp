@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.WPF.ViewModels;
+using PasswordManager.WPF.Services;
 
 namespace PasswordManager.WPF.Views;
 
@@ -67,22 +68,28 @@ public sealed partial class ImportPage : Page
 
     private async void ImportButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_viewModel != null)
+        if (_viewModel == null) return;
+        var success = await _viewModel.ImportAsync();
+
+        if (success)
         {
-            var success = await _viewModel.ImportAsync();
-
-            if (!success && !string.IsNullOrEmpty(_viewModel.ImportStatus))
-            {
-                var dialog = new ModernWpf.Controls.ContentDialog
-                {
-                    Title = "Import Error",
-                    Content = _viewModel.ImportStatus,
-                    CloseButtonText = "OK"
-                };
-
-                await dialog.ShowAsync();
-            }
+            ToastService.Instance.Show(
+                $"Import complete — {_viewModel.ImportedItemsCount} item{(_viewModel.ImportedItemsCount == 1 ? "" : "s")} added to vault.",
+                ToastType.Success, "Import");
         }
+        else
+        {
+            ToastService.Instance.Show(
+                string.IsNullOrEmpty(_viewModel.ImportStatus) ? "Import failed." : _viewModel.ImportStatus,
+                ToastType.Error, "Import Error");
+        }
+    }
+
+    private void NewImportButton_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel?.ClearResults();
+        if (_viewModel != null)
+            _viewModel.SelectedFilePath = string.Empty;
     }
 
     private void ClearResultsButton_Click(object sender, RoutedEventArgs e)

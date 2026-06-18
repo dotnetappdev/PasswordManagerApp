@@ -1,4 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
+using PasswordManager.Models.DTOs;
+using PasswordManager.Services.Interfaces;
+using PasswordManager.Services.Services;
 using PasswordManager.WPF.Services;
 using System.IO;
 using System.Text.Json;
@@ -19,12 +22,25 @@ public class SettingsViewModel : BaseViewModel
     private string _databaseConnectionString = "";
     private string _sqliteDatabasePath = "passwordmanager.db";
     private int _selectedDatabaseProviderIndex = 0;
+    private string _sentryDsn = string.Empty;
 
-    // Simplified cloud backup properties
+    public string SentryDsn
+    {
+        get => _sentryDsn;
+        set => SetProperty(ref _sentryDsn, value);
+    }
+
+    // Cloud backup properties
     private bool _enableCloudBackup = false;
     private DateTime? _nextScheduledBackup;
-    private string _selectedCloudProvider = "";
-    private List<object> _availableBackups = new();
+    private CloudBackupProvider _selectedCloudProvider = CloudBackupProvider.None;
+    private string _networkPath = string.Empty;
+    private string _backupScheduleInterval = "Daily";
+    private bool _autoBackupEnabled = false;
+    private string _googleDriveClientId = string.Empty;
+    private string _googleDriveClientSecret = string.Empty;
+    private bool _googleDriveConnected = false;
+    private string _googleDriveAccountInfo = string.Empty;
 
     private static string SettingsFilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -51,8 +67,11 @@ public class SettingsViewModel : BaseViewModel
         catch { }
     }
 
+    private readonly IServiceProvider _serviceProvider;
+
     public SettingsViewModel(IServiceProvider serviceProvider)
     {
+        _serviceProvider = serviceProvider;
         _ = LoadSettingsAsync();
     }
 
@@ -148,6 +167,7 @@ public class SettingsViewModel : BaseViewModel
         set => SetProperty(ref _enableCloudBackup, value);
     }
 
+
     public DateTime? NextScheduledBackup
     {
         get => _nextScheduledBackup;
@@ -157,20 +177,81 @@ public class SettingsViewModel : BaseViewModel
     public string NextScheduledBackupFormatted =>
         NextScheduledBackup?.ToString("Next backup: yyyy-MM-dd HH:mm UTC") ?? string.Empty;
 
-    public string SelectedCloudProvider
+    public CloudBackupProvider SelectedCloudProvider
     {
         get => _selectedCloudProvider;
         set => SetProperty(ref _selectedCloudProvider, value);
     }
 
-    // Simplified backup list with formatted date
-    public List<BackupItem> AvailableBackups { get; set; } = new();
+    public string NetworkPath
+    {
+        get => _networkPath;
+        set => SetProperty(ref _networkPath, value);
+    }
 
-    public List<string> AvailableThemes => new List<string> { "Light", "Dark", "System" };
+    public string BackupScheduleInterval
+    {
+        get => _backupScheduleInterval;
+        set => SetProperty(ref _backupScheduleInterval, value);
+    }
 
-    public List<string> AuthenticationModes => new List<string> { "Local Database", "API Server" };
+    public bool AutoBackupEnabled
+    {
+        get => _autoBackupEnabled;
+        set => SetProperty(ref _autoBackupEnabled, value);
+    }
 
-    public List<int> TimeoutOptions => new List<int> { 5, 10, 15, 30, 60, 120 };
+    public string GoogleDriveClientId
+    {
+        get => _googleDriveClientId;
+        set => SetProperty(ref _googleDriveClientId, value);
+    }
+
+    public string GoogleDriveClientSecret
+    {
+        get => _googleDriveClientSecret;
+        set => SetProperty(ref _googleDriveClientSecret, value);
+    }
+
+    public bool GoogleDriveConnected
+    {
+        get => _googleDriveConnected;
+        set => SetProperty(ref _googleDriveConnected, value);
+    }
+
+    public string GoogleDriveAccountInfo
+    {
+        get => _googleDriveAccountInfo;
+        set => SetProperty(ref _googleDriveAccountInfo, value);
+    }
+
+    // Static provider list for the ComboBox
+    public List<CloudProviderDisplayItem> AvailableCloudProviders { get; } = new()
+    {
+        new() { Provider = CloudBackupProvider.OneDrive,   DisplayName = "OneDrive (Windows built-in)" },
+        new() { Provider = CloudBackupProvider.GoogleDrive, DisplayName = "Google Drive" },
+        new() { Provider = CloudBackupProvider.NetworkLocation, DisplayName = "Network / Shared Folder" },
+    };
+
+    public List<BackupScheduleItem> ScheduleIntervalOptions { get; } = new()
+    {
+        new() { Interval = "Hourly",  DisplayName = "Every hour" },
+        new() { Interval = "Daily",   DisplayName = "Once a day" },
+        new() { Interval = "Weekly",  DisplayName = "Once a week" },
+        new() { Interval = "Monthly", DisplayName = "Once a month" },
+    };
+
+    public List<CloudBackupInfo> AvailableBackups { get; set; } = new();
+
+    // NOTE: these must be cached single instances, NOT new lists per get. A ComboBox with a
+    // TwoWay SelectedItem binding compares the selected value against the *current* ItemsSource;
+    // if the getter hands back a fresh collection each time, the selector loses sync and the
+    // saved value (e.g. "Dark") is not selected on startup.
+    public List<string> AvailableThemes { get; } = new() { "Light", "Dark", "System" };
+
+    public List<string> AuthenticationModes { get; } = new() { "Local Database", "API Server" };
+
+    public List<int> TimeoutOptions { get; } = new() { 5, 10, 15, 30, 60, 120 };
 
     private async Task LoadSettingsAsync()
     {
@@ -188,6 +269,26 @@ public class SettingsViewModel : BaseViewModel
             SqliteDatabasePath = localSettings.TryGetValue("SqliteDatabasePath", out var dbPath) ? dbPath : "passwordmanager.db";
             ExportPath = localSettings.TryGetValue("ExportPath", out var exportPath) ? exportPath
                 : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport");
+            SentryDsn = localSettings.TryGetValue("SentryDsn", out var sentryDsn) ? sentryDsn : string.Empty;
+            GoogleDriveClientId = localSettings.TryGetValue("GDriveClientId", out var gdId) ? gdId : string.Empty;
+            EnableCloudBackup = localSettings.TryGetValue("EnableCloudBackup", out var ecb) && bool.TryParse(ecb, out var ecbVal) && ecbVal;
+            if (localSettings.TryGetValue("SelectedCloudProvider", out var provStr) && int.TryParse(provStr, out var provInt))
+                SelectedCloudProvider = (CloudBackupProvider)provInt;
+            BackupScheduleInterval = localSettings.TryGetValue("BackupScheduleInterval", out var bsi) ? bsi : "Daily";
+
+            // Check if Google Drive is already connected
+            try
+            {
+                var gd = _serviceProvider.GetService<IGoogleDriveBackupService>();
+                if (gd != null && await gd.HasStoredTokenAsync())
+                {
+                    GoogleDriveConnected = true;
+                    GoogleDriveAccountInfo = gd.AccountInfo != null
+                        ? $"Connected: {gd.AccountInfo.Email}"
+                        : "Connected to Google Drive";
+                }
+            }
+            catch { }
 
             ApplyTheme();
         }
@@ -222,6 +323,11 @@ public class SettingsViewModel : BaseViewModel
             localSettings["ApiBaseUrl"] = ApiBaseUrl;
             localSettings["DatabaseProvider"] = DatabaseProvider;
             localSettings["ExportPath"] = ExportPath;
+            localSettings["SentryDsn"] = SentryDsn;
+            localSettings["GDriveClientId"] = GoogleDriveClientId;
+            localSettings["EnableCloudBackup"] = EnableCloudBackup.ToString();
+            localSettings["SelectedCloudProvider"] = ((int)SelectedCloudProvider).ToString();
+            localSettings["BackupScheduleInterval"] = BackupScheduleInterval;
             SaveLocalSettings(localSettings);
 
             // Apply theme immediately
@@ -310,43 +416,116 @@ public class SettingsViewModel : BaseViewModel
 
     public async Task LoadAvailableBackupsAsync()
     {
-        await Task.Delay(100); // Simulate async operation
-        AvailableBackups = new List<BackupItem>();
+        try
+        {
+            var manager = _serviceProvider.GetService<CloudBackupManager>();
+            if (manager == null) return;
+            AvailableBackups = await manager.ListAllBackupsAsync();
+            OnPropertyChanged(nameof(AvailableBackups));
+        }
+        catch { AvailableBackups = new(); }
     }
 
     public async Task<bool> CreateCloudBackupAsync(string masterPassword)
     {
-        await Task.Delay(100); // Simulate async operation
-        return true;
+        try
+        {
+            IsLoading = true;
+            var manager = _serviceProvider.GetService<CloudBackupManager>();
+            if (manager == null) return false;
+            var fileName = $"VaultGuard_{DateTime.UtcNow:yyyyMMdd_HHmmss}.pwmbackup";
+            var result = await manager.CreateAndUploadBackupAsync(SelectedCloudProvider, masterPassword, fileName, "Manual backup");
+            if (result.Success) await LoadAvailableBackupsAsync();
+            return result.Success;
+        }
+        catch { return false; }
+        finally { IsLoading = false; }
     }
 
-    public async Task ChooseNetworkLocationAsync()
+    public async Task<bool> ConnectGoogleDriveAsync()
     {
-        await Task.Delay(100); // Simulate async operation
+        try
+        {
+            IsLoading = true;
+            var gd = _serviceProvider.GetService<IGoogleDriveBackupService>();
+            if (gd == null) return false;
+            var ok = await gd.ConnectWithOAuthAsync(GoogleDriveClientId, GoogleDriveClientSecret);
+            if (ok)
+            {
+                GoogleDriveConnected = true;
+                GoogleDriveAccountInfo = gd.AccountInfo != null
+                    ? $"Connected: {gd.AccountInfo.Email}"
+                    : "Connected to Google Drive";
+                SaveCloudSettings();
+            }
+            return ok;
+        }
+        catch { return false; }
+        finally { IsLoading = false; }
     }
+
+    public async Task DisconnectGoogleDriveAsync()
+    {
+        var gd = _serviceProvider.GetService<IGoogleDriveBackupService>();
+        if (gd != null) await gd.DisconnectAsync();
+        GoogleDriveConnected = false;
+        GoogleDriveAccountInfo = string.Empty;
+        SaveCloudSettings();
+    }
+
+    public Task ChooseNetworkLocationAsync() => Task.CompletedTask;
 
     public async Task<bool> RestoreFromFileAsync()
     {
-        await Task.Delay(100); // Simulate async operation
+        await Task.Delay(50);
         return true;
     }
 
-    public async Task<bool> RestoreCloudBackupAsync(object backup, string masterPassword)
+    public async Task<bool> RestoreCloudBackupAsync(CloudBackupInfo backup, string masterPassword)
     {
-        await Task.Delay(100); // Simulate async operation
-        return true;
+        try
+        {
+            IsLoading = true;
+            var manager = _serviceProvider.GetService<CloudBackupManager>();
+            if (manager == null) return false;
+            var rawData = await manager.DownloadBackupDataAsync(backup);
+            if (rawData == null) return false;
+            var backupSvc = _serviceProvider.GetService<IDatabaseBackupService>();
+            if (backupSvc == null) return false;
+            return await backupSvc.RestoreFullAsync(rawData, masterPassword);
+        }
+        catch { return false; }
+        finally { IsLoading = false; }
     }
 
-    public async Task<bool> DeleteCloudBackupAsync(object backup)
+    public async Task<bool> DeleteCloudBackupAsync(CloudBackupInfo backup)
     {
-        await Task.Delay(100); // Simulate async operation
-        return true;
+        try
+        {
+            var manager = _serviceProvider.GetService<CloudBackupManager>();
+            if (manager == null) return false;
+            var ok = await manager.DeleteBackupAsync(backup.Provider, backup.Id);
+            if (ok) await LoadAvailableBackupsAsync();
+            return ok;
+        }
+        catch { return false; }
     }
 
     public async Task<ExportResult> ExportToBrowserAsync(string format)
     {
-        await Task.Delay(100); // Simulate async operation
+        await Task.Delay(100);
         return new ExportResult { Success = true, ExportedCount = 0 };
+    }
+
+    private void SaveCloudSettings()
+    {
+        var s = LoadLocalSettings();
+        s["GDriveClientId"] = GoogleDriveClientId;
+        s["GDriveClientSecret"] = GoogleDriveClientSecret;
+        s["EnableCloudBackup"] = EnableCloudBackup.ToString();
+        s["SelectedCloudProvider"] = ((int)SelectedCloudProvider).ToString();
+        s["BackupScheduleInterval"] = BackupScheduleInterval;
+        SaveLocalSettings(s);
     }
 
     public class ExportResult
@@ -357,13 +536,15 @@ public class SettingsViewModel : BaseViewModel
     }
 }
 
-// Simplified backup item class
-public class BackupItem
+public class CloudProviderDisplayItem
 {
-    public string Id { get; set; } = string.Empty;
-    public string FileName { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
-    public string ServiceName { get; set; } = string.Empty;
-
-    public string CreatedAtFormatted => CreatedAt.ToString("Created: MMM dd, yyyy HH:mm");
+    public CloudBackupProvider Provider { get; set; }
+    public string DisplayName { get; set; } = string.Empty;
 }
+
+public class BackupScheduleItem
+{
+    public string Interval { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+}
+

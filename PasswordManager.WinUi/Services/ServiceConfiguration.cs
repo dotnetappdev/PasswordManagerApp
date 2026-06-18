@@ -225,10 +225,12 @@ public static class ServiceConfiguration
 
     private static void ConfigureBackupServices(IServiceCollection services)
     {
+        services.AddScoped<IBackupEncryptionService, BackupEncryptionService>();
         services.AddScoped<IDatabaseBackupService, DatabaseBackupService>();
         services.AddScoped<IOneDriveBackupService, OneDriveBackupService>();
         services.AddScoped<IiCloudBackupService, iCloudBackupService>();
         services.AddScoped<INetworkLocationBackupService, NetworkLocationBackupService>();
+        services.AddSingleton<IGoogleDriveBackupService, GoogleDriveBackupService>();
         services.AddScoped<CloudBackupManager>();
         services.AddScoped<IBackupSettingsService, BackupSettingsService>();
         

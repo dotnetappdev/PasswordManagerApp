@@ -52,6 +52,13 @@ class PasswordManagerBackground {
         case 'testConnection':
           await this.testConnection(sendResponse);
           break;
+        case 'passkeyCreate':
+        case 'passkeyGet':
+          await this.handlePasskey(request, sendResponse);
+          break;
+        case 'saveTotpSecret':
+          await this.saveTotpSecret(request, sendResponse);
+          break;
         default:
           sendResponse({ success: false, error: 'Unknown action' });
       }
@@ -105,6 +112,11 @@ class PasswordManagerBackground {
       } else if (endpoint === 'testConnection') {
         apiEndpoint = 'health';
         method = 'GET';
+      } else if (endpoint === 'passkeyCreate') {
+        // Self-hosted/live API must expose the vault-passkey endpoints (see PASSKEYS_SETUP.md).
+        apiEndpoint = 'passkey/vault/create';
+      } else if (endpoint === 'passkeyGet') {
+        apiEndpoint = 'passkey/vault/assert';
       }
 
       const fetchOptions = {
@@ -360,8 +372,8 @@ class PasswordManagerBackground {
         includeSymbols: true
       };
 
-      const response = await this.sendNativeMessage({
-        action: 'generatePassword',
+      // Honor the configured backend (Local SQLite / API / offline) instead of native-only.
+      const response = await this.sendMessageWithFallback('generatePassword', {
         options: options
       });
 
@@ -387,33 +399,36 @@ class PasswordManagerBackground {
 
   async login(request, sendResponse) {
     try {
-      const response = await this.sendNativeMessage({
-        action: 'login',
-        email: request.username, // Browser extension sends username, but native host expects email
+      // Unlock against whichever backend is configured (Local SQLite app or API server).
+      const response = await this.sendMessageWithFallback('login', {
+        email: request.username, // extension collects "username", backends expect email
         password: request.password
       });
 
-      if (response.success) {
-        this.authToken = response.token;
-        
+      // Native host returns { token }; the API may return { token | accessToken | jwt }.
+      const token = response && (response.token || response.accessToken || response.jwt);
+
+      if (response && (response.success || token)) {
+        this.authToken = token || this.authToken;
+
         // Save token to storage
         await chrome.storage.sync.set({ authToken: this.authToken });
-        
-        sendResponse({ 
-          success: true, 
-          message: response.message || 'Login successful' 
+
+        sendResponse({
+          success: true,
+          message: response.message || 'Login successful'
         });
       } else {
-        sendResponse({ 
-          success: false, 
-          error: response.error || 'Login failed' 
+        sendResponse({
+          success: false,
+          error: (response && response.error) || 'Login failed'
         });
       }
     } catch (error) {
       console.error('Password Manager: Login error:', error);
-      sendResponse({ 
-        success: false, 
-        error: 'Failed to communicate with native host. Please ensure the native host is installed.' 
+      sendResponse({
+        success: false,
+        error: `Login failed: ${error.message}. Check your backend setting (Local app vs API) in Settings.`
       });
     }
   }
@@ -456,29 +471,117 @@ class PasswordManagerBackground {
     }
   }
 
+  async handlePasskey(request, sendResponse) {
+    // Passkey signing/registration needs the unlocked vault (master key) held by the
+    // native host session, so a valid token is required.
+    if (!this.authToken) {
+      sendResponse({ success: false, error: 'Vault is locked. Sign in to the extension first.', fallback: true });
+      return;
+    }
+
+    try {
+      const { action, ...fields } = request;
+      // Route to whichever backend is configured. In API mode this hits the server's
+      // vault-passkey endpoints; in Local mode it hits the native host + SQLite.
+      const response = await this.sendMessageWithFallback(action, {
+        token: this.authToken,
+        ...fields
+      });
+      sendResponse(response || { success: false, error: 'No response from backend', fallback: true });
+    } catch (error) {
+      console.error('Password Manager: Passkey request failed:', error);
+      // fallback:true lets the page use the platform authenticator if our backend is unavailable.
+      sendResponse({ success: false, error: error.message, fallback: true });
+    }
+  }
+
   async testConnection(sendResponse) {
     try {
-      const response = await this.sendNativeMessage({
-        action: 'testConnection'
-      });
+      const settings = await chrome.storage.sync.get(['connectionMode', 'apiUrl']);
+      const mode = settings.connectionMode || 'auto';
+      const response = await this.sendMessageWithFallback('testConnection', {});
 
-      if (response.success) {
-        sendResponse({ 
-          success: true, 
-          message: response.message || 'Connection successful' 
+      // A native-host reply includes the resolved SQLite path; an API "health" reply won't.
+      const ok = response && (response.success || response.status === 'healthy' || response.healthy);
+      if (ok) {
+        sendResponse({
+          success: true,
+          message: response.message || (mode === 'api' ? `Connected to API (${settings.apiUrl || ''})` : 'Connection successful'),
+          databasePath: response.databasePath || ''
         });
       } else {
-        sendResponse({ 
-          success: false, 
-          error: response.error || 'Connection test failed' 
+        sendResponse({
+          success: false,
+          error: (response && response.error) || 'Connection test failed'
         });
       }
     } catch (error) {
       console.error('Password Manager: Connection test failed:', error);
-      sendResponse({ 
-        success: false, 
-        error: 'Failed to communicate with native host. Please ensure the native host is installed and registered.' 
+      sendResponse({
+        success: false,
+        error: `Connection failed: ${error.message}. Check your backend setting in Settings.`
       });
+    }
+  }
+
+  // ── TOTP Secret Save ──────────────────────────────────────────────────────────
+  // Called by the content script after intercepting an otpauth:// URI on a 2FA
+  // setup page. Tries to attach the TOTP secret to the existing vault entry for
+  // this hostname, or creates a new entry if none exists.
+  async saveTotpSecret(request, sendResponse) {
+    const { otpauthUri, issuer, account, secret, hostname } = request;
+
+    // Try native host (SQLite) first — works offline, no auth token needed
+    try {
+      const nativeResult = await this.sendNativeMessage({
+        action: 'saveTotpSecret',
+        token: this.authToken,
+        otpauthUri,
+        issuer,
+        account,
+        hostname,
+      });
+      if (nativeResult && nativeResult.success) {
+        sendResponse({ success: true, source: 'sqlite', ...nativeResult });
+        return;
+      }
+    } catch (_) {
+      // Native host unavailable — fall through to API
+    }
+
+    // Fallback: save via REST API
+    try {
+      const apiUrl = await this.getApiUrl();
+
+      // 1. Find an existing vault item for this hostname
+      const searchResp = await fetch(
+        `${apiUrl}/api/credentials?url=${encodeURIComponent(hostname)}`,
+        { headers: { Authorization: `Bearer ${this.authToken}` } }
+      );
+
+      let itemId = null;
+      if (searchResp.ok) {
+        const items = await searchResp.json();
+        if (Array.isArray(items) && items.length > 0) itemId = items[0].id;
+      }
+
+      if (itemId) {
+        const patchResp = await fetch(`${apiUrl}/api/credentials/${itemId}/totp`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.authToken}` },
+          body: JSON.stringify({ otpauthUri, secret }),
+        });
+        sendResponse({ success: patchResp.ok, source: 'api', error: patchResp.ok ? null : await patchResp.text() });
+      } else {
+        const createResp = await fetch(`${apiUrl}/api/credentials`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.authToken}` },
+          body: JSON.stringify({ title: issuer || hostname, websiteUrl: `https://${hostname}`, username: account || '', password: '', totpSecret: otpauthUri }),
+        });
+        sendResponse({ success: createResp.ok, source: 'api', error: createResp.ok ? null : await createResp.text() });
+      }
+    } catch (err) {
+      sendResponse({ success: false, error: err.message });
     }
   }
 }

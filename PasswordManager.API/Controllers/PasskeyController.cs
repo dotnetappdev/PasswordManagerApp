@@ -72,6 +72,58 @@ public class PasskeyController : ControllerBase
     }
 
     /// <summary>
+    /// Create a software passkey for a third-party site (1Password-style virtual authenticator).
+    /// The private key is generated server-side and stored encrypted under the user's master key.
+    /// Called by the browser extension when "API server" is the selected backend.
+    /// </summary>
+    [HttpPost("vault/create")]
+    [Authorize]
+    public async Task<ActionResult<VaultPasskeyCreateResponseDto>> CreateVaultPasskey([FromBody] VaultPasskeyCreateRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _passkeyService.CreateVaultPasskeyAsync(userId, request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating vault passkey");
+            return StatusCode(500, new VaultPasskeyCreateResponseDto { Success = false, Error = "An error occurred while creating the passkey" });
+        }
+    }
+
+    /// <summary>
+    /// Produce a WebAuthn assertion (sign a challenge) using a stored vault passkey.
+    /// </summary>
+    [HttpPost("vault/assert")]
+    [Authorize]
+    public async Task<ActionResult<VaultPasskeyAssertResponseDto>> AssertVaultPasskey([FromBody] VaultPasskeyAssertRequestDto request)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _passkeyService.AssertVaultPasskeyAsync(userId, request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error asserting vault passkey");
+            return StatusCode(500, new VaultPasskeyAssertResponseDto { Success = false, Error = "An error occurred while signing in with the passkey" });
+        }
+    }
+
+    /// <summary>
     /// Start the passkey registration process
     /// </summary>
     [HttpPost("register/start")]

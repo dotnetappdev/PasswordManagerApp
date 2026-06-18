@@ -544,6 +544,203 @@ public class PasskeyService : IPasskeyService
         }
     }
 
+    // Marks software (third-party site) passkeys so they're not confused with PM-login passkeys.
+    private const string VaultPasskeyDeviceType = "VaultPasskey";
+
+    public async Task<VaultPasskeyCreateResponseDto> CreateVaultPasskeyAsync(string userId, VaultPasskeyCreateRequestDto request)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(request.RpId))
+                return new VaultPasskeyCreateResponseDto { Success = false, Error = "rpId is required" };
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                return new VaultPasskeyCreateResponseDto { Success = false, Error = "User not found" };
+
+            if (!await VerifyMasterPasswordAsync(user, request.MasterPassword))
+                return new VaultPasskeyCreateResponseDto { Success = false, Error = "Invalid master password" };
+
+            var masterKey = _passwordCryptoService.DeriveMasterKey(request.MasterPassword, Convert.FromBase64String(user.UserSalt));
+            try
+            {
+                var cred = WebAuthnSoftwareAuthenticator.CreateCredential(request.RpId);
+
+                // Encrypt {rpId, userHandle, userName, privateKey} under the master key.
+                var payload = JsonSerializer.Serialize(new VaultPasskeySecret
+                {
+                    RpId = request.RpId,
+                    UserHandle = request.UserHandle,
+                    UserName = request.UserName,
+                    PrivateKeyPkcs8 = Convert.ToBase64String(cred.Pkcs8PrivateKey)
+                });
+                var enc = _passwordCryptoService.EncryptPasswordWithKey(payload, masterKey);
+
+                var passkey = new UserPasskey
+                {
+                    UserId = userId,
+                    // Stored as standard base64 to match the existing CredentialId convention.
+                    CredentialId = Convert.ToBase64String(cred.CredentialId),
+                    Name = $"{request.RpId}{(string.IsNullOrEmpty(request.UserName) ? "" : " · " + request.UserName)}",
+                    PublicKey = Convert.ToBase64String(cred.CosePublicKey),
+                    SignatureCounter = 0,
+                    DeviceType = VaultPasskeyDeviceType,
+                    IsBackedUp = true,
+                    RequiresUserVerification = true,
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true,
+                    StoreInVault = true,
+                    EncryptedVaultData = JsonSerializer.Serialize(enc)
+                };
+                _context.UserPasskeys.Add(passkey);
+                await _context.SaveChangesAsync();
+
+                Array.Clear(cred.Pkcs8PrivateKey, 0, cred.Pkcs8PrivateKey.Length);
+
+                return new VaultPasskeyCreateResponseDto
+                {
+                    Success = true,
+                    CredentialId = WebAuthnSoftwareAuthenticator.Base64Url(cred.CredentialId),
+                    AttestationObject = Convert.ToBase64String(cred.AttestationObject),
+                    PublicKeyCose = Convert.ToBase64String(cred.CosePublicKey)
+                };
+            }
+            finally
+            {
+                Array.Clear(masterKey, 0, masterKey.Length);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating vault passkey for {UserId}", userId);
+            return new VaultPasskeyCreateResponseDto { Success = false, Error = "Passkey creation failed" };
+        }
+    }
+
+    public async Task<VaultPasskeyAssertResponseDto> AssertVaultPasskeyAsync(string userId, VaultPasskeyAssertRequestDto request)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(request.RpId) || string.IsNullOrEmpty(request.ClientDataJSON))
+                return new VaultPasskeyAssertResponseDto { Success = false, Error = "rpId and clientDataJSON are required" };
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                return new VaultPasskeyAssertResponseDto { Success = false, Error = "User not found" };
+
+            if (!await VerifyMasterPasswordAsync(user, request.MasterPassword))
+                return new VaultPasskeyAssertResponseDto { Success = false, Error = "Invalid master password" };
+
+            var masterKey = _passwordCryptoService.DeriveMasterKey(request.MasterPassword, Convert.FromBase64String(user.UserSalt));
+            try
+            {
+                var candidates = await _context.UserPasskeys
+                    .Where(p => p.UserId == userId && p.IsActive && p.DeviceType == VaultPasskeyDeviceType)
+                    .ToListAsync();
+
+                // Match by credential id (allowCredentials) by comparing raw bytes, so base64 vs
+                // base64url encoding never matters.
+                var allowBytes = request.AllowCredentialIds
+                    .Select(SafeBase64UrlDecode).Where(b => b != null).Select(b => Convert.ToBase64String(b!)).ToHashSet();
+
+                UserPasskey? match = null;
+                VaultPasskeySecret? secret = null;
+
+                foreach (var candidate in OrderCandidates(candidates, allowBytes.Count > 0))
+                {
+                    if (allowBytes.Count > 0 && !allowBytes.Contains(NormalizeCredId(candidate.CredentialId)))
+                        continue;
+
+                    var s = TryDecryptSecret(candidate, masterKey);
+                    if (s == null) continue;
+                    if (allowBytes.Count == 0 && !string.Equals(s.RpId, request.RpId, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    match = candidate;
+                    secret = s;
+                    break;
+                }
+
+                if (match == null || secret == null)
+                    return new VaultPasskeyAssertResponseDto { Success = false, Error = "No matching passkey for this site" };
+
+                var pkcs8 = Convert.FromBase64String(secret.PrivateKeyPkcs8);
+                try
+                {
+                    var newCount = match.SignatureCounter + 1;
+                    var (authData, signature) = WebAuthnSoftwareAuthenticator.SignAssertion(
+                        request.RpId, pkcs8, WebAuthnSoftwareAuthenticator.Base64UrlDecode(request.ClientDataJSON), newCount);
+
+                    match.SignatureCounter = newCount;
+                    match.LastUsedAt = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+
+                    return new VaultPasskeyAssertResponseDto
+                    {
+                        Success = true,
+                        CredentialId = WebAuthnSoftwareAuthenticator.Base64Url(Convert.FromBase64String(match.CredentialId)),
+                        AuthenticatorData = Convert.ToBase64String(authData),
+                        Signature = Convert.ToBase64String(signature),
+                        UserHandle = secret.UserHandle
+                    };
+                }
+                finally
+                {
+                    Array.Clear(pkcs8, 0, pkcs8.Length);
+                }
+            }
+            finally
+            {
+                Array.Clear(masterKey, 0, masterKey.Length);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error asserting vault passkey for {UserId}", userId);
+            return new VaultPasskeyAssertResponseDto { Success = false, Error = "Passkey authentication failed" };
+        }
+    }
+
+    private static IEnumerable<UserPasskey> OrderCandidates(List<UserPasskey> candidates, bool hasAllowList) =>
+        hasAllowList ? candidates : candidates.OrderByDescending(p => p.LastUsedAt ?? p.CreatedAt);
+
+    private static string NormalizeCredId(string credentialId)
+    {
+        // DB stores standard base64; normalize to standard base64 string of the raw bytes.
+        try { return Convert.ToBase64String(Convert.FromBase64String(credentialId)); }
+        catch { return credentialId; }
+    }
+
+    private static byte[]? SafeBase64UrlDecode(string s)
+    {
+        try { return WebAuthnSoftwareAuthenticator.Base64UrlDecode(s); }
+        catch { return null; }
+    }
+
+    private VaultPasskeySecret? TryDecryptSecret(UserPasskey passkey, byte[] masterKey)
+    {
+        if (string.IsNullOrEmpty(passkey.EncryptedVaultData)) return null;
+        try
+        {
+            var enc = JsonSerializer.Deserialize<EncryptedPasswordData>(passkey.EncryptedVaultData);
+            if (enc == null) return null;
+            var json = _passwordCryptoService.DecryptPasswordWithKey(enc, masterKey);
+            return JsonSerializer.Deserialize<VaultPasskeySecret>(json);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private sealed class VaultPasskeySecret
+    {
+        public string RpId { get; set; } = string.Empty;
+        public string UserHandle { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public string PrivateKeyPkcs8 { get; set; } = string.Empty;
+    }
+
     #region Private Methods
 
     private async Task<bool> VerifyMasterPasswordAsync(ApplicationUser user, string masterPassword)

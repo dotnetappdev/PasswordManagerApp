@@ -1,13 +1,17 @@
-; Password Manager Web API Installer
-; Inno Setup Script
-; Requires Inno Setup 6.x (https://jrsoftware.org/isdl.php)
+; VaultGuard Web API Installer
+; Inno Setup 6.x Script  (https://jrsoftware.org/isdl.php)
+;
+; Build:  iscc /DMyAppVersion=1.0.0 installers\api-installer.iss
 
-#define MyAppName "Password Manager Web API"
-#define MyAppVersion "1.0.0"
-#define MyAppPublisher "Password Manager"
+#ifndef MyAppVersion
+  #define MyAppVersion "1.0.0"
+#endif
+
+#define MyAppName "VaultGuard Web API"
+#define MyAppPublisher "VaultGuard"
 #define MyAppURL "https://github.com/dotnetappdev/PasswordManagerApp"
 #define MyAppExeName "PasswordManager.API.exe"
-#define DotNetRuntimeURL "https://aka.ms/dotnet/9.0/aspnetcore-runtime-win-x64.exe"
+#define DotNetRuntimeURL "https://aka.ms/dotnet/10.0/aspnetcore-runtime-win-x64.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -23,7 +27,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile=..\LICENSE
 OutputDir=output
-OutputBaseFilename=PasswordManager-API-Setup-{#MyAppVersion}
+OutputBaseFilename=VaultGuardAPI-Setup-{#MyAppVersion}
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
@@ -52,7 +56,7 @@ Name: "generatecert"; Description: "Generate HTTPS development certificate"; Gro
 [Files]
 ; API Files - Source should point to published API output
 ; Note: Run 'dotnet publish -c Release' before building installer
-Source: "..\PasswordManager.API\bin\Release\net9.0\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\PasswordManager.API\bin\Release\net10.0\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Configuration template
 Source: "config\appsettings.json.template"; DestDir: "{app}"; DestName: "appsettings.json"; Flags: onlyifdoesntexist confirmoverwrite
 
@@ -107,7 +111,7 @@ function IsDotNetInstalled(): Boolean;
 var
   ResultCode: Integer;
 begin
-  { Check if .NET 9 runtime is installed by running dotnet --list-runtimes }
+  { Check if .NET 10 runtime is installed by running dotnet --list-runtimes }
   Result := False;
   if Exec('cmd.exe', '/C dotnet --list-runtimes | findstr "Microsoft.AspNetCore.App 9."', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
   begin
@@ -115,7 +119,7 @@ begin
   end;
   
   if not Result then
-    Log('.NET 9 ASP.NET Core runtime not found, will need to download and install');
+    Log('.NET 10 ASP.NET Core runtime not found, will need to download and install');
 end;
 
 function DownloadAndInstallDotNet(): Boolean;
@@ -128,7 +132,7 @@ begin
   DotNetInstallerPath := ExpandConstant('{tmp}\dotnet-runtime-installer.exe');
   
   { Download .NET runtime installer }
-  DownloadPage := CreateDownloadPage('Downloading .NET Runtime', 'Downloading the latest .NET 9 ASP.NET Core runtime from Microsoft...', nil);
+  DownloadPage := CreateDownloadPage('Downloading .NET Runtime', 'Downloading the latest .NET 10 ASP.NET Core runtime from Microsoft...', nil);
   DownloadPage.Clear;
   DownloadPage.Add('{#DotNetRuntimeURL}', 'dotnet-runtime-installer.exe', '');
   
@@ -166,7 +170,7 @@ begin
       begin
         Log('Failed to install .NET runtime, exit code: ' + IntToStr(ResultCode));
         SuppressibleMsgBox('Failed to install .NET runtime. Exit code: ' + IntToStr(ResultCode) + #13#10 + 
-                          'Please try installing .NET 9 manually from: https://dotnet.microsoft.com/download/dotnet/9.0', mbError, MB_OK, IDOK);
+                          'Please try installing .NET 10 manually from: https://dotnet.microsoft.com/download/dotnet/9.0', mbError, MB_OK, IDOK);
         Result := False;
       end;
     end else
@@ -340,18 +344,18 @@ begin
   { Check if .NET runtime is installed }
   if not IsDotNetInstalled() then
   begin
-    if MsgBox('.NET 9 ASP.NET Core runtime is not installed on this system.' + #13#10 + 
-              'The installer will now download and install the latest .NET 9 runtime from Microsoft.' + #13#10 + #13#10 +
+    if MsgBox('.NET 10 ASP.NET Core runtime is not installed on this system.' + #13#10 + 
+              'The installer will now download and install the latest .NET 10 runtime from Microsoft.' + #13#10 + #13#10 +
               'Do you want to continue?', mbConfirmation, MB_YESNO) = IDYES then
     begin
       if not DownloadAndInstallDotNet() then
       begin
         Result := 'Failed to install .NET runtime. The application may not run without it.' + #13#10 +
-                  'Please install .NET 9 manually from: https://dotnet.microsoft.com/download/dotnet/9.0';
+                  'Please install .NET 10 manually from: https://dotnet.microsoft.com/download/dotnet/9.0';
       end;
     end else
     begin
-      Result := 'Installation cancelled. .NET 9 runtime is required to run this application.';
+      Result := 'Installation cancelled. .NET 10 runtime is required to run this application.';
     end;
   end;
 end;

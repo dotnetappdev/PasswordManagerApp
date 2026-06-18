@@ -1,0 +1,20 @@
+@using PasswordManager.Models.DTOs
+@using MudBlazor
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2"
+          Style="border-bottom:1px solid rgba(255,255,255,0.06); padding:6px 0;">
+    <MudCheckBox Value="Item.IsSelected" Color="Color.Primary" Dense="true"
+                 ValueChanged="@((bool v) => { Item.IsSelected = v; OnChanged.InvokeAsync(); })" />
+    <MudStack Spacing="0" Style="flex:1;">
+        <MudText Style="font-size:14px; font-weight:600;">@Item.Title</MudText>
+        @if (!string.IsNullOrEmpty(Item.Subtitle))
+        {
+            <MudText Typo="Typo.caption" Style="color:#888;">@Item.Subtitle</MudText>
+        }
+    </MudStack>
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public BackupItemDto Item { get; set; } = default!;
+    [Parameter] public EventCallback OnChanged { get; set; }
+}

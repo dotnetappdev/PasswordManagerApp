@@ -9,6 +9,8 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject ISnackbar Snackbar
+@inject ITotpService TotpService
+@implements IDisposable
 
 <div style="display: flex; height: 100vh; overflow: hidden;">
 
@@ -224,9 +226,27 @@
                     {
                         @DetailField("Email", selectedItem.LoginItem!.Email, copyable: true)
                     }
-                    @if (!string.IsNullOrEmpty(selectedItem.LoginItem?.TotpSecret))
+                    @if (!string.IsNullOrEmpty(_totpSecret))
                     {
-                        @DetailField("TOTP Secret", selectedItem.LoginItem!.TotpSecret, copyable: true)
+                        <div style="display: flex; align-items: flex-start; margin-bottom: 18px;">
+                            <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" Color="Color.Secondary"
+                                     Style="cursor:grab; flex-shrink:0; margin-right:4px; margin-top:10px; opacity:0.6;" />
+                            <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 8px;">Verification Code</div>
+                            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: color-mix(in srgb, var(--mud-palette-primary) 8%, transparent); border-radius: 10px; border: 1px solid color-mix(in srgb, var(--mud-palette-primary) 20%, transparent);">
+                                <div style="font-family: 'Consolas', monospace; font-size: 26px; font-weight: 700; color: var(--mud-palette-primary); letter-spacing: 4px; flex: 1;">
+                                    @(_totpCode.Length == 6 ? _totpCode[..3] + " " + _totpCode[3..] : _totpCode)
+                                </div>
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                                    <div style="font-size: 18px; font-weight: 700; color: @(_totpRemaining <= 5 ? "var(--mud-palette-error)" : "var(--mud-palette-text-secondary)"); font-variant-numeric: tabular-nums;">@_totpRemaining</div>
+                                    <div style="font-size: 10px; color: var(--mud-palette-text-disabled);">SEC</div>
+                                </div>
+                                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small"
+                                               Color="Color.Primary" Title="Copy code"
+                                               OnClick="@(async () => await CopyAsync(_totpCode, "Verification code"))" />
+                            </div>
+                            </div>
+                        </div>
                     }
                 }
                 else if (selectedItem.Type == ItemType.CreditCard)
@@ -310,16 +330,76 @@
                 }
 
                 @* ── Custom fields ── *@
-                @if (selectedItem.CustomFields.Any())
-                {
-                    <div style="margin-top: 20px;">
-                        <div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 12px;">Custom Fields</div>
-                        @foreach (var field in selectedItem.CustomFields)
-                        {
-                            @DetailField(field.Name ?? "Field", field.Value)
-                        }
+                <div style="margin-top: 20px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                        <div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase;">Custom Fields</div>
+                        <MudMenu AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft"
+                                 Dense="true" PopoverClass="custom-field-menu">
+                            <ActivatorContent>
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                           EndIcon="@Icons.Material.Filled.ArrowDropDown">+ add another field</MudButton>
+                            </ActivatorContent>
+                            <ChildContent>
+                                @foreach (var ft in _fieldTypes)
+                                {
+                                    var captured = ft;
+                                    <MudMenuItem Icon="@captured.Icon" OnClick="@(() => AddCustomField(captured.Type))">
+                                        @captured.Label
+                                    </MudMenuItem>
+                                }
+                            </ChildContent>
+                        </MudMenu>
                     </div>
-                }
+
+
+                    @{
+                        var visibleFields = selectedItem.CustomFields
+                            .Where(f => !string.Equals(f.Name, TotpHelper.TotpCustomFieldName, StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+                    }
+                    @if (visibleFields.Count == 0)
+                    {
+                        <div style="font-size: 12px; color: var(--mud-palette-text-disabled); padding: 4px 0;">No custom fields yet.</div>
+                    }
+                    @foreach (var (field, idx) in visibleFields.Select((f,i)=>(f,i)))
+                    {
+                        var capturedField = field;
+                        var capturedIdx   = idx;
+                        <div draggable="true"
+                             style="display:flex; align-items:flex-start; gap:8px; padding:8px 0; border-bottom:1px solid var(--mud-palette-divider);"
+                             @ondragstart="@(() => _dragSourceIdx = capturedIdx)"
+                             @ondragover:preventDefault="true"
+                             @ondrop="@(() => ReorderCustomField(_dragSourceIdx, capturedIdx))">
+                            <!-- drag handle -->
+                            <MudIcon Icon="@Icons.Material.Filled.DragIndicator"
+                                     Size="Size.Small" Color="Color.Secondary"
+                                     Style="cursor:grab; margin-top:14px; flex-shrink:0;" />
+                            <!-- label + value -->
+                            <div style="flex:1; min-width:0;">
+                                <div style="font-size:11px; font-weight:700; letter-spacing:.8px; color:var(--mud-palette-text-secondary); text-transform:uppercase; margin-bottom:2px;">
+                                    @capturedField.Name
+                                </div>
+                                <div style="font-size:14px; word-break:break-all; color:var(--mud-palette-text-primary);">
+                                    @capturedField.Value
+                                </div>
+                            </div>
+                            <!-- copy + delete -->
+                            <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small"
+                                           Color="Color.Default" Style="flex-shrink:0;"
+                                           OnClick="@(async () => await CopyAsync(capturedField.Value, capturedField.Name ?? "Field"))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.RemoveCircleOutline" Size="Size.Small"
+                                           Color="Color.Error" Style="flex-shrink:0;"
+                                           OnClick="@(() => RemoveCustomField(capturedField))" />
+                        </div>
+                    }
+                </div>
+
+                @* ── Save button ── *@
+                <div style="margin-top: 16px;">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Save"
+                               OnClick="@SaveDetailChangesAsync">Save changes</MudButton>
+                </div>
 
                 @* ── Timestamps ── *@
                 <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--mud-palette-divider);">
@@ -364,6 +444,32 @@
 
     private bool isLoading = true;
     private PasswordItem? selectedItem;
+
+    // ── Custom field add + reorder ────────────────────────────────────────────
+    private bool _showFieldPicker;
+    private int _dragSourceIdx = -1;
+
+    private static readonly (string Label, string Icon, CustomFieldType Type)[] _fieldTypes =
+    [
+        ("Text",             Icons.Material.Filled.TextFields,     CustomFieldType.Text),
+        ("URL",              Icons.Material.Filled.Link,            CustomFieldType.Url),
+        ("Email",            Icons.Material.Filled.Email,           CustomFieldType.Email),
+        ("Address",          Icons.Material.Filled.LocationOn,      CustomFieldType.Address),
+        ("Date",             Icons.Material.Filled.CalendarToday,   CustomFieldType.Date),
+        ("One-Time Password",Icons.Material.Filled.Key,             CustomFieldType.OneTimePassword),
+        ("Password",         Icons.Material.Filled.Lock,            CustomFieldType.Password),
+        ("Phone",            Icons.Material.Filled.Phone,           CustomFieldType.Phone),
+        ("Number",           Icons.Material.Filled.Tag,             CustomFieldType.Number),
+        ("Yes / No",         Icons.Material.Filled.ToggleOn,        CustomFieldType.Toggle),
+        ("Multiline text",   Icons.Material.Filled.Notes,           CustomFieldType.TextArea),
+        ("Sign in with",     Icons.Material.Filled.AccountCircle,   CustomFieldType.SignInWith),
+    ];
+
+    // ── TOTP live display ──────────────────────────────────────────────────────
+    private System.Timers.Timer? _totpTimer;
+    private string? _totpSecret;
+    private string _totpCode = "------";
+    private int _totpRemaining = 30;
 
     // Keys of currently-revealed masked fields (cleared when a new item is selected)
     private readonly HashSet<string> revealedFields = new();
@@ -473,6 +579,128 @@
     {
         selectedItem = item;
         revealedFields.Clear();
+        StartTotpTimer(item);
+    }
+
+    private void ToggleCustomFieldPicker() => _showFieldPicker = !_showFieldPicker;
+
+    private async Task ReorderCustomField(int fromIdx, int toIdx)
+    {
+        if (selectedItem == null || fromIdx == toIdx || fromIdx < 0) return;
+        var fields = selectedItem.CustomFields
+            .Where(f => !string.Equals(f.Name, TotpHelper.TotpCustomFieldName, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(f => f.DisplayOrder).ToList();
+        if (fromIdx >= fields.Count || toIdx >= fields.Count) return;
+        var moved = fields[fromIdx];
+        fields.RemoveAt(fromIdx);
+        fields.Insert(toIdx, moved);
+        for (int i = 0; i < fields.Count; i++) fields[i].DisplayOrder = i;
+        try
+        {
+            await PasswordItemService.UpdateAsync(selectedItem);
+        }
+        catch { }
+        _dragSourceIdx = -1;
+    }
+
+    private async Task RemoveCustomField(CustomField field)
+    {
+        if (selectedItem == null) return;
+        selectedItem.CustomFields?.Remove(field);
+        try { await PasswordItemService.UpdateAsync(selectedItem); }
+        catch { }
+    }
+
+    private async Task SaveDetailChangesAsync()
+    {
+        if (selectedItem == null) return;
+        try
+        {
+            await PasswordItemService.UpdateAsync(selectedItem);
+            Snackbar.Add("Changes saved.", Severity.Success);
+        }
+        catch { }
+    }
+
+    private async Task AddCustomField(CustomFieldType type)
+    {
+        if (selectedItem == null) return;
+        _showFieldPicker = false;
+
+        var name = type switch
+        {
+            CustomFieldType.Password => "Password",
+            CustomFieldType.Email    => "Email",
+            CustomFieldType.Url      => "URL",
+            CustomFieldType.Phone    => "Phone",
+            CustomFieldType.Number   => "Number",
+            CustomFieldType.Date     => "Date",
+            CustomFieldType.Toggle   => "Yes / No",
+            _                        => "Text field",
+        };
+
+        selectedItem.CustomFields ??= new List<CustomField>();
+        selectedItem.CustomFields.Add(new CustomField
+        {
+            Name = name,
+            Value = "",
+            Type = type,
+            DisplayOrder = selectedItem.CustomFields.Count,
+            PasswordItemId = selectedItem.Id,
+            CreatedAt = DateTime.UtcNow,
+            LastModified = DateTime.UtcNow,
+        });
+
+        try
+        {
+            await PasswordItemService.UpdateAsync(selectedItem);
+            Snackbar.Add($"Custom field \"{name}\" added.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to save field: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void StartTotpTimer(PasswordItem? item)
+    {
+        _totpTimer?.Stop();
+        _totpSecret = TotpHelper.GetSecret(item);
+        if (string.IsNullOrEmpty(_totpSecret))
+        {
+            _totpCode = "------";
+            _totpRemaining = 30;
+            return;
+        }
+        UpdateTotpDisplay();
+        _totpTimer ??= new System.Timers.Timer(1000);
+        _totpTimer.Elapsed -= OnTotpTick;
+        _totpTimer.Elapsed += OnTotpTick;
+        _totpTimer.AutoReset = true;
+        _totpTimer.Start();
+    }
+
+    private void OnTotpTick(object? _, System.Timers.ElapsedEventArgs __)
+    {
+        UpdateTotpDisplay();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateTotpDisplay()
+    {
+        if (string.IsNullOrEmpty(_totpSecret)) return;
+        try
+        {
+            _totpCode = TotpService.GenerateCode(_totpSecret) ?? "------";
+            _totpRemaining = TotpService.GetRemainingSeconds(30);
+        }
+        catch { _totpCode = "------"; _totpRemaining = 30; }
+    }
+
+    public void Dispose()
+    {
+        _totpTimer?.Stop();
+        _totpTimer?.Dispose();
     }
 
     // ── Navigation ───────────────────────────────────────────────────────────
@@ -578,86 +806,125 @@
     {
         if (string.IsNullOrEmpty(value)) return;
         b.OpenElement(0, "div");
-        b.AddAttribute(1, "style", "margin-bottom: 18px;");
+        b.AddAttribute(1, "style", "display: flex; align-items: flex-start; margin-bottom: 18px;");
+
+        // drag handle
+        b.OpenComponent<MudIcon>(10);
+        b.AddAttribute(11, "Icon", Icons.Material.Filled.DragIndicator);
+        b.AddAttribute(12, "Size", Size.Small);
+        b.AddAttribute(13, "Color", Color.Secondary);
+        b.AddAttribute(14, "Style", "cursor:grab; flex-shrink:0; margin-right:4px; margin-top:10px; opacity:0.6;");
+        b.CloseComponent();
+
+        // content column
+        b.OpenElement(20, "div");
+        b.AddAttribute(21, "style", "flex: 1; min-width: 0;");
 
         // label
-        b.OpenElement(2, "div");
-        b.AddAttribute(3, "style", "font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 4px;");
-        b.AddContent(4, label);
+        b.OpenElement(30, "div");
+        b.AddAttribute(31, "style", "font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 4px;");
+        b.AddContent(32, label);
         b.CloseElement();
 
         // value row
-        b.OpenElement(5, "div");
-        b.AddAttribute(6, "style", "display: flex; align-items: center; gap: 8px;");
-        b.OpenElement(7, "div");
-        b.AddAttribute(8, "style", "font-size: 14px; word-break: break-all;");
-        b.AddContent(9, value);
+        b.OpenElement(40, "div");
+        b.AddAttribute(41, "style", "display: flex; align-items: center; gap: 8px;");
+        b.OpenElement(42, "div");
+        b.AddAttribute(43, "style", "font-size: 14px; word-break: break-all;");
+        b.AddContent(44, value);
         b.CloseElement();
         if (copyable)
         {
-            b.OpenComponent<MudIconButton>(10);
-            b.AddAttribute(11, "Icon", Icons.Material.Filled.ContentCopy);
-            b.AddAttribute(12, "Size", Size.Small);
-            b.AddAttribute(13, "Color", Color.Default);
-            b.AddAttribute(14, "Title", $"Copy {label}");
-            b.AddAttribute(15, "OnClick", EventCallback.Factory.Create(this, async () => await CopyAsync(value, label)));
+            b.OpenComponent<MudIconButton>(50);
+            b.AddAttribute(51, "Icon", Icons.Material.Filled.ContentCopy);
+            b.AddAttribute(52, "Size", Size.Small);
+            b.AddAttribute(53, "Color", Color.Default);
+            b.AddAttribute(54, "Title", $"Copy {label}");
+            b.AddAttribute(55, "OnClick", EventCallback.Factory.Create(this, async () => await CopyAsync(value, label)));
             b.CloseComponent();
         }
-        b.CloseElement();
+        b.CloseElement(); // value row
 
-        b.CloseElement();
+        b.CloseElement(); // content column
+        b.CloseElement(); // outer
     };
 
     private RenderFragment DetailNoteField(string label, string? value) => b =>
     {
         if (string.IsNullOrEmpty(value)) return;
         b.OpenElement(0, "div");
-        b.AddAttribute(1, "style", "margin-bottom: 18px;");
+        b.AddAttribute(1, "style", "display: flex; align-items: flex-start; margin-bottom: 18px;");
 
-        b.OpenElement(2, "div");
-        b.AddAttribute(3, "style", "font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 4px;");
-        b.AddContent(4, label);
+        // drag handle
+        b.OpenComponent<MudIcon>(10);
+        b.AddAttribute(11, "Icon", Icons.Material.Filled.DragIndicator);
+        b.AddAttribute(12, "Size", Size.Small);
+        b.AddAttribute(13, "Color", Color.Secondary);
+        b.AddAttribute(14, "Style", "cursor:grab; flex-shrink:0; margin-right:4px; margin-top:10px; opacity:0.6;");
+        b.CloseComponent();
+
+        // content column
+        b.OpenElement(20, "div");
+        b.AddAttribute(21, "style", "flex: 1; min-width: 0;");
+
+        b.OpenElement(30, "div");
+        b.AddAttribute(31, "style", "font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 4px;");
+        b.AddContent(32, label);
         b.CloseElement();
 
-        b.OpenElement(5, "div");
-        b.AddAttribute(6, "style", "font-size: 14px; white-space: pre-wrap; word-break: break-word; padding: 12px; background: var(--mud-palette-surface); border-radius: 8px; border: 1px solid var(--mud-palette-divider);");
-        b.AddContent(7, value);
+        b.OpenElement(40, "div");
+        b.AddAttribute(41, "style", "font-size: 14px; white-space: pre-wrap; word-break: break-word; padding: 12px; background: var(--mud-palette-surface); border-radius: 8px; border: 1px solid var(--mud-palette-divider);");
+        b.AddContent(42, value);
         b.CloseElement();
 
-        b.CloseElement();
+        b.CloseElement(); // content column
+        b.CloseElement(); // outer
     };
 
     private RenderFragment DetailLinkField(string label, string? url) => b =>
     {
         if (string.IsNullOrEmpty(url)) return;
         b.OpenElement(0, "div");
-        b.AddAttribute(1, "style", "margin-bottom: 18px;");
+        b.AddAttribute(1, "style", "display: flex; align-items: flex-start; margin-bottom: 18px;");
 
-        b.OpenElement(2, "div");
-        b.AddAttribute(3, "style", "font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 4px;");
-        b.AddContent(4, label);
-        b.CloseElement();
-
-        b.OpenElement(5, "div");
-        b.AddAttribute(6, "style", "display: flex; align-items: center; gap: 8px;");
-
-        b.OpenComponent<MudLink>(7);
-        b.AddAttribute(8, "Href", url);
-        b.AddAttribute(9, "Target", "_blank");
-        b.AddAttribute(10, "Style", "font-size: 14px; word-break: break-all;");
-        b.AddContent(11, url);
+        // drag handle
+        b.OpenComponent<MudIcon>(10);
+        b.AddAttribute(11, "Icon", Icons.Material.Filled.DragIndicator);
+        b.AddAttribute(12, "Size", Size.Small);
+        b.AddAttribute(13, "Color", Color.Secondary);
+        b.AddAttribute(14, "Style", "cursor:grab; flex-shrink:0; margin-right:4px; margin-top:10px; opacity:0.6;");
         b.CloseComponent();
 
-        b.OpenComponent<MudIconButton>(12);
-        b.AddAttribute(13, "Icon", Icons.Material.Filled.ContentCopy);
-        b.AddAttribute(14, "Size", Size.Small);
-        b.AddAttribute(15, "Color", Color.Default);
-        b.AddAttribute(16, "Title", "Copy URL");
-        b.AddAttribute(17, "OnClick", EventCallback.Factory.Create(this, async () => await CopyAsync(url, label)));
+        // content column
+        b.OpenElement(20, "div");
+        b.AddAttribute(21, "style", "flex: 1; min-width: 0;");
+
+        b.OpenElement(30, "div");
+        b.AddAttribute(31, "style", "font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 4px;");
+        b.AddContent(32, label);
+        b.CloseElement();
+
+        b.OpenElement(40, "div");
+        b.AddAttribute(41, "style", "display: flex; align-items: center; gap: 8px;");
+
+        b.OpenComponent<MudLink>(50);
+        b.AddAttribute(51, "Href", url);
+        b.AddAttribute(52, "Target", "_blank");
+        b.AddAttribute(53, "Style", "font-size: 14px; word-break: break-all;");
+        b.AddContent(54, url);
         b.CloseComponent();
 
-        b.CloseElement();
-        b.CloseElement();
+        b.OpenComponent<MudIconButton>(60);
+        b.AddAttribute(61, "Icon", Icons.Material.Filled.ContentCopy);
+        b.AddAttribute(62, "Size", Size.Small);
+        b.AddAttribute(63, "Color", Color.Default);
+        b.AddAttribute(64, "Title", "Copy URL");
+        b.AddAttribute(65, "OnClick", EventCallback.Factory.Create(this, async () => await CopyAsync(url, label)));
+        b.CloseComponent();
+
+        b.CloseElement(); // value row
+        b.CloseElement(); // content column
+        b.CloseElement(); // outer
     };
 
     private RenderFragment DetailPasswordField(string label, string? value, string key) => b =>
@@ -665,41 +932,54 @@
         if (string.IsNullOrEmpty(value)) return;
         var capturedShow = revealedFields.Contains(key);
         b.OpenElement(0, "div");
-        b.AddAttribute(1, "style", "margin-bottom: 18px;");
+        b.AddAttribute(1, "style", "display: flex; align-items: flex-start; margin-bottom: 18px;");
 
-        b.OpenElement(2, "div");
-        b.AddAttribute(3, "style", "font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 4px;");
-        b.AddContent(4, label);
+        // drag handle
+        b.OpenComponent<MudIcon>(10);
+        b.AddAttribute(11, "Icon", Icons.Material.Filled.DragIndicator);
+        b.AddAttribute(12, "Size", Size.Small);
+        b.AddAttribute(13, "Color", Color.Secondary);
+        b.AddAttribute(14, "Style", "cursor:grab; flex-shrink:0; margin-right:4px; margin-top:10px; opacity:0.6;");
+        b.CloseComponent();
+
+        // content column
+        b.OpenElement(20, "div");
+        b.AddAttribute(21, "style", "flex: 1; min-width: 0;");
+
+        b.OpenElement(30, "div");
+        b.AddAttribute(31, "style", "font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-bottom: 4px;");
+        b.AddContent(32, label);
         b.CloseElement();
 
-        b.OpenElement(5, "div");
-        b.AddAttribute(6, "style", "display: flex; align-items: center; gap: 8px;");
+        b.OpenElement(40, "div");
+        b.AddAttribute(41, "style", "display: flex; align-items: center; gap: 8px;");
 
-        b.OpenElement(7, "div");
-        b.AddAttribute(8, "style", "font-size: 14px; font-family: monospace; word-break: break-all;");
-        b.AddContent(9, capturedShow ? value : new string('•', Math.Min(value.Length, 12)));
+        b.OpenElement(42, "div");
+        b.AddAttribute(43, "style", "font-size: 14px; font-family: monospace; word-break: break-all;");
+        b.AddContent(44, capturedShow ? value : new string('•', Math.Min(value.Length, 12)));
         b.CloseElement();
 
         // reveal toggle
-        b.OpenComponent<MudIconButton>(10);
-        b.AddAttribute(11, "Icon", capturedShow ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility);
-        b.AddAttribute(12, "Size", Size.Small);
-        b.AddAttribute(13, "Color", Color.Default);
-        b.AddAttribute(14, "Title", capturedShow ? "Hide" : "Show");
-        b.AddAttribute(15, "OnClick", EventCallback.Factory.Create(this, () => ToggleReveal(key)));
+        b.OpenComponent<MudIconButton>(50);
+        b.AddAttribute(51, "Icon", capturedShow ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility);
+        b.AddAttribute(52, "Size", Size.Small);
+        b.AddAttribute(53, "Color", Color.Default);
+        b.AddAttribute(54, "Title", capturedShow ? "Hide" : "Show");
+        b.AddAttribute(55, "OnClick", EventCallback.Factory.Create(this, () => ToggleReveal(key)));
         b.CloseComponent();
 
         // copy
-        b.OpenComponent<MudIconButton>(16);
-        b.AddAttribute(17, "Icon", Icons.Material.Filled.ContentCopy);
-        b.AddAttribute(18, "Size", Size.Small);
-        b.AddAttribute(19, "Color", Color.Default);
-        b.AddAttribute(20, "Title", $"Copy {label}");
-        b.AddAttribute(21, "OnClick", EventCallback.Factory.Create(this, async () => await CopyAsync(value, label)));
+        b.OpenComponent<MudIconButton>(60);
+        b.AddAttribute(61, "Icon", Icons.Material.Filled.ContentCopy);
+        b.AddAttribute(62, "Size", Size.Small);
+        b.AddAttribute(63, "Color", Color.Default);
+        b.AddAttribute(64, "Title", $"Copy {label}");
+        b.AddAttribute(65, "OnClick", EventCallback.Factory.Create(this, async () => await CopyAsync(value, label)));
         b.CloseComponent();
 
-        b.CloseElement();
-        b.CloseElement();
+        b.CloseElement(); // value row
+        b.CloseElement(); // content column
+        b.CloseElement(); // outer
     };
 
     private void ToggleReveal(string key)

@@ -179,6 +179,11 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="16,0,0,0">
+                        <ui:ToggleSwitch x:Name="PasskeyToggle"
+                                         OnContent="On" OffContent="Off"
+                                         HorizontalAlignment="Right"
+                                         Margin="0,0,0,10"
+                                         Toggled="PasskeyToggle_Toggled"/>
                         <Button x:Name="SetupHelloButton" Click="SetupHelloButton_Click"
                                 Height="34" Margin="0,0,0,8"
                                 Background="{DynamicResource ModernPrimaryBrush}" Foreground="White"

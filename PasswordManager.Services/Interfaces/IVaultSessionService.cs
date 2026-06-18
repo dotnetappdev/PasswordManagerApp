@@ -56,4 +56,10 @@ public interface IVaultSessionService
     /// <param name="sessionId">Session ID</param>
     /// <returns>Master key or null if session is invalid or locked</returns>
     byte[]? GetMasterKey(string sessionId);
+
+    /// <summary>
+    /// Returns the session ID of the first unlocked session, or null if none exists.
+    /// Useful for services that need to encrypt/decrypt without knowing the session ID ahead of time.
+    /// </summary>
+    string? GetActiveSessionId();
 }

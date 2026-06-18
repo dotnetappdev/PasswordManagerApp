@@ -12,6 +12,8 @@ class PasswordManagerContentScript {
     this.scanForForms();
     this.setupDOMObserver();
     this.setupKeyboardShortcuts();
+    this.totpDetector = new TotpSetupDetector(this);
+    this.totpDetector.scan();
   }
 
   async loadSettings() {
@@ -1408,4 +1410,216 @@ if (document.readyState === 'loading') {
   });
 } else {
   new PasswordManagerContentScript();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Passkey (WebAuthn) interception bridge.
+//
+// The content script runs in an isolated world and cannot override the page's
+// navigator.credentials directly, so it injects inpage.js into the page world and
+// relays its requests to the background service worker (which talks to the native host).
+(function installPasskeyBridge() {
+  const REQUEST = 'PM_PASSKEY_REQUEST';
+  const RESPONSE = 'PM_PASSKEY_RESPONSE';
+
+  // 1. Inject the page-world hook as early as possible.
+  try {
+    const script = document.createElement('script');
+    script.src = chrome.runtime.getURL('inpage.js');
+    script.async = false;
+    (document.head || document.documentElement).appendChild(script);
+    script.onload = () => script.remove();
+  } catch (e) {
+    console.warn('Password Manager: failed to inject passkey hook', e);
+  }
+
+  // 2. Relay page → background → page.
+  window.addEventListener('message', (event) => {
+    if (event.source !== window || !event.data || event.data.type !== REQUEST) return;
+
+    const { id, kind, request } = event.data;
+    const action = kind === 'create' ? 'passkeyCreate' : 'passkeyGet';
+
+    const reply = (payload) => window.postMessage({ type: RESPONSE, id, payload }, window.location.origin);
+
+    try {
+      chrome.runtime.sendMessage({ action, ...request }, (response) => {
+        if (chrome.runtime.lastError) {
+          // Background/native host unreachable → let the page fall back to the platform authenticator.
+          reply({ success: false, error: chrome.runtime.lastError.message, fallback: true });
+          return;
+        }
+        reply(response || { success: false, error: 'No response', fallback: true });
+      });
+    } catch (e) {
+      reply({ success: false, error: e.message, fallback: true });
+    }
+  });
+})();
+
+// ─── TOTP Setup Detector ──────────────────────────────────────────────────────
+// Watches for 2FA setup pages and extracts the otpauth:// URI automatically,
+// the same way 1Password does — no camera, no manual copy-paste.
+class TotpSetupDetector {
+  constructor(contentScript) {
+    this.cs = contentScript;
+    this._shown = false;  // only prompt once per page load
+    this._observer = null;
+  }
+
+  scan() {
+    // 1. Immediate DOM scan
+    this._tryScan();
+
+    // 2. Watch for dynamic content (SPAs render the QR after a network call)
+    this._observer = new MutationObserver(() => {
+      if (!this._shown) this._tryScan();
+    });
+    this._observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  _tryScan() {
+    const uri = this._findOtpauthUri();
+    if (uri) {
+      this._observer?.disconnect();
+      this._shown = true;
+      this._promptSave(uri);
+    }
+  }
+
+  // ── Strategy 1: otpauth:// URI visible anywhere in the DOM ──────────────────
+  // Covers: hidden inputs, data- attrs, anchor hrefs, raw text nodes, script vars
+  _findOtpauthUri() {
+    // Check full page HTML first — fastest
+    const html = document.documentElement.innerHTML;
+    const inlineMatch = html.match(/otpauth:\/\/totp\/[^\s"'<>]+/i);
+    if (inlineMatch) return decodeURIComponent(inlineMatch[0]);
+
+    // Check all img src attributes — some sites embed the uri as a QR src param
+    for (const img of document.querySelectorAll('img')) {
+      const src = img.src || img.getAttribute('src') || '';
+      const m = src.match(/[?&](?:data|chl|cht)=([^&]+)/i);
+      if (m) {
+        const decoded = decodeURIComponent(m[1]);
+        if (decoded.startsWith('otpauth://')) return decoded;
+      }
+      // Some sites use data-* on the img itself
+      for (const attr of img.attributes) {
+        if (attr.value.startsWith('otpauth://')) return attr.value;
+      }
+    }
+
+    // Check canvas elements rendered by JS QR libraries (totp QRs often go to <canvas>)
+    for (const canvas of document.querySelectorAll('canvas')) {
+      const uri = this._decodeCanvasQr(canvas);
+      if (uri) return uri;
+    }
+
+    return null;
+  }
+
+  // ── Strategy 2: decode a <canvas> QR code using jsQR (bundled) ──────────────
+  _decodeCanvasQr(canvas) {
+    try {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      const { width, height } = canvas;
+      if (width < 50 || height < 50) return null; // too small to be a QR
+      const imageData = ctx.getImageData(0, 0, width, height);
+      if (typeof jsQR === 'undefined') return null;
+      const result = jsQR(imageData.data, width, height);
+      if (result?.data?.startsWith('otpauth://')) return result.data;
+    } catch (_) {}
+    return null;
+  }
+
+  // ── Prompt the user to save ──────────────────────────────────────────────────
+  _promptSave(uri) {
+    const parsed = this._parseOtpauth(uri);
+    if (!parsed) return;
+
+    // Build the save banner (matches our extension's dark theme)
+    const banner = document.createElement('div');
+    banner.id = 'pm-totp-banner';
+    Object.assign(banner.style, {
+      position: 'fixed', top: '16px', right: '16px', zIndex: '2147483647',
+      background: '#1a1a2e', border: '1px solid #2563EB',
+      borderRadius: '12px', padding: '14px 16px', width: '320px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      color: '#e5e5e5', fontSize: '14px',
+    });
+
+    banner.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="width:32px;height:32px;border-radius:8px;background:#2563EB;display:flex;align-items:center;justify-content:center;font-size:16px;">🔐</div>
+        <div>
+          <div style="font-weight:600;font-size:14px;">Save One-Time Password?</div>
+          <div style="font-size:11px;color:#9d9d9d;">${parsed.issuer || location.hostname}</div>
+        </div>
+        <button id="pm-totp-close" style="margin-left:auto;background:none;border:none;color:#9d9d9d;cursor:pointer;font-size:18px;padding:0;">✕</button>
+      </div>
+      <div style="background:#0d1b2a;border-radius:8px;padding:10px;margin-bottom:12px;">
+        <div style="font-size:11px;color:#60A5FA;margin-bottom:4px;">ACCOUNT</div>
+        <div style="font-weight:500;">${parsed.account || 'Unknown account'}</div>
+        <div style="font-size:11px;color:#9d9d9d;margin-top:4px;">Secret key detected · ${parsed.digits || 6} digits · ${parsed.period || 30}s</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button id="pm-totp-save" style="flex:1;background:#2563EB;color:white;border:none;border-radius:8px;padding:9px;cursor:pointer;font-weight:600;font-size:13px;">
+          Save to Vault
+        </button>
+        <button id="pm-totp-dismiss" style="flex:1;background:#2a2a3e;color:#9d9d9d;border:none;border-radius:8px;padding:9px;cursor:pointer;font-size:13px;">
+          Ignore
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(banner);
+
+    banner.querySelector('#pm-totp-close').onclick = () => banner.remove();
+    banner.querySelector('#pm-totp-dismiss').onclick = () => banner.remove();
+    banner.querySelector('#pm-totp-save').onclick = async () => {
+      await this._saveTotp(parsed, uri);
+      banner.remove();
+    };
+  }
+
+  async _saveTotp(parsed, rawUri) {
+    // Ask background to save — it will attach it to the matching vault item
+    // (matched by hostname) or create a new entry if no match found
+    chrome.runtime.sendMessage({
+      action: 'saveTotpSecret',
+      otpauthUri: rawUri,
+      issuer: parsed.issuer || location.hostname,
+      account: parsed.account,
+      secret: parsed.secret,
+      hostname: location.hostname,
+    }, (response) => {
+      const ok = response?.success;
+      this.cs.showNotification(
+        ok
+          ? `✅ One-time password saved for ${parsed.issuer || location.hostname}`
+          : `❌ Could not save OTP: ${response?.error || 'unknown error'}`
+      );
+    });
+  }
+
+  _parseOtpauth(uri) {
+    try {
+      // otpauth://totp/Issuer:account?secret=XXX&issuer=XXX&digits=6&period=30
+      const url = new URL(uri);
+      if (url.protocol !== 'otpauth:') return null;
+      const label = decodeURIComponent(url.pathname.replace(/^\/\/totp\//, ''));
+      const colonIdx = label.indexOf(':');
+      const issuer = colonIdx >= 0 ? label.slice(0, colonIdx) : (url.searchParams.get('issuer') || '');
+      const account = colonIdx >= 0 ? label.slice(colonIdx + 1) : label;
+      return {
+        issuer: url.searchParams.get('issuer') || issuer,
+        account,
+        secret: url.searchParams.get('secret'),
+        digits: parseInt(url.searchParams.get('digits') || '6'),
+        period: parseInt(url.searchParams.get('period') || '30'),
+      };
+    } catch (_) { return null; }
+  }
 }

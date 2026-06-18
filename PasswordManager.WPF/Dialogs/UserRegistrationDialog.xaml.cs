@@ -273,7 +273,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
 
             // Generate cryptographic components
             var userSalt = _cryptoService.GenerateUserSalt();
-            var masterPassword = MasterPasswordBox.Password;
+            var masterPassword = MasterPasswordBox.Password.Trim();
             var masterPasswordHash = _cryptoService.CreateMasterPasswordHash(masterPassword, userSalt);
             var masterKeyIdentifier = _cryptoService.CreateMasterKeyIdentifier(masterPassword, userSalt);
 

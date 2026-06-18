@@ -99,6 +99,19 @@ public interface IPasskeyService
     Task<bool> VerifyPasskeyAssertionAsync(string credentialId, string clientDataJson, string authenticatorData, string signature, string challenge);
 
     /// <summary>
+    /// Creates a software passkey for a third-party site and stores its private key encrypted
+    /// in the user's vault (zero-knowledge). Server-side equivalent of the native host's
+    /// passkeyCreate. Requires the master password to derive the encryption key.
+    /// </summary>
+    Task<VaultPasskeyCreateResponseDto> CreateVaultPasskeyAsync(string userId, VaultPasskeyCreateRequestDto request);
+
+    /// <summary>
+    /// Produces a WebAuthn assertion (signs the challenge) using a stored vault passkey.
+    /// Server-side equivalent of the native host's passkeyGet.
+    /// </summary>
+    Task<VaultPasskeyAssertResponseDto> AssertVaultPasskeyAsync(string userId, VaultPasskeyAssertRequestDto request);
+
+    /// <summary>
     /// Generates a new WebAuthn challenge
     /// </summary>
     /// <returns>Base64-encoded challenge</returns>

@@ -11,6 +11,7 @@ namespace PasswordManager.BrowserExtension.NativeHost;
 public class Program
 {
     private static PasswordManagerDbContext? _dbContext;
+    private static string _currentDbPath = "";
     private static readonly Dictionary<string, (string userId, byte[] masterKey)> _sessions = new();
 
     public static async Task Main(string[] args)
@@ -34,15 +35,18 @@ public class Program
     private static void InitializeServices()
     {
         // Initialize database context
-        var connectionString = GetDatabasePath();
+        _currentDbPath = ResolveDatabasePath();
         var options = new DbContextOptionsBuilder<PasswordManagerDbContext>()
-            .UseSqlite(connectionString)
+            .UseSqlite($"Data Source={_currentDbPath}")
             .Options;
-        
+
         _dbContext = new PasswordManagerDbContext(options);
     }
 
-    private static string GetDatabasePath()
+    private static string GetDatabasePath() => $"Data Source={ResolveDatabasePath()}";
+
+    /// <summary>Returns the raw path to the SQLite vault file the host will use.</summary>
+    private static string ResolveDatabasePath()
     {
         // Try to find the database in common locations
         var possiblePaths = new[]
@@ -59,12 +63,12 @@ public class Program
         {
             if (File.Exists(path))
             {
-                return $"Data Source={path}";
+                return Path.GetFullPath(path);
             }
         }
 
         // If not found, use default path (will be created if needed)
-        return $"Data Source={Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PasswordManager", "passwordmanager.db")}";
+        return Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PasswordManager", "passwordmanager.db"));
     }
 
     private static async Task ProcessNativeMessages()
@@ -141,12 +145,18 @@ public class Program
             if (!string.IsNullOrEmpty(customDbPath) && File.Exists(customDbPath))
             {
                 // Reinitialize database with custom path
-                var connectionString = $"Data Source={customDbPath}";
-                var options = new DbContextOptionsBuilder<PasswordManagerDbContext>()
-                    .UseSqlite(connectionString)
-                    .Options;
-                
-                _dbContext = new PasswordManagerDbContext(options);
+                var fullPath = Path.GetFullPath(customDbPath);
+                if (!string.Equals(fullPath, _currentDbPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    var options = new DbContextOptionsBuilder<PasswordManagerDbContext>()
+                        .UseSqlite($"Data Source={fullPath}")
+                        .Options;
+
+                    _dbContext = new PasswordManagerDbContext(options);
+                    _currentDbPath = fullPath;
+                    _passkeySchemaEnsured = false;
+                    _customFieldSchemaEnsured = false; // re-check the schema on the new DB
+                }
             }
         }
 
@@ -159,6 +169,9 @@ public class Program
                 "getCreditCards" => await HandleGetCreditCards(message),
                 "generatePassword" => HandleGeneratePassword(message),
                 "testConnection" => await HandleTestConnection(),
+                "passkeyCreate" => await HandlePasskeyCreate(message),
+                "passkeyGet" => await HandlePasskeyGet(message),
+                "saveTotpSecret" => await HandleSaveTotpSecret(message),
                 _ => new { success = false, error = "Unknown action" }
             };
         }
@@ -176,8 +189,8 @@ public class Program
             return new { success = false, error = "Email and password are required" };
         }
 
-        var email = emailElement.GetString();
-        var password = passwordElement.GetString();
+        var email = emailElement.GetString()?.Trim();
+        var password = passwordElement.GetString()?.Trim();
 
         if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
         {
@@ -457,10 +470,11 @@ public class Program
             // Test database connection
             await _dbContext!.Database.OpenConnectionAsync();
             await _dbContext.Database.CloseConnectionAsync();
-            
-            return new { 
-                success = true, 
-                message = "Database connection successful" 
+
+            return new {
+                success = true,
+                message = "Database connection successful",
+                databasePath = _currentDbPath
             };
         }
         catch (Exception ex)
@@ -470,6 +484,458 @@ public class Program
                 error = $"Database connection failed: {ex.Message}" 
             };
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Passkey (WebAuthn virtual authenticator) — software keys stored in the vault.
+    //
+    // 1Password model: the host generates a P-256 key pair on registration, encrypts
+    // the private key under the user's master key (AES-GCM, zero-knowledge) and stores
+    // it in the UserPasskeys table. On authentication it decrypts the private key and
+    // signs the challenge. The browser never sees the private key.
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    private static readonly byte[] Aaguid = new byte[16]; // all-zero AAGUID (privacy-preserving)
+
+    private static bool _passkeySchemaEnsured;
+    private static bool _customFieldSchemaEnsured;
+
+    /// <summary>
+    /// Adds the extra "RpId" column to the UserPasskeys table if it isn't there yet.
+    /// SQLite ignores the statement target if the column already exists (we swallow the error),
+    /// so this is a safe, migration-free schema top-up that the main app tolerates too.
+    /// </summary>
+    private static async Task EnsurePasskeySchemaAsync()
+    {
+        if (_passkeySchemaEnsured) return;
+        try
+        {
+            await _dbContext!.Database.ExecuteSqlRawAsync("ALTER TABLE \"UserPasskeys\" ADD COLUMN \"RpId\" TEXT NULL");
+        }
+        catch
+        {
+            // Column already exists (or table is being created elsewhere) — fine.
+        }
+        _passkeySchemaEnsured = true;
+    }
+
+    private static async Task EnsureCustomFieldSchemaAsync()
+    {
+        if (_customFieldSchemaEnsured) return;
+        try
+        {
+            // Create the CustomFields table if it doesn't exist yet (safe — EF may have already done it).
+            await _dbContext!.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS ""CustomFields"" (
+                    ""Id""             INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    ""PasswordItemId"" INTEGER NOT NULL REFERENCES ""PasswordItems""(""Id"") ON DELETE CASCADE,
+                    ""Name""           TEXT NULL,
+                    ""Value""          TEXT NULL,
+                    ""Type""           INTEGER NOT NULL DEFAULT 0,
+                    ""IsProtected""    INTEGER NOT NULL DEFAULT 0,
+                    ""DisplayOrder""   INTEGER NOT NULL DEFAULT 0,
+                    ""CreatedAt""      TEXT NOT NULL,
+                    ""LastModified""   TEXT NOT NULL
+                )");
+        }
+        catch
+        {
+            // Table already exists — fine.
+        }
+        _customFieldSchemaEnsured = true;
+    }
+
+    private static async Task<object> HandleSaveTotpSecret(Dictionary<string, object> message)
+    {
+        var session = ResolveSession(message);
+        if (session == null) return new { success = false, error = "Not authenticated" };
+
+        var otpauthUri = Str(message, "otpauthUri");
+        var hostname   = Str(message, "hostname");
+        var issuer     = Str(message, "issuer");
+        var account    = Str(message, "account");
+
+        if (string.IsNullOrEmpty(otpauthUri))
+            return new { success = false, error = "otpauthUri is required" };
+
+        await EnsureCustomFieldSchemaAsync();
+
+        const string totpFieldName = "TOTP Secret";
+        var now = DateTime.UtcNow.ToString("o");
+
+        // Find an existing login item by hostname
+        PasswordItem? item = null;
+        if (!string.IsNullOrEmpty(hostname))
+        {
+            item = await _dbContext!.PasswordItems
+                .Include(p => p.LoginItem)
+                .Where(p => !p.IsDeleted && p.UserId == session.Value.userId &&
+                            p.LoginItem != null && p.LoginItem.WebsiteUrl != null &&
+                            p.LoginItem.WebsiteUrl.Contains(hostname))
+                .FirstOrDefaultAsync();
+        }
+
+        if (item != null)
+        {
+            // Upsert the TOTP custom field via raw SQL (avoids EF migration issues)
+            var existingField = await _dbContext!.CustomFields
+                .FirstOrDefaultAsync(f => f.PasswordItemId == item.Id &&
+                    f.Name != null && f.Name.ToLower() == totpFieldName.ToLower());
+
+            if (existingField != null)
+            {
+                existingField.Value = otpauthUri;
+                existingField.LastModified = DateTime.UtcNow;
+            }
+            else
+            {
+                _dbContext.CustomFields.Add(new CustomField
+                {
+                    PasswordItemId = item.Id,
+                    Name = totpFieldName,
+                    Value = otpauthUri,
+                    Type = 2, // CustomFieldType.Password
+                    IsProtected = true,
+                    CreatedAt = DateTime.UtcNow,
+                    LastModified = DateTime.UtcNow,
+                });
+            }
+            item.LastModified = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync();
+            return new { success = true, updated = true, itemId = item.Id, title = item.Title };
+        }
+        else
+        {
+            // Create a new login item for this TOTP entry
+            var title = issuer ?? account ?? hostname ?? "TOTP Entry";
+            var newItem = new PasswordItem
+            {
+                Title = title,
+                UserId = session.Value.userId,
+                Type = 0, // ItemType.Login
+                CreatedAt = DateTime.UtcNow,
+                LastModified = DateTime.UtcNow,
+            };
+            _dbContext!.PasswordItems.Add(newItem);
+            await _dbContext.SaveChangesAsync();
+
+            _dbContext.CustomFields.Add(new CustomField
+            {
+                PasswordItemId = newItem.Id,
+                Name = totpFieldName,
+                Value = otpauthUri,
+                Type = 2,
+                IsProtected = true,
+                CreatedAt = DateTime.UtcNow,
+                LastModified = DateTime.UtcNow,
+            });
+            await _dbContext.SaveChangesAsync();
+            return new { success = true, created = true, itemId = newItem.Id, title = newItem.Title };
+        }
+    }
+
+    private static (string userId, byte[] masterKey)? ResolveSession(Dictionary<string, object> message)
+    {
+        if (message.TryGetValue("token", out var tokenObj) && tokenObj is JsonElement tokenEl)
+        {
+            var token = tokenEl.GetString();
+            if (!string.IsNullOrEmpty(token) && _sessions.TryGetValue(token, out var session))
+                return session;
+        }
+        return null;
+    }
+
+    private static string? Str(Dictionary<string, object> m, string key) =>
+        m.TryGetValue(key, out var o) && o is JsonElement e && e.ValueKind == JsonValueKind.String ? e.GetString() : null;
+
+    private static async Task<object> HandlePasskeyCreate(Dictionary<string, object> message)
+    {
+        var session = ResolveSession(message);
+        if (session == null)
+            return new { success = false, error = "Vault is locked. Sign in to the extension first." };
+
+        var rpId = Str(message, "rpId");
+        var userName = Str(message, "userName") ?? "";
+        var userHandleB64 = Str(message, "userHandle") ?? "";
+        if (string.IsNullOrEmpty(rpId))
+            return new { success = false, error = "rpId is required" };
+
+        try
+        {
+            await EnsurePasskeySchemaAsync();
+
+            // 1. Generate the P-256 key pair.
+            using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+            var ecParams = ecdsa.ExportParameters(includePrivateParameters: true);
+            var pkcs8 = ecdsa.ExportPkcs8PrivateKey();
+
+            // 2. Random credential id.
+            var credentialId = RandomNumberGenerator.GetBytes(32);
+            var credentialIdB64Url = Base64Url(credentialId);
+
+            // 3. COSE EC2 public key.
+            var cosePublicKey = EncodeCoseEc2PublicKey(ecParams.Q.X!, ecParams.Q.Y!);
+
+            // 4. authenticatorData with attested credential data (AT flag set).
+            const byte flags = 0x01 | 0x04 | 0x40; // UP | UV | AT
+            var authData = BuildAuthenticatorData(rpId, flags, signCount: 0,
+                attestedCredentialData: BuildAttestedCredentialData(credentialId, cosePublicKey));
+
+            // 5. attestationObject with fmt = "none".
+            var attestationObject = BuildNoneAttestationObject(authData);
+
+            // 6. Encrypt the private key (+ metadata) under the master key and persist.
+            var vaultPayload = JsonSerializer.Serialize(new
+            {
+                rpId,
+                userHandle = userHandleB64,
+                userName,
+                privateKeyPkcs8 = Convert.ToBase64String(pkcs8)
+            });
+            var enc = EncryptWithKey(vaultPayload, session.Value.masterKey);
+
+            var passkey = new UserPasskey
+            {
+                UserId = session.Value.userId,
+                CredentialId = credentialIdB64Url,
+                Name = $"{rpId}{(string.IsNullOrEmpty(userName) ? "" : " · " + userName)}",
+                PublicKey = Convert.ToBase64String(cosePublicKey),
+                SignatureCounter = 0,
+                DeviceType = "Extension",
+                IsBackedUp = true,
+                RequiresUserVerification = true,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true,
+                StoreInVault = true,
+                RpId = rpId,
+                EncryptedVaultData = JsonSerializer.Serialize(enc)
+            };
+            _dbContext!.UserPasskeys.Add(passkey);
+            await _dbContext.SaveChangesAsync();
+
+            Array.Clear(pkcs8, 0, pkcs8.Length);
+
+            return new
+            {
+                success = true,
+                credentialId = credentialIdB64Url,
+                attestationObject = Convert.ToBase64String(attestationObject),
+                publicKeyCose = Convert.ToBase64String(cosePublicKey)
+            };
+        }
+        catch (Exception ex)
+        {
+            return new { success = false, error = $"Passkey creation failed: {ex.Message}" };
+        }
+    }
+
+    private static async Task<object> HandlePasskeyGet(Dictionary<string, object> message)
+    {
+        var session = ResolveSession(message);
+        if (session == null)
+            return new { success = false, error = "Vault is locked. Sign in to the extension first." };
+
+        var rpId = Str(message, "rpId");
+        var clientDataJsonB64 = Str(message, "clientDataJSON");
+        if (string.IsNullOrEmpty(rpId) || string.IsNullOrEmpty(clientDataJsonB64))
+            return new { success = false, error = "rpId and clientDataJSON are required" };
+
+        // Optional list of allowed credential ids (base64url).
+        var allowIds = new List<string>();
+        if (message.TryGetValue("allowCredentialIds", out var allowObj) && allowObj is JsonElement allowEl &&
+            allowEl.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in allowEl.EnumerateArray())
+                if (item.ValueKind == JsonValueKind.String) allowIds.Add(item.GetString()!);
+        }
+
+        try
+        {
+            await EnsurePasskeySchemaAsync();
+
+            // Find candidate passkeys for this user + RP.
+            var candidates = await _dbContext!.UserPasskeys
+                .Where(p => p.UserId == session.Value.userId && p.IsActive && p.RpId == rpId)
+                .ToListAsync();
+
+            UserPasskey? passkey = allowIds.Count > 0
+                ? candidates.FirstOrDefault(p => allowIds.Contains(p.CredentialId))
+                : candidates.OrderByDescending(p => p.LastUsedAt ?? p.CreatedAt).FirstOrDefault();
+
+            if (passkey == null)
+                return new { success = false, error = "No matching passkey for this site" };
+
+            // Decrypt the private key.
+            var enc = JsonSerializer.Deserialize<EncryptedPasswordData>(passkey.EncryptedVaultData!)!;
+            var payloadJson = DecryptPasswordWithKey(enc, session.Value.masterKey);
+            using var payload = JsonDocument.Parse(payloadJson);
+            var pkcs8 = Convert.FromBase64String(payload.RootElement.GetProperty("privateKeyPkcs8").GetString()!);
+            var userHandle = payload.RootElement.TryGetProperty("userHandle", out var uh) ? uh.GetString() ?? "" : "";
+
+            using var ecdsa = ECDsa.Create();
+            ecdsa.ImportPkcs8PrivateKey(pkcs8, out _);
+            Array.Clear(pkcs8, 0, pkcs8.Length);
+
+            // authenticatorData (no attested credential data on assertion).
+            var newCount = passkey.SignatureCounter + 1;
+            const byte flags = 0x01 | 0x04; // UP | UV
+            var authData = BuildAuthenticatorData(rpId, flags, newCount, attestedCredentialData: null);
+
+            // signature over authData || SHA-256(clientDataJSON), ES256 (ASN.1 DER).
+            var clientDataHash = SHA256.HashData(Base64UrlDecode(clientDataJsonB64));
+            var signedData = authData.Concat(clientDataHash).ToArray();
+            var signature = ecdsa.SignData(signedData, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence);
+
+            // Update counter + last-used.
+            passkey.SignatureCounter = newCount;
+            passkey.LastUsedAt = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync();
+
+            return new
+            {
+                success = true,
+                credentialId = passkey.CredentialId,
+                authenticatorData = Convert.ToBase64String(authData),
+                signature = Convert.ToBase64String(signature),
+                userHandle
+            };
+        }
+        catch (Exception ex)
+        {
+            return new { success = false, error = $"Passkey authentication failed: {ex.Message}" };
+        }
+    }
+
+    // --- WebAuthn binary builders ---------------------------------------------------
+
+    private static byte[] BuildAuthenticatorData(string rpId, byte flags, uint signCount, byte[]? attestedCredentialData)
+    {
+        var rpIdHash = SHA256.HashData(Encoding.UTF8.GetBytes(rpId));
+        var countBytes = new byte[4];
+        countBytes[0] = (byte)(signCount >> 24);
+        countBytes[1] = (byte)(signCount >> 16);
+        countBytes[2] = (byte)(signCount >> 8);
+        countBytes[3] = (byte)signCount;
+
+        using var ms = new MemoryStream();
+        ms.Write(rpIdHash, 0, rpIdHash.Length);
+        ms.WriteByte(flags);
+        ms.Write(countBytes, 0, 4);
+        if (attestedCredentialData != null)
+            ms.Write(attestedCredentialData, 0, attestedCredentialData.Length);
+        return ms.ToArray();
+    }
+
+    private static byte[] BuildAttestedCredentialData(byte[] credentialId, byte[] cosePublicKey)
+    {
+        using var ms = new MemoryStream();
+        ms.Write(Aaguid, 0, Aaguid.Length);
+        ms.WriteByte((byte)(credentialId.Length >> 8));
+        ms.WriteByte((byte)(credentialId.Length & 0xFF));
+        ms.Write(credentialId, 0, credentialId.Length);
+        ms.Write(cosePublicKey, 0, cosePublicKey.Length);
+        return ms.ToArray();
+    }
+
+    /// <summary>CBOR: { "fmt": "none", "attStmt": {}, "authData": authData }.</summary>
+    private static byte[] BuildNoneAttestationObject(byte[] authData)
+    {
+        using var ms = new MemoryStream();
+        ms.WriteByte(0xA3); // map(3)
+        CborWriteTextKey(ms, "fmt");
+        CborWriteTextString(ms, "none");
+        CborWriteTextKey(ms, "attStmt");
+        ms.WriteByte(0xA0); // map(0)
+        CborWriteTextKey(ms, "authData");
+        CborWriteByteString(ms, authData);
+        return ms.ToArray();
+    }
+
+    /// <summary>COSE_Key for an EC2 P-256 public key: {1:2, 3:-7, -1:1, -2:x, -3:y}.</summary>
+    private static byte[] EncodeCoseEc2PublicKey(byte[] x, byte[] y)
+    {
+        x = LeftPad(x, 32);
+        y = LeftPad(y, 32);
+        using var ms = new MemoryStream();
+        ms.WriteByte(0xA5); // map(5)
+        ms.WriteByte(0x01); ms.WriteByte(0x02);                 // 1 (kty)  : 2 (EC2)
+        ms.WriteByte(0x03); ms.WriteByte(0x26);                 // 3 (alg)  : -7 (ES256)
+        ms.WriteByte(0x20); ms.WriteByte(0x01);                 // -1 (crv) : 1 (P-256)
+        ms.WriteByte(0x21); CborWriteByteString(ms, x);         // -2 (x)
+        ms.WriteByte(0x22); CborWriteByteString(ms, y);         // -3 (y)
+        return ms.ToArray();
+    }
+
+    // --- minimal CBOR writers (definite-length, values < 24..65535) -----------------
+
+    private static void CborWriteTextKey(Stream s, string text) => CborWriteTextString(s, text);
+
+    private static void CborWriteTextString(Stream s, string text)
+    {
+        var bytes = Encoding.UTF8.GetBytes(text);
+        CborWriteTypeAndLength(s, majorType: 3, length: bytes.Length);
+        s.Write(bytes, 0, bytes.Length);
+    }
+
+    private static void CborWriteByteString(Stream s, byte[] bytes)
+    {
+        CborWriteTypeAndLength(s, majorType: 2, length: bytes.Length);
+        s.Write(bytes, 0, bytes.Length);
+    }
+
+    private static void CborWriteTypeAndLength(Stream s, int majorType, int length)
+    {
+        var mt = (byte)(majorType << 5);
+        if (length < 24)
+        {
+            s.WriteByte((byte)(mt | length));
+        }
+        else if (length < 256)
+        {
+            s.WriteByte((byte)(mt | 24));
+            s.WriteByte((byte)length);
+        }
+        else
+        {
+            s.WriteByte((byte)(mt | 25));
+            s.WriteByte((byte)(length >> 8));
+            s.WriteByte((byte)(length & 0xFF));
+        }
+    }
+
+    private static byte[] LeftPad(byte[] value, int size)
+    {
+        if (value.Length == size) return value;
+        if (value.Length > size) return value.Skip(value.Length - size).ToArray();
+        var padded = new byte[size];
+        Array.Copy(value, 0, padded, size - value.Length, value.Length);
+        return padded;
+    }
+
+    private static string Base64Url(byte[] data) =>
+        Convert.ToBase64String(data).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+    private static byte[] Base64UrlDecode(string input)
+    {
+        var s = input.Replace('-', '+').Replace('_', '/');
+        switch (s.Length % 4) { case 2: s += "=="; break; case 3: s += "="; break; }
+        return Convert.FromBase64String(s);
+    }
+
+    private static EncryptedPasswordData EncryptWithKey(string plaintext, byte[] masterKey)
+    {
+        var nonce = RandomNumberGenerator.GetBytes(12);
+        var plaintextBytes = Encoding.UTF8.GetBytes(plaintext);
+        var ciphertext = new byte[plaintextBytes.Length];
+        var tag = new byte[16];
+        using var aes = new AesGcm(masterKey, 16);
+        aes.Encrypt(nonce, plaintextBytes, ciphertext, tag);
+        return new EncryptedPasswordData
+        {
+            EncryptedPassword = Convert.ToBase64String(ciphertext),
+            Nonce = Convert.ToBase64String(nonce),
+            AuthenticationTag = Convert.ToBase64String(tag)
+        };
     }
 
     // Crypto utility methods
@@ -759,6 +1225,45 @@ public class CreditCardItem
     public PasswordItem PasswordItem { get; set; } = null!;
 }
 
+/// <summary>
+/// WebAuthn passkey row. Mirrors the main app's UserPasskey table. The private key is held
+/// (AES-GCM encrypted under the master key) inside <see cref="EncryptedVaultData"/>; RpId is an
+/// extra plaintext column added at runtime by the host so credentials can be looked up per site.
+/// </summary>
+public class UserPasskey
+{
+    public int Id { get; set; }
+    public string UserId { get; set; } = string.Empty;
+    public string CredentialId { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string PublicKey { get; set; } = string.Empty;
+    public uint SignatureCounter { get; set; }
+    public string? DeviceType { get; set; }
+    public bool IsBackedUp { get; set; }
+    public bool RequiresUserVerification { get; set; } = true;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? LastUsedAt { get; set; }
+    public bool IsActive { get; set; } = true;
+    public bool StoreInVault { get; set; } = true;
+    public string? EncryptedVaultData { get; set; }
+    public string? RpId { get; set; }
+}
+
+public class CustomField
+{
+    public int Id { get; set; }
+    public int PasswordItemId { get; set; }
+    [MaxLength(100)]
+    public string? Name { get; set; }
+    public string? Value { get; set; }
+    public int Type { get; set; }
+    public bool IsProtected { get; set; }
+    public int DisplayOrder { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime LastModified { get; set; } = DateTime.UtcNow;
+    public PasswordItem PasswordItem { get; set; } = null!;
+}
+
 public class PasswordManagerDbContext : IdentityDbContext<ApplicationUser>
 {
     public PasswordManagerDbContext(DbContextOptions<PasswordManagerDbContext> options) : base(options)
@@ -768,6 +1273,8 @@ public class PasswordManagerDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<PasswordItem> PasswordItems { get; set; } = null!;
     public DbSet<LoginItem> LoginItems { get; set; } = null!;
     public DbSet<CreditCardItem> CreditCardItems { get; set; } = null!;
+    public DbSet<UserPasskey> UserPasskeys { get; set; } = null!;
+    public DbSet<CustomField> CustomFields { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -864,6 +1371,35 @@ public class PasswordManagerDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Email).HasMaxLength(256);
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.LastModified).IsRequired();
+        });
+
+        // Configure UserPasskey (maps to the existing UserPasskeys table).
+        modelBuilder.Entity<UserPasskey>(entity =>
+        {
+            entity.ToTable("UserPasskeys");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.CredentialId).IsRequired().HasMaxLength(1024);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.PublicKey).IsRequired().HasMaxLength(2048);
+            entity.Property(e => e.DeviceType).HasMaxLength(50);
+            entity.Property(e => e.EncryptedVaultData).HasMaxLength(4096);
+            // RpId is an extra column the host adds via ALTER TABLE (EnsurePasskeySchema).
+            entity.Property(e => e.RpId).HasMaxLength(256);
+        });
+
+        // Configure CustomField
+        modelBuilder.Entity<CustomField>(entity =>
+        {
+            entity.ToTable("CustomFields");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.LastModified).IsRequired();
+            entity.HasOne(e => e.PasswordItem)
+                  .WithMany()
+                  .HasForeignKey(e => e.PasswordItemId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

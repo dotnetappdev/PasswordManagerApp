@@ -18,15 +18,18 @@ public class DatabaseBackupService : IDatabaseBackupService
     private readonly ILogger<DatabaseBackupService> _logger;
     private readonly IDatabaseContextFactory _contextFactory;
     private readonly IPasswordEncryptionService _encryptionService;
+    private readonly IBackupEncryptionService _backupEncryption;
 
     public DatabaseBackupService(
         ILogger<DatabaseBackupService> logger,
         IDatabaseContextFactory contextFactory,
-        IPasswordEncryptionService encryptionService)
+        IPasswordEncryptionService encryptionService,
+        IBackupEncryptionService backupEncryption)
     {
         _logger = logger;
         _contextFactory = contextFactory;
         _encryptionService = encryptionService;
+        _backupEncryption = backupEncryption;
     }
 
     public async Task<DatabaseBackupResult> CreateBackupAsync(string encryptionKey, bool compress = true)
@@ -78,9 +81,9 @@ public class DatabaseBackupService : IDatabaseBackupService
                 finalData = jsonBytes;
             }
 
-            // Encrypt the data (simplified - in production this would use proper encryption)
-            // For now, just return the data as-is
-            var encryptedData = finalData;
+            var encryptedData = string.IsNullOrEmpty(encryptionKey)
+                ? finalData
+                : _backupEncryption.Encrypt(finalData, encryptionKey);
 
             return new DatabaseBackupResult
             {
@@ -104,9 +107,9 @@ public class DatabaseBackupService : IDatabaseBackupService
     {
         try
         {
-            // Decrypt the data (simplified - in production this would use proper decryption)
-            // For now, assume data is already decrypted
-            var decryptedData = backupData;
+            var decryptedData = string.IsNullOrEmpty(encryptionKey)
+                ? backupData
+                : _backupEncryption.Decrypt(backupData, encryptionKey);
 
             // Check if compressed and decompress
             var jsonData = await DecompressIfNeeded(decryptedData);
@@ -130,6 +133,194 @@ public class DatabaseBackupService : IDatabaseBackupService
         {
             _logger.LogError(ex, "Failed to restore database backup");
             return false;
+        }
+    }
+
+    public async Task<BackupContentsDto?> BrowseBackupAsync(byte[] encryptedData, string masterPassword)
+    {
+        try
+        {
+            var decrypted = string.IsNullOrEmpty(masterPassword)
+                ? encryptedData
+                : _backupEncryption.Decrypt(encryptedData, masterPassword);
+            var json = await DecompressIfNeeded(decrypted);
+            var root = JsonSerializer.Deserialize<JsonElement>(json);
+
+            var contents = new BackupContentsDto
+            {
+                CreatedAt = root.TryGetProperty("metadata", out var meta) && meta.TryGetProperty("CreatedAt", out var ts)
+                    ? ts.GetDateTime()
+                    : DateTime.UtcNow
+            };
+
+            if (root.TryGetProperty("loginItems", out var logins))
+            {
+                foreach (var el in logins.EnumerateArray())
+                    contents.LoginItems.Add(MapElement(el, "Login"));
+            }
+            if (root.TryGetProperty("secureNoteItems", out var notes))
+            {
+                foreach (var el in notes.EnumerateArray())
+                    contents.SecureNotes.Add(MapElement(el, "Secure Note"));
+            }
+            if (root.TryGetProperty("creditCardItems", out var cards))
+            {
+                foreach (var el in cards.EnumerateArray())
+                    contents.CreditCards.Add(MapElement(el, "Credit Card"));
+            }
+            if (root.TryGetProperty("wifiItems", out var wifi))
+            {
+                foreach (var el in wifi.EnumerateArray())
+                    contents.WifiItems.Add(MapElement(el, "Wi-Fi"));
+            }
+            // Also pull top-level passwordItems that may not have sub-type rows
+            if (root.TryGetProperty("passwordItems", out var passwords))
+            {
+                foreach (var el in passwords.EnumerateArray())
+                {
+                    // Only add if not already represented via a sub-type above
+                    var idProp = el.TryGetProperty("Id", out var idEl);
+                    var id = idProp ? (idEl.ValueKind == JsonValueKind.Number ? idEl.GetInt32().ToString() : (idEl.GetString() ?? "")) : "";
+                    bool exists = contents.LoginItems.Any(x => x.Id == id)
+                               || contents.SecureNotes.Any(x => x.Id == id)
+                               || contents.CreditCards.Any(x => x.Id == id)
+                               || contents.WifiItems.Any(x => x.Id == id);
+                    if (!exists)
+                        contents.LoginItems.Add(MapElement(el, "Login"));
+                }
+            }
+            return contents;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to browse backup");
+            return null;
+        }
+    }
+
+    private static BackupItemDto MapElement(JsonElement el, string itemType)
+    {
+        // Id is int in the DB — use it as string for the DTO key
+        string id;
+        if (el.TryGetProperty("Id", out var idEl))
+            id = idEl.ValueKind == JsonValueKind.Number ? idEl.GetInt32().ToString() : (idEl.GetString() ?? Guid.NewGuid().ToString());
+        else
+            id = Guid.NewGuid().ToString();
+
+        var title = el.TryGetProperty("Title", out var t) ? t.GetString() ?? "(untitled)" : "(untitled)";
+        string? subtitle = null;
+        if (el.TryGetProperty("Username", out var u)) subtitle = u.GetString();
+        else if (el.TryGetProperty("CardHolderName", out var ch)) subtitle = ch.GetString();
+        else if (el.TryGetProperty("NetworkName", out var nn)) subtitle = nn.GetString();
+        DateTime created = el.TryGetProperty("CreatedAt", out var c) ? c.GetDateTime() : DateTime.UtcNow;
+        return new BackupItemDto
+        {
+            Id = id, Title = title, Subtitle = subtitle,
+            ItemType = itemType, CreatedAt = created,
+            IsSelected = true, RawJson = el.GetRawText()
+        };
+    }
+
+    public async Task<bool> RestoreFullAsync(byte[] encryptedData, string masterPassword)
+    {
+        try
+        {
+            var decrypted = string.IsNullOrEmpty(masterPassword)
+                ? encryptedData
+                : _backupEncryption.Decrypt(encryptedData, masterPassword);
+            var json = await DecompressIfNeeded(decrypted);
+            var root = JsonSerializer.Deserialize<JsonElement>(json);
+
+            using var context = _contextFactory.CreateDbContext();
+
+            // Clear existing data in dependency order
+            context.CustomFields.RemoveRange(context.CustomFields);
+            context.LoginItems.RemoveRange(context.LoginItems);
+            context.SecureNoteItems.RemoveRange(context.SecureNoteItems);
+            context.CreditCardItems.RemoveRange(context.CreditCardItems);
+            context.WiFiItems.RemoveRange(context.WiFiItems);
+            context.PasswordItems.RemoveRange(context.PasswordItems);
+            await context.SaveChangesAsync();
+
+            // Re-insert password items (with sub-types inline)
+            if (root.TryGetProperty("passwordItems", out var items))
+            {
+                var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var list = JsonSerializer.Deserialize<List<PasswordItem>>(items.GetRawText(), opts);
+                if (list != null) context.PasswordItems.AddRange(list);
+            }
+            if (root.TryGetProperty("loginItems", out var li))
+            {
+                var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var list = JsonSerializer.Deserialize<List<LoginItem>>(li.GetRawText(), opts);
+                if (list != null) context.LoginItems.AddRange(list);
+            }
+            if (root.TryGetProperty("secureNoteItems", out var sn))
+            {
+                var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var list = JsonSerializer.Deserialize<List<SecureNoteItem>>(sn.GetRawText(), opts);
+                if (list != null) context.SecureNoteItems.AddRange(list);
+            }
+            if (root.TryGetProperty("creditCardItems", out var cc))
+            {
+                var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var list = JsonSerializer.Deserialize<List<CreditCardItem>>(cc.GetRawText(), opts);
+                if (list != null) context.CreditCardItems.AddRange(list);
+            }
+            if (root.TryGetProperty("wifiItems", out var wi))
+            {
+                var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var list = JsonSerializer.Deserialize<List<WiFiItem>>(wi.GetRawText(), opts);
+                if (list != null) context.WiFiItems.AddRange(list);
+            }
+
+            await context.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "RestoreFullAsync failed");
+            return false;
+        }
+    }
+
+    public async Task<int> ImportSelectedItemsAsync(BackupContentsDto contents, IEnumerable<string> selectedIds)
+    {
+        try
+        {
+            var idSet = new HashSet<string>(selectedIds);
+            var selected = contents.LoginItems.Concat(contents.SecureNotes)
+                                              .Concat(contents.CreditCards)
+                                              .Concat(contents.WifiItems)
+                                              .Where(x => idSet.Contains(x.Id))
+                                              .ToList();
+            if (!selected.Any()) return 0;
+
+            using var context = _contextFactory.CreateDbContext();
+            var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            int count = 0;
+
+            foreach (var item in selected)
+            {
+                try
+                {
+                    var pi = JsonSerializer.Deserialize<PasswordItem>(item.RawJson, opts);
+                    if (pi == null) continue;
+                    pi.Id = 0; // let EF assign a new PK
+                    pi.Title = $"{pi.Title} (restored)";
+                    context.PasswordItems.Add(pi);
+                    count++;
+                }
+                catch { /* skip malformed items */ }
+            }
+
+            await context.SaveChangesAsync();
+            return count;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "ImportSelectedItemsAsync failed");
+            return 0;
         }
     }
 

@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Services.Interfaces;
@@ -14,6 +15,7 @@ using System.Security.Cryptography;
 using PasswordManager.DAL;
 using PasswordManager.DAL.Seed;
 using Microsoft.EntityFrameworkCore;
+using Sentry;
 
 namespace PasswordManager.WPF.Views;
 
@@ -30,6 +32,7 @@ public sealed partial class SettingsPage : Page
     {
         InitializeComponent();
         _logger = new FileLogger();
+        BuildToastRows();
     }
 
     public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
@@ -227,16 +230,7 @@ public sealed partial class SettingsPage : Page
             if (!string.IsNullOrEmpty(path))
             {
                 System.Windows.Clipboard.SetText(path);
-
-                // Show success notification
-                var dialog = new ModernWpf.Controls.ContentDialog
-                {
-                    Title = "Success",
-                    Content = "Database path copied to clipboard",
-                    CloseButtonText = "OK",
-                    // WPF: XamlRoot not needed
-                };
-                _ = dialog.ShowAsync(); // Fire and forget
+                PasswordManager.WPF.Services.ToastService.Instance.Show("Database path copied to clipboard.", PasswordManager.WPF.Services.ToastType.Success);
 
                 await _logger.LogAsync("SettingsPage", "Copied database path to clipboard");
             }
@@ -381,16 +375,10 @@ public sealed partial class SettingsPage : Page
         {
             var success = await _viewModel.ExportDataAsync();
 
-            var message = success ? "Export completed successfully!" : "Export failed. Please try again.";
-            var dialog = new ModernWpf.Controls.ContentDialog
-            {
-                Title = "Export Result",
-                Content = message,
-                CloseButtonText = "OK",
-                // WPF: XamlRoot not needed
-            };
-
-            await dialog.ShowAsync();
+            if (success)
+                PasswordManager.WPF.Services.ToastService.Instance.Show("Export completed successfully!", PasswordManager.WPF.Services.ToastType.Success);
+            else
+                PasswordManager.WPF.Services.ToastService.Instance.Show("Export failed. Please try again.", PasswordManager.WPF.Services.ToastType.Error);
         }
     }
 
@@ -484,9 +472,13 @@ public sealed partial class SettingsPage : Page
     {
         if (_serviceProvider == null) return;
 
+        // Create a dedicated scope so the import gets a fresh DbContext isolated from the
+        // rest of the app. Using the root provider directly caused EF tracking conflicts
+        // (stale entities from login/load operations) that silently failed all item saves.
+        using var importScope = _serviceProvider.CreateScope();
         try
         {
-            var importService = _serviceProvider.GetRequiredService<PasswordManager.Imports.Interfaces.IImportService>();
+            var importService = importScope.ServiceProvider.GetRequiredService<PasswordManager.Imports.Interfaces.IImportService>();
             var selectedItem = ImportTypeComboBox.SelectedItem as ComboBoxItem;
             var filePath = ImportFilePathTextBox.Text;
 
@@ -692,21 +684,22 @@ public sealed partial class SettingsPage : Page
 
             if (userSelectionTag == "current")
             {
-                // Import for current user - determine current user id to attach imported items
+                // Prefer the already-authenticated user from the page-level auth service (no DB hit).
+                // Fall back to the scoped auth service only if needed.
                 try
                 {
-                    string? currentUserId = null;
-                    if (_authService?.CurrentUser != null)
-                        currentUserId = _authService.CurrentUser.Id;
-                    else if (_authService != null)
-                        currentUserId = await _authService.GetCurrentUserIdAsync();
+                    string? currentUserId = _authService?.CurrentUser?.Id;
+                    if (string.IsNullOrEmpty(currentUserId))
+                    {
+                        var scopedAuth = importScope.ServiceProvider.GetService<PasswordManager.Services.Interfaces.IAuthService>();
+                        currentUserId = scopedAuth != null ? await scopedAuth.GetCurrentUserIdAsync() : null;
+                    }
                     targetUserIds.Add(currentUserId);
                 }
                 catch (Exception ex)
                 {
-                    // Log error but continue with null userId (will import for all users as fallback)
                     await _logger.LogErrorAsync("SettingsPage", "Failed to get current user ID for import", ex);
-                    targetUserIds.Add(null);
+                    targetUserIds.Add(_authService?.CurrentUser?.Id); // best-effort fallback
                 }
             }
             else if (userSelectionTag == "multiple")
@@ -740,6 +733,8 @@ public sealed partial class SettingsPage : Page
             int totalSuccessful = 0;
             int totalFailed = 0;
             int totalProcessed = 0;
+            var collectedErrors = new List<string>();
+            var collectedWarnings = new List<string>();
 
             for (int i = 0; i < targetUserIds.Count; i++)
             {
@@ -750,50 +745,71 @@ public sealed partial class SettingsPage : Page
 
                 ImportProgressText.Text = $"Processing items for user {i + 1} of {targetUserIds.Count}...";
 
-                var result = await importService.ImportPasswordsAsync(providerName, fileStream, fileName, targetUserId);
+                // Live percentage on the progress bar.
+                ImportProgressBar.IsIndeterminate = false;
+                var progress = new Progress<int>(p =>
+                {
+                    ImportProgressBar.Value = p;
+                    ImportProgressText.Text = p >= 100 ? "Finishing up… 100%" : $"Importing… {p}%";
+                });
+                var result = await importService.ImportPasswordsAsync(providerName, fileStream, fileName, targetUserId, progress);
 
                 if (result.Success)
                 {
                     totalSuccessful += result.SuccessfulImports;
                     totalFailed += result.FailedImports;
                     totalProcessed += result.TotalItemsProcessed;
+                    // Capture per-item failures for display
+                    collectedWarnings.AddRange(result.Warnings);
                 }
                 else
                 {
-                    await _logger.LogErrorAsync("SettingsPage", $"Import failed for user {targetUserId}: {result.ErrorMessage}", null);
+                    var errMsg = result.ErrorMessage ?? "Unknown error";
+                    await _logger.LogErrorAsync("SettingsPage", $"Import failed for user {targetUserId}: {errMsg}", null);
+                    collectedErrors.Add(errMsg);
+                    SentrySdk.CaptureMessage($"Import failed [{providerName}]: {errMsg}", SentryLevel.Error);
                 }
             }
 
-            // Show combined result
+            // Show combined result — leave the bar at a visible 100%.
             ImportProgressRing.IsActive = false;
             ImportProgressBar.IsIndeterminate = false;
             ImportProgressBar.Value = 100;
-            ImportProgressPanel.Visibility = Visibility.Collapsed;
+            ImportProgressText.Text = "100% — import complete";
+            ImportProgressPanel.Visibility = Visibility.Visible;
 
             if (totalSuccessful > 0 || totalProcessed > 0)
             {
                 ImportStatusText.Text = "✓ Import completed successfully!";
-                if (targetUserIds.Count > 1)
-                {
-                    ImportResultText.Text = $"Imported for {targetUserIds.Count} user(s): {totalSuccessful} items successful, {totalFailed} failed, Total processed: {totalProcessed}";
-                }
-                else
-                {
-                    ImportResultText.Text = $"Imported: {totalSuccessful} items, Failed: {totalFailed}, Total processed: {totalProcessed}";
-                }
+                var summary = targetUserIds.Count > 1
+                    ? $"Imported for {targetUserIds.Count} user(s): {totalSuccessful} items, {totalFailed} failed, {totalProcessed} processed."
+                    : $"Imported: {totalSuccessful} items, Failed: {totalFailed}, Processed: {totalProcessed}.";
+                if (collectedWarnings.Count > 0)
+                    summary += $"\n\nPer-item errors ({collectedWarnings.Count}):\n" + string.Join("\n", collectedWarnings.Take(10));
+                if (collectedWarnings.Count > 10)
+                    summary += $"\n…and {collectedWarnings.Count - 10} more (see log for details)";
+                ImportResultText.Text = summary;
             }
             else
             {
                 ImportStatusText.Text = "✗ Import failed";
-                ImportResultText.Text = "No items were successfully imported";
+                if (collectedErrors.Count > 0)
+                    ImportResultText.Text = string.Join("\n\n", collectedErrors);
+                else if (collectedWarnings.Count > 0)
+                    ImportResultText.Text = $"0 items saved. Errors:\n{string.Join("\n", collectedWarnings.Take(10))}";
+                else
+                    ImportResultText.Text = "No items were successfully imported. Check the log file for details.";
             }
         }
         catch (Exception ex)
         {
+            SentrySdk.CaptureException(ex);
             ImportProgressRing.IsActive = false;
             ImportProgressPanel.Visibility = Visibility.Collapsed;
             ImportStatusText.Text = "✗ Import failed";
-            ImportResultText.Text = $"Error: {ex.Message}";
+            var msg = ex.InnerException != null ? $"{ex.Message}\nCause: {ex.InnerException.Message}" : ex.Message;
+            ImportResultText.Text = $"Error: {msg}";
+            await _logger.LogErrorAsync("SettingsPage", "Unhandled exception during import", ex);
         }
         finally
         {
@@ -849,14 +865,7 @@ public sealed partial class SettingsPage : Page
             {
                 _viewModel.ExportPath = folderDialog.SelectedPath;
 
-                var dialog = new ModernWpf.Controls.ContentDialog
-                {
-                    Title = "Export Folder Selected",
-                    Content = $"Export folder set to: {folderDialog.SelectedPath}",
-                    CloseButtonText = "OK",
-                };
-
-                await dialog.ShowAsync();
+                PasswordManager.WPF.Services.ToastService.Instance.Show($"Export folder: {folderDialog.SelectedPath}", PasswordManager.WPF.Services.ToastType.Info);
             }
         }
         catch (Exception ex)
@@ -1003,13 +1012,7 @@ public sealed partial class SettingsPage : Page
 
                 progressDialog.Hide();
 
-                var successDialog = new ModernWpf.Controls.ContentDialog
-                {
-                    Title = "Success",
-                    Content = "Sample data seeded successfully!\n\n• Categories\n• Collections\n• Tags\n• Sample password items\n\nYour lists should now be populated.",
-                    CloseButtonText = "OK",
-                };
-                await successDialog.ShowAsync();
+                PasswordManager.WPF.Services.ToastService.Instance.Show("Sample data seeded — categories, collections, tags and items added.", PasswordManager.WPF.Services.ToastType.Success, "Seed Complete");
             }
             catch (Exception ex)
             {
@@ -1159,16 +1162,10 @@ public sealed partial class SettingsPage : Page
         {
             var success = await _viewModel.ClearAllDataAsync();
 
-            var message = success ? "All data has been cleared." : "Failed to clear data. Please try again.";
-            var resultDialog = new ModernWpf.Controls.ContentDialog
-            {
-                Title = "Clear Data Result",
-                Content = message,
-                CloseButtonText = "OK",
-                // WPF: XamlRoot not needed
-            };
-
-            await resultDialog.ShowAsync();
+            if (success)
+                PasswordManager.WPF.Services.ToastService.Instance.Success("All data has been cleared.", "Done");
+            else
+                PasswordManager.WPF.Services.ToastService.Instance.Error("Failed to clear data. Please try again.");
 
             if (success)
             {
@@ -1293,16 +1290,43 @@ public sealed partial class SettingsPage : Page
         return (true, string.Empty);
     }
 
-    private async Task ShowErrorDialog(string message)
+    private Task ShowErrorDialog(string message)
     {
-        var errorDialog = new ModernWpf.Controls.ContentDialog
+        PasswordManager.WPF.Services.ToastService.Instance.Show(message, PasswordManager.WPF.Services.ToastType.Error, "Error");
+        return Task.CompletedTask;
+    }
+
+    // ─── Google Drive handlers ────────────────────────────────────────────────
+
+    private async void ConnectGoogleDriveButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null) return;
+        if (string.IsNullOrWhiteSpace(_viewModel.GoogleDriveClientId) ||
+            string.IsNullOrWhiteSpace(_viewModel.GoogleDriveClientSecret))
         {
-            Title = "Error",
-            Content = message,
-            CloseButtonText = "OK",
-            // WPF: XamlRoot not needed
-        };
-        await errorDialog.ShowAsync();
+            await ShowErrorDialog("Please enter your Google Drive OAuth Client ID and Client Secret first.\n\nCreate them at console.cloud.google.com → APIs & Services → Credentials.");
+            return;
+        }
+
+        _viewModel.IsLoading = true;
+        var ok = await _viewModel.ConnectGoogleDriveAsync();
+        if (ok)
+            PasswordManager.WPF.Services.ToastService.Instance.Show("Connected to Google Drive!", PasswordManager.WPF.Services.ToastType.Success);
+        else
+            await ShowErrorDialog("Google Drive connection failed. Make sure your Client ID and Secret are correct and that you allowed the authorisation in the browser.");
+    }
+
+    private async void DisconnectGoogleDriveButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null) return;
+        await _viewModel.DisconnectGoogleDriveAsync();
+        PasswordManager.WPF.Services.ToastService.Instance.Show("Disconnected from Google Drive.", PasswordManager.WPF.Services.ToastType.Info);
+    }
+
+    private void GDriveClientSecretBox_PasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null && sender is PasswordBox pb)
+            _viewModel.GoogleDriveClientSecret = pb.Password;
     }
 
     // Cloud Backup Event Handlers
@@ -1327,8 +1351,11 @@ public sealed partial class SettingsPage : Page
     {
         if (_viewModel != null && NetworkLocationPanel != null)
         {
-            NetworkLocationPanel.Visibility = _viewModel.SelectedCloudProvider == "NetworkLocation"
+            NetworkLocationPanel.Visibility = _viewModel.SelectedCloudProvider == PasswordManager.Models.DTOs.CloudBackupProvider.NetworkLocation
                 ? Visibility.Visible : Visibility.Collapsed;
+            if (GoogleDriveSettingsPanel != null)
+                GoogleDriveSettingsPanel.Visibility = _viewModel.SelectedCloudProvider == PasswordManager.Models.DTOs.CloudBackupProvider.GoogleDrive
+                    ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 
@@ -1405,46 +1432,105 @@ public sealed partial class SettingsPage : Page
 
     private async void RestoreBackupButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_viewModel != null && sender is Button button && button.Tag is CloudBackupInfo backup)
+        if (_viewModel == null || sender is not Button button || button.Tag is not CloudBackupInfo backup) return;
+
+        // iPhone-style warning — red destructive action dialog
+        var warningPanel = new StackPanel { Margin = new Thickness(0, 8, 0, 0) };
+        var warningBorder = new Border
         {
-            // Show confirmation dialog
-            var confirmDialog = new ModernWpf.Controls.ContentDialog
+            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(30, 220, 50, 50)),
+            BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(100, 220, 50, 50)),
+            BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(12, 10, 12, 10), Margin = new Thickness(0, 0, 0, 12)
+        };
+        var warnStack = new StackPanel { Orientation = Orientation.Horizontal };
+        warnStack.Children.Add(new TextBlock
+        {
+            Text = "", FontFamily = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"),
+            FontSize = 16, Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 80, 80)),
+            Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Top
+        });
+        warnStack.Children.Add(new TextBlock
+        {
+            Text = "This will permanently remove all your current passwords, notes, credit cards, and Wi-Fi entries and replace them with the backup.\n\nThis cannot be undone.",
+            TextWrapping = TextWrapping.Wrap, FontSize = 13, LineHeight = 20
+        });
+        warningBorder.Child = warnStack;
+        warningPanel.Children.Add(warningBorder);
+        warningPanel.Children.Add(new TextBlock { Text = $"Backup date:  {backup.CreatedAtFormatted}", FontSize = 13, Margin = new Thickness(0, 0, 0, 8) });
+        var pwBox = new PasswordBox { Margin = new Thickness(0, 4, 0, 0) };
+        warningPanel.Children.Add(new TextBlock { Text = "Master password", FontSize = 12, Opacity = 0.7, Margin = new Thickness(0, 0, 0, 4) });
+        warningPanel.Children.Add(pwBox);
+
+        var confirmDialog = new ModernWpf.Controls.ContentDialog
+        {
+            Title = "Restore Backup",
+            Content = warningPanel,
+            PrimaryButtonText = "Restore All",
+            CloseButtonText = "Cancel",
+        };
+
+        if (await confirmDialog.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary)
+        {
+            var success = await _viewModel.RestoreCloudBackupAsync(backup, pwBox.Password);
+            var resultDlg = new ModernWpf.Controls.ContentDialog
             {
-                Title = "Restore Backup",
-                Content = $"This will replace all current data with the backup from {backup.CreatedAt:MMM dd, yyyy HH:mm}. This action cannot be undone.\n\nAre you sure you want to continue?",
-                PrimaryButtonText = "Yes, Restore",
-                CloseButtonText = "Cancel",
-                // WPF: XamlRoot not needed
+                Title = success ? "Restored" : "Error",
+                Content = success ? "Backup restored successfully. Please restart the app." : "Restore failed — check your master password and try again.",
+                CloseButtonText = "OK",
             };
+            await resultDlg.ShowAsync();
+        }
+    }
 
-            if (await confirmDialog.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary)
+    private async void BrowseBackupButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null || sender is not Button button || button.Tag is not CloudBackupInfo backup) return;
+
+        // Ask for master password first
+        var pwBox = new PasswordBox { };
+        var pwDialog = new ModernWpf.Controls.ContentDialog
+        {
+            Title = "Enter Master Password",
+            Content = pwBox,
+            PrimaryButtonText = "Open Backup",
+            CloseButtonText = "Cancel",
+        };
+        if (await pwDialog.ShowAsync() != ModernWpf.Controls.ContentDialogResult.Primary) return;
+
+        var masterPassword = pwBox.Password;
+        if (string.IsNullOrEmpty(masterPassword)) return;
+
+        // Download + decrypt + parse
+        var backupService = _serviceProvider?.GetService<IDatabaseBackupService>();
+        var cloudManager = _serviceProvider?.GetService<PasswordManager.Services.Services.CloudBackupManager>();
+        if (backupService == null || cloudManager == null) return;
+
+        var downloadResult = await cloudManager.DownloadBackupDataAsync(backup);
+        if (downloadResult == null)
+        {
+            await new ModernWpf.Controls.ContentDialog { Title = "Error", Content = "Could not download backup.", CloseButtonText = "OK" }.ShowAsync();
+            return;
+        }
+
+        var contents = await backupService.BrowseBackupAsync(downloadResult, masterPassword);
+        if (contents == null || contents.TotalCount == 0)
+        {
+            await new ModernWpf.Controls.ContentDialog { Title = "Error", Content = "Could not read backup — check your master password.", CloseButtonText = "OK" }.ShowAsync();
+            return;
+        }
+
+        // Open browse dialog
+        var browseDialog = new PasswordManager.WPF.Dialogs.CloudBackupBrowseDialog(contents);
+        if (await browseDialog.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary)
+        {
+            var imported = await backupService.ImportSelectedItemsAsync(contents, browseDialog.SelectedIds);
+            await new ModernWpf.Controls.ContentDialog
             {
-                // Show password dialog
-                var passwordDialog = new ModernWpf.Controls.ContentDialog
-                {
-                    Title = "Enter Master Password",
-                    Content = await CreateMasterPasswordInput(),
-                    PrimaryButtonText = "Restore",
-                    CloseButtonText = "Cancel",
-                    // WPF: XamlRoot not needed
-                };
-
-                if (await passwordDialog.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary && passwordDialog.Content is PasswordBox passwordBox)
-                {
-                    var success = await _viewModel.RestoreCloudBackupAsync(backup, passwordBox.Password);
-
-                    var message = success ? "Backup restored successfully!" : "Backup restoration failed. Please check your master password and try again.";
-                    var dialog = new ModernWpf.Controls.ContentDialog
-                    {
-                        Title = success ? "Success" : "Error",
-                        Content = message,
-                        CloseButtonText = "OK",
-                        // WPF: XamlRoot not needed
-                    };
-
-                    await dialog.ShowAsync();
-                }
-            }
+                Title = "Import Complete",
+                Content = $"{imported} item(s) added to your vault.",
+                CloseButtonText = "OK"
+            }.ShowAsync();
         }
     }
 
@@ -1603,14 +1689,10 @@ public sealed partial class SettingsPage : Page
                 }
 
                 var result = await resetService.ResetDataTablesAsync();
-                var dlg = new ModernWpf.Controls.ContentDialog
-                {
-                    Title = result.Success ? "Reset Complete" : "Reset Failed",
-                    Content = result.Success ? "Password data has been reset." : $"Failed to reset password data: {result.Message}",
-                    CloseButtonText = "OK",
-                    // WPF: XamlRoot not needed
-                };
-                await dlg.ShowAsync();
+                if (result.Success)
+                    PasswordManager.WPF.Services.ToastService.Instance.Show("Password data has been reset.", PasswordManager.WPF.Services.ToastType.Success, "Reset Complete");
+                else
+                    PasswordManager.WPF.Services.ToastService.Instance.Show($"Reset failed: {result.Message}", PasswordManager.WPF.Services.ToastType.Error, "Reset Failed");
             }
             catch (Exception ex)
             {
@@ -1678,15 +1760,10 @@ public sealed partial class SettingsPage : Page
                 }
 
                 var result = await resetService.ResetAllTablesAsync(reseedData: false);
-                var dlg = new ModernWpf.Controls.ContentDialog
-                {
-                    Title = result.Success ? "Reset Complete" : "Reset Failed",
-                    Content = result.Success ? "All database tables have been reset." : $"Failed to reset database: {result.Message}",
-                    CloseButtonText = "OK",
-                    // WPF: XamlRoot not needed
-                };
-
-                await dlg.ShowAsync();
+                if (result.Success)
+                    PasswordManager.WPF.Services.ToastService.Instance.Show("All database tables have been reset.", PasswordManager.WPF.Services.ToastType.Success, "Reset Complete");
+                else
+                    PasswordManager.WPF.Services.ToastService.Instance.Show($"Reset failed: {result.Message}", PasswordManager.WPF.Services.ToastType.Error, "Reset Failed");
 
                 if (result.Success)
                 {
@@ -1796,17 +1873,148 @@ public sealed partial class SettingsPage : Page
         catch { }
     }
 
-    private void CheckUpdatesButton_Click(object sender, RoutedEventArgs e)
+    private void OpenImportLogButton_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = "https://github.com/dotnetappdev/vaultguard/releases",
-                UseShellExecute = true
-            });
+            var logDir = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
+            var monthFolder = System.IO.Path.Combine(logDir, DateTime.Now.ToString("yyyy-MM"));
+            var logFile = System.IO.Path.Combine(monthFolder, $"{DateTime.Now:yyyy-MM-dd}.log");
+
+            if (System.IO.File.Exists(logFile))
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = logFile, UseShellExecute = true });
+            else if (System.IO.Directory.Exists(logDir))
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = logDir, UseShellExecute = true });
+            else
+                _ = ShowErrorDialog("No log file found yet.", "Logs");
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _ = ShowErrorDialog($"Could not open log: {ex.Message}", "Error");
+        }
+    }
+
+    private async void SaveSentrySettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null) return;
+        await _viewModel.SaveSettingsAsync();
+
+        var dsn = _viewModel.SentryDsn?.Trim() ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(dsn))
+        {
+            try
+            {
+                SentrySdk.Init(o =>
+                {
+                    o.Dsn = dsn;
+                    o.AttachStacktrace = true;
+                    o.SendDefaultPii = false;
+                    o.Environment = "production";
+                });
+                PasswordManager.WPF.Services.ToastService.Instance.Success("Sentry error reporting enabled.", "Saved");
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorDialog("Error", $"Invalid Sentry DSN: {ex.Message}");
+            }
+        }
+        else
+        {
+            PasswordManager.WPF.Services.ToastService.Instance.Info("Sentry DSN cleared. Error reporting disabled.", "Saved");
+        }
+    }
+
+    private PasswordManager.WPF.Services.UpdateInfo? _pendingUpdate;
+    private CancellationTokenSource? _updateCts;
+
+    private async void CheckUpdatesButton_Click(object sender, RoutedEventArgs e)
+    {
+        var updateService = _serviceProvider?.GetService<PasswordManager.WPF.Services.UpdateService>();
+        if (updateService is null) return;
+
+        CheckUpdatesButton.IsEnabled = false;
+        CheckUpdatesButtonText.Text = "Checking…";
+        UpdateStatusPanel.Visibility = System.Windows.Visibility.Visible;
+        UpdateProgressBar.Visibility = System.Windows.Visibility.Collapsed;
+        DownloadUpdateButton.Visibility = System.Windows.Visibility.Collapsed;
+        OpenReleasesButton.Visibility = System.Windows.Visibility.Collapsed;
+
+        try
+        {
+            _updateCts?.Cancel();
+            _updateCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+            _pendingUpdate = await updateService.CheckForUpdateAsync(_updateCts.Token);
+
+            if (_pendingUpdate is null)
+            {
+                UpdateStatusText.Text = $"You're up to date! (v{updateService.GetCurrentVersion()})";
+                UpdateStatusPanel.Background = new SolidColorBrush(Color.FromRgb(0x16, 0x61, 0x34));
+            }
+            else
+            {
+                UpdateStatusText.Text =
+                    $"Update available: v{_pendingUpdate.Version}  (you have v{updateService.GetCurrentVersion()})";
+                UpdateStatusPanel.Background = new SolidColorBrush(Color.FromRgb(0x1D, 0x4E, 0xD8));
+                if (_pendingUpdate.InstallerDownloadUrl is not null)
+                    DownloadUpdateButton.Visibility = System.Windows.Visibility.Visible;
+                OpenReleasesButton.Visibility = System.Windows.Visibility.Visible;
+            }
+        }
+        catch (Exception ex)
+        {
+            UpdateStatusText.Text = $"Could not check for updates: {ex.Message}";
+            UpdateStatusPanel.Background = new SolidColorBrush(Color.FromRgb(0x7F, 0x1D, 0x1D));
+        }
+        finally
+        {
+            CheckUpdatesButton.IsEnabled = true;
+            CheckUpdatesButtonText.Text = "Check for Updates";
+        }
+    }
+
+    private async void DownloadUpdateButton_Click(object sender, RoutedEventArgs e)
+    {
+        var updateService = _serviceProvider?.GetService<PasswordManager.WPF.Services.UpdateService>();
+        if (updateService is null || _pendingUpdate?.InstallerDownloadUrl is null) return;
+
+        DownloadUpdateButton.IsEnabled = false;
+        CheckUpdatesButton.IsEnabled = false;
+        UpdateProgressBar.Visibility = System.Windows.Visibility.Visible;
+        UpdateStatusText.Text = "Downloading update…";
+
+        var savePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+            $"VaultGuardSetup-{_pendingUpdate.Version}.exe");
+
+        try
+        {
+            _updateCts?.Cancel();
+            _updateCts = new CancellationTokenSource();
+            var progress = new Progress<int>(p =>
+            {
+                UpdateProgressBar.Value = p;
+                UpdateStatusText.Text = $"Downloading update… {p}%";
+            });
+
+            await updateService.DownloadInstallerAsync(
+                _pendingUpdate.InstallerDownloadUrl, savePath, progress, _updateCts.Token);
+
+            UpdateStatusText.Text = "Download complete. Launching installer…";
+            await Task.Delay(800);
+            updateService.LaunchInstallerAndExit(savePath);
+        }
+        catch (Exception ex)
+        {
+            UpdateStatusText.Text = $"Download failed: {ex.Message}";
+            DownloadUpdateButton.IsEnabled = true;
+            CheckUpdatesButton.IsEnabled = true;
+            UpdateProgressBar.Visibility = System.Windows.Visibility.Collapsed;
+        }
+    }
+
+    private void OpenReleasesButton_Click(object sender, RoutedEventArgs e)
+    {
+        var updateService = _serviceProvider?.GetService<PasswordManager.WPF.Services.UpdateService>();
+        updateService?.OpenReleasesPage();
     }
 
     private void OpenDocumentationButton_Click(object sender, RoutedEventArgs e)
@@ -1820,5 +2028,156 @@ public sealed partial class SettingsPage : Page
             });
         }
         catch { }
+    }
+
+    // ── Toast notification appearance ────────────────────────────────────────────
+
+    private readonly Dictionary<PasswordManager.WPF.Services.ToastType, Border> _toastChips = new();
+
+    private static readonly (PasswordManager.WPF.Services.ToastType Type, string Label)[] ToastRowDefs =
+    {
+        (PasswordManager.WPF.Services.ToastType.Success, "Success"),
+        (PasswordManager.WPF.Services.ToastType.Error,   "Error"),
+        (PasswordManager.WPF.Services.ToastType.Warning, "Warning"),
+        (PasswordManager.WPF.Services.ToastType.Info,    "Info"),
+    };
+
+    private void BuildToastRows()
+    {
+        if (ToastRowsHost == null) return;
+        ToastRowsHost.Children.Clear();
+        _toastChips.Clear();
+
+        foreach (var (type, label) in ToastRowDefs)
+        {
+            var grid = new Grid { Margin = new Thickness(0, 4, 0, 4) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(170) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var chip = new Border { VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(chip, 0);
+            _toastChips[type] = chip;
+
+            var nameBlock = new TextBlock
+            {
+                Text = label,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(12, 0, 0, 0),
+                Foreground = (Brush)FindResource("ModernTextSecondaryBrush")
+            };
+            Grid.SetColumn(nameBlock, 1);
+
+            var btnRow = new StackPanel { Orientation = Orientation.Horizontal };
+            Grid.SetColumn(btnRow, 2);
+
+            var customizeBtn = new Button
+            {
+                Content = "Customize…",
+                Style = (Style)FindResource("ModernSecondaryButtonStyle"),
+                Padding = new Thickness(10, 4, 10, 4),
+                Tag = type
+            };
+            customizeBtn.Click += CustomizeToast_Click;
+
+            var testBtn = new Button
+            {
+                Content = "Test",
+                Style = (Style)FindResource("ModernSecondaryButtonStyle"),
+                Margin = new Thickness(6, 0, 0, 0),
+                Padding = new Thickness(10, 4, 10, 4),
+                Tag = type
+            };
+            testBtn.Click += TestToast_Click;
+
+            btnRow.Children.Add(customizeBtn);
+            btnRow.Children.Add(testBtn);
+
+            grid.Children.Add(chip);
+            grid.Children.Add(nameBlock);
+            grid.Children.Add(btnRow);
+            ToastRowsHost.Children.Add(grid);
+
+            RefreshToastChip(type);
+        }
+    }
+
+    private void RefreshToastChip(PasswordManager.WPF.Services.ToastType type)
+    {
+        if (!_toastChips.TryGetValue(type, out var chip)) return;
+        var theme = PasswordManager.WPF.Services.ToastSettings.For(type);
+
+        Brush Safe(string hex)
+        {
+            try { return (Brush)new BrushConverter().ConvertFrom(hex)!; }
+            catch { return Brushes.Gray; }
+        }
+
+        var accent = Safe(theme.Accent);
+
+        var icon = new TextBlock
+        {
+            Text = char.ConvertFromUtf32(theme.IconGlyph),
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
+            FontSize = 15,
+            Foreground = accent,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 8, 0)
+        };
+        var swatch = new TextBlock
+        {
+            Text = theme.Accent.ToUpperInvariant(),
+            FontFamily = new FontFamily("Consolas"),
+            FontSize = 11,
+            Foreground = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC)),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var inner = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(10, 6, 12, 6) };
+        inner.Children.Add(icon);
+        inner.Children.Add(swatch);
+
+        chip.Background = Safe(theme.Background);
+        chip.CornerRadius = new CornerRadius(6);
+        chip.BorderBrush = accent;
+        chip.BorderThickness = new Thickness(1);
+        chip.Child = inner;
+    }
+
+    private void CustomizeToast_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.Tag is not PasswordManager.WPF.Services.ToastType type) return;
+        var theme = PasswordManager.WPF.Services.ToastSettings.For(type);
+        var dialog = new PasswordManager.WPF.Dialogs.ToastColorPickerDialog($"Customize \"{type}\" toast", theme)
+        {
+            Owner = Window.GetWindow(this)
+        };
+        if (dialog.ShowDialog() == true)
+        {
+            theme.CopyFrom(dialog.Result);
+            RefreshToastChip(type);
+        }
+    }
+
+    private void TestToast_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.Tag is not PasswordManager.WPF.Services.ToastType type) return;
+        PasswordManager.WPF.Services.ToastService.Instance.Show(
+            "This is a sample notification.", type, $"{type} preview");
+    }
+
+    private void SaveToastColors_Click(object sender, RoutedEventArgs e)
+    {
+        PasswordManager.WPF.Services.ToastSettings.Save();
+        PasswordManager.WPF.Services.ToastService.Instance.Success(
+            "Toast notification colours saved.", "Saved");
+    }
+
+    private void ResetToastColors_Click(object sender, RoutedEventArgs e)
+    {
+        PasswordManager.WPF.Services.ToastSettings.ResetToDefaults();
+        PasswordManager.WPF.Services.ToastSettings.Save();
+        foreach (var (type, _) in ToastRowDefs) RefreshToastChip(type);
+        PasswordManager.WPF.Services.ToastService.Instance.Info(
+            "Toast colours reset to defaults.", "Reset");
     }
 }

@@ -565,4 +565,9 @@ public class MockVaultSessionService : IVaultSessionService
         _masterKeys.TryGetValue(sessionId, out var masterKey);
         return masterKey;
     }
+
+    public string? GetActiveSessionId()
+    {
+        return _sessions.Keys.FirstOrDefault();
+    }
 }

@@ -26,7 +26,7 @@
                        TextTrimming="CharacterEllipsis"
                        VerticalAlignment="Center"
                        Foreground="#E5E5E5"
-                       FontSize="14"
+                       FontSize="15"
                        FontFamily="Segoe UI"
                        FontWeight="Normal"/>
 

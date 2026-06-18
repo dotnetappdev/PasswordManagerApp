@@ -10,6 +10,8 @@ public interface IPasswordItemApiService
     Task<IEnumerable<PasswordItemDto>> GetByCategoryIdAsync(int categoryId);
     Task<IEnumerable<PasswordItemDto>> GetByTagIdAsync(int tagId);
     Task<IEnumerable<PasswordItemDto>> SearchAsync(string searchTerm);
+    Task<IEnumerable<PasswordItemDto>> SearchByUrlAsync(string url);
+    Task<bool> UpdateTotpSecretAsync(int id, string otpauthUri);
     Task<PasswordItemDto> CreateAsync(CreatePasswordItemDto createDto, string userId);
     Task<PasswordItemDto?> UpdateAsync(int id, UpdatePasswordItemDto updateDto);
     Task<bool> DeleteAsync(int id);

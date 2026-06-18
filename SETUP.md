@@ -1,8 +1,8 @@
-# Setup Guide
+# Setup Guide — VaultGuard
 
-Welcome to the Password Manager setup guide! This document will walk you through setting up your development environment, configuring databases, and getting the application running.
+Welcome to the VaultGuard development setup guide. This walks you through the environment, database configuration, and running each application component.
 
-📖 **Back to [Main README](README.md)**
+📖 **Back to [Main README](README.md)** · [Getting Started](GETTING_STARTED.md) · [Installer Docs](installers/README.md)
 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
@@ -19,8 +19,8 @@ Welcome to the Password Manager setup guide! This document will walk you through
 
 Before you begin, ensure you have the following installed:
 
-- **.NET 9 SDK** - [Download here](https://dotnet.microsoft.com/download/dotnet/9.0)
-- **Visual Studio 2024** or **JetBrains Rider** (recommended IDEs)
+- **.NET 10 SDK** - [Download here](https://dotnet.microsoft.com/download/dotnet/10.0)
+- **Visual Studio 2022 v17.12+** or **JetBrains Rider 2024+** (recommended IDEs)
 - **Git** for version control
 - **Database Server** (choose one):
   - **SQLite** (default, no setup required)
@@ -32,7 +32,7 @@ Before you begin, ensure you have the following installed:
 ### Verify .NET Installation
 ```bash
 dotnet --version
-# Should show 9.0.x or higher
+# Should show 10.0.x or higher
 ```
 
 ## Initial Setup
@@ -400,11 +400,37 @@ dotnet ef database update MigrationName --project ../PasswordManager.DAL --start
    dotnet PasswordManager.Web.dll
    ```
 
+## Releases & Auto-Update
+
+### Shipping a release
+
+Push a semantic version tag — GitHub Actions builds all three workflows automatically:
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+This produces on the [Releases page](https://github.com/dotnetappdev/PasswordManagerApp/releases):
+
+| Asset | Workflow |
+|-------|---------|
+| `VaultGuardSetup-1.2.3.exe` | `build-wpf.yml` — Inno Setup EXE |
+| `VaultGuardSetup-1.2.3.msi` | `build-wpf.yml` — WiX v4 MSI |
+| `VaultGuardAPI-1.2.3.zip` | `build-api.yml` — self-contained API publish |
+| `VaultGuardWeb-1.2.3.zip` | `build-web.yml` — Blazor publish |
+
+### In-app update check
+
+The WPF desktop app polls `https://api.github.com/repos/dotnetappdev/PasswordManagerApp/releases/latest`, compares the tag version with the running assembly version, and offers a one-click **Download & Install** when a newer version is available (**Settings → About → Check for Updates**).
+
+---
+
 ## Development Setup
 
 ### IDE Configuration
 
-**Visual Studio 2024:**
+**Visual Studio 2022:**
 1. Open `PasswordManager.sln`
 2. Set multiple startup projects:
    - `PasswordManager.API`

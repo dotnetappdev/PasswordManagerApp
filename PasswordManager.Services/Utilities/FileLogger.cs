@@ -48,19 +48,23 @@ public class FileLogger : IDisposable
         }
     }
 
-    public async Task LogErrorAsync(string category, string message, Exception exception)
+    public async Task LogErrorAsync(string category, string message, Exception? exception = null)
     {
         var errorDetails = new StringBuilder();
         errorDetails.AppendLine(message);
-        errorDetails.AppendLine($"Exception Type: {exception.GetType().FullName}");
-        errorDetails.AppendLine($"Exception Message: {exception.Message}");
-        errorDetails.AppendLine($"Stack Trace: {exception.StackTrace}");
 
-        if (exception.InnerException != null)
+        if (exception != null)
         {
-            errorDetails.AppendLine($"Inner Exception: {exception.InnerException.GetType().FullName}");
-            errorDetails.AppendLine($"Inner Message: {exception.InnerException.Message}");
-            errorDetails.AppendLine($"Inner Stack Trace: {exception.InnerException.StackTrace}");
+            errorDetails.AppendLine($"Exception Type: {exception.GetType().FullName}");
+            errorDetails.AppendLine($"Exception Message: {exception.Message}");
+            errorDetails.AppendLine($"Stack Trace: {exception.StackTrace}");
+
+            if (exception.InnerException != null)
+            {
+                errorDetails.AppendLine($"Inner Exception: {exception.InnerException.GetType().FullName}");
+                errorDetails.AppendLine($"Inner Message: {exception.InnerException.Message}");
+                errorDetails.AppendLine($"Inner Stack Trace: {exception.InnerException.StackTrace}");
+            }
         }
 
         await LogAsync(category, errorDetails.ToString(), LogLevel.Error);

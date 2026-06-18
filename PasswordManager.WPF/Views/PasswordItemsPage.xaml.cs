@@ -552,40 +552,77 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         // Card view removed; keep method stub for compatibility if referenced elsewhere
     }
 
-    private void RevealPasswordButton_Click(object sender, RoutedEventArgs e)
+    private async void RevealPasswordButton_Click(object sender, RoutedEventArgs e)
     {
         var detailPassword = GetElement<Controls.ReadOnlyField>("DetailPassword");
         if (detailPassword == null) return;
 
-        // CopyText always holds the real value (set in ShowItemDetails for every type)
-        var real = detailPassword.CopyText ?? string.Empty;
-        if (string.IsNullOrEmpty(real)) return;
-
-        // Toggle between masked and revealed
-        if (!string.IsNullOrEmpty(detailPassword.Text) && detailPassword.Text.StartsWith("•"))
-            detailPassword.Text = real;                                   // reveal
+        // Mask → reveal: decrypt on demand
+        if (detailPassword.Text.StartsWith("•"))
+        {
+            if (_selectedItem?.LoginItem != null && _serviceProvider != null)
+            {
+                try
+                {
+                    var sessionId = await GetSessionIdAsync();
+                    if (!string.IsNullOrEmpty(sessionId))
+                    {
+                        var svc = _serviceProvider.GetService<IPasswordRevealService>();
+                        var decrypted = svc != null ? await svc.RevealPasswordAsync(_selectedItem.LoginItem, sessionId) : null;
+                        if (!string.IsNullOrEmpty(decrypted))
+                        {
+                            detailPassword.Text     = decrypted;
+                            detailPassword.CopyText = decrypted;
+                            return;
+                        }
+                    }
+                }
+                catch { }
+            }
+            // Fallback: show raw CopyText if decrypt failed
+            var raw = detailPassword.CopyText ?? string.Empty;
+            if (!string.IsNullOrEmpty(raw)) detailPassword.Text = raw;
+        }
         else
-            detailPassword.Text = new string('•', Math.Max(8, real.Length)); // mask
+        {
+            // Reveal → mask
+            detailPassword.Text = "••••••••";
+        }
     }
 
     private async void CopyPasswordButton_Click(object sender, RoutedEventArgs e)
     {
+        if (_selectedItem?.LoginItem == null) return;
         try
         {
-            var list = GetElement<ListView>("ItemsList");
-            var selected = _selectedItem ?? (list?.SelectedItem as PasswordItem);
-            var pwd = selected?.Password ?? selected?.LoginItem?.Password;
-            if (string.IsNullOrEmpty(pwd))
+            var sessionId = await GetSessionIdAsync();
+            if (!string.IsNullOrEmpty(sessionId))
             {
-                await ShowTemporaryMessageAsync("No password available to copy");
-                return;
+                var svc = _serviceProvider?.GetService<IPasswordRevealService>();
+                var pwd = svc != null ? await svc.RevealPasswordAsync(_selectedItem.LoginItem, sessionId) : null;
+                if (!string.IsNullOrEmpty(pwd))
+                {
+                    System.Windows.Clipboard.SetText(pwd);
+                    ToastService.Instance.Success("Password copied to clipboard");
+                    return;
+                }
             }
-
-            System.Windows.Clipboard.SetText(pwd);
-            ToastService.Instance.Success("Password copied to clipboard");
+            await ShowTemporaryMessageAsync("No password available — vault may be locked");
         }
         catch (Exception ex)
-        { }
+        {
+            await ShowTemporaryMessageAsync($"Failed to copy: {ex.Message}");
+        }
+    }
+
+    private async Task<string?> GetSessionIdAsync()
+    {
+        try
+        {
+            var storage = _serviceProvider?.GetService<ISecureStorageService>();
+            return storage != null ? await storage.GetAsync("sessionId") : null;
+        }
+        catch { return null; }
     }
 
     /// <summary>
@@ -749,8 +786,25 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         var tb = GetElement<TextBlock>("DetailCardCvv");
         if (tb == null || string.IsNullOrEmpty(_currentCardCvv)) return;
 
-        // Toggle between masked dots and the real CVV.
         tb.Text = tb.Text.StartsWith("•") ? _currentCardCvv : new string('•', _currentCardCvv.Length);
+    }
+
+    private void RevealCardNumberButton_Click(object sender, RoutedEventArgs e)
+    {
+        var detailUsername = GetElement<Controls.ReadOnlyField>("DetailUsername");
+        if (detailUsername == null) return;
+
+        var full = detailUsername.CopyText;
+        if (string.IsNullOrEmpty(full)) return;
+
+        detailUsername.Text = detailUsername.Text.Contains("•") ? full : MaskCardNumber(full);
+    }
+
+    private static string MaskCardNumber(string number)
+    {
+        var digits = new string(number.Where(char.IsDigit).ToArray());
+        if (digits.Length < 4) return number;
+        return $"•••• •••• •••• {digits[^4..]}";
     }
 
     private void CopyCvvButton_Click(object sender, RoutedEventArgs e)
@@ -787,19 +841,21 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         string pwd = string.Empty;
 
         // Field section + label references for type-aware display
-        var usernameSection = GetElement<StackPanel>("DetailUsernameSection");
-        var passwordSection = GetElement<StackPanel>("DetailPasswordSection");
-        var websiteSection  = GetElement<StackPanel>("DetailWebsiteSection");
-        var creditCardSection = GetElement<StackPanel>("DetailCreditCardSection");
+        var usernameSection = GetElement<Grid>("DetailUsernameSection");
+        var passwordSection = GetElement<Grid>("DetailPasswordSection");
+        var websiteSection  = GetElement<Grid>("DetailWebsiteSection");
+        var creditCardSection = GetElement<Grid>("DetailCreditCardSection");
         var usernameLabel   = GetElement<TextBlock>("UsernameLabel");
         var passwordLabel   = GetElement<TextBlock>("PasswordLabel");
         var websiteLabel    = GetElement<TextBlock>("WebsiteLabel");
 
-        // Default: all login sections visible, CC section hidden
+        // Default: all login sections visible, CC section hidden, card-number reveal hidden
         if (usernameSection   != null) usernameSection.Visibility   = Visibility.Visible;
         if (passwordSection   != null) passwordSection.Visibility   = Visibility.Visible;
         if (websiteSection    != null) websiteSection.Visibility    = Visibility.Visible;
         if (creditCardSection != null) creditCardSection.Visibility = Visibility.Collapsed;
+        var revealCardNumberBtn = GetElement<Button>("RevealCardNumberButton");
+        if (revealCardNumberBtn != null) revealCardNumberBtn.Visibility = Visibility.Collapsed;
 
         if (item.Type == ItemType.CreditCard)
         {
@@ -814,7 +870,14 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             username = cardNumber;
             pwd      = string.Empty; // not used for CC; cardholder shown as plain text below
 
-            if (detailUsername != null) { detailUsername.Text = string.IsNullOrEmpty(cardNumber) ? "—" : cardNumber; detailUsername.CopyText = cardNumber; }
+            var revealCardBtn = GetElement<Button>("RevealCardNumberButton");
+            if (detailUsername != null)
+            {
+                detailUsername.Text     = string.IsNullOrEmpty(cardNumber) ? "—" : MaskCardNumber(cardNumber);
+                detailUsername.CopyText = cardNumber;
+            }
+            if (revealCardBtn != null)
+                revealCardBtn.Visibility = string.IsNullOrEmpty(cardNumber) ? Visibility.Collapsed : Visibility.Visible;
             // Reuse the "password" field row to show cardholder name in plain text
             if (detailPassword != null)
             {
@@ -846,7 +909,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             if (detailWebsite  != null) { detailWebsite.Text  = website;  detailWebsite.CopyText  = website; }
             if (detailPassword != null)
             {
-                detailPassword.Text     = string.IsNullOrEmpty(pwd) ? "—" : new string('•', Math.Max(8, pwd.Length));
+                detailPassword.Text     = string.IsNullOrEmpty(pwd) ? "—" : "••••••••";
                 detailPassword.CopyText = pwd;
             }
         }
@@ -887,7 +950,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             if (detailWebsite  != null) { detailWebsite.Text  = website;  detailWebsite.CopyText  = website; }
             if (detailPassword != null)
             {
-                detailPassword.Text     = string.IsNullOrEmpty(pwd) ? "—" : new string('•', Math.Max(8, pwd.Length));
+                detailPassword.Text     = string.IsNullOrEmpty(pwd) ? "—" : "••••••••";
                 detailPassword.CopyText = pwd;
             }
         }
@@ -950,21 +1013,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         }
         catch { }
 
-        // Custom fields
-        try
-        {
-            var cfList = GetElement<ItemsControl>("DetailCustomFieldsList");
-            var cfSection = GetElement<StackPanel>("DetailCustomFieldsView");
-            if (cfList != null && item.CustomFields?.Any() == true)
-            {
-                cfList.ItemsSource = item.CustomFields;
-                if (cfSection != null) cfSection.Visibility = Visibility.Visible;
-            }
-            else if (cfSection != null)
-            {
-                cfSection.Visibility = Visibility.Collapsed;
-            }
-        }
+        // Custom fields — always visible, refresh list
+        try { RefreshDetailCustomFields(); }
         catch { }
 
         // Tags
@@ -980,6 +1030,65 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
         // Live verification code (TOTP)
         SetupTotp(item);
+
+        // Wire drag handles on all static field rows
+        try { WireFieldDragHandles(); } catch { }
+    }
+
+    // ── Static field drag-drop ─────────────────────────────────────────────────
+    private FrameworkElement? _fieldDragSource;
+
+    private void WireFieldDragHandles()
+    {
+        var detailFields = GetElement<StackPanel>("DetailFields");
+        if (detailFields == null) return;
+
+        foreach (UIElement child in detailFields.Children)
+        {
+            if (child is not Grid row || row.Tag as string != "StaticFieldRow") continue;
+
+            // Find the drag handle TextBlock (Tag="DragHandle") in col 0
+            TextBlock? handle = null;
+            foreach (UIElement rowChild in row.Children)
+            {
+                if (rowChild is TextBlock tb && tb.Tag as string == "DragHandle")
+                { handle = tb; break; }
+            }
+            if (handle == null) continue;
+
+            // Capture for closures
+            var capturedRow = row;
+            handle.PreviewMouseLeftButtonDown += (_, _) => _fieldDragSource = capturedRow;
+            handle.PreviewMouseMove += (_, e) =>
+            {
+                if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed && _fieldDragSource == capturedRow)
+                    DragDrop.DoDragDrop(handle, capturedRow, DragDropEffects.Move);
+            };
+
+            row.DragEnter += (_, e) =>
+            {
+                if (e.Data.GetDataPresent(typeof(Grid)))
+                    capturedRow.Background = new System.Windows.Media.SolidColorBrush(
+                        System.Windows.Media.Color.FromArgb(30, 0x25, 0x63, 0xEB));
+            };
+            row.DragLeave += (_, _) => capturedRow.Background = null;
+            row.Drop += (_, e) =>
+            {
+                capturedRow.Background = null;
+                if (e.Data.GetData(typeof(Grid)) is not Grid dragged) return;
+                if (dragged == capturedRow) return;
+
+                int targetIdx = detailFields.Children.IndexOf(capturedRow);
+                int sourceIdx = detailFields.Children.IndexOf(dragged);
+                if (targetIdx < 0 || sourceIdx < 0 || targetIdx == sourceIdx) return;
+
+                detailFields.Children.Remove(dragged);
+                int insertAt = detailFields.Children.IndexOf(capturedRow);
+                if (insertAt < 0) insertAt = detailFields.Children.Count;
+                else if (sourceIdx > targetIdx) insertAt = targetIdx;
+                detailFields.Children.Insert(insertAt, dragged);
+            };
+        }
     }
 
     /// <summary>
@@ -988,7 +1097,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     /// </summary>
     private void SetupTotp(PasswordItem item)
     {
-        var section = GetElement<StackPanel>("DetailTotpSection");
+        var section = GetElement<Grid>("DetailTotpSection");
         _currentTotpSecret = PasswordManager.Services.Utilities.TotpHelper.GetSecret(item);
 
         bool usable = !string.IsNullOrEmpty(_currentTotpSecret)
@@ -1823,50 +1932,123 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
     private void AddCustomFieldButton_Click(object sender, RoutedEventArgs e)
     {
-        try
+        if (sender is FrameworkElement anchor)
+            CustomFieldHelper.ShowFieldTypeMenu(anchor, AddDetailFieldOfType);
+    }
+
+    private async void AddDetailFieldOfType(CustomFieldType fieldType)
+    {
+        if (_selectedItem == null) return;
+
+        _selectedItem.CustomFields ??= new List<CustomField>();
+        _selectedItem.CustomFields.Add(new CustomField
         {
-            var customFieldsContainer = GetElement<StackPanel>("CustomFieldsContainer");
-            if (customFieldsContainer != null)
+            Name           = CustomFieldHelper.GetDefaultFieldName(fieldType),
+            Value          = "",
+            Type           = fieldType,
+            DisplayOrder   = _selectedItem.CustomFields.Count,
+            PasswordItemId = _selectedItem.Id,
+            CreatedAt      = DateTime.UtcNow,
+            LastModified   = DateTime.UtcNow,
+        });
+
+        if (_passwordItemService != null)
+        {
+            try { await _passwordItemService.UpdateAsync(_selectedItem); }
+            catch { }
+        }
+
+        RefreshDetailCustomFields();
+    }
+
+    private void RefreshDetailCustomFields()
+    {
+        var cfList      = GetElement<StackPanel>("DetailCustomFieldsList");
+        var noFieldsText = GetElement<TextBlock>("NoCustomFieldsText");
+
+        const string totpFieldName      = "TOTP Secret";
+        const string brandIconFieldName = "Brand Icon";
+        var visible = _selectedItem?.CustomFields?
+            .Where(f => !string.Equals(f.Name, totpFieldName, StringComparison.OrdinalIgnoreCase)
+                     && !string.Equals(f.Name, brandIconFieldName, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(f => f.DisplayOrder)
+            .ToList() ?? new List<CustomField>();
+
+        if (cfList != null)
+        {
+            cfList.Children.Clear();
+            foreach (var field in visible)
             {
-                // Create a new custom field UI
-                var fieldGrid = new Grid();
-                fieldGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                fieldGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                fieldGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-                var nameTextBox = new TextBox
-                {
-                    // PlaceholderText = "Field name",
-                    Margin = new Thickness(0, 0, 4, 0)
-                };
-                Grid.SetColumn(nameTextBox, 0);
-
-                var valueTextBox = new TextBox
-                {
-                    // PlaceholderText = "Field value",
-                    Margin = new Thickness(4, 0, 4, 0)
-                };
-                Grid.SetColumn(valueTextBox, 1);
-
-                var removeButton = new Button
-                {
-                    Content = "✕",
-                    Width = 32,
-                    Height = 32,
-                    Margin = new Thickness(4, 0, 0, 0)
-                };
-                Grid.SetColumn(removeButton, 2);
-
-                removeButton.Click += (s, args) => customFieldsContainer.Children.Remove(fieldGrid);
-
-                fieldGrid.Children.Add(nameTextBox);
-                fieldGrid.Children.Add(valueTextBox);
-                fieldGrid.Children.Add(removeButton);
-
-                customFieldsContainer.Children.Add(fieldGrid);
+                var row = CustomFieldHelper.CreateCustomFieldRow(
+                    field,
+                    cfList,
+                    OnDetailCustomFieldChanged,
+                    OnDetailCustomFieldRemoved,
+                    OnDetailCustomFieldReorder
+                );
+                cfList.Children.Add(row);
             }
         }
-        catch (Exception ex)
-        { }
+
+        if (noFieldsText != null)
+            noFieldsText.Visibility = visible.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async void OnDetailCustomFieldChanged(CustomField field)
+    {
+        field.LastModified = DateTime.UtcNow;
+        if (_passwordItemService != null && _selectedItem != null)
+        {
+            try { await _passwordItemService.UpdateAsync(_selectedItem); }
+            catch { }
+        }
+    }
+
+    private async void OnDetailCustomFieldRemoved(CustomField field)
+    {
+        _selectedItem?.CustomFields?.Remove(field);
+        if (_passwordItemService != null && _selectedItem != null)
+        {
+            try { await _passwordItemService.UpdateAsync(_selectedItem); }
+            catch { }
+        }
+        RefreshDetailCustomFields();
+    }
+
+    private async void OnDetailCustomFieldReorder(CustomField dragged, int newIndex)
+    {
+        if (_selectedItem?.CustomFields == null) return;
+        var list = _selectedItem.CustomFields
+            .Where(f => !string.Equals(f.Name, "TOTP Secret", StringComparison.OrdinalIgnoreCase)
+                     && !string.Equals(f.Name, "Brand Icon",   StringComparison.OrdinalIgnoreCase))
+            .OrderBy(f => f.DisplayOrder)
+            .ToList();
+
+        list.Remove(dragged);
+        newIndex = Math.Clamp(newIndex, 0, list.Count);
+        list.Insert(newIndex, dragged);
+        for (int i = 0; i < list.Count; i++) list[i].DisplayOrder = i;
+
+        if (_passwordItemService != null)
+        {
+            try { await _passwordItemService.UpdateAsync(_selectedItem); }
+            catch { }
+        }
+        RefreshDetailCustomFields();
+    }
+
+    private void DetailScrollViewer_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+    {
+        if (e.Handled) return;
+        if (sender is not ScrollViewer sv) return;
+        sv.ScrollToVerticalOffset(sv.VerticalOffset - (e.Delta / 2.0));
+        e.Handled = true;
+    }
+
+    private async void SaveDetailButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedItem == null || _passwordItemService == null) return;
+        try { await _passwordItemService.UpdateAsync(_selectedItem); }
+        catch { }
     }
 }

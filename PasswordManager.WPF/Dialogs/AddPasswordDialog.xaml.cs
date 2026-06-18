@@ -395,6 +395,13 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             }
         }
 
+        // For generic 1Password-style types, populate the GenericFieldsContainer from CustomFields
+        if (IsGenericType(_editingItem.Type))
+        {
+            GenericTypeFieldsPanel.Visibility = Visibility.Visible;
+            PopulateGenericFieldsContainer(_editingItem.Type);
+        }
+
         // If this item belongs to an "Identity" category, prefer the login-style layout
         try
         {
@@ -455,29 +462,369 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 
     private void TypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (TypeComboBox.SelectedIndex >= 0)
+        if (TypeComboBox.SelectedIndex < 0) return;
+
+        var selectedType = (ItemType)(TypeComboBox.SelectedIndex + 1);
+
+        // Show/hide legacy fields panels
+        LoginFieldsPanel.Visibility          = selectedType is ItemType.Login or ItemType.Password ? Visibility.Visible : Visibility.Collapsed;
+        CreditCardFieldsPanel.Visibility     = selectedType == ItemType.CreditCard  ? Visibility.Visible : Visibility.Collapsed;
+        SecureNoteFieldsPanel.Visibility     = selectedType == ItemType.SecureNote  ? Visibility.Visible : Visibility.Collapsed;
+        WiFiFieldsPanel.Visibility           = selectedType == ItemType.WiFi        ? Visibility.Visible : Visibility.Collapsed;
+        PasskeyFieldsPanel.Visibility        = selectedType == ItemType.Passkey     ? Visibility.Visible : Visibility.Collapsed;
+        IdentityFieldsPanel.Visibility       = selectedType == ItemType.Identity    ? Visibility.Visible : Visibility.Collapsed;
+        APICredentialsFieldsPanel.Visibility = Visibility.Collapsed;
+        GenericTypeFieldsPanel.Visibility    = Visibility.Collapsed;
+
+        // API Credentials legacy panel
+        if (selectedType == ItemType.SecureNote &&
+            CategoryComboBox.SelectedItem is ComboBoxItem catItem && catItem.Tag is Category cat2 &&
+            cat2.Name.Contains("API", StringComparison.OrdinalIgnoreCase))
         {
-            var selectedType = (ItemType)(TypeComboBox.SelectedIndex + 1);
+            SecureNoteFieldsPanel.Visibility     = Visibility.Collapsed;
+            APICredentialsFieldsPanel.Visibility = Visibility.Visible;
+        }
 
-            // Show/hide fields based on type
-            LoginFieldsPanel.Visibility         = selectedType is ItemType.Login or ItemType.Password ? Visibility.Visible : Visibility.Collapsed;
-            CreditCardFieldsPanel.Visibility    = selectedType == ItemType.CreditCard  ? Visibility.Visible : Visibility.Collapsed;
-            SecureNoteFieldsPanel.Visibility    = selectedType == ItemType.SecureNote  ? Visibility.Visible : Visibility.Collapsed;
-            WiFiFieldsPanel.Visibility          = selectedType == ItemType.WiFi        ? Visibility.Visible : Visibility.Collapsed;
-            PasskeyFieldsPanel.Visibility       = selectedType == ItemType.Passkey     ? Visibility.Visible : Visibility.Collapsed;
-            IdentityFieldsPanel.Visibility      = selectedType == ItemType.Identity    ? Visibility.Visible : Visibility.Collapsed;
-            APICredentialsFieldsPanel.Visibility = Visibility.Collapsed;
+        // New 1Password-style generic types
+        if (IsGenericType(selectedType))
+        {
+            GenericTypeFieldsPanel.Visibility = Visibility.Visible;
+            PopulateGenericFieldsContainer(selectedType);
+        }
+    }
 
-            // API Credentials panel replaces SecureNote when category contains "API"
-            if (selectedType == ItemType.SecureNote &&
-                CategoryComboBox.SelectedItem is ComboBoxItem catItem && catItem.Tag is Category cat2 &&
-                cat2.Name.Contains("API", StringComparison.OrdinalIgnoreCase))
+    private static bool IsGenericType(ItemType t) => t switch
+    {
+        ItemType.SshKey or ItemType.BankAccount or ItemType.Database or
+        ItemType.DriversLicense or ItemType.EmailAccount or ItemType.MedicalRecord or
+        ItemType.Membership or ItemType.OutdoorLicense or ItemType.Passport or
+        ItemType.RewardsProgram or ItemType.Server or ItemType.SocialSecurityNumber or
+        ItemType.SoftwareLicense or ItemType.WirelessRouter or ItemType.CryptoWallet or
+        ItemType.Document or ItemType.ApiCredentials => true,
+        _ => false
+    };
+
+    private record FieldDef(string Name, string Placeholder = "", bool IsProtected = false, bool IsPaired = false);
+
+    private static IReadOnlyList<FieldDef> GetFieldDefs(ItemType type) => type switch
+    {
+        ItemType.SshKey => [
+            new("Private Key", "Paste your private key", IsProtected: true),
+            new("Public Key",  "Paste your public key"),
+            new("Filename",    "e.g. id_rsa"),
+            new("Key Type",    "e.g. RSA, Ed25519"),
+        ],
+        ItemType.ApiCredentials => [
+            new("Username",   "API username or key ID"),
+            new("Credential", "API key or token", IsProtected: true),
+            new("Type",       "e.g. Bearer, Basic"),
+            new("Filename",   "Config file or alias"),
+        ],
+        ItemType.BankAccount => [
+            new("Bank Name",       "e.g. Chase, Wells Fargo"),
+            new("Account Type",    "e.g. Checking, Savings"),
+            new("Routing Number",  "9-digit routing number"),
+            new("Account Number",  "Your account number", IsProtected: true),
+            new("SWIFT / BIC",     "International bank code"),
+            new("IBAN",            "International account number"),
+            new("PIN",             "ATM or phone PIN", IsProtected: true),
+        ],
+        ItemType.CryptoWallet => [
+            new("Wallet Address", "Public wallet address"),
+            new("Private Key",    "Private key or WIF", IsProtected: true),
+            new("Seed Phrase",    "12 or 24 recovery words", IsProtected: true),
+            new("Coin / Network", "e.g. Bitcoin, Ethereum"),
+        ],
+        ItemType.Database => [
+            new("Type",               "e.g. PostgreSQL, MySQL"),
+            new("Server",             "Host or IP address"),
+            new("Port",               "e.g. 5432, 3306"),
+            new("Database",           "Database name"),
+            new("Username",           "DB username"),
+            new("Password",           "DB password", IsProtected: true),
+            new("Alias",              "Friendly connection name"),
+            new("Connection Options", "Extra connection string params"),
+        ],
+        ItemType.DriversLicense => [
+            new("Full Name",      "Name on license"),
+            new("License Number", "License number"),
+            new("License Class",  "e.g. Class C, CDL"),
+            new("Date of Birth",  "MM/DD/YYYY"),
+            new("Expiry Date",    "MM/DD/YYYY"),
+            new("State / Province", "Issuing state or province"),
+            new("Country",        "Issuing country"),
+            new("Address",        "Address on license"),
+        ],
+        ItemType.EmailAccount => [
+            new("Username",      "Email address"),
+            new("Password",      "Account password", IsProtected: true),
+            new("IMAP Server",   "e.g. imap.gmail.com"),
+            new("IMAP Port",     "e.g. 993"),
+            new("SMTP Server",   "e.g. smtp.gmail.com"),
+            new("SMTP Port",     "e.g. 587"),
+        ],
+        ItemType.MedicalRecord => [
+            new("Healthcare Provider", "Doctor or hospital name"),
+            new("Patient",             "Patient name"),
+            new("Date",                "Date of visit (MM/DD/YYYY)"),
+            new("Location",            "Clinic or hospital address"),
+            new("Reason for Visit",    "Brief description"),
+            new("Medication",          "Medications prescribed"),
+        ],
+        ItemType.Membership => [
+            new("Organization",    "Organization name"),
+            new("Member Name",     "Name on membership"),
+            new("Member ID",       "Membership ID or number"),
+            new("Telephone",       "Customer service phone"),
+            new("Member Since",    "Start date (MM/DD/YYYY)"),
+            new("Expiry Date",     "Expiry date (MM/DD/YYYY)"),
+            new("Membership URL",  "Member portal URL"),
+        ],
+        ItemType.OutdoorLicense => [
+            new("Full Name",         "Name on license"),
+            new("License Number",    "License number"),
+            new("Valid From",        "Start date (MM/DD/YYYY)"),
+            new("Expires",           "Expiry date (MM/DD/YYYY)"),
+            new("Approved Wildlife", "Permitted species or activity"),
+            new("Maximum Quota",     "Bag or catch limit"),
+            new("State / Province",  "Issuing state or province"),
+            new("Country",           "Issuing country"),
+        ],
+        ItemType.Passport => [
+            new("Full Name",       "Name as on passport"),
+            new("Passport Number", "Passport number"),
+            new("Nationality",     "Nationality"),
+            new("Date of Birth",   "MM/DD/YYYY"),
+            new("Issuing Country", "Country of issue"),
+            new("Issue Date",      "MM/DD/YYYY"),
+            new("Expiry Date",     "MM/DD/YYYY"),
+            new("Place of Birth",  "City and country"),
+            new("Gender",          "As shown on passport"),
+        ],
+        ItemType.RewardsProgram => [
+            new("Company Name",    "Airline, hotel, or retailer"),
+            new("Member Name",     "Name on account"),
+            new("Member ID",       "Rewards or frequent-flyer number"),
+            new("PIN",             "Account PIN", IsProtected: true),
+            new("Member Since",    "MM/DD/YYYY"),
+            new("Customer Service","Support phone number"),
+            new("Redemption URL",  "Portal to redeem rewards"),
+        ],
+        ItemType.Server => [
+            new("Server Address", "Host, IP, or URL"),
+            new("Port",           "e.g. 22, 443"),
+            new("Username",       "Login username"),
+            new("Password",       "Login password", IsProtected: true),
+            new("Notes",          "Additional connection notes"),
+        ],
+        ItemType.SocialSecurityNumber => [
+            new("Name",               "Full legal name"),
+            new("Social Security No.", "XXX-XX-XXXX", IsProtected: true),
+        ],
+        ItemType.SoftwareLicense => [
+            new("License Key",   "Activation key", IsProtected: true),
+            new("Licensed To",   "Name or company"),
+            new("Email",         "Registration email"),
+            new("Company",       "Publisher company"),
+            new("Version",       "Licensed version"),
+            new("Expiry Date",   "License expiry (MM/DD/YYYY)"),
+            new("Download Link", "Download page URL"),
+            new("Support URL",   "Support or product URL"),
+        ],
+        ItemType.WirelessRouter => [
+            new("Base Station Name",         "Router or access point name"),
+            new("Base Station Password",      "Admin password", IsProtected: true),
+            new("Network Name (SSID)",        "Wi-Fi SSID"),
+            new("Wireless Password",          "Wi-Fi password", IsProtected: true),
+            new("Server / IP",               "Router IP address"),
+            new("Network Type",              "e.g. WPA2, WPA3"),
+            new("Attached Storage Password", "NAS or USB share password", IsProtected: true),
+        ],
+        ItemType.Document => [
+            new("Document Type",  "e.g. Insurance, Certificate"),
+            new("Reference No.",  "Document number or reference"),
+            new("Issued By",      "Issuing authority or company"),
+            new("Issue Date",     "MM/DD/YYYY"),
+            new("Expiry Date",    "MM/DD/YYYY"),
+        ],
+        _ => []
+    };
+
+    private void PopulateGenericFieldsContainer(ItemType selectedType)
+    {
+        GenericFieldsContainer.Children.Clear();
+
+        var defs = GetFieldDefs(selectedType);
+        if (defs.Count == 0) return;
+
+        GenericTypeHeader.Text = GetGenericTypeHeader(selectedType);
+
+        // Retrieve existing custom field values (for edit mode)
+        var existingValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (_editingItem != null)
+        {
+            foreach (var cf in _editingItem.CustomFields ?? [])
+                existingValues[cf.Name] = cf.Value;
+        }
+
+        // Render fields: emit pairs side-by-side, singles full-width
+        int i = 0;
+        while (i < defs.Count)
+        {
+            var a = defs[i];
+            var b = (i + 1 < defs.Count) ? defs[i + 1] : null;
+
+            // Use 2-col row when both items are available and neither is a large protected field
+            bool usePair = b != null && !a.IsProtected && !b.IsProtected;
+
+            if (usePair)
             {
-                SecureNoteFieldsPanel.Visibility     = Visibility.Collapsed;
-                APICredentialsFieldsPanel.Visibility = Visibility.Visible;
+                var row = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(16) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                var leftControl = BuildFieldControl(a, existingValues);
+                var rightControl = BuildFieldControl(b!, existingValues);
+
+                Grid.SetColumn(leftControl, 0);
+                Grid.SetColumn(rightControl, 2);
+                row.Children.Add(leftControl);
+                row.Children.Add(rightControl);
+                GenericFieldsContainer.Children.Add(row);
+                i += 2;
+            }
+            else
+            {
+                var ctrl = BuildFieldControl(a, existingValues);
+                (ctrl as FrameworkElement)!.Margin = new Thickness(0, 0, 0, 12);
+                GenericFieldsContainer.Children.Add(ctrl);
+                i++;
             }
         }
     }
+
+    private UIElement BuildFieldControl(FieldDef def, Dictionary<string, string> values)
+    {
+        var panel = new StackPanel();
+        var label = new TextBlock
+        {
+            Text = def.Name,
+            FontSize = 12,
+            FontWeight = FontWeights.SemiBold,
+            Margin = new Thickness(0, 0, 0, 4)
+        };
+        label.SetResourceReference(TextBlock.ForegroundProperty, "ModernTextSecondaryBrush");
+        panel.Children.Add(label);
+
+        var border = new Border { CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1), Height = 40 };
+        border.SetResourceReference(Border.BackgroundProperty, "ModernSurfaceBrush");
+        border.SetResourceReference(Border.BorderBrushProperty, "ModernBorderBrush");
+
+        values.TryGetValue(def.Name, out var existing);
+
+        if (def.IsProtected)
+        {
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var pb = new PasswordBox
+            {
+                Password = existing ?? "",
+                Background = System.Windows.Media.Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(12, 0, 0, 0),
+                FontSize = 14,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                Tag = def.Name
+            };
+            var showTb = new TextBox
+            {
+                Background = System.Windows.Media.Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(12, 0, 0, 0),
+                FontSize = 14,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                Visibility = Visibility.Collapsed,
+                Text = existing ?? "",
+                Tag = "reveal:" + def.Name
+            };
+
+            var eyeBtn = new Button
+            {
+                Background = System.Windows.Media.Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(8, 6, 8, 6),
+                VerticalAlignment = VerticalAlignment.Center,
+                Content = new TextBlock { Text = "", FontFamily = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"), FontSize = 14 }
+            };
+            eyeBtn.SetResourceReference(Button.ForegroundProperty, "ModernTextSecondaryBrush");
+            eyeBtn.Click += (_, _) =>
+            {
+                if (pb.Visibility == Visibility.Visible)
+                {
+                    showTb.Text = pb.Password;
+                    pb.Visibility = Visibility.Collapsed;
+                    showTb.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    pb.Password = showTb.Text;
+                    showTb.Visibility = Visibility.Collapsed;
+                    pb.Visibility = Visibility.Visible;
+                }
+            };
+
+            Grid.SetColumn(showTb, 0);
+            Grid.SetColumn(pb, 0);
+            Grid.SetColumn(eyeBtn, 1);
+            grid.Children.Add(pb);
+            grid.Children.Add(showTb);
+            grid.Children.Add(eyeBtn);
+            border.Child = grid;
+        }
+        else
+        {
+            var tb = new TextBox
+            {
+                Text = existing ?? "",
+                Background = System.Windows.Media.Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(12, 0, 12, 0),
+                VerticalContentAlignment = VerticalAlignment.Center,
+                FontSize = 14,
+                Tag = def.Name
+            };
+            
+            border.Child = tb;
+        }
+
+        panel.Children.Add(border);
+        return panel;
+    }
+
+    private static string GetGenericTypeHeader(ItemType type) => type switch
+    {
+        ItemType.SshKey              => "SSH Key Details",
+        ItemType.ApiCredentials      => "API Credential Details",
+        ItemType.BankAccount         => "Bank Account Details",
+        ItemType.CryptoWallet        => "Crypto Wallet Details",
+        ItemType.Database            => "Database Details",
+        ItemType.DriversLicense      => "Driver License Details",
+        ItemType.EmailAccount        => "Email Account Details",
+        ItemType.MedicalRecord       => "Medical Record Details",
+        ItemType.Membership          => "Membership Details",
+        ItemType.OutdoorLicense      => "Outdoor License Details",
+        ItemType.Passport            => "Passport Details",
+        ItemType.RewardsProgram      => "Rewards Program Details",
+        ItemType.Server              => "Server Details",
+        ItemType.SocialSecurityNumber=> "Social Security Details",
+        ItemType.SoftwareLicense     => "Software License Details",
+        ItemType.WirelessRouter      => "Wireless Router Details",
+        ItemType.Document            => "Document Details",
+        _                            => "Details"
+    };
 
     private void GeneratePasswordButton_Click(object sender, RoutedEventArgs e)
     {
@@ -760,14 +1107,88 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             if (item.WiFiItem == null)
                 item.WiFiItem = new WiFiItem();
 
-            // Set user ID for the WiFi item
             if (_authService.CurrentUser != null)
-            {
                 item.WiFiItem.UserId = _authService.CurrentUser.Id;
-            }
-
-            // Additional WiFi fields would be set here when UI is implemented
         }
+
+        // Handle generic 1Password-style types via CustomFields
+        if (IsGenericType(selectedType))
+        {
+            var defs = GetFieldDefs(selectedType);
+            // Remove any pre-existing custom fields for this type's fields so we don't duplicate
+            item.CustomFields.RemoveAll(cf =>
+                defs.Any(d => string.Equals(d.Name, cf.Name, StringComparison.OrdinalIgnoreCase)));
+
+            int order = item.CustomFields.Count;
+            foreach (var def in defs)
+            {
+                var value = ReadGenericFieldValue(def);
+                if (string.IsNullOrEmpty(value)) continue;
+
+                item.CustomFields.Add(new CustomField
+                {
+                    Name = def.Name,
+                    Value = value,
+                    Type = def.IsProtected ? CustomFieldType.Password : CustomFieldType.Text,
+                    IsProtected = def.IsProtected,
+                    DisplayOrder = order++,
+                    PasswordItemId = item.Id
+                });
+            }
+        }
+    }
+
+    private string ReadGenericFieldValue(FieldDef def)
+    {
+        foreach (UIElement child in GenericFieldsContainer.Children)
+        {
+            var panel = GetStackPanelChild(child);
+            if (panel == null) continue;
+
+            foreach (UIElement grandchild in panel.Children)
+            {
+                var value = TryReadFieldFromElement(grandchild, def.Name, def.IsProtected);
+                if (value != null) return value;
+            }
+        }
+        return "";
+    }
+
+    private static StackPanel? GetStackPanelChild(UIElement el)
+    {
+        if (el is StackPanel sp) return sp;
+        if (el is Grid g)
+        {
+            foreach (UIElement c in g.Children)
+                if (c is StackPanel sp2) return sp2;
+        }
+        return null;
+    }
+
+    private static string? TryReadFieldFromElement(UIElement el, string fieldName, bool isProtected)
+    {
+        if (el is Border b)
+        {
+            if (isProtected && b.Child is Grid g)
+            {
+                foreach (UIElement gc in g.Children)
+                {
+                    if (gc is PasswordBox pb && pb.Tag is string tag && string.Equals(tag, fieldName, StringComparison.OrdinalIgnoreCase))
+                        return pb.Password;
+                    if (gc is TextBox tb && tb.Tag is string tbTag && tbTag.StartsWith("reveal:") &&
+                        string.Equals(tbTag["reveal:".Length..], fieldName, StringComparison.OrdinalIgnoreCase) &&
+                        tb.Visibility == Visibility.Visible)
+                        return tb.Text;
+                }
+            }
+            else if (!isProtected && b.Child is TextBox textBox &&
+                     textBox.Tag is string textTag &&
+                     string.Equals(textTag, fieldName, StringComparison.OrdinalIgnoreCase))
+            {
+                return textBox.Text;
+            }
+        }
+        return null;
     }
 
     private void ShowLoadingIndicator(bool show, string message = "Loading...")
@@ -874,8 +1295,15 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
     {
         if (e.Handled) return;
         if (sender is not ScrollViewer scrollViewer) return;
-
         scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - (e.Delta / 2.0));
+        e.Handled = true;
+    }
+
+    private void CustomFieldsScrollViewer_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+    {
+        if (e.Handled) return;
+        if (sender is not ScrollViewer sv) return;
+        sv.ScrollToVerticalOffset(sv.VerticalOffset - (e.Delta / 2.0));
         e.Handled = true;
     }
 
@@ -1048,42 +1476,25 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 
     private void AddCustomField_Click(object sender, RoutedEventArgs e)
     {
-        // Toggle the type picker panel
-        FieldTypePickerPanel.Visibility = FieldTypePickerPanel.Visibility == Visibility.Visible
-            ? Visibility.Collapsed
-            : Visibility.Visible;
+        if (sender is FrameworkElement anchor)
+            CustomFieldHelper.ShowFieldTypeMenu(anchor, AddFieldOfType);
     }
 
-    private void FieldTypeButton_Click(object sender, RoutedEventArgs e)
+    private void AddFieldOfType(CustomFieldType fieldType)
     {
-        if (sender is Button btn && btn.Tag is string typeStr && Enum.TryParse<CustomFieldType>(typeStr, out var fieldType))
+        var newField = new CustomField
         {
-            var newField = new CustomField
-            {
-                Name = GetDefaultFieldName(fieldType),
-                Value = "",
-                Type = fieldType,
-                DisplayOrder = _customFields.Count,
-                PasswordItemId = _editingItem?.Id ?? 0
-            };
-            _customFields.Add(newField);
-            RefreshCustomFieldsUI();
-            FieldTypePickerPanel.Visibility = Visibility.Collapsed;
-        }
+            Name           = CustomFieldHelper.GetDefaultFieldName(fieldType),
+            Value          = "",
+            Type           = fieldType,
+            DisplayOrder   = _customFields.Count,
+            PasswordItemId = _editingItem?.Id ?? 0,
+            CreatedAt      = DateTime.UtcNow,
+            LastModified   = DateTime.UtcNow,
+        };
+        _customFields.Add(newField);
+        RefreshCustomFieldsUI();
     }
-
-    private static string GetDefaultFieldName(CustomFieldType type) => type switch
-    {
-        CustomFieldType.Password => "Password",
-        CustomFieldType.Email    => "Email",
-        CustomFieldType.Url      => "URL",
-        CustomFieldType.Phone    => "Phone",
-        CustomFieldType.Number   => "Number",
-        CustomFieldType.Date     => "Date",
-        CustomFieldType.Toggle   => "Yes / No",
-        CustomFieldType.TextArea => "Notes",
-        _                        => "Text Field",
-    };
 
     private void RefreshCustomFieldsUI()
     {
@@ -1091,13 +1502,33 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 
         foreach (var field in _customFields.OrderBy(f => f.DisplayOrder))
         {
-            var fieldControl = CustomFieldHelper.CreateCustomFieldControl(
+            var row = CustomFieldHelper.CreateCustomFieldRow(
                 field,
+                CustomFieldsContainer,
                 OnCustomFieldChanged,
-                OnCustomFieldRemoved
+                OnCustomFieldRemoved,
+                OnCustomFieldReorder
             );
-            CustomFieldsContainer.Children.Add(fieldControl);
+            CustomFieldsContainer.Children.Add(row);
         }
+
+        // Update the Custom Fields tab badge
+        var count = _customFields.Count;
+        if (CustomFieldsTabBadge != null)
+        {
+            CustomFieldsTabBadge.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            if (CustomFieldsTabCount != null) CustomFieldsTabCount.Text = count.ToString();
+        }
+    }
+
+    private void OnCustomFieldReorder(CustomField dragged, int newIndex)
+    {
+        _customFields.Remove(dragged);
+        newIndex = Math.Clamp(newIndex, 0, _customFields.Count);
+        _customFields.Insert(newIndex, dragged);
+        for (int i = 0; i < _customFields.Count; i++)
+            _customFields[i].DisplayOrder = i;
+        RefreshCustomFieldsUI();
     }
 
     private void OnCustomFieldChanged(CustomField field)
@@ -1294,3 +1725,4 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         RefreshCustomFieldsUI();
     }
 }
+

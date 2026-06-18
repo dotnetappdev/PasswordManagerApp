@@ -766,7 +766,7 @@
                                         </Border>
                                         <TextBlock Grid.Column="1" Text="MASTER PASSWORD"
                                                    FontSize="10" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource ModernTextTertiaryBrush}" Margin="14,0"/>
+                                                   Foreground="{DynamicResource ModernTextTertiaryBrush}" Margin="14,0"/>
                                         <Border Grid.Column="2" Height="1" VerticalAlignment="Center">
                                             <Border.Background><SolidColorBrush Color="#FFFFFF" Opacity="0.07"/></Border.Background>
                                         </Border>
@@ -860,19 +860,19 @@
                                     <WrapPanel Margin="0,0,0,20" Orientation="Horizontal">
                                         <TextBlock x:Name="RegReqLength"  x:FieldModifier="private"
                                                    Text="○ 8+ chars" FontSize="11"
-                                                   Foreground="{StaticResource ModernTextTertiaryBrush}" Margin="0,0,12,4"/>
+                                                   Foreground="{DynamicResource ModernTextTertiaryBrush}" Margin="0,0,12,4"/>
                                         <TextBlock x:Name="RegReqUpper"   x:FieldModifier="private"
                                                    Text="○ Uppercase" FontSize="11"
-                                                   Foreground="{StaticResource ModernTextTertiaryBrush}" Margin="0,0,12,4"/>
+                                                   Foreground="{DynamicResource ModernTextTertiaryBrush}" Margin="0,0,12,4"/>
                                         <TextBlock x:Name="RegReqLower"   x:FieldModifier="private"
                                                    Text="○ Lowercase" FontSize="11"
-                                                   Foreground="{StaticResource ModernTextTertiaryBrush}" Margin="0,0,12,4"/>
+                                                   Foreground="{DynamicResource ModernTextTertiaryBrush}" Margin="0,0,12,4"/>
                                         <TextBlock x:Name="RegReqNumber"  x:FieldModifier="private"
                                                    Text="○ Number" FontSize="11"
-                                                   Foreground="{StaticResource ModernTextTertiaryBrush}" Margin="0,0,12,4"/>
+                                                   Foreground="{DynamicResource ModernTextTertiaryBrush}" Margin="0,0,12,4"/>
                                         <TextBlock x:Name="RegReqSpecial" x:FieldModifier="private"
                                                    Text="○ Symbol" FontSize="11"
-                                                   Foreground="{StaticResource ModernTextTertiaryBrush}" Margin="0,0,0,4"/>
+                                                   Foreground="{DynamicResource ModernTextTertiaryBrush}" Margin="0,0,0,4"/>
                                     </WrapPanel>
 
                                     <!-- ── Confirm password ── -->
@@ -920,7 +920,7 @@
                                                        Foreground="#6B7280" HorizontalAlignment="Left"/>
                                             <Border HorizontalAlignment="Right" CornerRadius="4" Padding="7,2">
                                                 <Border.Background><SolidColorBrush Color="#FFFFFF" Opacity="0.05"/></Border.Background>
-                                                <TextBlock Text="optional" FontSize="10" Foreground="{StaticResource ModernTextTertiaryBrush}"/>
+                                                <TextBlock Text="optional" FontSize="10" Foreground="{DynamicResource ModernTextTertiaryBrush}"/>
                                             </Border>
                                         </Grid>
                                         <Border CornerRadius="10" BorderThickness="1" Padding="14,12">
@@ -936,7 +936,7 @@
                                             </TextBox>
                                         </Border>
                                         <TextBlock Text="Never include your actual password — this is stored in plain text."
-                                                   FontSize="11" Foreground="{StaticResource ModernTextTertiaryBrush}" Margin="0,6,0,0"
+                                                   FontSize="11" Foreground="{DynamicResource ModernTextTertiaryBrush}" Margin="0,6,0,0"
                                                    TextWrapping="Wrap"/>
                                     </StackPanel>
 

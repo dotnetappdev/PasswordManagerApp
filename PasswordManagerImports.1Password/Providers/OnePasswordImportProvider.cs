@@ -103,8 +103,11 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             }
 
             // Track collections and categories we need to create
+            // Temp IDs start at 1 so ImportService's > 0 check passes and dict keys are unique
             var collectionsToCreate = new Dictionary<string, Collection>();
             var categoriesToCreate = new Dictionary<string, (Category Category, string CollectionName)>();
+            int tempCollId = 1;
+            int tempCatId = 1;
 
             // Process records based on format
             if (isNewFormat && recordsNew != null)
@@ -130,6 +133,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                         {
                             collectionsToCreate[collectionName] = new Collection
                             {
+                                Id = tempCollId++,
                                 Name = collectionName,
                                 Icon = GetCollectionIcon(collectionName),
                                 Color = GetCollectionColor(collectionName),
@@ -145,7 +149,9 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                         {
                             var newCategory = new Category
                             {
+                                Id = tempCatId++,
                                 Name = categoryName,
+                                CollectionId = collection.Id,
                                 Icon = GetCategoryIcon(categoryName),
                                 Color = GetCategoryColor(categoryName)
                             };
@@ -216,6 +222,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                         {
                             collectionsToCreate[collectionName] = new Collection
                             {
+                                Id = tempCollId++,
                                 Name = collectionName,
                                 Icon = GetCollectionIcon(collectionName),
                                 Color = GetCollectionColor(collectionName),
@@ -231,10 +238,11 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                         {
                             var newCategory = new Category
                             {
+                                Id = tempCatId++,
                                 Name = categoryName,
+                                CollectionId = collection.Id,
                                 Icon = GetCategoryIcon(categoryName),
                                 Color = GetCategoryColor(categoryName)
-                                // CollectionId will be set after collection is created by ImportService
                             };
                             categoriesToCreate[categoryKey] = (newCategory, collectionName);
                         }
@@ -344,10 +352,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             result.RequiredTags.Add(new Tag { Name = "Favorite", Color = "#fbbf24" });
             result.RequiredTags.Add(new Tag { Name = "Archived", Color = "#6b7280" });
 
-            // Set success and failure counts
-            result.SuccessfulImports = result.ImportedItems.Count;
-            result.FailedImports = result.TotalItemsProcessed - result.SuccessfulImports;
-
+            // Leave SuccessfulImports/FailedImports at 0 — ImportService updates them during actual saves
             result.Success = true;
         }
         catch (Exception ex)
@@ -371,30 +376,31 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             _                => ItemType.Login
         };
 
-    // 1PUX CategoryUuid values from 1Password's schema
+    // 1PUX CategoryUuid values — verified against Bitwarden's open-source 1PUX importer
     private static ItemType MapPuxCategoryToItemType(string? categoryUuid) =>
         categoryUuid?.ToLowerInvariant() switch
         {
             "001" => ItemType.Login,
             "002" => ItemType.CreditCard,
             "003" => ItemType.SecureNote,
-            "004" => ItemType.Login,          // Identity — closest to Login
+            "004" => ItemType.Identity,
             "005" => ItemType.Password,
-            "006" => ItemType.Login,          // Document
-            "101" => ItemType.Login,          // Software License
-            "102" => ItemType.Login,          // Email Account
-            "103" => ItemType.Login,          // Database
-            "104" => ItemType.Login,          // Server
-            "105" => ItemType.WiFi,           // Wireless Router
-            "106" => ItemType.SecureNote,     // Secure Note
-            "107" => ItemType.CreditCard,     // Bank Account
-            "108" => ItemType.Login,          // Membership
-            "110" => ItemType.Login,          // Passport
-            "111" => ItemType.Login,          // Driver License
-            "112" => ItemType.Login,          // Outdoor License
-            "113" => ItemType.Login,          // Reward Program
-            "114" => ItemType.Login,          // Social Security Number
-            "115" => ItemType.Login,          // API Credentials
+            "006" => ItemType.Document,
+            "100" => ItemType.SoftwareLicense,
+            "101" => ItemType.BankAccount,        // Bank Account → treat as CreditCard-like
+            "102" => ItemType.Database,
+            "103" => ItemType.DriversLicense,
+            "104" => ItemType.OutdoorLicense,
+            "105" => ItemType.Membership,
+            "106" => ItemType.Passport,
+            "107" => ItemType.RewardsProgram,
+            "108" => ItemType.SocialSecurityNumber,
+            "109" => ItemType.WirelessRouter,
+            "110" => ItemType.Server,
+            "111" => ItemType.EmailAccount,
+            "112" => ItemType.ApiCredentials,
+            "113" => ItemType.MedicalRecord,
+            "114" => ItemType.SshKey,
             _     => ItemType.Login
         };
 
@@ -665,8 +671,11 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             }
 
             // Track collections and categories we need to create
+            // Temp IDs start at 1 so ImportService's > 0 check passes and dict keys are unique
             var collectionsToCreate = new Dictionary<string, Collection>();
             var categoriesToCreate = new Dictionary<string, (Category Category, string CollectionName)>();
+            int tempCollId = 1;
+            int tempCatId = 1;
 
             var totalItemsAttempted = 0;
 
@@ -688,8 +697,13 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                             // Skip archived items if desired (currently importing all)
                             // if (item.State == "archived") continue;
 
+                            // 1Password stores URLs in an "urls" array; the singular "url" is often empty.
+                            var itemUrl = !string.IsNullOrWhiteSpace(item.Overview.Url)
+                                ? item.Overview.Url
+                                : (item.Overview.Urls?.FirstOrDefault(u => !string.IsNullOrWhiteSpace(u.Url))?.Url ?? string.Empty);
+
                             // Determine collection based on URL/title analysis
-                            var collectionName = DetermineCollection(item.Overview.Url, item.Overview.Title);
+                            var collectionName = DetermineCollection(itemUrl, item.Overview.Title);
 
                             // Use vault name as the category (1Password vaults map to categories)
                             var categoryName = vaultName;
@@ -699,6 +713,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                             {
                                 collectionsToCreate[collectionName] = new Collection
                                 {
+                                    Id = tempCollId++,
                                     Name = collectionName,
                                     Icon = GetCollectionIcon(collectionName),
                                     Color = GetCollectionColor(collectionName),
@@ -714,7 +729,9 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                             {
                                 var newCategory = new Category
                                 {
+                                    Id = tempCatId++,
                                     Name = categoryName,
+                                    CollectionId = collection.Id,
                                     Icon = GetVaultIcon(categoryName),
                                     Color = GetVaultColor(categoryName)
                                 };
@@ -731,61 +748,172 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                             foreach (var loginField in item.Details.LoginFields)
                             {
                                 if (loginField.Designation == "username")
-                                {
                                     username = loginField.Value;
-                                }
                                 else if (loginField.Designation == "password")
-                                {
                                     password = loginField.Value;
-                                }
-                                // Check for TOTP in field type
                                 else if (loginField.FieldType == "OTP" || loginField.Type?.ToUpperInvariant() == "TOTP")
-                                {
                                     totpSecret = loginField.Value;
+                            }
+
+                            // TOTP may also live in section fields (1Password stores it there for some items)
+                            if (string.IsNullOrWhiteSpace(totpSecret))
+                            {
+                                var totpSectionField = item.Details.Sections
+                                    .SelectMany(s => s.Fields)
+                                    .FirstOrDefault(f => !string.IsNullOrWhiteSpace(f.Value.Totp));
+                                if (totpSectionField != null)
+                                    totpSecret = totpSectionField.Value.Totp;
+                            }
+
+                            var itemType = MapPuxCategoryToItemType(item.CategoryUuid);
+
+                            // Build a flat lookup of all section fields by their id for easy access
+                            var sectionFields = item.Details.Sections
+                                .SelectMany(s => s.Fields)
+                                .ToLookup(f => (f.Id ?? string.Empty).ToLowerInvariant());
+
+                            string SectionVal(params string[] ids)
+                            {
+                                foreach (var id in ids)
+                                {
+                                    var match = sectionFields[id.ToLowerInvariant()].FirstOrDefault();
+                                    if (match is not null)
+                                    {
+                                        var v = GetFieldValue(match.Value);
+                                        if (!string.IsNullOrWhiteSpace(v)) return v;
+                                    }
                                 }
+                                return string.Empty;
+                            }
+
+                            // Remap extended types to storage types the DB supports
+                            if (itemType == ItemType.BankAccount)
+                                itemType = ItemType.CreditCard;     // Bank Account → same fields as Credit Card
+                            else if (itemType == ItemType.WirelessRouter)
+                                itemType = ItemType.WiFi;
+                            else if (itemType != ItemType.Login && itemType != ItemType.CreditCard &&
+                                     itemType != ItemType.SecureNote && itemType != ItemType.Password &&
+                                     itemType != ItemType.WiFi && itemType != ItemType.Passkey)
+                            {
+                                // Identity, Document, SoftwareLicense, Database, etc.
+                                // — fall back to Login so section fields are captured as custom fields
+                                itemType = ItemType.Login;
                             }
 
                             // Create the password item
                             var passwordItem = new PasswordItem
                             {
                                 Title = item.Overview.Title?.Trim() ?? "Untitled",
-                                Type = MapPuxCategoryToItemType(item.CategoryUuid),
+                                Type = itemType,
                                 CollectionId = collection.Id,
                                 CategoryId = category.Id,
                                 CreatedAt = DateTimeOffset.FromUnixTimeSeconds(item.CreatedAt).UtcDateTime,
                                 LastModified = DateTimeOffset.FromUnixTimeSeconds(item.UpdatedAt).UtcDateTime,
-                                LoginItem = new LoginItem
-                                {
-                                    Website = item.Overview.Url?.Trim() ?? string.Empty,
-                                    WebsiteUrl = item.Overview.Url?.Trim() ?? string.Empty,
-                                    Username = username?.Trim() ?? string.Empty,
-                                    Password = password?.Trim() ?? string.Empty,
-                                    Email = IsEmail(username?.Trim() ?? string.Empty) ? username.Trim() : null,
-                                    Notes = !string.IsNullOrWhiteSpace(item.Details.NotesPlain) ? item.Details.NotesPlain.Trim() : null,
-                                    TotpSecret = !string.IsNullOrWhiteSpace(totpSecret) ? totpSecret.Trim() : null
-                                },
                                 Tags = new List<Tag>(),
                                 CustomFields = new List<CustomField>()
                             };
 
-                            // Add custom fields from sections
+                            if (itemType == ItemType.CreditCard)
+                            {
+                                var expiryFormatted = FormatPuxExpiry(SectionVal("expiry"));
+
+                                passwordItem.CreditCardItem = new CreditCardItem
+                                {
+                                    CardholderName  = SectionVal("cardholder"),
+                                    CardNumber      = SectionVal("ccnum"),
+                                    ExpiryDate      = expiryFormatted,
+                                    CVV             = SectionVal("cvv"),
+                                    PIN             = SectionVal("pin"),
+                                    CardType        = ParseCardType(SectionVal("type")),
+                                    IssuingBank     = SectionVal("bank"),
+                                    ValidFrom       = SectionVal("validfrom", "validFrom"),
+                                    BankWebsite     = SectionVal("website"),
+                                    BankPhoneNumber = SectionVal("phonetollfree", "phoneTollFree", "phonelocal", "phoneLocal"),
+                                    Notes           = !string.IsNullOrWhiteSpace(item.Details.NotesPlain) ? item.Details.NotesPlain.Trim() : null,
+                                };
+                                // No LoginItem — would fail with null Username constraint.
+                                // Notes stored directly in CreditCardItem.Notes above.
+                            }
+                            else if (itemType == ItemType.SecureNote)
+                            {
+                                // Build full note content: notesPlain first, then any section fields appended
+                                var noteBuilder = new System.Text.StringBuilder();
+                                if (!string.IsNullOrWhiteSpace(item.Details.NotesPlain))
+                                    noteBuilder.Append(item.Details.NotesPlain.Trim());
+
+                                foreach (var section in item.Details.Sections)
+                                {
+                                    foreach (var field in section.Fields)
+                                    {
+                                        var fv = GetFieldValue(field.Value);
+                                        if (string.IsNullOrWhiteSpace(fv)) continue;
+                                        var label = field.Title ?? field.Id ?? string.Empty;
+                                        if (noteBuilder.Length > 0) noteBuilder.AppendLine();
+                                        if (!string.IsNullOrWhiteSpace(label))
+                                            noteBuilder.Append(label).Append(": ");
+                                        noteBuilder.Append(fv);
+                                    }
+                                }
+
+                                // Truncate to 5000 chars to stay within SecureNoteItem.Content MaxLength
+                                var noteContent = noteBuilder.Length > 0 ? noteBuilder.ToString() : string.Empty;
+                                if (noteContent.Length > 4900)
+                                    noteContent = noteContent[..4900] + "\n[truncated]";
+
+                                passwordItem.SecureNoteItem = new SecureNoteItem
+                                {
+                                    Title   = (item.Overview.Title?.Trim() ?? "Untitled")[..Math.Min(item.Overview.Title?.Trim().Length ?? 8, 100)],
+                                    Content = noteContent.Length > 0 ? noteContent : "(empty)",
+                                };
+                                // No LoginItem — would fail with null Username constraint.
+                            }
+                            else
+                            {
+                                passwordItem.LoginItem = new LoginItem
+                                {
+                                    Website    = itemUrl.Trim(),
+                                    WebsiteUrl = itemUrl.Trim(),
+                                    Username   = username?.Trim() ?? string.Empty,
+                                    Password   = password?.Trim() ?? string.Empty,
+                                    Email      = IsEmail(username?.Trim() ?? string.Empty) ? username.Trim() : null,
+                                    Notes      = !string.IsNullOrWhiteSpace(item.Details.NotesPlain) ? item.Details.NotesPlain.Trim() : null,
+                                    TotpSecret = !string.IsNullOrWhiteSpace(totpSecret) ? totpSecret.Trim() : null
+                                };
+                            }
+
+                            // Add remaining section fields as custom fields
+                            // (skip known credit card fields already mapped to CreditCardItem,
+                            //  and skip all fields for secure notes since they're in SecureNoteItem.Content)
+                            var creditCardKnownIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                            {
+                                "ccnum","expiry","cvv","pin","cardholder","type","bank",
+                                "validfrom","validFrom","website","phonetollfree","phoneTollFree",
+                                "phonelocal","phoneLocal","billingaddress"
+                            };
+
                             var displayOrder = 0;
                             foreach (var section in item.Details.Sections)
                             {
                                 foreach (var field in section.Fields)
                                 {
+                                    // Secure note fields are already in SecureNoteItem.Content
+                                    if (itemType == ItemType.SecureNote) continue;
+
+                                    // Skip known credit card fields already in CreditCardItem
+                                    if (itemType == ItemType.CreditCard && creditCardKnownIds.Contains(field.Id ?? string.Empty))
+                                        continue;
+
                                     var fieldValue = GetFieldValue(field.Value);
                                     if (!string.IsNullOrWhiteSpace(fieldValue))
                                     {
-                                        var customField = new CustomField
+                                        passwordItem.CustomFields.Add(new CustomField
                                         {
                                             Name = field.Title ?? field.Id ?? "Field",
                                             Value = fieldValue,
                                             Type = DetermineCustomFieldType(field.Value),
                                             IsProtected = !string.IsNullOrWhiteSpace(field.Value.Concealed),
                                             DisplayOrder = displayOrder++
-                                        };
-                                        passwordItem.CustomFields.Add(customField);
+                                        });
                                     }
                                 }
                             }
@@ -842,10 +970,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             result.RequiredTags.Add(new Tag { Name = "Favorite", Color = "#fbbf24" });
             result.RequiredTags.Add(new Tag { Name = "Archived", Color = "#6b7280" });
 
-            // Set success and failure counts
-            result.SuccessfulImports = result.ImportedItems.Count;
-            result.FailedImports = result.TotalItemsProcessed - result.SuccessfulImports;
-
+            // Leave SuccessfulImports/FailedImports at 0 — ImportService updates them during actual saves
             result.Success = true;
         }
         catch (Exception ex)
@@ -857,18 +982,77 @@ public class OnePasswordImportProvider : IPasswordImportProvider
         return result;
     }
 
+    // 1Password stores expiry as monthYear int (202612), Unix timestamp, or string "2027-04".
+    // GetFieldValue already converts monthYear to "MM/YYYY"; this handles the remaining cases.
+    private static string FormatPuxExpiry(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
+
+        // Already formatted as "MM/YYYY" by GetFieldValue (monthYear path)
+        if (raw.Length == 7 && raw[2] == '/')
+            return raw;
+
+        // String like "2027-04" → "04/2027"
+        if (raw.Length == 7 && raw[4] == '-')
+            return raw[5..] + "/" + raw[..4];
+
+        // Unix timestamp fallback
+        if (long.TryParse(raw, out var unixSeconds) && unixSeconds > 0)
+        {
+            var dt = DateTimeOffset.FromUnixTimeSeconds(unixSeconds);
+            return dt.ToString("MM/yyyy");
+        }
+
+        return raw;
+    }
+
+    private static CardType ParseCardType(string? rawType)
+    {
+        return rawType?.ToLowerInvariant() switch
+        {
+            "mc" or "mastercard" or "master card" => CardType.MasterCard,
+            "visa"                                 => CardType.Visa,
+            "amex" or "american express"           => CardType.AmericanExpress,
+            "discover"                             => CardType.Discover,
+            "diners" or "diners club"              => CardType.DinersClub,
+            "jcb"                                  => CardType.JCB,
+            _                                      => CardType.Other
+        };
+    }
+
     private string GetFieldValue(PuxFieldValue fieldValue)
     {
+        if (!string.IsNullOrWhiteSpace(fieldValue.Totp))
+            return fieldValue.Totp;
         if (!string.IsNullOrWhiteSpace(fieldValue.Concealed))
             return fieldValue.Concealed;
+        if (!string.IsNullOrWhiteSpace(fieldValue.CreditCardNumber))
+            return fieldValue.CreditCardNumber;
         if (!string.IsNullOrWhiteSpace(fieldValue.String))
             return fieldValue.String;
+        if (!string.IsNullOrWhiteSpace(fieldValue.CreditCardType))
+            return fieldValue.CreditCardType;
+        if (!string.IsNullOrWhiteSpace(fieldValue.Menu))
+            return fieldValue.Menu;
+        if (!string.IsNullOrWhiteSpace(fieldValue.Gender))
+            return fieldValue.Gender;
         if (!string.IsNullOrWhiteSpace(fieldValue.Email))
             return fieldValue.Email;
         if (!string.IsNullOrWhiteSpace(fieldValue.Phone))
             return fieldValue.Phone;
         if (!string.IsNullOrWhiteSpace(fieldValue.Url))
             return fieldValue.Url;
+        if (!string.IsNullOrWhiteSpace(fieldValue.Address))
+            return fieldValue.Address;
+        if (!string.IsNullOrWhiteSpace(fieldValue.Reference))
+            return fieldValue.Reference;
+        if (fieldValue.MonthYear > 0)
+        {
+            // monthYear is YYYYMM integer, e.g. 202612 → "12/2026"
+            var year = fieldValue.MonthYear / 100;
+            var month = fieldValue.MonthYear % 100;
+            return $"{month:D2}/{year}";
+        }
         if (fieldValue.Date > 0)
             return DateTimeOffset.FromUnixTimeSeconds(fieldValue.Date).ToString("yyyy-MM-dd");
 
@@ -877,6 +1061,8 @@ public class OnePasswordImportProvider : IPasswordImportProvider
 
     private CustomFieldType DetermineCustomFieldType(PuxFieldValue fieldValue)
     {
+        if (!string.IsNullOrWhiteSpace(fieldValue.Totp))
+            return CustomFieldType.Password;
         if (!string.IsNullOrWhiteSpace(fieldValue.Concealed))
             return CustomFieldType.Password;
         if (!string.IsNullOrWhiteSpace(fieldValue.Email))

@@ -58,6 +58,7 @@
         <img src="icons/icon32.svg" alt="Password Manager" class="logo">
         <h1>Password Manager</h1>
         <div class="header-actions">
+          <button id="settingsBtn" class="btn btn-icon" title="Settings">⚙️</button>
           <button id="helpBtn" class="btn btn-icon" title="Help">❓</button>
           <button id="aboutBtn" class="btn btn-icon" title="About">ℹ️</button>
           <button id="logoutBtn" class="btn btn-secondary btn-small">Logout</button>
@@ -140,28 +141,38 @@
       </div>
       
       <div class="settings-info">
-        <h3>Connection Mode</h3>
+        <h3>Data Source</h3>
         <div class="form-group">
-          <label for="connectionMode">Connection Method:</label>
+          <label for="connectionMode">Where should the extension read your vault from?</label>
           <select id="connectionMode" class="form-control">
-            <option value="auto">Auto (Try all methods)</option>
-            <option value="native">Native Messaging (Recommended)</option>
-            <option value="api">Web API</option>
-            <option value="localStorage">Offline (localStorage)</option>
+            <option value="native">Desktop app (local SQLite) — most private</option>
+            <option value="api">API server (self-hosted or live/cloud)</option>
+            <option value="auto">Auto (try local app, then API)</option>
+            <option value="localStorage">Offline (cached credentials only)</option>
           </select>
-          <small>Auto mode tries Native → API → localStorage in order. Configure settings below for the methods you want to use.</small>
+          <small>
+            <strong>Desktop app</strong>: reads the local <code>passwordmanager.db</code> via the native host.<br>
+            <strong>API server</strong>: connects to your own self-hosted server or the live/cloud service over HTTPS.<br>
+            <strong>Auto</strong>: tries the local app first, then falls back to the API.
+          </small>
         </div>
 
         <div class="form-group" id="apiUrlGroup" style="display: none;">
-          <label for="apiUrl">API URL:</label>
-          <input type="text" id="apiUrl" placeholder="http://localhost:5000" class="form-control">
-          <small>URL of your Password Manager API server</small>
+          <label for="apiUrl">API server URL:</label>
+          <input type="text" id="apiUrl" placeholder="https://your-server.example.com" class="form-control">
+          <div style="margin-top: 6px;">
+            <button type="button" id="presetSelfHostedBtn" class="btn btn-secondary btn-small">Self-hosted (localhost)</button>
+            <button type="button" id="presetCloudBtn" class="btn btn-secondary btn-small">Live / Cloud</button>
+          </div>
+          <small>For a self‑hosted server use its base URL (e.g. <code>http://localhost:5000</code>). For the hosted service use the cloud URL. Requires you to sign in with your email + master password.</small>
         </div>
 
         <div class="form-group" id="databasePathGroup" style="display: none;">
-          <label for="databasePath">Database Path:</label>
+          <label for="databasePath">SQLite Database Path:</label>
           <input type="text" id="databasePath" placeholder="C:\Users\YourName\AppData\Roaming\PasswordManager\passwordmanager.db" class="form-control">
-          <small>Path to your SQLite database file (used by Native Messaging)</small>
+          <small>Point this to the <strong>same</strong> <code>passwordmanager.db</code> the desktop app uses, so credentials and passkeys are shared. Leave blank to let the native host auto‑detect it.</small>
+          <button type="button" id="detectDbBtn" class="btn btn-secondary btn-small" style="margin-top: 8px;">Detect from app</button>
+          <div id="activeDbInfo" class="info-text" style="display: none; margin-top: 8px; word-break: break-all;"></div>
         </div>
 
         <button type="button" id="saveSettingsBtn" class="btn btn-primary">Save Settings</button>

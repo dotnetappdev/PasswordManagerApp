@@ -56,6 +56,7 @@ public static class ServiceConfiguration
 
         // HTTP client
         services.AddHttpClient();
+        services.AddSingleton<UpdateService>();
 #endif
         return services;
     }
@@ -201,14 +202,14 @@ public static class ServiceConfiguration
         services.AddScoped<IPasskeyService, PasskeyService>();
         services.AddScoped<WpfAuthService>();
         services.AddScoped<IAuthService, WpfAuthService>();
-        services.AddScoped<IPasswordRevealService, PasswordRevealService>();
+        services.AddSingleton<IPasswordRevealService, PasswordRevealService>();
         services.AddScoped<IAppSyncService, AppSyncService>();
         services.AddScoped<IAppStartupService, AppStartupService>();
         services.AddScoped<IDatabaseMigrationService, DatabaseMigrationService>();
         services.AddScoped<IDatabaseHealthService, DatabaseHealthService>();
         services.AddScoped<IDatabaseResetService, DatabaseResetService>();
         services.AddScoped<IUserProfileService, UserProfileService>();
-        services.AddScoped<IVaultSessionService, VaultSessionService>();
+        services.AddSingleton<IVaultSessionService, VaultSessionService>();
         services.AddScoped<IPasscodeService, PasscodeService>();
         services.AddScoped<IVaultService, VaultService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
@@ -237,10 +238,12 @@ public static class ServiceConfiguration
 
     private static void ConfigureBackupServices(IServiceCollection services)
     {
+        services.AddScoped<IBackupEncryptionService, BackupEncryptionService>();
         services.AddScoped<IDatabaseBackupService, DatabaseBackupService>();
         services.AddScoped<IOneDriveBackupService, OneDriveBackupService>();
         services.AddScoped<IiCloudBackupService, iCloudBackupService>();
         services.AddScoped<INetworkLocationBackupService, NetworkLocationBackupService>();
+        services.AddSingleton<IGoogleDriveBackupService, GoogleDriveBackupService>();
         services.AddScoped<CloudBackupManager>();
         services.AddScoped<IBackupSettingsService, BackupSettingsService>();
         

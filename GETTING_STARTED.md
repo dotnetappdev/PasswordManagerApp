@@ -1,80 +1,79 @@
-# Getting Started with Password Manager
+# Getting Started with VaultGuard
 
 ## Prerequisites
 
-- **.NET 9 SDK** or later
-- **Visual Studio 2024** or **JetBrains Rider** (recommended)
-- **Git** for version control
+| Tool | Version | Notes |
+|------|---------|-------|
+| .NET SDK | **10.0** | [Download](https://dotnet.microsoft.com/download/dotnet/10.0) |
+| Visual Studio | 2022 v17.12+ | or JetBrains Rider 2024+ |
+| Git | any | for version control |
+| Database server | any | SQLite works out-of-the-box; see below for others |
 
-> **Note:** This project uses .NET 9 for the latest features and performance improvements. Please ensure you have the .NET 9 SDK installed to build and run the solution.
+> **Quick check:**
+> ```bash
+> dotnet --version   # must show 10.x.x
+> ```
 
-## Installation
+---
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/dotnetappdev/PasswordManagerApp.git
-   cd PasswordManagerApp
-   ```
+## Install from a Release (recommended for end-users)
 
-2. **Restore dependencies**
-   ```bash
-   dotnet restore
-   ```
+Download the latest installer from the [GitHub Releases](https://github.com/dotnetappdev/PasswordManagerApp/releases) page:
 
-3. **Set up the database**
-   ```bash
-   # For local development (SQLite)
-   cd PasswordManager.API
-   dotnet ef database update
-   ```
+| File | What it is |
+|------|-----------|
+| `VaultGuardSetup-x.y.z.exe` | EXE installer (Inno Setup) — wizard, auto .NET download |
+| `VaultGuardSetup-x.y.z.msi` | MSI installer — for IT / Group Policy / MDM deployment |
 
-4. **Run the applications**
-   ```bash
-   # Run the API (for sync features and web app backend)
-   cd PasswordManager.API
-   dotnet run
+The app checks for updates automatically. Go to **Settings → About → Check for Updates** to trigger a manual check at any time.
 
-   # Run the Blazor Web App (in a new terminal)
-   cd PasswordManager.Web
-   dotnet run
+---
 
-   # Run the Uno Platform Mobile App (in a new terminal)
-   cd PasswordManager.Uno
-   
-   # For Android
-   dotnet run -f net9.0-android
-   
-   # For iOS (macOS only)
-   dotnet run -f net9.0-ios
-   
-   # For WebAssembly
-   dotnet run -f net9.0-browserwasm
-   ```
+## Build from Source
 
-## Quick Start
+### 1. Clone the repository
 
-### Web App Access
-- **URL**: `https://localhost:5001` (or the URL shown in the terminal)
-- **Features**: Full password management, API key generation, settings
+```bash
+git clone https://github.com/dotnetappdev/PasswordManagerApp.git
+cd PasswordManagerApp
+```
 
-### Mobile App Access (Uno Platform)
-- **Platforms**: iOS, Android, WebAssembly
-- **Features**: Offline-first password management, biometric authentication, 1Password-inspired UI
-- **Build Guide**: See [UNO_PLATFORM_GUIDE.md](UNO_PLATFORM_GUIDE.md) for detailed instructions
-- **Authentication**: Master password (same as mobile app)
-- **Theme**: Dark mode only for professional appearance
+### 2. Restore dependencies
 
-### Mobile Application (MAUI)
-1. Launch the mobile application on your device
-2. Create a strong master password on first launch
-3. Optionally set a password hint for recovery
-4. Start adding your passwords and secure data using the same UI as the web app
+```bash
+dotnet restore
+```
+
+### 3. Run the desktop app (WPF)
+
+```bash
+dotnet run --project PasswordManager.WPF
+```
+
+### 4. Run the API (optional — only needed for sync / web access)
+
+```bash
+# Apply migrations first (SQLite, no setup required)
+cd PasswordManager.API
+dotnet ef database update
+dotnet run
+```
+
+### 5. Run the Blazor web app (optional)
+
+```bash
+cd PasswordManager.Web
+dotnet run
+```
+
+---
 
 ## Database Configuration
 
-The application supports multiple database providers. Set the `DatabaseProvider` in `appsettings.json`:
+The default is **SQLite** — zero configuration, works immediately. Switch the provider in `appsettings.json`:
 
-### SQLite (Default)
+### SQLite (default)
+
 ```json
 {
   "DatabaseProvider": "sqlite",
@@ -83,52 +82,70 @@ The application supports multiple database providers. Set the `DatabaseProvider`
   }
 }
 ```
-- Automatically configured for local development
-- Database file stored in app data directory
-- No additional setup required
 
 ### SQL Server
+
 ```json
 {
   "DatabaseProvider": "sqlserver",
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=PasswordManager;Trusted_Connection=true;TrustServerCertificate=true;"
+    "DefaultConnection": "Server=localhost;Database=VaultGuard;Trusted_Connection=true;TrustServerCertificate=true;"
   }
 }
 ```
 
 ### PostgreSQL
+
 ```json
 {
   "DatabaseProvider": "postgresql",
   "ConnectionStrings": {
-    "PostgresConnection": "Host=localhost;Database=passwordmanager;Username=postgres;Password=yourpassword"
+    "PostgresConnection": "Host=localhost;Database=vaultguard;Username=postgres;Password=yourpassword"
   }
 }
 ```
 
 ### MySQL
+
 ```json
 {
   "DatabaseProvider": "mysql",
   "ConnectionStrings": {
-    "MySqlConnection": "Server=localhost;Database=PasswordManager;User=root;Password=yourpassword;Port=3306;"
+    "MySqlConnection": "Server=localhost;Database=VaultGuard;User=root;Password=yourpassword;Port=3306;"
   }
 }
 ```
 
-For detailed MySQL setup instructions, see the [MySQL Setup Guide](MYSQL_SETUP_GUIDE.md).
+See [MYSQL_SETUP_GUIDE.md](MYSQL_SETUP_GUIDE.md) for detailed MySQL instructions.
+
+---
 
 ## First Steps
 
-1. **Create your first account** through the web app or mobile app
-2. **Set up a strong master password** - this is the key to your vault
-3. **Generate API keys** (if needed) through the web app settings
-4. **Import existing passwords** using the import feature
-5. **Start organizing** your passwords with collections and categories
+1. **Register an account** — launch the WPF app or web app and create your user
+2. **Set a strong master password** — this derives your encryption key; it is never stored
+3. **Add passwords** — manually or via the **Import** tab (supports 1Password, Bitwarden, LastPass, Chrome, Firefox)
+4. **Install the browser extension** — see [INSTALLATION.md](INSTALLATION.md) for autofill setup
+5. **Enable sync** (optional) — run the API and point the desktop app at it via **Settings → Database**
+
+---
+
+## Auto-Update (WPF)
+
+The WPF app has a built-in update checker:
+
+1. Go to **Settings → About**
+2. Click **Check for Updates**
+3. If a newer version is on GitHub Releases, a download button appears
+4. Click **Download & Install** — the installer launches and the app exits cleanly
+
+Updates are distributed as signed EXE + MSI on every tagged GitHub release via [GitHub Actions](https://github.com/dotnetappdev/PasswordManagerApp/actions).
+
+---
 
 ## Next Steps
 
-- Review the [Development Guide](DEVELOPMENT.md) if you plan to contribute
-- Check the [User Guide](USER_GUIDE.md) for detailed usage instructions
-- Read about [Security & Encryption](ENCRYPTION_IMPLEMENTATION.md) to understand how your data is protected
+- [Development Guide](DEVELOPMENT.md) — contributing, architecture, testing
+- [User Guide](USER_GUIDE.md) — detailed feature walkthrough
+- [Encryption & Security](ENCRYPTION_IMPLEMENTATION.md) — how AES-256-GCM protects your data
+- [Installer Docs](installers/README.md) — building EXE / MSI, silent installs, CI/CD

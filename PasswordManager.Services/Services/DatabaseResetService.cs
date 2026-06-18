@@ -43,6 +43,8 @@ public class DatabaseResetService : IDatabaseResetService
         "Collections",
         "Categories",
         "Tags",
+        "Vaults",
+        "ApiKeys",
         "PasswordItemTags",
         "CustomFields",
         "Passkeys",
@@ -108,6 +110,8 @@ public class DatabaseResetService : IDatabaseResetService
                     "Categories",
                     "Tags",
                     "Collections",
+                    "Vaults",
+                    "ApiKeys",
                     "AuditLogs"
                 };
 

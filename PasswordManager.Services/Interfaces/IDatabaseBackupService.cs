@@ -1,4 +1,5 @@
 using PasswordManager.Models.DTOs;
+using PasswordManager.Models;
 
 namespace PasswordManager.Services.Interfaces;
 
@@ -33,9 +34,23 @@ public interface IDatabaseBackupService
     /// <summary>
     /// Get backup metadata for validation
     /// </summary>
-    /// <param name="backupData">Encrypted backup data</param>
-    /// <returns>Backup metadata or null if invalid</returns>
     Task<BackupMetadata?> GetBackupMetadataAsync(byte[] backupData);
+
+    /// <summary>
+    /// Decrypt and parse a backup into browsable items — does NOT restore anything.
+    /// </summary>
+    Task<BackupContentsDto?> BrowseBackupAsync(byte[] encryptedData, string masterPassword);
+
+    /// <summary>
+    /// Replace all current data with the backup contents.
+    /// </summary>
+    Task<bool> RestoreFullAsync(byte[] encryptedData, string masterPassword);
+
+    /// <summary>
+    /// Import only the selected items from a previously-browsed backup into the current vault (merge, not replace).
+    /// Returns the number of items actually imported.
+    /// </summary>
+    Task<int> ImportSelectedItemsAsync(BackupContentsDto contents, IEnumerable<string> selectedIds);
 }
 
 /// <summary>

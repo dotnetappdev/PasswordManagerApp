@@ -25,11 +25,18 @@ public class PasswordRevealService : IPasswordRevealService
 
     public bool CanRevealPasswords(string sessionId) => _vaultSessionService.IsVaultUnlocked(sessionId);
 
+    private string ResolveSessionId(string sessionId)
+    {
+        if (_vaultSessionService.IsVaultUnlocked(sessionId)) return sessionId;
+        return _vaultSessionService.GetActiveSessionId() ?? sessionId;
+    }
+
     public async Task<string?> RevealPasswordAsync(LoginItem loginItem, string sessionId)
     {
+        var sid = ResolveSessionId(sessionId);
         try
         {
-            if (!CanRevealPasswords(sessionId))
+            if (!CanRevealPasswords(sid))
             {
                 _logger.LogWarning("Attempted to reveal password when vault is locked");
                 return null;
@@ -56,7 +63,7 @@ public class PasswordRevealService : IPasswordRevealService
 
             var decryptedPassword = _vaultSessionService.DecryptPassword(
                 string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
-                sessionId);
+                sid);
             return decryptedPassword;
         }
         catch (Exception ex)
@@ -68,9 +75,10 @@ public class PasswordRevealService : IPasswordRevealService
 
     public async Task<string?> RevealPasswordAsync(WiFiItem wifiItem, string sessionId)
     {
+        var sid = ResolveSessionId(sessionId);
         try
         {
-            if (!CanRevealPasswords(sessionId))
+            if (!CanRevealPasswords(sid))
             {
                 _logger.LogWarning("Attempted to reveal WiFi password when vault is locked");
                 return null;
@@ -96,7 +104,7 @@ public class PasswordRevealService : IPasswordRevealService
 
             var decryptedPassword = _vaultSessionService.DecryptPassword(
                 string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
-                sessionId);
+                sid);
             return decryptedPassword;
         }
         catch (Exception ex)
@@ -108,9 +116,10 @@ public class PasswordRevealService : IPasswordRevealService
 
     public async Task<string?> RevealCardNumberAsync(CreditCardItem creditCardItem, string sessionId)
     {
+        var sid = ResolveSessionId(sessionId);
         try
         {
-            if (!CanRevealPasswords(sessionId))
+            if (!CanRevealPasswords(sid))
             {
                 _logger.LogWarning("Attempted to reveal card number when vault is locked");
                 return null;
@@ -132,7 +141,7 @@ public class PasswordRevealService : IPasswordRevealService
 
             var decryptedCardNumber = _vaultSessionService.DecryptPassword(
                 string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
-                sessionId);
+                sid);
             return decryptedCardNumber;
         }
         catch (Exception ex)
@@ -144,9 +153,10 @@ public class PasswordRevealService : IPasswordRevealService
 
     public async Task<string?> RevealCvvAsync(CreditCardItem creditCardItem, string sessionId)
     {
+        var sid = ResolveSessionId(sessionId);
         try
         {
-            if (!CanRevealPasswords(sessionId))
+            if (!CanRevealPasswords(sid))
             {
                 _logger.LogWarning("Attempted to reveal CVV when vault is locked");
                 return null;
@@ -168,7 +178,7 @@ public class PasswordRevealService : IPasswordRevealService
 
             var decryptedCvv = _vaultSessionService.DecryptPassword(
                 string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
-                sessionId);
+                sid);
             return decryptedCvv;
         }
         catch (Exception ex)
@@ -180,9 +190,10 @@ public class PasswordRevealService : IPasswordRevealService
 
     public async Task<string?> RevealContentAsync(SecureNoteItem secureNoteItem, string sessionId)
     {
+        var sid = ResolveSessionId(sessionId);
         try
         {
-            if (!CanRevealPasswords(sessionId))
+            if (!CanRevealPasswords(sid))
             {
                 _logger.LogWarning("Attempted to reveal secure note content when vault is locked");
                 return null;
@@ -204,7 +215,7 @@ public class PasswordRevealService : IPasswordRevealService
 
             var decryptedContent = _vaultSessionService.DecryptPassword(
                 string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
-                sessionId);
+                sid);
             return decryptedContent;
         }
         catch (Exception ex)

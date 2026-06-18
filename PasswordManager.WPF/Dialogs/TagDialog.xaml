@@ -12,7 +12,7 @@
                CloseButtonStyle="{StaticResource ui:ContentDialogSecondaryButtonStyle}">
 
     <Grid xmlns:ui="http://schemas.modernwpf.com/2019"
-    Background="{StaticResource ModernFormBackgroundBrush}"
+    Background="{DynamicResource ModernFormBackgroundBrush}"
           MaxWidth="450"
           MaxHeight="500">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -37,11 +37,11 @@
                     <TextBlock Text="Name"
                                FontSize="14"
                                FontWeight="SemiBold"
-                               Foreground="{StaticResource ModernTextPrimaryBrush}"
+                               Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                Margin="0,0,0,4"/>
-                    <Border Background="{StaticResource ModernSurfaceBrush}"
+                    <Border Background="{DynamicResource ModernSurfaceBrush}"
                             CornerRadius="8"
-                            BorderBrush="{StaticResource ModernBorderBrush}"
+                            BorderBrush="{DynamicResource ModernBorderBrush}"
                             BorderThickness="1">
                         <Grid>
                             <TextBox x:Name="TagNameTextBox"
@@ -62,11 +62,11 @@
                     <TextBlock Text="Description"
                                FontSize="14"
                                FontWeight="SemiBold"
-                               Foreground="{StaticResource ModernTextPrimaryBrush}"
+                               Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                Margin="0,0,0,4"/>
-                    <Border Background="{StaticResource ModernSurfaceBrush}"
+                    <Border Background="{DynamicResource ModernSurfaceBrush}"
                             CornerRadius="8"
-                            BorderBrush="{StaticResource ModernBorderBrush}"
+                            BorderBrush="{DynamicResource ModernBorderBrush}"
                             BorderThickness="1">
                         <Grid>
                             <TextBox x:Name="TagDescriptionTextBox"
@@ -90,11 +90,11 @@
                     <TextBlock Text="Color"
                                FontSize="14"
                                FontWeight="SemiBold"
-                               Foreground="{StaticResource ModernTextPrimaryBrush}"
+                               Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                Margin="0,0,0,4"/>
-                    <Border Background="{StaticResource ModernSurfaceBrush}"
+                    <Border Background="{DynamicResource ModernSurfaceBrush}"
                             CornerRadius="8"
-                            BorderBrush="{StaticResource ModernBorderBrush}"
+                            BorderBrush="{DynamicResource ModernBorderBrush}"
                             BorderThickness="1"
                             Padding="16,12">
                         <Grid>

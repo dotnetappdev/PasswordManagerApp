@@ -212,12 +212,12 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
 
-            // Configure User relationship
-            entity.Property(e => e.UserId).IsRequired();
+            // Configure User relationship (optional — system/global tags have no UserId)
             entity.HasOne(e => e.User)
                   .WithMany(u => u.Tags)
                   .HasForeignKey(e => e.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configure Category
@@ -230,12 +230,12 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
 
-            // Configure User relationship
-            entity.Property(e => e.UserId).IsRequired();
+            // Configure User relationship (optional — seeded/global categories have no UserId)
             entity.HasOne(e => e.User)
                   .WithMany(u => u.Categories)
                   .HasForeignKey(e => e.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
 
             // Category.VaultId and Category.Vault are [NotMapped] — no FK configuration.
         });
@@ -251,12 +251,12 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
 
-            // Configure User relationship
-            entity.Property(e => e.UserId).IsRequired();
+            // Configure User relationship (optional — seeded/global collections have no UserId)
             entity.HasOne(e => e.User)
                   .WithMany(u => u.Collections)
                   .HasForeignKey(e => e.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
 
             // Vault relationship — nullable so existing collections without a vault still work
             entity.Property(e => e.VaultId).IsRequired(false);

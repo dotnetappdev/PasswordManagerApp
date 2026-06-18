@@ -396,4 +396,72 @@ public class PasswordItemApiService : IPasswordItemApiService
             throw;
         }
     }
+
+    public async Task<IEnumerable<PasswordItemDto>> SearchByUrlAsync(string url)
+    {
+        try
+        {
+            var hostname = ExtractHostname(url);
+            var items = await _context.PasswordItems
+                .Include(p => p.LoginItem)
+                .Where(p => !p.IsDeleted && p.LoginItem != null &&
+                            p.LoginItem.WebsiteUrl != null &&
+                            p.LoginItem.WebsiteUrl.Contains(hostname))
+                .ToListAsync();
+            return items.Select(p => p.ToDto());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching by URL {Url}", url);
+            return Enumerable.Empty<PasswordItemDto>();
+        }
+    }
+
+    public async Task<bool> UpdateTotpSecretAsync(int id, string otpauthUri)
+    {
+        try
+        {
+            var item = await _context.PasswordItems
+                .Include(p => p.CustomFields)
+                .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+            if (item == null) return false;
+
+            // Store as a custom field named "totp_secret" — same as TotpHelper convention
+            const string totpFieldName = "TOTP Secret";
+            var existing = item.CustomFields?.FirstOrDefault(f =>
+                string.Equals(f.Name, totpFieldName, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+            {
+                existing.Value = otpauthUri;
+                existing.LastModified = DateTime.UtcNow;
+            }
+            else
+            {
+                _context.CustomFields.Add(new CustomField
+                {
+                    PasswordItemId = item.Id,
+                    Name = totpFieldName,
+                    Value = otpauthUri,
+                    Type = CustomFieldType.Password,
+                    IsProtected = true,
+                    CreatedAt = DateTime.UtcNow,
+                    LastModified = DateTime.UtcNow,
+                });
+            }
+            item.LastModified = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating TOTP for item {Id}", id);
+            return false;
+        }
+    }
+
+    private static string ExtractHostname(string url)
+    {
+        try { return new Uri(url.Contains("://") ? url : $"https://{url}").Host; }
+        catch { return url; }
+    }
 }

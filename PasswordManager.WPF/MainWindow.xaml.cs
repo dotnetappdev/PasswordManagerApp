@@ -127,6 +127,31 @@ public sealed partial class MainWindow : Window
     /// item actions (copy, open &amp; fill, edit, delete) are dispatched to the items page when shown.
     /// Mirrors the reference list on the Settings → Shortcuts tab.
     /// </summary>
+    // App-wide zoom (Ctrl + / Ctrl - / Ctrl 0). Scales the whole window content.
+    private readonly System.Windows.Media.ScaleTransform _appScale = new(1.0, 1.0);
+    private double _zoom = 1.0;
+
+    private void ApplyZoom(double delta)
+    {
+        _zoom = System.Math.Round(System.Math.Clamp(_zoom + delta, 0.6, 2.5), 2);
+        SetZoom();
+    }
+
+    private void ResetZoom()
+    {
+        _zoom = 1.0;
+        SetZoom();
+    }
+
+    private void SetZoom()
+    {
+        _appScale.ScaleX = _zoom;
+        _appScale.ScaleY = _zoom;
+        if (this.Content is System.Windows.FrameworkElement root && root.LayoutTransform != _appScale)
+            root.LayoutTransform = _appScale;
+        try { Services.ToastService.Instance.Info($"Zoom {(int)(_zoom * 100)}%"); } catch { }
+    }
+
     private void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (!_isAuthenticated) return;
@@ -138,6 +163,14 @@ public sealed partial class MainWindow : Window
         // ── Global ──
         if (ctrl && e.Key == System.Windows.Input.Key.OemComma) { NavigateToPage("Settings"); e.Handled = true; return; }
         if (ctrl && e.Key == System.Windows.Input.Key.L)        { HandleLogout();              e.Handled = true; return; }
+
+        // ── App zoom (Ctrl +, Ctrl -, Ctrl 0 to reset) ──
+        if (ctrl && (e.Key == System.Windows.Input.Key.OemPlus || e.Key == System.Windows.Input.Key.Add))
+        { ApplyZoom(+0.1); e.Handled = true; return; }
+        if (ctrl && (e.Key == System.Windows.Input.Key.OemMinus || e.Key == System.Windows.Input.Key.Subtract))
+        { ApplyZoom(-0.1); e.Handled = true; return; }
+        if (ctrl && (e.Key == System.Windows.Input.Key.D0 || e.Key == System.Windows.Input.Key.NumPad0))
+        { ResetZoom(); e.Handled = true; return; }
 
         var itemsPage = ContentFrame?.Content as Views.PasswordItemsPage;
 

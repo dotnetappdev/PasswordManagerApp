@@ -31,6 +31,7 @@
             <converters:DateToModifiedStringConverter x:Key="DateToModifiedStringConverter"/>
             <converters:NotNullToInvertedVisibilityConverter x:Key="NotNullToInvertedVisibilityConverter"/>
             <converters:BoolNegationConverter x:Key="BoolNegationConverter"/>
+            <converters:BoolNegationToVisibilityConverter x:Key="BoolNegationToVisibilityConverter"/>
             <converters:NotZeroToBoolConverter x:Key="NotZeroToBoolConverter"/>
             <converters:FirstLetterConverter x:Key="FirstLetterConverter"/>
             <converters:InitialsMultiConverter x:Key="InitialsMultiConverter"/>

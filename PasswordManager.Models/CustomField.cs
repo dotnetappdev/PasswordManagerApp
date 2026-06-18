@@ -45,5 +45,8 @@ public enum CustomFieldType
     TextArea = 7,
     Phone = 8,
     File = 9,
-    Toggle = 10,    // Yes / No radio button pair
+    Toggle = 10,          // Yes / No radio button pair
+    Address = 11,         // Multi-line address block
+    OneTimePassword = 12, // TOTP / authenticator code
+    SignInWith = 13,      // SSO provider (e.g. "Sign in with Google")
 }

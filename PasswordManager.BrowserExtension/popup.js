@@ -30,6 +30,7 @@ class PasswordManagerPopup {
   setupEventListeners() {
     // Navigation
     document.getElementById('settingsLink').addEventListener('click', () => this.showSettings());
+    document.getElementById('settingsBtn').addEventListener('click', () => this.showSettings());
     document.getElementById('backBtn').addEventListener('click', () => this.showScreen('main'));
     document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
 
@@ -75,6 +76,15 @@ class PasswordManagerPopup {
     document.getElementById('connectionMode').addEventListener('change', (e) => this.handleConnectionModeChange(e));
     document.getElementById('saveSettingsBtn').addEventListener('click', () => this.saveSettings());
     document.getElementById('testConnectionBtn').addEventListener('click', () => this.testConnection());
+    document.getElementById('detectDbBtn').addEventListener('click', () => this.detectDatabasePath());
+    document.getElementById('presetSelfHostedBtn').addEventListener('click', () => {
+      document.getElementById('apiUrl').value = 'http://localhost:5000';
+    });
+    document.getElementById('presetCloudBtn').addEventListener('click', () => {
+      const input = document.getElementById('apiUrl');
+      if (!input.value || input.value === 'http://localhost:5000') input.value = 'https://';
+      input.focus();
+    });
 
     // Tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -272,15 +282,16 @@ class PasswordManagerPopup {
     
     try {
       const response = await chrome.runtime.sendMessage({ action: 'testConnection' });
-      
+
       if (response.success) {
         messageDiv.textContent = 'Connection successful!';
         messageDiv.className = 'message success';
+        this.showActiveDb(response.databasePath);
       } else {
         messageDiv.textContent = response.error || 'Connection failed';
         messageDiv.className = 'message error';
       }
-      
+
       messageDiv.style.display = 'block';
       setTimeout(() => {
         messageDiv.style.display = 'none';
@@ -292,6 +303,52 @@ class PasswordManagerPopup {
     } finally {
       testBtn.textContent = 'Test Connection';
       testBtn.disabled = false;
+    }
+  }
+
+  showActiveDb(path) {
+    const info = document.getElementById('activeDbInfo');
+    if (!info) return;
+    if (path) {
+      info.innerHTML = '<strong>Active database (native host):</strong><br>' + this.escapeHtml(path);
+      info.style.display = 'block';
+    } else {
+      info.style.display = 'none';
+    }
+  }
+
+  // Ask the native host which SQLite DB it resolved, and prefill the path field with it
+  // so the extension is guaranteed to point at the same vault as the desktop app.
+  async detectDatabasePath() {
+    const detectBtn = document.getElementById('detectDbBtn');
+    const messageDiv = document.getElementById('settingsMessage');
+    const databasePathInput = document.getElementById('databasePath');
+
+    detectBtn.textContent = 'Detecting...';
+    detectBtn.disabled = true;
+
+    try {
+      const response = await chrome.runtime.sendMessage({ action: 'testConnection' });
+
+      if (response.success && response.databasePath) {
+        databasePathInput.value = response.databasePath;
+        this.showActiveDb(response.databasePath);
+        messageDiv.textContent = 'Found database. Click "Save Settings" to use it.';
+        messageDiv.className = 'message success';
+      } else {
+        messageDiv.textContent = response.error || 'Could not detect the database. Is the native host installed?';
+        messageDiv.className = 'message error';
+      }
+
+      messageDiv.style.display = 'block';
+      setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
+    } catch (error) {
+      messageDiv.textContent = 'Detection failed: ' + error.message;
+      messageDiv.className = 'message error';
+      messageDiv.style.display = 'block';
+    } finally {
+      detectBtn.textContent = 'Detect from app';
+      detectBtn.disabled = false;
     }
   }
 
@@ -476,12 +533,7 @@ class PasswordManagerPopup {
     div.textContent = text;
     return div.innerHTML;
   }
-}
 
-// Initialize popup when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  new PasswordManagerPopup();
-});
   showAbout() {
     document.getElementById('aboutModal').style.display = 'flex';
   }
@@ -495,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 }
 
-// Initialize popup when DOM is loaded  
+// Initialize popup when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   new PasswordManagerPopup();
 });

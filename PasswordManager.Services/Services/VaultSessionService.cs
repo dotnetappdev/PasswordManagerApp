@@ -147,4 +147,14 @@ public class VaultSessionService : IVaultSessionService
         }
         return null;
     }
+
+    public string? GetActiveSessionId()
+    {
+        foreach (var kvp in _sessions)
+        {
+            if (kvp.Value.unlocked && kvp.Value.masterKey != null)
+                return kvp.Key;
+        }
+        return null;
+    }
 }

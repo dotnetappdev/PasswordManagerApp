@@ -111,8 +111,8 @@ public sealed partial class LoginPage : Page
             if (authProgressRing != null) authProgressRing.IsActive = true;
 
             // Update ViewModel with current values
-            _viewModel.MasterPassword = masterPasswordBox?.Password ?? string.Empty;
-            _viewModel.ConfirmMasterPassword = confirmPasswordBox?.Password ?? string.Empty;
+            _viewModel.MasterPassword = (masterPasswordBox?.Password ?? string.Empty).Trim();
+            _viewModel.ConfirmMasterPassword = (confirmPasswordBox?.Password ?? string.Empty).Trim();
             _viewModel.PasswordHint = passwordHintBox?.Text ?? string.Empty;
 
 

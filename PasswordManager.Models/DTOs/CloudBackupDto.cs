@@ -25,6 +25,12 @@ public class CloudBackupInfo
     public string? CloudPath { get; set; }
     public bool IsCompressed { get; set; }
     public string ServiceName { get; set; } = string.Empty;
+    public CloudBackupProvider Provider { get; set; }
+
+    public string CreatedAtFormatted => CreatedAt.ToLocalTime().ToString("MMM d, yyyy  h:mm tt");
+    public string SizeFormatted => SizeInBytes < 1024 * 1024
+        ? $"{SizeInBytes / 1024.0:F1} KB"
+        : $"{SizeInBytes / (1024.0 * 1024):F1} MB";
 }
 
 /// <summary>
@@ -41,6 +47,36 @@ public class CloudBackupSettings
 }
 
 /// <summary>
+/// Contents of a decrypted backup — used for browse/selective restore
+/// </summary>
+public class BackupContentsDto
+{
+    public string BackupId { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public int TotalCount => LoginItems.Count + SecureNotes.Count + CreditCards.Count + WifiItems.Count;
+
+    public List<BackupItemDto> LoginItems { get; set; } = new();
+    public List<BackupItemDto> SecureNotes { get; set; } = new();
+    public List<BackupItemDto> CreditCards { get; set; } = new();
+    public List<BackupItemDto> WifiItems { get; set; } = new();
+}
+
+/// <summary>
+/// A single selectable item from a backup
+/// </summary>
+public class BackupItemDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? Subtitle { get; set; }   // username / card number / network name
+    public string ItemType { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public bool IsSelected { get; set; } = true;
+    // Raw JSON payload kept for actual import
+    public string RawJson { get; set; } = string.Empty;
+}
+
+/// <summary>
 /// Supported cloud backup providers
 /// </summary>
 public enum CloudBackupProvider
@@ -48,5 +84,6 @@ public enum CloudBackupProvider
     None = 0,
     OneDrive = 1,
     iCloud = 2,
-    NetworkLocation = 3
+    NetworkLocation = 3,
+    GoogleDrive = 4
 }

@@ -5,6 +5,7 @@ using PasswordManager.Services.Interfaces;
 using PasswordManager.Services.Utilities;
 using System.Reflection;
 using System.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace PasswordManager.Imports.Services;
 
@@ -15,6 +16,7 @@ public class ImportService : IImportService
     private readonly ICategoryInterface _categoryService;
     private readonly ITagService _tagService;
     private readonly PluginDiscoveryService _pluginDiscovery;
+    private readonly IVaultSessionService? _vaultSessionService;
     private readonly Dictionary<string, IPasswordImportProvider> _importProviders;
     private readonly FileLogger _logger;
     private bool _pluginsLoaded = false;
@@ -24,13 +26,15 @@ public class ImportService : IImportService
         ICollectionService collectionService,
         ICategoryInterface categoryService,
         ITagService tagService,
-        PluginDiscoveryService pluginDiscovery)
+        PluginDiscoveryService pluginDiscovery,
+        IVaultSessionService? vaultSessionService = null)
     {
         _passwordItemService = passwordItemService;
         _collectionService = collectionService;
         _categoryService = categoryService;
         _tagService = tagService;
         _pluginDiscovery = pluginDiscovery;
+        _vaultSessionService = vaultSessionService;
         _importProviders = new Dictionary<string, IPasswordImportProvider>();
     }
 
@@ -129,7 +133,7 @@ public class ImportService : IImportService
         }
     }
 
-    public async Task<ImportResult> ImportPasswordsAsync(string providerName, Stream fileStream, string fileName, string? userId = null)
+    public async Task<ImportResult> ImportPasswordsAsync(string providerName, Stream fileStream, string fileName, string? userId = null, IProgress<int>? progress = null, string? sessionId = null)
     {
         if (!_importProviders.TryGetValue(providerName, out var provider))
         {
@@ -155,7 +159,20 @@ public class ImportService : IImportService
                 // Create required tags (tags currently global - create as-is)
                 await EnsureTagsExistAsync(result.RequiredTags);
 
+                // Build a map of persisted Tag entities so items link to existing rows rather than
+                // new Tag() objects. EF Core tracks new objects as Added → INSERT, causing duplicate
+                // rows or unique-constraint failures on the second save within the same DbContext.
+                var persistedTagMap = (await _tagService.GetAllAsync())
+                    .ToDictionary(t => t.Name, t => t, StringComparer.OrdinalIgnoreCase);
+
+                // Reset counts — provider may have pre-populated them during parsing
+                result.SuccessfulImports = 0;
+                result.FailedImports = 0;
+
                 // Import the password items and map them to the actual created collections/categories
+                var totalToImport = result.ImportedItems.Count;
+                var processed = 0;
+                progress?.Report(0);
                 foreach (var item in result.ImportedItems)
                 {
                     try
@@ -165,15 +182,51 @@ public class ImportService : IImportService
                         {
                             item.CollectionId = actualCollectionId;
                         }
+                        else if (item.CollectionId is null or 0 && collectionMapping.Count > 0)
+                        {
+                            // Fallback: assign to first available collection
+                            item.CollectionId = collectionMapping.Values.First();
+                        }
 
                         if (item.CategoryId.HasValue && item.CategoryId.Value > 0 && categoryMapping.TryGetValue(item.CategoryId.Value, out var actualCategoryId))
                         {
                             item.CategoryId = actualCategoryId;
                         }
+                        else if (item.CategoryId is null or 0 && categoryMapping.Count > 0)
+                        {
+                            // Fallback: assign to first available category
+                            item.CategoryId = categoryMapping.Values.First();
+                        }
+
                         // Ensure item is assigned to the requesting user/tenant if provided
                         if (!string.IsNullOrEmpty(userId))
                         {
                             item.UserId = userId;
+                            if (item.LoginItem != null)
+                                item.LoginItem.UserId = userId;
+                            if (item.CreditCardItem != null)
+                                item.CreditCardItem.UserId = userId;
+                            if (item.SecureNoteItem != null)
+                                item.SecureNoteItem.UserId = userId;
+                        }
+
+                        // Encrypt plaintext credentials — always attempt, GetActiveSessionId fallback handles missing sessionId
+                        if (_vaultSessionService != null)
+                        {
+                            EncryptItemCredentials(item, sessionId);
+                        }
+
+                        // Replace new Tag() instances with the persisted entity so EF Core
+                        // creates a junction-table row instead of trying to INSERT a duplicate tag.
+                        if (item.Tags.Count > 0)
+                        {
+                            var resolvedTags = item.Tags
+                                .Select(t => persistedTagMap.TryGetValue(t.Name, out var pt) ? pt : t)
+                                .GroupBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+                                .Select(g => g.First())
+                                .ToList();
+                            item.Tags.Clear();
+                            resolvedTags.ForEach(t => item.Tags.Add(t));
                         }
 
                         await _passwordItemService.CreateAsync(item);
@@ -182,19 +235,28 @@ public class ImportService : IImportService
                     catch (Exception ex)
                     {
                         result.FailedImports++;
-                        result.Warnings.Add($"Failed to import '{item.Title}': {ex.Message}");
+                        var detail = ex.InnerException != null ? $"{ex.Message} → {ex.InnerException.Message}" : ex.Message;
+                        result.Warnings.Add($"Failed to import '{item.Title}': {detail}");
                     }
+
+                    processed++;
+                    progress?.Report((int)(processed * 100.0 / Math.Max(1, totalToImport)));
                 }
+
+                progress?.Report(100);
             }
 
             return result;
         }
         catch (Exception ex)
         {
+            var inner = ex.InnerException;
+            var chain = new System.Text.StringBuilder(ex.Message);
+            while (inner != null) { chain.Append(" → ").Append(inner.Message); inner = inner.InnerException; }
             return new ImportResult
             {
                 Success = false,
-                ErrorMessage = $"Import failed: {ex.Message}"
+                ErrorMessage = $"Import failed: {chain}"
             };
         }
     }
@@ -305,6 +367,45 @@ public class ImportService : IImportService
             {
                 await _tagService.CreateAsync(tag);
             }
+        }
+    }
+
+    private void EncryptItemCredentials(PasswordItem item, string? sessionId)
+    {
+        if (_vaultSessionService == null) return;
+
+        // Fall back to any active session if the provided sessionId is missing or stale
+        var sid = sessionId;
+        if (string.IsNullOrEmpty(sid) || !_vaultSessionService.IsVaultUnlocked(sid))
+            sid = _vaultSessionService.GetActiveSessionId();
+
+        if (string.IsNullOrEmpty(sid)) return;
+
+        if (item.LoginItem != null && !string.IsNullOrEmpty(item.LoginItem.Password))
+        {
+            try
+            {
+                item.LoginItem.EncryptedPassword = _vaultSessionService.EncryptPassword(item.LoginItem.Password, sid);
+            }
+            catch { /* vault may be locked; skip encryption, password will be missing */ }
+        }
+
+        if (item.LoginItem != null && !string.IsNullOrEmpty(item.LoginItem.Notes))
+        {
+            try
+            {
+                item.LoginItem.EncryptedNotes = _vaultSessionService.EncryptPassword(item.LoginItem.Notes, sid);
+            }
+            catch { }
+        }
+
+        if (item.LoginItem != null && !string.IsNullOrEmpty(item.LoginItem.TotpSecret))
+        {
+            try
+            {
+                item.LoginItem.EncryptedTotpSecret = _vaultSessionService.EncryptPassword(item.LoginItem.TotpSecret, sid);
+            }
+            catch { }
         }
     }
 }

@@ -182,7 +182,8 @@ public class PuxFieldValue
     [JsonPropertyName("concealed")]
     public string Concealed { get; set; } = string.Empty;
 
-    [JsonPropertyName("email")]
+    // email is an object: {email_address: string, provider: string|null}
+    // We flatten it to just the email_address string during parsing
     public string Email { get; set; } = string.Empty;
 
     [JsonPropertyName("phone")]
@@ -193,6 +194,30 @@ public class PuxFieldValue
 
     [JsonPropertyName("date")]
     public long Date { get; set; }
+
+    // monthYear is stored as an integer YYYYMM, e.g. 202612 = December 2026
+    public int MonthYear { get; set; }
+
+    // creditCardType stores the network code, e.g. "mc", "visa", "amex"
+    public string CreditCardType { get; set; } = string.Empty;
+
+    // creditCardNumber — card number stored directly (alternative to concealed for card number fields)
+    public string CreditCardNumber { get; set; } = string.Empty;
+
+    // menu type (e.g. card type selected from a dropdown) — treat same as string
+    public string Menu { get; set; } = string.Empty;
+
+    // reference — pointer to another item
+    public string Reference { get; set; } = string.Empty;
+
+    // address type — complex object; we skip it during parsing but record key sub-fields
+    public string Address { get; set; } = string.Empty;
+
+    // totp / otp — the TOTP URI or secret key
+    public string Totp { get; set; } = string.Empty;
+
+    // gender — stored as a menu field; treat as string
+    public string Gender { get; set; } = string.Empty;
 }
 
 // Custom converter to handle both string and object formats for field values
@@ -237,8 +262,26 @@ public class PuxFieldValueConverter : JsonConverter<PuxFieldValue>
                                 SkipToken(ref reader);
                             break;
                         case "email":
+                            // email is an object {email_address, provider} or occasionally a plain string
                             if (reader.TokenType == JsonTokenType.String)
+                            {
                                 fieldValue.Email = reader.GetString() ?? string.Empty;
+                            }
+                            else if (reader.TokenType == JsonTokenType.StartObject)
+                            {
+                                while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+                                {
+                                    if (reader.TokenType == JsonTokenType.PropertyName)
+                                    {
+                                        var key = reader.GetString()?.ToLowerInvariant();
+                                        reader.Read();
+                                        if (key == "email_address" && reader.TokenType == JsonTokenType.String)
+                                            fieldValue.Email = reader.GetString() ?? string.Empty;
+                                        else
+                                            SkipToken(ref reader);
+                                    }
+                                }
+                            }
                             else
                                 SkipToken(ref reader);
                             break;
@@ -257,6 +300,75 @@ public class PuxFieldValueConverter : JsonConverter<PuxFieldValue>
                         case "date":
                             if (reader.TokenType == JsonTokenType.Number)
                                 fieldValue.Date = reader.GetInt64();
+                            else
+                                SkipToken(ref reader);
+                            break;
+                        case "monthyear":
+                            if (reader.TokenType == JsonTokenType.Number)
+                                fieldValue.MonthYear = reader.GetInt32();
+                            else
+                                SkipToken(ref reader);
+                            break;
+                        case "creditcardtype":
+                            if (reader.TokenType == JsonTokenType.String)
+                                fieldValue.CreditCardType = reader.GetString() ?? string.Empty;
+                            else
+                                SkipToken(ref reader);
+                            break;
+                        case "creditcardnumber":
+                            if (reader.TokenType == JsonTokenType.String)
+                                fieldValue.CreditCardNumber = reader.GetString() ?? string.Empty;
+                            else
+                                SkipToken(ref reader);
+                            break;
+                        case "reference":
+                            if (reader.TokenType == JsonTokenType.String)
+                                fieldValue.Reference = reader.GetString() ?? string.Empty;
+                            else
+                                SkipToken(ref reader);
+                            break;
+                        case "menu":
+                            if (reader.TokenType == JsonTokenType.String)
+                                fieldValue.Menu = reader.GetString() ?? string.Empty;
+                            else
+                                SkipToken(ref reader);
+                            break;
+                        case "gender":
+                            if (reader.TokenType == JsonTokenType.String)
+                                fieldValue.Gender = reader.GetString() ?? string.Empty;
+                            else
+                                SkipToken(ref reader);
+                            break;
+                        case "totp":
+                        case "otp":
+                            if (reader.TokenType == JsonTokenType.String)
+                                fieldValue.Totp = reader.GetString() ?? string.Empty;
+                            else
+                                SkipToken(ref reader);
+                            break;
+                        case "address":
+                            // address is a nested object — flatten to a readable string
+                            if (reader.TokenType == JsonTokenType.StartObject)
+                            {
+                                var addrParts = new List<string>();
+                                while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+                                {
+                                    if (reader.TokenType == JsonTokenType.PropertyName)
+                                    {
+                                        var key = reader.GetString();
+                                        reader.Read();
+                                        if (reader.TokenType == JsonTokenType.String)
+                                        {
+                                            var val = reader.GetString();
+                                            if (!string.IsNullOrWhiteSpace(val))
+                                                addrParts.Add(val);
+                                        }
+                                        else
+                                            SkipToken(ref reader);
+                                    }
+                                }
+                                fieldValue.Address = string.Join(", ", addrParts);
+                            }
                             else
                                 SkipToken(ref reader);
                             break;
@@ -322,6 +434,22 @@ public class PuxFieldValueConverter : JsonConverter<PuxFieldValue>
             writer.WriteString("url", value.Url);
         if (value.Date > 0)
             writer.WriteNumber("date", value.Date);
+        if (value.MonthYear > 0)
+            writer.WriteNumber("monthYear", value.MonthYear);
+        if (!string.IsNullOrEmpty(value.CreditCardType))
+            writer.WriteString("creditCardType", value.CreditCardType);
+        if (!string.IsNullOrEmpty(value.CreditCardNumber))
+            writer.WriteString("creditCardNumber", value.CreditCardNumber);
+        if (!string.IsNullOrEmpty(value.Reference))
+            writer.WriteString("reference", value.Reference);
+        if (!string.IsNullOrEmpty(value.Menu))
+            writer.WriteString("menu", value.Menu);
+        if (!string.IsNullOrEmpty(value.Totp))
+            writer.WriteString("totp", value.Totp);
+        if (!string.IsNullOrEmpty(value.Gender))
+            writer.WriteString("gender", value.Gender);
+        if (!string.IsNullOrEmpty(value.Address))
+            writer.WriteString("address", value.Address);
 
         writer.WriteEndObject();
     }

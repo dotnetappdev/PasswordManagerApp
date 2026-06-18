@@ -47,39 +47,49 @@ public partial class App : Application
                 && args.Exception.StackTrace?.Contains("VerifyPathIsAnimatable") == true)
             {
                 args.Handled = true;
+                return;
             }
+            SentrySdk.CaptureException(args.Exception);
+        };
+
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception ex)
+                SentrySdk.CaptureException(ex);
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            SentrySdk.CaptureException(args.Exception);
+            args.SetObserved();
         };
     }
 
     private static void ApplyNavigationViewDarkResources()
     {
         var r = Application.Current.Resources;
-        var sidebar   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x11, 0x11, 0x11));
-        var content   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x18, 0x18, 0x18));
-        var textNorm  = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xD1, 0xD5, 0xDB));
-        var textSel   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.White);
-        var bgSel     = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x2B, 0x2B, 0x2B));
-        var bgHover   = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x28, 0x28, 0x28));
-        var separator = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x18, 0xFF, 0xFF, 0xFF));
-        var header    = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x6B, 0x72, 0x80));
+        static System.Windows.Media.SolidColorBrush B(byte r2, byte g, byte b)
+            => new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(r2, g, b));
 
-        r["NavigationViewDefaultPaneBackground"]             = sidebar;
-        r["NavigationViewExpandedPaneBackground"]            = sidebar;
-        r["NavigationViewTopPaneBackground"]                 = sidebar;
-        r["NavigationViewContentBackground"]                 = content;
-        r["NavigationViewContentGridBackground"]             = content;
-        r["NavigationViewItemForeground"]                    = textNorm;
-        r["NavigationViewItemForegroundSelected"]            = textSel;
-        r["NavigationViewItemForegroundPointerOver"]         = textSel;
-        r["NavigationViewItemForegroundPressed"]             = textNorm;
-        r["NavigationViewItemForegroundDisabled"]            = header;
+        // Establish mutable (non-frozen) brush entries so ThemeHelper can mutate them on theme switch
+        r["NavigationViewDefaultPaneBackground"]             = B(0x14, 0x14, 0x14);
+        r["NavigationViewExpandedPaneBackground"]            = B(0x14, 0x14, 0x14);
+        r["NavigationViewTopPaneBackground"]                 = B(0x14, 0x14, 0x14);
+        r["NavigationViewContentBackground"]                 = B(0x1A, 0x1A, 0x1A);
+        r["NavigationViewContentGridBackground"]             = B(0x1A, 0x1A, 0x1A);
+        r["NavigationViewItemForeground"]                    = B(0xD1, 0xD5, 0xDB);
+        r["NavigationViewItemForegroundSelected"]            = B(0xFF, 0xFF, 0xFF);
+        r["NavigationViewItemForegroundPointerOver"]         = B(0xFF, 0xFF, 0xFF);
+        r["NavigationViewItemForegroundPressed"]             = B(0xE5, 0xE7, 0xEB);
+        r["NavigationViewItemForegroundDisabled"]            = B(0x4B, 0x55, 0x63);
         r["NavigationViewItemBackground"]                    = System.Windows.Media.Brushes.Transparent;
-        r["NavigationViewItemBackgroundSelected"]            = bgSel;
-        r["NavigationViewItemBackgroundPointerOver"]         = bgHover;
-        r["NavigationViewItemBackgroundPressed"]             = bgHover;
-        r["NavigationViewItemBackgroundSelectedPointerOver"] = bgSel;
-        r["NavigationViewItemSeparatorForeground"]           = separator;
-        r["NavigationViewItemHeaderForeground"]              = header;
+        r["NavigationViewItemBackgroundSelected"]            = B(0x2B, 0x2B, 0x2B);
+        r["NavigationViewItemBackgroundPointerOver"]         = B(0x28, 0x28, 0x28);
+        r["NavigationViewItemBackgroundPressed"]             = B(0x36, 0x36, 0x36);
+        r["NavigationViewItemBackgroundSelectedPointerOver"] = B(0x2B, 0x2B, 0x2B);
+        r["NavigationViewItemBackgroundSelectedPressed"]     = B(0x20, 0x20, 0x20);
+        r["NavigationViewItemSeparatorForeground"]           = B(0x3A, 0x3A, 0x3A);
+        r["NavigationViewItemHeaderForeground"]              = B(0x6B, 0x72, 0x80);
     }
 
     private static void ApplyComboBoxDarkResources()
@@ -136,9 +146,25 @@ public partial class App : Application
         try
         {
             var configuration = _host.Services.GetRequiredService<IConfiguration>();
-            var sentryConfig = configuration.GetSection("Sentry").Get<SentryConfiguration>();
+            var sentryConfig = configuration.GetSection("Sentry").Get<SentryConfiguration>() ?? new PasswordManager.Models.Configuration.SentryConfiguration();
 
-            if (sentryConfig?.IsConfigured == true)
+            // Local settings.json can override the DSN (configurable from the About tab in Settings).
+            var localSettingsPath = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "PasswordManager", "settings.json");
+            if (System.IO.File.Exists(localSettingsPath))
+            {
+                try
+                {
+                    var localSettings = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(
+                        System.IO.File.ReadAllText(localSettingsPath)) ?? new();
+                    if (localSettings.TryGetValue("SentryDsn", out var localDsn) && !string.IsNullOrWhiteSpace(localDsn))
+                        sentryConfig.Dsn = localDsn;
+                }
+                catch { }
+            }
+
+            if (sentryConfig.IsConfigured)
             {
                 SentrySdk.Init(options =>
                 {
@@ -168,6 +194,9 @@ public partial class App : Application
 
         ThemeHelper.Initialize(m_window, this);
         _ = LoadSavedTheme();
+
+        // Load persisted toast accent colours so they're applied before any toast is shown.
+        PasswordManager.WPF.Services.ToastSettings.Load();
 
         InitTrayIcon();
         m_window.Show();

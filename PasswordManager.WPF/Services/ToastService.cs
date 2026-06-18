@@ -89,22 +89,34 @@ public sealed class ToastService
 
     private static UIElement BuildCard(ToastMessage toast)
     {
-        var (accent, icon, bgHex) = toast.Type switch
+        // NOTE: icons must be real Unicode chars (\u escapes), NOT XML "&#x...;" entities — those only
+        // work in XAML and render as empty squares when assigned to TextBlock.Text in code.
+        var (accent, _, bgHex) = toast.Type switch
         {
-            ToastType.Success => ("#10B981", "&#xE73E;", "#0A2E20"),
-            ToastType.Error   => ("#EF4444", "&#xE711;", "#2D0A0A"),
-            ToastType.Warning => ("#F59E0B", "&#xE7BA;", "#2D1E06"),
-            _                 => ("#60A5FA", "&#xE946;", "#0A1929")
+            ToastType.Success => (ToastSettings.Success.Accent,"", ToastSettings.Success.Background), // CheckMark
+            ToastType.Error   => (ToastSettings.Error.Accent,"", ToastSettings.Error.Background), // ErrorBadge
+            ToastType.Warning => (ToastSettings.Warning.Accent,"", ToastSettings.Warning.Background), // Warning
+            _                 => (ToastSettings.Info.Accent,"", ToastSettings.Info.Background)  // Info
         };
 
-        var accentBrush  = (Brush)new BrushConverter().ConvertFrom(accent)!;
-        var bgBrush      = (Brush)new BrushConverter().ConvertFrom(bgHex)!;
+        var theme = ToastSettings.For(toast.Type);
+
+        Brush SafeBrush(string hex, string fallback)
+        {
+            try { return (Brush)new BrushConverter().ConvertFrom(hex)!; }
+            catch { return (Brush)new BrushConverter().ConvertFrom(fallback)!; }
+        }
+
+        var accentBrush  = SafeBrush(accent, "#60A5FA");
+        var bgBrush      = SafeBrush(bgHex, "#0A1929");
         var transform    = new TranslateTransform(0, 60);
 
         // Icon
         var iconBlock = new TextBlock
         {
-            Text        = icon,
+            // Build the glyph from its (user-customisable) code point so no literal
+            // private-use char is needed in source.
+            Text        = char.ConvertFromUtf32(theme.IconGlyph),
             FontFamily  = new FontFamily("Segoe MDL2 Assets"),
             FontSize    = 18,
             Foreground  = accentBrush,
