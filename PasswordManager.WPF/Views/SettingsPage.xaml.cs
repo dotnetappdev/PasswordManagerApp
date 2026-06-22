@@ -1816,6 +1816,16 @@ public sealed partial class SettingsPage : Page
         catch { }
     }
 
+    private void ManagePasskeysButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var mainWindow = (Application.Current as App)?.MainWindow;
+            mainWindow?.NavigateToPage("Passkeys");
+        }
+        catch { }
+    }
+
     private async void SeedVaultsButton_Click(object sender, RoutedEventArgs e)
     {
         if (_serviceProvider == null) return;

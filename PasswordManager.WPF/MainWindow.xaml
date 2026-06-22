@@ -3,6 +3,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:PasswordManager.WPF.Controls"
+        Icon="Assets/AppIcon.ico"
         PreviewKeyDown="MainWindow_PreviewKeyDown">
 
     <Grid Background="{DynamicResource ModernBackgroundBrush}">
@@ -205,12 +206,7 @@
                 <ui:NavigationViewItemSeparator Background="{DynamicResource ModernBorderBrush}"/>
                 <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="Security"/>
 
-                <ui:NavigationViewItem Content="Passkeys" Tag="Passkeys"
-                                       MouseRightButtonUp="NavigationItem_RightTapped">
-                    <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE8D7;" FontSize="16"/>
-                    </ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
+                <!-- Passkeys: hidden from the menu — manage them from Settings → Security instead -->
 
                 <ui:NavigationViewItem Content="Vaults" Tag="Vaults"
                                        MouseRightButtonUp="NavigationItem_RightTapped">

@@ -49,16 +49,33 @@ public static class CustomFieldHelper
     private static CustomField? _dragSource;
 
     // ── Public: popup type menu ─────────────────────────────────────────────
-    /// <summary>Opens a 1Password-style dropdown below <paramref name="anchor"/>.</summary>
+    /// <summary>
+    /// Opens a 1Password-style dropdown below <paramref name="anchor"/>.
+    /// Uses a plain <see cref="Popup"/> rather than <see cref="ContextMenu"/> — ModernWpf's
+    /// ContextMenu template includes an animated ScrollBar whose visual-state storyboard can
+    /// throw "VerifyPathIsAnimatable" if it fires while the popup's visual tree is still settling.
+    /// A bare Popup has no ScrollBar in its template, so that race can't happen.
+    /// </summary>
     public static void ShowFieldTypeMenu(FrameworkElement anchor, Action<CustomFieldType> onPicked)
     {
-        var menu = new ContextMenu
+        var popup = new Popup
         {
-            Background  = BrushSurface,
+            PlacementTarget = anchor,
+            Placement = PlacementMode.Bottom,
+            StaysOpen = false,
+            AllowsTransparency = true,
+            PopupAnimation = PopupAnimation.None,
+        };
+
+        var border = new Border
+        {
+            Background = BrushSurface,
             BorderBrush = BrushBorder,
             BorderThickness = new Thickness(1),
             Padding = new Thickness(0, 4, 0, 4),
         };
+
+        var stack = new StackPanel();
 
         foreach (var (label, icon, type) in MenuItems)
         {
@@ -87,26 +104,30 @@ public static class CustomFieldHelper
             row.Children.Add(iconTb);
             row.Children.Add(labelTb);
 
-            var item = new MenuItem
+            var item = new System.Windows.Controls.Button
             {
-                Header = row,
+                Content = row,
                 Background = BrushTransp,
                 Foreground = BrushPrimary,
+                BorderThickness = new Thickness(0),
                 Padding = new Thickness(12, 7, 16, 7),
-                Tag = type
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                Cursor = Cursors.Hand,
+                Tag = type,
             };
+            item.MouseEnter += (_, _) => item.Background = BrushBg;
+            item.MouseLeave += (_, _) => item.Background = BrushTransp;
             item.Click += (_, _) =>
             {
-                menu.IsOpen = false;
+                popup.IsOpen = false;
                 onPicked(type);
             };
-            menu.Items.Add(item);
+            stack.Children.Add(item);
         }
 
-        menu.PlacementTarget = anchor;
-        menu.Placement = PlacementMode.Bottom;
-        menu.HorizontalOffset = 0;
-        menu.IsOpen = true;
+        border.Child = stack;
+        popup.Child = border;
+        popup.IsOpen = true;
     }
 
     // ── Public: create one 1Password-style field row ────────────────────────
