@@ -24,13 +24,13 @@
                                     <GradientStop Color="#7C3AED" Offset="1"/>
                                 </LinearGradientBrush>
                             </Border.Background>
-                            <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="22"
+                            <TextBlock Text="&#xE72E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="22"
                                        Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="Vaults"
+                            <TextBlock Text="Vault Management"
                                        FontSize="28" FontWeight="Bold" Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
-                            <TextBlock Text="Separate spaces for your credentials"
+                            <TextBlock Text="Create, rename and delete vaults — open a vault from the sidebar to see its items"
                                        FontSize="13" Foreground="{DynamicResource ModernTextTertiaryBrush}" Margin="0,2,0,0"/>
                         </StackPanel>
                     </StackPanel>
@@ -46,7 +46,7 @@
                                         Background="{DynamicResource ModernSurfaceBrush}"
                                         BorderBrush="{DynamicResource ModernBorderBrush}">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets"
+                                        <TextBlock Text="&#xE72C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                                    FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}" Margin="0,0,7,0"/>
                                         <TextBlock Text="Refresh" Foreground="{DynamicResource ModernTextSecondaryBrush}" FontSize="13"/>
                                     </StackPanel>
@@ -71,7 +71,7 @@
                                         </LinearGradientBrush>
                                     </Border.Background>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets"
+                                        <TextBlock Text="&#xE710;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                                    FontSize="13" Foreground="White" Margin="0,0,7,0"/>
                                         <TextBlock Text="New Vault" Foreground="White"
                                                    FontSize="13" FontWeight="SemiBold"/>
@@ -106,7 +106,7 @@
                         Background="{DynamicResource ModernCardBrush}" BorderBrush="{DynamicResource ModernBorderBrush}" BorderThickness="1">
                     <StackPanel Orientation="Horizontal">
                         <Border Width="40" Height="40" CornerRadius="10" Margin="0,0,14,0" Background="#1E3A5F">
-                            <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                            <TextBlock Text="&#xE72E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="18"
                                        Foreground="#60A5FA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel VerticalAlignment="Center">
@@ -122,7 +122,7 @@
                         Background="{DynamicResource ModernCardBrush}" BorderBrush="{DynamicResource ModernBorderBrush}" BorderThickness="1">
                     <StackPanel Orientation="Horizontal">
                         <Border Width="40" Height="40" CornerRadius="10" Margin="0,0,14,0" Background="#14532D">
-                            <TextBlock Text="&#xE1A3;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                            <TextBlock Text="&#xE1A3;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="18"
                                        Foreground="#4ADE80" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel VerticalAlignment="Center">
@@ -138,7 +138,7 @@
                         Background="{DynamicResource ModernCardBrush}" BorderBrush="{DynamicResource ModernBorderBrush}" BorderThickness="1">
                     <StackPanel Orientation="Horizontal">
                         <Border Width="40" Height="40" CornerRadius="10" Margin="0,0,14,0" Background="#1A1A3E">
-                            <TextBlock Text="&#xE1A3;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                            <TextBlock Text="&#xE1A3;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="18"
                                        Foreground="#818CF8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel VerticalAlignment="Center">
@@ -155,7 +155,7 @@
                     CornerRadius="16" Padding="48" Margin="0,0,0,24"
                     Background="{DynamicResource ModernFormBackgroundBrush}" BorderBrush="{DynamicResource ModernBorderBrush}" BorderThickness="1">
                 <StackPanel HorizontalAlignment="Center">
-                    <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="56"
+                    <TextBlock Text="&#xE72E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="56"
                                HorizontalAlignment="Center" Foreground="{DynamicResource ModernTextTertiaryBrush}" Margin="0,0,0,16"/>
                     <TextBlock Text="No vaults yet" FontSize="20" FontWeight="SemiBold"
                                Foreground="{DynamicResource ModernTextSecondaryBrush}" HorizontalAlignment="Center"/>
@@ -174,7 +174,7 @@
                                         </LinearGradientBrush>
                                     </Border.Background>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets"
+                                        <TextBlock Text="&#xE710;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                                    FontSize="14" Foreground="White" Margin="0,0,8,0"/>
                                         <TextBlock Text="Create Your First Vault" Foreground="White"
                                                    FontSize="14" FontWeight="SemiBold"/>
@@ -299,7 +299,7 @@
                                                 Background="Transparent" BorderThickness="0"
                                                 HorizontalAlignment="Left" Padding="0">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE1CE;" FontFamily="Segoe MDL2 Assets"
+                                                <TextBlock Text="&#xE1CE;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                                            FontSize="12" Foreground="{DynamicResource ModernTextTertiaryBrush}" Margin="0,0,5,0"/>
                                                 <TextBlock Text="Set Default" FontSize="12" Foreground="{DynamicResource ModernTextTertiaryBrush}"/>
                                             </StackPanel>
@@ -311,7 +311,7 @@
                                                     Background="Transparent" BorderThickness="0"
                                                     Width="32" Height="32"
                                                     ToolTipService.ToolTip="Edit vault">
-                                                <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets"
+                                                <TextBlock Text="&#xE70F;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                                            FontSize="14" Foreground="{DynamicResource ModernTextTertiaryBrush}"/>
                                             </Button>
                                             <Button Click="DeleteVaultButton_Click" Tag="{Binding}"
@@ -319,7 +319,7 @@
                                                     Width="32" Height="32"
                                                     Visibility="{Binding IsDefault, Converter={StaticResource BoolToHiddenConverter}}"
                                                     ToolTipService.ToolTip="Delete vault">
-                                                <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets"
+                                                <TextBlock Text="&#xE74D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                                            FontSize="14" Foreground="{DynamicResource ModernTextTertiaryBrush}"/>
                                             </Button>
                                         </StackPanel>
@@ -349,7 +349,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="&#xE946;" FontFamily="Segoe MDL2 Assets"
+                    <TextBlock Grid.Column="0" Text="&#xE946;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                FontSize="20" Foreground="{DynamicResource ModernTextSecondaryBrush}" Margin="0,0,16,0"
                                VerticalAlignment="Center"/>
                     <StackPanel Grid.Column="1">

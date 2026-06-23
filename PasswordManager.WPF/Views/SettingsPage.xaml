@@ -249,6 +249,13 @@
                                      IsChecked="{Binding RequirePasscode, Mode=TwoWay}"
                                      Checked="PasscodeToggle_Toggled"
                                      Margin="0,0,0,8"/>
+
+                        <CheckBox x:Name="PasskeysToggle"
+                                     Content="Enable Passkey Sign-In"
+                                     IsChecked="{Binding EnablePasskeys, Mode=TwoWay}"
+                                     Checked="PasskeysToggle_Toggled"
+                                     Unchecked="PasskeysToggle_Toggled"
+                                     Margin="0,0,0,8"/>
                         
                         <Button x:Name="ChangePasswordButton"
                                Style="{StaticResource ModernSecondaryButtonStyle}"
@@ -268,6 +275,18 @@
                             <StackPanel Orientation="Horizontal" Margin="8">
                                 <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Manage Passkeys"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- WhatsApp-style "Linked Devices": shows a QR the mobile app scans to sign in -->
+                        <Button x:Name="LinkedDevicesButton"
+                               Style="{StaticResource ModernSecondaryButtonStyle}"
+                               HorizontalAlignment="Left"
+                               Margin="0,8,0,0"
+                               Click="LinkedDevicesButton_Click">
+                            <StackPanel Orientation="Horizontal" Margin="8">
+                                <TextBlock Text="&#xE8CE;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Linked Devices"/>
                             </StackPanel>
                         </Button>
 
@@ -502,8 +521,10 @@
                                      Unchecked="CloudBackupToggle_Toggled"
                                      Margin="0,0,0,4"/>
 
-                        <StackPanel Margin="8" Visibility="{Binding EnableCloudBackup, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <TextBlock Text="Cloud Provider" 
+                        <!-- Always visible (toggling this with the EnableCloudBackup converter while the
+                             provider combo realized caused a mid-layout re-parent crash). -->
+                        <StackPanel Margin="8">
+                            <TextBlock Text="Cloud Provider"
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>
                             <ComboBox x:Name="CloudProviderComboBox"
@@ -517,7 +538,8 @@
                         </StackPanel>
 
                         <!-- Google Drive OAuth Settings -->
-                        <StackPanel Margin="8" x:Name="GoogleDriveSettingsPanel" Visibility="Collapsed">
+                        <StackPanel Margin="8" x:Name="GoogleDriveSettingsPanel"
+                                    Visibility="{Binding IsGoogleDriveSelected, Converter={StaticResource BoolToVisibilityConverter}}">
                             <TextBlock Text="Google Drive — OAuth Credentials"
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>
@@ -576,7 +598,8 @@
                         </StackPanel>
 
                         <!-- Network Location Configuration -->
-                        <StackPanel Margin="8" x:Name="NetworkLocationPanel" Visibility="Collapsed">
+                        <StackPanel Margin="8" x:Name="NetworkLocationPanel"
+                                    Visibility="{Binding IsNetworkLocationSelected, Converter={StaticResource BoolToVisibilityConverter}}">
                             <TextBlock Text="Network Location Settings" 
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>
@@ -601,7 +624,7 @@
                         </StackPanel>
 
                         <!-- Backup Schedule Settings -->
-                        <StackPanel Margin="12" Visibility="{Binding EnableCloudBackup, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel Margin="12">
                             <TextBlock Text="Backup Schedule" 
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>
@@ -629,7 +652,7 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Margin="12" Visibility="{Binding EnableCloudBackup, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel Margin="12">
                             <TextBlock Text="Backup Management" 
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>

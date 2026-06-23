@@ -21,23 +21,37 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
     private readonly IPasskeyService _passkeyService;
     private readonly IAuthService _authService;
     private readonly IPasswordStrengthService _strengthService;
+    private readonly IVaultService? _vaultService;
     private readonly Services.IWindowsHelloService _windowsHello = new Services.WindowsHelloService();
     private PasswordItem? _editingItem;
     private bool _isReadOnly = false;
     private List<CustomField> _customFields = new();
     private string? _brandIconDataUrl;
+    private List<string> _knownUsernames = new();
+    private static readonly Random _usernameRandom = new();
 
     public PasswordItem? Result { get; private set; }
 
-    public AddPasswordDialog(IServiceProvider serviceProvider, PasswordItem? editingItem = null, bool isReadOnly = false)
+    // When set, the saved item is attached to this vault (via its default collection).
+    // When null, it falls back to the user's default vault so every item always belongs to a vault.
+    public int? TargetVaultId { get; set; }
+
+    public AddPasswordDialog(IServiceProvider serviceProvider, PasswordItem? editingItem = null, bool isReadOnly = false, int? targetVaultId = null)
     {
         this.InitializeComponent();
+
+        // Must be set before LoadData() runs below — LoadData() is "async void" and its vault
+        // pre-selection logic can run synchronously (if the vault query completes without truly
+        // yielding), finishing before a caller's `{ TargetVaultId = ... }` object initializer would
+        // otherwise get a chance to run. Taking it as a constructor parameter avoids that race.
+        TargetVaultId = targetVaultId;
 
         _passwordItemService = serviceProvider.GetRequiredService<IPasswordItemService>();
         _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
         _passkeyService = serviceProvider.GetRequiredService<IPasskeyService>();
         _authService = serviceProvider.GetRequiredService<IAuthService>();
         _strengthService = serviceProvider.GetRequiredService<IPasswordStrengthService>();
+        _vaultService = serviceProvider.GetService<IVaultService>();
         _editingItem = editingItem;
         _isReadOnly = isReadOnly;
 
@@ -153,6 +167,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 
         // Username
         UsernameTextBox.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        GenerateUsernameButton.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
         UsernameTextDisplay.Visibility = readOnly ? Visibility.Visible : Visibility.Collapsed;
         if (readOnly) UsernameTextDisplay.Text = UsernameTextBox.Text;
 
@@ -304,6 +319,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             }
 
 
+            await LoadVaultsAsync();
+            await LoadKnownUsernamesAsync();
+
             // GeneratePasswordButton may not have an x:Name in XAML (older markup). Find safely and apply visibility based on current read-only state.
             var genBtnObj = this.FindName("GeneratePasswordButton");
             if (genBtnObj is Button genBtn)
@@ -336,6 +354,117 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         catch (Exception ex)
         {
         }
+    }
+
+    private async Task LoadVaultsAsync()
+    {
+        if (_vaultService == null) { VaultPickerPanel.Visibility = Visibility.Collapsed; return; }
+        try
+        {
+            var vaults = await _vaultService.GetAllAsync();
+
+            // No vaults yet — don't force the user to pick one; just hide the field
+            // and save without a vault assignment.
+            if (vaults.Count == 0)
+            {
+                VaultPickerPanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            VaultPickerPanel.Visibility = Visibility.Visible;
+            VaultComboBox.ItemsSource = vaults;
+
+            int? selectedVaultId = TargetVaultId;
+
+            if (_editingItem != null && _editingItem.CollectionId.HasValue)
+            {
+                foreach (var v in vaults)
+                {
+                    var defaultCollectionId = await _vaultService.GetDefaultCollectionIdAsync(v.Id);
+                    if (defaultCollectionId == _editingItem.CollectionId)
+                    {
+                        selectedVaultId = v.Id;
+                        break;
+                    }
+                }
+            }
+
+            if (!selectedVaultId.HasValue)
+                selectedVaultId = (await _vaultService.GetDefaultVaultAsync())?.Id;
+
+            VaultComboBox.SelectedItem = vaults.FirstOrDefault(v => v.Id == selectedVaultId) ?? vaults.FirstOrDefault();
+        }
+        catch
+        {
+            // Non-fatal — saving falls back to the user's default vault.
+        }
+    }
+
+    // Collects every distinct username/email already used across the vault, so the field can
+    // suggest reusing one instead of forcing the user to retype it (or look it up elsewhere).
+    private async Task LoadKnownUsernamesAsync()
+    {
+        try
+        {
+            var items = await _passwordItemService.GetAllAsync();
+            _knownUsernames = items
+                .Select(i => i.Username)
+                .Where(u => !string.IsNullOrWhiteSpace(u))
+                .Select(u => u!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(u => u, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch
+        {
+            // Non-fatal — the field still works as plain free text without suggestions.
+        }
+    }
+
+    private void UsernameTextBox_TextChanged(ModernWpf.Controls.AutoSuggestBox sender, ModernWpf.Controls.AutoSuggestBoxTextChangedEventArgs args)
+    {
+        try
+        {
+            if (args.Reason != ModernWpf.Controls.AutoSuggestionBoxTextChangeReason.UserInput) return;
+
+            var query = sender.Text ?? string.Empty;
+            sender.ItemsSource = string.IsNullOrEmpty(query)
+                ? _knownUsernames
+                : _knownUsernames.Where(u => u.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+        catch { }
+    }
+
+    private void UsernameTextBox_SuggestionChosen(ModernWpf.Controls.AutoSuggestBox sender, ModernWpf.Controls.AutoSuggestBoxSuggestionChosenEventArgs args)
+    {
+        if (args.SelectedItem is string chosen)
+            sender.Text = chosen;
+    }
+
+    // Reddit-style random handle (adjective + noun + a few digits) for users who don't want
+    // their real email/name attached to an account.
+    private static readonly string[] _usernameAdjectives =
+    {
+        "Quiet", "Brave", "Lucky", "Mighty", "Silent", "Clever", "Swift", "Bold", "Calm", "Bright",
+        "Wild", "Cosmic", "Frosty", "Golden", "Hidden", "Rogue", "Solar", "Lunar", "Crimson", "Electric"
+    };
+    private static readonly string[] _usernameNouns =
+    {
+        "Falcon", "Panther", "Otter", "Wolf", "Raven", "Tiger", "Comet", "Badger", "Phoenix", "Cobra",
+        "Hawk", "Yeti", "Dragon", "Sparrow", "Wizard", "Knight", "Nomad", "Pilot", "Ranger", "Voyager"
+    };
+
+    private string GenerateRedditStyleUsername()
+    {
+        var adjective = _usernameAdjectives[_usernameRandom.Next(_usernameAdjectives.Length)];
+        var noun = _usernameNouns[_usernameRandom.Next(_usernameNouns.Length)];
+        var number = _usernameRandom.Next(0, 9999).ToString("D2");
+        return $"{adjective}{noun}{number}";
+    }
+
+    private void GenerateUsernameButton_Click(object sender, RoutedEventArgs e)
+    {
+        UsernameTextBox.Text = GenerateRedditStyleUsername();
     }
 
     private void PopulateFields()
@@ -402,11 +531,13 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             PopulateGenericFieldsContainer(_editingItem.Type);
         }
 
-        // If this item belongs to an "Identity" category, prefer the login-style layout
+        // If this item belongs to an "Identity" category (but isn't itself an Identity-typed
+        // item, which now uses the generic CustomFields panel above), prefer the login-style layout
         try
         {
             var catName = _editingItem.Category?.Name ?? string.Empty;
-            if (!string.IsNullOrEmpty(catName) && catName.IndexOf("Identity", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (_editingItem.Type != ItemType.Identity &&
+                !string.IsNullOrEmpty(catName) && catName.IndexOf("Identity", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 // Show login fields and hide other type-specific panels so Identity acts like a filtered Login form
                 LoginFieldsPanel.Visibility = Visibility.Visible;
@@ -472,7 +603,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         SecureNoteFieldsPanel.Visibility     = selectedType == ItemType.SecureNote  ? Visibility.Visible : Visibility.Collapsed;
         WiFiFieldsPanel.Visibility           = selectedType == ItemType.WiFi        ? Visibility.Visible : Visibility.Collapsed;
         PasskeyFieldsPanel.Visibility        = selectedType == ItemType.Passkey     ? Visibility.Visible : Visibility.Collapsed;
-        IdentityFieldsPanel.Visibility       = selectedType == ItemType.Identity    ? Visibility.Visible : Visibility.Collapsed;
+        IdentityFieldsPanel.Visibility       = Visibility.Collapsed; // superseded by the generic CustomFields-backed panel below
         APICredentialsFieldsPanel.Visibility = Visibility.Collapsed;
         GenericTypeFieldsPanel.Visibility    = Visibility.Collapsed;
 
@@ -500,11 +631,11 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         ItemType.Membership or ItemType.OutdoorLicense or ItemType.Passport or
         ItemType.RewardsProgram or ItemType.Server or ItemType.SocialSecurityNumber or
         ItemType.SoftwareLicense or ItemType.WirelessRouter or ItemType.CryptoWallet or
-        ItemType.Document or ItemType.ApiCredentials => true,
+        ItemType.Document or ItemType.ApiCredentials or ItemType.Identity => true,
         _ => false
     };
 
-    private record FieldDef(string Name, string Placeholder = "", bool IsProtected = false, bool IsPaired = false);
+    private record FieldDef(string Name, string Placeholder = "", bool IsProtected = false, bool IsPaired = false, string[]? Choices = null);
 
     private static IReadOnlyList<FieldDef> GetFieldDefs(ItemType type) => type switch
     {
@@ -631,13 +762,36 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             new("Download Link", "Download page URL"),
             new("Support URL",   "Support or product URL"),
         ],
+        ItemType.Identity => [
+            new("First Name",        "First name"),
+            new("Initial",           "M."),
+            new("Last Name",         "Last name"),
+            new("Gender",            "Gender"),
+            new("Birth Date",        "MM/DD/YYYY"),
+            new("Occupation",        "Occupation"),
+            new("Company",           "Company name"),
+            new("Department",        "Department"),
+            new("Job Title",         "Job title"),
+            new("Address",           "Street, City/Town, State/Province, ZIP/Postal Code, Country"),
+            new("Home Phone",        "Home phone number"),
+            new("Cell Phone",        "Cell phone number"),
+            new("Business Phone",    "Business phone number"),
+            new("Username",          "Internet username"),
+            new("Reminder Question", "Password reminder question"),
+            new("Reminder Answer",   "Password reminder answer"),
+            new("Email",             "Email address"),
+        ],
         ItemType.WirelessRouter => [
             new("Base Station Name",         "Router or access point name"),
-            new("Base Station Password",      "Admin password", IsProtected: true),
-            new("Network Name (SSID)",        "Wi-Fi SSID"),
-            new("Wireless Password",          "Wi-Fi password", IsProtected: true),
-            new("Server / IP",               "Router IP address"),
-            new("Network Type",              "e.g. WPA2, WPA3"),
+            new("Base Station Password",     "Admin password", IsProtected: true),
+            new("Server / IP Address",       "Router IP address"),
+            new("AirPort ID",                "Router hardware (MAC) address"),
+            new("Network Name",              "Wi-Fi SSID"),
+            new("Wireless Security",         "e.g. WPA2, WPA3", Choices: [
+                "WPA3", "WPA2", "WPA2/WPA3 Mixed", "WPA", "WEP", "None / Open",
+                "2.4 GHz", "5 GHz", "6 GHz", "2.4 GHz + 5 GHz", "2.4 GHz + 5 GHz + 6 GHz",
+            ]),
+            new("Wireless Network Password", "Wi-Fi password", IsProtected: true),
             new("Attached Storage Password", "NAS or USB share password", IsProtected: true),
         ],
         ItemType.Document => [
@@ -784,6 +938,24 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             grid.Children.Add(eyeBtn);
             border.Child = grid;
         }
+        else if (def.Choices is { Length: > 0 })
+        {
+            // Editable combo box: pick a preset (security type, Wi-Fi band, etc.) or type a custom value.
+            var cb = new ComboBox
+            {
+                IsEditable = true,
+                Text = existing ?? "",
+                Background = System.Windows.Media.Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(10, 0, 8, 0),
+                VerticalContentAlignment = VerticalAlignment.Center,
+                FontSize = 14,
+                Tag = def.Name
+            };
+            foreach (var choice in def.Choices)
+                cb.Items.Add(choice);
+            border.Child = cb;
+        }
         else
         {
             var tb = new TextBox
@@ -796,7 +968,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                 FontSize = 14,
                 Tag = def.Name
             };
-            
+
             border.Child = tb;
         }
 
@@ -823,6 +995,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         ItemType.SoftwareLicense     => "Software License Details",
         ItemType.WirelessRouter      => "Wireless Router Details",
         ItemType.Document            => "Document Details",
+        ItemType.Identity            => "Identity Details",
         _                            => "Details"
     };
 
@@ -950,6 +1123,20 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             if (CategoryComboBox.SelectedItem is ComboBoxItem categoryItem && categoryItem.Tag is Category category)
             {
                 item.CategoryId = category.Id;
+            }
+
+            // Attach the item to the vault chosen in the picker (via its default collection) so it always belongs to one.
+            if (_vaultService != null)
+            {
+                try
+                {
+                    var vaultId = (VaultComboBox.SelectedItem as Vault)?.Id
+                                  ?? TargetVaultId
+                                  ?? (await _vaultService.GetDefaultVaultAsync())?.Id;
+                    if (vaultId.HasValue)
+                        item.CollectionId = await _vaultService.GetDefaultCollectionIdAsync(vaultId.Value);
+                }
+                catch { /* non-fatal — item is still saved without a vault assignment */ }
             }
 
 
@@ -1186,6 +1373,12 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                      string.Equals(textTag, fieldName, StringComparison.OrdinalIgnoreCase))
             {
                 return textBox.Text;
+            }
+            else if (!isProtected && b.Child is ComboBox comboBox &&
+                     comboBox.Tag is string comboTag &&
+                     string.Equals(comboTag, fieldName, StringComparison.OrdinalIgnoreCase))
+            {
+                return comboBox.Text;
             }
         }
         return null;

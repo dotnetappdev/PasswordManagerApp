@@ -23,6 +23,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 {
     private PasswordItemsViewModel? _viewModel;
     private IServiceProvider? _serviceProvider;
+    private int? _pendingVaultIdForNewItems;
     private PasswordItem? _selectedItem;
     private ICategoryInterface? _categoryService;
     private List<Category> _categories = new();
@@ -39,7 +40,9 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
     public PasswordItemsPage()
     {
-        this.InitializeComponent();
+        this.
+            
+            InitializeComponent();
 
         // Refresh the live list when data is cleared/changed elsewhere (e.g. Settings → Delete Seed Data).
         Loaded += (_, _) =>
@@ -142,11 +145,19 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     {
         if (_viewModel == null) return;
 
-        // Update page title
-        if (!string.IsNullOrEmpty(filterData.FilterName))
+        _pendingVaultIdForNewItems = filterData.FilterVaultId;
+
+        // Update page title. When filtering by a vault, show the vault NAME in the header
+        // (never the id) so the user can tell which vault they're viewing at a glance.
+        var contentTitle = GetElement<TextBlock>("ContentTitle");
+        var contentSubtitle = GetElement<TextBlock>("ContentSubtitle");
+        if (filterData.FilterVaultId.HasValue && !string.IsNullOrEmpty(filterData.FilterVaultName))
         {
-            var contentTitle = GetElement<TextBlock>("ContentTitle");
-            var contentSubtitle = GetElement<TextBlock>("ContentSubtitle");
+            if (contentTitle != null) contentTitle.Text = filterData.FilterVaultName;
+            if (contentSubtitle != null) contentSubtitle.Text = $"Vault · {filterData.FilterVaultName}";
+        }
+        else if (!string.IsNullOrEmpty(filterData.FilterName))
+        {
             if (contentTitle != null) contentTitle.Text = filterData.FilterName;
             if (contentSubtitle != null) contentSubtitle.Text = $"Showing {filterData.FilterName.ToLower()}";
         }
@@ -179,6 +190,12 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (!string.IsNullOrEmpty(filterData.FilterCategoryName))
         {
             _viewModel.FilterCategoryName = filterData.FilterCategoryName;
+        }
+
+        // Apply vault filter — same All Items / Passwords screen, scoped to one vault
+        if (filterData.FilterVaultId.HasValue)
+        {
+            _viewModel.FilterVaultId = filterData.FilterVaultId;
         }
     }
 
@@ -922,18 +939,22 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         }
         else if (item.PasskeyItem != null || item.Type == ItemType.Passkey)
         {
-            // ── Passkey layout ──────────────────────────────────────────────
-            if (usernameLabel != null) usernameLabel.Text = "USERNAME";
-            if (passwordLabel != null) passwordLabel.Text = "DISPLAY NAME";
+            // ── Passkey: only Website + the passkey credential (masked, copy/reveal) ──
+            if (usernameSection != null) usernameSection.Visibility = Visibility.Collapsed;
+            if (passwordLabel != null) passwordLabel.Text = "PASSKEY";
             if (websiteLabel  != null) websiteLabel.Text  = "WEBSITE";
 
-            username = item.PasskeyItem?.Username ?? item.Username ?? string.Empty;
-            website  = item.PasskeyItem?.WebsiteUrl ?? item.PasskeyItem?.Website ?? item.Website ?? string.Empty;
-            var display = item.PasskeyItem?.DisplayName ?? string.Empty;
+            website = item.PasskeyItem?.WebsiteUrl ?? item.PasskeyItem?.Website ?? item.Website ?? string.Empty;
+            var credential = item.PasskeyItem?.CredentialId ?? string.Empty;
 
-            if (detailUsername != null) { detailUsername.Text = username; detailUsername.CopyText = username; }
-            if (detailWebsite  != null) { detailWebsite.Text  = website;  detailWebsite.CopyText  = website; }
-            if (detailPassword != null) { detailPassword.Text = string.IsNullOrEmpty(display) ? "—" : display; detailPassword.CopyText = display; }
+            if (detailWebsite  != null) { detailWebsite.Text  = website; detailWebsite.CopyText = website; }
+            if (detailPassword != null)
+            {
+                // The reveal button (RevealPasswordButton_Click) falls back to CopyText when there is
+                // no LoginItem, so it reveals the passkey credential here.
+                detailPassword.Text     = string.IsNullOrEmpty(credential) ? "—" : "••••••••";
+                detailPassword.CopyText = credential;
+            }
         }
         else
         {
@@ -1031,8 +1052,76 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         // Live verification code (TOTP)
         SetupTotp(item);
 
+        // Reflect favorite state on the detail star + quick action
+        UpdateFavoriteVisuals();
+
         // Wire drag handles on all static field rows
         try { WireFieldDragHandles(); } catch { }
+    }
+
+    // ── Favorites ───────────────────────────────────────────────────────────────
+    // One-click toggle from the list row star, the detail header star, or the quick action —
+    // works for every item type. Flips the persisted flag and updates the filled/outline icon.
+    private const string StarOutline = "";
+    private const string StarFilled  = "";
+
+    private async void FavoriteToggleButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is PasswordItem item)
+            await ToggleFavoriteAsync(item);
+    }
+
+    private async void FavoriteDetailButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedItem != null)
+            await ToggleFavoriteAsync(_selectedItem);
+    }
+
+    private async Task ToggleFavoriteAsync(PasswordItem item)
+    {
+        if (_passwordItemService == null) return;
+        try
+        {
+            var ok = await _passwordItemService.ToggleFavoriteAsync(item.Id);
+            if (!ok) return;
+
+            // Service flipped the flag in the DB; mirror it locally so the UI matches.
+            item.IsFavorite = !item.IsFavorite;
+
+            // Re-render the row star (its DataTrigger re-evaluates when the container refreshes)
+            GetElement<ListView>("ItemsList")?.Items.Refresh();
+
+            if (_selectedItem?.Id == item.Id) UpdateFavoriteVisuals();
+
+            ToastService.Instance.Success(item.IsFavorite
+                ? $"'{item.Title}' added to favorites"
+                : $"'{item.Title}' removed from favorites");
+        }
+        catch (Exception ex)
+        {
+            ToastService.Instance.Error($"Couldn't update favorite: {ex.Message}");
+        }
+    }
+
+    private void UpdateFavoriteVisuals()
+    {
+        bool fav = _selectedItem?.IsFavorite == true;
+        // FavoriteStarFill (E735) when on, FavoriteStar outline (E734) when off — built from
+        // code points so the glyphs are unambiguous in source.
+        string filled = char.ConvertFromUtf32(0xE735);
+        string outline = char.ConvertFromUtf32(0xE734);
+        var gold = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF5, 0xB3, 0x01));
+        var dim = (System.Windows.Media.Brush?)Application.Current.Resources["ModernTextTertiaryBrush"]
+                  ?? System.Windows.Media.Brushes.Gray;
+
+        var icon = GetElement<TextBlock>("FavoriteDetailIcon");
+        if (icon != null) { icon.Text = fav ? filled : outline; icon.Foreground = fav ? gold : dim; }
+
+        var qaIcon = GetElement<TextBlock>("FavoriteQuickActionIcon");
+        if (qaIcon != null) qaIcon.Text = fav ? filled : outline;
+
+        var qaLabel = GetElement<TextBlock>("FavoriteQuickActionLabel");
+        if (qaLabel != null) qaLabel.Text = fav ? "Remove from Favorites" : "Add to Favorites";
     }
 
     // ── Static field drag-drop ─────────────────────────────────────────────────
@@ -1095,10 +1184,37 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     /// Shows a live, auto-refreshing TOTP verification code for items that carry an authenticator
     /// secret; hides the section (and stops the timer) for everything else.
     /// </summary>
-    private void SetupTotp(PasswordItem item)
+    private async void SetupTotp(PasswordItem item)
     {
         var section = GetElement<Grid>("DetailTotpSection");
+
+        // 1) Manually-entered secret lives in the reserved "TOTP Secret" custom field.
         _currentTotpSecret = PasswordManager.Services.Utilities.TotpHelper.GetSecret(item);
+
+        // 2) Fallback: secrets imported from other managers (1Password, Bitwarden, …) are stored
+        //    encrypted on the login item itself. Decrypt them on demand so their codes show too.
+        if (string.IsNullOrEmpty(_currentTotpSecret)
+            && item.LoginItem != null
+            && !string.IsNullOrEmpty(item.LoginItem.EncryptedTotpSecret)
+            && _serviceProvider != null)
+        {
+            try
+            {
+                var sessionId = await GetSessionIdAsync();
+                if (!string.IsNullOrEmpty(sessionId))
+                {
+                    var reveal = _serviceProvider.GetService<IPasswordRevealService>();
+                    if (reveal != null)
+                    {
+                        var imported = await reveal.RevealTotpSecretAsync(item.LoginItem, sessionId);
+                        // Guard against a fast item switch resolving onto the wrong item.
+                        if (_selectedItem?.Id == item.Id && !string.IsNullOrWhiteSpace(imported))
+                            _currentTotpSecret = imported;
+                    }
+                }
+            }
+            catch { /* best-effort — just won't show a code */ }
+        }
 
         bool usable = !string.IsNullOrEmpty(_currentTotpSecret)
                       && _totpService != null
@@ -1267,7 +1383,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             if (typeResult == ModernWpf.Controls.ContentDialogResult.Primary || typeSelectionDialog.SelectedItemType != null)
             {
                 // Then show the main add dialog with the selected type pre-filled
-                var dialog = new Dialogs.AddPasswordDialog(_serviceProvider);
+                var dialog = new Dialogs.AddPasswordDialog(_serviceProvider, targetVaultId: _pendingVaultIdForNewItems);
                 ConfigureDialogForCentering(dialog);
 
                 // Pre-select the item type if one was chosen

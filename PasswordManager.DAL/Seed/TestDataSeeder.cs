@@ -58,14 +58,35 @@ public static class TestDataSeeder
 
     public static void SeedCollections(PasswordManagerDbContext db, string testUserId)
     {
+        // Every user gets a default "Personal" vault; demo collections/items live in it
+        // unless the demo data explicitly models a separate vault (e.g. "Work").
+        var vault = db.Vaults.FirstOrDefault(v => v.UserId == testUserId && v.IsDefault)
+                 ?? db.Vaults.FirstOrDefault(v => v.UserId == testUserId);
+        if (vault == null)
+        {
+            vault = new Vault
+            {
+                Name = "Personal",
+                Description = "Your personal password vault",
+                IsDefault = true,
+                Icon = "🔐",
+                Color = "#2563EB",
+                UserId = testUserId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            db.Vaults.Add(vault);
+            db.SaveChanges();
+        }
+
         if (!db.Collections.Any(c => c.UserId == testUserId))
         {
             db.Collections.AddRange(
-                new Collection { Name = "Banking",   Icon = "🏦", Color = "#1f2937", IsDefault = true,  UserId = testUserId },
-                new Collection { Name = "Insurance", Icon = "🛡️", Color = "#059669", IsDefault = false, UserId = testUserId },
-                new Collection { Name = "Utilities", Icon = "⚡", Color = "#dc2626", IsDefault = false, UserId = testUserId },
-                new Collection { Name = "Work",      Icon = "💼", Color = "#7c3aed", IsDefault = false, UserId = testUserId },
-                new Collection { Name = "Personal",  Icon = "👤", Color = "#3b82f6", IsDefault = false, UserId = testUserId }
+                new Collection { Name = "Banking",   Icon = "🏦", Color = "#1f2937", IsDefault = true,  UserId = testUserId, VaultId = vault.Id },
+                new Collection { Name = "Insurance", Icon = "🛡️", Color = "#059669", IsDefault = false, UserId = testUserId, VaultId = vault.Id },
+                new Collection { Name = "Utilities", Icon = "⚡", Color = "#dc2626", IsDefault = false, UserId = testUserId, VaultId = vault.Id },
+                new Collection { Name = "Work",      Icon = "💼", Color = "#7c3aed", IsDefault = false, UserId = testUserId, VaultId = vault.Id },
+                new Collection { Name = "Personal",  Icon = "👤", Color = "#3b82f6", IsDefault = false, UserId = testUserId, VaultId = vault.Id }
             );
             db.SaveChanges();
         }

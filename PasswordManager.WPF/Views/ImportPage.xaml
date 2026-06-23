@@ -97,8 +97,8 @@
                                Click="ImportButton_Click"
                                Margin="0,0,8,0">
                             <StackPanel Orientation="Horizontal" Margin="4,0">
-                                <TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets" FontSize="15" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Start Import" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets" FontSize="15" Margin="0,0,8,0" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock Text="Start Import" FontSize="14" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
                         <Button x:Name="CancelButton"

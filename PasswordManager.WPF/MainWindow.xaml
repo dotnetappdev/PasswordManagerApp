@@ -207,13 +207,7 @@
                 <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="Security"/>
 
                 <!-- Passkeys: hidden from the menu — manage them from Settings → Security instead -->
-
-                <ui:NavigationViewItem Content="Vaults" Tag="Vaults"
-                                       MouseRightButtonUp="NavigationItem_RightTapped">
-                    <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE72E;" FontSize="16"/>
-                    </ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
+                <!-- Vaults: managed entirely from the sidebar VAULTS list (create/rename/delete) -->
 
                 <ui:NavigationViewItem Content="Security Dashboard" Tag="Security"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
@@ -232,6 +226,34 @@
                         <ui:FontIcon Glyph="&#xE8FD;" FontSize="16"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
+
+                <!-- Vaults row — a real NavigationViewItem so its icon/text land on exactly the
+                     same indentation as "Manage Categories" above (hand-tuned Grid margins drifted
+                     out of alignment); the inline "+" creates a vault, the user's vaults list itself
+                     renders just below via VaultsNavPanel. -->
+                <ui:NavigationViewItem Focusable="False" SelectsOnInvoked="False" IsHitTestVisible="True">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE72E;" FontSize="16"/>
+                    </ui:NavigationViewItem.Icon>
+                    <Grid IsHitTestVisible="True">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Vaults" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                        <Button Grid.Column="1" Background="Transparent" BorderThickness="0"
+                                Padding="0" Width="32" Height="32" MinWidth="0" MinHeight="0"
+                                Margin="0,0,4,0"
+                                VerticalAlignment="Center"
+                                ToolTipService.ToolTip="Add Vault"
+                                Click="AddVaultNavButton_Click">
+                            <TextBlock Text="&#xE109;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="18"
+                                       Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                    </Grid>
+                </ui:NavigationViewItem>
+                <StackPanel x:Name="VaultsNavPanel" Margin="0,0,0,8"/>
 
                 <ui:NavigationViewItem Content="Import / Export" Tag="Import"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
@@ -279,25 +301,6 @@
                 <StackPanel Margin="0,0,0,8">
                     <!-- hairline divider -->
                     <Border Height="1" Background="{DynamicResource ModernBorderBrush}" Margin="0,4"/>
-
-                    <!-- Dynamic favourite categories -->
-                    <Grid Margin="16,6,8,2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="VAULTS" FontSize="10" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource ModernTextTertiaryBrush}"
-                                   VerticalAlignment="Center"/>
-                        <Button Grid.Column="1" Background="Transparent" BorderThickness="0"
-                                Padding="4" MinWidth="0" MinHeight="0"
-                                ToolTipService.ToolTip="Add Category"
-                                Click="AddCategoryNavButton_Click">
-                            <TextBlock Text="&#xE109;" FontFamily="Segoe MDL2 Assets" FontSize="12"
-                                       Foreground="{DynamicResource ModernTextTertiaryBrush}"/>
-                        </Button>
-                    </Grid>
-                    <StackPanel x:Name="FavoriteCategoriesPanel"/>
 
                     <!-- Dynamic tags -->
                     <Grid Margin="16,10,8,2">

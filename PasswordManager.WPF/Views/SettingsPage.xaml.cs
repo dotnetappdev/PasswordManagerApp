@@ -1344,20 +1344,13 @@ public sealed partial class SettingsPage : Page
 
     private void CloudProviderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        UpdateNetworkLocationVisibility();
+        // The provider sub-panels' visibility is now driven entirely by data binding
+        // (IsGoogleDriveSelected / IsNetworkLocationSelected), so there is nothing to toggle here.
+        // Mutating Visibility from this handler ran inside the layout pass and crashed the app.
     }
 
-    private void UpdateNetworkLocationVisibility()
-    {
-        if (_viewModel != null && NetworkLocationPanel != null)
-        {
-            NetworkLocationPanel.Visibility = _viewModel.SelectedCloudProvider == PasswordManager.Models.DTOs.CloudBackupProvider.NetworkLocation
-                ? Visibility.Visible : Visibility.Collapsed;
-            if (GoogleDriveSettingsPanel != null)
-                GoogleDriveSettingsPanel.Visibility = _viewModel.SelectedCloudProvider == PasswordManager.Models.DTOs.CloudBackupProvider.GoogleDrive
-                    ? Visibility.Visible : Visibility.Collapsed;
-        }
-    }
+    // Kept (called once on navigation) but now a no-op — binding handles panel visibility.
+    private void UpdateNetworkLocationVisibility() { }
 
     private async void CreateBackupButton_Click(object sender, RoutedEventArgs e)
     {
@@ -1824,6 +1817,27 @@ public sealed partial class SettingsPage : Page
             mainWindow?.NavigateToPage("Passkeys");
         }
         catch { }
+    }
+
+    private async void PasskeysToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
+            await _viewModel.SaveSettingsAsync();
+    }
+
+    // WhatsApp-style "Linked Devices": shows a QR the mobile (MAUI) app scans to sign in.
+    private async void LinkedDevicesButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_serviceProvider == null) return;
+        try
+        {
+            var email = _authService?.CurrentUser?.Email;
+            await Helpers.QrSignInDialog.ShowAsync(_serviceProvider, email);
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Linked Devices QR failed", ex);
+        }
     }
 
     private async void SeedVaultsButton_Click(object sender, RoutedEventArgs e)

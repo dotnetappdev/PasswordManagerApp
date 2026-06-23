@@ -13,6 +13,7 @@ public class SettingsViewModel : BaseViewModel
     private bool _enableSync = false;
     private bool _enableTwoFactor = false;
     private bool _requirePasscode = false;
+    private bool _enablePasskeys = false;
     private string _exportPath = string.Empty;
     private string _selectedTheme = "System";
     private int _sessionTimeoutMinutes = 30;
@@ -91,6 +92,12 @@ public class SettingsViewModel : BaseViewModel
     {
         get => _requirePasscode;
         set => SetProperty(ref _requirePasscode, value);
+    }
+
+    public bool EnablePasskeys
+    {
+        get => _enablePasskeys;
+        set => SetProperty(ref _enablePasskeys, value);
     }
 
     public string ExportPath
@@ -180,8 +187,21 @@ public class SettingsViewModel : BaseViewModel
     public CloudBackupProvider SelectedCloudProvider
     {
         get => _selectedCloudProvider;
-        set => SetProperty(ref _selectedCloudProvider, value);
+        set
+        {
+            if (SetProperty(ref _selectedCloudProvider, value))
+            {
+                // Drive the provider sub-panels' visibility purely by binding (these notify) instead
+                // of toggling Visibility in code during the combo's SelectionChanged — doing the latter
+                // mutates the visual tree mid-measure and throws "Visual already has a parent".
+                OnPropertyChanged(nameof(IsGoogleDriveSelected));
+                OnPropertyChanged(nameof(IsNetworkLocationSelected));
+            }
+        }
     }
+
+    public bool IsGoogleDriveSelected => _selectedCloudProvider == CloudBackupProvider.GoogleDrive;
+    public bool IsNetworkLocationSelected => _selectedCloudProvider == CloudBackupProvider.NetworkLocation;
 
     public string NetworkPath
     {
@@ -275,6 +295,7 @@ public class SettingsViewModel : BaseViewModel
             if (localSettings.TryGetValue("SelectedCloudProvider", out var provStr) && int.TryParse(provStr, out var provInt))
                 SelectedCloudProvider = (CloudBackupProvider)provInt;
             BackupScheduleInterval = localSettings.TryGetValue("BackupScheduleInterval", out var bsi) ? bsi : "Daily";
+            EnablePasskeys = localSettings.TryGetValue("EnablePasskeys", out var ep) && bool.TryParse(ep, out var epVal) && epVal;
 
             // Check if Google Drive is already connected
             try
@@ -328,6 +349,7 @@ public class SettingsViewModel : BaseViewModel
             localSettings["EnableCloudBackup"] = EnableCloudBackup.ToString();
             localSettings["SelectedCloudProvider"] = ((int)SelectedCloudProvider).ToString();
             localSettings["BackupScheduleInterval"] = BackupScheduleInterval;
+            localSettings["EnablePasskeys"] = EnablePasskeys.ToString();
             SaveLocalSettings(localSettings);
 
             // Apply theme immediately

@@ -67,7 +67,7 @@ namespace PasswordManager.Services.Services
                 Name = vault.Name,
                 Description = vault.Description,
                 Icon = vault.Icon,
-                Color = vault.Color,
+                Color = string.IsNullOrWhiteSpace(vault.Color) ? "#2563EB" : vault.Color,
                 IsDefault = true,
                 VaultId = vault.Id,
                 UserId = vault.UserId,
@@ -89,7 +89,7 @@ namespace PasswordManager.Services.Services
             existing.Name = vault.Name;
             existing.Description = vault.Description;
             existing.Icon = string.IsNullOrWhiteSpace(vault.Icon) ? existing.Icon ?? "🔐" : vault.Icon;
-            existing.Color = vault.Color;
+            existing.Color = string.IsNullOrWhiteSpace(vault.Color) ? existing.Color ?? "#2563EB" : vault.Color;
             existing.IsDefault = vault.IsDefault;
             existing.UpdatedAt = DateTime.UtcNow;
 
@@ -109,7 +109,13 @@ namespace PasswordManager.Services.Services
                 if (newDefault != null) { newDefault.IsDefault = true; }
             }
 
-            // Collections with VaultId = id will get VaultId = NULL via SetNull cascade
+            // Collections.VaultId is a real FK to Vault.Id with SetNull configured, but that only
+            // applies to rows EF has loaded/tracked. Since we never load this vault's collections here,
+            // they'd still point at the doomed vault row and the DELETE would hit the FK constraint.
+            // Null them out directly rather than loading every collection just to detach it.
+            await _db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE Collections SET VaultId = NULL WHERE VaultId = {id}");
+
             // Items inside those collections keep their CollectionId (items are not deleted)
             _db.Vaults.Remove(vault);
             await _db.SaveChangesAsync();
@@ -189,6 +195,37 @@ namespace PasswordManager.Services.Services
             return newVault;
         }
 
+        // Resolves the collection new items should be assigned to so they "belong" to this vault.
+        // Falls back to creating the vault's default collection if it's somehow missing.
+        public async Task<int?> GetDefaultCollectionIdAsync(int vaultId)
+        {
+            var vault = await _db.Vaults.FindAsync(vaultId);
+            if (vault == null) return null;
+
+            var collection = await _db.Collections
+                .FirstOrDefaultAsync(c => c.VaultId == vaultId && c.IsDefault)
+                ?? await _db.Collections.FirstOrDefaultAsync(c => c.VaultId == vaultId);
+
+            if (collection != null) return collection.Id;
+
+            collection = new Collection
+            {
+                Name = vault.Name,
+                Description = vault.Description,
+                Icon = vault.Icon,
+                Color = string.IsNullOrWhiteSpace(vault.Color) ? "#2563EB" : vault.Color,
+                IsDefault = true,
+                VaultId = vault.Id,
+                UserId = vault.UserId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                LastModified = DateTime.UtcNow
+            };
+            _db.Collections.Add(collection);
+            await _db.SaveChangesAsync();
+            return collection.Id;
+        }
+
         // Get items belonging to a specific vault (via its collections)
         public async Task<List<PasswordItem>> GetItemsAsync(int vaultId)
         {
@@ -257,7 +294,7 @@ namespace PasswordManager.Services.Services
                     Name = vault.Name,
                     Description = vault.Description,
                     Icon = vault.Icon,
-                    Color = vault.Color,
+                    Color = string.IsNullOrWhiteSpace(vault.Color) ? "#2563EB" : vault.Color,
                     IsDefault = true,
                     VaultId = vault.Id,
                     UserId = userId,

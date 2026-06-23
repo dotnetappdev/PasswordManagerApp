@@ -4,11 +4,11 @@
              IsHitTestVisible="False">
     <!-- IsHitTestVisible=False so toasts don't eat mouse events below them -->
     <Grid>
-        <!-- Toasts anchor to bottom-right -->
+        <!-- Toasts anchor to top-right -->
         <StackPanel x:Name="ToastPanel"
-                    VerticalAlignment="Bottom"
+                    VerticalAlignment="Top"
                     HorizontalAlignment="Right"
-                    Margin="0,0,20,20"
+                    Margin="0,20,20,0"
                     IsHitTestVisible="True"/>
     </Grid>
 </UserControl>

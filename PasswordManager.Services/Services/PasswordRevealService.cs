@@ -73,6 +73,38 @@ public class PasswordRevealService : IPasswordRevealService
         }
     }
 
+    public async Task<string?> RevealTotpSecretAsync(LoginItem loginItem, string sessionId)
+    {
+        var sid = ResolveSessionId(sessionId);
+        try
+        {
+            if (!CanRevealPasswords(sid))
+            {
+                _logger.LogWarning("Attempted to reveal TOTP secret when vault is locked");
+                return null;
+            }
+
+            if (string.IsNullOrEmpty(loginItem.EncryptedTotpSecret))
+                return string.Empty;
+
+            // Same pipe-delimited (cipher|nonce|tag) format used for the password.
+            var parts = loginItem.EncryptedTotpSecret.Split('|');
+            if (parts.Length != 3)
+            {
+                _logger.LogError("Invalid encrypted TOTP secret format for login item {Id}", loginItem.Id);
+                return null;
+            }
+
+            return _vaultSessionService.DecryptPassword(
+                string.Join("|", parts[0], parts[1], parts[2]), sid);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error revealing TOTP secret for login item {Id}", loginItem.Id);
+            return null;
+        }
+    }
+
     public async Task<string?> RevealPasswordAsync(WiFiItem wifiItem, string sessionId)
     {
         var sid = ResolveSessionId(sessionId);

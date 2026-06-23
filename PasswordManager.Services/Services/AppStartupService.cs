@@ -5,6 +5,7 @@ using PasswordManager.DAL;
 using Microsoft.EntityFrameworkCore;
 using PasswordManager.DAL.Seed;
 using PasswordManager.Models;
+using System.Linq;
 
 namespace PasswordManager.Services.Services;
 
@@ -87,6 +88,11 @@ public class AppStartupService : IAppStartupService
                     if (canConnect)
                     {
                         await EnsureVaultSchemaAsync(dbContext);
+
+                        // Every user needs a default "Personal" vault, and any password items
+                        // created before vaults existed (or imported with no collection) need
+                        // to be attached to it so they actually show up when that vault is opened.
+                        await BackfillDefaultVaultsAsync(dbContext);
                     }
 
                     if (!canConnect || !canConnectApp)
@@ -482,6 +488,91 @@ public class AppStartupService : IAppStartupService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "EnsureVaultSchemaAsync encountered an error — app will continue but some features may be unavailable");
+        }
+    }
+
+    /// <summary>
+    /// Ensures every user who has at least one password item (or an account) has a default
+    /// "Personal" vault, and reassigns any orphaned items (CollectionId == null — created before
+    /// vaults existed, or imported without one) into that vault's default collection.
+    /// Idempotent and safe to run on every startup.
+    /// </summary>
+    private async Task BackfillDefaultVaultsAsync(PasswordManagerDbContext dbContext)
+    {
+        try
+        {
+            var itemUserIds = await dbContext.PasswordItems
+                .Where(p => !string.IsNullOrEmpty(p.UserId))
+                .Select(p => p.UserId!)
+                .Distinct()
+                .ToListAsync();
+
+            var accountUserIds = await dbContext.Users.Select(u => u.Id).ToListAsync();
+
+            var userIds = itemUserIds.Union(accountUserIds).Where(id => !string.IsNullOrEmpty(id)).Distinct();
+
+            foreach (var userId in userIds)
+            {
+                var vault = await dbContext.Vaults.FirstOrDefaultAsync(v => v.UserId == userId && v.IsDefault)
+                         ?? await dbContext.Vaults.FirstOrDefaultAsync(v => v.UserId == userId);
+
+                if (vault == null)
+                {
+                    vault = new Vault
+                    {
+                        Name = "Personal",
+                        Description = "Your personal password vault",
+                        IsDefault = true,
+                        Icon = "🔐",
+                        Color = "#2563EB",
+                        UserId = userId,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    dbContext.Vaults.Add(vault);
+                    await dbContext.SaveChangesAsync();
+                    _logger.LogInformation("Backfill: created default Personal vault for user {UserId}", userId);
+                }
+
+                var defaultCollection = await dbContext.Collections.FirstOrDefaultAsync(c => c.VaultId == vault.Id && c.IsDefault)
+                                      ?? await dbContext.Collections.FirstOrDefaultAsync(c => c.VaultId == vault.Id);
+
+                if (defaultCollection == null)
+                {
+                    defaultCollection = new Collection
+                    {
+                        Name = vault.Name,
+                        Description = vault.Description,
+                        Icon = vault.Icon,
+                        Color = vault.Color,
+                        IsDefault = true,
+                        VaultId = vault.Id,
+                        UserId = userId,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        LastModified = DateTime.UtcNow
+                    };
+                    dbContext.Collections.Add(defaultCollection);
+                    await dbContext.SaveChangesAsync();
+                }
+
+                var orphanItems = await dbContext.PasswordItems
+                    .Where(p => p.UserId == userId && p.CollectionId == null)
+                    .ToListAsync();
+
+                if (orphanItems.Count > 0)
+                {
+                    foreach (var item in orphanItems)
+                        item.CollectionId = defaultCollection.Id;
+
+                    await dbContext.SaveChangesAsync();
+                    _logger.LogInformation("Backfill: attached {Count} orphaned item(s) to the Personal vault for user {UserId}", orphanItems.Count, userId);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "BackfillDefaultVaultsAsync encountered an error — app will continue but some items may be missing from vaults");
         }
     }
 

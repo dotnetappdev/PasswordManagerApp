@@ -24,6 +24,7 @@ public class PasswordItemService : IPasswordItemService
             .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Include(p => p.Category)
+            .Include(p => p.Collection)
             .Where(p => !p.IsDeleted)
             .OrderByDescending(p => p.LastModified)
             .ToListAsync();

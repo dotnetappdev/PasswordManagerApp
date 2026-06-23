@@ -16,6 +16,13 @@ public interface IPasswordRevealService
     Task<string?> RevealPasswordAsync(LoginItem loginItem, string sessionId);
 
     /// <summary>
+    /// Reveals the authenticator (TOTP) secret for a login item. This is where TOTP secrets
+    /// imported from other managers (1Password, etc.) are stored — encrypted at rest in
+    /// <see cref="LoginItem.EncryptedTotpSecret"/> — so the verification-code UI can read them.
+    /// </summary>
+    Task<string?> RevealTotpSecretAsync(LoginItem loginItem, string sessionId);
+
+    /// <summary>
     /// Reveals the password for a WiFi item
     /// </summary>
     /// <param name="wifiItem">The WiFi item containing encrypted password</param>

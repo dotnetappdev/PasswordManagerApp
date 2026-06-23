@@ -17,5 +17,8 @@ namespace PasswordManager.Services.Interfaces
         Task<List<PasswordItem>> GetItemsAsync(int vaultId);
         Task MoveItemToVaultAsync(int passwordItemId, int targetVaultId);
         Task SeedDefaultVaultsAsync(string userId);
+
+        // Resolves the collection that new items should be attached to so they "belong" to this vault.
+        Task<int?> GetDefaultCollectionIdAsync(int vaultId);
     }
 }

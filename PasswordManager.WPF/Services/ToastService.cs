@@ -61,8 +61,8 @@ public sealed class ToastService
         var card = BuildCard(toast);
         _host!.Children.Add(card);
 
-        // Slide in
-        var slideIn = new DoubleAnimation(60, 0, TimeSpan.FromMilliseconds(280))
+        // Slide in (from above, since toasts now anchor top-right)
+        var slideIn = new DoubleAnimation(-60, 0, TimeSpan.FromMilliseconds(280))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
@@ -109,7 +109,7 @@ public sealed class ToastService
 
         var accentBrush  = SafeBrush(accent, "#60A5FA");
         var bgBrush      = SafeBrush(bgHex, "#0A1929");
-        var transform    = new TranslateTransform(0, 60);
+        var transform    = new TranslateTransform(0, -60);
 
         // Icon
         var iconBlock = new TextBlock

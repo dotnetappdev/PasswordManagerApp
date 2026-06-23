@@ -8,6 +8,7 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject AppNotificationService Notify
+@inject NavigationManager Navigation
 
 <PageTitle>Vaults - VaultGuard</PageTitle>
 
@@ -40,9 +41,17 @@ else if (vaults?.Any() == true)
                 <MudCard Elevation="2" Style="@($"border-top: 4px solid {(vault.Color ?? "#2563EB")}; height:100%;")">
                     <MudCardContent>
                         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                <MudIcon Icon="@Icons.Material.Filled.Shield"
-                                         Style="@($"color:{(vault.Color ?? "#2563EB")}; font-size:1.8rem;")" />
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2"
+                                      Style="cursor:pointer;" @onclick="@(() => OpenVault(vault))">
+                                @if (!string.IsNullOrWhiteSpace(vault.Icon))
+                                {
+                                    <span style="font-size:1.8rem; line-height:1;">@vault.Icon</span>
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Shield"
+                                             Style="@($"color:{(vault.Color ?? "#2563EB")}; font-size:1.8rem;")" />
+                                }
                                 <div>
                                     <MudText Typo="Typo.h6" Style="font-weight:600;">@vault.Name</MudText>
                                     @if (vault.IsDefault)
@@ -138,6 +147,21 @@ else
                               Variant="Variant.Outlined" Placeholder="#2563EB"
                               Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Palette" />
+
+                <div>
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">Icon</MudText>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                        @foreach (var emoji in IconChoices)
+                        {
+                            var isSelected = _editingVault.Icon == emoji;
+                            <div @onclick="@(() => _editingVault.Icon = emoji)"
+                                 style="@($"width:38px; height:38px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; cursor:pointer; border-radius:8px; background:var(--mud-palette-surface); border:2px solid {(isSelected ? (_editingVault.Color ?? "#2563EB") : "transparent")};")">
+                                @emoji
+                            </div>
+                        }
+                    </div>
+                </div>
+
                 <MudCheckBox @bind-Value="_editingVault.IsDefault" Label="Set as default vault"
                              Color="Color.Primary" />
             </MudStack>
@@ -163,7 +187,14 @@ else
     bool isSaving = false;
     Vault? _editingVault;
 
+    // Preset emoji for the vault icon picker (matches the WPF/MAUI pickers).
+    static readonly string[] IconChoices =
+        { "🔐", "🔑", "🗄️", "💼", "🏦", "💳", "📁", "🛡️", "⭐", "🏠", "💻", "📱" };
+
     protected override async Task OnInitializedAsync() => await LoadVaults();
+
+    // Clicking a vault opens the items list filtered to that vault.
+    void OpenVault(Vault vault) => Navigation.NavigateTo($"/passwords?vaultId={vault.Id}");
 
     async Task LoadVaults()
     {
@@ -187,7 +218,8 @@ else
         _editingVault = new Vault
         {
             UserId = AuthService.CurrentUser?.Id ?? string.Empty,
-            Color = "#2563EB"
+            Color = "#2563EB",
+            Icon = "🔐"
         };
         _dialogVisible = true;
     }

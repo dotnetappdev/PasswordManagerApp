@@ -21,6 +21,7 @@ public sealed partial class MainWindow : Window
     private readonly IServiceProvider _serviceProvider;
     private bool _isAuthenticated = false;
     private string? _currentUserId = null;
+    private int? _selectedVaultId = null; // currently highlighted vault row in the sidebar
     private Style? _navItemStyle; // cache for dynamic nav items
     
     // Protected default categories that cannot be deleted
@@ -50,6 +51,8 @@ public sealed partial class MainWindow : Window
         InitializeNavigation();
         // Load dynamic categories for navigation
         _ = RefreshCategoriesAsync();
+        // Load the user's vaults into the sidebar
+        _ = RefreshVaultsNavAsync();
         // Load sidebar tags as chips
         _ = RefreshTagsAsync();
     }
@@ -298,6 +301,13 @@ public sealed partial class MainWindow : Window
     {
         if (!_isAuthenticated && pageTag != "Login") return;
 
+        // Selecting a real nav item deselects any highlighted vault in the sidebar.
+        if (_selectedVaultId != null)
+        {
+            _selectedVaultId = null;
+            HighlightSelectedVault();
+        }
+
         try
         {
             // Create a fresh page INSTANCE — Frame.Navigate(Type, ...) renders the Type
@@ -310,7 +320,6 @@ public sealed partial class MainWindow : Window
                     => new Views.PasswordItemsPage(),
                 "Profile"           => new Views.ProfilePage(),
                 "Categories"        => new Views.CategoriesPage(),
-                "Vaults"            => new Views.VaultsPage(),
                 "Passkeys"          => new Views.PasskeysPage(),
                 "ManageItems"       => new Views.ManageItemsPage(),
                 "SecurityDashboard" => new Views.DashboardPage(),
@@ -578,6 +587,7 @@ public sealed partial class MainWindow : Window
     {
         NavigateLoginFrame();
         _ = RefreshCategoriesAsync();
+        _ = RefreshVaultsNavAsync();
         _ = RefreshTagsAsync();
     }
 
@@ -604,6 +614,7 @@ public sealed partial class MainWindow : Window
         SetAuthenticationState(true);
         MainNavigationView.SelectedItem = AllItemsNavItem;
         NavigateToPage("AllItems");
+        _ = RefreshVaultsNavAsync();
     }
 
     // Public method to handle logout
@@ -665,6 +676,7 @@ public sealed partial class MainWindow : Window
             CloseButtonText = "Cancel",
             DefaultButton = ModernWpf.Controls.ContentDialogButton.Close
         };
+        ApplyDialogStyle(dialog);
 
         var result = await dialog.ShowAsync();
         if (result == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -716,28 +728,316 @@ public sealed partial class MainWindow : Window
 
     // Delete tag navigation handler removed (UI buttons removed). Kept method removed per request.
 
-    private async void AddCategoryNavButton_Click(object sender, RoutedEventArgs e)
+    private async void AddVaultNavButton_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            // Open the CategoryDialog for creating a new category
-            var categoryDialog = new Dialogs.CategoryDialog(_serviceProvider);
+            var vaultService = _serviceProvider.GetService<IVaultService>();
+            var authService = _serviceProvider.GetService<IAuthService>();
+            if (vaultService == null) return;
 
-            var result = await categoryDialog.ShowAsync();
-            if (result == ModernWpf.Controls.ContentDialogResult.Primary && categoryDialog.Result is not null)
+            var (name, description, color, icon) = await Helpers.VaultDialogHelper.ShowAsync("Create New Vault");
+            if (name == null) return;
+
+            var userId = authService?.CurrentUser?.Id ?? string.Empty;
+            await vaultService.CreateAsync(new Vault
             {
-                await ShowInfoMessage("Category Created", $"Category '{categoryDialog.Result.Name}' has been created successfully.");
-            }
+                Name = name,
+                Description = description,
+                UserId = userId,
+                Icon = string.IsNullOrWhiteSpace(icon) ? "🔐" : icon,
+                Color = string.IsNullOrWhiteSpace(color) ? "#2563EB" : color
+            });
+
+            await RefreshVaultsNavAsync();
+            ToastService.Instance.Success($"Vault \"{name}\" created");
         }
         catch (Exception ex)
         {
-            await ShowErrorMessage("Error", $"Failed to create category: {ex.Message}");
+            await ShowErrorMessage("Error", $"Failed to create vault: {ex.Message}");
+        }
+    }
+
+    // Populate the VaultsNavPanel with the user's actual vaults; clicking one filters
+    // the shared All Items / Passwords screen down to that vault.
+    public async Task RefreshVaultsNavAsync()
+    {
+        try
+        {
+            // Resolve directly from the root provider — IAuthService is scoped, and a
+            // fresh CreateScope() here would get its own AuthService instance with
+            // CurrentUser == null, making GetAllAsync() return an empty list even
+            // though vaults exist in the database for the actual logged-in user.
+            var vaultService = _serviceProvider.GetService<IVaultService>();
+            if (vaultService == null) return;
+
+            var vaults = await vaultService.GetAllAsync();
+
+            Dispatcher.Invoke(() =>
+            {
+                var vaultsPanel = VaultsNavPanel;
+                if (vaultsPanel == null) return;
+
+                var previousIds = vaultsPanel.Children.OfType<FrameworkElement>()
+                    .Select(c => c.Tag as int?)
+                    .Where(id => id.HasValue)
+                    .Select(id => id!.Value)
+                    .ToHashSet();
+
+                vaultsPanel.Children.Clear();
+
+                var secondaryBrush = (System.Windows.Media.Brush?)Application.Current.Resources["ModernTextSecondaryBrush"]
+                                     ?? System.Windows.Media.Brushes.White;
+                var tertiaryBrush = (System.Windows.Media.Brush?)Application.Current.Resources["ModernTextTertiaryBrush"]
+                                    ?? System.Windows.Media.Brushes.Gray;
+
+                foreach (var vault in vaults)
+                {
+                    var rowGrid = new Grid { Margin = new Thickness(8, 1, 8, 1), Height = 36, Tag = vault.Id };
+                    rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                    rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                    // Vault entry — a real NavigationViewItem so its icon/text land on exactly the
+                    // same indentation as the "Vaults" header and the NavigationViewItems above it
+                    // (hand-tuned Grid margins kept drifting out of alignment). Clicking it navigates
+                    // to the filtered All Items / Passwords screen.
+                    var (vaultGlyph, vaultGlyphFont) = Helpers.VaultIconHelper.Resolve(vault.Icon);
+                    var iconGlyph = new FontIcon { FontSize = 16, Glyph = vaultGlyph, FontFamily = vaultGlyphFont };
+                    // IsHitTestVisible=False: this NavigationViewItem is never added to a real
+                    // NavigationView's MenuItems, just dropped in for its icon/content template so
+                    // it lines up with the items above — letting it handle its own mouse/selection
+                    // logic here could misbehave. A transparent Button on top (below) does the click.
+                    var navItem = new NavigationViewItem
+                    {
+                        Icon = iconGlyph,
+                        Focusable = false,
+                        IsHitTestVisible = false,
+                        Background = System.Windows.Media.Brushes.Transparent,
+                        // Unhosted (not a real MainNavigationView child), so it doesn't pick up
+                        // NavigationView's own compact item spacing — zero these out or the
+                        // library's default template padding makes rows look far apart.
+                        Margin = new Thickness(0),
+                        Padding = new Thickness(0),
+                        MinHeight = 0,
+                        VerticalAlignment = VerticalAlignment.Stretch,
+                        VerticalContentAlignment = VerticalAlignment.Center,
+                        Content = new TextBlock
+                        {
+                            Text = vault.Name,
+                            FontSize = 14,
+                            FontWeight = FontWeights.SemiBold,
+                            Foreground = secondaryBrush,
+                            TextTrimming = TextTrimming.CharacterEllipsis,
+                            VerticalAlignment = VerticalAlignment.Center
+                        }
+                    };
+                    Grid.SetColumn(navItem, 0);
+                    rowGrid.Children.Add(navItem);
+
+                    // Transparent click overlay on top of navItem — handles navigation without
+                    // relying on NavigationViewItem's own (unhosted) selection/click plumbing.
+                    var navClickOverlay = new Button
+                    {
+                        Background = System.Windows.Media.Brushes.Transparent,
+                        BorderThickness = new Thickness(0),
+                        Padding = new Thickness(0)
+                    };
+                    navClickOverlay.Click += (s, e) =>
+                    {
+                        // Behave like a proper menu: mark this vault selected (highlight it, clear the
+                        // NavigationView selection) and open its filtered item list.
+                        _selectedVaultId = vault.Id;
+                        MainNavigationView.SelectedItem = null;
+                        HighlightSelectedVault();
+
+                        var filterData = new Models.NavigationFilterData(_serviceProvider)
+                        {
+                            FilterName = vault.Name,
+                            FilterVaultId = vault.Id,
+                            FilterVaultName = vault.Name
+                        };
+                        ContentFrame.Navigate(new Views.PasswordItemsPage(), filterData);
+                    };
+                    Grid.SetColumn(navClickOverlay, 0);
+                    rowGrid.Children.Add(navClickOverlay);
+
+                    // Rename (pencil)
+                    var renameBtn = new Button
+                    {
+                        Style = Application.Current.Resources["ModernIconButtonStyle"] as Style,
+                        Padding = new Thickness(4),
+                        MinWidth = 0, MinHeight = 0,
+                        Width = 24, Height = 24,
+                        ToolTip = "Rename vault"
+                    };
+                    renameBtn.Content = new TextBlock
+                    {
+                        Text = "", FontFamily = new System.Windows.Media.FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
+                        FontSize = 12, Foreground = tertiaryBrush
+                    };
+                    renameBtn.Click += async (s, e) => await RenameVaultAsync(vault);
+                    Grid.SetColumn(renameBtn, 1);
+                    rowGrid.Children.Add(renameBtn);
+
+                    // Delete (trash) — disabled while the vault still has items
+                    var deleteBtn = new Button
+                    {
+                        Style = Application.Current.Resources["ModernIconButtonStyle"] as Style,
+                        Padding = new Thickness(4),
+                        MinWidth = 0, MinHeight = 0,
+                        Width = 24, Height = 24,
+                        IsEnabled = vault.ItemCount == 0,
+                        ToolTip = vault.ItemCount == 0
+                            ? "Delete vault"
+                            : $"Move or delete the {vault.ItemCount} item(s) in this vault first"
+                    };
+                    deleteBtn.Content = new TextBlock
+                    {
+                        Text = "", FontFamily = new System.Windows.Media.FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
+                        FontSize = 12, Foreground = tertiaryBrush
+                    };
+                    deleteBtn.Click += async (s, e) =>
+                    {
+                        try
+                        {
+                            var confirmDialog = new ModernWpf.Controls.ContentDialog
+                            {
+                                Title = "Delete Vault",
+                                Content = MakeDialogMessage($"Delete \"{vault.Name}\"? This cannot be undone."),
+                                PrimaryButtonText = "Delete",
+                                CloseButtonText = "Cancel",
+                                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close
+                            };
+                            ApplyDialogStyle(confirmDialog);
+                            if (await confirmDialog.ShowAsync() != ModernWpf.Controls.ContentDialogResult.Primary)
+                                return;
+
+                            var delVaultService = _serviceProvider.GetService<IVaultService>();
+                            if (delVaultService == null) return;
+                            await delVaultService.DeleteAsync(vault.Id);
+                            ToastService.Instance.Success($"Vault \"{vault.Name}\" deleted");
+                            await RefreshVaultsNavAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            await ShowErrorMessage("Error", $"Failed to delete vault: {ex.Message}");
+                        }
+                    };
+                    Grid.SetColumn(deleteBtn, 2);
+                    rowGrid.Children.Add(deleteBtn);
+
+                    vaultsPanel.Children.Add(rowGrid);
+
+                    if (!previousIds.Contains(vault.Id))
+                        AnimateNewVaultRow(rowGrid);
+                }
+
+                // Re-apply the selection highlight after a rebuild so it survives refreshes.
+                HighlightSelectedVault();
+            });
+        }
+        catch { }
+    }
+
+    // Highlights the selected vault row in the sidebar (like a selected NavigationViewItem) and
+    // clears the others, so the vault list reads and behaves like a proper menu.
+    private void HighlightSelectedVault()
+    {
+        if (VaultsNavPanel == null) return;
+
+        var selectedBrush = new System.Windows.Media.SolidColorBrush(
+            System.Windows.Media.Color.FromArgb(40, 0x25, 0x63, 0xEB)); // subtle accent fill
+        selectedBrush.Freeze();
+
+        foreach (var child in VaultsNavPanel.Children.OfType<Grid>())
+        {
+            bool isSelected = child.Tag is int id && _selectedVaultId.HasValue && id == _selectedVaultId.Value;
+            child.Background = isSelected ? selectedBrush : System.Windows.Media.Brushes.Transparent;
+        }
+    }
+
+    // Flashy "just added" entrance: scale/fade in plus a quick accent-color highlight flash
+    // on the row background so a newly created vault is unmistakable in the sidebar.
+    private static void AnimateNewVaultRow(Grid rowGrid)
+    {
+        rowGrid.RenderTransformOrigin = new Point(0.5, 0.5);
+        var scaleTransform = new System.Windows.Media.ScaleTransform(0.85, 0.85);
+        rowGrid.RenderTransform = scaleTransform;
+        rowGrid.Opacity = 0;
+
+        var highlight = new Border
+        {
+            CornerRadius = new CornerRadius(6),
+            Background = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromArgb(90, 37, 99, 235)), // #2563EB flash
+            IsHitTestVisible = false
+        };
+        Grid.SetColumnSpan(highlight, 3);
+        rowGrid.Children.Insert(0, highlight);
+
+        var fadeIn = new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(280))
+        {
+            EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+        };
+        var scaleX = new System.Windows.Media.Animation.DoubleAnimation(0.85, 1.0, TimeSpan.FromMilliseconds(280))
+        {
+            EasingFunction = new System.Windows.Media.Animation.BackEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut, Amplitude = 0.6 }
+        };
+        var scaleY = new System.Windows.Media.Animation.DoubleAnimation(0.85, 1.0, TimeSpan.FromMilliseconds(280))
+        {
+            EasingFunction = new System.Windows.Media.Animation.BackEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut, Amplitude = 0.6 }
+        };
+        var highlightFade = new System.Windows.Media.Animation.DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(900))
+        {
+            BeginTime = TimeSpan.FromMilliseconds(150),
+            EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseIn }
+        };
+
+        rowGrid.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+        scaleTransform.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleXProperty, scaleX);
+        scaleTransform.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleYProperty, scaleY);
+        highlight.BeginAnimation(UIElement.OpacityProperty, highlightFade);
+    }
+
+    private async Task RenameVaultAsync(Vault vault)
+    {
+        try
+        {
+            var (name, description, color, icon) = await Helpers.VaultDialogHelper.ShowAsync(
+                "Edit Vault", vault.Name, vault.Description, vault.Color, vault.Icon);
+            if (name == null) return;
+
+            using var scope = _serviceProvider.CreateScope();
+            var vaultService = scope.ServiceProvider.GetService<IVaultService>();
+            if (vaultService == null) return;
+
+            vault.Name = name;
+            vault.Description = description;
+            vault.Color = string.IsNullOrWhiteSpace(color) ? vault.Color : color;
+            vault.Icon = string.IsNullOrWhiteSpace(icon) ? vault.Icon : icon;
+
+            await vaultService.UpdateAsync(vault);
+            await RefreshVaultsNavAsync();
+            ToastService.Instance.Success("Vault updated");
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage("Error", $"Failed to rename vault: {ex.Message}");
         }
     }
 
     private void NewItemButton_Click(object sender, RoutedEventArgs e)
     {
-        // Navigate to AllItems page; the page's Add button handles the dialog
+        // If an items page is already showing (e.g. a vault was selected), add the new item there so
+        // it inherits the current vault — the page's Add dialog pre-selects that vault in its combo.
+        // Otherwise fall back to the All Items page.
+        if (ContentFrame?.Content is Views.PasswordItemsPage existingPage)
+        {
+            existingPage.TriggerAddNew();
+            return;
+        }
+
         NavigateToPage("AllItems");
         Dispatcher.BeginInvoke(new Action(() =>
         {
@@ -880,7 +1180,7 @@ public sealed partial class MainWindow : Window
                                 FilterName = tag.Name,
                                 TagName = tag.Name
                             };
-                            ContentFrame.Navigate(typeof(Views.PasswordItemsPage), filterData);
+                            ContentFrame.Navigate(new Views.PasswordItemsPage(), filterData);
                         }
                         catch { }
                     };
@@ -1040,6 +1340,7 @@ public sealed partial class MainWindow : Window
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
                 DefaultButton = ModernWpf.Controls.ContentDialogButton.Close};
+            ApplyDialogStyle(confirmDialog);
 
             var result = await confirmDialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -1100,6 +1401,7 @@ public sealed partial class MainWindow : Window
                 PrimaryButtonText = "Delete",
                 CloseButtonText = "Cancel",
                 DefaultButton = ModernWpf.Controls.ContentDialogButton.Close};
+            ApplyDialogStyle(confirmDialog);
 
             var result = await confirmDialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary)
@@ -1156,14 +1458,26 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    // Applies the polished, elevated dialog chrome (rounded corners + drop shadow + dim backdrop)
+    // so confirmation/info dialogs don't look flat. Safe no-op if the style isn't found.
+    private static void ApplyDialogStyle(ModernWpf.Controls.ContentDialog dialog)
+    {
+        try
+        {
+            dialog.Style = dialog.TryFindResource("Modern1PasswordDialogStyle") as Style;
+        }
+        catch { }
+    }
+
     // Helper methods for dialogs
     private async Task ShowErrorMessage(string title, string message)
     {
         var errorDialog = new ModernWpf.Controls.ContentDialog
         {
             Title = title,
-            Content = message,
+            Content = MakeDialogMessage(message),
             CloseButtonText = "OK"};
+        ApplyDialogStyle(errorDialog);
         await errorDialog.ShowAsync();
     }
 
@@ -1172,10 +1486,20 @@ public sealed partial class MainWindow : Window
         var infoDialog = new ModernWpf.Controls.ContentDialog
         {
             Title = title,
-            Content = message,
+            Content = MakeDialogMessage(message),
             CloseButtonText = "OK"};
+        ApplyDialogStyle(infoDialog);
         await infoDialog.ShowAsync();
     }
+
+    // Plain strings don't wrap inside ContentDialog's default content presenter, so a long error
+    // message stretches the dialog far past its styled MaxWidth. Wrap explicitly instead.
+    private static TextBlock MakeDialogMessage(string message) => new()
+    {
+        Text = message,
+        TextWrapping = TextWrapping.Wrap,
+        MaxWidth = 480
+    };
 
     private Style? TryGetNavItemStyle()
     {

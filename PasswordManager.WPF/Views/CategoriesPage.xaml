@@ -93,96 +93,142 @@
                          ItemsSource="{Binding Categories}"
                          Visibility="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibilityConverter}}"
                          SelectionMode="Single"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Disabled"
                          SelectionChanged="CategoriesGridView_SelectionChanged">
-                    
+
+                    <ListView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ListView.ItemsPanel>
+
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <Border Style="{StaticResource ModernCardStyle}" 
-                                   Width="240"
-                                   Height="160">
-                                
+                            <Border x:Name="CategoryCard"
+                                   Width="260"
+                                   CornerRadius="14"
+                                   Background="{DynamicResource ModernCardBrush}"
+                                   BorderBrush="{DynamicResource ModernBorderBrush}"
+                                   BorderThickness="1">
+                                <Border.Effect>
+                                    <DropShadowEffect ShadowDepth="0" BlurRadius="12" Color="#000000" Opacity="0.25"/>
+                                </Border.Effect>
+
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    
-                                    <!-- Category Header -->
-                                    <StackPanel Grid.Row="0" Margin="0,0,0,16">
-                                        <Border Background="{StaticResource ModernPrimaryGradientBrush}"
-                                              
-                                               Width="40"
-                                               Height="40"
-                                               HorizontalAlignment="Left">
-                                            <TextBlock Text="{Binding Icon}" FontFamily="Segoe MDL2 Assets"
-                                                     FontSize="18"
-                                                     Foreground="White"
-                                                     HorizontalAlignment="Center"
+
+                                    <!-- Category header: icon + name -->
+                                    <StackPanel Grid.Row="0" Margin="18,18,18,12">
+                                        <Grid Margin="0,0,0,14">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Border Grid.Column="0" Width="44" Height="44" CornerRadius="12"
+                                                   Background="{Binding Color, Converter={StaticResource HexColorToBrushConverter}}"
+                                                   Opacity="0.16"/>
+                                            <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="20"
+                                                     Width="44" HorizontalAlignment="Center"
                                                      VerticalAlignment="Center"/>
-                                        </Border>
-                                        
-                                        <TextBlock Text="{Binding Name}" 
-                                                  Style="{StaticResource ModernBodyStyle}"
-                                                  FontWeight="SemiBold"
-                                                  TextTrimming="CharacterEllipsis"/>
+
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}"
+                                                      FontSize="15" FontWeight="SemiBold"
+                                                      Foreground="{DynamicResource ModernTextPrimaryBrush}"
+                                                      VerticalAlignment="Center"
+                                                      Margin="14,0,0,0"
+                                                      TextTrimming="CharacterEllipsis"/>
+                                        </Grid>
+
+                                        <TextBlock Text="{Binding Description}"
+                                                  FontSize="12"
+                                                  Foreground="{DynamicResource ModernTextTertiaryBrush}"
+                                                  TextWrapping="Wrap"
+                                                  TextTrimming="CharacterEllipsis"
+                                                  MaxHeight="34"
+                                                  Visibility="{Binding Description, Converter={StaticResource StringToVisibilityConverter}}"/>
                                     </StackPanel>
-                                    
-                                    <!-- Description -->
-                                    <TextBlock Grid.Row="1"
-                                              Text="{Binding Description}" 
-                                              Style="{StaticResource ModernCaptionStyle}"
-                                              TextWrapping="Wrap"
-                                              VerticalAlignment="Top"
-                                              Visibility="{Binding Description, Converter={StaticResource StringToVisibilityConverter}}"/>
-                                    
-                                    <!-- Actions -->
-                                    <StackPanel Grid.Row="2" 
-                                               Orientation="Horizontal" 
-                                               HorizontalAlignment="Right"
-                                               Margin="8">
-                                        <Button x:Name="ToggleFavoriteButton"
-                                               Background="Transparent"
-                                               BorderBrush="Transparent"
-                                               BorderThickness="1.5"
-                                               Foreground="{StaticResource ModernWarningBrush}"
-                                              
-                                               Padding="12,8"
-                                               Click="ToggleFavoriteButton_Click"
-                                               ToolTipService.ToolTip="Toggle Favorite">
-                                            <TextBlock Text="&#xE734;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
-                                        </Button>
-                                        <Button Style="{StaticResource ModernSecondaryButtonStyle}"
-                                               Padding="12,8"
-                                               Click="EditCategoryButton_Click"
-                                               ToolTipService.ToolTip="Edit">
-                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
-                                        </Button>
-                                        <Button Background="Transparent"
-                                               BorderBrush="{StaticResource ModernErrorBrush}"
-                                               BorderThickness="1.5"
-                                               Foreground="{StaticResource ModernErrorBrush}"
-                                              
-                                               Padding="12,8"
-                                               Click="DeleteCategoryButton_Click"
-                                               ToolTipService.ToolTip="Delete">
-                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
-                                        </Button>
-                                    </StackPanel>
+
+                                    <!-- Footer action bar -->
+                                    <Border Grid.Row="2" BorderBrush="{DynamicResource ModernBorderBrush}" BorderThickness="0,1,0,0"
+                                           CornerRadius="0,0,14,14" Background="{DynamicResource ModernFormBackgroundBrush}">
+                                        <Grid Margin="14,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Favourite toggle -->
+                                            <Button Grid.Column="0" x:Name="ToggleFavoriteButton"
+                                                   Background="Transparent" BorderThickness="0"
+                                                   HorizontalAlignment="Left" Width="32" Height="32" Padding="0"
+                                                   Click="ToggleFavoriteButton_Click"
+                                                   ToolTipService.ToolTip="Toggle favourite">
+                                                <TextBlock Text="&#xE734;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="{DynamicResource ModernTextTertiaryBrush}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{StaticResource ModernWarningBrush}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Button>
+
+                                            <!-- Edit + Delete -->
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                <Button Width="32" Height="32" Padding="0"
+                                                       Background="Transparent" BorderThickness="0"
+                                                       Click="EditCategoryButton_Click"
+                                                       ToolTipService.ToolTip="Edit category">
+                                                    <TextBlock Text="&#xE70F;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14"
+                                                             Foreground="{DynamicResource ModernTextTertiaryBrush}"/>
+                                                </Button>
+                                                <Button Width="32" Height="32" Padding="0"
+                                                       Background="Transparent" BorderThickness="0"
+                                                       Click="DeleteCategoryButton_Click"
+                                                       ToolTipService.ToolTip="Delete category">
+                                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14"
+                                                             Foreground="#EF4444"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
                                 </Grid>
-                                
+
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="BorderBrush" Value="{DynamicResource ModernTextTertiaryBrush}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
                             </Border>
                         </DataTemplate>
                     </ListView.ItemTemplate>
-                    
+
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
                             <Setter Property="Margin" Value="0,0,16,16"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Background" Value="Transparent"/>
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                             <Setter Property="VerticalContentAlignment" Value="Stretch"/>
                         </Style>
                     </ListView.ItemContainerStyle>
-                    
+
                 </ListView>
                 
                 <!-- Empty State -->

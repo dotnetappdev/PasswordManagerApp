@@ -4,7 +4,9 @@
 @using PasswordManager.Services.Interfaces
 @using PasswordManager.Services.Utilities
 @using PasswordManager.Models
+@using VaultModel = PasswordManager.Models.Vault
 @inject IPasswordItemService PasswordItemService
+@inject IVaultService VaultService
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -36,6 +38,24 @@
                 Favorites
             </MudNavLink>
         </MudNavMenu>
+
+        @if (vaults.Any())
+        {
+            <div style="padding: 12px 12px 4px; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-top: 8px;">
+                Vaults
+            </div>
+            <MudNavMenu>
+                @foreach (var v in vaults)
+                {
+                    var active = selectedVaultId == v.Id;
+                    var capturedVault = v;
+                    <MudNavLink Style="@SidebarItemStyle(active)"
+                                OnClick="@(() => SetVault(capturedVault))">
+                        <span style="margin-right:8px;">@(string.IsNullOrWhiteSpace(v.Icon) ? "🔐" : v.Icon)</span>@v.Name
+                    </MudNavLink>
+                }
+            </MudNavMenu>
+        }
 
         <div style="padding: 12px 12px 4px; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--mud-palette-text-secondary); text-transform: uppercase; margin-top: 8px;">
             Categories
@@ -432,12 +452,14 @@
     private List<PasswordItem> allItems = new();
     private List<PasswordItem> filteredItems = new();
     private List<string> collections = new();
+    private List<VaultModel> vaults = new();
 
     // ── Filter state ──────────────────────────────────────────────────────────
 
     private ItemType? selectedType;
     private bool showFavorites;
     private string selectedCollection = "";
+    private int? selectedVaultId;
     private string searchQuery = "";
 
     // ── UI state ──────────────────────────────────────────────────────────────
@@ -511,6 +533,8 @@
                 .OrderBy(i => i.Title)
                 .ToList();
 
+            vaults = (await VaultService.GetAllAsync()) ?? new();
+
             collections = allItems
                 .Where(i => i.CategoryId.HasValue && i.Category != null)
                 .Select(i => i.Category!.Name)
@@ -538,6 +562,7 @@
         selectedType = type;
         showFavorites = favorites;
         selectedCollection = "";
+        selectedVaultId = null;
         searchQuery = "";
         SelectItem(null);
         ApplyFilter();
@@ -548,6 +573,19 @@
         selectedCollection = col;
         selectedType = null;
         showFavorites = false;
+        selectedVaultId = null;
+        searchQuery = "";
+        SelectItem(null);
+        ApplyFilter();
+    }
+
+    // Scope the list to a single vault; the section header shows the vault name (never the id).
+    private void SetVault(VaultModel vault)
+    {
+        selectedVaultId = vault.Id;
+        selectedType = null;
+        showFavorites = false;
+        selectedCollection = "";
         searchQuery = "";
         SelectItem(null);
         ApplyFilter();
@@ -561,6 +599,7 @@
         {
             if (showFavorites && !i.IsFavorite) return false;
             if (selectedType.HasValue && i.Type != selectedType) return false;
+            if (selectedVaultId.HasValue && i.Collection?.VaultId != selectedVaultId) return false;
             if (!string.IsNullOrEmpty(selectedCollection) &&
                 (i.Category?.Name != selectedCollection)) return false;
 
@@ -743,12 +782,14 @@
     // ── Display helpers ──────────────────────────────────────────────────────
 
     private bool IsActive(ItemType? type, bool favorites)
-        => showFavorites == favorites && selectedType == type && string.IsNullOrEmpty(selectedCollection);
+        => showFavorites == favorites && selectedType == type
+           && string.IsNullOrEmpty(selectedCollection) && selectedVaultId == null;
 
     private static string SidebarItemStyle(bool active)
         => active ? "font-weight: 700; background: color-mix(in srgb, var(--mud-palette-primary) 12%, transparent);" : "";
 
     private string SectionTitle => showFavorites ? "Favorites"
+        : selectedVaultId.HasValue ? (vaults.FirstOrDefault(v => v.Id == selectedVaultId)?.Name ?? "Vault")
         : selectedType.HasValue ? GetTypeName(selectedType.Value)
         : !string.IsNullOrEmpty(selectedCollection) ? selectedCollection
         : "All Items";

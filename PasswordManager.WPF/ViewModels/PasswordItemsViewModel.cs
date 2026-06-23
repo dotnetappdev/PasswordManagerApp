@@ -14,6 +14,7 @@ public class PasswordItemsViewModel : BaseViewModel
     private string? _filterTagName = null;
     private string? _filterCategoryName = null;
     private int? _selectedCategoryId = null;
+    private int? _filterVaultId = null;
     private ObservableCollection<PasswordItem> _allItems = new();
 
     public PasswordItemsViewModel(IServiceProvider serviceProvider)
@@ -68,6 +69,18 @@ public class PasswordItemsViewModel : BaseViewModel
         set
         {
             if (SetProperty(ref _filterCategoryName, value))
+            {
+                _ = ApplyFiltersAsync();
+            }
+        }
+    }
+
+    public int? FilterVaultId
+    {
+        get => _filterVaultId;
+        set
+        {
+            if (SetProperty(ref _filterVaultId, value))
             {
                 _ = ApplyFiltersAsync();
             }
@@ -196,6 +209,12 @@ public class PasswordItemsViewModel : BaseViewModel
                     items = items.Where(item => 
                         item.Category != null && 
                         string.Equals(item.Category.Name, FilterCategoryName, StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Apply vault filter (items belong to a vault via their Collection)
+                if (FilterVaultId.HasValue)
+                {
+                    items = items.Where(item => item.Collection != null && item.Collection.VaultId == FilterVaultId.Value);
                 }
 
                 // Apply tag filter

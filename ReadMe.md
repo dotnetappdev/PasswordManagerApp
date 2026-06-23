@@ -2,6 +2,7 @@
 
 [![API Build](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-api.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-api.yml)
 [![Web App Build](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml)
+[![WPF Installer](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-wpf.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-wpf.yml)
 [![Unit Tests](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/run-tests.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/run-tests.yml)
 
 A full-featured, self-hosted password manager built with **Blazor Server (.NET 10)**, **MudBlazor**, **Entity Framework Core**, and **ASP.NET Core Identity**.
@@ -160,6 +161,52 @@ dotnet run
 On first launch the setup wizard runs to configure the database. After setup, log in — demo data is seeded automatically for your account on first login.
 
 > If no users exist yet a demo account is auto-created: `demo@local` / `DemoPassword123!`
+
+---
+
+## 📥 Downloads & Installers
+
+Pre-built Windows installers (EXE + MSI) are published automatically to **[GitHub Releases](https://github.com/dotnetappdev/PasswordManagerApp/releases)** for every `v*` tag.
+
+| Platform | Installer | Source |
+|----------|-----------|--------|
+| Windows (WPF desktop) | `VaultGuardSetup-<version>.exe` / `.msi` | [installer/setup.iss](installer/setup.iss), [installer/setup.wxs](installer/setup.wxs) |
+| Windows (WinUI) | Inno Setup script | [installers/winui-installer.iss](installers/winui-installer.iss) |
+| API (self-host) | Inno Setup script | [installers/api-installer.iss](installers/api-installer.iss) |
+
+> Until the first tagged release is published, build locally (below) or grab the artifacts attached to the latest **WPF Installer** workflow run.
+
+### Building installers locally
+
+```powershell
+# 1. Publish a self-contained build
+dotnet publish PasswordManager.WPF/PasswordManager.WPF.csproj -c Release -r win-x64 --self-contained true -o publish/wpf
+
+# 2a. EXE installer (needs Inno Setup 6 — https://jrsoftware.org/isdl.php)
+iscc /DMyAppVersion=1.0.0 installer/setup.iss
+
+# 2b. MSI installer (needs WiX v4 — dotnet tool install --global wix --version 4.*)
+wix build installer/setup.wxs -ext WixToolset.UI.wixext -d Version=1.0.0 -d PublishDir=publish/wpf -o installer/output/VaultGuardSetup-1.0.0.msi
+```
+
+The convenience scripts [installers/build-installers.bat](installers/build-installers.bat) / [.sh](installers/build-installers.sh) wrap these steps.
+
+### Automated build & release (CI)
+
+The [`build-wpf.yml`](.github/workflows/build-wpf.yml) workflow runs on every push/PR to `devmain`/`main` (uploads installers as artifacts) and, **when you push a `v*` tag, builds the EXE + MSI and attaches them to a GitHub Release automatically**:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0   # → triggers the installer build + GitHub Release
+```
+
+### App icons
+
+The WPF app icon lives at [PasswordManager.WPF/Assets/AppIcon.ico](PasswordManager.WPF/Assets/AppIcon.ico) and should bundle the standard Windows sizes — **16×16, 32×32, 48×48, 64×64, 128×128, 256×256** — in a single multi-resolution `.ico`. To regenerate from a 1024×1024 source PNG with ImageMagick:
+
+```bash
+magick source-1024.png -define icon:auto-resize=256,128,64,48,32,16 PasswordManager.WPF/Assets/AppIcon.ico
+```
 
 ---
 

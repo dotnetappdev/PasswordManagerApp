@@ -1,10 +1,12 @@
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using PasswordManager.WPF;
 using PasswordManager.WPF.ViewModels;
 using PasswordManager.WPF.Services;
 using PasswordManager.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MwControls = ModernWpf.Controls;
@@ -48,8 +50,7 @@ public sealed partial class VaultsPage : Page
     {
         try
         {
-            if (dialog.Style == null && Application.Current.Resources.Contains("Modern1PasswordDialogStyle"))
-                dialog.Style = Application.Current.Resources["Modern1PasswordDialogStyle"] as Style;
+            dialog.Style = dialog.TryFindResource("Modern1PasswordDialogStyle") as Style;
         }
         catch { }
     }
@@ -69,6 +70,7 @@ public sealed partial class VaultsPage : Page
             {
                 ToastService.Instance.Success($"Vault \"{name}\" created");
                 UpdateTotalItemsText();
+                _ = (Application.Current.MainWindow as MainWindow)?.RefreshVaultsNavAsync();
             }
         }
         catch (Exception ex) { await ShowMsgAsync("Error", ex.Message); }
@@ -89,6 +91,7 @@ public sealed partial class VaultsPage : Page
             vault.Icon = string.IsNullOrWhiteSpace(icon) ? vault.Icon : icon;
 
             await _viewModel.UpdateVaultAsync(vault);
+            _ = (Application.Current.MainWindow as MainWindow)?.RefreshVaultsNavAsync();
         }
         catch (Exception ex) { await ShowMsgAsync("Error", ex.Message); }
     }
@@ -111,6 +114,7 @@ public sealed partial class VaultsPage : Page
             {
                 await _viewModel.DeleteVaultAsync(vault);
                 ToastService.Instance.Success($"Vault \"{vault.Name}\" deleted");
+                _ = (Application.Current.MainWindow as MainWindow)?.RefreshVaultsNavAsync();
             }
         }
         catch (Exception ex) { await ShowMsgAsync("Error", ex.Message); }
@@ -133,74 +137,21 @@ public sealed partial class VaultsPage : Page
 
     // ── Shared vault create/edit dialog ─────────────────────────────────────────
 
-    private async Task<(string? Name, string? Desc, string? Color, string? Icon)> ShowVaultDialogAsync(
+    private Task<(string? Name, string? Desc, string? Color, string? Icon)> ShowVaultDialogAsync(
         string title,
         string? existingName = null, string? existingDesc = null,
         string? existingColor = null, string? existingIcon = null)
-    {
-        var dialog = new MwControls.ContentDialog
-        {
-            Title = title,
-            PrimaryButtonText = existingName == null ? "Create" : "Save",
-            CloseButtonText = "Cancel",
-            DefaultButton = MwControls.ContentDialogButton.Primary
-        };
-        ConfigureDialogForCentering(dialog);
-
-        var nameBox = new TextBox { Text = existingName ?? "", Margin = new Thickness(0,0,0,12) };
-        var descBox = new TextBox
-        {
-            Text = existingDesc ?? "", AcceptsReturn = true,
-            TextWrapping = TextWrapping.Wrap, Height = 64,
-            Margin = new Thickness(0,0,0,12)
-        };
-        var colorBox = new TextBox { Text = existingColor ?? "#2563EB", Margin = new Thickness(0,0,0,12) };
-        var iconBox  = new TextBox { Text = existingIcon  ?? "🔐" };
-
-        var colorSwatches = new[] { "#2563EB","#7C3AED","#059669","#DC2626","#D97706","#0891B2","#EC4899","#374151" };
-        var swatchPanel = new WrapPanel { Margin = new Thickness(0,0,0,12) };
-        foreach (var hex in colorSwatches)
-        {
-            var swatch = new Border
-            {
-                Width = 28, Height = 28, CornerRadius = new CornerRadius(6), Margin = new Thickness(0,0,8,0),
-                Background = TryParseBrush(hex), Cursor = System.Windows.Input.Cursors.Hand
-            };
-            var captured = hex;
-            swatch.MouseLeftButtonDown += (_, _) => colorBox.Text = captured;
-            swatchPanel.Children.Add(swatch);
-        }
-
-        var panel = new StackPanel { Margin = new Thickness(4) };
-        panel.Children.Add(MakeLabel("Vault Name *")); panel.Children.Add(nameBox);
-        panel.Children.Add(MakeLabel("Description")); panel.Children.Add(descBox);
-        panel.Children.Add(MakeLabel("Accent Color")); panel.Children.Add(swatchPanel);
-        panel.Children.Add(colorBox);
-        panel.Children.Add(MakeLabel("Icon Emoji")); panel.Children.Add(iconBox);
-        dialog.Content = panel;
-
-        var result = await dialog.ShowAsync();
-        if (result != MwControls.ContentDialogResult.Primary) return (null, null, null, null);
-        var n = nameBox.Text?.Trim();
-        if (string.IsNullOrEmpty(n)) return (null, null, null, null);
-        return (n, descBox.Text?.Trim(), colorBox.Text?.Trim(), iconBox.Text?.Trim());
-    }
-
-    private static TextBlock MakeLabel(string text) =>
-        new() { Text = text, FontSize = 12, FontWeight = FontWeights.SemiBold,
-                Foreground = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromRgb(0x9D, 0x9D, 0x9D)),
-                Margin = new Thickness(0,0,0,4) };
-
-    private static System.Windows.Media.SolidColorBrush TryParseBrush(string hex)
-    {
-        try { return new((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex)); }
-        catch { return new(System.Windows.Media.Color.FromRgb(0x37, 0x37, 0x37)); }
-    }
+        => Helpers.VaultDialogHelper.ShowAsync(title, existingName, existingDesc, existingColor, existingIcon,
+            configureCentering: ConfigureDialogForCentering);
 
     private async Task ShowMsgAsync(string title, string msg)
     {
-        var d = new MwControls.ContentDialog { Title = title, Content = msg, CloseButtonText = "OK" };
+        var d = new MwControls.ContentDialog
+        {
+            Title = title,
+            Content = new TextBlock { Text = msg, TextWrapping = TextWrapping.Wrap, MaxWidth = 480 },
+            CloseButtonText = "OK"
+        };
         ConfigureDialogForCentering(d);
         await d.ShowAsync();
     }
