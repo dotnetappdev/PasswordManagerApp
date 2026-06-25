@@ -194,12 +194,22 @@ builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add CORS
+// Add CORS — restrict to an explicit allow-list instead of AllowAnyOrigin. Origins come from the
+// "Cors:AllowedOrigins" config array (set per environment); the default covers local dev only.
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+if (corsOrigins is null || corsOrigins.Length == 0)
+{
+    corsOrigins = new[]
+    {
+        "https://localhost", "http://localhost",
+        "https://localhost:7001", "https://localhost:5001", "http://localhost:5000"
+    };
+}
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("Default", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins(corsOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -222,7 +232,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowAll");
+app.UseCors("Default");
+
+// Run the framework authentication step (Identity bearer/cookie schemes registered by
+// AddIdentity().AddApiEndpoints()) before our API-key gate, so a request carrying a valid bearer
+// token arrives already authenticated and the API-key middleware lets it through.
+app.UseAuthentication();
 
 // Add API key authentication middleware
 app.UseMiddleware<ApiKeyAuthenticationMiddleware>();

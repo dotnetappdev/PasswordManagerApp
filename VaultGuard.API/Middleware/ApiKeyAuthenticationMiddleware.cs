@@ -32,6 +32,15 @@ namespace VaultGuard.API.Middleware
                 return;
             }
 
+            // If the request is already authenticated by the framework (UseAuthentication, e.g. a
+            // valid bearer token), let it through without also requiring an API key. We do NOT
+            // overwrite the existing principal in that case.
+            if (context.User?.Identity?.IsAuthenticated == true)
+            {
+                await _next(context);
+                return;
+            }
+
             // Check for API key in header
             if (!context.Request.Headers.TryGetValue("X-API-Key", out var apiKeyValues))
             {
