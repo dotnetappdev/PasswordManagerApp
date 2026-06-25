@@ -444,6 +444,32 @@ Benefits:
 - [WinUI App Documentation](../VaultGuard.WinUi/README.md)
 - [API Documentation](../VaultGuard.API/README.md)
 
+## Database credentials & secrets
+
+Connection strings in `appsettings.json` / `appsettings.Development.json` ship with **placeholders**
+only (`__DB_USER__`, `__SET_VIA_ENV_OR_USER_SECRETS__`). Never commit real credentials. Provide them
+at runtime, where the value overrides the matching `appsettings` key:
+
+**Environment variables** (double underscore maps to nested config keys):
+
+```bash
+# Linux/macOS
+export ConnectionStrings__DefaultConnection="Server=...;Database=...;User Id=...;Password=..."
+
+# Windows (PowerShell)
+$env:ConnectionStrings__DefaultConnection = "Server=...;Database=...;User Id=...;Password=..."
+```
+
+**.NET user-secrets** (recommended for local dev — kept outside the repo):
+
+```bash
+cd VaultGuard.API
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=...;Password=..."
+```
+
+The default provider is SQLite (`SqliteConnection`), which needs no credentials, so a fresh checkout
+runs without any of the above. Set the variables only when pointing at SQL Server / PostgreSQL / MySQL.
+
 ## Support
 
 For issues or questions:
