@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.Models.DTOs.Audit;
+namespace VaultGuard.Models.DTOs.Audit;
 
 public class AuditLogDto
 {

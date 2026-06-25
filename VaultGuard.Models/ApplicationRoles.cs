@@ -1,4 +1,4 @@
-namespace PasswordManager.Models;
+namespace VaultGuard.Models;
 
 /// <summary>
 /// Standard application roles with consistent naming

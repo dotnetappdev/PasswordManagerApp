@@ -1,11 +1,11 @@
 using Moq;
 using NUnit.Framework;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Imports.Services;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Imports.Services;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.BackEnd.Tests.Services;
+namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
 public class ImportServiceTests

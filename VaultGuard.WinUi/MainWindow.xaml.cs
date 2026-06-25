@@ -5,12 +5,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.WinUi.Models;
-using PasswordManager.WinUi.Services;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.WinUi.Models;
+using VaultGuard.WinUi.Services;
 
-namespace PasswordManager.WinUi;
+namespace VaultGuard.WinUi;
 
 /// <summary>
 /// An empty window that can be used on its own or navigated to within a Frame.
@@ -36,7 +36,7 @@ public sealed partial class MainWindow : Window
     {
         _serviceProvider = serviceProvider;
         this.InitializeComponent();
-        this.Title = "Password Manager - WinUI";
+        this.Title = "Vault Guard - WinUI";
 
         // Set window size
         this.AppWindow.Resize(new Windows.Graphics.SizeInt32(1200, 800));

@@ -1,10 +1,10 @@
-using PasswordManager.Models;
-using PasswordManager.Models.Configuration;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Crypto.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Models.Configuration;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
 using Xunit;
 
-namespace PasswordManager.Tests.UI;
+namespace VaultGuard.Tests.UI;
 
 /// <summary>
 /// Mock implementation of IDatabaseConfigurationService for testing

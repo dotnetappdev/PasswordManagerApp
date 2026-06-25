@@ -1,15 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Models.Configuration;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Crypto.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Models.Configuration;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
 using Xunit;
 using System.IO;
 
-namespace PasswordManager.Tests.UI;
+namespace VaultGuard.Tests.UI;
 
 /// <summary>
 /// Integration tests that simulate the complete UI workflow described in the issue:
@@ -29,7 +29,7 @@ public class WindowsUIWorkflowTests : IDisposable
     public WindowsUIWorkflowTests()
     {
         // Create a temporary directory for test data
-        _testDataDirectory = Path.Combine(Path.GetTempPath(), "PasswordManagerUITests", Guid.NewGuid().ToString());
+        _testDataDirectory = Path.Combine(Path.GetTempPath(), "VaultGuardUITests", Guid.NewGuid().ToString());
         Directory.CreateDirectory(_testDataDirectory);
         
         _testDatabasePath = Path.Combine(_testDataDirectory, "test_passwordmanager.db");
@@ -55,7 +55,7 @@ public class WindowsUIWorkflowTests : IDisposable
         services.AddSingleton<IConfiguration>(configuration);
 
         // Add Entity Framework with SQLite
-        services.AddDbContext<PasswordManagerDbContext>(options =>
+        services.AddDbContext<VaultGuardDbContext>(options =>
             options.UseSqlite($"Data Source={_testDatabasePath}"));
 
         // Add essential services (we'll mock the complex ones if needed)

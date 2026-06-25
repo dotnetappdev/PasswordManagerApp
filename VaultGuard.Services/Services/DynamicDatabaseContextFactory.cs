@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Models.Configuration;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models.Configuration;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Factory for creating database contexts with dynamic provider selection

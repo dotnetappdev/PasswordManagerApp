@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace PasswordManager.DAL.Migrations
+namespace VaultGuard.DAL.Migrations
 {
     /// <inheritdoc />
     public partial class AddCustomFields : Migration

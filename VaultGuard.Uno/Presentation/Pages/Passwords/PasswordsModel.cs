@@ -1,10 +1,10 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using PasswordManager.Uno.Services.LocalDatabase;
-using PasswordManager.Uno.Services.Sync;
+using VaultGuard.Uno.Services.LocalDatabase;
+using VaultGuard.Uno.Services.Sync;
 using System.Collections.ObjectModel;
 
-namespace PasswordManager.Mobile.Presentation.Pages.Passwords;
+namespace VaultGuard.Mobile.Presentation.Pages.Passwords;
 
 public partial class PasswordsModel : ObservableObject
 {

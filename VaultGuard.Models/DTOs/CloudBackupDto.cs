@@ -1,4 +1,4 @@
-namespace PasswordManager.Models.DTOs;
+namespace VaultGuard.Models.DTOs;
 
 /// <summary>
 /// Result of cloud backup operations
@@ -74,6 +74,11 @@ public class BackupItemDto
     public bool IsSelected { get; set; } = true;
     // Raw JSON payload kept for actual import
     public string RawJson { get; set; } = string.Empty;
+
+    // The vault this item belonged to at backup time (resolved by name, not id, since restoring
+    // into a different install/database means the original numeric vault id may not exist or may
+    // now belong to a different vault). Null means the item had no vault at backup time.
+    public string? VaultName { get; set; }
 }
 
 /// <summary>
@@ -85,5 +90,6 @@ public enum CloudBackupProvider
     OneDrive = 1,
     iCloud = 2,
     NetworkLocation = 3,
-    GoogleDrive = 4
+    GoogleDrive = 4,
+    Ftp = 5
 }

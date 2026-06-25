@@ -29,7 +29,7 @@ This document summarizes the fixes applied to resolve 1Password import issues an
 - Vault-specific icons and colors
 
 **Vault Mapping**:
-- 1Password vaults are mapped to categories in the Password Manager
+- 1Password vaults are mapped to categories in the Vault Guard
 - Vault names like "Personal", "Work", "Family" get appropriate icons and colors
 - Collections are auto-determined from URL/title analysis for organization
 - Example: "Personal" vault → Personal category (blue, person icon)
@@ -68,7 +68,7 @@ bool isNewFormat = headers.Contains("URL") &&
 ### Assembly Loading Security
 ```csharp
 // Only load DLLs matching our pattern
-if (!fileName.StartsWith("PasswordManagerImports.", StringComparison.OrdinalIgnoreCase))
+if (!fileName.StartsWith("VaultGuardImports.", StringComparison.OrdinalIgnoreCase))
 {
     continue;
 }
@@ -88,7 +88,7 @@ builder.Services.AddSingleton<PluginDiscoveryService>();
 builder.Services.AddScoped<IImportService, ImportService>();
 
 // Preload assemblies at startup
-var importDlls = Directory.GetFiles(baseDirectory, "PasswordManagerImports.*.dll");
+var importDlls = Directory.GetFiles(baseDirectory, "VaultGuardImports.*.dll");
 foreach (var dllPath in importDlls)
 {
     // Load, validate, and register providers
@@ -98,36 +98,36 @@ foreach (var dllPath in importDlls)
 ## Files Modified
 
 ### Core Import Logic
-- `PasswordManagerImports.1Password/Models/OnePasswordCsvRecord.cs`
+- `VaultGuardImports.1Password/Models/OnePasswordCsvRecord.cs`
   - Added `OnePasswordCsvRecordNew` model for new CSV format
   
-- `PasswordManagerImports.1Password/Providers/OnePasswordImportProvider.cs`
+- `VaultGuardImports.1Password/Providers/OnePasswordImportProvider.cs`
   - Implemented dual format support with robust detection
   - Separated processing logic for each format
   
-- `PasswordManagerImports.1Password/plugin.json`
+- `VaultGuardImports.1Password/plugin.json`
   - Updated to version 1.1.0
   - Added configuration for both formats
   - Enhanced help documentation
 
 ### API Integration
-- `PasswordManager.API/Program.cs`
+- `VaultGuard.API/Program.cs`
   - Registered import services in DI container
   - Added startup assembly preloading
   - Implemented security validation
 
 ### UI Enhancements
-- `PasswordManager.Uno/Presentation/Pages/Settings/SettingsPage.xaml`
+- `VaultGuard.Uno/Presentation/Pages/Settings/SettingsPage.xaml`
   - Added Import/Export section
   - Added styled buttons with proper command bindings
 
 ## Build Verification
 
 All affected projects build successfully:
-- ✅ PasswordManagerImports.1Password
-- ✅ PasswordManager.API
-- ✅ PasswordManager.WinUi
-- ✅ PasswordManager.Web
+- ✅ VaultGuardImports.1Password
+- ✅ VaultGuard.API
+- ✅ VaultGuard.WinUi
+- ✅ VaultGuard.Web
 
 Build logs show 0 errors, only nullable reference warnings (expected).
 

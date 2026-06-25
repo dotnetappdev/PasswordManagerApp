@@ -1,6 +1,6 @@
-# Database Provider Plugin Architecture for PasswordManagerApp
+# Database Provider Plugin Architecture for VaultGuardApp
 
-This document describes how to support multiple database providers (MySQL, SQL Server, PostgreSQL, and SQLite) in the PasswordManagerApp using a plugin-like architecture with Entity Framework Core.
+This document describes how to support multiple database providers (MySQL, SQL Server, PostgreSQL, and SQLite) in the VaultGuardApp using a plugin-like architecture with Entity Framework Core.
 
 ## Overview
 - The API and App projects will have a configuration option in `appsettings.json` to select the database provider.
@@ -9,14 +9,14 @@ This document describes how to support multiple database providers (MySQL, SQL S
 - The main API loads the correct provider/factory at runtime based on configuration.
 
 ## Structure
-- `PasswordManager.DAL.SqlServer/` — Contains context factory and migrations for SQL Server
-- `PasswordManager.DAL.MySql/` — Contains context factory and migrations for MySQL
-- `PasswordManager.DAL.Postgres/` — Contains context factory and migrations for PostgreSQL
-- `PasswordManager.DAL.SupaBase/` — Contains context factory and migrations for Supabase (Postgres)
-- `PasswordManager.DAL/` — Contains context factory and migrations for SQLite (default)
+- `VaultGuard.DAL.SqlServer/` — Contains context factory and migrations for SQL Server
+- `VaultGuard.DAL.MySql/` — Contains context factory and migrations for MySQL
+- `VaultGuard.DAL.Postgres/` — Contains context factory and migrations for PostgreSQL
+- `VaultGuard.DAL.SupaBase/` — Contains context factory and migrations for Supabase (Postgres)
+- `VaultGuard.DAL/` — Contains context factory and migrations for SQLite (default)
 
 ## Configuration
-In both `PasswordManager.API/appsettings.json` and `PasswordManager.App/appsettings.json`:
+In both `VaultGuard.API/appsettings.json` and `VaultGuard.App/appsettings.json`:
 
 ```json
 {
@@ -40,7 +40,7 @@ In both `PasswordManager.API/appsettings.json` and `PasswordManager.App/appsetti
 - Migrations are managed per-provider in their respective projects.
 
 ## Adding a New Provider
-1. Create a new DAL project for the provider (e.g., `PasswordManager.DAL.Oracle`).
+1. Create a new DAL project for the provider (e.g., `VaultGuard.DAL.Oracle`).
 2. Implement a context factory and add migrations.
 3. Update the API to recognize the new provider in configuration.
 
@@ -55,34 +55,34 @@ Each provider has its own migrations. Use the following commands from the root o
 
 ### SQLite (default)
 ```
-dotnet ef migrations add <MigrationName> --project PasswordManager.DAL --startup-project PasswordManager.API
+dotnet ef migrations add <MigrationName> --project VaultGuard.DAL --startup-project VaultGuard.API
 ```
 
 ### SQL Server
 ```
-dotnet ef migrations add <MigrationName> --project PasswordManager.DAL.SqlServer --startup-project PasswordManager.API --context PasswordManager.DAL.SqlServer.SqlServerContextFactory
+dotnet ef migrations add <MigrationName> --project VaultGuard.DAL.SqlServer --startup-project VaultGuard.API --context VaultGuard.DAL.SqlServer.SqlServerContextFactory
 ```
 
 ### MySQL
 ```
-dotnet ef migrations add <MigrationName> --project PasswordManager.DAL.MySql --startup-project PasswordManager.API --context PasswordManager.DAL.MySql.MySqlContextFactory
+dotnet ef migrations add <MigrationName> --project VaultGuard.DAL.MySql --startup-project VaultGuard.API --context VaultGuard.DAL.MySql.MySqlContextFactory
 ```
 
 ### PostgreSQL
 ```
-dotnet ef migrations add <MigrationName> --project PasswordManager.DAL.Postgres --startup-project PasswordManager.API --context PasswordManager.DAL.Postgres.PostgresContextFactory
+dotnet ef migrations add <MigrationName> --project VaultGuard.DAL.Postgres --startup-project VaultGuard.API --context VaultGuard.DAL.Postgres.PostgresContextFactory
 ```
 
 
 ### Supabase (Postgres)
 ```
-dotnet ef migrations add <MigrationName> --project PasswordManager.DAL.SupaBase --startup-project PasswordManager.API --context SupabaseDbContext
+dotnet ef migrations add <MigrationName> --project VaultGuard.DAL.SupaBase --startup-project VaultGuard.API --context SupabaseDbContext
 ```
 
 ### Applying Migrations
 - Migrations are applied automatically at runtime by the API startup code.
 - To apply manually, use:
 ```
-dotnet ef database update --project <ProviderProject> --startup-project PasswordManager.API
+dotnet ef database update --project <ProviderProject> --startup-project VaultGuard.API
 ```
-Replace `<ProviderProject>` with the appropriate DAL project (e.g., `PasswordManager.DAL.SqlServer`, `PasswordManager.DAL.SupaBase`).
+Replace `<ProviderProject>` with the appropriate DAL project (e.g., `VaultGuard.DAL.SqlServer`, `VaultGuard.DAL.SupaBase`).

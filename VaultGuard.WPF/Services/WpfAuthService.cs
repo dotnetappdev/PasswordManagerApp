@@ -2,16 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.DAL;
-using PasswordManager.Models;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Data.Common;
 using Microsoft.Extensions.Logging;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 
-namespace PasswordManager.WPF.Services;
+namespace VaultGuard.WPF.Services;
 
 /// <summary>
 /// WinUI-specific authentication service that uses master password authentication
@@ -21,7 +21,7 @@ public class WpfAuthService : IAuthService
 {
     private readonly IPasswordCryptoService _passwordCryptoService;
     private readonly IVaultSessionService _vaultSessionService;
-    private readonly PasswordManagerDbContextApp _dbContext;
+    private readonly VaultGuardDbContextApp _dbContext;
     private readonly ISecureStorageService _secureStorageService;
     private readonly ILogger<WpfAuthService> _logger;
     private bool _isAuthenticated = false;
@@ -30,7 +30,7 @@ public class WpfAuthService : IAuthService
     public WpfAuthService(
         IPasswordCryptoService passwordCryptoService,
         IVaultSessionService vaultSessionService,
-        PasswordManagerDbContextApp dbContext,
+        VaultGuardDbContextApp dbContext,
         ISecureStorageService secureStorageService,
         ILogger<WpfAuthService> logger)
     {

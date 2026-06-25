@@ -1,6 +1,6 @@
 # React Native Mobile App - Setup Guide
 
-This guide will help you set up and run the Password Manager React Native mobile application.
+This guide will help you set up and run the Vault Guard React Native mobile application.
 
 ## Prerequisites
 
@@ -59,7 +59,7 @@ source ~/.bash_profile  # or source ~/.zshrc
 ### 1. Navigate to the React Native Project
 
 ```bash
-cd /path/to/PasswordManagerApp/react
+cd /path/to/VaultGuardApp/react
 ```
 
 ### 2. Install Dependencies
@@ -147,7 +147,7 @@ When you first launch the app:
    - Navigate to Settings (Profile tab → Settings)
    - Select **Local SQLite Database** for offline use
    - Or select **API with Cloud Sync** and configure:
-     - API URL: Your Password Manager API endpoint
+     - API URL: Your Vault Guard API endpoint
      - API Key: Your API authentication key
      - Test the connection
 
@@ -161,7 +161,7 @@ When you first launch the app:
 ### Running on Device
 
 #### iOS Device
-1. Open `ios/PasswordManagerMobile.xcworkspace` in Xcode
+1. Open `ios/VaultGuardMobile.xcworkspace` in Xcode
 2. Select your device
 3. Configure signing & capabilities
 4. Run the app

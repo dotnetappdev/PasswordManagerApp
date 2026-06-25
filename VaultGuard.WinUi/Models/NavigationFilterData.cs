@@ -1,6 +1,6 @@
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.WinUi.Models
+namespace VaultGuard.WinUi.Models
 {
     public class NavigationFilterData
     {

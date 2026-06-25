@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace PasswordManager.WPF.Controls
+namespace VaultGuard.WPF.Controls
 {
     public sealed partial class ReadOnlyField : UserControl
     {

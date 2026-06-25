@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace PasswordManager.Models;
+namespace VaultGuard.Models;
 
 /// <summary>
 /// Represents a one-time passcode for two-factor authentication

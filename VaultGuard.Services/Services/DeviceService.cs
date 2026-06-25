@@ -1,19 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Device;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Device;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 public class DeviceService : IDeviceService
 {
-    private readonly PasswordManagerDbContext _dbContext;
+    private readonly VaultGuardDbContext _dbContext;
     private readonly ILogger<DeviceService> _logger;
 
     public DeviceService(
-        PasswordManagerDbContext dbContext,
+        VaultGuardDbContext dbContext,
         ILogger<DeviceService> logger)
     {
         _dbContext = dbContext;

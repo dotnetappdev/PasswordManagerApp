@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.DAL.SupaBase;
+namespace VaultGuard.DAL.SupaBase;
 
 public interface ISupabaseDbContext : IDisposable
 {

@@ -1,7 +1,7 @@
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Auth;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Auth;
 
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 /// <summary>
 /// Service for managing WebAuthn Passkey operations

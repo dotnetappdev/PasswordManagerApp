@@ -1,7 +1,7 @@
-using PasswordManager.Models.Configuration;
+using VaultGuard.Models.Configuration;
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.Models.DTOs
+namespace VaultGuard.Models.DTOs
 {
     public class ApiKeyRequestDto
     {

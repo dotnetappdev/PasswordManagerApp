@@ -5,7 +5,7 @@ using Android.OS;
 using Android.Provider;
 using Android.Service.Autofill;
 
-namespace PasswordManager.Uno.Services.AutoFill;
+namespace VaultGuard.Uno.Services.AutoFill;
 
 /// <summary>
 /// Android AutoFill service implementation

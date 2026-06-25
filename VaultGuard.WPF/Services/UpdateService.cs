@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
-namespace PasswordManager.WPF.Services;
+namespace VaultGuard.WPF.Services;
 
 public record UpdateInfo(
     string TagName,
@@ -14,12 +14,19 @@ public record UpdateInfo(
     string HtmlUrl,
     string? InstallerDownloadUrl,
     string? ZipDownloadUrl,
-    long? InstallerSize);
+    long? InstallerSize,
+    IReadOnlyList<string>? Features = null,
+    bool RequiresRestart = false,
+    string? AppName = null);
 
 public class UpdateService
 {
-    private const string ApiUrl = "https://api.github.com/repos/dotnetappdev/PasswordManagerApp/releases/latest";
-    private const string ReleasesUrl = "https://github.com/dotnetappdev/PasswordManagerApp/releases";
+    private const string ApiUrl = "https://api.github.com/repos/dotnetappdev/VaultGuardApp/releases/latest";
+    private const string ReleasesUrl = "https://github.com/dotnetappdev/VaultGuardApp/releases";
+
+    /// <summary>Default JSON version manifest if none is configured in settings/appsettings.</summary>
+    public const string DefaultManifestUrl =
+        "https://raw.githubusercontent.com/dotnetappdev/VaultGuardApp/main/version.json";
 
     private readonly HttpClient _http;
 
@@ -62,6 +69,43 @@ public class UpdateService
                 InstallerSize: exeAsset?.Size ?? zipAsset?.Size);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Checks a configurable JSON version manifest (app name, version, feature list, requiresRestart,
+    /// download URL). Falls back to the GitHub releases API when no manifest URL is supplied. Returns
+    /// null when already up to date or unreachable.
+    /// </summary>
+    public async Task<UpdateInfo?> CheckManifestAsync(string? manifestUrl, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(manifestUrl))
+            return await CheckForUpdateAsync(ct);
+
+        try
+        {
+            var m = await _http.GetFromJsonAsync<UpdateManifest>(manifestUrl, ct);
+            if (m is null || string.IsNullOrWhiteSpace(m.Version)) return null;
+
+            var remoteVersion = m.Version.TrimStart('v');
+            if (!IsNewer(remoteVersion, GetCurrentVersion())) return null;
+
+            return new UpdateInfo(
+                TagName: m.Version,
+                Version: remoteVersion,
+                ReleaseNotes: m.Notes ?? string.Empty,
+                HtmlUrl: m.NotesUrl ?? ReleasesUrl,
+                InstallerDownloadUrl: m.DownloadUrl,
+                ZipDownloadUrl: null,
+                InstallerSize: m.InstallerSize,
+                Features: m.Features,
+                RequiresRestart: m.RequiresRestart,
+                AppName: m.AppName);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException
+                                      or OperationCanceledException or System.Text.Json.JsonException)
         {
             return null;
         }
@@ -115,6 +159,21 @@ public class UpdateService
         if (Version.TryParse(remote, out var r) && Version.TryParse(current, out var c))
             return r > c;
         return false;
+    }
+
+    /// <summary>Schema of the JSON version manifest hosted on GitHub (raw file).</summary>
+    private sealed class UpdateManifest
+    {
+        [JsonPropertyName("appName")] public string? AppName { get; set; }
+        [JsonPropertyName("version")] public string Version { get; set; } = string.Empty;
+        [JsonPropertyName("releaseDate")] public string? ReleaseDate { get; set; }
+        [JsonPropertyName("features")] public List<string>? Features { get; set; }
+        [JsonPropertyName("requiresRestart")] public bool RequiresRestart { get; set; }
+        [JsonPropertyName("mandatory")] public bool Mandatory { get; set; }
+        [JsonPropertyName("downloadUrl")] public string? DownloadUrl { get; set; }
+        [JsonPropertyName("installerSize")] public long? InstallerSize { get; set; }
+        [JsonPropertyName("notes")] public string? Notes { get; set; }
+        [JsonPropertyName("notesUrl")] public string? NotesUrl { get; set; }
     }
 
     private sealed class GitHubRelease

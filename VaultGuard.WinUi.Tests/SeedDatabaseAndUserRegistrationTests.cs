@@ -1,17 +1,17 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.Models;
-using PasswordManager.DAL;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.Crypto.Extensions;
+using VaultGuard.Models;
+using VaultGuard.DAL;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.Crypto.Extensions;
 using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace PasswordManager.WinUi.Tests;
+namespace VaultGuard.WinUi.Tests;
 
 /// <summary>
 /// Tests for verifying that the cryptographic fixes work correctly
@@ -34,7 +34,7 @@ public class SeedDatabaseAndUserRegistrationTests : IDisposable
         services.AddLogging(builder => builder.AddConsole());
         
         // Add database context
-        services.AddDbContext<PasswordManagerDbContextApp>(options =>
+        services.AddDbContext<VaultGuardDbContextApp>(options =>
             options.UseSqlite($"Data Source={_testDbPath}"));
         
         // Add crypto services
@@ -44,7 +44,7 @@ public class SeedDatabaseAndUserRegistrationTests : IDisposable
         
         // Initialize database
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>();
         dbContext.Database.EnsureCreated();
     }
 
@@ -56,7 +56,7 @@ public class SeedDatabaseAndUserRegistrationTests : IDisposable
         
         // Arrange
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>();
         var cryptoService = scope.ServiceProvider.GetRequiredService<IPasswordCryptoService>();
 
         // Act - Simulate the fixed SampleDataSeeder behavior
@@ -111,7 +111,7 @@ public class SeedDatabaseAndUserRegistrationTests : IDisposable
     {
         // Arrange
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>();
         var cryptoService = scope.ServiceProvider.GetRequiredService<IPasswordCryptoService>();
 
         const string testPassword = "TestPassword123!";

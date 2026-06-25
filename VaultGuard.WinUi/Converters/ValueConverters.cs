@@ -1,10 +1,10 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
-using PasswordManager.Models;
+using VaultGuard.Models;
 using System.Reflection;
 
-namespace PasswordManager.WinUi.Converters;
+namespace VaultGuard.WinUi.Converters;
 
 public class TypeToIconConverter : IValueConverter
 {

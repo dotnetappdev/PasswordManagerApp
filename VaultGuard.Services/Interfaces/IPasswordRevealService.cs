@@ -1,6 +1,6 @@
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 /// <summary>
 /// Service for revealing encrypted passwords stored in password items

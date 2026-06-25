@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Software WebAuthn authenticator primitives shared by the API's vault-passkey endpoints.

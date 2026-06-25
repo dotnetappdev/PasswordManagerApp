@@ -1,17 +1,17 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.API.DTOs;
-using PasswordManager.Models.DTOs;
-using PasswordManager.Models;
-using PasswordManager.Models.Authorization;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.Crypto.Services;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.API.DTOs;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Models;
+using VaultGuard.Models.Authorization;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.Crypto.Services;
 using System.Security.Claims;
-using ApiDtos = PasswordManager.API.DTOs;
+using ApiDtos = VaultGuard.API.DTOs;
 
-namespace PasswordManager.API.Controllers;
+namespace VaultGuard.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

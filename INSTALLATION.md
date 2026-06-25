@@ -1,6 +1,6 @@
-# Password Manager Browser Extension - Complete Installation Guide
+# Vault Guard Browser Extension - Complete Installation Guide
 
-This guide will walk you through the complete setup process for using the Password Manager browser extension with direct SQLite database access.
+This guide will walk you through the complete setup process for using the Vault Guard browser extension with direct SQLite database access.
 
 ## Overview
 
@@ -13,8 +13,8 @@ The new architecture eliminates the need for a running API server by using a **n
 
 ## Prerequisites
 
-- .NET 8.0 Runtime or SDK installed
-- Your Password Manager SQLite database
+- .NET 10 Runtime or SDK installed
+- Your Vault Guard SQLite database
 - Chrome, Edge, or Firefox browser
 
 ## Installation Steps
@@ -26,7 +26,7 @@ The new architecture eliminates the need for a running API server by using a **n
 1. Open PowerShell or Command Prompt **as Administrator**
 2. Navigate to the native host directory:
    ```cmd
-   cd PasswordManager.BrowserExtension.NativeHost
+   cd VaultGuard.BrowserExtension.NativeHost
    ```
 3. Run the installation script:
    ```cmd
@@ -38,7 +38,7 @@ The new architecture eliminates the need for a running API server by using a **n
 1. Open terminal
 2. Navigate to the native host directory:
    ```bash
-   cd PasswordManager.BrowserExtension.NativeHost
+   cd VaultGuard.BrowserExtension.NativeHost
    ```
 3. Run the installation script:
    ```bash
@@ -50,7 +50,7 @@ The new architecture eliminates the need for a running API server by using a **n
 1. Open terminal
 2. Navigate to the native host directory:
    ```bash
-   cd PasswordManager.BrowserExtension.NativeHost
+   cd VaultGuard.BrowserExtension.NativeHost
    ```
 3. Run the installation script:
    ```bash
@@ -64,20 +64,20 @@ The new architecture eliminates the need for a running API server by using a **n
 1. Open Chrome and navigate to `chrome://extensions/` (or `edge://extensions/` for Edge)
 2. Enable "Developer mode" in the top right
 3. Click "Load unpacked"
-4. Select the `PasswordManager.BrowserExtension` folder
+4. Select the `VaultGuard.BrowserExtension` folder
 5. **Important**: Note the Extension ID shown in the extension card (e.g., `abcdefghijklmnopqrstuvwxyz123456`)
 
 #### Firefox
 
 1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
 2. Click "Load Temporary Add-on"
-3. Select the `manifest.json` file from the `PasswordManager.BrowserExtension` folder
+3. Select the `manifest.json` file from the `VaultGuard.BrowserExtension` folder
 4. **Important**: Note the Extension ID from the extension details
 
 ### Step 3: Configure the Native Messaging Host
 
 1. **Find the manifest file location** (created by the installation script):
-   - Windows: `C:\Program Files\PasswordManager\NativeHost\com.passwordmanager.native_host.json`
+   - Windows: `C:\Program Files\VaultGuard\NativeHost\com.passwordmanager.native_host.json`
    - Linux: `~/.config/google-chrome/NativeMessagingHosts/com.passwordmanager.native_host.json`
    - macOS: `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.passwordmanager.native_host.json`
 
@@ -85,7 +85,7 @@ The new architecture eliminates the need for a running API server by using a **n
    ```json
    {
      "name": "com.passwordmanager.native_host",
-     "description": "Password Manager Native Messaging Host",
+     "description": "Vault Guard Native Messaging Host",
      "path": "/path/to/executable",
      "type": "stdio",
      "allowed_origins": [
@@ -100,12 +100,12 @@ Run one of these commands in Command Prompt **as Administrator**:
 
 #### For Chrome:
 ```cmd
-reg add "HKEY_CURRENT_USER\Software\Google\Chrome\NativeMessagingHosts\com.passwordmanager.native_host" /ve /t REG_SZ /d "C:\Program Files\PasswordManager\NativeHost\com.passwordmanager.native_host.json" /f
+reg add "HKEY_CURRENT_USER\Software\Google\Chrome\NativeMessagingHosts\com.passwordmanager.native_host" /ve /t REG_SZ /d "C:\Program Files\VaultGuard\NativeHost\com.passwordmanager.native_host.json" /f
 ```
 
 #### For Edge:
 ```cmd
-reg add "HKEY_CURRENT_USER\Software\Microsoft\Edge\NativeMessagingHosts\com.passwordmanager.native_host" /ve /t REG_SZ /d "C:\Program Files\PasswordManager\NativeHost\com.passwordmanager.native_host.json" /f
+reg add "HKEY_CURRENT_USER\Software\Microsoft\Edge\NativeMessagingHosts\com.passwordmanager.native_host" /ve /t REG_SZ /d "C:\Program Files\VaultGuard\NativeHost\com.passwordmanager.native_host.json" /f
 ```
 
 ### Step 5: Configure Database Access
@@ -114,9 +114,9 @@ The native host automatically searches for your database in these locations:
 
 1. `passwordmanager_dev.db` in the current directory
 2. User data directories:
-   - Windows: `%APPDATA%\PasswordManager\passwordmanager.db`
-   - Linux: `~/.local/share/PasswordManager/passwordmanager.db`
-   - macOS: `~/Library/Application Support/PasswordManager/passwordmanager.db`
+   - Windows: `%APPDATA%\VaultGuard\passwordmanager.db`
+   - Linux: `~/.local/share/VaultGuard/passwordmanager.db`
+   - macOS: `~/Library/Application Support/VaultGuard/passwordmanager.db`
 
 **If your database is elsewhere**, you have two options:
 
@@ -147,7 +147,7 @@ If you see an error, check:
 
 ## Database Locations
 
-The native host searches for your Password Manager database in this order:
+The native host searches for your Vault Guard database in this order:
 
 1. **Development database**: `passwordmanager_dev.db` in the current directory
 2. **User data directory**: Platform-specific user data folder

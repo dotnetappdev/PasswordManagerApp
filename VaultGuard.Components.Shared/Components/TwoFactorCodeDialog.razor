@@ -1,0 +1,90 @@
+@using VaultGuard.Services.Interfaces
+@inject ITwoFactorService TwoFactorService
+
+@*
+    Reusable step-up prompt. Asks the signed-in user for a current authenticator (TOTP) code or
+    one of their recovery codes and validates it against ITwoFactorService before returning true.
+    Mirrors the WPF SecurityGateHelper code prompt.
+*@
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-3">@Message</MudText>
+        <MudTextField @bind-Value="code"
+                      Label="@(useRecoveryCode ? "Recovery code" : "Authenticator code")"
+                      Variant="Variant.Outlined"
+                      Immediate="true"
+                      MaxLength="12"
+                      @onkeyup="OnKeyUp" />
+        <MudCheckBox @bind-Value="useRecoveryCode" Color="Color.Primary" Class="mt-2"
+                     Label="This is a recovery code" />
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2">@error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="verifying" OnClick="Verify">
+            @if (verifying)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            }
+            else
+            {
+                <text>Verify</text>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>User whose 2FA configuration the entered code is validated against.</summary>
+    [Parameter] public string UserId { get; set; } = string.Empty;
+
+    [Parameter] public string Message { get; set; } = "Enter the 6-digit code from your authenticator app to continue.";
+
+    private string code = string.Empty;
+    private bool useRecoveryCode = false;
+    private string? error;
+    private bool verifying = false;
+
+    private async Task OnKeyUp(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await Verify();
+    }
+
+    private async Task Verify()
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            error = "Please enter a code.";
+            return;
+        }
+
+        verifying = true;
+        error = null;
+        try
+        {
+            var ok = await TwoFactorService.VerifyTwoFactorCodeAsync(UserId, code.Trim(), useRecoveryCode);
+            if (ok)
+            {
+                MudDialog.Close(DialogResult.Ok(true));
+                return;
+            }
+            error = "That code wasn't valid. Please try again.";
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            verifying = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

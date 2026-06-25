@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how the Password Manager application handles Entity Framework Identity tables creation, migration management, and database initialization to prevent the "SQLite Error 1: 'no such table: AspNetUsers'" issue.
+This guide explains how the Vault Guard application handles Entity Framework Identity tables creation, migration management, and database initialization to prevent the "SQLite Error 1: 'no such table: AspNetUsers'" issue.
 
 ## Problem Statement
 
@@ -15,7 +15,7 @@ The application may encounter the error: `SQLite Error 1: 'no such table: AspNet
 
 ### WinUI Application Identity Setup
 
-The WinUI application (`PasswordManager.WinUi/App.xaml.cs`) uses full ASP.NET Core Identity with roles:
+The WinUI application (`VaultGuard.WinUi/App.xaml.cs`) uses full ASP.NET Core Identity with roles:
 
 ```csharp
 // Add Identity services with roles so all Identity tables are created
@@ -28,7 +28,7 @@ services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     options.Password.RequireUppercase = true;
     options.Password.RequireLowercase = true;
 })
-.AddEntityFrameworkStores<PasswordManagerDbContextApp>()
+.AddEntityFrameworkStores<VaultGuardDbContextApp>()
 .AddDefaultTokenProviders();
 ```
 
@@ -39,10 +39,10 @@ services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 
 ### Database Context Configuration
 
-The `PasswordManagerDbContextApp` inherits from `IdentityDbContext<ApplicationUser, ApplicationRole, string>`:
+The `VaultGuardDbContextApp` inherits from `IdentityDbContext<ApplicationUser, ApplicationRole, string>`:
 
 ```csharp
-public class PasswordManagerDbContextApp : IdentityDbContext<ApplicationUser, ApplicationRole, string>, IPasswordManagerDbContextApp
+public class VaultGuardDbContextApp : IdentityDbContext<ApplicationUser, ApplicationRole, string>, IVaultGuardDbContextApp
 {
     // Use 'new' keyword to explicitly hide the inherited Users property from IdentityDbContext
     public new DbSet<ApplicationUser> Users { get; set; } = null!;
@@ -89,7 +89,7 @@ The `AppStartupService.InitializeDatabaseAsync()` method handles database initia
 The `CheckIdentityTablesExistAsync()` method uses a reliable approach to detect missing Identity tables:
 
 ```csharp
-private async Task<bool> CheckIdentityTablesExistAsync(PasswordManagerDbContextApp dbContext)
+private async Task<bool> CheckIdentityTablesExistAsync(VaultGuardDbContextApp dbContext)
 {
     try
     {
@@ -161,16 +161,16 @@ For development and troubleshooting, you can use these Entity Framework CLI comm
 
 ```bash
 # Check migration status
-dotnet ef migrations list --project PasswordManager.DAL
+dotnet ef migrations list --project VaultGuard.DAL
 
 # Add a new migration
-dotnet ef migrations add MigrationName --project PasswordManager.DAL
+dotnet ef migrations add MigrationName --project VaultGuard.DAL
 
 # Apply pending migrations
-dotnet ef database update --project PasswordManager.DAL
+dotnet ef database update --project VaultGuard.DAL
 
 # Remove last migration (development only)
-dotnet ef migrations remove --project PasswordManager.DAL
+dotnet ef migrations remove --project VaultGuard.DAL
 ```
 
 ## Error Handling and Recovery
@@ -254,7 +254,7 @@ The application includes automatic Identity data seeding through the `IdentityDa
 
 ```csharp
 // Register Identity data seeder for proper Identity table initialization
-services.AddScoped<PasswordManager.DAL.Seed.IdentityDataSeeder>();
+services.AddScoped<VaultGuard.DAL.Seed.IdentityDataSeeder>();
 ```
 
 The seeder:
@@ -283,6 +283,6 @@ To verify that Identity tables are properly created and configured:
 
 ## Conclusion
 
-This guide provides comprehensive information about Entity Framework Identity setup and migration management in the Password Manager application. The application includes robust error handling, automatic recovery mechanisms, and comprehensive logging to prevent and resolve Identity table issues.
+This guide provides comprehensive information about Entity Framework Identity setup and migration management in the Vault Guard application. The application includes robust error handling, automatic recovery mechanisms, and comprehensive logging to prevent and resolve Identity table issues.
 
 For additional support, refer to the application logs, use the migration management API endpoints, or consult the Entity Framework Core documentation for advanced scenarios.

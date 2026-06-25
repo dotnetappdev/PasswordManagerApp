@@ -1,26 +1,26 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PasswordManager.Models;
+using VaultGuard.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace PasswordManager.DAL.Seed;
+namespace VaultGuard.DAL.Seed;
 
 public static class TestDataSeeder
 {
     public const string TestUserId = "test-user-id-12345";
 
-    public static void SeedTestData(PasswordManagerDbContext db)
+    public static void SeedTestData(VaultGuardDbContext db)
     {
         SeedTestData(db, TestUserId, createUserIfMissing: true);
     }
 
-    public static void SeedTestData(PasswordManagerDbContext db, string testUserId)
+    public static void SeedTestData(VaultGuardDbContext db, string testUserId)
     {
         SeedTestData(db, testUserId, createUserIfMissing: false);
     }
 
-    private static void SeedTestData(PasswordManagerDbContext db, string testUserId, bool createUserIfMissing)
+    private static void SeedTestData(VaultGuardDbContext db, string testUserId, bool createUserIfMissing)
     {
         if (createUserIfMissing && !db.Users.Any(u => u.Id == testUserId))
         {
@@ -41,7 +41,7 @@ public static class TestDataSeeder
         SeedPasswordItems(db, testUserId);
     }
 
-    public static void ClearSeedData(PasswordManagerDbContext db, string userId)
+    public static void ClearSeedData(VaultGuardDbContext db, string userId)
     {
         var items = db.PasswordItems.Where(p => p.UserId == userId).ToList();
         if (items.Any()) { db.PasswordItems.RemoveRange(items); db.SaveChanges(); }
@@ -56,7 +56,7 @@ public static class TestDataSeeder
         if (tags.Any()) { db.Tags.RemoveRange(tags); db.SaveChanges(); }
     }
 
-    public static void SeedCollections(PasswordManagerDbContext db, string testUserId)
+    public static void SeedCollections(VaultGuardDbContext db, string testUserId)
     {
         // Every user gets a default "Personal" vault; demo collections/items live in it
         // unless the demo data explicitly models a separate vault (e.g. "Work").
@@ -92,7 +92,7 @@ public static class TestDataSeeder
         }
     }
 
-    public static void SeedCategories(PasswordManagerDbContext db, string testUserId)
+    public static void SeedCategories(VaultGuardDbContext db, string testUserId)
     {
         if (!db.Categories.Any(c => c.UserId == testUserId))
         {
@@ -126,7 +126,7 @@ public static class TestDataSeeder
         }
     }
 
-    public static void SeedTags(PasswordManagerDbContext db, string testUserId)
+    public static void SeedTags(VaultGuardDbContext db, string testUserId)
     {
         if (!db.Tags.Any(t => t.UserId == testUserId))
         {
@@ -156,7 +156,7 @@ public static class TestDataSeeder
     }
 
     // Removes existing items for the user then seeds ~100 fresh demo items.
-    public static void ForceSeedPasswordItems(PasswordManagerDbContext db, string userId)
+    public static void ForceSeedPasswordItems(VaultGuardDbContext db, string userId)
     {
         var existing = db.PasswordItems.Where(p => p.UserId == userId).ToList();
         if (existing.Any()) { db.PasswordItems.RemoveRange(existing); db.SaveChanges(); }
@@ -164,18 +164,18 @@ public static class TestDataSeeder
     }
 
     // Used by SampleDataSeeder — each user gets their own seed data independently.
-    public static void SeedPasswordItemsForUser(PasswordManagerDbContext db, string userId)
+    public static void SeedPasswordItemsForUser(VaultGuardDbContext db, string userId)
     {
         SeedPasswordItemsCore(db, userId);
     }
 
-    private static void SeedPasswordItems(PasswordManagerDbContext db, string testUserId)
+    private static void SeedPasswordItems(VaultGuardDbContext db, string testUserId)
     {
         if (!db.PasswordItems.Any())
             SeedPasswordItemsCore(db, testUserId);
     }
 
-    private static void SeedPasswordItemsCore(PasswordManagerDbContext db, string uid)
+    private static void SeedPasswordItemsCore(VaultGuardDbContext db, string uid)
     {
         // Load lookup data scoped to this user so IDs are correct
         var cats = db.Categories.Where(c => c.UserId == uid).ToList();

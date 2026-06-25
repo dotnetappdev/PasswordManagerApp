@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.Models
+namespace VaultGuard.Models
 {
     /// <summary>
     /// Represents the result of an API test execution

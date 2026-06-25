@@ -1,17 +1,17 @@
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.WPF;
-using PasswordManager.WPF.ViewModels;
-using PasswordManager.WPF.Services;
-using PasswordManager.Models;
+using VaultGuard.WPF;
+using VaultGuard.WPF.ViewModels;
+using VaultGuard.WPF.Services;
+using VaultGuard.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MwControls = ModernWpf.Controls;
 
-namespace PasswordManager.WPF.Views;
+namespace VaultGuard.WPF.Views;
 
 public sealed partial class VaultsPage : Page
 {
@@ -112,6 +112,15 @@ public sealed partial class VaultsPage : Page
             ConfigureDialogForCentering(confirm);
             if (await confirm.ShowAsync() == MwControls.ContentDialogResult.Primary)
             {
+                // Optional step-up: when "require authenticator code on vault delete" is enabled and
+                // the user has 2FA, they must enter a current TOTP/recovery code before we delete.
+                if (_serviceProvider != null &&
+                    !await Helpers.SecurityGateHelper.RequireCodeForActionAsync(
+                        _serviceProvider, Helpers.SecurityGateHelper.GateAction.VaultDelete))
+                {
+                    return;
+                }
+
                 await _viewModel.DeleteVaultAsync(vault);
                 ToastService.Instance.Success($"Vault \"{vault.Name}\" deleted");
                 _ = (Application.Current.MainWindow as MainWindow)?.RefreshVaultsNavAsync();

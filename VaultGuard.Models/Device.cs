@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.Models;
+namespace VaultGuard.Models;
 
 /// <summary>
 /// Represents a device that has been linked to a user account

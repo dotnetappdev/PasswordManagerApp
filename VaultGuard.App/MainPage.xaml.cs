@@ -1,4 +1,4 @@
-﻿namespace PasswordManager.App;
+﻿namespace VaultGuard.App;
 
 public partial class MainPage : ContentPage
 {

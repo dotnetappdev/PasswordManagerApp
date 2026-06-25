@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 
-namespace PasswordManager.WPF.Services
+namespace VaultGuard.WPF.Services
 {
     /// <summary>
     /// One toast type's customisable look: a primary (accent) colour, a secondary
@@ -55,7 +55,7 @@ namespace PasswordManager.WPF.Services
 
         private static string FilePath => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "PasswordManager", "toast_colors.json");
+            "VaultGuard", "toast_colors.json");
 
         private sealed class ThemeDto
         {

@@ -1,4 +1,4 @@
-namespace PasswordManager.API.DTOs;
+namespace VaultGuard.API.DTOs;
 
 /// <summary>
 /// DTO for creating/updating password items with encryption

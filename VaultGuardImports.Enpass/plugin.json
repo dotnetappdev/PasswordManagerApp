@@ -3,7 +3,7 @@
   "displayName": "Enpass",
   "description": "Import passwords from Enpass JSON export files",
   "version": "1.0.0",
-  "author": "PasswordManager Team",
+  "author": "VaultGuard Team",
   "website": "https://enpass.io",
   "created": "2026-05-29T00:00:00Z",
   "lastUpdated": "2026-05-29T00:00:00Z",

@@ -1,7 +1,7 @@
 # Input Validation Enhancement Summary
 
 ## Overview
-This document summarizes the comprehensive input validation enhancements made to the Password Manager application across all platforms (Blazor Web, WinUI Desktop, and Uno Platform Mobile).
+This document summarizes the comprehensive input validation enhancements made to the Vault Guard application across all platforms (Blazor Web, WinUI Desktop, and Uno Platform Mobile).
 
 ## Requirements Met
 
@@ -38,16 +38,16 @@ Implemented inline validation with specific, actionable error messages:
 
 ### 4. Applied to All Apps ✅
 Validation implemented across:
-- ✅ Blazor Web Application (`PasswordManager.Web`)
-- ✅ WinUI Desktop Application (`PasswordManager.WinUi`)
-- ✅ Uno Platform Mobile App (`PasswordManager.Uno`)
+- ✅ Blazor Web Application (`VaultGuard.Web`)
+- ✅ WinUI Desktop Application (`VaultGuard.WinUi`)
+- ✅ Uno Platform Mobile App (`VaultGuard.Uno`)
 
 ## Implementation Details
 
 ### Files Created
 
 #### 1. InputValidationHelper.cs
-**Location**: `PasswordManager.Services/Helpers/InputValidationHelper.cs`
+**Location**: `VaultGuard.Services/Helpers/InputValidationHelper.cs`
 
 Centralized validation helper with methods:
 - `ValidateUsername(string username)` - Username/email validation
@@ -62,7 +62,7 @@ Each method returns a tuple: `(bool IsValid, string ErrorMessage)`
 ### Files Modified
 
 #### 1. CreateUserValidator.cs
-**Location**: `PasswordManager.Services/Validators/CreateUserValidator.cs`
+**Location**: `VaultGuard.Services/Validators/CreateUserValidator.cs`
 
 Enhanced FluentValidation rules:
 - Email: Min 3 chars, legal characters only
@@ -70,7 +70,7 @@ Enhanced FluentValidation rules:
 - First/Last Name: Min 2 chars, legal characters only
 
 #### 2. Login.razor
-**Location**: `PasswordManager.Components.Shared/Pages/Login.razor`
+**Location**: `VaultGuard.Components.Shared/Pages/Login.razor`
 
 Enhanced validation in Blazor Web app:
 - Added detailed validation in `CanSetupMasterKey()` method
@@ -79,7 +79,7 @@ Enhanced validation in Blazor Web app:
 - Added complexity checks (uppercase, lowercase, digit)
 
 #### 3. UserRegistrationDialog.xaml.cs
-**Location**: `PasswordManager.WinUi/Dialogs/UserRegistrationDialog.xaml.cs`
+**Location**: `VaultGuard.WinUi/Dialogs/UserRegistrationDialog.xaml.cs`
 
 Enhanced validation in WinUI registration dialog:
 - First/Last name: Min 2 chars, character restrictions
@@ -88,7 +88,7 @@ Enhanced validation in WinUI registration dialog:
 - Legal character validation for all fields
 
 #### 4. LoginModel.cs
-**Location**: `PasswordManager.Uno/Presentation/Pages/Login/LoginModel.cs`
+**Location**: `VaultGuard.Uno/Presentation/Pages/Login/LoginModel.cs`
 
 Enhanced validation in Uno Platform mobile app:
 - Email: Min 3 chars, format validation, legal characters
@@ -98,7 +98,7 @@ Enhanced validation in Uno Platform mobile app:
 ### Files Created - Tests
 
 #### 1. InputValidationHelperTests.cs
-**Location**: `PasswordManager.BackEnd.Tests/Helpers/InputValidationHelperTests.cs`
+**Location**: `VaultGuard.BackEnd.Tests/Helpers/InputValidationHelperTests.cs`
 
 Comprehensive unit tests covering:
 - Username validation (23 test cases)
@@ -122,7 +122,7 @@ Comprehensive unit tests covering:
 **Test Results**: All 23 tests passing ✅
 
 #### 2. ValidationTests.cs
-**Location**: `PasswordManager.Tests.Playwright/ValidationTests.cs`
+**Location**: `VaultGuard.Tests.Playwright/ValidationTests.cs`
 
 Integration tests using Playwright:
 - Empty password rejection
@@ -144,7 +144,7 @@ Integration tests using Playwright:
 ## Testing
 
 ### Unit Tests
-- **Location**: `PasswordManager.BackEnd.Tests/Helpers/InputValidationHelperTests.cs`
+- **Location**: `VaultGuard.BackEnd.Tests/Helpers/InputValidationHelperTests.cs`
 - **Framework**: NUnit
 - **Tests**: 23 test cases
 - **Status**: ✅ All passing
@@ -157,18 +157,18 @@ Integration tests using Playwright:
   - Password matching (3 tests)
 
 ### Integration Tests
-- **Location**: `PasswordManager.Tests.Playwright/ValidationTests.cs`
+- **Location**: `VaultGuard.Tests.Playwright/ValidationTests.cs`
 - **Framework**: Playwright
 - **Tests**: 4 test scenarios
 - **Platforms Tested**: Blazor Web application
 
 ### Build Verification
 All modified projects successfully build:
-- ✅ PasswordManager.Services
-- ✅ PasswordManager.Components.Shared (Blazor)
-- ✅ PasswordManager.WinUi
-- ✅ PasswordManager.Web
-- ✅ PasswordManager.BackEnd.Tests
+- ✅ VaultGuard.Services
+- ✅ VaultGuard.Components.Shared (Blazor)
+- ✅ VaultGuard.WinUi
+- ✅ VaultGuard.Web
+- ✅ VaultGuard.BackEnd.Tests
 
 ## Benefits
 

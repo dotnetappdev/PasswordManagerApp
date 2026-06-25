@@ -6,10 +6,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.WPF.Views;
+namespace VaultGuard.WPF.Views;
 
 public sealed partial class SecurityPage : Page
 {

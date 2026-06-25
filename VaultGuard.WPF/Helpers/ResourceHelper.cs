@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Media;
 
-namespace PasswordManager.WPF.Helpers;
+namespace VaultGuard.WPF.Helpers;
 
 public static class ResourceHelper
 {

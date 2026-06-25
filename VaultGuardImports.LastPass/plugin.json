@@ -3,7 +3,7 @@
   "displayName": "LastPass",
   "description": "Import passwords from LastPass CSV export files",
   "version": "1.0.0",
-  "author": "PasswordManager Team",
+  "author": "VaultGuard Team",
   "website": "https://www.lastpass.com",
   "created": "2024-12-18T00:00:00Z",
   "lastUpdated": "2024-12-18T00:00:00Z",

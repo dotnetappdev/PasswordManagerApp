@@ -1,8 +1,8 @@
 using FileHelpers;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManagerImports.RoboForm;
+namespace VaultGuardImports.RoboForm;
 
 /// <summary>
 /// RoboForm CSV import plugin
@@ -24,7 +24,7 @@ public class RoboFormImportPlugin : IPasswordImportPlugin
             DisplayName = "RoboForm",
             Description = "Import passwords from RoboForm CSV export files",
             Version = "1.0.0",
-            Author = "PasswordManager Team",
+            Author = "VaultGuard Team",
             Website = "https://roboform.com",
             Created = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,

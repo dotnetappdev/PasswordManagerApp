@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManagerImports.Enpass;
+namespace VaultGuardImports.Enpass;
 
 /// <summary>
 /// Enpass JSON import plugin
@@ -25,7 +25,7 @@ public class EnpassImportPlugin : IPasswordImportPlugin
             DisplayName = "Enpass",
             Description = "Import passwords from Enpass JSON export files",
             Version = "1.0.0",
-            Author = "PasswordManager Team",
+            Author = "VaultGuard Team",
             Website = "https://enpass.io",
             Created = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,

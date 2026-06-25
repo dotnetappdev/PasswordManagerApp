@@ -1,7 +1,7 @@
 <Router AppAssembly="@typeof(MauiProgram).Assembly"
-        AdditionalAssemblies="new[] { typeof(PasswordManager.Components.Shared._Imports).Assembly }">
+        AdditionalAssemblies="new[] { typeof(VaultGuard.Components.Shared._Imports).Assembly }">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(PasswordManager.Components.Shared.Components.Layout.MainLayout)" />
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(VaultGuard.Components.Shared.Components.Layout.MainLayout)" />
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
     <NotFound>

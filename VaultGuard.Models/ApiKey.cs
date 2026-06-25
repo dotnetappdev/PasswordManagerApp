@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using PasswordManager.Models.Configuration;
+using VaultGuard.Models.Configuration;
 
-namespace PasswordManager.Models
+namespace VaultGuard.Models
 {
     public class ApiKey
     {

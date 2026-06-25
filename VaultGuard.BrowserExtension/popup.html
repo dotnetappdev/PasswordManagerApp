@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Password Manager</title>
+  <title>Vault Guard</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -11,8 +11,8 @@
     <!-- Loading State -->
     <div id="loading" class="screen">
       <div class="header">
-        <img src="icons/icon32.svg" alt="Password Manager" class="logo">
-        <h1>Password Manager</h1>
+        <img src="icons/icon32.svg" alt="Vault Guard" class="logo">
+        <h1>Vault Guard</h1>
       </div>
       <div class="loading-spinner"></div>
       <p>Loading...</p>
@@ -21,8 +21,8 @@
     <!-- Login Screen -->
     <div id="login" class="screen" style="display: none;">
       <div class="header">
-        <img src="icons/icon32.svg" alt="Password Manager" class="logo">
-        <h1>Password Manager</h1>
+        <img src="icons/icon32.svg" alt="Vault Guard" class="logo">
+        <h1>Vault Guard</h1>
       </div>
       
       <form id="loginForm" class="form">
@@ -55,8 +55,8 @@
     <!-- Main Screen -->
     <div id="main" class="screen" style="display: none;">
       <div class="header">
-        <img src="icons/icon32.svg" alt="Password Manager" class="logo">
-        <h1>Password Manager</h1>
+        <img src="icons/icon32.svg" alt="Vault Guard" class="logo">
+        <h1>Vault Guard</h1>
         <div class="header-actions">
           <button id="settingsBtn" class="btn btn-icon" title="Settings">⚙️</button>
           <button id="helpBtn" class="btn btn-icon" title="Help">❓</button>
@@ -169,7 +169,7 @@
 
         <div class="form-group" id="databasePathGroup" style="display: none;">
           <label for="databasePath">SQLite Database Path:</label>
-          <input type="text" id="databasePath" placeholder="C:\Users\YourName\AppData\Roaming\PasswordManager\passwordmanager.db" class="form-control">
+          <input type="text" id="databasePath" placeholder="C:\Users\YourName\AppData\Roaming\VaultGuard\passwordmanager.db" class="form-control">
           <small>Point this to the <strong>same</strong> <code>passwordmanager.db</code> the desktop app uses, so credentials and passkeys are shared. Leave blank to let the native host auto‑detect it.</small>
           <button type="button" id="detectDbBtn" class="btn btn-secondary btn-small" style="margin-top: 8px;">Detect from app</button>
           <div id="activeDbInfo" class="info-text" style="display: none; margin-top: 8px; word-break: break-all;"></div>
@@ -200,11 +200,11 @@
     <div id="aboutModal" class="modal" style="display: none;">
       <div class="modal-content">
         <span class="modal-close" id="aboutClose">&times;</span>
-        <h2>About Password Manager Extension</h2>
+        <h2>About Vault Guard Extension</h2>
         <div class="about-info">
           <p><strong>Version:</strong> 1.0.0</p>
           <p><strong>Build Date:</strong> December 2024</p>
-          <p><strong>Author:</strong> Password Manager Team</p>
+          <p><strong>Author:</strong> Vault Guard Team</p>
           
           <h3>Features</h3>
           <ul>
@@ -226,7 +226,7 @@
           
           <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e6ed; text-align: center;">
             <p style="color: #6c757d; font-size: 12px;">
-              © 2024 Password Manager. All rights reserved.
+              © 2024 Vault Guard. All rights reserved.
             </p>
           </div>
         </div>
@@ -237,7 +237,7 @@
     <div id="helpModal" class="modal" style="display: none;">
       <div class="modal-content modal-large">
         <span class="modal-close" id="helpClose">&times;</span>
-        <h2>Password Manager Extension - Help</h2>
+        <h2>Vault Guard Extension - Help</h2>
         <div class="help-content">
           <h3>Quick Start</h3>
           <ol>

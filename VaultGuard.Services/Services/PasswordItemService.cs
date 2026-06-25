@@ -1,15 +1,15 @@
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.DAL;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManager.Services;
+namespace VaultGuard.Services;
 
 public class PasswordItemService : IPasswordItemService
 {
-    private readonly PasswordManagerDbContext _context;
+    private readonly VaultGuardDbContext _context;
 
-    public PasswordItemService(PasswordManagerDbContext context)
+    public PasswordItemService(VaultGuardDbContext context)
     {
         _context = context;
     }

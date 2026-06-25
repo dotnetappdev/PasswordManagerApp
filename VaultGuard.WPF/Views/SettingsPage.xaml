@@ -1,5 +1,5 @@
 <Page
-    x:Class="PasswordManager.WPF.Views.SettingsPage"
+    x:Class="VaultGuard.WPF.Views.SettingsPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.modernwpf.com/2019"
@@ -74,10 +74,10 @@
                                 <ComboBoxItem Content="Favorites"/>
                             </ComboBox>
                         </StackPanel>
-                        <CheckBox Content="Show item count in navigation sidebar"
-                                  IsChecked="True" Margin="8,4,8,4"/>
-                        <CheckBox Content="Animate list transitions"
-                                  IsChecked="True" Margin="8,4,8,4"/>
+                        <ui:ToggleSwitch Header="Show item count in navigation sidebar"
+                                  IsOn="True" Margin="8,4,8,4"/>
+                        <ui:ToggleSwitch Header="Animate list transitions"
+                                  IsOn="True" Margin="8,4,8,4"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -237,26 +237,58 @@
                     </StackPanel>
                     
                     <StackPanel Margin="16">
-                        <CheckBox x:Name="TwoFactorToggle"
-                                     Content="Enable Two-Factor Authentication"
-                                     IsChecked="{Binding EnableTwoFactor, Mode=TwoWay}"
-                                     Checked="TwoFactorToggle_Toggled"
-                                     Unchecked="TwoFactorToggle_Toggled"
+                        <Button x:Name="TwoFactorButton"
+                               Style="{StaticResource ModernSecondaryButtonStyle}"
+                               HorizontalAlignment="Left"
+                               Margin="0,0,0,8"
+                               Click="TwoFactorButton_Click">
+                            <StackPanel Orientation="Horizontal" Margin="8">
+                                <TextBlock Text="&#xE1A3;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Two-Factor Authentication" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="TwoFactorStatusText" Text="Not enabled" Margin="10,0,0,0"
+                                           VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="ForgetDeviceButton"
+                               Style="{StaticResource ModernSecondaryButtonStyle}"
+                               HorizontalAlignment="Left"
+                               Margin="0,0,0,8"
+                               ToolTip="Clears the saved master password for this profile on this device, so your next sign-in (even with 2FA enabled) requires your master password again."
+                               Click="ForgetDeviceButton_Click">
+                            <StackPanel Orientation="Horizontal" Margin="8">
+                                <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Forget This Device" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <ui:ToggleSwitch x:Name="PasscodeToggle"
+                                     Header="Require Passcode on Launch"
+                                     IsOn="{Binding RequirePasscode, Mode=TwoWay}"
+                                     Toggled="PasscodeToggle_Toggled"
                                      Margin="0,0,0,8"/>
 
-                        <CheckBox x:Name="PasscodeToggle"
-                                     Content="Require Passcode on Launch"
-                                     IsChecked="{Binding RequirePasscode, Mode=TwoWay}"
-                                     Checked="PasscodeToggle_Toggled"
+                        <ui:ToggleSwitch x:Name="PasskeysToggle"
+                                     Header="Enable Passkey Sign-In"
+                                     IsOn="{Binding EnablePasskeys, Mode=TwoWay}"
+                                     Toggled="PasskeysToggle_Toggled"
                                      Margin="0,0,0,8"/>
 
-                        <CheckBox x:Name="PasskeysToggle"
-                                     Content="Enable Passkey Sign-In"
-                                     IsChecked="{Binding EnablePasskeys, Mode=TwoWay}"
-                                     Checked="PasskeysToggle_Toggled"
-                                     Unchecked="PasskeysToggle_Toggled"
+                        <!-- Step-up verification: only takes effect when 2FA is enabled. When on, the
+                             matching destructive action first asks for a current authenticator/recovery code. -->
+                        <TextBlock Text="Require authenticator code for"
+                                   Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"
+                                   Margin="0,4,0,4"/>
+                        <ui:ToggleSwitch x:Name="RequireCodeVaultDeleteToggle"
+                                     Header="Deleting a vault"
+                                     IsOn="{Binding RequireCodeOnVaultDelete, Mode=TwoWay}"
+                                     Margin="0,0,0,4"/>
+                        <ui:ToggleSwitch x:Name="RequireCodeItemDeleteToggle"
+                                     Header="Deleting a password item"
+                                     IsOn="{Binding RequireCodeOnItemDelete, Mode=TwoWay}"
                                      Margin="0,0,0,8"/>
-                        
+
                         <Button x:Name="ChangePasswordButton"
                                Style="{StaticResource ModernSecondaryButtonStyle}"
                                HorizontalAlignment="Left"
@@ -364,7 +396,7 @@
                                             ui:ControlHelper.PlaceholderText="https://localhost:7001/api"
                                             Style="{StaticResource ModernTextBoxStyle}"
                                             MinWidth="360"/>
-                                    <TextBlock Text="Configure the base URL for the Password Manager API server." 
+                                    <TextBlock Text="Configure the base URL for the Vault Guard API server." 
                                               Style="{StaticResource ModernCaptionStyle}"
                                               TextWrapping="Wrap"/>
                                 </StackPanel>
@@ -475,10 +507,10 @@
                             </Button>
                         </StackPanel>
                         
-                        <CheckBox x:Name="SyncToggle"
-                                     Content="Enable Cloud Sync"
-                                     IsChecked="{Binding EnableSync, Mode=TwoWay}"
-                                     Checked="SyncToggle_Toggled"
+                        <ui:ToggleSwitch x:Name="SyncToggle"
+                                     Header="Enable Cloud Sync"
+                                     IsOn="{Binding EnableSync, Mode=TwoWay}"
+                                     Toggled="SyncToggle_Toggled"
                                      Margin="0,8,0,0"/>
                     </StackPanel>
                 </StackPanel>
@@ -514,12 +546,13 @@
                     </StackPanel>
                     
                     <StackPanel Margin="16">
-                        <CheckBox x:Name="CloudBackupToggle"
-                                     Content="Enable Automatic Cloud Backup"
-                                     IsChecked="{Binding EnableCloudBackup, Mode=TwoWay}"
-                                     Checked="CloudBackupToggle_Toggled"
-                                     Unchecked="CloudBackupToggle_Toggled"
-                                     Margin="0,0,0,4"/>
+                        <ui:ToggleSwitch x:Name="CloudBackupToggle"
+                                         Header="Enable Automatic Cloud Backup"
+                                         OnContent="On" OffContent="Off"
+                                         IsOn="{Binding EnableCloudBackup, Mode=TwoWay}"
+                                         Toggled="CloudBackupToggle_Toggled"
+                                         HorizontalAlignment="Left"
+                                         Margin="0,0,0,4"/>
 
                         <!-- Always visible (toggling this with the EnableCloudBackup converter while the
                              provider combo realized caused a mid-layout re-parent crash). -->
@@ -535,6 +568,30 @@
                                      Style="{StaticResource ModernComboBoxStyle}"
                                      SelectionChanged="CloudProviderComboBox_SelectionChanged"
                                      MinWidth="200"/>
+                        </StackPanel>
+
+                        <!-- Backup Schedule Settings (kept above the per-provider Test Connection actions) -->
+                        <StackPanel Margin="8,4,8,8">
+                            <TextBlock Text="Backup Schedule"
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            <ComboBox
+                                     ItemsSource="{Binding ScheduleIntervalOptions}"
+                                     SelectedValue="{Binding BackupScheduleInterval, Mode=TwoWay}"
+                                     SelectedValuePath="Interval"
+                                     DisplayMemberPath="DisplayName"
+                                     Style="{StaticResource ModernComboBoxStyle}"
+                                     MinWidth="200"/>
+
+                            <!-- Time Picker for preferred backup time -->
+                            <StackPanel Margin="0,8,0,0" Visibility="{Binding AutoBackupEnabled, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="Preferred Backup Time"
+                                          Style="{StaticResource ModernCaptionStyle}"/>
+                                <TextBlock Text="{Binding NextScheduledBackupFormatted}"
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                          Visibility="{Binding NextScheduledBackupFormatted, Converter={StaticResource StringToVisibilityConverter}}"/>
+                            </StackPanel>
                         </StackPanel>
 
                         <!-- Google Drive OAuth Settings -->
@@ -597,63 +654,228 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <!-- Network Location Configuration -->
-                        <StackPanel Margin="8" x:Name="NetworkLocationPanel"
-                                    Visibility="{Binding IsNetworkLocationSelected, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <TextBlock Text="Network Location Settings" 
+                        <!-- OneDrive OAuth Settings -->
+                        <StackPanel Margin="8" x:Name="OneDriveSettingsPanel"
+                                    Visibility="{Binding IsOneDriveSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="OneDrive — Sign in with Microsoft"
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>
-                            
-                            <StackPanel Orientation="Horizontal" Margin="12">
-                                <TextBox x:Name="NetworkPathTextBox"
-                                        Text="{Binding NetworkPath, Mode=TwoWay}"
-                                        ui:ControlHelper.PlaceholderText="\\server\share\folder or Z:\backups"
-                                        Style="{StaticResource ModernTextBoxStyle}"
-                                        MinWidth="300"/>
-                                        
-                                <Button x:Name="ChooseNetworkLocationButton"
-                                       Style="{StaticResource ModernSecondaryButtonStyle}"
-                                       Click="ChooseNetworkLocationButton_Click"
-                                       VerticalAlignment="Bottom">
+
+                            <TextBlock Text="Sign in seamlessly with VaultGuard's built-in Microsoft app registration — just click Sign in, no setup required."
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      TextWrapping="Wrap"
+                                      Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                      Margin="0,4,0,8"/>
+
+                            <!-- Connection status, plus a live green/red reachability dot driven by a
+                                 background timer (SettingsPage.xaml.cs) that pings OneDrive periodically
+                                 without requiring the user to restart the app. -->
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,8"
+                                       Visibility="{Binding OneDriveConnected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                         Foreground="{StaticResource ModernSuccessBrush}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding OneDriveAccountInfo}"
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          Foreground="{StaticResource ModernSuccessBrush}"
+                                          VerticalAlignment="Center"/>
+                                <Border Width="8" Height="8" CornerRadius="4" Margin="10,0,4,0"
+                                        VerticalAlignment="Center"
+                                        Background="{Binding OneDriveOnline, Converter={StaticResource OnlineStatusToBrushConverter}}"
+                                        Visibility="{Binding OneDriveOnline, Converter={StaticResource OnlineStatusToVisibilityConverter}}"/>
+                                <TextBlock Text="{Binding OneDriveOnline, Converter={StaticResource OnlineStatusToTextConverter}}"
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          Foreground="{Binding OneDriveOnline, Converter={StaticResource OnlineStatusToBrushConverter}}"
+                                          Visibility="{Binding OneDriveOnline, Converter={StaticResource OnlineStatusToVisibilityConverter}}"
+                                          VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <Button Style="{StaticResource ModernPrimaryButtonStyle}"
+                                       Click="ConnectOneDriveButton_Click"
+                                       Visibility="{Binding OneDriveConnected, Converter={StaticResource BoolNegationToVisibilityConverter}}">
                                     <StackPanel Orientation="Horizontal" Margin="8">
-                                        <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Browse"/>
+                                        <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Sign in with Microsoft"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource ModernSecondaryButtonStyle}"
+                                       Click="DisconnectOneDriveButton_Click"
+                                       Margin="8,0,0,0"
+                                       Visibility="{Binding OneDriveConnected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <StackPanel Orientation="Horizontal" Margin="8">
+                                        <TextBlock Text="&#xF3B1;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Sign out"/>
                                     </StackPanel>
                                 </Button>
                             </StackPanel>
                         </StackPanel>
 
-                        <!-- Backup Schedule Settings -->
-                        <StackPanel Margin="12">
-                            <TextBlock Text="Backup Schedule" 
+                        <!-- NAS / Network Drive Configuration -->
+                        <StackPanel Margin="8" x:Name="NetworkLocationPanel"
+                                    Visibility="{Binding IsNetworkLocationSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="NAS / Network Drive"
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>
-                            
-                            <ComboBox
-                                     ItemsSource="{Binding ScheduleIntervalOptions}"
-                                     SelectedValue="{Binding BackupScheduleInterval, Mode=TwoWay}"
-                                     SelectedValuePath="Interval"
-                                     DisplayMemberPath="DisplayName"
-                                     Style="{StaticResource ModernComboBoxStyle}"
-                                     MinWidth="200"/>
-                            
-                            <!-- Time Picker for preferred backup time -->
-                            <StackPanel Margin="8" Visibility="{Binding AutoBackupEnabled, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <TextBlock Text="Preferred Backup Time"
-                                          Style="{StaticResource ModernCaptionStyle}"/>
-                                <!-- TimePicker not supported in WPF: <TimePicker x:Name="BackupTimePicker"
-                                           Time="{Binding PreferredBackupTime, Mode=TwoWay}"
-                                           ClockIdentifier="24HourClock"/> -->
-                                           
-                                <TextBlock Text="{Binding NextScheduledBackupFormatted}"
-                                          Style="{StaticResource ModernCaptionStyle}"
-                                          Foreground="{DynamicResource ModernTextSecondaryBrush}"
-                                          Visibility="{Binding NextScheduledBackupFormatted, Converter={StaticResource StringToVisibilityConverter}}"/>
+                            <TextBlock Text="Back up to a NAS or any network share. Pick one of the network drives mapped on this PC, or type a UNC path directly. Tick &quot;Requires authentication&quot; if the share needs its own username and password."
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      TextWrapping="Wrap"
+                                      Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                      Margin="0,4,0,8"/>
+
+                            <!-- Mapped drives detected on this machine -->
+                            <StackPanel Margin="0,4,0,4">
+                                <TextBlock Text="Mapped network drives" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <ComboBox x:Name="MappedDriveComboBox"
+                                              ItemsSource="{Binding MappedDrives}"
+                                              DisplayMemberPath="DisplayName"
+                                              SelectionChanged="MappedDriveComboBox_SelectionChanged"
+                                              Style="{StaticResource ModernComboBoxStyle}"
+                                              ui:ControlHelper.PlaceholderText="No mapped drives — type a UNC path below"
+                                              MinWidth="320"/>
+                                    <Button x:Name="RefreshMappedDrivesButton"
+                                            Style="{StaticResource ModernSecondaryButtonStyle}"
+                                            Click="RefreshMappedDrivesButton_Click"
+                                            Margin="8,0,0,0" VerticalAlignment="Bottom"
+                                            ToolTip="Re-scan mapped drives">
+                                        <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="4"/>
+                                    </Button>
+                                </StackPanel>
                             </StackPanel>
+
+                            <StackPanel Margin="0,4,0,4">
+                                <TextBlock Text="Path (UNC or mapped drive)" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox x:Name="NetworkPathTextBox"
+                                            Text="{Binding NetworkPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            ui:ControlHelper.PlaceholderText="\\server\share\folder or Z:\backups"
+                                            Style="{StaticResource ModernTextBoxStyle}"
+                                            MinWidth="320"/>
+                                    <Button x:Name="ChooseNetworkLocationButton"
+                                           Style="{StaticResource ModernSecondaryButtonStyle}"
+                                           Click="ChooseNetworkLocationButton_Click"
+                                           Margin="8,0,0,0" VerticalAlignment="Bottom">
+                                        <StackPanel Orientation="Horizontal" Margin="8">
+                                            <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Browse"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <ui:ToggleSwitch Header="Requires authentication (share has its own credentials)"
+                                     IsOn="{Binding NasRequireAuth, Mode=TwoWay}"
+                                     Margin="0,8,0,4"/>
+
+                            <!-- Credentials, only when the share requires them -->
+                            <StackPanel Margin="0,0,0,4"
+                                        Visibility="{Binding NasRequireAuth, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <StackPanel Margin="0,4,0,4">
+                                    <TextBlock Text="Username" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                                    <TextBox Text="{Binding NasUsername, Mode=TwoWay}"
+                                             Style="{StaticResource ModernTextBoxStyle}"
+                                             ui:ControlHelper.PlaceholderText="DOMAIN\user or nasuser"
+                                             MinWidth="320"/>
+                                </StackPanel>
+                                <StackPanel Margin="0,4,0,4">
+                                    <TextBlock Text="Password" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                                    <PasswordBox x:Name="NasPasswordBox"
+                                                 Style="{StaticResource ModernPasswordBoxStyle}"
+                                                 PasswordChanged="NasPasswordBox_PasswordChanged"
+                                                 MinWidth="320"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <TextBlock Text="{Binding NasStatus}"
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      TextWrapping="Wrap"
+                                      Margin="0,4,0,8"/>
+
+                            <Button Style="{StaticResource ModernPrimaryButtonStyle}"
+                                   Click="TestNasConnectionButton_Click"
+                                   HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal" Margin="8">
+                                    <TextBlock Text="&#xE8C4;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Test Connection"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- FTP / FTPS Settings -->
+                        <StackPanel Margin="8" x:Name="FtpSettingsPanel"
+                                    Visibility="{Binding IsFtpSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="FTP / FTPS Connection"
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            <TextBlock Text="Save backups to any FTP or FTPS site — a remote server or hosting account. To back up to a NAS or network share on your LAN, use the NAS / Network Drive provider instead. Combine this with the Backup Schedule above to run off-site backups automatically."
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      TextWrapping="Wrap"
+                                      Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                      Margin="0,4,0,8"/>
+
+                            <Grid Margin="0,4,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="120"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Host" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                                    <TextBox Text="{Binding FtpHost, Mode=TwoWay}"
+                                             Style="{StaticResource ModernTextBoxStyle}"
+                                             ui:ControlHelper.PlaceholderText="nas.local or 192.168.1.10"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Port" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                                    <TextBox Text="{Binding FtpPort, Mode=TwoWay}"
+                                             Style="{StaticResource ModernTextBoxStyle}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Margin="0,4,0,4">
+                                <TextBlock Text="Username" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                                <TextBox Text="{Binding FtpUsername, Mode=TwoWay}"
+                                         Style="{StaticResource ModernTextBoxStyle}"
+                                         MinWidth="300"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,4,0,4">
+                                <TextBlock Text="Password" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                                <PasswordBox x:Name="FtpPasswordBox"
+                                             Style="{StaticResource ModernPasswordBoxStyle}"
+                                             PasswordChanged="FtpPasswordBox_PasswordChanged"
+                                             MinWidth="300"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,4,0,4">
+                                <TextBlock Text="Remote Directory" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                                <TextBox Text="{Binding FtpRemoteDirectory, Mode=TwoWay}"
+                                         Style="{StaticResource ModernTextBoxStyle}"
+                                         ui:ControlHelper.PlaceholderText="/backups/passwordmanager"
+                                         MinWidth="300"/>
+                            </StackPanel>
+
+                            <ui:ToggleSwitch Header="Use FTPS (FTP over TLS) — recommended"
+                                     IsOn="{Binding FtpUseFtps, Mode=TwoWay}"
+                                     Margin="0,4,0,8"/>
+
+                            <TextBlock Text="{Binding FtpStatus}"
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      TextWrapping="Wrap"
+                                      Margin="0,0,0,8"/>
+
+                            <Button Style="{StaticResource ModernPrimaryButtonStyle}"
+                                   Click="TestFtpConnectionButton_Click"
+                                   HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal" Margin="8">
+                                    <TextBlock Text="&#xE8C4;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Test Connection"/>
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
 
                         <StackPanel Margin="12">
-                            <TextBlock Text="Backup Management" 
+                            <TextBlock Text="Backup Management"
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>
                             
@@ -861,10 +1083,13 @@
                                         IsReadOnly="True" 
                                         Style="{StaticResource ModernTextBoxStyle}"
                                         Margin="0,0,8,0"/>
-                                <Button Grid.Column="1" 
+                                <Button Grid.Column="1"
                                        Style="{StaticResource ModernSecondaryButtonStyle}"
                                        Click="ChooseExportFolderButton_Click">
-                                    <TextBlock Text="&#xE8DA;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE8DA;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Browse" VerticalAlignment="Center"/>
+                                    </StackPanel>
                                 </Button>
                             </Grid>
                         </StackPanel>
@@ -985,23 +1210,22 @@
                                    Click="StartImportButton_Click"
                                    IsEnabled="False"
                                    MinWidth="140"
-                                   Height="40"
                                    AutomationProperties.Name="Start password import"
                                    AutomationProperties.HelpText="Begin importing passwords from the selected file">
-                                <StackPanel Orientation="Horizontal" Margin="10">
+                                <StackPanel Orientation="Horizontal" Margin="8">
                                     <TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                     <TextBlock Text="Start Import" FontSize="14" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </Button>
-                            
+
                             <Button x:Name="ClearImportButton"
                                    Style="{StaticResource ModernSecondaryButtonStyle}"
                                    Click="ClearImportButton_Click"
                                    MinWidth="120"
-                                   Height="40"
+                                   Margin="8,0,0,0"
                                    AutomationProperties.Name="Clear import selections"
                                    AutomationProperties.HelpText="Reset all import selections and start over">
-                                <StackPanel Orientation="Horizontal" Margin="10">
+                                <StackPanel Orientation="Horizontal" Margin="8">
                                     <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                     <TextBlock Text="Clear" FontSize="14" FontWeight="SemiBold"/>
                                 </StackPanel>
@@ -1458,7 +1682,7 @@
                                      Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel Grid.Column="1">
-                            <TextBlock Text="VaultGuard Password Manager"
+                            <TextBlock Text="VaultGuard Vault Guard"
                                       FontSize="18" FontWeight="SemiBold"
                                       Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                             <TextBlock x:Name="AppVersionText" Text="Version 1.0.0 · Windows Desktop"
@@ -1475,6 +1699,7 @@
                                     <RowDefinition/>
                                     <RowDefinition/>
                                     <RowDefinition/>
+                                    <RowDefinition/>
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Build"
                                           Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
@@ -1482,13 +1707,39 @@
                                           Text="2025" Style="{StaticResource ModernCaptionStyle}"/>
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Platform"
                                           Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text=".NET 10 · WPF"
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="WPF · Windows Desktop"
                                           Style="{StaticResource ModernCaptionStyle}"/>
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Encryption"
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Runtime"
                                           Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="AES-256-GCM"
+                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="RuntimeText"
+                                          Text=".NET" Style="{StaticResource ModernCaptionStyle}"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Encryption"
+                                          Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="AES-256-GCM"
                                           Style="{StaticResource ModernCaptionStyle}"/>
                             </Grid>
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <TextBlock Text="Built with " Style="{StaticResource ModernCaptionStyle}"
+                                          Foreground="{DynamicResource ModernTextSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Text="&#xEB52;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                          Foreground="#E0245E" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="BuiltWithText" Text=" using .NET"
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          Foreground="{DynamicResource ModernTextSecondaryBrush}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <!-- Configurable update source (JSON version manifest on GitHub) -->
+                            <StackPanel Margin="0,14,0,0">
+                                <TextBlock Text="Product Update URL"
+                                          Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                                <TextBlock Text="Points to a JSON version manifest (app name, version, features, whether a restart is required, and the installer download link)."
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                          TextWrapping="Wrap" Margin="0,2,0,6"/>
+                                <TextBox Text="{Binding UpdateManifestUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        Style="{StaticResource ModernTextBoxStyle}"
+                                        ui:ControlHelper.PlaceholderText="https://raw.githubusercontent.com/.../version.json"/>
+                            </StackPanel>
+
                             <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                                 <Button x:Name="CheckUpdatesButton" Style="{StaticResource ModernSecondaryButtonStyle}"
                                         Click="CheckUpdatesButton_Click">
@@ -1514,6 +1765,10 @@
                                 <StackPanel>
                                     <TextBlock x:Name="UpdateStatusText" TextWrapping="Wrap"
                                                Style="{StaticResource ModernCaptionStyle}"/>
+                                    <TextBlock x:Name="UpdateFeaturesText" TextWrapping="Wrap" Visibility="Collapsed"
+                                               Style="{StaticResource ModernCaptionStyle}"
+                                               Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                               Margin="0,6,0,0"/>
                                     <ProgressBar x:Name="UpdateProgressBar" Visibility="Collapsed"
                                                  Height="6" Margin="0,8,0,0" Minimum="0" Maximum="100"/>
                                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">

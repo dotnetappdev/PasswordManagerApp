@@ -1,13 +1,13 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using PasswordManager.Models;
+using VaultGuard.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PasswordManager.WinUi.Helpers;
+namespace VaultGuard.WinUi.Helpers;
 
-using PasswordManager.WinUi.Helpers;
+using VaultGuard.WinUi.Helpers;
 
 public static class CustomFieldHelper
 {

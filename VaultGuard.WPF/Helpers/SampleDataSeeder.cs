@@ -1,12 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL.Seed;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL.Seed;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.Services.Interfaces;
 using System;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WPF.Helpers
+namespace VaultGuard.WPF.Helpers
 {
     public static class SampleDataSeeder
     {
@@ -19,7 +19,7 @@ namespace PasswordManager.WPF.Helpers
                 var sp = scope.ServiceProvider;
 
                 var cryptoService = sp.GetRequiredService<IPasswordCryptoService>();
-                var db = sp.GetRequiredService<PasswordManager.DAL.PasswordManagerDbContext>();
+                var db = sp.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
 
                 // Prefer the authenticated user; fall back to first user in DB; create demo if none.
                 var authService = sp.GetService<IAuthService>();
@@ -47,7 +47,7 @@ namespace PasswordManager.WPF.Helpers
                 TestDataSeeder.SeedTags(db, seedUserId);
 
                 // Seed default vaults for this user if none exist
-                var vaultService = sp.GetService<PasswordManager.Services.Interfaces.IVaultService>();
+                var vaultService = sp.GetService<VaultGuard.Services.Interfaces.IVaultService>();
                 if (vaultService != null && !db.Vaults.Any(v => v.UserId == seedUserId))
                 {
                     await vaultService.SeedDefaultVaultsAsync(seedUserId);
@@ -67,7 +67,7 @@ namespace PasswordManager.WPF.Helpers
 
         // True when a "<db>.seeded" marker exists next to the SQLite database, meaning demo data has
         // already been seeded once (or was deliberately cleared) and must not be re-added.
-        private static bool SeedMarkerExists(PasswordManager.DAL.PasswordManagerDbContext db)
+        private static bool SeedMarkerExists(VaultGuard.DAL.VaultGuardDbContext db)
         {
             try
             {
@@ -103,7 +103,7 @@ namespace PasswordManager.WPF.Helpers
         /// Inline schema guard that runs on the seeder's own DbContext connection.
         /// Creates any missing tables/columns before EF Core INSERT statements run.
         /// </summary>
-        private static async Task EnsureVaultSchemaOnConnectionAsync(PasswordManager.DAL.PasswordManagerDbContext db)
+        private static async Task EnsureVaultSchemaOnConnectionAsync(VaultGuard.DAL.VaultGuardDbContext db)
         {
             try
             {
@@ -166,12 +166,12 @@ namespace PasswordManager.WPF.Helpers
         }
 
         private static async Task<string> CreateDemoUserAsync(
-            PasswordManager.DAL.PasswordManagerDbContext db,
+            VaultGuard.DAL.VaultGuardDbContext db,
             IPasswordCryptoService cryptoService)
         {
             const string demoMasterPassword = "DemoPassword123!";
             var salt = cryptoService.GenerateUserSalt();
-            var demoUser = new PasswordManager.Models.ApplicationUser
+            var demoUser = new VaultGuard.Models.ApplicationUser
             {
                 Id = Guid.NewGuid().ToString(),
                 Email = "demo@local",

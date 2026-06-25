@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service to detect platform type from user agent strings

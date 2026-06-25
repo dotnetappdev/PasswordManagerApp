@@ -11,11 +11,11 @@ window.passkey = {
         window.crypto.getRandomValues(userId);
         const publicKey = {
             challenge: challenge,
-            rp: { name: 'Password Manager' },
+            rp: { name: 'Vault Guard' },
             user: {
                 id: userId,
                 name: 'user@local',
-                displayName: 'Password Manager User'
+                displayName: 'Vault Guard User'
             },
             pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
             authenticatorSelection: { userVerification: 'preferred' },

@@ -1,7 +1,7 @@
 using FluentValidation;
-using PasswordManager.Models.DTOs.Auth;
+using VaultGuard.Models.DTOs.Auth;
 
-namespace PasswordManager.Services.Validators;
+namespace VaultGuard.Services.Validators;
 
 public class ChangePasswordValidator : AbstractValidator<ChangePasswordDto>
 {

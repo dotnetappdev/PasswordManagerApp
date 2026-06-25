@@ -5,33 +5,33 @@
 set -e
 
 export PATH="/home/runner/.dotnet:$PATH"
-cd /home/runner/work/PasswordManagerApp/PasswordManagerApp
+cd /home/runner/work/VaultGuardApp/VaultGuardApp
 
 echo "=== Testing Entity Framework Identity Setup ==="
 echo ""
 
 # Test 1: Build core projects
 echo "Test 1: Building core projects..."
-dotnet build PasswordManager.Models/PasswordManager.Models.csproj --verbosity quiet
+dotnet build VaultGuard.Models/VaultGuard.Models.csproj --verbosity quiet
 echo "✅ Models project builds successfully"
 
-dotnet build PasswordManager.DAL/PasswordManager.DAL.csproj --verbosity quiet
+dotnet build VaultGuard.DAL/VaultGuard.DAL.csproj --verbosity quiet
 echo "✅ DAL project builds successfully (no more warning about Users property)"
 
-dotnet build PasswordManager.Services/PasswordManager.Services.csproj --verbosity quiet
+dotnet build VaultGuard.Services/VaultGuard.Services.csproj --verbosity quiet
 echo "✅ Services project builds successfully"
 
 # Test 2: Check migration files exist
 echo ""
 echo "Test 2: Checking migration files..."
-if [ -f "PasswordManager.DAL/Migrations/20250803101910_firstmigration.cs" ]; then
+if [ -f "VaultGuard.DAL/Migrations/20250803101910_firstmigration.cs" ]; then
     echo "✅ First migration exists (creates AspNetUsers table)"
 else
     echo "❌ First migration missing"
     exit 1
 fi
 
-if [ -f "PasswordManager.DAL/Migrations/20250904185307_AddMasterKeyIdentifier.cs" ]; then
+if [ -f "VaultGuard.DAL/Migrations/20250904185307_AddMasterKeyIdentifier.cs" ]; then
     echo "✅ MasterKeyIdentifier migration exists"
 else
     echo "❌ MasterKeyIdentifier migration missing"
@@ -41,14 +41,14 @@ fi
 # Test 3: Check for Identity table creation in first migration
 echo ""
 echo "Test 3: Validating Identity table creation in migration..."
-if grep -q "AspNetUsers" PasswordManager.DAL/Migrations/20250803101910_firstmigration.cs; then
+if grep -q "AspNetUsers" VaultGuard.DAL/Migrations/20250803101910_firstmigration.cs; then
     echo "✅ First migration creates AspNetUsers table"
 else
     echo "❌ AspNetUsers table creation not found in first migration"
     exit 1
 fi
 
-if grep -q "AspNetRoles" PasswordManager.DAL/Migrations/20250803101910_firstmigration.cs; then
+if grep -q "AspNetRoles" VaultGuard.DAL/Migrations/20250803101910_firstmigration.cs; then
     echo "✅ First migration creates AspNetRoles table"
 else
     echo "❌ AspNetRoles table creation not found in first migration"
@@ -58,14 +58,14 @@ fi
 # Test 4: Check Identity configuration
 echo ""
 echo "Test 4: Validating Identity configuration..."
-if grep -q "AddIdentity<ApplicationUser, ApplicationRole>" PasswordManager.WinUi/App.xaml.cs; then
+if grep -q "AddIdentity<ApplicationUser, ApplicationRole>" VaultGuard.WinUi/App.xaml.cs; then
     echo "✅ WinUI app uses full Identity with roles"
 else
     echo "❌ WinUI app Identity configuration incorrect"
     exit 1
 fi
 
-if grep -q "IdentityDbContext<ApplicationUser, ApplicationRole, string>" PasswordManager.DAL/PasswordManagerDbContextApp.cs; then
+if grep -q "IdentityDbContext<ApplicationUser, ApplicationRole, string>" VaultGuard.DAL/VaultGuardDbContextApp.cs; then
     echo "✅ DbContext inherits from IdentityDbContext with roles"
 else
     echo "❌ DbContext Identity inheritance incorrect"
@@ -92,21 +92,21 @@ fi
 # Test 6: Check improved error handling
 echo ""
 echo "Test 6: Validating improved error handling..."
-if grep -q "CheckIdentityTablesExistAsync" PasswordManager.Services/Services/AppStartupService.cs; then
+if grep -q "CheckIdentityTablesExistAsync" VaultGuard.Services/Services/AppStartupService.cs; then
     echo "✅ Identity table checking method exists"
 else
     echo "❌ Identity table checking method missing"
     exit 1
 fi
 
-if grep -q "sqlite_master" PasswordManager.Services/Services/AppStartupService.cs; then
+if grep -q "sqlite_master" VaultGuard.Services/Services/AppStartupService.cs; then
     echo "✅ Improved table detection using sqlite_master"
 else
     echo "❌ Improved table detection logic missing"
     exit 1
 fi
 
-if grep -q "no such table: AspNetUsers" PasswordManager.WinUi/Services/WinUiAuthService.cs; then
+if grep -q "no such table: AspNetUsers" VaultGuard.WinUi/Services/WinUiAuthService.cs; then
     echo "✅ WinUiAuthService has error handling for missing AspNetUsers table"
 else
     echo "❌ WinUiAuthService missing AspNetUsers error handling"

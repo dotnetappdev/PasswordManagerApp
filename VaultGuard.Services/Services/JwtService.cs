@@ -4,13 +4,13 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Auth;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Auth;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 public class JwtService : IJwtService
 {

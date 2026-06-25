@@ -1,12 +1,12 @@
-; Password Manager WinUI Application Installer
+; Vault Guard WinUI Application Installer
 ; Inno Setup Script
 ; Requires Inno Setup 6.x (https://jrsoftware.org/isdl.php)
 
-#define MyAppName "Password Manager"
+#define MyAppName "Vault Guard"
 #define MyAppVersion "1.0.0"
-#define MyAppPublisher "Password Manager"
-#define MyAppURL "https://github.com/dotnetappdev/PasswordManagerApp"
-#define MyAppExeName "PasswordManager.WinUi.exe"
+#define MyAppPublisher "Vault Guard"
+#define MyAppURL "https://github.com/dotnetappdev/VaultGuardApp"
+#define MyAppExeName "VaultGuard.WinUi.exe"
 #define DotNetRuntimeURL "https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe"
 
 [Setup]
@@ -23,14 +23,14 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile=..\LICENSE
 OutputDir=output
-OutputBaseFilename=PasswordManager-WinUI-Setup-{#MyAppVersion}
+OutputBaseFilename=VaultGuard-WinUI-Setup-{#MyAppVersion}
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
 ArchitecturesAllowed=x64 arm64
 ArchitecturesInstallIn64BitMode=x64 arm64
 PrivilegesRequired=admin
-SetupIconFile=..\PasswordManager.WinUi\Assets\Square44x44Logo.scale-200.png
+SetupIconFile=..\VaultGuard.WinUi\Assets\Square44x44Logo.scale-200.png
 UninstallDisplayIcon={app}\{#MyAppExeName}
 
 [Languages]
@@ -52,7 +52,7 @@ Name: "autostart"; Description: "Start {#MyAppName} automatically when Windows s
 [Files]
 ; WinUI Application Files - Source should point to published WinUI output
 ; Note: Run 'dotnet publish -c Release' before building installer
-Source: "..\PasswordManager.WinUi\bin\x64\Release\net9.0-windows10.0.19041.0\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\VaultGuard.WinUi\bin\x64\Release\net9.0-windows10.0.19041.0\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Configuration template
 Source: "config\winui-appsettings.json.template"; DestDir: "{app}"; DestName: "appsettings.json"; Flags: onlyifdoesntexist confirmoverwrite
 

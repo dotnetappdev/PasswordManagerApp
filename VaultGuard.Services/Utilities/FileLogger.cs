@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace PasswordManager.Services.Utilities;
+namespace VaultGuard.Services.Utilities;
 
 public class FileLogger : IDisposable
 {

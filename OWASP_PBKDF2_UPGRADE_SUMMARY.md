@@ -1,33 +1,33 @@
 # OWASP PBKDF2 Upgrade Summary
 
 ## Overview
-This document summarizes the changes made to upgrade the Password Manager application to follow the OWASP 2024 recommendations for PBKDF2 password storage, increasing the iteration count from 100,000 to 600,000.
+This document summarizes the changes made to upgrade the Vault Guard application to follow the OWASP 2024 recommendations for PBKDF2 password storage, increasing the iteration count from 100,000 to 600,000.
 
 ## Changes Made
 
-### 1. Core Crypto Service (`PasswordManager.Crypto/Services/PasswordCryptoService.cs`)
+### 1. Core Crypto Service (`VaultGuard.Crypto/Services/PasswordCryptoService.cs`)
 - **Changed**: `MasterKeyIterations` constant from 100,000 to 600,000
 - **Changed**: `AuthHashIterations` constant from 100,000 to 600,000
 - **Impact**: All password encryption/decryption operations now use 600,000 iterations
 
-### 2. Application User Model (`PasswordManager.Models/ApplicationUser.cs`)
+### 2. Application User Model (`VaultGuard.Models/ApplicationUser.cs`)
 - **Changed**: `MasterPasswordIterations` default value from 100,000 to 600,000
 - **Impact**: New users will automatically use 600,000 iterations
 
-### 3. Configuration (`PasswordManager.API/appsettings.json`)
+### 3. Configuration (`VaultGuard.API/appsettings.json`)
 - **Changed**: `MasterKeyIterations` from 100,000 to 600,000
 - **Changed**: `AuthHashIterations` from 100,000 to 600,000
 - **Changed**: `MinIterations` from 50,000 to 600,000
 - **Changed**: `MaxIterations` from 200,000 to 1,000,000
 - **Impact**: Configuration-based systems will use the new iteration counts
 
-### 4. Interface Documentation (`PasswordManager.Crypto/Interfaces/`)
+### 4. Interface Documentation (`VaultGuard.Crypto/Interfaces/`)
 - **Updated**: `IPasswordCryptoService.cs` default parameter values from 100,000 to 600,000
 - **Updated**: `ICryptographyService.cs` documentation to reference OWASP 2024 recommendations
 - **Impact**: Interface contracts now reflect the new standards
 
 ### 5. Documentation Updates
-- **Updated**: `PasswordManager.Crypto/README.md` - All references to iteration counts
+- **Updated**: `VaultGuard.Crypto/README.md` - All references to iteration counts
 - **Updated**: `ENCRYPTION_IMPLEMENTATION.md` - Security specifications and examples
 - **Updated**: `ReadMe.md` - Main project documentation
 - **Updated**: Test files to use 600,000 iterations for validation
@@ -81,7 +81,7 @@ This document summarizes the changes made to upgrade the Password Manager applic
 ### Test Command
 ```bash
 # Run crypto tests to verify functionality
-dotnet test PasswordManager.Crypto.Tests
+dotnet test VaultGuard.Crypto.Tests
 ```
 
 ## Migration Strategy
@@ -113,6 +113,6 @@ dotnet test PasswordManager.Crypto.Tests
 
 ## Conclusion
 
-The Password Manager application now meets the OWASP 2024 recommendations for PBKDF2 password storage with 600,000 iterations. This upgrade significantly enhances security while maintaining backward compatibility and providing a clear migration path for existing users.
+The Vault Guard application now meets the OWASP 2024 recommendations for PBKDF2 password storage with 600,000 iterations. This upgrade significantly enhances security while maintaining backward compatibility and providing a clear migration path for existing users.
 
 The changes are minimal but impactful, focusing on core cryptographic parameters while preserving the existing architecture and user experience.

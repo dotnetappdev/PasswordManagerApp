@@ -3,13 +3,13 @@
 ## Building from Source
 
 ### Prerequisites
-- .NET 9 SDK
-- Visual Studio 2024 or JetBrains Rider
+- .NET 10 SDK (10.0.301 or newer; pinned in `global.json`)
+- Visual Studio 2026 or JetBrains Rider
 - Git
-- For Uno Platform mobile development:
-  - Android SDK (for Android development)
-  - Xcode 15+ (for iOS development on macOS)
-  - Uno Platform workload: `dotnet workload install android ios`
+- For mobile development:
+  - Android SDK (for Android)
+  - Xcode 16+ (for iOS, on macOS)
+  - MAUI workloads: `dotnet workload install maui`
 
 ### Build Commands
 ```bash
@@ -17,16 +17,16 @@
 dotnet build
 
 # Build specific projects
-dotnet build PasswordManager.Web          # Web application
-dotnet build PasswordManager.Uno          # Uno Platform mobile app
-dotnet build PasswordManager.Components.Shared  # Shared components
+dotnet build VaultGuard.Web          # Web application
+dotnet build VaultGuard.Uno          # Uno Platform mobile app
+dotnet build VaultGuard.Components.Shared  # Shared components
 
 # Build Uno Platform for specific platforms
-cd PasswordManager.Uno
-dotnet build -f net9.0-android           # Android
-dotnet build -f net9.0-ios               # iOS (macOS only)
-dotnet build -f net9.0-browserwasm       # WebAssembly
-dotnet build -f net9.0-desktop           # Desktop (Windows/macOS/Linux)
+cd VaultGuard.Uno
+dotnet build -f net10.0-android           # Android
+dotnet build -f net10.0-ios               # iOS (macOS only)
+dotnet build -f net10.0-browserwasm       # WebAssembly
+dotnet build -f net10.0-desktop           # Desktop (Windows/macOS/Linux)
 
 # Run tests
 dotnet test
@@ -35,41 +35,41 @@ dotnet test
 ### Running in Development Mode
 ```bash
 # Start the API server
-cd PasswordManager.API
+cd VaultGuard.API
 dotnet run
 
 # Start the web application (new terminal)
-cd PasswordManager.Web
+cd VaultGuard.Web
 dotnet run
 
 # Run the Uno Platform mobile app (new terminal)
-cd PasswordManager.Uno
-dotnet run -f net9.0-android    # For Android emulator
-dotnet run -f net9.0-ios         # For iOS simulator (macOS)
-dotnet run -f net9.0-browserwasm # For WebAssembly in browser
+cd VaultGuard.Uno
+dotnet run -f net10.0-android    # For Android emulator
+dotnet run -f net10.0-ios         # For iOS simulator (macOS)
+dotnet run -f net10.0-browserwasm # For WebAssembly in browser
 ```
 
 ## Project Structure
 
 ```
-PasswordManagerApp/
-├── PasswordManager.API/              # ASP.NET Core Web API
-├── PasswordManager.Web/              # Blazor Server Web Application
-├── PasswordManager.WinUi/            # WinUI 3 Desktop Application
-├── PasswordManager.Uno/              # Uno Platform Mobile App (iOS/Android/WASM)
-├── PasswordManager.Components.Shared/ # Shared Blazor Component Library
-├── PasswordManager.BrowserExtension/ # Cross-browser extension
-├── PasswordManager.Crypto/           # Cryptography library
-├── PasswordManager.DAL/              # Data Access Layer
-├── PasswordManager.DAL.SqlServer/    # SQL Server provider
-├── PasswordManager.DAL.MySql/        # MySQL provider
-├── PasswordManager.DAL.Postgres/     # PostgreSQL provider
-├── PasswordManager.DAL.SupaBase/     # Supabase provider
-├── PasswordManager.Models/           # Shared models and DTOs
-├── PasswordManager.Services/         # Business logic services
-├── PasswordManager.Imports/          # Import framework
-├── PasswordManagerImports.1Password/ # 1Password import plugin
-└── PasswordManagerImports.Bitwarden/ # Enhanced secure import plugin
+VaultGuardApp/
+├── VaultGuard.API/              # ASP.NET Core Web API
+├── VaultGuard.Web/              # Blazor Server Web Application
+├── VaultGuard.WinUi/            # WinUI 3 Desktop Application
+├── VaultGuard.Uno/              # Uno Platform Mobile App (iOS/Android/WASM)
+├── VaultGuard.Components.Shared/ # Shared Blazor Component Library
+├── VaultGuard.BrowserExtension/ # Cross-browser extension
+├── VaultGuard.Crypto/           # Cryptography library
+├── VaultGuard.DAL/              # Data Access Layer
+├── VaultGuard.DAL.SqlServer/    # SQL Server provider
+├── VaultGuard.DAL.MySql/        # MySQL provider
+├── VaultGuard.DAL.Postgres/     # PostgreSQL provider
+├── VaultGuard.DAL.SupaBase/     # Supabase provider
+├── VaultGuard.Models/           # Shared models and DTOs
+├── VaultGuard.Services/         # Business logic services
+├── VaultGuard.Imports/          # Import framework
+├── VaultGuardImports.1Password/ # 1Password import plugin
+└── VaultGuardImports.Bitwarden/ # Enhanced secure import plugin
 ```
 
 ## Database Development
@@ -77,27 +77,27 @@ PasswordManagerApp/
 ### Entity Framework Migrations
 ```bash
 # Add a new migration
-cd PasswordManager.DAL
-dotnet ef migrations add MigrationName --startup-project ../PasswordManager.API
+cd VaultGuard.DAL
+dotnet ef migrations add MigrationName --startup-project ../VaultGuard.API
 
 # Update database
-dotnet ef database update --startup-project ../PasswordManager.API
+dotnet ef database update --startup-project ../VaultGuard.API
 
 # Generate SQL script
-dotnet ef migrations script --startup-project ../PasswordManager.API
+dotnet ef migrations script --startup-project ../VaultGuard.API
 ```
 
 ### Database Providers
 Each database provider has its own project:
-- **PasswordManager.DAL.SqlServer**: SQL Server support
-- **PasswordManager.DAL.MySql**: MySQL support with Pomelo provider
-- **PasswordManager.DAL.Postgres**: PostgreSQL support with Npgsql
-- **PasswordManager.DAL.SupaBase**: Supabase cloud database support
+- **VaultGuard.DAL.SqlServer**: SQL Server support
+- **VaultGuard.DAL.MySql**: MySQL support with Pomelo provider
+- **VaultGuard.DAL.Postgres**: PostgreSQL support with Npgsql
+- **VaultGuard.DAL.SupaBase**: Supabase cloud database support
 
 ## Creating Import Plugins
 
 1. Create a new class library project
-2. Reference `PasswordManager.Imports`
+2. Reference `VaultGuard.Imports`
 3. Implement `IPasswordImportProvider`
 4. Register the plugin in your application
 
@@ -126,7 +126,7 @@ dotnet test
 dotnet test --collect:"XPlat Code Coverage"
 
 # Run specific test project
-dotnet test PasswordManager.Crypto.Tests/
+dotnet test VaultGuard.Crypto.Tests/
 ```
 
 ### Integration Tests
@@ -192,7 +192,7 @@ The solution includes integration tests for:
 ## Architecture
 
 ### Shared Component Library
-The `PasswordManager.Components.Shared` project contains:
+The `VaultGuard.Components.Shared` project contains:
 - **Pages**: Master password, vault, settings, and admin pages
 - **Components**: Authentication, layout, and UI components
 - **Services**: Shared business logic and data access patterns
@@ -236,7 +236,7 @@ For detailed security information, see [ENCRYPTION_IMPLEMENTATION.md](ENCRYPTION
 ## Troubleshooting
 
 ### Common Issues
-- **.NET SDK version**: Ensure .NET 9 SDK is installed
+- **.NET SDK version**: Ensure .NET 10 SDK is installed
 - **Database connection**: Check connection strings
 - **Authentication**: Verify JWT configuration
 - **CORS**: Check cross-origin settings for API calls

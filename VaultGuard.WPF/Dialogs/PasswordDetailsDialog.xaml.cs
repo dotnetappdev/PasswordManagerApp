@@ -1,10 +1,10 @@
 using System.Windows;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.WPF.Services;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.WPF.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace PasswordManager.WPF.Dialogs;
+namespace VaultGuard.WPF.Dialogs;
 
 public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDialog
 {

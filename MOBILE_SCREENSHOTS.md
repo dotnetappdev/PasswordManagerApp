@@ -2,7 +2,7 @@
 
 ## 📸 Overview
 
-This guide provides comprehensive instructions for capturing professional screenshots of the Password Manager mobile app on iOS and Android platforms. These screenshots showcase the 1Password-inspired design and demonstrate the app's features.
+This guide provides comprehensive instructions for capturing professional screenshots of the Vault Guard mobile app on iOS and Android platforms. These screenshots showcase the 1Password-inspired design and demonstrate the app's features.
 
 ## 📱 Screenshot Requirements
 
@@ -145,7 +145,7 @@ Shopping
 
 3. **Run the App**
    ```bash
-   cd PasswordManager.Uno
+   cd VaultGuard.Uno
    dotnet run -f net9.0-ios
    ```
 
@@ -158,7 +158,7 @@ Shopping
 **Setup:**
 - Theme: Light mode
 - Fields: Empty with placeholder text visible
-- Status: "New to Password Manager?" link visible
+- Status: "New to Vault Guard?" link visible
 
 **Capture:**
 ```bash
@@ -288,7 +288,7 @@ xcrun simctl io booted screenshot ios-login-light.png
 
 3. **Run the App**
    ```bash
-   cd PasswordManager.Uno
+   cd VaultGuard.Uno
    dotnet run -f net9.0-android
    ```
 

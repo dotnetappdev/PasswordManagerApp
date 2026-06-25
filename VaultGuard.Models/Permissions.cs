@@ -1,4 +1,4 @@
-namespace PasswordManager.Models;
+namespace VaultGuard.Models;
 
 /// <summary>
 /// Application permissions for role-based authorization

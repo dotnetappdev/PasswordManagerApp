@@ -1,302 +1,383 @@
+using System.Diagnostics;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models.DTOs;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
-/// OneDrive backup service implementation using local OneDrive folder detection
-/// Works with users already signed into OneDrive on Windows - no credentials collected
-/// 
-/// Security Model (similar to Microsoft Authenticator):
-/// - Stores backups in OneDrive/Apps/PasswordManager folder (app-specific secure location)
-/// - Sets folder and file attributes as Hidden+System for additional security  
-/// - Files are encrypted before storage and have .pwmbackup extension
-/// - Uses existing Windows OneDrive sync without requiring separate authentication
+/// OneDrive backup service using the Microsoft Graph API. Supports personal Microsoft accounts only.
+///
+/// Stores backups in the app's special "approot" folder — a OneDrive folder that only this app
+/// (and its registered Azure AD app id) can see, the same idea as Google Drive's appDataFolder.
+/// OAuth2 tokens are stored in the local app-data settings file, encrypted with DPAPI on Windows.
+///
+/// OAuth flow: public-client loopback redirect with PKCE (RFC 8252) — no client secret needed,
+/// as long as the Azure AD app registration's platform is "Mobile and desktop applications".
 /// </summary>
 public class OneDriveBackupService : IOneDriveBackupService
 {
     private readonly ILogger<OneDriveBackupService> _logger;
-    private const string SecureBackupFolderPath = "Apps/PasswordManager"; // Secure app-specific folder like Microsoft Authenticator
+    private readonly HttpClient _http;
+
+    private const string TokenFile = "onedrive_token.json";
+    private const string SettingsDir = "VaultGuard";
+    private const string BackupMimeType = "application/octet-stream";
+    private const string GraphBase = "https://graph.microsoft.com/v1.0";
+    private const string AppFolderUrl = GraphBase + "/me/drive/special/approot";
+    private const string Scope = "offline_access Files.ReadWrite.AppFolder User.Read";
+
+    // VaultGuard's own "Mobile and desktop applications" Azure AD app registration — a public
+    // client with no secret, registered to support personal Microsoft accounts. Shipping this
+    // means personal users never have to register their own Azure app.
+    // Read from configuration (CloudBackup:OneDrive:PersonalClientId in appsettings.json) so the id
+    // can be rotated without a code change; falls back to a placeholder if not configured.
+    private const string FallbackPersonalClientId = "00000000-0000-0000-0000-000000000000";
+    private readonly string _personalClientId;
+
+    private const string TokenEndpoint = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
+    private const string AuthEndpoint = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
 
     public string ServiceName => "OneDrive";
-    public long MaxBackupSizeBytes => 100 * 1024 * 1024; // 100MB limit for personal OneDrive
+    public long MaxBackupSizeBytes => 100 * 1024 * 1024; // 100 MB
 
-    public OneDriveBackupService(ILogger<OneDriveBackupService> logger)
+    private StoredToken? _token;
+
+    public OneDriveAccountInfo? AccountInfo { get; private set; }
+    public string? LastError { get; private set; }
+
+    public OneDriveBackupService(ILogger<OneDriveBackupService> logger, IConfiguration configuration)
     {
         _logger = logger;
+        _personalClientId = configuration["CloudBackup:OneDrive:PersonalClientId"] is { Length: > 0 } configured
+            ? configured
+            : FallbackPersonalClientId;
+        _http = new HttpClient();
+        _http.DefaultRequestHeaders.UserAgent.ParseAdd("VaultGuard/1.0");
+        LoadStoredCredentials();
+    }
+
+    // ─── Auth ───────────────────────────────────────────────────────────────
+
+    private async Task<bool> ConnectWithOAuthAsync(string clientId, CancellationToken ct = default)
+    {
+        LastError = null;
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            LastError = "No client ID was supplied.";
+            return false;
+        }
+
+        // PKCE
+        var verifier = GenerateCodeVerifier();
+        var challenge = GenerateCodeChallenge(verifier);
+
+        var port = FindFreePort();
+        // Azure AD's loopback "any free port" exemption only matches the literal host "localhost"
+        // registered with NO trailing slash/path (just "http://localhost"), and the dynamic value
+        // sent in the request must match exactly — including no trailing slash. 127.0.0.1 does NOT
+        // get this treatment, and a trailing slash on the dynamic URI breaks the match too, both
+        // causing "invalid_request: redirect_uri is not valid" even with the right URI registered.
+        // HttpListener prefixes, however, MUST end in "/" — so we need two slightly different strings.
+        var redirectUri = $"http://localhost:{port}";
+        var listenerPrefix = $"{redirectUri}/";
+
+        var authUrl = $"{AuthEndpoint}?response_type=code" +
+                      $"&client_id={Uri.EscapeDataString(clientId)}" +
+                      $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
+                      $"&scope={Uri.EscapeDataString(Scope)}" +
+                      $"&code_challenge={challenge}" +
+                      $"&code_challenge_method=S256" +
+                      $"&response_mode=query";
+
+        string? code = null;
+        string? authError = null;
+        try
+        {
+            Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
+
+            using var listener = new HttpListener();
+            listener.Prefixes.Add(listenerPrefix);
+            listener.Start();
+            try
+            {
+                using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                timeoutCts.CancelAfter(TimeSpan.FromMinutes(5));
+                var context = await listener.GetContextAsync().WaitAsync(timeoutCts.Token);
+                code = context.Request.QueryString["code"];
+                authError = context.Request.QueryString["error_description"] ?? context.Request.QueryString["error"];
+                var html = string.IsNullOrEmpty(code)
+                    ? $"<html><body><h2>VaultGuard: sign-in failed — {System.Net.WebUtility.HtmlEncode(authError ?? "no authorization code returned")}. You can close this tab.</h2></body></html>"
+                    : "<html><body><h2>VaultGuard: authorisation complete — you can close this tab.</h2></body></html>";
+                var buf = Encoding.UTF8.GetBytes(html);
+                context.Response.ContentLength64 = buf.Length;
+                await context.Response.OutputStream.WriteAsync(buf, timeoutCts.Token);
+                context.Response.Close();
+            }
+            finally
+            {
+                listener.Stop();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            LastError = "Sign-in timed out waiting for the browser to redirect back (5 minutes). Make sure you completed the Microsoft sign-in page.";
+            return false;
+        }
+        catch (Exception ex)
+        {
+            LastError = $"Could not start the local sign-in listener: {ex.Message}";
+            _logger.LogError(ex, "OneDrive loopback listener failed");
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(code))
+        {
+            LastError = string.IsNullOrEmpty(authError)
+                ? "No authorization code was returned by Microsoft. The sign-in may have been cancelled."
+                : $"Microsoft returned an error: {authError}";
+            return false;
+        }
+
+        var form = new Dictionary<string, string>
+        {
+            ["code"] = code,
+            ["client_id"] = clientId,
+            ["redirect_uri"] = redirectUri,
+            ["grant_type"] = "authorization_code",
+            ["code_verifier"] = verifier,
+            ["scope"] = Scope,
+        };
+
+        HttpResponseMessage resp;
+        string respBody;
+        try
+        {
+            resp = await _http.PostAsync(TokenEndpoint, new FormUrlEncodedContent(form), ct);
+            respBody = await resp.Content.ReadAsStringAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            LastError = $"Could not reach Microsoft's token endpoint: {ex.Message}";
+            _logger.LogError(ex, "OneDrive token exchange request failed");
+            return false;
+        }
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            // AAD error responses are JSON with an "error" + "error_description" — surface that
+            // verbatim instead of just the HTTP status, since it's the only way to tell e.g. an
+            // app-registration misconfiguration apart from a redirect URI mismatch.
+            var detail = TryExtractOAuthError(respBody) ?? respBody;
+            LastError = $"Token exchange failed ({(int)resp.StatusCode} {resp.StatusCode}): {detail}";
+            _logger.LogError("OneDrive token exchange failed: {Status} {Body}", resp.StatusCode, respBody);
+            return false;
+        }
+
+        var tok = JsonSerializer.Deserialize<OAuthTokenResponse>(respBody);
+        if (tok == null)
+        {
+            LastError = "Microsoft's token response could not be parsed.";
+            return false;
+        }
+
+        _token = new StoredToken
+        {
+            AccessToken = tok.AccessToken,
+            RefreshToken = tok.RefreshToken ?? string.Empty,
+            ExpiresAt = DateTimeOffset.UtcNow.AddSeconds(tok.ExpiresIn - 60),
+            ClientId = clientId,
+        };
+
+        SaveStoredCredentials();
+        await RefreshAccountInfoAsync(ct);
+        return true;
+    }
+
+    private static string? TryExtractOAuthError(string body)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            var root = doc.RootElement;
+            var code = root.TryGetProperty("error", out var e) ? e.GetString() : null;
+            var desc = root.TryGetProperty("error_description", out var d) ? d.GetString() : null;
+            return desc != null ? $"{code}: {desc}" : code;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public Task<bool> ConnectPersonalAsync(CancellationToken ct = default) =>
+        ConnectWithOAuthAsync(_personalClientId, ct);
+
+    public async Task<bool> HasStoredTokenAsync()
+    {
+        LoadStoredCredentials();
+        return _token != null && !string.IsNullOrEmpty(_token.RefreshToken);
+    }
+
+    public async Task DisconnectAsync()
+    {
+        _token = null;
+        AccountInfo = null;
+        var path = TokenFilePath();
+        if (File.Exists(path)) File.Delete(path);
+    }
+
+    public async Task<bool> PingAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            if (!await HasStoredTokenAsync()) return false;
+            await EnsureAccessTokenAsync();
+            if (_token == null) return false;
+
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(8));
+
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{GraphBase}/me?$select=id");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token.AccessToken);
+            var resp = await _http.SendAsync(request, timeoutCts.Token);
+            return resp.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public async Task<bool> AuthenticateAsync()
     {
-        try
-        {
-            // Check if OneDrive is set up and syncing on this Windows machine
-            var oneDrivePath = GetOneDrivePath();
-            if (oneDrivePath != null)
-            {
-                _logger.LogInformation("OneDrive folder detected at: {Path}", oneDrivePath);
-                return true;
-            }
-
-            _logger.LogInformation("OneDrive is not set up or not syncing on this machine");
-            return false;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to detect OneDrive");
-            return false;
-        }
+        LoadStoredCredentials();
+        if (_token == null) return false;
+        await EnsureAccessTokenAsync();
+        return _token != null;
     }
 
     public async Task<bool> IsAuthenticatedAsync()
     {
-        return GetOneDrivePath() != null;
+        LoadStoredCredentials();
+        if (_token == null || string.IsNullOrEmpty(_token.RefreshToken)) return false;
+        if (_token.ExpiresAt < DateTimeOffset.UtcNow)
+        {
+            try { await RefreshAccessTokenAsync(); }
+            catch { return false; }
+        }
+        return _token != null;
     }
 
-    public async Task SignOutAsync()
-    {
-        // Cannot programmatically sign out of OneDrive on Windows
-        // User needs to sign out through OneDrive app or Windows settings
-        _logger.LogInformation("User must sign out of OneDrive through Windows settings or OneDrive app");
-    }
+    public async Task SignOutAsync() => await DisconnectAsync();
+
+    // ─── Backup operations ───────────────────────────────────────────────────
 
     public async Task<CloudBackupResult> UploadBackupAsync(byte[] backupData, string fileName, string? description = null)
     {
-        try
+        await EnsureAccessTokenAsync();
+        if (_token == null) return Fail("Not authenticated with OneDrive.");
+        if (backupData.Length > MaxBackupSizeBytes) return Fail("Backup exceeds 100 MB limit.");
+
+        var request = new HttpRequestMessage(HttpMethod.Put, $"{AppFolderUrl}:/{Uri.EscapeDataString(fileName)}:/content");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token!.AccessToken);
+        request.Content = new ByteArrayContent(backupData);
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue(BackupMimeType);
+
+        var resp = await _http.SendAsync(request);
+        if (!resp.IsSuccessStatusCode)
         {
-            if (!await IsAuthenticatedAsync())
-            {
-                return new CloudBackupResult 
-                { 
-                    Success = false, 
-                    ErrorMessage = "OneDrive is not set up or not syncing on this machine" 
-                };
-            }
-
-            if (backupData.Length > MaxBackupSizeBytes)
-            {
-                return new CloudBackupResult 
-                { 
-                    Success = false, 
-                    ErrorMessage = $"Backup size exceeds maximum allowed size of {MaxBackupSizeBytes / (1024 * 1024)}MB" 
-                };
-            }
-
-            var oneDrivePath = GetOneDrivePath();
-            if (oneDrivePath == null)
-            {
-                return new CloudBackupResult 
-                { 
-                    Success = false, 
-                    ErrorMessage = "OneDrive path not found" 
-                };
-            }
-
-            // Create secure PasswordManager folder in OneDrive Apps directory
-            // This follows Microsoft Authenticator's approach for secure backup storage
-            var backupFolder = Path.Combine(oneDrivePath, SecureBackupFolderPath);
-            if (!Directory.Exists(backupFolder))
-            {
-                Directory.CreateDirectory(backupFolder);
-                _logger.LogInformation("Created secure backup folder at: {Path}", backupFolder);
-                
-                // Set folder as hidden and system folder for additional security
-                try
-                {
-                    var directoryInfo = new DirectoryInfo(backupFolder);
-                    directoryInfo.Attributes |= FileAttributes.Hidden | FileAttributes.System;
-                    _logger.LogDebug("Set secure attributes on backup folder");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not set secure attributes on backup folder");
-                }
-            }
-
-            var filePath = Path.Combine(backupFolder, fileName);
-            await File.WriteAllBytesAsync(filePath, backupData);
-
-            // Set secure file attributes similar to Microsoft Authenticator
-            try
-            {
-                var secureFileInfo = new FileInfo(filePath);
-                secureFileInfo.Attributes |= FileAttributes.Hidden | FileAttributes.System;
-                _logger.LogDebug("Set secure attributes on backup file: {FileName}", fileName);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Could not set secure attributes on backup file: {FileName}", fileName);
-            }
-
-            var fileInfo = new FileInfo(filePath);
-            return new CloudBackupResult
-            {
-                Success = true,
-                BackupInfo = new CloudBackupInfo
-                {
-                    Id = filePath,
-                    FileName = fileName,
-                    Description = description,
-                    CreatedAt = fileInfo.CreationTimeUtc,
-                    ModifiedAt = fileInfo.LastWriteTimeUtc,
-                    SizeInBytes = fileInfo.Length,
-                    CloudPath = filePath,
-                    ServiceName = ServiceName
-                }
-            };
+            var err = await resp.Content.ReadAsStringAsync();
+            _logger.LogError("OneDrive upload failed {Status}: {Body}", resp.StatusCode, err);
+            return Fail($"Upload failed ({resp.StatusCode}).");
         }
-        catch (Exception ex)
+
+        var body = await resp.Content.ReadAsStringAsync();
+        var file = JsonSerializer.Deserialize<DriveItem>(body);
+        if (file == null) return Fail("OneDrive returned no file info.");
+
+        return new CloudBackupResult
         {
-            _logger.LogError(ex, "Failed to upload backup to OneDrive");
-            return new CloudBackupResult 
-            { 
-                Success = false, 
-                ErrorMessage = $"Upload failed: {ex.Message}" 
-            };
-        }
+            Success = true,
+            BackupInfo = new CloudBackupInfo
+            {
+                Id = file.Id,
+                FileName = fileName,
+                Description = description,
+                CreatedAt = file.CreatedDateTime ?? DateTime.UtcNow,
+                ModifiedAt = file.LastModifiedDateTime ?? DateTime.UtcNow,
+                SizeInBytes = backupData.Length,
+                ServiceName = ServiceName,
+                Provider = CloudBackupProvider.OneDrive,
+            }
+        };
     }
 
     public async Task<CloudBackupResult> DownloadBackupAsync(string backupId)
     {
-        try
-        {
-            if (!File.Exists(backupId))
-            {
-                return new CloudBackupResult 
-                { 
-                    Success = false, 
-                    ErrorMessage = "Backup file not found" 
-                };
-            }
+        await EnsureAccessTokenAsync();
+        if (_token == null) return Fail("Not authenticated.");
 
-            var backupData = await File.ReadAllBytesAsync(backupId);
-            var fileInfo = new FileInfo(backupId);
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{GraphBase}/me/drive/items/{backupId}/content");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token!.AccessToken);
+        var resp = await _http.SendAsync(request);
+        if (!resp.IsSuccessStatusCode) return Fail($"Download failed ({resp.StatusCode}).");
 
-            return new CloudBackupResult
-            {
-                Success = true,
-                BackupData = backupData,
-                BackupInfo = new CloudBackupInfo
-                {
-                    Id = backupId,
-                    FileName = fileInfo.Name,
-                    CreatedAt = fileInfo.CreationTimeUtc,
-                    ModifiedAt = fileInfo.LastWriteTimeUtc,
-                    SizeInBytes = fileInfo.Length,
-                    CloudPath = backupId,
-                    ServiceName = ServiceName
-                }
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to download backup from OneDrive");
-            return new CloudBackupResult 
-            { 
-                Success = false, 
-                ErrorMessage = $"Download failed: {ex.Message}" 
-            };
-        }
+        var data = await resp.Content.ReadAsByteArrayAsync();
+        return new CloudBackupResult { Success = true, BackupData = data };
     }
 
     public async Task<List<CloudBackupInfo>> ListBackupsAsync()
     {
-        try
-        {
-            if (!await IsAuthenticatedAsync())
+        await EnsureAccessTokenAsync();
+        if (_token == null) return [];
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{AppFolderUrl}/children?$orderby=createdDateTime desc&$top=50");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token!.AccessToken);
+        var resp = await _http.SendAsync(request);
+        if (!resp.IsSuccessStatusCode) return [];
+
+        var body = await resp.Content.ReadAsStringAsync();
+        var list = JsonSerializer.Deserialize<DriveItemList>(body);
+        if (list?.Value == null) return [];
+
+        return list.Value
+            .Where(f => f.Name.EndsWith(".pwmbackup", StringComparison.OrdinalIgnoreCase))
+            .Select(f => new CloudBackupInfo
             {
-                return new List<CloudBackupInfo>();
-            }
-
-            var oneDrivePath = GetOneDrivePath();
-            if (oneDrivePath == null)
-            {
-                return new List<CloudBackupInfo>();
-            }
-
-            var backupFolder = Path.Combine(oneDrivePath, SecureBackupFolderPath);
-            if (!Directory.Exists(backupFolder))
-            {
-                return new List<CloudBackupInfo>();
-            }
-
-            var backupFiles = Directory.GetFiles(backupFolder, "*.pwmbackup")
-                .Select(filePath =>
-                {
-                    var fileInfo = new FileInfo(filePath);
-                    return new CloudBackupInfo
-                    {
-                        Id = filePath,
-                        FileName = fileInfo.Name,
-                        CreatedAt = fileInfo.CreationTimeUtc,
-                        ModifiedAt = fileInfo.LastWriteTimeUtc,
-                        SizeInBytes = fileInfo.Length,
-                        CloudPath = filePath,
-                        ServiceName = ServiceName
-                    };
-                })
-                .ToList();
-
-            return backupFiles;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to list backups from OneDrive");
-            return new List<CloudBackupInfo>();
-        }
+                Id = f.Id,
+                FileName = f.Name,
+                CreatedAt = f.CreatedDateTime ?? DateTime.UtcNow,
+                ModifiedAt = f.LastModifiedDateTime ?? DateTime.UtcNow,
+                SizeInBytes = f.Size,
+                ServiceName = ServiceName,
+                Provider = CloudBackupProvider.OneDrive,
+            }).ToList();
     }
 
     public async Task<bool> DeleteBackupAsync(string backupId)
     {
-        try
-        {
-            if (File.Exists(backupId))
-            {
-                File.Delete(backupId);
-                return true;
-            }
-            return false;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to delete backup from OneDrive");
-            return false;
-        }
+        await EnsureAccessTokenAsync();
+        if (_token == null) return false;
+
+        var request = new HttpRequestMessage(HttpMethod.Delete, $"{GraphBase}/me/drive/items/{backupId}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token!.AccessToken);
+        var resp = await _http.SendAsync(request);
+        return resp.IsSuccessStatusCode || resp.StatusCode == HttpStatusCode.NoContent;
     }
 
     public async Task<OneDriveAccountInfo?> GetAccountInfoAsync()
     {
-        try
-        {
-            if (!await IsAuthenticatedAsync())
-            {
-                return null;
-            }
-
-            var oneDrivePath = GetOneDrivePath();
-            if (oneDrivePath == null)
-            {
-                return null;
-            }
-
-            // Try to get available space from the OneDrive folder
-            var driveInfo = new DriveInfo(Path.GetPathRoot(oneDrivePath) ?? oneDrivePath);
-            
-            return new OneDriveAccountInfo
-            {
-                DisplayName = "OneDrive User",
-                Email = "user@outlook.com", // Cannot determine actual email without API
-                TotalSpace = driveInfo.TotalSize,
-                UsedSpace = driveInfo.TotalSize - driveInfo.AvailableFreeSpace,
-                AvailableSpace = driveInfo.AvailableFreeSpace
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get OneDrive account info");
-            return null;
-        }
+        if (!await IsAuthenticatedAsync()) return null;
+        if (AccountInfo == null) await RefreshAccountInfoAsync(CancellationToken.None);
+        return AccountInfo;
     }
 
     public async Task<long> GetAvailableStorageAsync()
@@ -312,63 +393,177 @@ public class OneDriveBackupService : IOneDriveBackupService
         }
     }
 
-    /// <summary>
-    /// Detects OneDrive folder path on Windows when user is already signed in
-    /// This approach doesn't collect credentials and works with existing Windows OneDrive integration
-    /// </summary>
-    private string? GetOneDrivePath()
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    private async Task EnsureAccessTokenAsync()
+    {
+        if (_token == null) return;
+        if (_token.ExpiresAt < DateTimeOffset.UtcNow)
+            await RefreshAccessTokenAsync();
+    }
+
+    private async Task RefreshAccessTokenAsync()
+    {
+        if (_token == null || string.IsNullOrEmpty(_token.RefreshToken)) return;
+
+        var form = new Dictionary<string, string>
+        {
+            ["client_id"] = _token.ClientId,
+            ["refresh_token"] = _token.RefreshToken,
+            ["grant_type"] = "refresh_token",
+            ["scope"] = Scope,
+        };
+
+        var resp = await _http.PostAsync(TokenEndpoint, new FormUrlEncodedContent(form));
+        if (!resp.IsSuccessStatusCode) { _token = null; return; }
+
+        var json = await resp.Content.ReadAsStringAsync();
+        var tok = JsonSerializer.Deserialize<OAuthTokenResponse>(json);
+        if (tok == null) return;
+
+        _token.AccessToken = tok.AccessToken;
+        if (!string.IsNullOrEmpty(tok.RefreshToken)) _token.RefreshToken = tok.RefreshToken;
+        _token.ExpiresAt = DateTimeOffset.UtcNow.AddSeconds(tok.ExpiresIn - 60);
+        SaveStoredCredentials();
+    }
+
+    private async Task RefreshAccountInfoAsync(CancellationToken ct)
     {
         try
         {
-            // Method 1: Check environment variable (most reliable)
-            var oneDriveEnv = Environment.GetEnvironmentVariable("OneDrive");
-            if (!string.IsNullOrEmpty(oneDriveEnv) && Directory.Exists(oneDriveEnv))
-            {
-                _logger.LogDebug("OneDrive detected via environment variable: {Path}", oneDriveEnv);
-                return oneDriveEnv;
-            }
+            var meReq = new HttpRequestMessage(HttpMethod.Get, $"{GraphBase}/me");
+            meReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token!.AccessToken);
+            var meResp = await _http.SendAsync(meReq, ct);
 
-            // Method 2: Check user profile folder (common location)
-            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            var commonPaths = new[]
+            var quotaReq = new HttpRequestMessage(HttpMethod.Get, $"{GraphBase}/me/drive");
+            quotaReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token!.AccessToken);
+            var quotaResp = await _http.SendAsync(quotaReq, ct);
+
+            GraphUser? me = meResp.IsSuccessStatusCode
+                ? JsonSerializer.Deserialize<GraphUser>(await meResp.Content.ReadAsStringAsync(ct))
+                : null;
+            GraphDrive? drive = quotaResp.IsSuccessStatusCode
+                ? JsonSerializer.Deserialize<GraphDrive>(await quotaResp.Content.ReadAsStringAsync(ct))
+                : null;
+
+            AccountInfo = new OneDriveAccountInfo
             {
-                Path.Combine(userProfile, "OneDrive"),
-                Path.Combine(userProfile, "OneDrive - Personal"),
-                Path.Combine(userProfile, "OneDrive - Microsoft")
+                DisplayName = me?.DisplayName,
+                Email = me?.Mail ?? me?.UserPrincipalName,
+                TotalSpace = drive?.Quota?.Total ?? 0,
+                UsedSpace = drive?.Quota?.Used ?? 0,
+                AvailableSpace = drive?.Quota?.Remaining ?? 0,
             };
-
-            foreach (var path in commonPaths)
-            {
-                if (Directory.Exists(path))
-                {
-                    _logger.LogDebug("OneDrive detected at: {Path}", path);
-                    return path;
-                }
-            }
-
-            // Method 3: Check for OneDrive registry key (Windows specific)
-            try
-            {
-                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\OneDrive\Accounts\Personal");
-                var userFolder = key?.GetValue("UserFolder")?.ToString();
-                if (!string.IsNullOrEmpty(userFolder) && Directory.Exists(userFolder))
-                {
-                    _logger.LogDebug("OneDrive detected via registry: {Path}", userFolder);
-                    return userFolder;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Could not check OneDrive registry key");
-            }
-
-            _logger.LogInformation("OneDrive folder not found - user may not be signed in or OneDrive may not be syncing");
-            return null;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error detecting OneDrive path");
-            return null;
+            _logger.LogWarning(ex, "Could not fetch OneDrive account info.");
         }
+    }
+
+    private static CloudBackupResult Fail(string msg) => new() { Success = false, ErrorMessage = msg };
+
+    private static string TokenFilePath() =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            SettingsDir, TokenFile);
+
+    private void LoadStoredCredentials()
+    {
+        var path = TokenFilePath();
+        if (!File.Exists(path)) return;
+        try
+        {
+            var raw = File.ReadAllBytes(path);
+            var dec = System.Security.Cryptography.ProtectedData.Unprotect(raw, null, DataProtectionScope.CurrentUser);
+            _token = JsonSerializer.Deserialize<StoredToken>(dec);
+        }
+        catch { _token = null; }
+    }
+
+    private void SaveStoredCredentials()
+    {
+        if (_token == null) return;
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(TokenFilePath())!);
+            var json = JsonSerializer.SerializeToUtf8Bytes(_token);
+            var enc = System.Security.Cryptography.ProtectedData.Protect(json, null, DataProtectionScope.CurrentUser);
+            File.WriteAllBytes(TokenFilePath(), enc);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not save OneDrive token.");
+        }
+    }
+
+    private static int FindFreePort()
+    {
+        var l = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
+        l.Start();
+        var port = ((IPEndPoint)l.LocalEndpoint).Port;
+        l.Stop();
+        return port;
+    }
+
+    private static string GenerateCodeVerifier()
+    {
+        var bytes = RandomNumberGenerator.GetBytes(32);
+        return Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    }
+
+    private static string GenerateCodeChallenge(string verifier)
+    {
+        var hash = SHA256.HashData(Encoding.ASCII.GetBytes(verifier));
+        return Convert.ToBase64String(hash).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    }
+
+    // ─── JSON models ──────────────────────────────────────────────────────────
+
+    private sealed class OAuthTokenResponse
+    {
+        [JsonPropertyName("access_token")] public string AccessToken { get; set; } = string.Empty;
+        [JsonPropertyName("refresh_token")] public string? RefreshToken { get; set; }
+        [JsonPropertyName("expires_in")] public int ExpiresIn { get; set; }
+    }
+
+    private sealed class StoredToken
+    {
+        public string AccessToken { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
+        public DateTimeOffset ExpiresAt { get; set; }
+        public string ClientId { get; set; } = string.Empty;
+    }
+
+    private sealed class DriveItem
+    {
+        [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;
+        [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
+        [JsonPropertyName("size")] public long Size { get; set; }
+        [JsonPropertyName("createdDateTime")] public DateTime? CreatedDateTime { get; set; }
+        [JsonPropertyName("lastModifiedDateTime")] public DateTime? LastModifiedDateTime { get; set; }
+    }
+
+    private sealed class DriveItemList
+    {
+        [JsonPropertyName("value")] public List<DriveItem>? Value { get; set; }
+    }
+
+    private sealed class GraphUser
+    {
+        [JsonPropertyName("displayName")] public string? DisplayName { get; set; }
+        [JsonPropertyName("mail")] public string? Mail { get; set; }
+        [JsonPropertyName("userPrincipalName")] public string? UserPrincipalName { get; set; }
+    }
+
+    private sealed class GraphDrive
+    {
+        [JsonPropertyName("quota")] public GraphQuota? Quota { get; set; }
+    }
+
+    private sealed class GraphQuota
+    {
+        [JsonPropertyName("total")] public long Total { get; set; }
+        [JsonPropertyName("used")] public long Used { get; set; }
+        [JsonPropertyName("remaining")] public long Remaining { get; set; }
     }
 }

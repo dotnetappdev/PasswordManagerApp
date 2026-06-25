@@ -1,8 +1,8 @@
 using FileHelpers;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManagerImports.Keeper;
+namespace VaultGuardImports.Keeper;
 
 /// <summary>
 /// Keeper CSV import plugin
@@ -24,7 +24,7 @@ public class KeeperImportPlugin : IPasswordImportPlugin
             DisplayName = "Keeper",
             Description = "Import passwords from Keeper CSV export files",
             Version = "1.0.0",
-            Author = "PasswordManager Team",
+            Author = "VaultGuard Team",
             Website = "https://keepersecurity.com",
             Created = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,

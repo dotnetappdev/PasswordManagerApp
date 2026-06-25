@@ -1,8 +1,8 @@
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Implementation of passcode service for MAUI apps

@@ -1,8 +1,8 @@
 using System.Reflection;
 using System.Text.Json;
-using PasswordManager.Imports.Interfaces;
+using VaultGuard.Imports.Interfaces;
 
-namespace PasswordManager.Imports.Services;
+namespace VaultGuard.Imports.Services;
 
 /// <summary>
 /// Service for discovering and loading password import plugins from external DLLs

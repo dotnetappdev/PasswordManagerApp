@@ -1,11 +1,11 @@
 using FileHelpers;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
-using PasswordManagerImports.OnePassword.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
+using VaultGuardImports.OnePassword.Models;
 using System.IO.Compression;
 using System.Text.Json;
 
-namespace PasswordManagerImports.OnePassword.Providers;
+namespace VaultGuardImports.OnePassword.Providers;
 
 public class OnePasswordImportProvider : IPasswordImportProvider
 {

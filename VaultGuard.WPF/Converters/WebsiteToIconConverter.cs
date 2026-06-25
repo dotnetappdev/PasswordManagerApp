@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace PasswordManager.WPF.Converters;
+namespace VaultGuard.WPF.Converters;
 
 public class WebsiteToIconConverter : IValueConverter
 {

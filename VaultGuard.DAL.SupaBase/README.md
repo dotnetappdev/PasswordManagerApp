@@ -1,10 +1,10 @@
-# PasswordManager.DAL.SupaBase
+# VaultGuard.DAL.SupaBase
 
 # EF Core Migrations for Supabase (Postgres)
 
 ## Prerequisites
 - .NET 9 SDK
-- [Npgsql.EntityFrameworkCore.PostgreSQL](https://www.nuget.org/packages/Npgsql.EntityFrameworkCore.PostgreSQL/) package installed in PasswordManager.DAL.SupaBase
+- [Npgsql.EntityFrameworkCore.PostgreSQL](https://www.nuget.org/packages/Npgsql.EntityFrameworkCore.PostgreSQL/) package installed in VaultGuard.DAL.SupaBase
 - Supabase Postgres connection string in `appsettings.json` (or `appsettings.Supabase.json`)
 
 ## Example Connection String
@@ -18,13 +18,13 @@
 ## Add a Migration
 
 ```
-dotnet ef migrations add InitialCreate --project PasswordManager.DAL.SupaBase --startup-project PasswordManager.API --context SupabaseDbContext
+dotnet ef migrations add InitialCreate --project VaultGuard.DAL.SupaBase --startup-project VaultGuard.API --context SupabaseDbContext
 ```
 
 ## Apply Migrations to Supabase
 
 ```
-dotnet ef database update --project PasswordManager.DAL.SupaBase --startup-project PasswordManager.API --context SupabaseDbContext
+dotnet ef database update --project VaultGuard.DAL.SupaBase --startup-project VaultGuard.API --context SupabaseDbContext
 ```
 
 ## Notes

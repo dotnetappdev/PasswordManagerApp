@@ -1,1 +1,1 @@
-global using Vault = PasswordManager.Models.Vault;
+global using Vault = VaultGuard.Models.Vault;

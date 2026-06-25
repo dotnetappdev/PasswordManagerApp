@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Implementation of permission service for managing child permissions and parent-child relationships
@@ -13,12 +13,12 @@ namespace PasswordManager.Services.Services;
 public class PermissionService : IPermissionService
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly PasswordManagerDbContextApp _context;
+    private readonly VaultGuardDbContextApp _context;
     private readonly ILogger<PermissionService> _logger;
 
     public PermissionService(
         UserManager<ApplicationUser> userManager,
-        PasswordManagerDbContextApp context,
+        VaultGuardDbContextApp context,
         ILogger<PermissionService> logger)
     {
         _userManager = userManager;

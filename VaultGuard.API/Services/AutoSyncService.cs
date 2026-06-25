@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration;
-using PasswordManager.API.Interfaces;
-using PasswordManager.Models.DTOs.Sync;
+using VaultGuard.API.Interfaces;
+using VaultGuard.Models.DTOs.Sync;
 
-namespace PasswordManager.API.Services;
+namespace VaultGuard.API.Services;
 
 public class AutoSyncService : BackgroundService
 {

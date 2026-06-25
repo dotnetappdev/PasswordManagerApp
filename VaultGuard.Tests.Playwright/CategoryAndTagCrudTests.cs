@@ -1,6 +1,6 @@
 using Microsoft.Playwright;
 
-namespace PasswordManager.Tests.Playwright;
+namespace VaultGuard.Tests.Playwright;
 
 /// <summary>
 /// Blazor web UI tests for Category CRUD operations.

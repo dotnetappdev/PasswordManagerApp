@@ -1,6 +1,6 @@
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.Imports.Interfaces;
+namespace VaultGuard.Imports.Interfaces;
 
 /// <summary>
 /// Interface for password import plugins that can be loaded from external DLLs

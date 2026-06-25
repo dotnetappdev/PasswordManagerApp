@@ -1,15 +1,15 @@
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Models;
-using PasswordManager.WPF.Dialogs;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.WPF.Dialogs;
+using VaultGuard.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WPF.Views;
+namespace VaultGuard.WPF.Views;
 
 public sealed partial class ManageItemsPage : Page
 {

@@ -1,9 +1,9 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.WinUi.ViewModels;
+using VaultGuard.WinUi.ViewModels;
 
-namespace PasswordManager.WinUi.Views;
+namespace VaultGuard.WinUi.Views;
 
 public sealed partial class ImportPage : Page
 {

@@ -1,6 +1,6 @@
 using System;
 
-namespace PasswordManager.WPF.Services
+namespace VaultGuard.WPF.Services
 {
     /// <summary>
     /// Lightweight app-wide notifications so pages can react to data changes made elsewhere

@@ -1,8 +1,8 @@
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 using System.IO;
 using System.Windows;
 
-namespace PasswordManager.WPF.Services;
+namespace VaultGuard.WPF.Services;
 
 public class WpfPlatformService : IPlatformService
 {
@@ -10,7 +10,7 @@ public class WpfPlatformService : IPlatformService
     {
         // For WPF apps, use the traditional LocalApplicationData folder
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var appDir = Path.Combine(localAppData, "PasswordManager");
+        var appDir = Path.Combine(localAppData, "VaultGuard");
 
         // Create directory if it doesn't exist
         try

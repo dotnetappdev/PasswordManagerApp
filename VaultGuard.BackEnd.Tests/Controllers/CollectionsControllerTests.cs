@@ -2,11 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using PasswordManager.API.Controllers;
-using PasswordManager.Models.DTOs;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.API.Controllers;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.BackEnd.Tests.Controllers;
+namespace VaultGuard.BackEnd.Tests.Controllers;
 
 [TestFixture]
 public class CollectionsControllerTests

@@ -1,7 +1,7 @@
 using System.Text;
-using PasswordManager.Crypto.Interfaces;
+using VaultGuard.Crypto.Interfaces;
 
-namespace PasswordManager.Crypto.Services;
+namespace VaultGuard.Crypto.Services;
 
 /// <summary>
 /// Implementation of password-specific cryptographic operations following Bitwarden's approach

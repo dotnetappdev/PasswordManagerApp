@@ -1,7 +1,7 @@
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Auth;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Auth;
 
-namespace PasswordManager.Tests.QrLogin;
+namespace VaultGuard.Tests.QrLogin;
 
 /// <summary>
 /// Simple unit tests for 2FA and Passkey DTOs without complex database setup
@@ -70,7 +70,7 @@ public class TwoFactorPasskeyBasicTests
     {
         // Arrange
         var secretKey = "JBSWY3DPEHPK3PXP";
-        var qrCodeUri = "otpauth://totp/PasswordManager:test@example.com?secret=JBSWY3DPEHPK3PXP&issuer=PasswordManager";
+        var qrCodeUri = "otpauth://totp/VaultGuard:test@example.com?secret=JBSWY3DPEHPK3PXP&issuer=VaultGuard";
         var backupCodes = new List<string> { "ABC12345", "DEF67890" };
 
         var dto = new TwoFactorSetupResponseDto
@@ -274,7 +274,7 @@ public class TwoFactorPasskeyBasicTests
     }
 
     [Theory]
-    [InlineData("otpauth://totp/PasswordManager:test@example.com?secret=JBSWY3DPEHPK3PXP&issuer=PasswordManager")]
+    [InlineData("otpauth://totp/VaultGuard:test@example.com?secret=JBSWY3DPEHPK3PXP&issuer=VaultGuard")]
     [InlineData("otpauth://totp/MyApp:user@domain.com?secret=ABCDEFGHIJK234567&issuer=MyApp")]
     public void ValidQrCodeUris_ShouldHaveCorrectFormat(string qrCodeUri)
     {

@@ -1,15 +1,15 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.JSInterop;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.DAL;
-using PasswordManager.Models;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models.Configuration;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Models.Configuration;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for user authentication and session management
@@ -19,7 +19,7 @@ public class AuthService : IAuthService
     private readonly IJSRuntime _jsRuntime;
     private readonly IPasswordCryptoService _passwordCryptoService;
     private readonly IVaultSessionService _vaultSessionService;
-    private readonly PasswordManagerDbContext _dbContext;
+    private readonly VaultGuardDbContext _dbContext;
     private readonly IDatabaseConfigurationService _databaseConfigurationService;
     private readonly ILogger<AuthService> _logger;
     private readonly HttpClient _httpClient;
@@ -30,7 +30,7 @@ public class AuthService : IAuthService
         IJSRuntime jsRuntime,
         IPasswordCryptoService passwordCryptoService,
         IVaultSessionService vaultSessionService,
-        PasswordManagerDbContext dbContext,
+        VaultGuardDbContext dbContext,
         IDatabaseConfigurationService databaseConfigurationService,
         HttpClient httpClient,
         ILogger<AuthService> logger)

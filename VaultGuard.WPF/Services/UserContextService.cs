@@ -1,11 +1,11 @@
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models.DTOs.Auth;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Models.DTOs.Auth;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WPF.Services;
+namespace VaultGuard.WPF.Services;
 
 /// <summary>
 /// Service to manage the current user context in the WinUI app.

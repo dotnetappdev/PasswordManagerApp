@@ -1,8 +1,8 @@
 using FileHelpers;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManagerImports.LastPass;
+namespace VaultGuardImports.LastPass;
 
 /// <summary>
 /// LastPass CSV import plugin
@@ -24,7 +24,7 @@ public class LastPassImportPlugin : IPasswordImportPlugin
             DisplayName = "LastPass",
             Description = "Import passwords from LastPass CSV export files",
             Version = "1.0.0",
-            Author = "PasswordManager Team",
+            Author = "VaultGuard Team",
             Website = "https://www.lastpass.com",
             Created = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,

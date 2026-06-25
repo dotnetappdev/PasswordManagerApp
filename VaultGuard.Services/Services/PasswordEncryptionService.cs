@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Logging;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.Crypto.Services;
-using PasswordManager.DAL.Interfaces;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.Crypto.Services;
+using VaultGuard.DAL.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for password item encryption and decryption using session-based vault operations

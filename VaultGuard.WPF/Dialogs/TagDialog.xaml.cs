@@ -1,14 +1,14 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
 using System.Windows.Shapes;
 
-namespace PasswordManager.WPF.Dialogs;
+namespace VaultGuard.WPF.Dialogs;
 
 public sealed partial class TagDialog : ModernWpf.Controls.ContentDialog
 {

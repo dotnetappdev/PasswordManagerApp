@@ -1,4 +1,4 @@
-namespace PasswordManager.Uno.Services.QRCode;
+namespace VaultGuard.Uno.Services.QRCode;
 
 /// <summary>
 /// Interface for QR code generation and scanning

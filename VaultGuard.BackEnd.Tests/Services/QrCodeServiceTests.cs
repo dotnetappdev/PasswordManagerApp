@@ -1,7 +1,7 @@
 using NUnit.Framework;
-using PasswordManager.Services.Services;
+using VaultGuard.Services.Services;
 
-namespace PasswordManager.BackEnd.Tests.Services;
+namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
 public class QrCodeServiceTests

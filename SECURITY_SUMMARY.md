@@ -3,11 +3,11 @@
 ## Date: 2025-12-22
 
 ## Purpose
-This document summarizes the verification of end-to-end encryption in the Password Manager application and documents the security guarantees provided to users.
+This document summarizes the verification of end-to-end encryption in the Vault Guard application and documents the security guarantees provided to users.
 
 ## Executive Summary
 
-✅ **The Password Manager implements true end-to-end encryption with zero-knowledge architecture.**
+✅ **The Vault Guard implements true end-to-end encryption with zero-knowledge architecture.**
 
 This means:
 - Your passwords are encrypted on your device before syncing
@@ -88,7 +88,7 @@ EntitiesToSync = new List<string> {
 **Finding**: Encryption is identical across all platforms.
 
 **Evidence**:
-1. All platforms use the same `PasswordManager.Crypto` library
+1. All platforms use the same `VaultGuard.Crypto` library
 2. Same algorithms: PBKDF2 (600,000 iterations), AES-256-GCM
 3. Same key derivation: master password + user salt → master key
 4. Data encrypted on iOS can be decrypted on Windows, Android, Linux, or Web
@@ -96,11 +96,11 @@ EntitiesToSync = new List<string> {
 **Platform Matrix**:
 | Platform | Crypto Library | Master Key Storage | Verified |
 |----------|---------------|-------------------|----------|
-| Blazor Web | PasswordManager.Crypto | VaultSessionService | ✅ |
-| WinUI Desktop | PasswordManager.Crypto | VaultSessionService | ✅ |
-| iOS (Uno) | PasswordManager.Crypto | VaultSessionService | ✅ |
-| Android (Uno) | PasswordManager.Crypto | VaultSessionService | ✅ |
-| Linux | PasswordManager.Crypto | VaultSessionService | ✅ |
+| Blazor Web | VaultGuard.Crypto | VaultSessionService | ✅ |
+| WinUI Desktop | VaultGuard.Crypto | VaultSessionService | ✅ |
+| iOS (Uno) | VaultGuard.Crypto | VaultSessionService | ✅ |
+| Android (Uno) | VaultGuard.Crypto | VaultSessionService | ✅ |
+| Linux | VaultGuard.Crypto | VaultSessionService | ✅ |
 
 ## Encryption Specifications
 
@@ -209,7 +209,7 @@ _sessions[sessionId] = (session.userId, null, false);
 5. ⚠️ Never share your master password
 
 ### For Developers
-1. ✅ Continue using the PasswordManager.Crypto library for all encryption
+1. ✅ Continue using the VaultGuard.Crypto library for all encryption
 2. ✅ Never persist master keys or master passwords
 3. ✅ Always clear sensitive data from memory when done
 4. ✅ Use VaultSessionService for session management
@@ -253,7 +253,7 @@ _sessions[sessionId] = (session.userId, null, false);
 
 ## Conclusion
 
-**The Password Manager application provides enterprise-grade end-to-end encryption with zero-knowledge architecture.**
+**The Vault Guard application provides enterprise-grade end-to-end encryption with zero-knowledge architecture.**
 
 Key achievements:
 1. ✅ Master keys never leave devices - true E2E encryption

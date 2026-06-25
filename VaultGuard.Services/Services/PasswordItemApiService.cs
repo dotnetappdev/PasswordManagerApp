@@ -1,20 +1,20 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs;
-using PasswordManager.Services.Helpers;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Services.Helpers;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 public class PasswordItemApiService : IPasswordItemApiService
 {
-    private readonly PasswordManagerDbContext _context;
+    private readonly VaultGuardDbContext _context;
     private readonly ILogger<PasswordItemApiService> _logger;
 
     public PasswordItemApiService(
-        PasswordManagerDbContext context,
+        VaultGuardDbContext context,
         ILogger<PasswordItemApiService> logger)
     {
         _context = context;

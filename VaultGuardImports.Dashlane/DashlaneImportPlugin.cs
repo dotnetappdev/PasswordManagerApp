@@ -1,8 +1,8 @@
 using FileHelpers;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManagerImports.Dashlane;
+namespace VaultGuardImports.Dashlane;
 
 /// <summary>
 /// Dashlane CSV import plugin
@@ -24,7 +24,7 @@ public class DashlaneImportPlugin : IPasswordImportPlugin
             DisplayName = "Dashlane",
             Description = "Import passwords from Dashlane CSV export files",
             Version = "1.0.0",
-            Author = "PasswordManager Team",
+            Author = "VaultGuard Team",
             Website = "https://www.dashlane.com",
             Created = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,

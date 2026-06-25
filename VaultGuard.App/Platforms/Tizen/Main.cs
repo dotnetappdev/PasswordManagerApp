@@ -2,7 +2,7 @@ using System;
 using Microsoft.Maui;
 using Microsoft.Maui.Hosting;
 
-namespace PasswordManager.App;
+namespace VaultGuard.App;
 
 class Program : MauiApplication
 {

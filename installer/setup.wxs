@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  VaultGuard Password Manager — WiX v4 MSI
+  VaultGuard Vault Guard — WiX v4 MSI
   Build with:
     wix build setup.wxs -ext WixToolset.UI.wixext \
         -d Version=1.0.0 -d PublishDir=..\publish\wpf \
@@ -9,7 +9,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
 
-  <Package Name="VaultGuard Password Manager"
+  <Package Name="VaultGuard Vault Guard"
            Manufacturer="VaultGuard"
            Version="$(var.Version)"
            UpgradeCode="7F2B3A4C-9E5D-4F6B-B8C1-3D0E2A5F7B90"
@@ -31,7 +31,7 @@
     <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
       <Component Id="MainExecutable">
         <File Id="MainExe"
-              Source="$(var.PublishDir)\PasswordManager.WPF.exe"
+              Source="$(var.PublishDir)\VaultGuard.WPF.exe"
               KeyPath="yes">
           <Shortcut Id="DesktopShortcut"
                     Directory="DesktopFolder"
@@ -48,7 +48,7 @@
       <!-- Harvest remaining publish output files via heat / build tooling.
            For CI use the Wix heat tool to auto-harvest or list files here. -->
       <Component Id="AllOtherFiles" Guid="*">
-        <File Source="$(var.PublishDir)\PasswordManager.WPF.dll" KeyPath="yes" />
+        <File Source="$(var.PublishDir)\VaultGuard.WPF.dll" KeyPath="yes" />
       </Component>
     </ComponentGroup>
 

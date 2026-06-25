@@ -19,7 +19,7 @@
         <!-- For example: <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers> -->
 
         <OutputType>Exe</OutputType>
-        <RootNamespace>PasswordManager.App</RootNamespace>
+        <RootNamespace>VaultGuard.App</RootNamespace>
         <UseMaui>true</UseMaui>
         <SingleProject>true</SingleProject>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -27,7 +27,7 @@
         <Nullable>enable</Nullable>
 
         <!-- Display name -->
-        <ApplicationTitle>PasswordManager.App</ApplicationTitle>
+        <ApplicationTitle>VaultGuard.App</ApplicationTitle>
 
         <!-- App Identifier -->
         <ApplicationId>com.companyname.passwordmanager.app</ApplicationId>
@@ -81,19 +81,19 @@
     <MakeDir Directories="$(OutputPath)plugins\SqlServer" />
     <MakeDir Directories="$(OutputPath)plugins\MySql" />
     <MakeDir Directories="$(OutputPath)plugins\Postgres" />
-    <Copy SourceFiles="$(SolutionDir)PasswordManager.DAL.SqlServer\bin\$(Configuration)\net10.0\PasswordManager.DAL.SqlServer.dll" DestinationFolder="$(OutputPath)plugins\SqlServer" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)PasswordManager.DAL.SqlServer\bin\$(Configuration)\net10.0\PasswordManager.DAL.SqlServer.dll')" />
-    <Copy SourceFiles="$(SolutionDir)PasswordManager.DAL.MySql\bin\$(Configuration)\net10.0\PasswordManager.DAL.MySql.dll" DestinationFolder="$(OutputPath)plugins\MySql" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)PasswordManager.DAL.MySql\bin\$(Configuration)\net10.0\PasswordManager.DAL.MySql.dll')" />
-    <Copy SourceFiles="$(SolutionDir)PasswordManager.DAL.Postgres\bin\$(Configuration)\net10.0\PasswordManager.DAL.Postgres.dll" DestinationFolder="$(OutputPath)plugins\Postgres" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)PasswordManager.DAL.Postgres\bin\$(Configuration)\net10.0\PasswordManager.DAL.Postgres.dll')" />
+    <Copy SourceFiles="$(SolutionDir)VaultGuard.DAL.SqlServer\bin\$(Configuration)\net10.0\VaultGuard.DAL.SqlServer.dll" DestinationFolder="$(OutputPath)plugins\SqlServer" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)VaultGuard.DAL.SqlServer\bin\$(Configuration)\net10.0\VaultGuard.DAL.SqlServer.dll')" />
+    <Copy SourceFiles="$(SolutionDir)VaultGuard.DAL.MySql\bin\$(Configuration)\net10.0\VaultGuard.DAL.MySql.dll" DestinationFolder="$(OutputPath)plugins\MySql" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)VaultGuard.DAL.MySql\bin\$(Configuration)\net10.0\VaultGuard.DAL.MySql.dll')" />
+    <Copy SourceFiles="$(SolutionDir)VaultGuard.DAL.Postgres\bin\$(Configuration)\net10.0\VaultGuard.DAL.Postgres.dll" DestinationFolder="$(OutputPath)plugins\Postgres" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)VaultGuard.DAL.Postgres\bin\$(Configuration)\net10.0\VaultGuard.DAL.Postgres.dll')" />
     <!-- Write plugin.json for each provider -->
     <WriteLinesToFile File="$(OutputPath)plugins\SqlServer\plugin.json" Lines="{&quot;name&quot;:&quot;SqlServer&quot;,&quot;type&quot;:&quot;provider&quot;,&quot;enabled&quot;:true,&quot;description&quot;:&quot;SQL Server EF Core provider plugin.&quot;}" Overwrite="true" />
     <WriteLinesToFile File="$(OutputPath)plugins\MySql\plugin.json" Lines="{&quot;name&quot;:&quot;MySql&quot;,&quot;type&quot;:&quot;provider&quot;,&quot;enabled&quot;:true,&quot;description&quot;:&quot;MySQL EF Core provider plugin.&quot;}" Overwrite="true" />
     <WriteLinesToFile File="$(OutputPath)plugins\Postgres\plugin.json" Lines="{&quot;name&quot;:&quot;Postgres&quot;,&quot;type&quot;:&quot;provider&quot;,&quot;enabled&quot;:true,&quot;description&quot;:&quot;PostgreSQL EF Core provider plugin.&quot;}" Overwrite="true" />
     <!-- Imports: ensure folder and copy DLLs -->
     <MakeDir Directories="$(OutputPath)plugins\imports" />
-    <Copy SourceFiles="$(SolutionDir)PasswordManager.Imports\bin\$(Configuration)\net10.0\PasswordManager.Imports.dll" DestinationFolder="$(OutputPath)plugins\imports" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)PasswordManager.Imports\bin\$(Configuration)\net10.0\PasswordManager.Imports.dll')" />
-    <Copy SourceFiles="$(SolutionDir)PasswordManagerImports.1Password\bin\$(Configuration)\net10.0\PasswordManagerImports.1Password.dll" DestinationFolder="$(OutputPath)plugins\imports" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)PasswordManagerImports.1Password\bin\$(Configuration)\net10.0\PasswordManagerImports.1Password.dll')" />
-    <WriteLinesToFile File="$(OutputPath)plugins\imports\PasswordManager.Imports.plugin.json" Lines="{&quot;name&quot;:&quot;Imports&quot;,&quot;type&quot;:&quot;import&quot;,&quot;enabled&quot;:true,&quot;description&quot;:&quot;Core import plugin.&quot;}" Overwrite="true" />
-    <WriteLinesToFile File="$(OutputPath)plugins\imports\PasswordManagerImports.1Password.plugin.json" Lines="{&quot;name&quot;:&quot;1Password&quot;,&quot;type&quot;:&quot;import&quot;,&quot;enabled&quot;:true,&quot;description&quot;:&quot;1Password import plugin.&quot;}" Overwrite="true" />
+    <Copy SourceFiles="$(SolutionDir)VaultGuard.Imports\bin\$(Configuration)\net10.0\VaultGuard.Imports.dll" DestinationFolder="$(OutputPath)plugins\imports" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)VaultGuard.Imports\bin\$(Configuration)\net10.0\VaultGuard.Imports.dll')" />
+    <Copy SourceFiles="$(SolutionDir)VaultGuardImports.1Password\bin\$(Configuration)\net10.0\VaultGuardImports.1Password.dll" DestinationFolder="$(OutputPath)plugins\imports" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)VaultGuardImports.1Password\bin\$(Configuration)\net10.0\VaultGuardImports.1Password.dll')" />
+    <WriteLinesToFile File="$(OutputPath)plugins\imports\VaultGuard.Imports.plugin.json" Lines="{&quot;name&quot;:&quot;Imports&quot;,&quot;type&quot;:&quot;import&quot;,&quot;enabled&quot;:true,&quot;description&quot;:&quot;Core import plugin.&quot;}" Overwrite="true" />
+    <WriteLinesToFile File="$(OutputPath)plugins\imports\VaultGuardImports.1Password.plugin.json" Lines="{&quot;name&quot;:&quot;1Password&quot;,&quot;type&quot;:&quot;import&quot;,&quot;enabled&quot;:true,&quot;description&quot;:&quot;1Password import plugin.&quot;}" Overwrite="true" />
   </Target>
 
     <ItemGroup>
@@ -111,13 +111,15 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\PasswordManager.DAL\PasswordManager.DAL.csproj" />
-      <ProjectReference Include="..\PasswordManager.Models\PasswordManager.Models.csproj" />
-      <ProjectReference Include="..\PasswordManager.Services\PasswordManager.Services.csproj" />
-      <ProjectReference Include="..\PasswordManager.Imports\PasswordManager.Imports.csproj" />
-      <ProjectReference Include="..\PasswordManagerImports.1Password\PasswordManagerImports.1Password.csproj" />
-      <ProjectReference Include="..\PasswordManager.Crypto\PasswordManager.Crypto.csproj" />
-      <ProjectReference Include="..\PasswordManager.Components.Shared\PasswordManager.Components.Shared.csproj" />
+      <ProjectReference Include="..\VaultGuard.DAL\VaultGuard.DAL.csproj" />
+      <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
+      <ProjectReference Include="..\VaultGuard.Services\VaultGuard.Services.csproj" />
+      <ProjectReference Include="..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
+      <ProjectReference Include="..\VaultGuardImports.1Password\VaultGuardImports.1Password.csproj" />
+      <ProjectReference Include="..\VaultGuard.Crypto\VaultGuard.Crypto.csproj" />
+      <ProjectReference Include="..\VaultGuard.Components.Shared\VaultGuard.Components.Shared.csproj" />
+      <ProjectReference Include="..\VaultGuard.ExceptionReporting\VaultGuard.ExceptionReporting.csproj" />
+      <ProjectReference Include="..\VaultGuard.ExceptionReporting.Sentry\VaultGuard.ExceptionReporting.Sentry.csproj" />
     </ItemGroup>
 
     <ItemGroup>

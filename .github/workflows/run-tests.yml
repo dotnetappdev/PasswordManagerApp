@@ -37,23 +37,23 @@ jobs:
     
     - name: Build test projects
       run: |
-        dotnet build PasswordManager.App.Tests/PasswordManager.App.Tests.csproj --no-restore --configuration Release
-        dotnet build PasswordManager.Web.Tests/PasswordManager.Web.Tests.csproj --no-restore --configuration Release
-        dotnet build PasswordManager.WinUi.Tests/PasswordManager.WinUi.Tests.csproj --no-restore --configuration Release
+        dotnet build VaultGuard.App.Tests/VaultGuard.App.Tests.csproj --no-restore --configuration Release
+        dotnet build VaultGuard.Web.Tests/VaultGuard.Web.Tests.csproj --no-restore --configuration Release
+        dotnet build VaultGuard.WinUi.Tests/VaultGuard.WinUi.Tests.csproj --no-restore --configuration Release
     
     - name: Run App Tests
-      run: dotnet test PasswordManager.App.Tests/PasswordManager.App.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=app-tests.trx"
+      run: dotnet test VaultGuard.App.Tests/VaultGuard.App.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=app-tests.trx"
     
     - name: Run Web Tests
-      run: dotnet test PasswordManager.Web.Tests/PasswordManager.Web.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=web-tests.trx"
+      run: dotnet test VaultGuard.Web.Tests/VaultGuard.Web.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=web-tests.trx"
     
     - name: Run WinUI Tests
-      run: dotnet test PasswordManager.WinUi.Tests/PasswordManager.WinUi.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=winui-tests.trx"
+      run: dotnet test VaultGuard.WinUi.Tests/VaultGuard.WinUi.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=winui-tests.trx"
     
     - name: Run Backend Tests
       run: |
-        if [ -d "PasswordManager.BackEnd.Tests" ]; then
-          dotnet test PasswordManager.BackEnd.Tests/PasswordManager.BackEnd.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=backend-tests.trx"
+        if [ -d "VaultGuard.BackEnd.Tests" ]; then
+          dotnet test VaultGuard.BackEnd.Tests/VaultGuard.BackEnd.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=backend-tests.trx"
         fi
     
     - name: Publish Test Results

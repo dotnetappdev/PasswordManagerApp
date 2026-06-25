@@ -1,6 +1,6 @@
-# Password Manager - Docker Setup Guide
+# Vault Guard - Docker Setup Guide
 
-This directory contains Docker configuration files for running the Password Manager Web API and SQL Server in containers.
+This directory contains Docker configuration files for running the Vault Guard Web API and SQL Server in containers.
 
 ## 📋 Table of Contents
 
@@ -80,7 +80,7 @@ SQL_SA_PASSWORD=YourStrong@Password123
 CERT_PASSWORD=
 
 # Database name
-DATABASE_NAME=PasswordManagerDB
+DATABASE_NAME=VaultGuardDB
 ```
 
 ### 3. Start the Containers
@@ -122,7 +122,7 @@ The following environment variables can be configured in your `.env` file:
 | `SQL_SA_PASSWORD` | `YourStrong@Password123` | SQL Server SA account password (must meet complexity requirements) |
 | `CERT_PASSWORD` | _(empty)_ | HTTPS certificate password (leave empty for dev cert) |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | ASP.NET Core environment name |
-| `DATABASE_NAME` | `PasswordManagerDB` | Database name |
+| `DATABASE_NAME` | `VaultGuardDB` | Database name |
 | `API_HTTPS_PORT` | `51650` | HTTPS port for the API |
 | `API_HTTP_PORT` | `51651` | HTTP port for the API |
 | `WEB_HTTP_PORT` | `8080` | HTTP port for the Blazor web app |
@@ -253,7 +253,7 @@ You can connect to the SQL Server instance using any SQL client:
 
 **Connection String:**
 ```
-Server=localhost,1433;Database=PasswordManagerDB;User Id=sa;Password=YourStrong@Password123;TrustServerCertificate=true;
+Server=localhost,1433;Database=VaultGuardDB;User Id=sa;Password=YourStrong@Password123;TrustServerCertificate=true;
 ```
 
 **Using SQL Server Management Studio (SSMS):**
@@ -289,10 +289,10 @@ dotnet ef database update --project /app
 # Backup SQL Server data
 docker-compose exec sqlserver /opt/mssql-tools18/bin/sqlcmd \
   -S localhost -U sa -P "YourStrong@Password123" -C \
-  -Q "BACKUP DATABASE [PasswordManagerDB] TO DISK = N'/var/opt/mssql/backup/PasswordManagerDB.bak' WITH NOFORMAT, NOINIT, NAME = 'PasswordManagerDB-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
+  -Q "BACKUP DATABASE [VaultGuardDB] TO DISK = N'/var/opt/mssql/backup/VaultGuardDB.bak' WITH NOFORMAT, NOINIT, NAME = 'VaultGuardDB-full', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
 
 # Copy backup file from container to host
-docker cp passwordmanager-sqlserver:/var/opt/mssql/backup/PasswordManagerDB.bak ./backup.bak
+docker cp passwordmanager-sqlserver:/var/opt/mssql/backup/VaultGuardDB.bak ./backup.bak
 ```
 
 ### Restoring Data
@@ -304,7 +304,7 @@ docker cp ./backup.bak passwordmanager-sqlserver:/var/opt/mssql/backup/
 # Restore database
 docker-compose exec sqlserver /opt/mssql-tools18/bin/sqlcmd \
   -S localhost -U sa -P "YourStrong@Password123" -C \
-  -Q "RESTORE DATABASE [PasswordManagerDB] FROM DISK = N'/var/opt/mssql/backup/PasswordManagerDB.bak' WITH FILE = 1, NOUNLOAD, REPLACE, STATS = 5"
+  -Q "RESTORE DATABASE [VaultGuardDB] FROM DISK = N'/var/opt/mssql/backup/VaultGuardDB.bak' WITH FILE = 1, NOUNLOAD, REPLACE, STATS = 5"
 ```
 
 ### Resetting the Database
@@ -415,7 +415,7 @@ Edit `docker-compose.yml` to use PostgreSQL or MySQL instead:
 postgres:
   image: postgres:16
   environment:
-    - POSTGRES_DB=PasswordManagerDB
+    - POSTGRES_DB=VaultGuardDB
     - POSTGRES_USER=postgres
     - POSTGRES_PASSWORD=YourPassword123
   ports:
@@ -424,7 +424,7 @@ postgres:
 api:
   environment:
     - DatabaseProvider=Postgres
-    - ConnectionStrings__PostgresConnection=Host=postgres;Database=PasswordManagerDB;Username=postgres;Password=YourPassword123
+    - ConnectionStrings__PostgresConnection=Host=postgres;Database=VaultGuardDB;Username=postgres;Password=YourPassword123
 ```
 
 **MySQL:**
@@ -433,14 +433,14 @@ mysql:
   image: mysql:8
   environment:
     - MYSQL_ROOT_PASSWORD=YourPassword123
-    - MYSQL_DATABASE=PasswordManagerDB
+    - MYSQL_DATABASE=VaultGuardDB
   ports:
     - "3306:3306"
 
 api:
   environment:
     - DatabaseProvider=MySql
-    - ConnectionStrings__MySqlConnection=Server=mysql;Database=PasswordManagerDB;User=root;Password=YourPassword123
+    - ConnectionStrings__MySqlConnection=Server=mysql;Database=VaultGuardDB;User=root;Password=YourPassword123
 ```
 
 ### Custom API Configuration
@@ -509,7 +509,7 @@ If you encounter issues:
 
 1. Check the [Troubleshooting](#troubleshooting) section
 2. Review container logs: `docker-compose logs`
-3. Check [GitHub Issues](https://github.com/dotnetappdev/PasswordManagerApp/issues)
+3. Check [GitHub Issues](https://github.com/dotnetappdev/VaultGuardApp/issues)
 4. Create a new issue with:
    - Docker version
    - Docker Compose version

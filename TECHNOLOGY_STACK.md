@@ -101,7 +101,7 @@
 
 ## Security & Cryptography
 
-### PasswordManager.Crypto
+### VaultGuard.Crypto
 - **Custom Implementation**: Tailored for password management
 - **Zero-Knowledge**: Client-side encryption
 - **Bitwarden Compatible**: Compatible encryption flow

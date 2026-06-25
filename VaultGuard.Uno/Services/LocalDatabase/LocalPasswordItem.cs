@@ -1,6 +1,6 @@
 using SQLite;
 
-namespace PasswordManager.Uno.Services.LocalDatabase;
+namespace VaultGuard.Uno.Services.LocalDatabase;
 
 /// <summary>
 /// Local SQLite representation of a Password Item

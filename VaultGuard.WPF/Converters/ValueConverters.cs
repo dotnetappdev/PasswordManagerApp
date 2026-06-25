@@ -3,9 +3,9 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.WPF.Converters;
+namespace VaultGuard.WPF.Converters;
 
 public class TypeToIconConverter : IValueConverter
 {
@@ -394,6 +394,35 @@ public class NameToAvatarBrushConverter : IValueConverter
         return new System.Windows.Media.SolidColorBrush(color);
     }
 
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+// Online/offline status dot for a service like OneDrive — bool? where null means "not connected /
+// unknown yet" (hidden), true means reachable (green), false means unreachable (red).
+public class OnlineStatusToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool ? Visibility.Visible : Visibility.Collapsed;
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+public class OnlineStatusToBrushConverter : IValueConverter
+{
+    private static readonly SolidColorBrush OnlineBrush = new(Color.FromRgb(0x10, 0xB9, 0x81)); // green
+    private static readonly SolidColorBrush OfflineBrush = new(Color.FromRgb(0xEF, 0x44, 0x44)); // red
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool b && b ? OnlineBrush : OfflineBrush;
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+public class OnlineStatusToTextConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool b ? (b ? "Online" : "Offline") : string.Empty;
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => throw new NotSupportedException();
 }

@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models.DTOs.Sync;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Models.DTOs.Sync;
 using System.Security.Claims;
 
-namespace PasswordManager.API.Controllers;
+namespace VaultGuard.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

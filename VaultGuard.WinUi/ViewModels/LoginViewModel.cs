@@ -1,13 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.Services.Interfaces;
 using System;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 
 
-namespace PasswordManager.WinUi.ViewModels;
+namespace VaultGuard.WinUi.ViewModels;
 
 public class LoginViewModel : BaseViewModel
 {
@@ -174,7 +174,7 @@ public class LoginViewModel : BaseViewModel
 
         if (_isFirstTimeSetup)
         {
-            PageTitle = "Set up Password Manager";
+            PageTitle = "Set up Vault Guard";
             PrimaryButtonText = "Create Master Password";
             PasswordLabel = "Create Master Password";
             PasswordPlaceholder = "Choose a strong master password";
@@ -555,7 +555,7 @@ public class LoginViewModel : BaseViewModel
         {
             // Direct database check to verify seeded users
             using var scope = ((App)Microsoft.UI.Xaml.Application.Current).Services.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManager.DAL.PasswordManagerDbContextApp>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContextApp>();
             
             var dbUsers = await dbContext.Users.ToListAsync();
             

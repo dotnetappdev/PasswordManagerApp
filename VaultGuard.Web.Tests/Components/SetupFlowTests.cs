@@ -2,12 +2,12 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using PasswordManager.Components.Shared.Components.Database;
-using PasswordManager.Models.Configuration;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Web.Components.Pages;
+using VaultGuard.Components.Shared.Components.Database;
+using VaultGuard.Models.Configuration;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Web.Components.Pages;
 
-namespace PasswordManager.Web.Tests.Components;
+namespace VaultGuard.Web.Tests.Components;
 
 [TestFixture]
 public class SetupFlowTests

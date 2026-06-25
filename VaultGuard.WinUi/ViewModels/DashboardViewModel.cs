@@ -1,12 +1,12 @@
 using System.Collections.ObjectModel;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WinUi.ViewModels;
+namespace VaultGuard.WinUi.ViewModels;
 
 public class DashboardViewModel : BaseViewModel
 {

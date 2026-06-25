@@ -2,13 +2,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Services.Services;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Services.Services;
 
-namespace PasswordManager.BackEnd.Tests.Services;
+namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
 public class UserProfileServiceTests

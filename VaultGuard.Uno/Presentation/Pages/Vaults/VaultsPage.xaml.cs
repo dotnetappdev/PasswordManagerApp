@@ -1,4 +1,4 @@
-namespace PasswordManager.Mobile.Presentation.Pages.Vaults;
+namespace VaultGuard.Mobile.Presentation.Pages.Vaults;
 
 public sealed partial class VaultsPage : Page
 {

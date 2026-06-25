@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:ContentDialog xmlns:ui="http://schemas.modernwpf.com/2019" x:Class="VaultGuard.WPF.Dialogs.BackupResultDialog"
+               xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               CloseButtonText="OK"
+               Style="{StaticResource Modern1PasswordDialogStyle}"
+               CloseButtonStyle="{StaticResource ui:ContentDialogSecondaryButtonStyle}">
+
+    <Grid Background="{DynamicResource ModernFormBackgroundBrush}"
+          MaxWidth="560"
+          MaxHeight="600">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="0,0,0,8">
+
+                <!-- Icon + message -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Border x:Name="IconBadge"
+                            Width="32" Height="32"
+                            CornerRadius="16"
+                            Margin="0,0,12,0"
+                            VerticalAlignment="Top">
+                        <TextBlock x:Name="IconGlyph"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="16"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock x:Name="MessageText"
+                               FontSize="14"
+                               TextWrapping="Wrap"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                </StackPanel>
+
+                <!-- Single-line detail (no exception object, just an error string) -->
+                <TextBlock x:Name="SimpleDetailText"
+                           Text=""
+                           FontSize="12"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,8"
+                           Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                           Visibility="Collapsed"/>
+
+                <!-- Error Details toggle -->
+                <ToggleButton x:Name="ErrorDetailsToggle"
+                              Visibility="Collapsed"
+                              Click="ErrorDetailsToggle_Click"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              Cursor="Hand"
+                              HorizontalAlignment="Left"
+                              Padding="0"
+                              Margin="0,4,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="ErrorDetailsChevron"
+                                   Text="&#xE76C;"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="11"
+                                   Margin="0,0,6,0"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
+                        <TextBlock Text="Error Details"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource ModernAccentBrush}"/>
+                    </StackPanel>
+                </ToggleButton>
+
+                <!-- Exception tree -->
+                <Border x:Name="ErrorDetailsPanel"
+                        Visibility="Collapsed"
+                        Background="{DynamicResource ModernSurfaceBrush}"
+                        BorderBrush="{DynamicResource ModernBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="8"
+                        MaxHeight="320">
+                    <Grid>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="304">
+                            <TreeView x:Name="ExceptionTreeView"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      Foreground="{DynamicResource ModernTextPrimaryBrush}">
+                                <TreeView.Resources>
+                                    <Style TargetType="TreeViewItem">
+                                        <Setter Property="Foreground" Value="{DynamicResource ModernTextPrimaryBrush}"/>
+                                        <Setter Property="IsExpanded" Value="True"/>
+                                        <Setter Property="Padding" Value="2"/>
+                                    </Style>
+                                </TreeView.Resources>
+                            </TreeView>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <!-- Copy details -->
+                <Button x:Name="CopyDetailsButton"
+                        Visibility="Collapsed"
+                        Content="Copy Details"
+                        Click="CopyDetailsButton_Click"
+                        Style="{StaticResource ui:ContentDialogSecondaryButtonStyle}"
+                        HorizontalAlignment="Left"
+                        Margin="0,12,0,0"
+                        Padding="14,6"/>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</ui:ContentDialog>

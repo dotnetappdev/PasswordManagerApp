@@ -2,7 +2,7 @@ using Microsoft.JSInterop;
 using System;
 using System.Threading.Tasks;
 
-namespace PasswordManager.Components.Shared.Services
+namespace VaultGuard.Components.Shared.Services
 {
     public enum AppThemeMode
     {

@@ -1,12 +1,12 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.WinUi.ViewModels;
-using PasswordManager.Models;
+using VaultGuard.WinUi.ViewModels;
+using VaultGuard.Models;
 using System;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WinUi.Views;
+namespace VaultGuard.WinUi.Views;
 
 public sealed partial class VaultsPage : Page
 {

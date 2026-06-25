@@ -1,5 +1,5 @@
 @echo off
-REM Password Manager Browser Extension Packaging Script
+REM Vault Guard Browser Extension Packaging Script
 REM Creates distributable packages for Chrome and Edge browsers
 
 setlocal enabledelayedexpansion
@@ -32,7 +32,7 @@ if "%VERSION%"=="" (
 )
 
 echo ================================================
-echo Password Manager Extension Packaging
+echo Vault Guard Extension Packaging
 echo Version: %VERSION%
 echo ================================================
 echo.

@@ -1,16 +1,16 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models.DTOs;
-using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.WinUi.ViewModels;
-using PasswordManager.Services.Utilities;
-using PasswordManager.Imports.Interfaces;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.WinUi.ViewModels;
+using VaultGuard.Services.Utilities;
+using VaultGuard.Imports.Interfaces;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace PasswordManager.WinUi.Views;
+namespace VaultGuard.WinUi.Views;
 
 public sealed partial class SettingsPage : Page
 {
@@ -52,10 +52,10 @@ public sealed partial class SettingsPage : Page
             try
             {
                 await _logger.LogAsync("SettingsPage", "Starting provider preload");
-                var importService = serviceProvider.GetService<PasswordManager.Imports.Interfaces.IImportService>();
+                var importService = serviceProvider.GetService<VaultGuard.Imports.Interfaces.IImportService>();
                 if (importService != null)
                 {
-                    // Force load all PasswordManagerImports.* assemblies and register providers
+                    // Force load all VaultGuardImports.* assemblies and register providers
                     var importDllsList = new List<string>();
 
                     // Common candidate directories to search for import provider assemblies. This covers
@@ -79,10 +79,10 @@ public sealed partial class SettingsPage : Page
                     try { candidateDirs.Add(Environment.CurrentDirectory); } catch { }
 
                     // Per-user imports folder (LocalAppData)
-                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PasswordManager", "imports")); } catch { }
+                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultGuard", "imports")); } catch { }
 
                     // Machine-wide imports folder (ProgramData)
-                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "PasswordManager", "imports")); } catch { }
+                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "VaultGuard", "imports")); } catch { }
 
                     // Standard plugin discovery folder used by PluginDiscoveryService
                     try { candidateDirs.Add(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "imports", "otherpasswordmanagers")); } catch { }
@@ -94,8 +94,8 @@ public sealed partial class SettingsPage : Page
                         {
                             if (Directory.Exists(dir))
                             {
-                                importDllsList.AddRange(Directory.GetFiles(dir, "PasswordManagerImports.*.dll", SearchOption.AllDirectories));
-                                importDllsList.AddRange(Directory.GetFiles(dir, "PasswordManagerImports.*.dll", SearchOption.TopDirectoryOnly));
+                                importDllsList.AddRange(Directory.GetFiles(dir, "VaultGuardImports.*.dll", SearchOption.AllDirectories));
+                                importDllsList.AddRange(Directory.GetFiles(dir, "VaultGuardImports.*.dll", SearchOption.TopDirectoryOnly));
                             }
                         }
                         catch { }
@@ -109,12 +109,12 @@ public sealed partial class SettingsPage : Page
                         {
                             var assembly = System.Reflection.Assembly.LoadFrom(dllPath);
                             var providerTypes = assembly.GetTypes()
-                                .Where(t => typeof(PasswordManager.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
+                                .Where(t => typeof(VaultGuard.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
                                          && !t.IsInterface && !t.IsAbstract);
 
                             foreach (var providerType in providerTypes)
                             {
-                                var provider = Activator.CreateInstance(providerType) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
+                                var provider = Activator.CreateInstance(providerType) as VaultGuard.Imports.Interfaces.IPasswordImportProvider;
                                 if (provider != null)
                                 {
                                     importService.RegisterProvider(provider);
@@ -298,7 +298,7 @@ public sealed partial class SettingsPage : Page
         }
     }
 
-    private async System.Threading.Tasks.Task PopulateImportTypesAsync(PasswordManager.Imports.Interfaces.IImportService importService)
+    private async System.Threading.Tasks.Task PopulateImportTypesAsync(VaultGuard.Imports.Interfaces.IImportService importService)
     {
         try
         {
@@ -490,7 +490,7 @@ public sealed partial class SettingsPage : Page
 
         try
         {
-            var importService = _serviceProvider.GetRequiredService<PasswordManager.Imports.Interfaces.IImportService>();
+            var importService = _serviceProvider.GetRequiredService<VaultGuard.Imports.Interfaces.IImportService>();
             var selectedItem = ImportTypeComboBox.SelectedItem as ComboBoxItem;
             var filePath = ImportFilePathTextBox.Text;
 
@@ -513,11 +513,11 @@ public sealed partial class SettingsPage : Page
             {
                 var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
                 var importDllsList = new List<string>();
-                importDllsList.AddRange(System.IO.Directory.GetFiles(baseDirectory, "PasswordManagerImports.*.dll"));
+                importDllsList.AddRange(System.IO.Directory.GetFiles(baseDirectory, "VaultGuardImports.*.dll"));
                 var importsFolder = System.IO.Path.Combine(baseDirectory, "imports", "otherpasswordmanagers");
                 if (System.IO.Directory.Exists(importsFolder))
                 {
-                    importDllsList.AddRange(System.IO.Directory.GetFiles(importsFolder, "PasswordManagerImports.*.dll", System.IO.SearchOption.AllDirectories));
+                    importDllsList.AddRange(System.IO.Directory.GetFiles(importsFolder, "VaultGuardImports.*.dll", System.IO.SearchOption.AllDirectories));
                 }
                 foreach (var dllPath in importDllsList)
                 {
@@ -525,14 +525,14 @@ public sealed partial class SettingsPage : Page
                     {
                         var asm = System.Reflection.Assembly.LoadFrom(dllPath);
                         var providerTypes = asm.GetTypes()
-                            .Where(t => typeof(PasswordManager.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
+                            .Where(t => typeof(VaultGuard.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
                                      && !t.IsInterface && !t.IsAbstract);
 
                         foreach (var providerType in providerTypes)
                         {
                             try
                             {
-                                var providerInstance = Activator.CreateInstance(providerType) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
+                                var providerInstance = Activator.CreateInstance(providerType) as VaultGuard.Imports.Interfaces.IPasswordImportProvider;
                                 if (providerInstance != null)
                                 {
                                     importService.RegisterProvider(providerInstance);
@@ -623,14 +623,14 @@ public sealed partial class SettingsPage : Page
                 try
                 {
                     // Try common assembly name variants
-                    var assemblyNames = new[] { "PasswordManagerImports.OnePassword", "PasswordManagerImports.1Password", "PasswordManagerImports.OnePassword.dll" };
+                    var assemblyNames = new[] { "VaultGuardImports.OnePassword", "VaultGuardImports.1Password", "VaultGuardImports.OnePassword.dll" };
                     foreach (var asmName in assemblyNames)
                     {
-                        var typeName = $"PasswordManagerImports.OnePassword.Providers.OnePasswordImportProvider, {asmName}";
+                        var typeName = $"VaultGuardImports.OnePassword.Providers.OnePasswordImportProvider, {asmName}";
                         var onePasswordProviderType = Type.GetType(typeName, false);
                         if (onePasswordProviderType != null)
                         {
-                            var instance = Activator.CreateInstance(onePasswordProviderType) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
+                            var instance = Activator.CreateInstance(onePasswordProviderType) as VaultGuard.Imports.Interfaces.IPasswordImportProvider;
                             if (instance != null)
                             {
                                 importService.RegisterProvider(instance);
@@ -652,7 +652,7 @@ public sealed partial class SettingsPage : Page
                             try
                             {
                                 var candidateTypes = asm.GetTypes()
-                                    .Where(t => typeof(PasswordManager.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
+                                    .Where(t => typeof(VaultGuard.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
                                                 && !t.IsInterface && !t.IsAbstract)
                                     .ToList();
 
@@ -661,7 +661,7 @@ public sealed partial class SettingsPage : Page
                                     // Try to instantiate and check ProviderName
                                     try
                                     {
-                                        var inst = Activator.CreateInstance(ct) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
+                                        var inst = Activator.CreateInstance(ct) as VaultGuard.Imports.Interfaces.IPasswordImportProvider;
                                         if (inst != null && string.Equals(inst.ProviderName, "1Password", StringComparison.OrdinalIgnoreCase))
                                         {
                                             importService.RegisterProvider(inst);
@@ -1475,7 +1475,7 @@ public sealed partial class SettingsPage : Page
         {
             try
             {
-                var resetService = _serviceProvider?.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+                var resetService = _serviceProvider?.GetService<VaultGuard.Services.Interfaces.IDatabaseResetService>();
                 if (resetService == null)
                 {
                     await ShowErrorDialog("Database reset service is not available.");
@@ -1508,7 +1508,7 @@ public sealed partial class SettingsPage : Page
         {
             try
             {
-                var resetService = _serviceProvider?.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+                var resetService = _serviceProvider?.GetService<VaultGuard.Services.Interfaces.IDatabaseResetService>();
                 if (resetService == null)
                 {
                     await ShowErrorDialog("Database reset service is not available.");
@@ -1548,7 +1548,7 @@ public sealed partial class SettingsPage : Page
         {
             try
             {
-                var resetService = _serviceProvider?.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+                var resetService = _serviceProvider?.GetService<VaultGuard.Services.Interfaces.IDatabaseResetService>();
                 if (resetService == null)
                 {
                     await ShowErrorDialog("Database reset service is not available.");
@@ -1582,7 +1582,7 @@ public sealed partial class SettingsPage : Page
     {
         try
         {
-            var resetService = _serviceProvider?.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+            var resetService = _serviceProvider?.GetService<VaultGuard.Services.Interfaces.IDatabaseResetService>();
             if (resetService == null)
             {
                 await ShowErrorDialog("Database reset service is not available.");

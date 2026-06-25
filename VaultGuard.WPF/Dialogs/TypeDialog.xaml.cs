@@ -5,7 +5,7 @@ using System.Windows.Shapes;
 using System;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WPF.Dialogs;
+namespace VaultGuard.WPF.Dialogs;
 
 public sealed partial class TypeDialog : ModernWpf.Controls.ContentDialog
 {

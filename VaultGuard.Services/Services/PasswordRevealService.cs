@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Logging;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.Models;
 using System.Text.Json;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for revealing encrypted passwords stored in password items

@@ -1,6 +1,6 @@
-# PasswordManager Playwright UI Tests
+# VaultGuard Playwright UI Tests
 
-This project contains UI tests for PasswordManager using Microsoft Playwright.
+This project contains UI tests for VaultGuard using Microsoft Playwright.
 
 ## Overview
 
@@ -29,7 +29,7 @@ The test suite includes:
 
 1. **.NET SDK**: Required for building and running tests
 2. **Playwright Browsers**: Installed automatically on first run
-3. **Blazor test mode**: The seeded-data tests start `PasswordManager.Web` automatically, or use `PLAYWRIGHT_BASE_URL` when targeting an already running instance
+3. **Blazor test mode**: The seeded-data tests start `VaultGuard.Web` automatically, or use `PLAYWRIGHT_BASE_URL` when targeting an already running instance
 
 ## Setup Instructions
 
@@ -45,14 +45,14 @@ playwright install
 
 ```bash
 # Build the WinUI application first
-dotnet build PasswordManager.WinUi/PasswordManager.WinUi.csproj --configuration Release
+dotnet build VaultGuard.WinUi/VaultGuard.WinUi.csproj --configuration Release
 ```
 
 ### 3. Install Test Dependencies
 
 ```bash
 # Restore test project dependencies
-dotnet restore PasswordManager.Tests.Playwright/PasswordManager.Tests.Playwright.csproj
+dotnet restore VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj
 ```
 
 ## Running Tests
@@ -61,17 +61,17 @@ dotnet restore PasswordManager.Tests.Playwright/PasswordManager.Tests.Playwright
 
 ```bash
 # Run all Playwright tests
-dotnet test PasswordManager.Tests.Playwright/PasswordManager.Tests.Playwright.csproj
+dotnet test VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj
 ```
 
 ### Run Specific Test Class
 
 ```bash
 # Run only password item tests
-dotnet test PasswordManager.Tests.Playwright/PasswordManager.Tests.Playwright.csproj --filter "TestCategory=PasswordItemCrudTests"
+dotnet test VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj --filter "TestCategory=PasswordItemCrudTests"
 
 # Run only user management tests  
-dotnet test PasswordManager.Tests.Playwright/PasswordManager.Tests.Playwright.csproj --filter "TestCategory=UserManagementCrudTests"
+dotnet test VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj --filter "TestCategory=UserManagementCrudTests"
 ```
 
 ### Run with Visual Studio Test Explorer
@@ -207,10 +207,10 @@ jobs:
         dotnet-version: '9.0.x'
     
     - name: Build WinUI App
-      run: dotnet build PasswordManager.WinUi/PasswordManager.WinUi.csproj --configuration Release
+      run: dotnet build VaultGuard.WinUi/VaultGuard.WinUi.csproj --configuration Release
     
     - name: Run Playwright Tests
-      run: dotnet test PasswordManager.Tests.Playwright/PasswordManager.Tests.Playwright.csproj --logger trx --results-directory TestResults
+      run: dotnet test VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj --logger trx --results-directory TestResults
     
     - name: Upload Test Results
       uses: actions/upload-artifact@v3
@@ -232,7 +232,7 @@ When adding new tests:
 
 ## Related Documentation
 
-- [WinUI Project README](../PasswordManager.WinUi/README.md)
+- [WinUI Project README](../VaultGuard.WinUi/README.md)
 - [Main Project README](../README.md)
 - [Development Guide](../DEVELOPMENT.md)
 - [Microsoft Playwright Documentation](https://playwright.dev/dotnet/)

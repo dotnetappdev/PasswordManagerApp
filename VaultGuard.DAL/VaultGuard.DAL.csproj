@@ -18,8 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
-  <ProjectReference Include="..\PasswordManager.Models\PasswordManager.Models.csproj" />
-  <ProjectReference Include="..\PasswordManager.Crypto\PasswordManager.Crypto.csproj" />
+  <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
+  <ProjectReference Include="..\VaultGuard.Crypto\VaultGuard.Crypto.csproj" />
   </ItemGroup>
 
 </Project>

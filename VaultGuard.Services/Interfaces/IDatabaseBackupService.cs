@@ -1,7 +1,7 @@
-using PasswordManager.Models.DTOs;
-using PasswordManager.Models;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Models;
 
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 /// <summary>
 /// Service for managing database backups and exports

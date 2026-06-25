@@ -1,9 +1,9 @@
 using System.Collections.ObjectModel;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManager.WinUi.ViewModels;
+namespace VaultGuard.WinUi.ViewModels;
 
 public class ImportViewModel : BaseViewModel
 {

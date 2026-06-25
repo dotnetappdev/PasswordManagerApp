@@ -3,7 +3,7 @@ using Foundation;
 using LocalAuthentication;
 using UIKit;
 
-namespace PasswordManager.Uno.Services.Biometric;
+namespace VaultGuard.Uno.Services.Biometric;
 
 /// <summary>
 /// iOS-specific biometric authentication using LocalAuthentication framework

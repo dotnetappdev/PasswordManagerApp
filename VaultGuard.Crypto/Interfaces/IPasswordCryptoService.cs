@@ -1,4 +1,4 @@
-namespace PasswordManager.Crypto.Interfaces;
+namespace VaultGuard.Crypto.Interfaces;
 
 /// <summary>
 /// Interface for password-specific cryptographic operations

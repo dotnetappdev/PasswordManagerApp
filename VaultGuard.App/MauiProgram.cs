@@ -1,20 +1,21 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL;
-using PasswordManager.Services;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Services.Services;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Imports.Services;
+using VaultGuard.DAL;
+using VaultGuard.Services;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Services.Services;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Imports.Services;
 using Microsoft.Extensions.Configuration;
-using PasswordManager.Crypto.Extensions;
-using PasswordManager.App.Services;
+using VaultGuard.Crypto.Extensions;
+using VaultGuard.App.Services;
 using Microsoft.AspNetCore.Identity;
-using PasswordManager.Models;
+using VaultGuard.Models;
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
-using PasswordManager.Components.Shared.Services;
+using VaultGuard.Components.Shared.Services;
+using VaultGuard.ExceptionReporting.Sentry;
 
-namespace PasswordManager.App;
+namespace VaultGuard.App;
 
 public static class MauiProgram
 {
@@ -62,6 +63,9 @@ public static class MauiProgram
 		// Add configuration
 		builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
+		// Exception reporting (Sentry-backed, swappable via IExceptionReporter)
+		builder.Services.AddSentryExceptionReporting(builder.Configuration["ExceptionReporting:SentryDsn"], "Mobile");
+
 		// Register crypto services (needed for database configuration)
 		builder.Services.AddCryptographyServices();
 
@@ -86,11 +90,11 @@ public static class MauiProgram
 			Directory.CreateDirectory(appDataDir);
 		}
 
-		builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+		builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
 			options.UseSqlite($"Data Source={defaultDbPath}"));
 		
 		// Add the regular context for compatibility
-		builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+		builder.Services.AddDbContext<VaultGuardDbContext>(options =>
 			options.UseSqlite($"Data Source={defaultDbPath}"));
 
 		// Add Identity services
@@ -103,7 +107,7 @@ public static class MauiProgram
 			options.Password.RequireUppercase = true;
 			options.Password.RequireLowercase = true;
 		})
-		.AddEntityFrameworkStores<PasswordManagerDbContextApp>();
+		.AddEntityFrameworkStores<VaultGuardDbContextApp>();
 
 		// Fix for CS0246: Correct the interface name from 'IPasswordItemIterface' to 'IPasswordItemService'  
 		builder.Services.AddScoped<IPasswordItemService, PasswordItemService>();
@@ -139,6 +143,7 @@ public static class MauiProgram
 		builder.Services.AddBlazorWebViewDeveloperTools();
 		builder.Logging.SetMinimumLevel(LogLevel.Debug);
 #endif
+		builder.Logging.AddProvider(new VaultGuard.Services.Logging.FileLoggerProvider(minLevel: LogLevel.Debug));
 
 		var app = builder.Build();
 

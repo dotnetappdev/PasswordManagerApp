@@ -1,6 +1,6 @@
-using PasswordManager.Models.DTOs;
+using VaultGuard.Models.DTOs;
 
-namespace PasswordManager.API.Interfaces;
+namespace VaultGuard.API.Interfaces;
 
 public interface IPasswordItemApiService
 {

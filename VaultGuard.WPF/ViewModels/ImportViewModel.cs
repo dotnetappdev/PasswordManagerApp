@@ -1,11 +1,11 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.WPF.ViewModels;
+namespace VaultGuard.WPF.ViewModels;
 
 public class ImportViewModel : BaseViewModel
 {
@@ -212,7 +212,7 @@ public class ImportViewModel : BaseViewModel
             string? userId = null;
             try
             {
-                var authService = _serviceProvider.GetService<PasswordManager.Services.Interfaces.IAuthService>();
+                var authService = _serviceProvider.GetService<VaultGuard.Services.Interfaces.IAuthService>();
                 userId = authService?.CurrentUser?.Id;
                 if (string.IsNullOrEmpty(userId) && authService != null)
                     userId = await authService.GetCurrentUserIdAsync();

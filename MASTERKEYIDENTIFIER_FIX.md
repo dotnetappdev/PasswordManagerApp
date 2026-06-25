@@ -98,10 +98,10 @@ The fix has been verified to include:
 
 ## Files Modified
 
-1. `PasswordManager.WinUi/Services/WinUiAuthService.cs` - Fixed master key identifier assignment and error handling
-2. `PasswordManager.Services/Services/AppStartupService.cs` - Added automatic migration for desktop apps
-3. `PasswordManager.Services/Services/DatabaseHealthService.cs` - Added database health checking (new file)
-4. `PasswordManager.WinUi/App.xaml.cs` - Registered DatabaseHealthService
+1. `VaultGuard.WinUi/Services/WinUiAuthService.cs` - Fixed master key identifier assignment and error handling
+2. `VaultGuard.Services/Services/AppStartupService.cs` - Added automatic migration for desktop apps
+3. `VaultGuard.Services/Services/DatabaseHealthService.cs` - Added database health checking (new file)
+4. `VaultGuard.WinUi/App.xaml.cs` - Registered DatabaseHealthService
 
 ## Migration Details
 

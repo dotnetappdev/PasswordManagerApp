@@ -6,9 +6,9 @@
             "type": "dotnet",
             "request": "launch",
             "preLaunchTask": "Build Solution",
-            "program": "${workspaceFolder}/PasswordManager.API/bin/Debug/net9.0/PasswordManager.API.dll",
+            "program": "${workspaceFolder}/VaultGuard.API/bin/Debug/net9.0/VaultGuard.API.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/PasswordManager.API",
+            "cwd": "${workspaceFolder}/VaultGuard.API",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             }
@@ -18,9 +18,9 @@
             "type": "dotnet",
             "request": "launch",
             "preLaunchTask": "Build Solution",
-            "program": "${workspaceFolder}/PasswordManager.Web/bin/Debug/net9.0/PasswordManager.Web.dll",
+            "program": "${workspaceFolder}/VaultGuard.Web/bin/Debug/net9.0/VaultGuard.Web.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/PasswordManager.Web",
+            "cwd": "${workspaceFolder}/VaultGuard.Web",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             }

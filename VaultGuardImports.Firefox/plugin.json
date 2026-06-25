@@ -3,7 +3,7 @@
   "displayName": "Mozilla Firefox",
   "description": "Import passwords from Firefox CSV export files",
   "version": "1.0.0",
-  "author": "PasswordManager Team",
+  "author": "VaultGuard Team",
   "website": "https://www.mozilla.org/firefox",
   "created": "2024-12-18T00:00:00Z",
   "lastUpdated": "2024-12-18T00:00:00Z",

@@ -1,34 +1,34 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
-using PasswordManager.DAL;
-using PasswordManager.Services.Services;
+using VaultGuard.DAL;
+using VaultGuard.Services.Services;
 using System.Threading.Tasks;
 
-namespace PasswordManager.BackEnd.Tests.Services
+namespace VaultGuard.BackEnd.Tests.Services
 {
     [TestFixture]
     public class DatabaseMigrationServiceTests
     {
         private DatabaseMigrationService _migrationService;
-        private PasswordManagerDbContextApp _contextApp;
-        private PasswordManagerDbContext _context;
+        private VaultGuardDbContextApp _contextApp;
+        private VaultGuardDbContext _context;
         private ILogger<DatabaseMigrationService> _logger;
 
         [SetUp]
         public void SetUp()
         {
             // Create in-memory database contexts for testing
-            var optionsApp = new DbContextOptionsBuilder<PasswordManagerDbContextApp>()
+            var optionsApp = new DbContextOptionsBuilder<VaultGuardDbContextApp>()
                 .UseInMemoryDatabase(databaseName: System.Guid.NewGuid().ToString())
                 .Options;
             
-            var optionsApi = new DbContextOptionsBuilder<PasswordManagerDbContext>()
+            var optionsApi = new DbContextOptionsBuilder<VaultGuardDbContext>()
                 .UseInMemoryDatabase(databaseName: System.Guid.NewGuid().ToString())
                 .Options;
 
-            _contextApp = new PasswordManagerDbContextApp(optionsApp);
-            _context = new PasswordManagerDbContext(optionsApi);
+            _contextApp = new VaultGuardDbContextApp(optionsApp);
+            _context = new VaultGuardDbContext(optionsApi);
             
             _logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<DatabaseMigrationService>.Instance;
             

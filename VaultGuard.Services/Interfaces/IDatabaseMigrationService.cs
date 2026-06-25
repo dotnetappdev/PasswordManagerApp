@@ -1,6 +1,6 @@
-using PasswordManager.Services.DTOs;
+using VaultGuard.Services.DTOs;
 
-namespace PasswordManager.Services.Interfaces
+namespace VaultGuard.Services.Interfaces
 {
     /// <summary>
     /// Service for managing database migrations

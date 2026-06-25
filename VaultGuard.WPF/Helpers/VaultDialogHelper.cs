@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using MwControls = ModernWpf.Controls;
 
-namespace PasswordManager.WPF.Helpers;
+namespace VaultGuard.WPF.Helpers;
 
 // Shared "Create/Edit Vault" dialog (name, description, accent color swatches, icon) —
 // used by both the sidebar "+" button (MainWindow) and the Vault Management page (VaultsPage)
@@ -114,15 +115,43 @@ public static class VaultDialogHelper
             iconBorders[matchIconIdx].BorderBrush = (Application.Current.Resources["ModernTextPrimaryBrush"] as System.Windows.Media.Brush)
                                                      ?? System.Windows.Media.Brushes.White;
 
+        // Hex box + an old-school "Custom…" colour-picker dialog, so any colour is reachable, not
+        // just the preset swatches.
+        var customBtn = new Button
+        {
+            Content = "Custom…",
+            Style = Application.Current.Resources["ModernSecondaryButtonStyle"] as Style,
+            Margin = new Thickness(8, 0, 0, 14),
+            MinWidth = 0, Padding = new Thickness(14, 0, 14, 0)
+        };
+        customBtn.Click += (_, _) =>
+        {
+            var owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+                        ?? Application.Current.MainWindow;
+            var picked = ColorPickerDialog.Show(colorBox.Text, owner);
+            if (picked != null)
+            {
+                colorBox.Text = picked;
+                foreach (var b in swatchBorders) b.BorderBrush = System.Windows.Media.Brushes.Transparent;
+            }
+        };
+        var colorRow = new Grid();
+        colorRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        colorRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(colorBox, 0);
+        Grid.SetColumn(customBtn, 1);
+        colorRow.Children.Add(colorBox);
+        colorRow.Children.Add(customBtn);
+
         var panel = new StackPanel { Margin = new Thickness(4), MinWidth = 360 };
         panel.Children.Add(MakeLabel("Vault Name *")); panel.Children.Add(nameBox);
         panel.Children.Add(MakeLabel("Description")); panel.Children.Add(descBox);
         panel.Children.Add(MakeLabel("Accent Color")); panel.Children.Add(swatchPanel);
-        panel.Children.Add(colorBox);
+        panel.Children.Add(colorRow);
         panel.Children.Add(MakeLabel("Icon")); panel.Children.Add(iconPanel);
         dialog.Content = panel;
 
-        var result = await dialog.ShowAsync();
+        var result = await DialogManager.ShowAsync(dialog);
         if (result != MwControls.ContentDialogResult.Primary) return (null, null, null, null);
         var n = nameBox.Text?.Trim();
         if (string.IsNullOrEmpty(n)) return (null, null, null, null);

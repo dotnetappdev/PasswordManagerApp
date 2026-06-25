@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Http;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 using System.Security.Claims;
 
-namespace PasswordManager.API.Middleware
+namespace VaultGuard.API.Middleware
 {
     public class ApiKeyAuthenticationMiddleware
     {

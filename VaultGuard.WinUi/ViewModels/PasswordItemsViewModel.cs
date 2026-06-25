@@ -1,10 +1,10 @@
 using System.Collections.ObjectModel;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 
-namespace PasswordManager.WinUi.ViewModels;
+namespace VaultGuard.WinUi.ViewModels;
 
 public class PasswordItemsViewModel : BaseViewModel
 {

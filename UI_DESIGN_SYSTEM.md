@@ -2,13 +2,13 @@
 
 ## Overview
 
-This document describes the standardized UI design system used across all PasswordManager platforms:
+This document describes the standardized UI design system used across all VaultGuard platforms:
 - **WinUI Desktop App** (XAML)
 - **Uno Platform** (iOS, Android, WebAssembly - XAML)
 - **Blazor Web App** (Razor/MudBlazor)
 - **Browser Extension** (HTML/CSS/JavaScript)
 
-All platforms reference the centralized constants defined in `PasswordManager.Models/UI/UIConstants.cs`.
+All platforms reference the centralized constants defined in `VaultGuard.Models/UI/UIConstants.cs`.
 
 ## Color Palette
 
@@ -144,23 +144,23 @@ Standard durations for smooth animations:
 ## Platform-Specific Implementation
 
 ### WinUI (Windows Desktop)
-- Theme files: `PasswordManager.WinUi/Themes/ModernTheme.xaml`
+- Theme files: `VaultGuard.WinUi/Themes/ModernTheme.xaml`
 - Uses XAML Color resources and StaticResource references
 - Supports gradient brushes for enhanced visuals
 
 ### Uno Platform (iOS, Android, WebAssembly)
-- Theme file: `PasswordManager.Uno/Styles/ColorPaletteOverride.xaml`
+- Theme file: `VaultGuard.Uno/Styles/ColorPaletteOverride.xaml`
 - Uses Material Design 3 color system with theme dictionaries
 - Separate Light and Dark theme definitions
 
 ### Blazor Web App
 - Uses MudBlazor component library
-- Theme service: `PasswordManager.Components.Shared/Services/ThemeService.cs`
+- Theme service: `VaultGuard.Components.Shared/Services/ThemeService.cs`
 - Colors applied via MudBlazor theme configuration
 - Shared CSS in component-specific .razor.css files
 
 ### Browser Extension
-- CSS file: `PasswordManager.BrowserExtension/popup.css`
+- CSS file: `VaultGuard.BrowserExtension/popup.css`
 - Uses CSS custom properties (variables) for easy theme application
 - Example:
   ```css

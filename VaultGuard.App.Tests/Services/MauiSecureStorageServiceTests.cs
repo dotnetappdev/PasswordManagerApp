@@ -1,10 +1,10 @@
 using NUnit.Framework;
 using Moq;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 using System;
 using System.Threading.Tasks;
 
-namespace PasswordManager.App.Tests.Services;
+namespace VaultGuard.App.Tests.Services;
 
 /// <summary>
 /// Tests for ISecureStorageService interface implementation

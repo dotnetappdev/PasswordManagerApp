@@ -1,8 +1,8 @@
-using PasswordManager.Crypto.Services;
-using PasswordManager.Crypto.Interfaces;
+using VaultGuard.Crypto.Services;
+using VaultGuard.Crypto.Interfaces;
 using System.Text;
 
-namespace PasswordManager.Crypto.Tests;
+namespace VaultGuard.Crypto.Tests;
 
 /// <summary>
 /// Simple test program to verify encryption functionality
@@ -11,7 +11,7 @@ public static class CryptoTest
 {
     public static void RunTests()
     {
-        Console.WriteLine("Testing Password Manager Cryptography...");
+        Console.WriteLine("Testing Vault Guard Cryptography...");
         
         // Test basic cryptography service
         var cryptoService = new CryptographyService();

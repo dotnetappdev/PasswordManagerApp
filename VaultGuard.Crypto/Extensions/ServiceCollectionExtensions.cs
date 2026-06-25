@@ -1,8 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.Crypto.Services;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.Crypto.Services;
 
-namespace PasswordManager.Crypto.Extensions;
+namespace VaultGuard.Crypto.Extensions;
 
 /// <summary>
 /// Extension methods for registering crypto services

@@ -1,10 +1,10 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace PasswordManager.WinUi.Dialogs;
+namespace VaultGuard.WinUi.Dialogs;
 
 public sealed partial class PasswordDetailsDialog : ContentDialog
 {
@@ -52,7 +52,7 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
             {
                 // Resolve password item service from the app's host services
                 var serviceProvider = (App.Current as App)?.Services;
-                var passwordService = serviceProvider?.GetService<PasswordManager.Services.Interfaces.IPasswordItemService>();
+                var passwordService = serviceProvider?.GetService<VaultGuard.Services.Interfaces.IPasswordItemService>();
                 if (passwordService != null)
                 {
                     await passwordService.DeleteAsync(_passwordItem.Id);
@@ -95,7 +95,7 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
             if (result == ContentDialogResult.Primary && dialog.Result is not null)
             {
                 // Refresh details from service
-                var passwordService = serviceProvider.GetService<PasswordManager.Services.Interfaces.IPasswordItemService>();
+                var passwordService = serviceProvider.GetService<VaultGuard.Services.Interfaces.IPasswordItemService>();
                 if (passwordService != null)
                 {
                     var updated = await passwordService.GetByIdAsync(_passwordItem.Id);

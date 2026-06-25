@@ -6,12 +6,12 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.WPF.Models;
-using PasswordManager.WPF.Services;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.WPF.Models;
+using VaultGuard.WPF.Services;
 
-namespace PasswordManager.WPF;
+namespace VaultGuard.WPF;
 
 /// <summary>
 /// An empty window that can be used on its own or navigated to within a Frame.
@@ -23,6 +23,19 @@ public sealed partial class MainWindow : Window
     private string? _currentUserId = null;
     private int? _selectedVaultId = null; // currently highlighted vault row in the sidebar
     private Style? _navItemStyle; // cache for dynamic nav items
+
+    // Plain, chrome-free Button template — no Background/MouseOver visuals at all. The default WPF
+    // Button template paints a solid light-blue "hot track" rectangle on hover, which otherwise
+    // blots out the vault name text underneath the sidebar's transparent click overlays.
+    private static readonly ControlTemplate TransparentOverlayButtonTemplate = CreateTransparentOverlayButtonTemplate();
+
+    private static ControlTemplate CreateTransparentOverlayButtonTemplate()
+    {
+        var border = new FrameworkElementFactory(typeof(Border));
+        border.SetValue(Border.BackgroundProperty, System.Windows.Media.Brushes.Transparent);
+        var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
+        return template;
+    }
     
     // Protected default categories that cannot be deleted
     private static readonly string[] ProtectedCategoryTags = new[] 
@@ -38,7 +51,7 @@ public sealed partial class MainWindow : Window
     {
         _serviceProvider = serviceProvider;
         this.InitializeComponent();
-        this.Title = "Password Manager - WPF";
+        this.Title = "Vault Guard - WPF";
 
         // Set window size
         this.Width = 1200;
@@ -78,13 +91,94 @@ public sealed partial class MainWindow : Window
             // Hide login frame and show main navigation
             LoginFrame.Visibility = Visibility.Collapsed;
             MainNavigationView.Visibility = Visibility.Visible;
+            MainMenuBar.Visibility = Visibility.Visible;
         }
         else
         {
             // Show login frame and hide main navigation
             LoginFrame.Visibility = Visibility.Visible;
             MainNavigationView.Visibility = Visibility.Collapsed;
+            MainMenuBar.Visibility = Visibility.Collapsed;
         }
+    }
+
+    // ─── Old-school menu bar (File / Help) ──────────────────────────────────────
+
+    private void MenuSettings_Click(object sender, RoutedEventArgs e) => NavigateToPage("Settings");
+    private void MenuAbout_Click(object sender, RoutedEventArgs e) => NavigateToPage("Settings");
+    private void MenuExit_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void MenuDocumentation_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "https://github.com/dotnetappdev/vaultguard/wiki",
+                UseShellExecute = true
+            });
+        }
+        catch { }
+    }
+
+    private async void MenuCheckUpdates_Click(object sender, RoutedEventArgs e)
+    {
+        var svc = _serviceProvider?.GetService<Services.UpdateService>();
+        if (svc == null) return;
+        try
+        {
+            var info = await svc.CheckManifestAsync(ReadUpdateManifestUrl());
+            if (info == null)
+            {
+                await ShowInfoMessage("Check for Updates", $"You're up to date (v{svc.GetCurrentVersion()}).");
+                return;
+            }
+
+            var features = info.Features is { Count: > 0 }
+                ? "\n\nWhat's new:\n" + string.Join("\n", info.Features.Select(f => "  •  " + f))
+                : string.Empty;
+            var appName = string.IsNullOrWhiteSpace(info.AppName) ? "Vault Guard" : info.AppName;
+
+            var dlg = new ModernWpf.Controls.ContentDialog
+            {
+                Title = "Update available",
+                Content = MakeDialogMessage(
+                    $"{appName} v{info.Version} is available (you have v{svc.GetCurrentVersion()})."
+                    + (info.RequiresRestart ? " A restart is required to apply it." : string.Empty)
+                    + features),
+                PrimaryButtonText = "Open Settings",
+                CloseButtonText = "Later",
+                DefaultButton = ModernWpf.Controls.ContentDialogButton.Primary
+            };
+            ApplyDialogStyle(dlg);
+            if (await Helpers.DialogManager.ShowAsync(dlg) == ModernWpf.Controls.ContentDialogResult.Primary)
+                NavigateToPage("Settings");
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorMessage("Check for Updates", $"Could not check for updates: {ex.Message}");
+        }
+    }
+
+    // Reads the configured update-manifest URL from the same local settings file the Settings page
+    // writes, so the menu's quick check honours the user's configured update source.
+    private static string? ReadUpdateManifestUrl()
+    {
+        try
+        {
+            var path = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "VaultGuard", "settings.json");
+            if (System.IO.File.Exists(path))
+            {
+                var dict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(
+                    System.IO.File.ReadAllText(path));
+                if (dict != null && dict.TryGetValue("UpdateManifestUrl", out var url) && !string.IsNullOrWhiteSpace(url))
+                    return url;
+            }
+        }
+        catch { }
+        return Services.UpdateService.DefaultManifestUrl;
     }
 
     private void MainNavigationView_SelectionChanged(ModernWpf.Controls.NavigationView sender, ModernWpf.Controls.NavigationViewSelectionChangedEventArgs args)
@@ -237,7 +331,7 @@ public sealed partial class MainWindow : Window
 
             content.Children.Add(new TextBlock
             {
-                Text = "VaultGuard Password Manager",
+                Text = "VaultGuard Vault Guard",
                 FontSize = 18,
                 FontWeight = FontWeights.SemiBold,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -281,7 +375,7 @@ public sealed partial class MainWindow : Window
             if (Application.Current.Resources.Contains("Modern1PasswordDialogStyle"))
                 dialog.Style = Application.Current.Resources["Modern1PasswordDialogStyle"] as Style;
 
-            if (await dialog.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary)
+            if (await Helpers.DialogManager.ShowAsync(dialog) == ModernWpf.Controls.ContentDialogResult.Primary)
             {
                 try
                 {
@@ -637,7 +731,16 @@ public sealed partial class MainWindow : Window
 
     private void ProfileButton_Click(object sender, RoutedEventArgs e)
     {
-        // Navigate directly to Profile page
+        // Show the dropdown (View Profile / Sign Out) instead of navigating directly.
+        if (sender is Button button && button.ContextMenu != null)
+        {
+            button.ContextMenu.PlacementTarget = button;
+            button.ContextMenu.IsOpen = true;
+        }
+    }
+
+    private void ViewProfileMenuItem_Click(object sender, RoutedEventArgs e)
+    {
         NavigateToPage("Profile");
     }
 
@@ -678,7 +781,7 @@ public sealed partial class MainWindow : Window
         };
         ApplyDialogStyle(dialog);
 
-        var result = await dialog.ShowAsync();
+        var result = await Helpers.DialogManager.ShowAsync(dialog);
         if (result == ModernWpf.Controls.ContentDialogResult.Primary)
         {
             // Handle logout
@@ -712,7 +815,7 @@ public sealed partial class MainWindow : Window
             // Open the TagDialog for creating a new tag
             var tagDialog = new Dialogs.TagDialog(_serviceProvider);
 
-            var result = await tagDialog.ShowAsync();
+            var result = await Helpers.DialogManager.ShowAsync(tagDialog);
             if (result == ModernWpf.Controls.ContentDialogResult.Primary && tagDialog.Result is not null)
             {
                 await ShowInfoMessage("Tag Created", $"Tag '{tagDialog.Result.Name}' has been created successfully.");
@@ -793,10 +896,41 @@ public sealed partial class MainWindow : Window
 
                 foreach (var vault in vaults)
                 {
-                    var rowGrid = new Grid { Margin = new Thickness(8, 1, 8, 1), Height = 36, Tag = vault.Id };
+                    var rowGrid = new Grid { Margin = new Thickness(0, 2, 0, 2), Height = 38, Tag = vault.Id };
                     rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                     rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                     rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                    // Selection chrome, drawn behind the row content. A rounded fill (inset from the
+                    // pane edges so it never looks clipped) plus a short left accent bar — toggled by
+                    // HighlightSelectedVault so the selected vault reads like a real menu selection
+                    // rather than a flat rectangle bleeding to the edges.
+                    var selectionFill = new Border
+                    {
+                        CornerRadius = new CornerRadius(6),
+                        Margin = new Thickness(4, 0, 4, 0),
+                        Background = System.Windows.Media.Brushes.Transparent,
+                        Tag = "sel",
+                        IsHitTestVisible = false,
+                        SnapsToDevicePixels = true
+                    };
+                    Grid.SetColumnSpan(selectionFill, 3);
+                    rowGrid.Children.Add(selectionFill);
+
+                    var accentBar = new Border
+                    {
+                        Width = 3,
+                        Height = 18,
+                        CornerRadius = new CornerRadius(2),
+                        HorizontalAlignment = HorizontalAlignment.Left,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Margin = new Thickness(1, 0, 0, 0),
+                        Background = System.Windows.Media.Brushes.Transparent,
+                        Tag = "accent",
+                        IsHitTestVisible = false
+                    };
+                    Grid.SetColumnSpan(accentBar, 3);
+                    rowGrid.Children.Add(accentBar);
 
                     // Vault entry — a real NavigationViewItem so its icon/text land on exactly the
                     // same indentation as the "Vaults" header and the NavigationViewItems above it
@@ -837,11 +971,15 @@ public sealed partial class MainWindow : Window
 
                     // Transparent click overlay on top of navItem — handles navigation without
                     // relying on NavigationViewItem's own (unhosted) selection/click plumbing.
+                    // Must use a flat, chrome-free template: the default WPF Button template paints
+                    // a solid light-blue "hot track" highlight on hover that otherwise blots out the
+                    // vault name underneath.
                     var navClickOverlay = new Button
                     {
                         Background = System.Windows.Media.Brushes.Transparent,
                         BorderThickness = new Thickness(0),
-                        Padding = new Thickness(0)
+                        Padding = new Thickness(0),
+                        Template = TransparentOverlayButtonTemplate
                     };
                     navClickOverlay.Click += (s, e) =>
                     {
@@ -910,7 +1048,7 @@ public sealed partial class MainWindow : Window
                                 DefaultButton = ModernWpf.Controls.ContentDialogButton.Close
                             };
                             ApplyDialogStyle(confirmDialog);
-                            if (await confirmDialog.ShowAsync() != ModernWpf.Controls.ContentDialogResult.Primary)
+                            if (await Helpers.DialogManager.ShowAsync(confirmDialog) != ModernWpf.Controls.ContentDialogResult.Primary)
                                 return;
 
                             var delVaultService = _serviceProvider.GetService<IVaultService>();
@@ -946,14 +1084,43 @@ public sealed partial class MainWindow : Window
     {
         if (VaultsNavPanel == null) return;
 
-        var selectedBrush = new System.Windows.Media.SolidColorBrush(
-            System.Windows.Media.Color.FromArgb(40, 0x25, 0x63, 0xEB)); // subtle accent fill
-        selectedBrush.Freeze();
+        var accent = System.Windows.Media.Color.FromRgb(0x25, 0x63, 0xEB);
+        // Dark-mode selection fill — a solid dark-gray card (matches NavigationViewItemBackgroundSelected)
+        // rather than a translucent accent tint, so the row reads clearly against the dark sidebar
+        // and never washes out the label text.
+        var selectedFill = new System.Windows.Media.SolidColorBrush(
+            System.Windows.Media.Color.FromRgb(0x2B, 0x2B, 0x2B));
+        selectedFill.Freeze();
+        var accentBrush = new System.Windows.Media.SolidColorBrush(accent);
+        accentBrush.Freeze();
+        var transparent = System.Windows.Media.Brushes.Transparent;
+        var brightWhite = System.Windows.Media.Brushes.White;
+
+        var secondaryBrush = (System.Windows.Media.Brush?)Application.Current.Resources["ModernTextSecondaryBrush"]
+                             ?? System.Windows.Media.Brushes.Gray;
 
         foreach (var child in VaultsNavPanel.Children.OfType<Grid>())
         {
             bool isSelected = child.Tag is int id && _selectedVaultId.HasValue && id == _selectedVaultId.Value;
-            child.Background = isSelected ? selectedBrush : System.Windows.Media.Brushes.Transparent;
+
+            // The Grid itself stays transparent — the chrome is painted by the inset borders so it
+            // gets rounded corners and never bleeds to (or looks cut off at) the pane edges.
+            child.Background = transparent;
+
+            foreach (var border in child.Children.OfType<Border>())
+            {
+                switch (border.Tag as string)
+                {
+                    case "sel": border.Background = isSelected ? selectedFill : transparent; break;
+                    case "accent": border.Background = isSelected ? accentBrush : transparent; break;
+                }
+            }
+
+            // Brighten the selected vault's label to pure white so it clearly shines through the
+            // dark selection card; unselected rows stay at the dimmer secondary color.
+            var nav = child.Children.OfType<NavigationViewItem>().FirstOrDefault();
+            if (nav?.Content is TextBlock tb)
+                tb.Foreground = isSelected ? brightWhite : secondaryBrush;
         }
     }
 
@@ -1237,7 +1404,7 @@ public sealed partial class MainWindow : Window
 
             dialog.Content = content;
 
-            var result = await dialog.ShowAsync();
+            var result = await Helpers.DialogManager.ShowAsync(dialog);
             if (result == ModernWpf.Controls.ContentDialogResult.Primary)
             {
                 var name = nameTextBox.Text?.Trim();
@@ -1342,7 +1509,7 @@ public sealed partial class MainWindow : Window
                 DefaultButton = ModernWpf.Controls.ContentDialogButton.Close};
             ApplyDialogStyle(confirmDialog);
 
-            var result = await confirmDialog.ShowAsync();
+            var result = await Helpers.DialogManager.ShowAsync(confirmDialog);
             if (result == ModernWpf.Controls.ContentDialogResult.Primary)
             {
                 // Handle deletion based on the item type
@@ -1403,7 +1570,7 @@ public sealed partial class MainWindow : Window
                 DefaultButton = ModernWpf.Controls.ContentDialogButton.Close};
             ApplyDialogStyle(confirmDialog);
 
-            var result = await confirmDialog.ShowAsync();
+            var result = await Helpers.DialogManager.ShowAsync(confirmDialog);
             if (result == ModernWpf.Controls.ContentDialogResult.Primary)
             {
                 try
@@ -1478,7 +1645,7 @@ public sealed partial class MainWindow : Window
             Content = MakeDialogMessage(message),
             CloseButtonText = "OK"};
         ApplyDialogStyle(errorDialog);
-        await errorDialog.ShowAsync();
+        await Helpers.DialogManager.ShowAsync(errorDialog);
     }
 
     private async Task ShowInfoMessage(string title, string message)
@@ -1489,7 +1656,7 @@ public sealed partial class MainWindow : Window
             Content = MakeDialogMessage(message),
             CloseButtonText = "OK"};
         ApplyDialogStyle(infoDialog);
-        await infoDialog.ShowAsync();
+        await Helpers.DialogManager.ShowAsync(infoDialog);
     }
 
     // Plain strings don't wrap inside ContentDialog's default content presenter, so a long error

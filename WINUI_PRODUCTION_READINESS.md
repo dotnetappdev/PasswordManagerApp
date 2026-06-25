@@ -17,7 +17,7 @@ This document summarizes the comprehensive review and cleanup of the WinUI deskt
 - **WinUiCompatibilityTests.cs** - Tests for WinUI 3 compatibility patterns
 - **IdentitySeederTests.cs** - Tests for Identity data seeding
 
-**Reason**: Test code should be in the separate `PasswordManager.WinUi.Tests` project, not in the main application project.
+**Reason**: Test code should be in the separate `VaultGuard.WinUi.Tests` project, not in the main application project.
 
 ### 2. Debug Output Cleanup (24 files modified, ~150 statements removed)
 
@@ -149,7 +149,7 @@ Update the following settings before production deployment:
 - [ ] Test secure storage on Windows (DPAPI)
 
 ### Automated Testing
-- [ ] Run unit tests in PasswordManager.WinUi.Tests project
+- [ ] Run unit tests in VaultGuard.WinUi.Tests project
 - [ ] Run integration tests if available
 - [ ] Perform security testing (penetration testing recommended)
 

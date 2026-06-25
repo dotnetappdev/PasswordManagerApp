@@ -40,9 +40,9 @@
 ## Code Implementation Details
 
 ### Files Modified:
-1. `PasswordManager.WinUi/Themes/ModernTheme.xaml` - Dialog centering style
-2. `PasswordManager.WinUi/Views/PasswordItemsPage.xaml` - UI layout changes
-3. `PasswordManager.WinUi/Views/PasswordItemsPage.xaml.cs` - Inline editing logic
+1. `VaultGuard.WinUi/Themes/ModernTheme.xaml` - Dialog centering style
+2. `VaultGuard.WinUi/Views/PasswordItemsPage.xaml` - UI layout changes
+3. `VaultGuard.WinUi/Views/PasswordItemsPage.xaml.cs` - Inline editing logic
 
 ### Key Methods Added:
 - `EditDetailButton_Click()` - Main toggle between edit/save modes

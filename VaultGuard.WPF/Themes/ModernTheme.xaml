@@ -2,14 +2,14 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
-        xmlns:helpers="clr-namespace:PasswordManager.WPF.Helpers"
+        xmlns:helpers="clr-namespace:VaultGuard.WPF.Helpers"
         xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
     <!-- 
-    Modern Theme for Password Manager (WPF)
+    Modern Theme for Vault Guard (WPF)
     
     Professional design system – Inter typography, deep dark palette,
-    gradient brand accents. Aligned with PasswordManager.Models/UI/UIConstants.cs
+    gradient brand accents. Aligned with VaultGuard.Models/UI/UIConstants.cs
     
     For full documentation, see: UI_DESIGN_SYSTEM.md
     -->
@@ -216,7 +216,9 @@
 
     <!-- TextBox — let ModernWPF's template handle VSM animations; override only colours -->
     <Style TargetType="TextBox">
+        <Setter Property="Background"      Value="{DynamicResource TextControlBackground}"/>
         <Setter Property="Foreground"      Value="{DynamicResource ModernTextPrimaryBrush}"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource TextControlBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding"         Value="12,10"/>
         <Setter Property="FontSize"        Value="14"/>

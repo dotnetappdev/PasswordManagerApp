@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-namespace PasswordManager.Models
+namespace VaultGuard.Models
 {
     public class Collection
     {

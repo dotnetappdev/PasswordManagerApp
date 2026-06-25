@@ -1,11 +1,11 @@
 using NUnit.Framework;
 using Moq;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WinUi.Tests.Services;
+namespace VaultGuard.WinUi.Tests.Services;
 
 /// <summary>
 /// Tests for IPlatformService interface for WinUI implementation
@@ -26,7 +26,7 @@ public class WinUiPlatformServiceTests
     public void GetAppDataDirectory_WhenCalled_ShouldReturnValidPath()
     {
         // Arrange
-        var expectedPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PasswordManager");
+        var expectedPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultGuard");
         _mockService.Setup(x => x.GetAppDataDirectory())
             .Returns(expectedPath);
 
@@ -36,7 +36,7 @@ public class WinUiPlatformServiceTests
         // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.Not.Empty);
-        Assert.That(result, Does.Contain("PasswordManager"));
+        Assert.That(result, Does.Contain("VaultGuard"));
     }
 
     [Test]
@@ -108,7 +108,7 @@ public class WinUiPlatformServiceTests
     public void GetAppDataDirectory_CalledMultipleTimes_ShouldReturnConsistentPath()
     {
         // Arrange
-        var expectedPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PasswordManager");
+        var expectedPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultGuard");
         _mockService.Setup(x => x.GetAppDataDirectory())
             .Returns(expectedPath);
 

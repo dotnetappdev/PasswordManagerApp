@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.Services.Interfaces;
 using System.Collections.Concurrent;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for managing vault sessions in the API

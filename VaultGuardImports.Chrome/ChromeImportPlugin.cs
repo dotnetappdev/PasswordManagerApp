@@ -1,8 +1,8 @@
 using FileHelpers;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManagerImports.Chrome;
+namespace VaultGuardImports.Chrome;
 
 /// <summary>
 /// Chrome browser CSV import plugin
@@ -24,7 +24,7 @@ public class ChromeImportPlugin : IPasswordImportPlugin
             DisplayName = "Google Chrome",
             Description = "Import passwords from Chrome CSV export files",
             Version = "1.0.0",
-            Author = "PasswordManager Team",
+            Author = "VaultGuard Team",
             Website = "https://www.google.com/chrome",
             Created = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,

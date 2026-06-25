@@ -1,4 +1,4 @@
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 /// <summary>
 /// Interface for secure storage operations

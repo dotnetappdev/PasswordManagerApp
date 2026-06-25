@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.Models;
+namespace VaultGuard.Models;
 
 /// <summary>
 /// Database entity for storing SMS configuration settings
@@ -58,7 +58,7 @@ public class SmsSettings
     /// SMS message template. Use {code} placeholder for the OTP code and {expiration} for expiration time
     /// </summary>
     [StringLength(500)]
-    public string MessageTemplate { get; set; } = "Your Password Manager verification code is: {code}. This code will expire in {expiration} minutes.";
+    public string MessageTemplate { get; set; } = "Your Vault Guard verification code is: {code}. This code will expire in {expiration} minutes.";
 
     /// <summary>
     /// Twilio Account SID (encrypted)
@@ -100,7 +100,7 @@ public class SmsSettings
     /// AWS SNS Sender Name
     /// </summary>
     [StringLength(100)]
-    public string? AwsSenderName { get; set; } = "Password Manager";
+    public string? AwsSenderName { get; set; } = "Vault Guard";
 
     /// <summary>
     /// Azure Communication Services Connection String (encrypted)

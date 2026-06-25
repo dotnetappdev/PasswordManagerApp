@@ -1,4 +1,4 @@
-# PasswordManager.Web
+# VaultGuard.Web
 
 A modern Blazor Server web application for password management with full theme support (Light, Dark, System), built using .NET 9 and MudBlazor components.
 
@@ -50,7 +50,7 @@ A modern Blazor Server web application for password management with full theme s
 ### Project Structure
 
 ```
-PasswordManager.Web/
+VaultGuard.Web/
 ├── Components/
 │   ├── App.razor              # Root application component
 │   ├── Routes.razor           # Route configuration
@@ -60,12 +60,12 @@ PasswordManager.Web/
 ├── wwwroot/                   # Static files
 ├── appsettings.json           # Configuration
 ├── Program.cs                 # Application startup
-└── PasswordManager.Web.csproj # Project file
+└── VaultGuard.Web.csproj # Project file
 ```
 
 ### Shared Component Integration
 
-The web app uses components from `PasswordManager.Components.Shared`:
+The web app uses components from `VaultGuard.Components.Shared`:
 
 - **Pages**: MasterPassword, Vault, Settings, Admin pages
 - **Layout**: MainLayout, NavMenu, and responsive components
@@ -92,8 +92,8 @@ Supports multiple database providers through Entity Framework Core:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/dotnetappdev/PasswordManagerApp.git
-   cd PasswordManagerApp/PasswordManager.Web
+   git clone https://github.com/dotnetappdev/VaultGuardApp.git
+   cd VaultGuardApp/VaultGuard.Web
    ```
 
 2. **Run the application**
@@ -166,7 +166,7 @@ Configure in `appsettings.json`:
 {
   "DatabaseProvider": "sqlserver",
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=PasswordManager;Trusted_Connection=true;TrustServerCertificate=true;"
+    "DefaultConnection": "Server=localhost;Database=VaultGuard;Trusted_Connection=true;TrustServerCertificate=true;"
   }
 }
 ```
@@ -176,7 +176,7 @@ Configure in `appsettings.json`:
 {
   "DatabaseProvider": "mysql",
   "ConnectionStrings": {
-    "MySqlConnection": "Server=localhost;Database=PasswordManager;User=root;Password=yourpassword;Port=3306;"
+    "MySqlConnection": "Server=localhost;Database=VaultGuard;User=root;Password=yourpassword;Port=3306;"
   }
 }
 ```
@@ -216,7 +216,7 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     options.Password.RequireUppercase = true;
     options.Password.RequireLowercase = true;
 })
-.AddEntityFrameworkStores<PasswordManagerDbContextApp>();
+.AddEntityFrameworkStores<VaultGuardDbContextApp>();
 ```
 
 ## Features
@@ -301,8 +301,8 @@ dotnet test
 
 ### Adding New Features
 
-1. Create components in `PasswordManager.Components.Shared` for shared functionality
-2. Add web-specific components in `PasswordManager.Web/Components`
+1. Create components in `VaultGuard.Components.Shared` for shared functionality
+2. Add web-specific components in `VaultGuard.Web/Components`
 3. Update navigation in shared `NavMenu.razor`
 4. Add necessary services to DI container in `Program.cs`
 
@@ -329,19 +329,19 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
-COPY ["PasswordManager.Web/PasswordManager.Web.csproj", "PasswordManager.Web/"]
-RUN dotnet restore "PasswordManager.Web/PasswordManager.Web.csproj"
+COPY ["VaultGuard.Web/VaultGuard.Web.csproj", "VaultGuard.Web/"]
+RUN dotnet restore "VaultGuard.Web/VaultGuard.Web.csproj"
 COPY . .
-WORKDIR "/src/PasswordManager.Web"
-RUN dotnet build "PasswordManager.Web.csproj" -c Release -o /app/build
+WORKDIR "/src/VaultGuard.Web"
+RUN dotnet build "VaultGuard.Web.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "PasswordManager.Web.csproj" -c Release -o /app/publish
+RUN dotnet publish "VaultGuard.Web.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "PasswordManager.Web.dll"]
+ENTRYPOINT ["dotnet", "VaultGuard.Web.dll"]
 ```
 
 ## Performance
@@ -375,8 +375,8 @@ This project is licensed under the MIT License - see the [LICENSE](../LICENSE) f
 ## Support
 
 - Email: support@passwordmanager.dev
-- Issues: [GitHub Issues](https://github.com/dotnetappdev/PasswordManagerApp/issues)
-- Discussions: [GitHub Discussions](https://github.com/dotnetappdev/PasswordManagerApp/discussions)
+- Issues: [GitHub Issues](https://github.com/dotnetappdev/VaultGuardApp/issues)
+- Discussions: [GitHub Discussions](https://github.com/dotnetappdev/VaultGuardApp/discussions)
 
 ---
 

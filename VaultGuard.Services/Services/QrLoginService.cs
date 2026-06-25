@@ -1,16 +1,16 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.Services.Interfaces;
 using QRCoder;
 using System.Text;
 using System.Text.Json;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for QR code login functionality

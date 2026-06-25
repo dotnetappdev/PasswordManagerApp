@@ -4,7 +4,7 @@ This document provides an overview of the React Native mobile application locate
 
 ## Overview
 
-The Password Manager mobile app is a fully-featured, cross-platform mobile application built with React Native that provides secure password management for iOS and Android devices. It supports both local SQLite storage and cloud synchronization via API.
+The Vault Guard mobile app is a fully-featured, cross-platform mobile application built with React Native that provides secure password management for iOS and Android devices. It supports both local SQLite storage and cloud synchronization via API.
 
 ## Key Features
 
@@ -34,7 +34,7 @@ The Password Manager mobile app is a fully-featured, cross-platform mobile appli
 
 #### API Cloud Sync Mode
 - **Multi-device sync**: Access data across all devices
-- **API integration**: Connects to Password Manager API
+- **API integration**: Connects to Vault Guard API
 - **Automatic sync**: Configurable sync intervals
 - **Conflict resolution**: Last-write-wins strategy
 
@@ -137,7 +137,7 @@ The app can operate in two modes:
 2. **API Cloud Sync Mode**
    - Best for: Multi-device users, team sharing
    - Configuration required:
-     - API URL: Your Password Manager API endpoint
+     - API URL: Your Vault Guard API endpoint
      - API Key: Authentication key for API access
    - Data location: Synced to cloud
 
@@ -307,9 +307,9 @@ For issues or questions:
 ## Related Documentation
 
 - [Main README](README.md) - Overall project documentation
-- [API Documentation](PasswordManager.API/README.md) - Backend API
-- [WinUI App](PasswordManager.WinUi/README.md) - Desktop application
-- [Web App](PasswordManager.Web/README.md) - Web application
+- [API Documentation](VaultGuard.API/README.md) - Backend API
+- [WinUI App](VaultGuard.WinUi/README.md) - Desktop application
+- [Web App](VaultGuard.Web/README.md) - Web application
 
 ## License
 

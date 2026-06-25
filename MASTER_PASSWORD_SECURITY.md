@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document explains the critical security aspects of master password handling and the architecture for offline/online synchronization in the Password Manager application.
+This document explains the critical security aspects of master password handling and the architecture for offline/online synchronization in the Vault Guard application.
 
 ## Master Password Security 🔐
 
@@ -300,21 +300,21 @@ Each device must:
 
 #### Mobile/Desktop Considerations
 ```csharp
-// Uno Mobile App (PasswordManager.App)
+// Uno Mobile App (VaultGuard.App)
 // Store master key in secure storage during session only
 await SecureStorage.SetAsync("session_master_key", masterKeyBase64);
 
 // Clear on logout/timeout
 SecureStorage.Remove("session_master_key");
 
-// WinUI Desktop App (PasswordManager.WinUi)
+// WinUI Desktop App (VaultGuard.WinUi)
 // Use Windows Credential Manager or similar
 // Memory-only storage preferred
 ```
 
 #### Web App Considerations
 ```javascript
-// Blazor Web (PasswordManager.Web)
+// Blazor Web (VaultGuard.Web)
 // Keep master key in memory only (JavaScript variable)
 // Never in localStorage or sessionStorage
 // Clear on logout/tab close

@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.Models;
-using PasswordManager.DAL.Interfaces;
-using PasswordManager.Crypto.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.DAL.Interfaces;
+using VaultGuard.Crypto.Interfaces;
 
-namespace PasswordManager.DAL.Seed;
+namespace VaultGuard.DAL.Seed;
 
 /// <summary>
 /// Service for seeding Identity users and roles
@@ -15,7 +15,7 @@ public class IdentityDataSeeder
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly IPasswordCryptoService _passwordCryptoService;
-    private readonly PasswordManagerDbContext _dbContext;
+    private readonly VaultGuardDbContext _dbContext;
     // private readonly IPermissionService _permissionService;
     private readonly ILogger<IdentityDataSeeder> _logger;
     
@@ -26,7 +26,7 @@ public class IdentityDataSeeder
         UserManager<ApplicationUser> userManager,
         RoleManager<ApplicationRole> roleManager,
         IPasswordCryptoService passwordCryptoService,
-        PasswordManagerDbContext dbContext,
+        VaultGuardDbContext dbContext,
         // IPermissionService permissionService,
         ILogger<IdentityDataSeeder> logger)
     {

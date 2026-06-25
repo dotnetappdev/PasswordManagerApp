@@ -1,8 +1,8 @@
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Services.Utilities;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Services.Utilities;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// "Watchtower"-style vault health analysis: scores the vault and surfaces weak, reused and old

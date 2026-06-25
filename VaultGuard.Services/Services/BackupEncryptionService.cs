@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// AES-256-GCM encryption with PBKDF2-SHA256 key derivation.

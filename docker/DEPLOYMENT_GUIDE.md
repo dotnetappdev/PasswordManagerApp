@@ -1,6 +1,6 @@
-# Password Manager - Complete Deployment Guide
+# Vault Guard - Complete Deployment Guide
 
-This guide provides an overview of all deployment options for the Password Manager application.
+This guide provides an overview of all deployment options for the Vault Guard application.
 
 ## 📋 Deployment Options Overview
 
@@ -75,7 +75,7 @@ cd installers
 build-installers.bat
 
 # Run the installer
-output\PasswordManager-API-Setup-1.0.0.exe
+output\VaultGuard-API-Setup-1.0.0.exe
 ```
 
 ### WinUI Application Installer
@@ -96,7 +96,7 @@ cd installers
 build-installers.bat
 
 # Run the installer
-output\PasswordManager-WinUI-Setup-1.0.0.exe
+output\VaultGuard-WinUI-Setup-1.0.0.exe
 ```
 
 ### Best For
@@ -125,7 +125,7 @@ Modern Windows app package format for Microsoft Store and enterprise distributio
 **Quick Start:**
 ```cmd
 # Build MSIX package
-cd PasswordManager.WinUi
+cd VaultGuard.WinUi
 dotnet publish -c Release -f net9.0-windows10.0.19041.0 -p:Platform=x64 -p:GenerateAppxPackageOnBuild=true
 
 # Package location
@@ -158,24 +158,24 @@ For developers who want full control over the setup process.
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/dotnetappdev/PasswordManagerApp.git
-cd PasswordManagerApp
+git clone https://github.com/dotnetappdev/VaultGuardApp.git
+cd VaultGuardApp
 
 # 2. Restore packages
 dotnet restore
 
 # 3. Configure database
-# Edit PasswordManager.API/appsettings.json
+# Edit VaultGuard.API/appsettings.json
 
 # 4. Run migrations
-cd PasswordManager.API
+cd VaultGuard.API
 dotnet ef database update
 
 # 5. Start API
 dotnet run
 
 # 6. Start WinUI app (separate terminal)
-cd ../PasswordManager.WinUi
+cd ../VaultGuard.WinUi
 dotnet run
 ```
 
@@ -250,8 +250,8 @@ cd docker
 docker-compose up -d
 
 # Option 2: Manual setup
-dotnet run --project PasswordManager.API
-dotnet run --project PasswordManager.WinUi
+dotnet run --project VaultGuard.API
+dotnet run --project VaultGuard.WinUi
 ```
 
 ---
@@ -276,10 +276,10 @@ dotnet run --project PasswordManager.WinUi
 **Firewall Rules:**
 ```cmd
 # Allow HTTPS
-netsh advfirewall firewall add rule name="Password Manager HTTPS" dir=in action=allow protocol=TCP localport=51650
+netsh advfirewall firewall add rule name="Vault Guard HTTPS" dir=in action=allow protocol=TCP localport=51650
 
 # Allow HTTP (optional, for health checks)
-netsh advfirewall firewall add rule name="Password Manager HTTP" dir=in action=allow protocol=TCP localport=51651
+netsh advfirewall firewall add rule name="Vault Guard HTTP" dir=in action=allow protocol=TCP localport=51651
 ```
 
 **Reverse Proxy (nginx example):**
@@ -352,8 +352,8 @@ server {
 - [Development Guide](../DEVELOPMENT.md)
 
 ### Component-Specific
-- [Web API Documentation](../PasswordManager.API/README.md)
-- [WinUI Documentation](../PasswordManager.WinUi/README.md)
+- [Web API Documentation](../VaultGuard.API/README.md)
+- [WinUI Documentation](../VaultGuard.WinUi/README.md)
 - [Database Providers](../ReadMe.DatabaseProviders.md)
 
 ### Guides
@@ -368,7 +368,7 @@ server {
 ### Getting Help
 
 1. **Check Documentation** - Review relevant guides above
-2. **Search Issues** - [GitHub Issues](https://github.com/dotnetappdev/PasswordManagerApp/issues)
+2. **Search Issues** - [GitHub Issues](https://github.com/dotnetappdev/VaultGuardApp/issues)
 3. **Ask Questions** - Create a new issue with details
 
 ### Reporting Issues

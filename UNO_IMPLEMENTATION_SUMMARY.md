@@ -2,12 +2,12 @@
 
 ## Overview
 
-Successfully created a cross-platform Uno Platform mobile application for the Password Manager solution. The app provides offline-first password management with SQLite local storage and two-way sync capabilities with the API.
+Successfully created a cross-platform Uno Platform mobile application for the Vault Guard solution. The app provides offline-first password management with SQLite local storage and two-way sync capabilities with the API.
 
 ## What Was Implemented
 
 ### 1. Project Structure ✅
-- Created `PasswordManager.Uno` project using Uno Platform templates
+- Created `VaultGuard.Uno` project using Uno Platform templates
 - Configured for multi-platform support:
   - Android (net9.0-android)
   - iOS (net9.0-ios)
@@ -209,10 +209,10 @@ Successfully created a cross-platform Uno Platform mobile application for the Pa
 ## File Structure
 
 ```
-PasswordManager.Uno/
+VaultGuard.Uno/
 ├── App.xaml                      # Application entry point
 ├── App.xaml.cs                   # DI and navigation setup
-├── PasswordManager.Uno.csproj    # Project configuration
+├── VaultGuard.Uno.csproj    # Project configuration
 ├── Directory.Packages.props      # Central package versions
 ├── global.json                   # Uno SDK version
 ├── GlobalUsings.cs               # Global using directives
@@ -280,8 +280,8 @@ dotnet build -f net9.0-desktop
 
 The Uno app integrates seamlessly with the existing solution:
 
-- **Shared Models**: References `PasswordManager.Models` project
-- **Shared Crypto**: References `PasswordManager.Crypto` project
+- **Shared Models**: References `VaultGuard.Models` project
+- **Shared Crypto**: References `VaultGuard.Crypto` project
 - **API Compatibility**: Uses same DTOs and endpoints as WinUI app
 - **Consistent UX**: Material Design consistent with modern web standards
 

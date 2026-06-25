@@ -206,7 +206,7 @@ Benefits:
 - `Presentation/Pages/Login/LoginModel.cs` - Added biometric authentication support
 - `Presentation/Pages/Login/LoginPage.xaml` - Added biometric UI elements
 - `App.xaml.cs` - Registered biometric service
-- `PasswordManager.Uno.csproj` - Added Xamarin.AndroidX.Biometric package
+- `VaultGuard.Uno.csproj` - Added Xamarin.AndroidX.Biometric package
 - `Directory.Packages.props` - Added biometric package version
 - `Platforms/iOS/Info.plist` - Added NSFaceIDUsageDescription
 

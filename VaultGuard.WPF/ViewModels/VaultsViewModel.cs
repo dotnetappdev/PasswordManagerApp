@@ -1,9 +1,9 @@
 using System.Collections.ObjectModel;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.WPF.ViewModels;
+namespace VaultGuard.WPF.ViewModels;
 
 public class VaultsViewModel : BaseViewModel
 {

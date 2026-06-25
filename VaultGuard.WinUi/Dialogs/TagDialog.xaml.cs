@@ -1,14 +1,14 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml.Shapes;
 
-namespace PasswordManager.WinUi.Dialogs;
+namespace VaultGuard.WinUi.Dialogs;
 
 public sealed partial class TagDialog : ContentDialog
 {

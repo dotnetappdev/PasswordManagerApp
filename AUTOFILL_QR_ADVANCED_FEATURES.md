@@ -1,4 +1,4 @@
-# AutoFill Password Manager & Advanced Features Implementation
+# AutoFill Vault Guard & Advanced Features Implementation
 
 ## Overview
 
@@ -6,7 +6,7 @@ Implemented comprehensive AutoFill password manager registration for iOS and And
 
 ## Features Implemented
 
-### 1. AutoFill Password Manager Registration
+### 1. AutoFill Vault Guard Registration
 
 #### iOS AutoFill Credential Provider
 - **Native iOS Integration**: Uses `AuthenticationServices` framework
@@ -49,8 +49,8 @@ Implemented comprehensive AutoFill password manager registration for iOS and And
 ```xml
 <!-- AndroidManifest.xml -->
 <service
-    android:name=".PasswordManagerAutofillService"
-    android:label="Password Manager"
+    android:name=".VaultGuardAutofillService"
+    android:label="Vault Guard"
     android:permission="android.permission.BIND_AUTOFILL_SERVICE"
     android:exported="true">
   <intent-filter>
@@ -163,13 +163,13 @@ Presentation/Pages/Settings/
 2. Tap "Enable" in AutoFill section
 3. App opens iOS Settings
 4. Navigate to Passwords > AutoFill Passwords
-5. Enable "Password Manager"
+5. Enable "Vault Guard"
 
 **Android**:
 1. Go to Settings page in app
 2. Tap "Enable" in AutoFill section
 3. App opens Android Settings
-4. Select "Password Manager" as AutoFill service
+4. Select "Vault Guard" as AutoFill service
 
 ### Configuring API
 
@@ -265,7 +265,7 @@ await autoFillService.SaveCredentialAsync(credential);
 1. Enable AutoFill in iOS Settings
 2. Open Safari or any app
 3. Tap on username/password field
-4. Verify Password Manager appears
+4. Verify Vault Guard appears
 5. Select credential and verify auto-fill
 
 **Android**:
@@ -339,7 +339,7 @@ await autoFillService.SaveCredentialAsync(credential);
 - `Platforms/iOS/Entitlements.plist` - Added AutoFill entitlement
 - `Platforms/Android/AndroidManifest.xml` - Added AutoFill service and permissions
 - `Directory.Packages.props` - Added ZXing.Net package
-- `PasswordManager.Uno.csproj` - Added ZXing.Net reference
+- `VaultGuard.Uno.csproj` - Added ZXing.Net reference
 
 ## Summary
 

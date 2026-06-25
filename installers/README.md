@@ -8,7 +8,7 @@ This directory contains **Inno Setup** installer scripts for the VaultGuard appl
 |--------|---------|--------|
 | `wpf-installer.iss` | **VaultGuard Desktop (WPF)** | `VaultGuardSetup-<version>.exe` |
 | `api-installer.iss` | VaultGuard Web API (Windows Service) | `VaultGuardAPI-Setup-<version>.exe` |
-| `winui-installer.iss` | VaultGuard WinUI (legacy) | `PasswordManager-WinUI-Setup-<version>.exe` |
+| `winui-installer.iss` | VaultGuard WinUI (legacy) | `VaultGuard-WinUI-Setup-<version>.exe` |
 
 > **For most users the WPF installer is the right choice.**
 > The API installer is only needed when self-hosting the sync backend.
@@ -34,7 +34,7 @@ This directory contains **Inno Setup** installer scripts for the VaultGuard appl
 ### Step 1 — Publish the desktop app
 
 ```powershell
-dotnet publish PasswordManager.WPF/PasswordManager.WPF.csproj `
+dotnet publish VaultGuard.WPF/VaultGuard.WPF.csproj `
     -c Release -r win-x64 --self-contained `
     -o publish/wpf `
     -p:Version=1.2.3
@@ -59,7 +59,7 @@ Output: `installers\output\VaultGuardSetup-1.2.3.exe`
 ### Step 1 — Publish the API
 
 ```powershell
-dotnet publish PasswordManager.API/PasswordManager.API.csproj `
+dotnet publish VaultGuard.API/VaultGuard.API.csproj `
     -c Release -o publish/api `
     -p:Version=1.2.3
 ```
@@ -170,6 +170,6 @@ Or via **Settings → Apps → VaultGuard → Uninstall**.
 - [Main README](../README.md)
 - [Setup Guide](../SETUP.md)
 - [Getting Started](../GETTING_STARTED.md)
-- [GitHub Releases](https://github.com/dotnetappdev/PasswordManagerApp/releases)
+- [GitHub Releases](https://github.com/dotnetappdev/VaultGuardApp/releases)
 - [Inno Setup Documentation](https://jrsoftware.org/ishelp/)
 - [WiX v4 Documentation](https://wixtoolset.org/docs/)

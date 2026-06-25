@@ -5,8 +5,8 @@ The application was experiencing duplicate route errors at runtime:
 
 ```
 The following routes are ambiguous:
-'home' in 'PasswordManager.App.Components.Pages.Home'
-'home' in 'PasswordManager.Components.Shared.Pages.Home'
+'home' in 'VaultGuard.App.Components.Pages.Home'
+'home' in 'VaultGuard.Components.Shared.Pages.Home'
 ```
 
 ## Root Cause
@@ -16,9 +16,9 @@ Both the App project and the Components.Shared project contained Razor component
 Removed the `@page` directives from the shared components, making them non-routable while preserving them as reusable components:
 
 ### Changes Made:
-1. **PasswordManager.Components.Shared/Pages/Home.razor**: Removed `@page "/home"`
-2. **PasswordManager.Components.Shared/Pages/Login.razor**: Removed `@page "/login"` and `@page "/"`  
-3. **PasswordManager.Components.Shared/Pages/Admin/UserManagement.razor**: Removed `@page "/admin/users"`
+1. **VaultGuard.Components.Shared/Pages/Home.razor**: Removed `@page "/home"`
+2. **VaultGuard.Components.Shared/Pages/Login.razor**: Removed `@page "/login"` and `@page "/"`  
+3. **VaultGuard.Components.Shared/Pages/Admin/UserManagement.razor**: Removed `@page "/admin/users"`
 
 ### Rationale:
 - The App project components are more comprehensive (e.g., Home component: 2715 vs 2421 lines)

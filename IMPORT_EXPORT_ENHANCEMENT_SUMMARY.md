@@ -1,45 +1,45 @@
 # Import/Export System Enhancement - Implementation Summary
 
 ## Overview
-This document summarizes the enhancements made to the Password Manager App's import/export system, browser extension, and theme system.
+This document summarizes the enhancements made to the Vault Guard App's import/export system, browser extension, and theme system.
 
 ## Changes Implemented
 
 ### 1. New Import Plugins
 
-#### Password Manager Imports
-- **LastPass** (`PasswordManagerImports.LastPass`)
+#### Vault Guard Imports
+- **LastPass** (`VaultGuardImports.LastPass`)
   - Supports CSV export format
   - Preserves folder structure as collections
   - Handles grouped passwords
   
-- **Dashlane** (`PasswordManagerImports.Dashlane`)
+- **Dashlane** (`VaultGuardImports.Dashlane`)
   - Supports CSV export format
   - Imports categories as collections
   - Handles email and username fields
   
-- **KeePass** (`PasswordManagerImports.KeePass`)
+- **KeePass** (`VaultGuardImports.KeePass`)
   - Supports CSV export format
   - Preserves group hierarchy
   - Compatible with generic CSV exporter
 
 #### Browser Password Imports
-- **Google Chrome** (`PasswordManagerImports.Chrome`)
+- **Google Chrome** (`VaultGuardImports.Chrome`)
   - Imports from Chrome password CSV exports
   - Auto-generates titles from URLs
   - Creates "Chrome Import" collection
   
-- **Microsoft Edge** (`PasswordManagerImports.Edge`)
+- **Microsoft Edge** (`VaultGuardImports.Edge`)
   - Same format as Chrome (Chromium-based)
   - Creates "Edge Import" collection
   - Compatible with Edge password exports
   
-- **Mozilla Firefox** (`PasswordManagerImports.Firefox`)
+- **Mozilla Firefox** (`VaultGuardImports.Firefox`)
   - Imports from Firefox Logins CSV
   - Preserves timestamps (creation, last used, last changed)
   - Handles httpRealm and formActionOrigin fields
   
-- **Apple Safari** (`PasswordManagerImports.Safari`)
+- **Apple Safari** (`VaultGuardImports.Safari`)
   - Imports from Safari password CSV
   - Supports OTPAuth field for 2FA
   - Preserves notes and titles
@@ -132,39 +132,39 @@ All import plugins follow the same pattern:
 
 ### Import Plugins
 ```
-PasswordManagerImports.LastPass/
+VaultGuardImports.LastPass/
   ├── LastPassImportPlugin.cs
-  ├── PasswordManagerImports.LastPass.csproj
+  ├── VaultGuardImports.LastPass.csproj
   └── plugin.json
 
-PasswordManagerImports.Dashlane/
+VaultGuardImports.Dashlane/
   ├── DashlaneImportPlugin.cs
-  ├── PasswordManagerImports.Dashlane.csproj
+  ├── VaultGuardImports.Dashlane.csproj
   └── plugin.json
 
-PasswordManagerImports.KeePass/
+VaultGuardImports.KeePass/
   ├── KeePassImportPlugin.cs
-  ├── PasswordManagerImports.KeePass.csproj
+  ├── VaultGuardImports.KeePass.csproj
   └── plugin.json
 
-PasswordManagerImports.Chrome/
+VaultGuardImports.Chrome/
   ├── ChromeImportPlugin.cs
-  ├── PasswordManagerImports.Chrome.csproj
+  ├── VaultGuardImports.Chrome.csproj
   └── plugin.json
 
-PasswordManagerImports.Edge/
+VaultGuardImports.Edge/
   ├── EdgeImportPlugin.cs
-  ├── PasswordManagerImports.Edge.csproj
+  ├── VaultGuardImports.Edge.csproj
   └── plugin.json
 
-PasswordManagerImports.Firefox/
+VaultGuardImports.Firefox/
   ├── FirefoxImportPlugin.cs
-  ├── PasswordManagerImports.Firefox.csproj
+  ├── VaultGuardImports.Firefox.csproj
   └── plugin.json
 
-PasswordManagerImports.Safari/
+VaultGuardImports.Safari/
   ├── SafariImportPlugin.cs
-  ├── PasswordManagerImports.Safari.csproj
+  ├── VaultGuardImports.Safari.csproj
   └── plugin.json
 ```
 
@@ -174,30 +174,30 @@ PasswordManagerImports.Safari/
 ## Files Modified
 
 ### Browser Extension
-- `PasswordManager.BrowserExtension/background.js` - Added connection modes and localStorage support
-- `PasswordManager.BrowserExtension/popup.html` - Added settings UI
-- `PasswordManager.BrowserExtension/popup.js` - Added settings management
-- `PasswordManager.BrowserExtension/popup.css` - Added form styling
+- `VaultGuard.BrowserExtension/background.js` - Added connection modes and localStorage support
+- `VaultGuard.BrowserExtension/popup.html` - Added settings UI
+- `VaultGuard.BrowserExtension/popup.js` - Added settings management
+- `VaultGuard.BrowserExtension/popup.css` - Added form styling
 
 ### Theme System
-- `PasswordManager.WinUi/App.xaml.cs` - Enhanced theme loading
-- `PasswordManager.WinUi/ViewModels/SettingsViewModel.cs` - Added persistence
+- `VaultGuard.WinUi/App.xaml.cs` - Enhanced theme loading
+- `VaultGuard.WinUi/ViewModels/SettingsViewModel.cs` - Added persistence
 
 ### Documentation
 - `ReadMe.md` - Updated with new features
-- `PasswordManager.sln` - Added all new projects
+- `VaultGuard.sln` - Added all new projects
 
 ## Build Status
 
 All new components build successfully:
-- ✅ PasswordManagerImports.LastPass
-- ✅ PasswordManagerImports.Dashlane
-- ✅ PasswordManagerImports.KeePass
-- ✅ PasswordManagerImports.Chrome
-- ✅ PasswordManagerImports.Edge
-- ✅ PasswordManagerImports.Firefox
-- ✅ PasswordManagerImports.Safari
-- ✅ PasswordManager.WinUi (with theme fixes)
+- ✅ VaultGuardImports.LastPass
+- ✅ VaultGuardImports.Dashlane
+- ✅ VaultGuardImports.KeePass
+- ✅ VaultGuardImports.Chrome
+- ✅ VaultGuardImports.Edge
+- ✅ VaultGuardImports.Firefox
+- ✅ VaultGuardImports.Safari
+- ✅ VaultGuard.WinUi (with theme fixes)
 
 ## Testing Requirements
 

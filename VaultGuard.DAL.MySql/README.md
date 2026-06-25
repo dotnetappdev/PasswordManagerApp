@@ -1,6 +1,6 @@
 # MySQL Provider
 
-This project contains the context factory and migrations for MySQL support in PasswordManagerApp.
+This project contains the context factory and migrations for MySQL support in VaultGuardApp.
 
 - Uses `MySqlContextFactory` for design-time and runtime context creation.
 - Migrations for MySQL are managed here.

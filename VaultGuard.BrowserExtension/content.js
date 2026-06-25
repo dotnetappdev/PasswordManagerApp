@@ -1,5 +1,5 @@
 // Content script for detecting and enhancing login forms
-class PasswordManagerContentScript {
+class VaultGuardContentScript {
   constructor() {
     this.apiUrl = 'http://localhost:5000'; // Default API URL
     this.observer = null;
@@ -24,7 +24,7 @@ class PasswordManagerContentScript {
       }
       this.authToken = result.authToken;
     } catch (error) {
-      console.log('Password Manager: Settings not found, using defaults');
+      console.log('Vault Guard: Settings not found, using defaults');
     }
   }
 
@@ -76,7 +76,7 @@ class PasswordManagerContentScript {
     const fieldType = this.getFieldType(field);
     
     // Log for debugging
-    console.log('Password Manager: Field focused', {
+    console.log('Vault Guard: Field focused', {
       fieldType: fieldType,
       formContext: formContext,
       fieldName: field.name,
@@ -173,8 +173,8 @@ class PasswordManagerContentScript {
         await this.showCredentialSelector(targetField, formContext);
       }
     } catch (error) {
-      console.error('Password Manager: Quick access error:', error);
-      this.showNotification('Error accessing Password Manager.');
+      console.error('Vault Guard: Quick access error:', error);
+      this.showNotification('Error accessing Vault Guard.');
     }
   }
 
@@ -422,13 +422,13 @@ class PasswordManagerContentScript {
     // Set icon and title based on type
     if (type === 'username') {
       icon.innerHTML = '👤';
-      icon.title = 'Fill username with Password Manager';
+      icon.title = 'Fill username with Vault Guard';
     } else if (type === 'password') {
       icon.innerHTML = '🔑';
-      icon.title = 'Fill password with Password Manager';
+      icon.title = 'Fill password with Vault Guard';
     } else if (type === 'creditcard') {
       icon.innerHTML = '💳';
-      icon.title = 'Fill credit card with Password Manager';
+      icon.title = 'Fill credit card with Vault Guard';
     }
     
     // Style the icon
@@ -491,7 +491,7 @@ class PasswordManagerContentScript {
   async handleIconClick(type, field) {
     try {
       if (!this.authToken) {
-        this.showNotification('Please log in to the Password Manager extension first.');
+        this.showNotification('Please log in to the Vault Guard extension first.');
         return;
       }
 
@@ -507,8 +507,8 @@ class PasswordManagerContentScript {
         await this.showCreditCardSelector(field, formContext);
       }
     } catch (error) {
-      console.error('Password Manager: Error handling icon click:', error);
-      this.showNotification('Error accessing Password Manager. Please check your connection.');
+      console.error('Vault Guard: Error handling icon click:', error);
+      this.showNotification('Error accessing Vault Guard. Please check your connection.');
     }
   }
 
@@ -1005,7 +1005,7 @@ class PasswordManagerContentScript {
       }, 100);
       
     } catch (error) {
-      console.error('Password Manager: Error showing inline password list:', error);
+      console.error('Vault Guard: Error showing inline password list:', error);
     }
   }
 
@@ -1107,7 +1107,7 @@ class PasswordManagerContentScript {
       
       this.showNotification('Credit card information filled successfully.');
     } catch (error) {
-      console.error('Password Manager: Error filling credit card:', error);
+      console.error('Vault Guard: Error filling credit card:', error);
       this.showNotification('Error filling credit card information.');
     }
   }
@@ -1406,10 +1406,10 @@ function showNotification(message) {
 // Initialize the content script
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    new PasswordManagerContentScript();
+    new VaultGuardContentScript();
   });
 } else {
-  new PasswordManagerContentScript();
+  new VaultGuardContentScript();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1430,7 +1430,7 @@ if (document.readyState === 'loading') {
     (document.head || document.documentElement).appendChild(script);
     script.onload = () => script.remove();
   } catch (e) {
-    console.warn('Password Manager: failed to inject passkey hook', e);
+    console.warn('Vault Guard: failed to inject passkey hook', e);
   }
 
   // 2. Relay page → background → page.

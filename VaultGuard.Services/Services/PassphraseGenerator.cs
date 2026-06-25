@@ -1,8 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Builds memorable passphrases from a curated word list using a cryptographically secure RNG.

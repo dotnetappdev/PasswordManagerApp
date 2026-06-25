@@ -19,6 +19,6 @@ echo "Current .NET version: $(dotnet --version)"
 
 # Test build a core project to verify setup
 echo "Testing build with .NET 9.0..."
-dotnet build PasswordManager.Models/PasswordManager.Models.csproj
+dotnet build VaultGuard.Models/VaultGuard.Models.csproj
 
 echo "✅ Setup verified successfully!"

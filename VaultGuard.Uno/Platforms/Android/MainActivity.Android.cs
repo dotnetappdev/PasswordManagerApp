@@ -4,7 +4,7 @@ using Android.OS;
 using Android.Views;
 using Android.Widget;
 
-namespace PasswordManager.Mobile.Droid;
+namespace VaultGuard.Mobile.Droid;
 
 [Activity(
     MainLauncher = true,

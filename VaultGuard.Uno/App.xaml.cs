@@ -1,8 +1,8 @@
 using Uno.Resizetizer;
 using Sentry;
-using PasswordManager.Models.Configuration;
+using VaultGuard.Models.Configuration;
 
-namespace PasswordManager.Mobile;
+namespace VaultGuard.Mobile;
 
 public partial class App : Application
 {
@@ -80,10 +80,10 @@ public partial class App : Application
                     var dbPath = System.IO.Path.Combine(
                         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                         "passwordmanager.db3");
-                    services.AddSingleton(new PasswordManager.Uno.Services.LocalDatabase.LocalDatabaseService(dbPath));
+                    services.AddSingleton(new VaultGuard.Uno.Services.LocalDatabase.LocalDatabaseService(dbPath));
                     
                     // Register HTTP client for API
-                    services.AddHttpClient("PasswordManagerApi", (sp, client) =>
+                    services.AddHttpClient("VaultGuardApi", (sp, client) =>
                     {
                         var config = sp.GetService<IConfiguration>();
                         var apiBaseUrl = config?["ApiBaseUrl"] ?? "https://localhost:5001";
@@ -92,31 +92,31 @@ public partial class App : Application
                     });
                     
                     // Register sync service
-                    services.AddSingleton<PasswordManager.Uno.Services.Sync.SyncService>();
+                    services.AddSingleton<VaultGuard.Uno.Services.Sync.SyncService>();
                     
                     // Register biometric authentication service
-                    services.AddSingleton<PasswordManager.Uno.Services.Biometric.IBiometricAuthService, PasswordManager.Uno.Services.Biometric.BiometricAuthService>();
+                    services.AddSingleton<VaultGuard.Uno.Services.Biometric.IBiometricAuthService, VaultGuard.Uno.Services.Biometric.BiometricAuthService>();
                     
                     // Register theme service
-                    services.AddSingleton<PasswordManager.Uno.Services.Theme.IThemeService, PasswordManager.Uno.Services.Theme.ThemeService>();
+                    services.AddSingleton<VaultGuard.Uno.Services.Theme.IThemeService, VaultGuard.Uno.Services.Theme.ThemeService>();
                     
                     // Register backup service
-                    services.AddSingleton<PasswordManager.Uno.Services.Backup.IBackupService>(sp => 
-                        new PasswordManager.Uno.Services.Backup.BackupService(
-                            sp.GetRequiredService<ILogger<PasswordManager.Uno.Services.Backup.BackupService>>(),
+                    services.AddSingleton<VaultGuard.Uno.Services.Backup.IBackupService>(sp => 
+                        new VaultGuard.Uno.Services.Backup.BackupService(
+                            sp.GetRequiredService<ILogger<VaultGuard.Uno.Services.Backup.BackupService>>(),
                             dbPath));
                     
                     // Register AutoFill service
-                    services.AddSingleton<PasswordManager.Uno.Services.AutoFill.IAutoFillService, PasswordManager.Uno.Services.AutoFill.AutoFillService>();
+                    services.AddSingleton<VaultGuard.Uno.Services.AutoFill.IAutoFillService, VaultGuard.Uno.Services.AutoFill.AutoFillService>();
                     
                     // Register QR Code service
-                    services.AddSingleton<PasswordManager.Uno.Services.QRCode.IQRCodeService, PasswordManager.Uno.Services.QRCode.QRCodeService>();
+                    services.AddSingleton<VaultGuard.Uno.Services.QRCode.IQRCodeService, VaultGuard.Uno.Services.QRCode.QRCodeService>();
                     
                     // Register ViewModels
-                    services.AddTransient<PasswordManager.Mobile.Presentation.Pages.Login.LoginModel>();
-                    services.AddTransient<PasswordManager.Mobile.Presentation.Pages.Passwords.PasswordsModel>();
-                    services.AddTransient<PasswordManager.Mobile.Presentation.Pages.Categories.CategoriesModel>();
-                    services.AddTransient<PasswordManager.Mobile.Presentation.Pages.Settings.SettingsModel>();
+                    services.AddTransient<VaultGuard.Mobile.Presentation.Pages.Login.LoginModel>();
+                    services.AddTransient<VaultGuard.Mobile.Presentation.Pages.Passwords.PasswordsModel>();
+                    services.AddTransient<VaultGuard.Mobile.Presentation.Pages.Categories.CategoriesModel>();
+                    services.AddTransient<VaultGuard.Mobile.Presentation.Pages.Settings.SettingsModel>();
                 })
                 .UseNavigation(RegisterRoutes)
             );
@@ -135,20 +135,20 @@ public partial class App : Application
             new ViewMap(ViewModel: typeof(ShellModel)),
             new ViewMap<MainPage, MainModel>(),
             new DataViewMap<SecondPage, SecondModel, Entity>(),
-            new ViewMap<PasswordManager.Mobile.Presentation.Pages.Login.LoginPage, PasswordManager.Mobile.Presentation.Pages.Login.LoginModel>(),
-            new ViewMap<PasswordManager.Mobile.Presentation.Pages.Passwords.PasswordsPage, PasswordManager.Mobile.Presentation.Pages.Passwords.PasswordsModel>(),
-            new ViewMap<PasswordManager.Mobile.Presentation.Pages.Categories.CategoriesPage, PasswordManager.Mobile.Presentation.Pages.Categories.CategoriesModel>(),
-            new ViewMap<PasswordManager.Mobile.Presentation.Pages.Settings.SettingsPage, PasswordManager.Mobile.Presentation.Pages.Settings.SettingsModel>()
+            new ViewMap<VaultGuard.Mobile.Presentation.Pages.Login.LoginPage, VaultGuard.Mobile.Presentation.Pages.Login.LoginModel>(),
+            new ViewMap<VaultGuard.Mobile.Presentation.Pages.Passwords.PasswordsPage, VaultGuard.Mobile.Presentation.Pages.Passwords.PasswordsModel>(),
+            new ViewMap<VaultGuard.Mobile.Presentation.Pages.Categories.CategoriesPage, VaultGuard.Mobile.Presentation.Pages.Categories.CategoriesModel>(),
+            new ViewMap<VaultGuard.Mobile.Presentation.Pages.Settings.SettingsPage, VaultGuard.Mobile.Presentation.Pages.Settings.SettingsModel>()
         );
 
         routes.Register(
             new RouteMap("", View: views.FindByViewModel<ShellModel>(),
                 Nested:
                 [
-                    new ("Login", View: views.FindByViewModel<PasswordManager.Mobile.Presentation.Pages.Login.LoginModel>(), IsDefault:true),
-                    new ("Passwords", View: views.FindByViewModel<PasswordManager.Mobile.Presentation.Pages.Passwords.PasswordsModel>()),
-                    new ("Categories", View: views.FindByViewModel<PasswordManager.Mobile.Presentation.Pages.Categories.CategoriesModel>()),
-                    new ("Settings", View: views.FindByViewModel<PasswordManager.Mobile.Presentation.Pages.Settings.SettingsModel>()),
+                    new ("Login", View: views.FindByViewModel<VaultGuard.Mobile.Presentation.Pages.Login.LoginModel>(), IsDefault:true),
+                    new ("Passwords", View: views.FindByViewModel<VaultGuard.Mobile.Presentation.Pages.Passwords.PasswordsModel>()),
+                    new ("Categories", View: views.FindByViewModel<VaultGuard.Mobile.Presentation.Pages.Categories.CategoriesModel>()),
+                    new ("Settings", View: views.FindByViewModel<VaultGuard.Mobile.Presentation.Pages.Settings.SettingsModel>()),
                     new ("Main", View: views.FindByViewModel<MainModel>()),
                     new ("Second", View: views.FindByViewModel<SecondModel>()),
                 ]

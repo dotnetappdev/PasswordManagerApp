@@ -3,7 +3,7 @@
   "displayName": "KeePass",
   "description": "Import passwords from KeePass CSV export files",
   "version": "1.0.0",
-  "author": "PasswordManager Team",
+  "author": "VaultGuard Team",
   "website": "https://keepass.info",
   "created": "2024-12-18T00:00:00Z",
   "lastUpdated": "2024-12-18T00:00:00Z",

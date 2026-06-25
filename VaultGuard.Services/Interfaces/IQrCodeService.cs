@@ -1,4 +1,4 @@
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 /// <summary>
 /// Renders arbitrary text (e.g. an <c>otpauth://</c> URI) to a QR code PNG so it can be scanned

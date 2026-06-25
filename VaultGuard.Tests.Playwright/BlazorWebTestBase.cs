@@ -3,7 +3,7 @@ using System.Net.Http;
 using Microsoft.Playwright;
 using Microsoft.Playwright.MSTest;
 
-namespace PasswordManager.Tests.Playwright;
+namespace VaultGuard.Tests.Playwright;
 
 [TestClass]
 public abstract class BlazorWebTestBase : PageTest
@@ -15,8 +15,8 @@ public abstract class BlazorWebTestBase : PageTest
     private static readonly string WebProjectPath = Path.GetFullPath(Path.Combine(
         AppContext.BaseDirectory,
         "..", "..", "..", "..",
-        "PasswordManager.Web",
-        "PasswordManager.Web.csproj"));
+        "VaultGuard.Web",
+        "VaultGuard.Web.csproj"));
 
     private static async Task EnsureAppStartedAsync()
     {
@@ -142,7 +142,7 @@ public abstract class BlazorWebTestBase : PageTest
                 var stdOut = await process.StandardOutput.ReadToEndAsync();
                 var stdErr = await process.StandardError.ReadToEndAsync();
                 throw new InvalidOperationException(
-                    $"PasswordManager.Web exited before tests started.{Environment.NewLine}{stdOut}{Environment.NewLine}{stdErr}");
+                    $"VaultGuard.Web exited before tests started.{Environment.NewLine}{stdOut}{Environment.NewLine}{stdErr}");
             }
 
             try
@@ -156,6 +156,6 @@ public abstract class BlazorWebTestBase : PageTest
             await Task.Delay(1000);
         }
 
-        throw new TimeoutException($"Timed out waiting for PasswordManager.Web at {baseUrl}.");
+        throw new TimeoutException($"Timed out waiting for VaultGuard.Web at {baseUrl}.");
     }
 }

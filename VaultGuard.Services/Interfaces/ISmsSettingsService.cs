@@ -1,7 +1,7 @@
-using PasswordManager.Models;
-using PasswordManager.Models.Configuration;
+using VaultGuard.Models;
+using VaultGuard.Models.Configuration;
 
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 /// <summary>
 /// Interface for managing SMS settings from both database and configuration

@@ -1,4 +1,4 @@
-namespace PasswordManager.Models.UI
+namespace VaultGuard.Models.UI
 {
     /// <summary>
     /// Centralized UI constants for consistent design across all platforms

@@ -1,6 +1,6 @@
 using Microsoft.Playwright;
 
-namespace PasswordManager.Tests.Playwright;
+namespace VaultGuard.Tests.Playwright;
 
 /// <summary>
 /// End-to-end workflow tests against the Blazor web app.

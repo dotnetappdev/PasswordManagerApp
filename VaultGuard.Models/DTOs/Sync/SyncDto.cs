@@ -1,4 +1,4 @@
-namespace PasswordManager.Models.DTOs.Sync;
+namespace VaultGuard.Models.DTOs.Sync;
 
 public class SyncRequestDto
 {

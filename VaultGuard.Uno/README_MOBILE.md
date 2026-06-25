@@ -1,8 +1,8 @@
-# Password Manager - Uno Platform Mobile App
+# Vault Guard - Uno Platform Mobile App
 
 ## Overview
 
-This is a cross-platform mobile application built with Uno Platform that provides secure password management with offline-first capabilities and a **1Password-inspired design**. The app synchronizes with the Password Manager API to keep passwords available across devices while maintaining a beautiful, professional user interface.
+This is a cross-platform mobile application built with Uno Platform that provides secure password management with offline-first capabilities and a **1Password-inspired design**. The app synchronizes with the Vault Guard API to keep passwords available across devices while maintaining a beautiful, professional user interface.
 
 ## ✨ Key Features
 
@@ -43,7 +43,7 @@ This is a cross-platform mobile application built with Uno Platform that provide
 ### Project Structure
 
 ```
-PasswordManager.Uno/
+VaultGuard.Uno/
 ├── Presentation/
 │   ├── Pages/
 │   │   ├── Login/           # Login page and view model

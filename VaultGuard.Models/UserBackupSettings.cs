@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using PasswordManager.Models.DTOs;
+using VaultGuard.Models.DTOs;
 
-namespace PasswordManager.Models;
+namespace VaultGuard.Models;
 
 /// <summary>
 /// User backup preferences stored in database

@@ -1,6 +1,6 @@
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Web.Middleware;
+namespace VaultGuard.Web.Middleware;
 
 /// <summary>
 /// Middleware to redirect to setup page on first run

@@ -9,7 +9,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 OUTPUT_DIR="$SCRIPT_DIR/output"
 
 echo "================================================"
-echo "Password Manager - Installer Build Script"
+echo "Vault Guard - Installer Build Script"
 echo "================================================"
 echo ""
 
@@ -33,7 +33,7 @@ publish_app() {
     echo "Publishing $project..."
     cd "$PROJECT_ROOT/$project"
     
-    if [ "$project" = "PasswordManager.API" ]; then
+    if [ "$project" = "VaultGuard.API" ]; then
         dotnet publish -c Release -o "bin/Release/net9.0/publish"
     else
         dotnet publish -c Release -p:Platform=x64 -o "bin/x64/Release/net9.0-windows10.0.19041.0/win-x64/publish"
@@ -62,8 +62,8 @@ build_installer() {
 main() {
     echo "Step 1: Publishing applications..."
     echo "-----------------------------------"
-    publish_app "PasswordManager.API"
-    publish_app "PasswordManager.WinUi"
+    publish_app "VaultGuard.API"
+    publish_app "VaultGuard.WinUi"
     
     echo ""
     echo "Step 2: Building installers..."

@@ -1,15 +1,15 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Models;
-using PasswordManager.WinUi.Dialogs;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.WinUi.Dialogs;
+using VaultGuard.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WinUi.Views;
+namespace VaultGuard.WinUi.Views;
 
 public sealed partial class ManageItemsPage : Page
 {

@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.Models;
-using PasswordManager.DAL.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.DAL.Interfaces;
 
-namespace PasswordManager.DAL;
+namespace VaultGuard.DAL;
 
-public class PasswordManagerDbContextApp : IdentityDbContext<ApplicationUser, ApplicationRole, string>, IPasswordManagerDbContextApp
+public class VaultGuardDbContextApp : IdentityDbContext<ApplicationUser, ApplicationRole, string>, IVaultGuardDbContextApp
 {
-    public PasswordManagerDbContextApp(DbContextOptions<PasswordManagerDbContextApp> options) : base(options)
+    public VaultGuardDbContextApp(DbContextOptions<VaultGuardDbContextApp> options) : base(options)
     {
     }
 

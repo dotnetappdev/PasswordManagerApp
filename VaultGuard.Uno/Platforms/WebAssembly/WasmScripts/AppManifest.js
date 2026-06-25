@@ -1,3 +1,3 @@
 var UnoAppManifest = {
-    displayName: "PasswordManager.Mobile"
+    displayName: "VaultGuard.Mobile"
 }

@@ -2,7 +2,7 @@
 using Foundation;
 using UIKit;
 
-namespace PasswordManager.Uno.Services.Backup;
+namespace VaultGuard.Uno.Services.Backup;
 
 /// <summary>
 /// iCloud backup service for iOS

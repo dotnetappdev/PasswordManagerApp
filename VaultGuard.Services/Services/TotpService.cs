@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// RFC 6238 TOTP generator. Accepts a raw Base32 secret or a full <c>otpauth://</c> URI

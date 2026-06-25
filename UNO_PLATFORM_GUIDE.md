@@ -1,8 +1,8 @@
-# Password Manager - Uno Platform Mobile App Guide
+# Vault Guard - Uno Platform Mobile App Guide
 
 ## 📱 Overview
 
-The Password Manager Uno Platform app delivers a professional, cross-platform mobile experience with a design inspired by 1Password. Built with Uno Platform, it provides native performance on iOS, Android, and WebAssembly with a consistent, beautiful interface.
+The Vault Guard Uno Platform app delivers a professional, cross-platform mobile experience with a design inspired by 1Password. Built with Uno Platform, it provides native performance on iOS, Android, and WebAssembly with a consistent, beautiful interface.
 
 ## ✨ Key Features
 
@@ -47,7 +47,7 @@ The Password Manager Uno Platform app delivers a professional, cross-platform mo
 ### Project Structure
 
 ```
-PasswordManager.Uno/
+VaultGuard.Uno/
 ├── 📱 Presentation/              # UI Layer (MVVM)
 │   ├── Pages/
 │   │   ├── Login/               # Authentication page
@@ -292,8 +292,8 @@ The app implements a robust two-way synchronization strategy:
 
 #### 1. Clone the Repository
 ```bash
-git clone https://github.com/dotnetappdev/PasswordManagerApp.git
-cd PasswordManagerApp
+git clone https://github.com/dotnetappdev/VaultGuardApp.git
+cd VaultGuardApp
 ```
 
 #### 2. Install Workloads
@@ -309,7 +309,7 @@ dotnet workload install uno
 ```
 
 #### 3. Configure API Endpoint
-Edit `PasswordManager.Uno/appsettings.json`:
+Edit `VaultGuard.Uno/appsettings.json`:
 ```json
 {
   "ApiBaseUrl": "https://your-api-domain.com"
@@ -325,7 +325,7 @@ For local development:
 
 #### 4. Restore Dependencies
 ```bash
-cd PasswordManager.Uno
+cd VaultGuard.Uno
 dotnet restore
 ```
 
@@ -425,7 +425,7 @@ dotnet run -f net9.0-browserwasm
 
 ### First Time Setup
 
-1. **Launch the App**: Open Password Manager on your device
+1. **Launch the App**: Open Vault Guard on your device
 2. **Login**: Enter your email and password
 3. **Enable Biometrics** (Optional): Toggle biometric login for quick access
 4. **Initial Sync**: Wait for initial sync to download your passwords
@@ -527,7 +527,7 @@ dotnet run -f net9.0-browserwasm
 
 3. **Create XAML Page**:
    ```xml
-   <Page x:Class="PasswordManager.Mobile.Presentation.Pages.YourPage.YourPage"
+   <Page x:Class="VaultGuard.Mobile.Presentation.Pages.YourPage.YourPage"
          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
        <Grid>
@@ -575,10 +575,10 @@ dotnet run -f net9.0-browserwasm
 #### Unit Tests
 ```bash
 # Create test project
-dotnet new xunit -n PasswordManager.Uno.Tests
+dotnet new xunit -n VaultGuard.Uno.Tests
 
 # Add reference to main project
-dotnet add reference ../PasswordManager.Uno/PasswordManager.Uno.csproj
+dotnet add reference ../VaultGuard.Uno/VaultGuard.Uno.csproj
 
 # Run tests
 dotnet test
@@ -715,8 +715,8 @@ dotnet build -f net9.0-ios
 
 ### Getting Help
 - **📖 Documentation**: Check this guide and other docs in the repository
-- **🐛 Bug Reports**: [Open an issue](https://github.com/dotnetappdev/PasswordManagerApp/issues) on GitHub
-- **💬 Discussions**: [Join the discussion](https://github.com/dotnetappdev/PasswordManagerApp/discussions)
+- **🐛 Bug Reports**: [Open an issue](https://github.com/dotnetappdev/VaultGuardApp/issues) on GitHub
+- **💬 Discussions**: [Join the discussion](https://github.com/dotnetappdev/VaultGuardApp/discussions)
 - **📧 Email**: Contact support@passwordmanager.dev
 
 ### Contributing

@@ -8,7 +8,7 @@ on:
     branches: [ devmain, main ]
 
 env:
-  PROJECT: PasswordManager.WPF/PasswordManager.WPF.csproj
+  PROJECT: VaultGuard.WPF/VaultGuard.WPF.csproj
   PUBLISH_DIR: publish/wpf
   DOTNET_VERSION: '10.0.x'
 

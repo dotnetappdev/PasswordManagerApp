@@ -15,13 +15,13 @@ The issue described: "The sql lite table is missing the entity frame work idneit
 **Before:**
 ```csharp
 services.AddIdentityCore<ApplicationUser>(options => {...})
-    .AddEntityFrameworkStores<PasswordManagerDbContextApp>();
+    .AddEntityFrameworkStores<VaultGuardDbContextApp>();
 ```
 
 **After:**
 ```csharp
 services.AddIdentity<ApplicationUser, ApplicationRole>(options => {...})
-    .AddEntityFrameworkStores<PasswordManagerDbContextApp>()
+    .AddEntityFrameworkStores<VaultGuardDbContextApp>()
     .AddDefaultTokenProviders();
 ```
 
@@ -86,9 +86,9 @@ var user = new ApplicationUser
 - ✅ Master-key-only authentication flow implemented
 
 ## Files Modified
-1. `PasswordManager.WinUi/App.xaml.cs` - Fixed Identity configuration
-2. `PasswordManager.Services/Services/AppStartupService.cs` - Added Identity table checking
-3. `PasswordManager.WinUi/Services/WinUiAuthService.cs` - Enhanced master key setup
+1. `VaultGuard.WinUi/App.xaml.cs` - Fixed Identity configuration
+2. `VaultGuard.Services/Services/AppStartupService.cs` - Added Identity table checking
+3. `VaultGuard.WinUi/Services/WinUiAuthService.cs` - Enhanced master key setup
 
 ## Expected Behavior After Fix
 1. **Fresh Installation**: Identity tables created automatically

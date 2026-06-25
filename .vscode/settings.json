@@ -1,5 +1,5 @@
 {
-    "dotnet.defaultSolution": "PasswordManager.sln",
+    "dotnet.defaultSolution": "VaultGuard.sln",
     "omnisharp.enableEditorConfigSupport": true,
     "omnisharp.enableRoslynAnalyzers": true,
     "files.exclude": {

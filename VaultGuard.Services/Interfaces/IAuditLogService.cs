@@ -1,7 +1,7 @@
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Audit;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Audit;
 
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 public interface IAuditLogService
 {

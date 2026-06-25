@@ -4,20 +4,21 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using PasswordManager.Crypto.Extensions;
-using PasswordManager.DAL;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Imports.Services;
-using PasswordManager.Models;
-using PasswordManager.Services;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Services.Services;
+using VaultGuard.Crypto.Extensions;
+using VaultGuard.DAL;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Imports.Services;
+using VaultGuard.Models;
+using VaultGuard.Services;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Services.Services;
 
 #if WINDOWS
-using PasswordManager.WinUi.Services.FileLogging;
+using VaultGuard.Services.Logging;
+using VaultGuard.ExceptionReporting.Sentry;
 #endif
 
-namespace PasswordManager.WinUi.Services;
+namespace VaultGuard.WinUi.Services;
 
 /// <summary>
 /// Configures dependency injection for the WinUI application.
@@ -53,6 +54,9 @@ public static class ServiceConfiguration
         // Logging
         ConfigureLogging(services);
 
+        // Exception reporting (Sentry-backed, swappable via IExceptionReporter)
+        services.AddSentryExceptionReporting(configuration["ExceptionReporting:SentryDsn"], "WinUI");
+
         // HTTP client
         services.AddHttpClient();
 #endif
@@ -69,10 +73,10 @@ public static class ServiceConfiguration
         var platformService = new WinUiPlatformService();
         var dbPath = GetConfiguredDatabasePath(platformService);
 
-        services.AddDbContext<PasswordManagerDbContextApp>(options =>
+        services.AddDbContext<VaultGuardDbContextApp>(options =>
             options.UseSqlite($"Data Source={dbPath}"));
 
-        services.AddDbContext<PasswordManagerDbContext>(options =>
+        services.AddDbContext<VaultGuardDbContext>(options =>
             options.UseSqlite($"Data Source={dbPath}"));
 
         services.AddIdentityCore<ApplicationUser>(options =>
@@ -83,12 +87,12 @@ public static class ServiceConfiguration
             options.Password.RequireLowercase = true;
         })
         .AddRoles<ApplicationRole>()
-        .AddEntityFrameworkStores<PasswordManagerDbContextApp>();
+        .AddEntityFrameworkStores<VaultGuardDbContextApp>();
 
-        services.AddScoped<DAL.Interfaces.IPasswordManagerDbContext>(provider =>
-            provider.GetRequiredService<PasswordManagerDbContext>());
+        services.AddScoped<DAL.Interfaces.IVaultGuardDbContext>(provider =>
+            provider.GetRequiredService<VaultGuardDbContext>());
 
-        services.AddScoped<PasswordManager.DAL.Seed.IdentityDataSeeder>();
+        services.AddScoped<VaultGuard.DAL.Seed.IdentityDataSeeder>();
     }
 
     private static string GetConfiguredDatabasePath(IPlatformService platformService)
@@ -99,7 +103,7 @@ public static class ServiceConfiguration
         try
         {
             var jsonContent = File.ReadAllText(configFilePath);
-            var config = System.Text.Json.JsonSerializer.Deserialize<PasswordManager.Models.Configuration.DatabaseConfiguration>(
+            var config = System.Text.Json.JsonSerializer.Deserialize<VaultGuard.Models.Configuration.DatabaseConfiguration>(
                 jsonContent, 
                 new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             
@@ -215,7 +219,7 @@ public static class ServiceConfiguration
             var config = new Fido2NetLib.Fido2Configuration
             {
                 ServerDomain = "localhost",
-                ServerName = "PasswordManager WinUI",
+                ServerName = "VaultGuard WinUI",
                 Origins = new HashSet<string> { "https://localhost", "http://localhost" },
                 TimestampDriftTolerance = 300000
             };
@@ -231,6 +235,7 @@ public static class ServiceConfiguration
         services.AddScoped<IiCloudBackupService, iCloudBackupService>();
         services.AddScoped<INetworkLocationBackupService, NetworkLocationBackupService>();
         services.AddSingleton<IGoogleDriveBackupService, GoogleDriveBackupService>();
+        services.AddSingleton<IFtpBackupService, FtpBackupService>();
         services.AddScoped<CloudBackupManager>();
         services.AddScoped<IBackupSettingsService, BackupSettingsService>();
         
@@ -242,13 +247,10 @@ public static class ServiceConfiguration
 
     private static void ConfigureLogging(IServiceCollection services)
     {
-        var platformService = new WinUiPlatformService();
-        var logBase = Path.Combine(platformService.GetAppDataDirectory(), "log");
-
         services.AddLogging(builder =>
         {
             builder.AddDebug();
-            builder.AddProvider(new FileLoggerProvider(logBase, LogLevel.Debug));
+            builder.AddProvider(new FileLoggerProvider(minLevel: LogLevel.Debug));
         });
     }
 #endif

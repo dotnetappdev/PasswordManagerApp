@@ -1,8 +1,8 @@
 using FileHelpers;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManagerImports.KeePass;
+namespace VaultGuardImports.KeePass;
 
 /// <summary>
 /// KeePass CSV import plugin
@@ -24,7 +24,7 @@ public class KeePassImportPlugin : IPasswordImportPlugin
             DisplayName = "KeePass",
             Description = "Import passwords from KeePass CSV export files",
             Version = "1.0.0",
-            Author = "PasswordManager Team",
+            Author = "VaultGuard Team",
             Website = "https://keepass.info",
             Created = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,

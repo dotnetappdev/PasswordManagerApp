@@ -1,6 +1,6 @@
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.Services.Utilities;
+namespace VaultGuard.Services.Utilities;
 
 /// <summary>
 /// Stores a login's authenticator (TOTP) secret on the item via a reserved custom field, so the

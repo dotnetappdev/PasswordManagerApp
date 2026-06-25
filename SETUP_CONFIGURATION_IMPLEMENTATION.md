@@ -33,8 +33,8 @@ Successfully implemented configuration features for browser extension and Web UI
 ## Files Changed
 
 **Created:**
-- `PasswordManager.Web/Components/Pages/Setup.razor` (567 lines)
-- `PasswordManager.Web/Middleware/SetupRedirectMiddleware.cs` (62 lines)
+- `VaultGuard.Web/Components/Pages/Setup.razor` (567 lines)
+- `VaultGuard.Web/Middleware/SetupRedirectMiddleware.cs` (62 lines)
 - `CONFIGURATION_GUIDE.md` (440 lines)
 
 **Modified:**

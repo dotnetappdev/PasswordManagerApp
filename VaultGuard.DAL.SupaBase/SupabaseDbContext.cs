@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.Models;
-using PasswordManager.DAL.SupaBase;
+using VaultGuard.Models;
+using VaultGuard.DAL.SupaBase;
 
-namespace PasswordManager.DAL.SupaBase;
+namespace VaultGuard.DAL.SupaBase;
 
 public class SupabaseDbContext : IdentityDbContext<ApplicationUser>, ISupabaseDbContext, IDisposable
 {
@@ -23,9 +23,9 @@ public class SupabaseDbContext : IdentityDbContext<ApplicationUser>, ISupabaseDb
     {
         base.OnModelCreating(modelBuilder);
 
-        // Copy all entity configuration and seeding from PasswordManagerDbContextApp
-        // ...existing code from PasswordManagerDbContextApp's OnModelCreating...
-        // For brevity, see PasswordManagerDbContextApp for full details
+        // Copy all entity configuration and seeding from VaultGuardDbContextApp
+        // ...existing code from VaultGuardDbContextApp's OnModelCreating...
+        // For brevity, see VaultGuardDbContextApp for full details
 
         // Configure PasswordItem
         modelBuilder.Entity<PasswordItem>(entity =>

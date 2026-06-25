@@ -1,10 +1,10 @@
 # Browser Extension and Web UI Configuration Guide
 
-This guide explains how to configure the Password Manager browser extension and Web UI with custom database paths and connection settings.
+This guide explains how to configure the Vault Guard browser extension and Web UI with custom database paths and connection settings.
 
 ## Overview
 
-The Password Manager now supports flexible configuration for both the browser extension and Web UI:
+The Vault Guard now supports flexible configuration for both the browser extension and Web UI:
 
 1. **Browser Extension**: Configure database path and connection method
 2. **Web UI**: Setup wizard for first-run database configuration
@@ -14,7 +14,7 @@ The Password Manager now supports flexible configuration for both the browser ex
 
 ### Accessing Settings
 
-1. Click the Password Manager extension icon in your browser
+1. Click the Vault Guard extension icon in your browser
 2. Click the "Settings" link (or gear icon if already logged in)
 3. You'll see the Settings page with connection options
 
@@ -34,7 +34,7 @@ The browser extension supports three connection modes:
 - **Supports custom database path configuration**
 
 #### 3. Web API
-- Connects to Password Manager API server
+- Connects to Vault Guard API server
 - Requires API server running
 - Configure custom API URL
 - Supports remote access
@@ -57,34 +57,34 @@ For Native Messaging mode, you can configure a custom database path:
 
 **Windows:**
 ```
-C:\Users\YourName\AppData\Roaming\PasswordManager\passwordmanager.db
+C:\Users\YourName\AppData\Roaming\VaultGuard\passwordmanager.db
 ```
 
 **macOS:**
 ```
-~/Library/Application Support/PasswordManager/passwordmanager.db
+~/Library/Application Support/VaultGuard/passwordmanager.db
 ```
 
 **Linux:**
 ```
-~/.local/share/PasswordManager/passwordmanager.db
+~/.local/share/VaultGuard/passwordmanager.db
 ```
 
 #### Custom Database Path Examples:
 
 **Windows (shared location):**
 ```
-D:\Shared\PasswordManager\passwordmanager.db
+D:\Shared\VaultGuard\passwordmanager.db
 ```
 
 **Windows (OneDrive):**
 ```
-C:\Users\YourName\OneDrive\PasswordManager\passwordmanager.db
+C:\Users\YourName\OneDrive\VaultGuard\passwordmanager.db
 ```
 
 **macOS (Dropbox):**
 ```
-~/Dropbox/PasswordManager/passwordmanager.db
+~/Dropbox/VaultGuard/passwordmanager.db
 ```
 
 ### Connecting Extension with WinUI App
@@ -178,7 +178,7 @@ Enterprise-grade database for organizations.
 ```
 Host: localhost
 Port: 1433
-Database: PasswordManager
+Database: VaultGuard
 Username: sa
 Password: YourPassword123!
 ```
@@ -198,7 +198,7 @@ Popular open-source database.
 ```
 Host: localhost
 Port: 3306
-Database: PasswordManager
+Database: VaultGuard
 Username: root
 Password: YourPassword123!
 ```
@@ -218,7 +218,7 @@ Advanced open-source database with modern features.
 ```
 Host: localhost
 Port: 5432
-Database: PasswordManager
+Database: VaultGuard
 Username: postgres
 Password: YourPassword123!
 ```
@@ -243,8 +243,8 @@ If you need to change database settings later:
 
 1. Stop the Web application
 2. Delete the configuration file:
-   - Windows: `%APPDATA%\PasswordManager\appsettings.json`
-   - macOS/Linux: `~/.local/share/PasswordManager/appsettings.json`
+   - Windows: `%APPDATA%\VaultGuard\appsettings.json`
+   - macOS/Linux: `~/.local/share/VaultGuard/appsettings.json`
 3. Restart the application
 4. The setup wizard will appear again
 
@@ -266,8 +266,8 @@ Synced across devices if browser sync is enabled.
 Configuration is stored in two locations:
 
 1. **App Data Directory** (primary):
-   - Windows: `%APPDATA%\PasswordManager\appsettings.json`
-   - macOS/Linux: `~/.local/share/PasswordManager/appsettings.json`
+   - Windows: `%APPDATA%\VaultGuard\appsettings.json`
+   - macOS/Linux: `~/.local/share/VaultGuard/appsettings.json`
 
 2. **Application Directory** (appsettings.json):
    - Updated automatically by setup wizard
@@ -438,14 +438,14 @@ Benefits:
 
 ## Related Documentation
 
-- [Browser Extension README](../PasswordManager.BrowserExtension/README.md)
-- [Native Host README](../PasswordManager.BrowserExtension.NativeHost/README.md)
-- [Web UI README](../PasswordManager.Web/README.md)
-- [WinUI App Documentation](../PasswordManager.WinUi/README.md)
-- [API Documentation](../PasswordManager.API/README.md)
+- [Browser Extension README](../VaultGuard.BrowserExtension/README.md)
+- [Native Host README](../VaultGuard.BrowserExtension.NativeHost/README.md)
+- [Web UI README](../VaultGuard.Web/README.md)
+- [WinUI App Documentation](../VaultGuard.WinUi/README.md)
+- [API Documentation](../VaultGuard.API/README.md)
 
 ## Support
 
 For issues or questions:
-- GitHub Issues: https://github.com/dotnetappdev/PasswordManagerApp/issues
+- GitHub Issues: https://github.com/dotnetappdev/VaultGuardApp/issues
 - Documentation: See README files in each project directory

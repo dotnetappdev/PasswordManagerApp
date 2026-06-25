@@ -1,7 +1,7 @@
 using System;
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.WPF.Models
+namespace VaultGuard.WPF.Models
 {
     public class NavigationFilterData
     {

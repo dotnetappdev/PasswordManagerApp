@@ -1,13 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using PasswordManager.DAL.Interfaces;
+using VaultGuard.DAL.Interfaces;
 using Microsoft.EntityFrameworkCore.Storage;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 
 
-using PasswordManager.DAL;
-namespace PasswordManager.Services.Services;
+using VaultGuard.DAL;
+namespace VaultGuard.Services.Services;
 
 public class DatabaseContextFactory : IDatabaseContextFactory
 {
@@ -25,9 +25,9 @@ public class DatabaseContextFactory : IDatabaseContextFactory
         _logger = logger;
     }
 
-    public async Task<IPasswordManagerDbContext> CreateContextAsync(string provider, string connectionString)
+    public async Task<IVaultGuardDbContext> CreateContextAsync(string provider, string connectionString)
     {
-        var optionsBuilder = new DbContextOptionsBuilder<PasswordManagerDbContext>();
+        var optionsBuilder = new DbContextOptionsBuilder<VaultGuardDbContext>();
 
         switch (provider.ToLower())
         {
@@ -50,7 +50,7 @@ public class DatabaseContextFactory : IDatabaseContextFactory
 
         _logger.LogInformation("Creating database context with provider {Provider}", provider);
         
-        var context = new PasswordManagerDbContext(optionsBuilder.Options);
+        var context = new VaultGuardDbContext(optionsBuilder.Options);
         
         // Ensure database is created
         await context.Database.EnsureCreatedAsync();
@@ -58,13 +58,13 @@ public class DatabaseContextFactory : IDatabaseContextFactory
         return context;
     }
 
-    public async Task<IPasswordManagerDbContext> CreateSqliteContextAsync()
+    public async Task<IVaultGuardDbContext> CreateSqliteContextAsync()
     {
         var connectionString = _configuration.GetConnectionString("SQLiteConnection") ?? "Data Source=passwordmanager.db";
         return await CreateContextAsync("sqlite", connectionString);
     }
 
-    public async Task<IPasswordManagerDbContext> CreateSqlServerContextAsync()
+    public async Task<IVaultGuardDbContext> CreateSqlServerContextAsync()
     {
         var connectionString = _configuration.GetConnectionString("DefaultConnection") ?? 
                               _configuration.GetConnectionString("SqlServerConnection") ?? 
@@ -72,23 +72,23 @@ public class DatabaseContextFactory : IDatabaseContextFactory
         return await CreateContextAsync("sqlserver", connectionString);
     }
 
-    public async Task<IPasswordManagerDbContext> CreatePostgresContextAsync()
+    public async Task<IVaultGuardDbContext> CreatePostgresContextAsync()
     {
         var connectionString = _configuration.GetConnectionString("PostgresConnection") ?? 
                               throw new InvalidOperationException("Postgres connection string not found");
         return await CreateContextAsync("postgres", connectionString);
     }
 
-    public IPasswordManagerDbContext CreateDbContext()
+    public IVaultGuardDbContext CreateDbContext()
     {
         // For synchronous operations, default to SQLite
         var connectionString = _configuration.GetConnectionString("SQLiteConnection") ?? "Data Source=passwordmanager.db";
-        var optionsBuilder = new DbContextOptionsBuilder<PasswordManagerDbContext>();
+        var optionsBuilder = new DbContextOptionsBuilder<VaultGuardDbContext>();
         optionsBuilder.UseSqlite(connectionString);
         
         _logger.LogInformation("Creating synchronous database context with SQLite provider");
         
-        var context = new PasswordManagerDbContext(optionsBuilder.Options);
+        var context = new VaultGuardDbContext(optionsBuilder.Options);
         
         // Ensure database is created synchronously
         context.Database.EnsureCreated();

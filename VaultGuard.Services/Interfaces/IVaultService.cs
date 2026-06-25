@@ -1,8 +1,8 @@
-using PasswordManager.Models;
+using VaultGuard.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace PasswordManager.Services.Interfaces
+namespace VaultGuard.Services.Interfaces
 {
     public interface IVaultService
     {

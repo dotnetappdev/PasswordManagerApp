@@ -1,19 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
-using PasswordManager.DAL;
-using PasswordManager.DAL.Seed;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Services.Services;
+using VaultGuard.DAL;
+using VaultGuard.DAL.Seed;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Services.Services;
 
-namespace PasswordManager.BackEnd.Tests.Services;
+namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
 public class CategoryServiceTests
 {
-    private DbContextOptions<PasswordManagerDbContext> _options = null!;
-    private PasswordManagerDbContext _context = null!;
+    private DbContextOptions<VaultGuardDbContext> _options = null!;
+    private VaultGuardDbContext _context = null!;
     private CategoryService _service = null!;
     private Mock<IAuthService> _authMock = null!;
     private const string UserId = "test-user-id-12345";
@@ -21,10 +21,10 @@ public class CategoryServiceTests
     [SetUp]
     public void Setup()
     {
-        _options = new DbContextOptionsBuilder<PasswordManagerDbContext>()
+        _options = new DbContextOptionsBuilder<VaultGuardDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
-        _context = new PasswordManagerDbContext(_options);
+        _context = new VaultGuardDbContext(_options);
 
         _authMock = new Mock<IAuthService>();
         _service  = new CategoryService(_context, _authMock.Object);

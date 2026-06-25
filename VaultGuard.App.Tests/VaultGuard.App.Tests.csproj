@@ -33,8 +33,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PasswordManager.Services\PasswordManager.Services.csproj" />
-    <ProjectReference Include="..\PasswordManager.Models\PasswordManager.Models.csproj" />
+    <ProjectReference Include="..\VaultGuard.Services\VaultGuard.Services.csproj" />
+    <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
   </ItemGroup>
 
 </Project>

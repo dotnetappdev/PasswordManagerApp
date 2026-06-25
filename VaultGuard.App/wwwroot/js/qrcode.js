@@ -1,4 +1,4 @@
-// QR Code functionality for Password Manager
+// QR Code functionality for Vault Guard
 // Self-contained implementation - no external dependencies required
 
 // Self-contained QR Code generator - no external dependencies

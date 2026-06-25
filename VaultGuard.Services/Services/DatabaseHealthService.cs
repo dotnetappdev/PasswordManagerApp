@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PasswordManager.DAL;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for checking database health and schema integrity
@@ -23,11 +23,11 @@ public interface IDatabaseHealthService
 
 public class DatabaseHealthService : IDatabaseHealthService
 {
-    private readonly PasswordManagerDbContext _dbContext;
+    private readonly VaultGuardDbContext _dbContext;
     private readonly ILogger<DatabaseHealthService> _logger;
 
     public DatabaseHealthService(
-        PasswordManagerDbContext dbContext,
+        VaultGuardDbContext dbContext,
         ILogger<DatabaseHealthService> logger)
     {
         _dbContext = dbContext;

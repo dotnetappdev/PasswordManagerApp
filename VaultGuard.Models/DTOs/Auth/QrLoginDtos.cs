@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.Models.DTOs.Auth;
+namespace VaultGuard.Models.DTOs.Auth;
 
 public class QrLoginGenerateRequestDto
 {

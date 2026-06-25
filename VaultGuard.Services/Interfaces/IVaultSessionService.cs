@@ -1,6 +1,6 @@
-using PasswordManager.Crypto.Interfaces;
+using VaultGuard.Crypto.Interfaces;
 
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 /// <summary>
 /// Interface for vault session management

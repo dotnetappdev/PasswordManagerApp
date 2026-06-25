@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models.DTOs;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Models.DTOs;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// iCloud backup service implementation using Windows iCloud Drive folder detection
@@ -10,7 +10,7 @@ namespace PasswordManager.Services.Services;
 /// This provides a basic file-based approach for Windows/Linux
 /// 
 /// Security Model (similar to Microsoft Authenticator):
-/// - Stores backups in iCloudDrive/Apps/PasswordManager folder (app-specific secure location)
+/// - Stores backups in iCloudDrive/Apps/VaultGuard folder (app-specific secure location)
 /// - Sets folder and file attributes as Hidden for additional security
 /// - Files are encrypted before storage and have .pwmbackup extension
 /// - Works with existing iCloud for Windows installation
@@ -87,8 +87,8 @@ public class iCloudBackupService : IiCloudBackupService
                 };
             }
 
-            // Create secure PasswordManager folder in iCloud Drive (similar to Microsoft Authenticator)
-            var backupFolder = Path.Combine(icloudPath, "Apps", "PasswordManager");
+            // Create secure VaultGuard folder in iCloud Drive (similar to Microsoft Authenticator)
+            var backupFolder = Path.Combine(icloudPath, "Apps", "VaultGuard");
             if (!Directory.Exists(backupFolder))
             {
                 Directory.CreateDirectory(backupFolder);
@@ -208,7 +208,7 @@ public class iCloudBackupService : IiCloudBackupService
                 return new List<CloudBackupInfo>();
             }
 
-            var backupFolder = Path.Combine(icloudPath, "Apps", "PasswordManager");
+            var backupFolder = Path.Combine(icloudPath, "Apps", "VaultGuard");
             if (!Directory.Exists(backupFolder))
             {
                 return new List<CloudBackupInfo>();

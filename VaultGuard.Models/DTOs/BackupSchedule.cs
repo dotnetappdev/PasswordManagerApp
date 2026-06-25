@@ -1,4 +1,4 @@
-namespace PasswordManager.Models.DTOs;
+namespace VaultGuard.Models.DTOs;
 
 /// <summary>
 /// Backup schedule intervals

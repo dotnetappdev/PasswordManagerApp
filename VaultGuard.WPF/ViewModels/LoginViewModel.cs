@@ -1,13 +1,14 @@
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.WPF.Services;
 using System;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 
 
-namespace PasswordManager.WPF.ViewModels;
+namespace VaultGuard.WPF.ViewModels;
 
 public class LoginViewModel : BaseViewModel
 {
@@ -15,6 +16,8 @@ public class LoginViewModel : BaseViewModel
     private readonly IVaultSessionService _vaultSessionService;
     private readonly ISecureStorageService _secureStorageService;
     private readonly IUserProfileService _userProfileService;
+    private readonly ITwoFactorService? _twoFactorService;
+    private readonly IMasterPasswordCacheService? _masterPasswordCacheService;
     private string _masterPassword = string.Empty;
     private string _confirmMasterPassword = string.Empty;
     private string _passwordHint = string.Empty;
@@ -31,12 +34,19 @@ public class LoginViewModel : BaseViewModel
     private bool _showLockMessage = false;
     private bool _showRegistrationForm = false;
 
+    // ── 2FA quick-unlock state ───────────────────────────────────────
+    private bool _requiresTwoFactor = false;
+    private bool _useBackupCode = false;
+    private string _twoFactorCode = string.Empty;
+
     public LoginViewModel(IServiceProvider serviceProvider)
     {
         _authService = serviceProvider.GetRequiredService<IAuthService>();
         _vaultSessionService = serviceProvider.GetRequiredService<IVaultSessionService>();
         _secureStorageService = serviceProvider.GetRequiredService<ISecureStorageService>();
         _userProfileService = serviceProvider.GetRequiredService<IUserProfileService>();
+        _twoFactorService = serviceProvider.GetService<ITwoFactorService>();
+        _masterPasswordCacheService = serviceProvider.GetService<IMasterPasswordCacheService>();
 
         // Initialize with default state and then asynchronously update
         UpdateUIForSetupMode(); // Set initial UI state
@@ -175,7 +185,7 @@ public class LoginViewModel : BaseViewModel
 
         if (_isFirstTimeSetup)
         {
-            PageTitle = "Set up Password Manager";
+            PageTitle = "Set up Vault Guard";
             PrimaryButtonText = "Create Master Password";
             PasswordLabel = "Create Master Password";
             PasswordPlaceholder = "Choose a strong master password";
@@ -297,6 +307,50 @@ public class LoginViewModel : BaseViewModel
         get => _showRegistrationForm;
         set => SetProperty(ref _showRegistrationForm, value);
     }
+
+    /// <summary>
+    /// True when the selected profile has 2FA enabled AND a cached master password is
+    /// available on this device — in that case the UI shows the TOTP/recovery-code field
+    /// instead of the master-password textbox.
+    /// </summary>
+    public bool RequiresTwoFactor
+    {
+        get => _requiresTwoFactor;
+        set
+        {
+            if (SetProperty(ref _requiresTwoFactor, value))
+            {
+                OnPropertyChanged(nameof(ShowMasterPasswordEntry));
+            }
+        }
+    }
+
+    /// <summary>True while the "Use a recovery code instead" toggle is active.</summary>
+    public bool UseBackupCode
+    {
+        get => _useBackupCode;
+        set
+        {
+            if (SetProperty(ref _useBackupCode, value))
+            {
+                OnPropertyChanged(nameof(TwoFactorFieldLabel));
+                OnPropertyChanged(nameof(TwoFactorFieldPlaceholder));
+            }
+        }
+    }
+
+    public string TwoFactorCode
+    {
+        get => _twoFactorCode;
+        set => SetProperty(ref _twoFactorCode, value);
+    }
+
+    public string TwoFactorFieldLabel => UseBackupCode ? "Recovery code" : "Authenticator code";
+
+    public string TwoFactorFieldPlaceholder => UseBackupCode ? "XXXX XXXX" : "6-digit code";
+
+    /// <summary>The classic master-password textbox is shown unless we're doing a 2FA-only quick unlock.</summary>
+    public bool ShowMasterPasswordEntry => !RequiresTwoFactor;
 
     public void GoToRegistration()
     {
@@ -474,6 +528,9 @@ public class LoginViewModel : BaseViewModel
         SelectedUser = user;
         ShowProfileSelection = false;
         ShowLockMessage = true; // Show lock message when user is selected
+        RequiresTwoFactor = false;
+        UseBackupCode = false;
+        TwoFactorCode = string.Empty;
 
         // Update UI for selected user
         if (!string.IsNullOrEmpty(user.FirstName) && !string.IsNullOrEmpty(user.LastName))
@@ -492,6 +549,64 @@ public class LoginViewModel : BaseViewModel
         OnPropertyChanged(nameof(ShowProfileSelection));
         OnPropertyChanged(nameof(ShowPasswordEntry));
         OnPropertyChanged(nameof(ShowLockMessage));
+
+        // Decide whether this profile can do a 2FA-only quick unlock: 2FA must be enabled for
+        // the user AND we must already have a cached master password for them on this device.
+        _ = EvaluateTwoFactorQuickUnlockAsync(user);
+    }
+
+    /// <summary>
+    /// Checks whether the selected profile qualifies for 2FA-only quick unlock (2FA enabled +
+    /// cached master password present). If so, swaps the UI to the TOTP/recovery-code field
+    /// instead of the master-password textbox. Users with 2FA disabled, or with 2FA enabled
+    /// but no cached password yet, keep the regular master-password flow unchanged.
+    /// </summary>
+    private async Task EvaluateTwoFactorQuickUnlockAsync(UserDto user)
+    {
+        try
+        {
+            if (_twoFactorService == null || _masterPasswordCacheService == null)
+            {
+                RequiresTwoFactor = false;
+                return;
+            }
+
+            var status = await _twoFactorService.GetTwoFactorStatusAsync(user.Id);
+            if (!status.IsEnabled)
+            {
+                RequiresTwoFactor = false;
+                return;
+            }
+
+            var hasCachedPassword = await _masterPasswordCacheService.HasCachedMasterPasswordAsync(user.Id);
+            RequiresTwoFactor = hasCachedPassword;
+        }
+        catch
+        {
+            // If the 2FA status check fails for any reason, fall back to the safe path:
+            // the regular master-password flow.
+            RequiresTwoFactor = false;
+        }
+    }
+
+    public void ToggleBackupCodeMode()
+    {
+        UseBackupCode = !UseBackupCode;
+        TwoFactorCode = string.Empty;
+        ErrorMessage = string.Empty;
+        OnPropertyChanged(nameof(HasError));
+    }
+
+    /// <summary>
+    /// Falls back to the regular master-password textbox for this session, e.g. when the user
+    /// can't access their authenticator or recovery codes right now.
+    /// </summary>
+    public void SwitchToMasterPasswordEntry()
+    {
+        RequiresTwoFactor = false;
+        TwoFactorCode = string.Empty;
+        ErrorMessage = string.Empty;
+        OnPropertyChanged(nameof(HasError));
     }
 
     public void GoBackToProfileSelection()
@@ -502,10 +617,83 @@ public class LoginViewModel : BaseViewModel
         PageTitle = "Choose Your Profile";
         MasterPassword = string.Empty;
         ErrorMessage = string.Empty;
+        RequiresTwoFactor = false;
+        UseBackupCode = false;
+        TwoFactorCode = string.Empty;
 
         OnPropertyChanged(nameof(ShowProfileSelection));
         OnPropertyChanged(nameof(ShowPasswordEntry));
         OnPropertyChanged(nameof(ShowLockMessage));
+    }
+
+    /// <summary>
+    /// Verifies the entered TOTP or recovery code for the selected profile and, on success,
+    /// retrieves the DPAPI-cached master password and feeds it into the existing
+    /// AuthenticateSpecificUserAsync path unchanged — the user never retypes their password.
+    /// </summary>
+    public async Task<bool> AuthenticateWithTwoFactorAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            ErrorMessage = string.Empty;
+
+            if (SelectedUser == null)
+            {
+                ErrorMessage = "No profile selected.";
+                return false;
+            }
+
+            if (_twoFactorService == null || _masterPasswordCacheService == null)
+            {
+                ErrorMessage = "Two-factor authentication is unavailable right now.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(TwoFactorCode))
+            {
+                ErrorMessage = UseBackupCode
+                    ? "Enter your recovery code."
+                    : "Enter your 6-digit authenticator code.";
+                return false;
+            }
+
+            // Recovery codes are displayed/typed as "XXXX XXXX" — strip the separator before verifying.
+            var code = UseBackupCode
+                ? TwoFactorCode.Replace(" ", string.Empty).Trim()
+                : TwoFactorCode.Trim();
+
+            var verified = await _twoFactorService.VerifyTwoFactorCodeAsync(SelectedUser.Id, code, UseBackupCode);
+            if (!verified)
+            {
+                ErrorMessage = UseBackupCode
+                    ? "That recovery code didn't match. Try again."
+                    : "That code didn't match. Try again.";
+                return false;
+            }
+
+            var cachedPassword = await _masterPasswordCacheService.GetCachedMasterPasswordAsync(SelectedUser.Id);
+            if (string.IsNullOrEmpty(cachedPassword))
+            {
+                // Cache must have been cleared/forgotten between selecting the profile and
+                // submitting the code — fall back to asking for the master password directly.
+                RequiresTwoFactor = false;
+                ErrorMessage = "Your saved sign-in expired on this device. Please enter your master password.";
+                return false;
+            }
+
+            return await AuthenticateSpecificUserAsync(SelectedUser, cachedPassword);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Verification failed: {ex.Message}";
+            return false;
+        }
+        finally
+        {
+            IsLoading = false;
+            OnPropertyChanged(nameof(HasError));
+        }
     }
 
     private async Task<bool> AuthenticateSpecificUserAsync(UserDto user, string masterPassword)
@@ -518,6 +706,14 @@ public class LoginViewModel : BaseViewModel
 
             if (loginResult)
             {
+                // Cache the master password (DPAPI-encrypted, scoped to this Windows user) so that
+                // future unlocks for a 2FA-enabled profile can skip retyping it. Safe to call
+                // unconditionally; users with 2FA disabled simply never read this cache back.
+                if (_masterPasswordCacheService != null)
+                {
+                    await _masterPasswordCacheService.CacheMasterPasswordAsync(user.Id, masterPassword);
+                }
+
                 return true;
             }
             else
@@ -539,6 +735,19 @@ public class LoginViewModel : BaseViewModel
         {
             ErrorMessage = "Authentication failed. Please try again.";
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Wipes the DPAPI-cached master password for the given user, forcing master-password
+    /// re-entry next time even if 2FA is enabled. Surfaced via a "Forget this device" action.
+    /// </summary>
+    public static async Task ForgetDeviceAsync(IServiceProvider serviceProvider, string userId)
+    {
+        var cacheService = serviceProvider.GetService<IMasterPasswordCacheService>();
+        if (cacheService != null)
+        {
+            await cacheService.ForgetDeviceAsync(userId);
         }
     }
 
@@ -574,7 +783,7 @@ public class LoginViewModel : BaseViewModel
         {
             // Direct database check to verify seeded users
             using var scope = ((App)System.Windows.Application.Current).Services.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManager.DAL.PasswordManagerDbContextApp>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContextApp>();
             
             var dbUsers = await dbContext.Users.ToListAsync();
             

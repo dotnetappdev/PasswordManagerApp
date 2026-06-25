@@ -2,22 +2,22 @@ using ModernWpf.Controls;
 using System.Windows;
 using System.Windows.Controls;
 using ListView = System.Windows.Controls.ListView;
-using Controls = PasswordManager.WPF.Controls;
+using Controls = VaultGuard.WPF.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.WPF.ViewModels;
-using PasswordManager.WPF.Helpers;
-using PasswordManager.WPF.Models;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.DAL.Seed;
-using PasswordManager.WPF.Services;
+using VaultGuard.WPF.ViewModels;
+using VaultGuard.WPF.Helpers;
+using VaultGuard.WPF.Models;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.DAL.Seed;
+using VaultGuard.WPF.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
 
-namespace PasswordManager.WPF.Views;
+namespace VaultGuard.WPF.Views;
 
 public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 {
@@ -47,11 +47,11 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         // Refresh the live list when data is cleared/changed elsewhere (e.g. Settings → Delete Seed Data).
         Loaded += (_, _) =>
         {
-            PasswordManager.WPF.Services.AppEvents.VaultDataChanged -= OnVaultDataChanged;
-            PasswordManager.WPF.Services.AppEvents.VaultDataChanged += OnVaultDataChanged;
+            VaultGuard.WPF.Services.AppEvents.VaultDataChanged -= OnVaultDataChanged;
+            VaultGuard.WPF.Services.AppEvents.VaultDataChanged += OnVaultDataChanged;
         };
         Unloaded += (_, _) =>
-            PasswordManager.WPF.Services.AppEvents.VaultDataChanged -= OnVaultDataChanged;
+            VaultGuard.WPF.Services.AppEvents.VaultDataChanged -= OnVaultDataChanged;
     }
 
     private async void OnVaultDataChanged()
@@ -441,6 +441,13 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
         if (await dialog.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary)
         {
+            if (_serviceProvider != null &&
+                !await Helpers.SecurityGateHelper.RequireCodeForActionAsync(
+                    _serviceProvider, Helpers.SecurityGateHelper.GateAction.ItemDelete))
+            {
+                return;
+            }
+
             var title = _selectedItem.Title;
             await _viewModel.DeleteItemAsync(_selectedItem);
             ToastService.Instance.Success($"'{title}' deleted");
@@ -1005,7 +1012,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 // Protected notes are masked until the user reveals them (Windows Hello gated).
                 _notesRevealed = false;
                 _protectedNotesPlain = notes;
-                var isProtected = PasswordManager.Services.Utilities.ProtectedItemHelper.IsProtected(item)
+                var isProtected = VaultGuard.Services.Utilities.ProtectedItemHelper.IsProtected(item)
                                   && !string.IsNullOrWhiteSpace(notes);
 
                 var revealBtn = GetElement<Button>("RevealNotesButton");
@@ -1189,7 +1196,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         var section = GetElement<Grid>("DetailTotpSection");
 
         // 1) Manually-entered secret lives in the reserved "TOTP Secret" custom field.
-        _currentTotpSecret = PasswordManager.Services.Utilities.TotpHelper.GetSecret(item);
+        _currentTotpSecret = VaultGuard.Services.Utilities.TotpHelper.GetSecret(item);
 
         // 2) Fallback: secrets imported from other managers (1Password, Bitwarden, …) are stored
         //    encrypted on the login item itself. Decrypt them on demand so their codes show too.
@@ -1317,7 +1324,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         {
             using var scope = _serviceProvider.CreateScope();
             var sp = scope.ServiceProvider;
-            var db = sp.GetRequiredService<PasswordManager.DAL.PasswordManagerDbContext>();
+            var db = sp.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
             var authService = sp.GetService<IAuthService>();
             var userId = authService?.CurrentUser?.Id;
 
@@ -1432,6 +1439,13 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             var result = await dialog.ShowAsync();
             if (result == ModernWpf.Controls.ContentDialogResult.Primary)
             {
+                if (_serviceProvider != null &&
+                    !await Helpers.SecurityGateHelper.RequireCodeForActionAsync(
+                        _serviceProvider, Helpers.SecurityGateHelper.GateAction.ItemDelete))
+                {
+                    return;
+                }
+
                 await _viewModel.DeleteItemAsync(item);
                 ToastService.Instance.Success($"'{item.Title}' deleted");
             }

@@ -1,6 +1,6 @@
-using PasswordManager.Models.Configuration;
+using VaultGuard.Models.Configuration;
 
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 /// <summary>
 /// Service for managing database configuration

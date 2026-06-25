@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 
-namespace PasswordManager.WinUi.Helpers;
+namespace VaultGuard.WinUi.Helpers;
 
 public static class ResourceHelper
 {

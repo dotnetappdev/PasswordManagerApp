@@ -1,4 +1,4 @@
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 public enum PasswordStrengthLevel
 {

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Testing Password Manager Native Host"
+echo "Testing Vault Guard Native Host"
 echo "==================================="
 echo
 
@@ -27,7 +27,7 @@ echo -n "$TEST_MESSAGE" >> /tmp/test_message.bin
 
 # Run the native host with the test message
 echo "Sending test message to native host..."
-./bin/Debug/net8.0/PasswordManager.BrowserExtension.NativeHost < /tmp/test_message.bin
+./bin/Debug/net8.0/VaultGuard.BrowserExtension.NativeHost < /tmp/test_message.bin
 
 # Clean up
 rm -f /tmp/test_message.bin

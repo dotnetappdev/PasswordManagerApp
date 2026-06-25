@@ -3,7 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace PasswordManager.Services.Utilities
+namespace VaultGuard.Services.Utilities
 {
     /// <summary>
     /// Cross-platform favicon cache service. Downloads favicons and caches them under

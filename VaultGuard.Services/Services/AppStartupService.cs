@@ -1,13 +1,13 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.DAL;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.DAL;
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL.Seed;
-using PasswordManager.Models;
+using VaultGuard.DAL.Seed;
+using VaultGuard.Models;
 using System.Linq;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for handling application startup operations
@@ -66,8 +66,8 @@ public class AppStartupService : IAppStartupService
             {
                 try
                 {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
-                    var dbContextApp = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
+                    var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
+                    var dbContextApp = scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>();
 
                     // Attempt to apply any pending migrations via migration service first
                     try
@@ -330,7 +330,7 @@ public class AppStartupService : IAppStartupService
     /// created before a feature was added without a proper migration).
     /// Must run BEFORE any EF Core INSERT/UPDATE that touches these tables.
     /// </summary>
-    private async Task EnsureVaultSchemaAsync(PasswordManagerDbContext dbContext)
+    private async Task EnsureVaultSchemaAsync(VaultGuardDbContext dbContext)
     {
         try
         {
@@ -497,7 +497,7 @@ public class AppStartupService : IAppStartupService
     /// vaults existed, or imported without one) into that vault's default collection.
     /// Idempotent and safe to run on every startup.
     /// </summary>
-    private async Task BackfillDefaultVaultsAsync(PasswordManagerDbContext dbContext)
+    private async Task BackfillDefaultVaultsAsync(VaultGuardDbContext dbContext)
     {
         try
         {
@@ -576,7 +576,7 @@ public class AppStartupService : IAppStartupService
         }
     }
 
-    private async Task SeedEssentialDataIfNeeded(PasswordManagerDbContext dbContext)
+    private async Task SeedEssentialDataIfNeeded(VaultGuardDbContext dbContext)
     {
         try
         {
@@ -647,7 +647,7 @@ public class AppStartupService : IAppStartupService
         }
     }
 
-    private async Task SeedTestDataIfNeeded(PasswordManagerDbContext dbContext)
+    private async Task SeedTestDataIfNeeded(VaultGuardDbContext dbContext)
     {
         try
         {
@@ -684,7 +684,7 @@ public class AppStartupService : IAppStartupService
 
     // Path of a small marker file next to the SQLite database that records the demo data has
     // already been seeded once. Returns null for non-file databases (server providers / in-memory).
-    private string? GetSeedMarkerPath(PasswordManagerDbContext dbContext)
+    private string? GetSeedMarkerPath(VaultGuardDbContext dbContext)
     {
         try
         {
@@ -724,7 +724,7 @@ public class AppStartupService : IAppStartupService
 
     // Removes a stale "<db>.seeded" marker (e.g. left behind after the database file was deleted)
     // so a brand-new database is seeded normally instead of being treated as already-seeded.
-    private void TryDeleteSeedMarker(PasswordManagerDbContext dbContext)
+    private void TryDeleteSeedMarker(VaultGuardDbContext dbContext)
     {
         try
         {
@@ -738,7 +738,7 @@ public class AppStartupService : IAppStartupService
     private async Task SeedIdentityDataIfNeeded(IServiceScope scope)
     {
         // Try to get the Identity seeder (may not be available in all configurations)
-        var identitySeeder = scope.ServiceProvider.GetService<PasswordManager.DAL.Seed.IdentityDataSeeder>();
+        var identitySeeder = scope.ServiceProvider.GetService<VaultGuard.DAL.Seed.IdentityDataSeeder>();
         if (identitySeeder == null)
         {
             _logger.LogWarning("IdentityDataSeeder could not be resolved - default accounts (admin/parent/user/child) were NOT created");
@@ -761,14 +761,14 @@ public class AppStartupService : IAppStartupService
         // time (a known dual-context migration timing issue), ensure it and retry the seed once.
         try
         {
-            var ctx = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+            var ctx = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
             var userCount = await ctx.Users.CountAsync();
             if (userCount == 0)
             {
                 _logger.LogWarning("No user accounts found after identity seeding - ensuring Identity schema and retrying once");
                 try
                 {
-                    await scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>().Database.MigrateAsync();
+                    await scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>().Database.MigrateAsync();
                 }
                 catch (Exception migEx)
                 {
@@ -791,7 +791,7 @@ public class AppStartupService : IAppStartupService
     /// Checks if ASP.NET Core Identity tables exist in the database
     /// This is crucial for ensuring the reported issue is resolved
     /// </summary>
-    private async Task<bool> CheckIdentityTablesExistAsync(PasswordManagerDbContextApp dbContext)
+    private async Task<bool> CheckIdentityTablesExistAsync(VaultGuardDbContextApp dbContext)
     {
         try
         {

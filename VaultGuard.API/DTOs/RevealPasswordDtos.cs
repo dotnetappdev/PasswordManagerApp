@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.API.DTOs;
+namespace VaultGuard.API.DTOs;
 
 /// <summary>
 /// Request DTO for revealing a password

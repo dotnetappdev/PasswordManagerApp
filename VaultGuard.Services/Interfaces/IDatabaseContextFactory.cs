@@ -1,12 +1,12 @@
-using PasswordManager.DAL.Interfaces;
+using VaultGuard.DAL.Interfaces;
 
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 public interface IDatabaseContextFactory
 {
-    Task<IPasswordManagerDbContext> CreateContextAsync(string provider, string connectionString);
-    Task<IPasswordManagerDbContext> CreateSqliteContextAsync();
-    Task<IPasswordManagerDbContext> CreateSqlServerContextAsync();
-    Task<IPasswordManagerDbContext> CreatePostgresContextAsync();
-    IPasswordManagerDbContext CreateDbContext();
+    Task<IVaultGuardDbContext> CreateContextAsync(string provider, string connectionString);
+    Task<IVaultGuardDbContext> CreateSqliteContextAsync();
+    Task<IVaultGuardDbContext> CreateSqlServerContextAsync();
+    Task<IVaultGuardDbContext> CreatePostgresContextAsync();
+    IVaultGuardDbContext CreateDbContext();
 }

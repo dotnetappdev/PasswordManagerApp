@@ -1,4 +1,4 @@
-// Auth.js - Enhance Password Manager login experience
+// Auth.js - Enhance Vault Guard login experience
 
 // Focus the password field when page loads
 window.focusPasswordField = function() {

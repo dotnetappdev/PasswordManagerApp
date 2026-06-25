@@ -93,10 +93,10 @@ This ensures all dialogs:
 
 ## Files Modified
 
-- `PasswordManager.WinUi/Themes/ModernTheme.xaml` - Enhanced dialog centering template
-- `PasswordManager.WinUi/Views/PasswordItemsPage.xaml.cs` - Centralized dialog configuration  
-- `PasswordManager.WinUi/Views/CategoriesPage.xaml.cs` - Applied same dialog configuration
-- `PasswordManager.WinUi/Dialogs/AddPasswordDialog.xaml.cs` - Enhanced save error handling
+- `VaultGuard.WinUi/Themes/ModernTheme.xaml` - Enhanced dialog centering template
+- `VaultGuard.WinUi/Views/PasswordItemsPage.xaml.cs` - Centralized dialog configuration  
+- `VaultGuard.WinUi/Views/CategoriesPage.xaml.cs` - Applied same dialog configuration
+- `VaultGuard.WinUi/Dialogs/AddPasswordDialog.xaml.cs` - Enhanced save error handling
 
 ## Key Technical Changes
 

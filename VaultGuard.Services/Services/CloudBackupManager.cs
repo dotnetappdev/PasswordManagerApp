@@ -1,8 +1,9 @@
 using Microsoft.Extensions.Logging;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models.DTOs;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Models.DTOs;
+using VaultGuard.ExceptionReporting;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for managing cloud backup operations across different providers
@@ -16,8 +17,11 @@ public class CloudBackupManager
     private readonly INetworkLocationBackupService _networkLocationService;
     private readonly IBackupSettingsService _backupSettingsService;
     private readonly IGoogleDriveBackupService _googleDriveService;
+    private readonly IFtpBackupService _ftpService;
+    private readonly IExceptionReporter _exceptionReporter;
 
     public IGoogleDriveBackupService GoogleDrive => _googleDriveService;
+    public IFtpBackupService Ftp => _ftpService;
 
     public CloudBackupManager(
         ILogger<CloudBackupManager> logger,
@@ -26,7 +30,9 @@ public class CloudBackupManager
         IiCloudBackupService iCloudService,
         INetworkLocationBackupService networkLocationService,
         IBackupSettingsService backupSettingsService,
-        IGoogleDriveBackupService googleDriveService)
+        IGoogleDriveBackupService googleDriveService,
+        IFtpBackupService ftpService,
+        IExceptionReporter exceptionReporter)
     {
         _logger = logger;
         _databaseBackupService = databaseBackupService;
@@ -35,6 +41,8 @@ public class CloudBackupManager
         _networkLocationService = networkLocationService;
         _backupSettingsService = backupSettingsService;
         _googleDriveService = googleDriveService;
+        _ftpService = ftpService;
+        _exceptionReporter = exceptionReporter;
     }
 
     /// <summary>
@@ -72,6 +80,13 @@ public class CloudBackupManager
                 DisplayName = _networkLocationService.ServiceName,
                 IsAvailable = true,
                 MaxBackupSizeMB = 1000
+            },
+            new CloudProviderInfo
+            {
+                Provider = CloudBackupProvider.Ftp,
+                DisplayName = _ftpService.ServiceName,
+                IsAvailable = true,
+                MaxBackupSizeMB = _ftpService.MaxBackupSizeBytes / (1024 * 1024)
             }
         };
     }
@@ -147,6 +162,7 @@ public class CloudBackupManager
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create and upload backup to {Provider}", provider);
+            _exceptionReporter.CaptureException(ex, new Dictionary<string, string> { ["operation"] = "CreateAndUploadBackup" });
             return new CloudBackupResult
             {
                 Success = false,
@@ -196,6 +212,7 @@ public class CloudBackupManager
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to download and restore backup from {Provider}", provider);
+            _exceptionReporter.CaptureException(ex, new Dictionary<string, string> { ["operation"] = "DownloadAndRestoreBackup" });
             return false;
         }
     }
@@ -259,6 +276,34 @@ public class CloudBackupManager
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to list iCloud backups");
+        }
+
+        // Get backups from Google Drive
+        try
+        {
+            if (await _googleDriveService.IsAuthenticatedAsync())
+            {
+                var googleDriveBackups = await _googleDriveService.ListBackupsAsync();
+                allBackups.AddRange(googleDriveBackups);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list Google Drive backups");
+        }
+
+        // Get backups from the configured FTP/NAS site
+        try
+        {
+            if (await _ftpService.IsAuthenticatedAsync())
+            {
+                var ftpBackups = await _ftpService.ListBackupsAsync();
+                allBackups.AddRange(ftpBackups);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list FTP backups");
         }
 
         return allBackups.OrderByDescending(b => b.ModifiedAt).ToList();
@@ -361,6 +406,7 @@ public class CloudBackupManager
             CloudBackupProvider.GoogleDrive => _googleDriveService,
             CloudBackupProvider.iCloud => _iCloudService,
             CloudBackupProvider.NetworkLocation => _networkLocationService,
+            CloudBackupProvider.Ftp => _ftpService,
             _ => null
         };
     }
@@ -386,7 +432,7 @@ public class CloudBackupManager
             }
 
             // Generate filename for scheduled backup
-            var fileName = $"PasswordManager_Scheduled_{DateTime.UtcNow:yyyyMMdd_HHmmss}.pwmbackup";
+            var fileName = $"VaultGuard_Scheduled_{DateTime.UtcNow:yyyyMMdd_HHmmss}.pwmbackup";
             
             // For scheduled backups, we'll need to handle master password differently
             // This is a placeholder - in production, you'd need a secure way to handle this
@@ -426,7 +472,7 @@ public class CloudBackupManager
             }
 
             // Generate filename for manual backup
-            var fileName = $"PasswordManager_Manual_{DateTime.UtcNow:yyyyMMdd_HHmmss}.pwmbackup";
+            var fileName = $"VaultGuard_Manual_{DateTime.UtcNow:yyyyMMdd_HHmmss}.pwmbackup";
             
             // For manual backups, we'll need to handle master password differently
             // This is a placeholder - in production, you'd need a secure way to handle this

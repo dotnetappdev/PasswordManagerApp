@@ -2,13 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Crypto.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
 
-namespace PasswordManager.API.Controllers;
+namespace VaultGuard.API.Controllers;
 
 /// <summary>
 /// Controller for managing SMS settings and configuration
@@ -18,7 +18,7 @@ namespace PasswordManager.API.Controllers;
 [Authorize]
 public class SmsSettingsController : ControllerBase
 {
-    private readonly PasswordManagerDbContext _context;
+    private readonly VaultGuardDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IVaultSessionService _vaultSessionService;
     private readonly IPasswordCryptoService _cryptoService;
@@ -26,7 +26,7 @@ public class SmsSettingsController : ControllerBase
     private readonly ILogger<SmsSettingsController> _logger;
 
     public SmsSettingsController(
-        PasswordManagerDbContext context,
+        VaultGuardDbContext context,
         UserManager<ApplicationUser> userManager,
         IVaultSessionService vaultSessionService,
         IPasswordCryptoService cryptoService,

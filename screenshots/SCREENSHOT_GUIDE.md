@@ -1,13 +1,13 @@
 # WinUI Screenshot Creation Guide
 
-This guide describes how to capture professional screenshots of the Password Manager WinUI application that showcase its 1Password-style design and functionality.
+This guide describes how to capture professional screenshots of the Vault Guard WinUI application that showcase its 1Password-style design and functionality.
 
 ## Prerequisites
 
 - Windows 10 version 19041+ or Windows 11
 - .NET 9.0 SDK installed
 - Visual Studio 2022 with WinUI workload
-- Password Manager WinUI application built and running
+- Vault Guard WinUI application built and running
 
 ## Screenshot Specifications
 

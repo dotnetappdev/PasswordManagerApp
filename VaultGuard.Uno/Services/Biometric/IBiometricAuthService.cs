@@ -1,4 +1,4 @@
-namespace PasswordManager.Uno.Services.Biometric;
+namespace VaultGuard.Uno.Services.Biometric;
 
 /// <summary>
 /// Interface for biometric authentication services

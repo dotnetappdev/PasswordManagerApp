@@ -7,7 +7,7 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PasswordManager.DAL\PasswordManager.DAL.csproj" />
-    <ProjectReference Include="..\PasswordManager.Models\PasswordManager.Models.csproj" />
+    <ProjectReference Include="..\VaultGuard.DAL\VaultGuard.DAL.csproj" />
+    <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
   </ItemGroup>
 </Project>

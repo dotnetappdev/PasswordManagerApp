@@ -1,6 +1,6 @@
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.App.Services;
+namespace VaultGuard.App.Services;
 
 /// <summary>
 /// MAUI implementation of secure storage service using Microsoft.Maui.Authentication.SecureStorage

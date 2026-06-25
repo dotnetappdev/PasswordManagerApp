@@ -1,4 +1,4 @@
-# Password Manager App - Issue Resolution Summary
+# Vault Guard App - Issue Resolution Summary
 
 ## Issue: "The one password 1pu import fails"
 
@@ -28,10 +28,10 @@
 - Build system configured to copy plugin DLL to imports directory
 
 **Files Created/Modified**:
-- `PasswordManagerImports.1Password/plugin.json` (NEW)
-- `PasswordManagerImports.1Password/OnePasswordImportPlugin.cs` (NEW)
-- `PasswordManagerImports.1Password/PasswordManagerImports.1Password.csproj` (MODIFIED - added plugin.json as content)
-- `PasswordManager.WinUi/PasswordManager.WinUi.csproj` (MODIFIED - enhanced plugin copy targets)
+- `VaultGuardImports.1Password/plugin.json` (NEW)
+- `VaultGuardImports.1Password/OnePasswordImportPlugin.cs` (NEW)
+- `VaultGuardImports.1Password/VaultGuardImports.1Password.csproj` (MODIFIED - added plugin.json as content)
+- `VaultGuard.WinUi/VaultGuard.WinUi.csproj` (MODIFIED - enhanced plugin copy targets)
 
 **Notes and Categories Import**:
 The existing `OnePasswordImportProvider` already properly handles:
@@ -50,14 +50,14 @@ The existing `OnePasswordImportProvider` already properly handles:
 **Status**: Complete, Runtime Testing Recommended
 
 **Changes Made**:
-- Updated `PasswordManager.API` project from net9.0 to net10.0
-- Updated `PasswordManager.Web` project from net9.0 to net10.0
+- Updated `VaultGuard.API` project from net9.0 to net10.0
+- Updated `VaultGuard.Web` project from net9.0 to net10.0
 - Both projects build successfully with .NET 10 SDK (10.0.100)
 - All package references compatible with .NET 10
 
 **Files Modified**:
-- `PasswordManager.API/PasswordManager.API.csproj`
-- `PasswordManager.Web/PasswordManager.Web.csproj`
+- `VaultGuard.API/VaultGuard.API.csproj`
+- `VaultGuard.Web/VaultGuard.Web.csproj`
 
 **Notes**:
 - .NET 10 SDK is available but may be in preview/RC state
@@ -81,9 +81,9 @@ The existing `OnePasswordImportProvider` already properly handles:
 - Registered service in DI container
 
 **Files Created/Modified**:
-- `PasswordManager.Services/Interfaces/IDatabaseResetService.cs` (NEW)
-- `PasswordManager.Services/Services/DatabaseResetService.cs` (NEW)
-- `PasswordManager.WinUi/App.xaml.cs` (MODIFIED - registered service)
+- `VaultGuard.Services/Interfaces/IDatabaseResetService.cs` (NEW)
+- `VaultGuard.Services/Services/DatabaseResetService.cs` (NEW)
+- `VaultGuard.WinUi/App.xaml.cs` (MODIFIED - registered service)
 
 **Database Reset Options**:
 1. **Data Reset** (Preserves Users):

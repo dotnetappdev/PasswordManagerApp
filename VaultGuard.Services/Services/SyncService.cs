@@ -1,15 +1,15 @@
-using PasswordManager.DAL.Interfaces;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL.Interfaces;
+using VaultGuard.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Sync;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Sync;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
-public class SyncService : PasswordManager.Services.Interfaces.ISyncService
+public class SyncService : VaultGuard.Services.Interfaces.ISyncService
 {
     private readonly IDatabaseContextFactory _contextFactory;
     private readonly ILogger<SyncService> _logger;
@@ -224,7 +224,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
         };
     }
 
-    private async Task SyncPasswordItems(IPasswordManagerDbContext source, IPasswordManagerDbContext target, DateTime? lastSyncTime, SyncStatisticsDto statistics, List<SyncConflictDto> conflicts)
+    private async Task SyncPasswordItems(IVaultGuardDbContext source, IVaultGuardDbContext target, DateTime? lastSyncTime, SyncStatisticsDto statistics, List<SyncConflictDto> conflicts)
     {
         _logger.LogInformation("Syncing password items");
         var sourceItems = await source.PasswordItems
@@ -430,7 +430,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
         _logger.LogInformation("Synced {Count} password items", sourceItems.Count);
     }
 
-    private async Task SyncCategories(IPasswordManagerDbContext source, IPasswordManagerDbContext target, DateTime? lastSyncTime, SyncStatisticsDto statistics, List<SyncConflictDto> conflicts)
+    private async Task SyncCategories(IVaultGuardDbContext source, IVaultGuardDbContext target, DateTime? lastSyncTime, SyncStatisticsDto statistics, List<SyncConflictDto> conflicts)
     {
         _logger.LogInformation("Syncing categories");
         var sourceCategories = await source.Categories
@@ -496,7 +496,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
         _logger.LogInformation("Synced {Count} categories", sourceCategories.Count);
     }
 
-    private async Task SyncCollections(IPasswordManagerDbContext source, IPasswordManagerDbContext target, DateTime? lastSyncTime, SyncStatisticsDto statistics, List<SyncConflictDto> conflicts)
+    private async Task SyncCollections(IVaultGuardDbContext source, IVaultGuardDbContext target, DateTime? lastSyncTime, SyncStatisticsDto statistics, List<SyncConflictDto> conflicts)
     {
         _logger.LogInformation("Syncing collections");
         var sourceCollections = await source.Collections
@@ -564,7 +564,7 @@ public class SyncService : PasswordManager.Services.Interfaces.ISyncService
         _logger.LogInformation("Synced {Count} collections", sourceCollections.Count);
     }
 
-    private async Task SyncTags(IPasswordManagerDbContext source, IPasswordManagerDbContext target, DateTime? lastSyncTime, SyncStatisticsDto statistics, List<SyncConflictDto> conflicts)
+    private async Task SyncTags(IVaultGuardDbContext source, IVaultGuardDbContext target, DateTime? lastSyncTime, SyncStatisticsDto statistics, List<SyncConflictDto> conflicts)
     {
         _logger.LogInformation("Syncing tags");
         var sourceTags = await source.Tags

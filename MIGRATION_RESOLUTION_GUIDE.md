@@ -13,7 +13,7 @@ The application was experiencing "table already exists" errors during startup du
 
 ### 1. Smart Database Initialization
 
-Updated both `PasswordManager.API/Program.cs` and `PasswordManager.Web/Program.cs` to:
+Updated both `VaultGuard.API/Program.cs` and `VaultGuard.Web/Program.cs` to:
 - Check for pending migrations first
 - Apply migrations if they exist using `Database.MigrateAsync()`
 - Only use `Database.EnsureCreatedAsync()` when no migrations exist
@@ -50,17 +50,17 @@ Created `MigrationController` with endpoints to:
 
 1. **Check Migration Status**:
    ```bash
-   dotnet ef migrations list --project PasswordManager.DAL --startup-project PasswordManager.API --context PasswordManagerDbContextApp
+   dotnet ef migrations list --project VaultGuard.DAL --startup-project VaultGuard.API --context VaultGuardDbContextApp
    ```
 
 2. **Apply Migrations Manually**:
    ```bash
-   dotnet ef database update --project PasswordManager.DAL --startup-project PasswordManager.API --context PasswordManagerDbContextApp
+   dotnet ef database update --project VaultGuard.DAL --startup-project VaultGuard.API --context VaultGuardDbContextApp
    ```
 
 3. **Create New Migrations**:
    ```bash
-   dotnet ef migrations add MigrationName --project PasswordManager.DAL --startup-project PasswordManager.API --context PasswordManagerDbContextApp
+   dotnet ef migrations add MigrationName --project VaultGuard.DAL --startup-project VaultGuard.API --context VaultGuardDbContextApp
    ```
 
 ### For Users
@@ -80,19 +80,19 @@ If you encounter migration conflicts, you have several options:
 ### Option 2: Reset Migrations
 ```bash
 # Remove migration files
-rm -rf PasswordManager.DAL/Migrations/*
+rm -rf VaultGuard.DAL/Migrations/*
 
 # Create new initial migration
-dotnet ef migrations add InitialCreate --project PasswordManager.DAL --startup-project PasswordManager.API --context PasswordManagerDbContextApp
+dotnet ef migrations add InitialCreate --project VaultGuard.DAL --startup-project VaultGuard.API --context VaultGuardDbContextApp
 ```
 
 ### Option 3: Reset Database
 ```bash
 # Delete database (CAUTION: This will lose all data)
-dotnet ef database drop --project PasswordManager.DAL --startup-project PasswordManager.API --context PasswordManagerDbContextApp
+dotnet ef database drop --project VaultGuard.DAL --startup-project VaultGuard.API --context VaultGuardDbContextApp
 
 # Apply migrations to fresh database
-dotnet ef database update --project PasswordManager.DAL --startup-project PasswordManager.API --context PasswordManagerDbContextApp
+dotnet ef database update --project VaultGuard.DAL --startup-project VaultGuard.API --context VaultGuardDbContextApp
 ```
 
 ## Prevention

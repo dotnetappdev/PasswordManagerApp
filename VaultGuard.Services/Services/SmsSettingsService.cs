@@ -1,27 +1,27 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Models.Configuration;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Models.Configuration;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for managing SMS settings from both database and configuration
 /// </summary>
 public class SmsSettingsService : ISmsSettingsService
 {
-    private readonly PasswordManagerDbContext _context;
+    private readonly VaultGuardDbContext _context;
     private readonly IPasswordCryptoService _cryptoService;
     private readonly ISmsService _smsService;
     private readonly SmsConfiguration _defaultConfig;
     private readonly ILogger<SmsSettingsService> _logger;
 
     public SmsSettingsService(
-        PasswordManagerDbContext context,
+        VaultGuardDbContext context,
         IPasswordCryptoService cryptoService,
         ISmsService smsService,
         IOptions<SmsConfiguration> defaultConfig,
@@ -255,7 +255,7 @@ public class SmsSettingsService : ISmsSettingsService
                         config.AwsSns.AccessKeyId = DecryptString(smsSettings.AwsAccessKeyId, masterKey);
                         config.AwsSns.SecretAccessKey = DecryptString(smsSettings.AwsSecretAccessKey, masterKey);
                         config.AwsSns.Region = smsSettings.AwsRegion ?? "us-east-1";
-                        config.AwsSns.SenderName = smsSettings.AwsSenderName ?? "Password Manager";
+                        config.AwsSns.SenderName = smsSettings.AwsSenderName ?? "Vault Guard";
                     }
                     break;
 
@@ -292,7 +292,7 @@ public class SmsSettingsService : ISmsSettingsService
             // In a real implementation, this would require the master key to decrypt the settings
             // and then configure a temporary SMS service to send the test message
             
-            var message = testMessage ?? "Test message from Password Manager SMS configuration.";
+            var message = testMessage ?? "Test message from Vault Guard SMS configuration.";
             
             // TODO: Implement actual test message sending
             // This would require:

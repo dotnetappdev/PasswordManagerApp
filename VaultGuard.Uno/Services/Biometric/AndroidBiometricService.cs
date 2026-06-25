@@ -3,7 +3,7 @@ using Android.Content;
 using AndroidX.Biometric;
 using AndroidX.Fragment.App;
 
-namespace PasswordManager.Uno.Services.Biometric;
+namespace VaultGuard.Uno.Services.Biometric;
 
 /// <summary>
 /// Android-specific biometric authentication using AndroidX.Biometric

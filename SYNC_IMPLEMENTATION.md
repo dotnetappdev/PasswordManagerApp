@@ -2,7 +2,7 @@
 
 ## Overview
 
-This implementation ensures that the Password Manager API is only called when the Sync button is clicked, and all API endpoints are secured with API key authentication.
+This implementation ensures that the Vault Guard API is only called when the Sync button is clicked, and all API endpoints are secured with API key authentication.
 
 ## Key Features
 
@@ -32,7 +32,7 @@ This implementation ensures that the Password Manager API is only called when th
 curl -X POST "https://localhost:7001/api/authentication/generate-api-key" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "MyPasswordManagerApp",
+    "name": "MyVaultGuardApp",
     "userId": "user123"
   }'
 ```
@@ -42,13 +42,13 @@ Response:
 {
   "apiKey": "ABC123XYZ789...",
   "userId": "user123",
-  "keyName": "MyPasswordManagerApp",
+  "keyName": "MyVaultGuardApp",
   "instructions": "Store this API key securely. You won't be able to see it again. Include it in the 'X-API-Key' header when making requests to the sync API."
 }
 ```
 
 ### Step 2: Configure API Key in App
-1. Launch the Password Manager app
+1. Launch the Vault Guard app
 2. Click the **"🔄 Sync"** button on the home page
 3. In the sync modal, paste your API key
 4. Click **"Configure API Key"**
@@ -81,7 +81,7 @@ Response:
   },
   "DatabaseProvider": "SqlServer",
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=PasswordManager;..."
+    "DefaultConnection": "Server=localhost;Database=VaultGuard;..."
   }
 }
 ```
@@ -92,8 +92,8 @@ The API automatically configures the database provider based on the `DatabasePro
 ## Testing the Implementation
 
 ### 1. Manual Testing
-1. Start the API: `dotnet run --project PasswordManager.API`
-2. Start the app: `dotnet run --project PasswordManager.App`
+1. Start the API: `dotnet run --project VaultGuard.API`
+2. Start the app: `dotnet run --project VaultGuard.App`
 3. Generate API key via the authentication endpoint
 4. Configure API key in the app's sync modal
 5. Click sync button to trigger sync

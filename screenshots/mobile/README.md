@@ -1,6 +1,6 @@
 # Mobile App Screenshots
 
-This directory contains screenshots of the Password Manager mobile app running on iOS and Android devices. The UI features a 1Password-inspired design with Material Design 3 components.
+This directory contains screenshots of the Vault Guard mobile app running on iOS and Android devices. The UI features a 1Password-inspired design with Material Design 3 components.
 
 ## Directory Structure
 
@@ -49,7 +49,7 @@ For detailed instructions on capturing screenshots, see [MOBILE_SCREENSHOTS.md](
 xcrun simctl boot "iPhone 15 Pro"
 
 # Run the app
-cd PasswordManager.Uno
+cd VaultGuard.Uno
 dotnet run -f net9.0-ios
 
 # Capture screenshot
@@ -62,7 +62,7 @@ xcrun simctl io booted screenshot screenshot-name.png
 emulator -avd Pixel_7_Pro_API_34
 
 # Run the app
-cd PasswordManager.Uno
+cd VaultGuard.Uno
 dotnet run -f net9.0-android
 
 # Capture screenshot

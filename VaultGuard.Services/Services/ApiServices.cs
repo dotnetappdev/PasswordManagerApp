@@ -1,20 +1,20 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs;
-using PasswordManager.Services.Helpers;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Services.Helpers;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 public class CategoryApiService : ICategoryApiService
 {
-    private readonly PasswordManagerDbContext _context;
+    private readonly VaultGuardDbContext _context;
     private readonly ILogger<CategoryApiService> _logger;
 
     public CategoryApiService(
-        PasswordManagerDbContext context,
+        VaultGuardDbContext context,
         ILogger<CategoryApiService> logger)
     {
         _context = context;
@@ -150,11 +150,11 @@ public class CategoryApiService : ICategoryApiService
 
 public class CollectionApiService : ICollectionApiService
 {
-    private readonly PasswordManagerDbContext _context;
+    private readonly VaultGuardDbContext _context;
     private readonly ILogger<CollectionApiService> _logger;
 
     public CollectionApiService(
-        PasswordManagerDbContext context,
+        VaultGuardDbContext context,
         ILogger<CollectionApiService> logger)
     {
         _context = context;
@@ -295,11 +295,11 @@ public class CollectionApiService : ICollectionApiService
 
 public class TagApiService : ITagApiService
 {
-    private readonly PasswordManagerDbContext _context;
+    private readonly VaultGuardDbContext _context;
     private readonly ILogger<TagApiService> _logger;
 
     public TagApiService(
-        PasswordManagerDbContext context,
+        VaultGuardDbContext context,
         ILogger<TagApiService> logger)
     {
         _context = context;
@@ -403,11 +403,11 @@ public class TagApiService : ITagApiService
 
 public class VaultApiService : IVaultApiService
 {
-    private readonly PasswordManagerDbContext _context;
+    private readonly VaultGuardDbContext _context;
     private readonly ILogger<VaultApiService> _logger;
 
     public VaultApiService(
-        PasswordManagerDbContext context,
+        VaultGuardDbContext context,
         ILogger<VaultApiService> logger)
     {
         _context = context;

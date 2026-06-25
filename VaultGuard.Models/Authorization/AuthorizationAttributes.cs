@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 
-namespace PasswordManager.Models.Authorization;
+namespace VaultGuard.Models.Authorization;
 
 /// <summary>
 /// Custom authorization attribute for permission-based access control

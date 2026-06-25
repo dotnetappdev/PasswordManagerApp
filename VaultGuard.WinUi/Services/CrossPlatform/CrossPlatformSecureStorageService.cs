@@ -1,6 +1,6 @@
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.WinUi.Services.CrossPlatform;
+namespace VaultGuard.WinUi.Services.CrossPlatform;
 
 /// <summary>
 /// Cross-platform implementation of ISecureStorageService for non-Windows environments.

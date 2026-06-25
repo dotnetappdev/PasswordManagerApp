@@ -1,7 +1,7 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace PasswordManager.Services.Helpers;
+namespace VaultGuard.Services.Helpers;
 
 /// <summary>
 /// Provides validation helpers for user input across all platforms

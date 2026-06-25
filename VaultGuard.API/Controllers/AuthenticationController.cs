@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Models;
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.API.Controllers
+namespace VaultGuard.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

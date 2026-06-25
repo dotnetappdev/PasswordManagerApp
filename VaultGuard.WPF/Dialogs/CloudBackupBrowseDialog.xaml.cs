@@ -2,9 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using ModernWpf.Controls;
-using PasswordManager.Models.DTOs;
+using VaultGuard.Models.DTOs;
 
-namespace PasswordManager.WPF.Dialogs;
+namespace VaultGuard.WPF.Dialogs;
 
 public partial class CloudBackupBrowseDialog : ContentDialog
 {

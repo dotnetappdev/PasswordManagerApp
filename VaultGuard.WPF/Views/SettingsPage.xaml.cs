@@ -3,21 +3,21 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models.DTOs;
-using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.WPF.ViewModels;
-using PasswordManager.Services.Utilities;
-using PasswordManager.Imports.Interfaces;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.WPF.ViewModels;
+using VaultGuard.Services.Utilities;
+using VaultGuard.Imports.Interfaces;
 using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using PasswordManager.DAL;
-using PasswordManager.DAL.Seed;
+using VaultGuard.DAL;
+using VaultGuard.DAL.Seed;
 using Microsoft.EntityFrameworkCore;
 using Sentry;
 
-namespace PasswordManager.WPF.Views;
+namespace VaultGuard.WPF.Views;
 
 public sealed partial class SettingsPage : Page
 {
@@ -28,11 +28,66 @@ public sealed partial class SettingsPage : Page
     private readonly FileLogger _logger;
     private List<UserDto> _availableUsers = new();
 
+    // Guards the cloud-backup dialogs (Create/Restore/Browse/Delete) against double-clicks.
+    // These handlers are "async void" and each shows a ModernWpf ContentDialog; a second click
+    // before the first dialog finishes can open two ContentDialogs over the same visual root at
+    // once, which ModernWpf doesn't support — it crashes deep in WPF's layout pass with
+    // "Specified Visual is already a child of another Visual" (AddVisualChild). One flag for the
+    // whole flow is enough since the various backup actions are mutually exclusive anyway.
+    private bool _cloudBackupDialogBusy;
+
+    // Periodically pings OneDrive while this page is open so the online/offline dot updates live
+    // instead of only on page load — no app restart needed to see a dropped connection recover.
+    private System.Windows.Threading.DispatcherTimer? _oneDriveStatusTimer;
+
     public SettingsPage()
     {
         InitializeComponent();
         _logger = new FileLogger();
         BuildToastRows();
+        PopulateAboutInfo();
+        Unloaded += SettingsPage_Unloaded;
+    }
+
+    private void SettingsPage_Unloaded(object sender, RoutedEventArgs e)
+    {
+        _oneDriveStatusTimer?.Stop();
+        _oneDriveStatusTimer = null;
+    }
+
+    private void StartOneDriveStatusTimer()
+    {
+        _oneDriveStatusTimer?.Stop();
+        _oneDriveStatusTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(30)
+        };
+        _oneDriveStatusTimer.Tick += async (_, _) =>
+        {
+            if (_viewModel != null)
+                await _viewModel.RefreshOneDriveStatusAsync();
+        };
+        _oneDriveStatusTimer.Start();
+    }
+
+    // Fills the About panel with the real assembly version, build date and the live .NET runtime
+    // (RuntimeInformation.FrameworkDescription is e.g. ".NET 10.0.1") rather than hardcoded text.
+    private void PopulateAboutInfo()
+    {
+        try
+        {
+            var asm = System.Reflection.Assembly.GetExecutingAssembly();
+            var version = asm.GetName().Version?.ToString(3) ?? "1.0.0";
+            var framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription; // ".NET 10.0.x"
+
+            if (AppVersionText != null) AppVersionText.Text = $"Version {version} · Windows Desktop";
+            if (RuntimeText != null) RuntimeText.Text = framework;
+            if (BuiltWithText != null) BuiltWithText.Text = $" using {framework}";
+
+            var buildDate = File.GetLastWriteTime(asm.Location);
+            if (BuildDateText != null) BuildDateText.Text = buildDate.ToString("MMMM yyyy");
+        }
+        catch { /* About info is cosmetic — never let it break the page */ }
     }
 
     public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
@@ -45,9 +100,12 @@ public sealed partial class SettingsPage : Page
             _userProfileService = serviceProvider.GetService<IUserProfileService>();
             _viewModel = new SettingsViewModel(serviceProvider);
             DataContext = _viewModel;
+            StartOneDriveStatusTimer();
 
             // Load all users for multi-user selection
             await LoadUsersAsync();
+
+            await RefreshTwoFactorStatusAsync();
 
             // Update network location visibility based on initial provider selection
             UpdateNetworkLocationVisibility();
@@ -59,10 +117,10 @@ public sealed partial class SettingsPage : Page
             try
             {
                 await _logger.LogAsync("SettingsPage", "Starting provider preload");
-                var importService = serviceProvider.GetService<PasswordManager.Imports.Interfaces.IImportService>();
+                var importService = serviceProvider.GetService<VaultGuard.Imports.Interfaces.IImportService>();
                 if (importService != null)
                 {
-                    // Force load all PasswordManagerImports.* assemblies and register providers
+                    // Force load all VaultGuardImports.* assemblies and register providers
                     var importDllsList = new List<string>();
 
                     // Common candidate directories to search for import provider assemblies. This covers
@@ -86,10 +144,10 @@ public sealed partial class SettingsPage : Page
                     try { candidateDirs.Add(Environment.CurrentDirectory); } catch { }
 
                     // Per-user imports folder (LocalAppData)
-                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PasswordManager", "imports")); } catch { }
+                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultGuard", "imports")); } catch { }
 
                     // Machine-wide imports folder (ProgramData)
-                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "PasswordManager", "imports")); } catch { }
+                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "VaultGuard", "imports")); } catch { }
 
                     // Standard plugin discovery folder used by PluginDiscoveryService
                     try { candidateDirs.Add(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "imports", "otherpasswordmanagers")); } catch { }
@@ -101,8 +159,8 @@ public sealed partial class SettingsPage : Page
                         {
                             if (Directory.Exists(dir))
                             {
-                                importDllsList.AddRange(Directory.GetFiles(dir, "PasswordManagerImports.*.dll", SearchOption.AllDirectories));
-                                importDllsList.AddRange(Directory.GetFiles(dir, "PasswordManagerImports.*.dll", SearchOption.TopDirectoryOnly));
+                                importDllsList.AddRange(Directory.GetFiles(dir, "VaultGuardImports.*.dll", SearchOption.AllDirectories));
+                                importDllsList.AddRange(Directory.GetFiles(dir, "VaultGuardImports.*.dll", SearchOption.TopDirectoryOnly));
                             }
                         }
                         catch { }
@@ -116,12 +174,12 @@ public sealed partial class SettingsPage : Page
                         {
                             var assembly = System.Reflection.Assembly.LoadFrom(dllPath);
                             var providerTypes = assembly.GetTypes()
-                                .Where(t => typeof(PasswordManager.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
+                                .Where(t => typeof(VaultGuard.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
                                          && !t.IsInterface && !t.IsAbstract);
 
                             foreach (var providerType in providerTypes)
                             {
-                                var provider = Activator.CreateInstance(providerType) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
+                                var provider = Activator.CreateInstance(providerType) as VaultGuard.Imports.Interfaces.IPasswordImportProvider;
                                 if (provider != null)
                                 {
                                     importService.RegisterProvider(provider);
@@ -230,7 +288,7 @@ public sealed partial class SettingsPage : Page
             if (!string.IsNullOrEmpty(path))
             {
                 System.Windows.Clipboard.SetText(path);
-                PasswordManager.WPF.Services.ToastService.Instance.Show("Database path copied to clipboard.", PasswordManager.WPF.Services.ToastType.Success);
+                VaultGuard.WPF.Services.ToastService.Instance.Show("Database path copied to clipboard.", VaultGuard.WPF.Services.ToastType.Success);
 
                 await _logger.LogAsync("SettingsPage", "Copied database path to clipboard");
             }
@@ -294,7 +352,7 @@ public sealed partial class SettingsPage : Page
         }
     }
 
-    private async System.Threading.Tasks.Task PopulateImportTypesAsync(PasswordManager.Imports.Interfaces.IImportService importService)
+    private async System.Threading.Tasks.Task PopulateImportTypesAsync(VaultGuard.Imports.Interfaces.IImportService importService)
     {
         try
         {
@@ -316,12 +374,63 @@ public sealed partial class SettingsPage : Page
         { }
     }
 
-    private async void TwoFactorToggle_Toggled(object sender, RoutedEventArgs e)
+    private async void TwoFactorButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_viewModel != null)
+        if (_serviceProvider == null) return;
+        try
         {
-            await _viewModel.SaveSettingsAsync();
+            var userId = _authService?.CurrentUser?.Id ?? await _authService?.GetCurrentUserIdAsync()!;
+            var userEmail = _authService?.CurrentUser?.Email;
+
+            await Helpers.TwoFactorDialogHelper.OpenManageDialogAsync(_serviceProvider, userId, userEmail);
+
+            await RefreshTwoFactorStatusAsync();
         }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Two-factor setup failed", ex);
+        }
+    }
+
+    // "Forget this device" — wipes the DPAPI-cached master password for the current profile so
+    // the next sign-in (even with 2FA enabled) requires the master password again.
+    private async void ForgetDeviceButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_serviceProvider == null) return;
+        try
+        {
+            var userId = _authService?.CurrentUser?.Id ?? await _authService?.GetCurrentUserIdAsync()!;
+            if (string.IsNullOrEmpty(userId)) return;
+
+            await VaultGuard.WPF.ViewModels.LoginViewModel.ForgetDeviceAsync(_serviceProvider, userId);
+
+            var dialog = new ModernWpf.Controls.ContentDialog
+            {
+                Title = "Device forgotten",
+                Content = "Your saved sign-in was cleared. You'll need your master password next time you sign in.",
+                CloseButtonText = "OK"
+            };
+            await dialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Forget device failed", ex);
+        }
+    }
+
+    private async System.Threading.Tasks.Task RefreshTwoFactorStatusAsync()
+    {
+        if (_serviceProvider == null || TwoFactorStatusText == null) return;
+        try
+        {
+            var twoFactorService = _serviceProvider.GetService<ITwoFactorService>();
+            var userId = _authService?.CurrentUser?.Id ?? await _authService?.GetCurrentUserIdAsync()!;
+            if (twoFactorService == null || string.IsNullOrEmpty(userId)) return;
+
+            var status = await twoFactorService.GetTwoFactorStatusAsync(userId);
+            TwoFactorStatusText.Text = status.IsEnabled ? "Enabled" : "Not enabled";
+        }
+        catch { }
     }
 
     private async void PasscodeToggle_Toggled(object sender, RoutedEventArgs e)
@@ -376,9 +485,9 @@ public sealed partial class SettingsPage : Page
             var success = await _viewModel.ExportDataAsync();
 
             if (success)
-                PasswordManager.WPF.Services.ToastService.Instance.Show("Export completed successfully!", PasswordManager.WPF.Services.ToastType.Success);
+                VaultGuard.WPF.Services.ToastService.Instance.Show("Export completed successfully!", VaultGuard.WPF.Services.ToastType.Success);
             else
-                PasswordManager.WPF.Services.ToastService.Instance.Show("Export failed. Please try again.", PasswordManager.WPF.Services.ToastType.Error);
+                VaultGuard.WPF.Services.ToastService.Instance.Show("Export failed. Please try again.", VaultGuard.WPF.Services.ToastType.Error);
         }
     }
 
@@ -478,7 +587,7 @@ public sealed partial class SettingsPage : Page
         using var importScope = _serviceProvider.CreateScope();
         try
         {
-            var importService = importScope.ServiceProvider.GetRequiredService<PasswordManager.Imports.Interfaces.IImportService>();
+            var importService = importScope.ServiceProvider.GetRequiredService<VaultGuard.Imports.Interfaces.IImportService>();
             var selectedItem = ImportTypeComboBox.SelectedItem as ComboBoxItem;
             var filePath = ImportFilePathTextBox.Text;
 
@@ -501,11 +610,11 @@ public sealed partial class SettingsPage : Page
             {
                 var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
                 var importDllsList = new List<string>();
-                importDllsList.AddRange(System.IO.Directory.GetFiles(baseDirectory, "PasswordManagerImports.*.dll"));
+                importDllsList.AddRange(System.IO.Directory.GetFiles(baseDirectory, "VaultGuardImports.*.dll"));
                 var importsFolder = System.IO.Path.Combine(baseDirectory, "imports", "otherpasswordmanagers");
                 if (System.IO.Directory.Exists(importsFolder))
                 {
-                    importDllsList.AddRange(System.IO.Directory.GetFiles(importsFolder, "PasswordManagerImports.*.dll", System.IO.SearchOption.AllDirectories));
+                    importDllsList.AddRange(System.IO.Directory.GetFiles(importsFolder, "VaultGuardImports.*.dll", System.IO.SearchOption.AllDirectories));
                 }
                 foreach (var dllPath in importDllsList)
                 {
@@ -513,14 +622,14 @@ public sealed partial class SettingsPage : Page
                     {
                         var asm = System.Reflection.Assembly.LoadFrom(dllPath);
                         var providerTypes = asm.GetTypes()
-                            .Where(t => typeof(PasswordManager.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
+                            .Where(t => typeof(VaultGuard.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
                                      && !t.IsInterface && !t.IsAbstract);
 
                         foreach (var providerType in providerTypes)
                         {
                             try
                             {
-                                var providerInstance = Activator.CreateInstance(providerType) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
+                                var providerInstance = Activator.CreateInstance(providerType) as VaultGuard.Imports.Interfaces.IPasswordImportProvider;
                                 if (providerInstance != null)
                                 {
                                     importService.RegisterProvider(providerInstance);
@@ -611,14 +720,14 @@ public sealed partial class SettingsPage : Page
                 try
                 {
                     // Try common assembly name variants
-                    var assemblyNames = new[] { "PasswordManagerImports.OnePassword", "PasswordManagerImports.1Password", "PasswordManagerImports.OnePassword.dll" };
+                    var assemblyNames = new[] { "VaultGuardImports.OnePassword", "VaultGuardImports.1Password", "VaultGuardImports.OnePassword.dll" };
                     foreach (var asmName in assemblyNames)
                     {
-                        var typeName = $"PasswordManagerImports.OnePassword.Providers.OnePasswordImportProvider, {asmName}";
+                        var typeName = $"VaultGuardImports.OnePassword.Providers.OnePasswordImportProvider, {asmName}";
                         var onePasswordProviderType = Type.GetType(typeName, false);
                         if (onePasswordProviderType != null)
                         {
-                            var instance = Activator.CreateInstance(onePasswordProviderType) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
+                            var instance = Activator.CreateInstance(onePasswordProviderType) as VaultGuard.Imports.Interfaces.IPasswordImportProvider;
                             if (instance != null)
                             {
                                 importService.RegisterProvider(instance);
@@ -640,7 +749,7 @@ public sealed partial class SettingsPage : Page
                             try
                             {
                                 var candidateTypes = asm.GetTypes()
-                                    .Where(t => typeof(PasswordManager.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
+                                    .Where(t => typeof(VaultGuard.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
                                                 && !t.IsInterface && !t.IsAbstract)
                                     .ToList();
 
@@ -649,7 +758,7 @@ public sealed partial class SettingsPage : Page
                                     // Try to instantiate and check ProviderName
                                     try
                                     {
-                                        var inst = Activator.CreateInstance(ct) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
+                                        var inst = Activator.CreateInstance(ct) as VaultGuard.Imports.Interfaces.IPasswordImportProvider;
                                         if (inst != null && string.Equals(inst.ProviderName, "1Password", StringComparison.OrdinalIgnoreCase))
                                         {
                                             importService.RegisterProvider(inst);
@@ -691,7 +800,7 @@ public sealed partial class SettingsPage : Page
                     string? currentUserId = _authService?.CurrentUser?.Id;
                     if (string.IsNullOrEmpty(currentUserId))
                     {
-                        var scopedAuth = importScope.ServiceProvider.GetService<PasswordManager.Services.Interfaces.IAuthService>();
+                        var scopedAuth = importScope.ServiceProvider.GetService<VaultGuard.Services.Interfaces.IAuthService>();
                         currentUserId = scopedAuth != null ? await scopedAuth.GetCurrentUserIdAsync() : null;
                     }
                     targetUserIds.Add(currentUserId);
@@ -865,7 +974,7 @@ public sealed partial class SettingsPage : Page
             {
                 _viewModel.ExportPath = folderDialog.SelectedPath;
 
-                PasswordManager.WPF.Services.ToastService.Instance.Show($"Export folder: {folderDialog.SelectedPath}", PasswordManager.WPF.Services.ToastType.Info);
+                VaultGuard.WPF.Services.ToastService.Instance.Show($"Export folder: {folderDialog.SelectedPath}", VaultGuard.WPF.Services.ToastType.Info);
             }
         }
         catch (Exception ex)
@@ -997,7 +1106,7 @@ public sealed partial class SettingsPage : Page
                     await System.Threading.Tasks.Task.Run(() =>
                     {
                         using var scope = scopeFactory.CreateScope();
-                        var db = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+                        var db = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
                         TestDataSeeder.SeedTestData(db, currentUserId);
                     });
                     await _logger.LogAsync("SettingsPage", $"Seeded data for user {currentUserId}");
@@ -1012,7 +1121,7 @@ public sealed partial class SettingsPage : Page
 
                 progressDialog.Hide();
 
-                PasswordManager.WPF.Services.ToastService.Instance.Show("Sample data seeded — categories, collections, tags and items added.", PasswordManager.WPF.Services.ToastType.Success, "Seed Complete");
+                VaultGuard.WPF.Services.ToastService.Instance.Show("Sample data seeded — categories, collections, tags and items added.", VaultGuard.WPF.Services.ToastType.Success, "Seed Complete");
             }
             catch (Exception ex)
             {
@@ -1059,7 +1168,7 @@ public sealed partial class SettingsPage : Page
             if (scopeFactory != null)
             {
                 using var scope = scopeFactory.CreateScope();
-                var itemService = scope.ServiceProvider.GetService<PasswordManager.Services.Interfaces.IPasswordItemService>();
+                var itemService = scope.ServiceProvider.GetService<VaultGuard.Services.Interfaces.IPasswordItemService>();
                 if (itemService != null)
                 {
                     var items = (await itemService.GetAllAsync()).ToList();
@@ -1073,8 +1182,8 @@ public sealed partial class SettingsPage : Page
 
             // STEP 2 — clear categories, collections, tags and any leftover rows (FK constraints off),
             // then mark the database as seeded so startup never re-adds the demo data.
-            var resetService = _serviceProvider.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
-            PasswordManager.Services.Interfaces.DatabaseResetResult? reset = null;
+            var resetService = _serviceProvider.GetService<VaultGuard.Services.Interfaces.IDatabaseResetService>();
+            VaultGuard.Services.Interfaces.DatabaseResetResult? reset = null;
             if (resetService != null)
                 reset = await resetService.ResetDataTablesAsync();
 
@@ -1085,7 +1194,7 @@ public sealed partial class SettingsPage : Page
                     await System.Threading.Tasks.Task.Run(() =>
                     {
                         using var scope = scopeFactory.CreateScope();
-                        var db = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+                        var db = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
                         TestDataSeeder.ClearSeedData(db, TestDataSeeder.TestUserId);
                         TryMarkSeedComplete(db);
                     });
@@ -1099,9 +1208,9 @@ public sealed partial class SettingsPage : Page
             await _logger.LogAsync("SettingsPage", $"Delete seed data: {itemsDeleted} items deleted; reset: {reset?.Message}");
 
             // Tell the live items / dashboard views to reload so the cleared data disappears immediately.
-            PasswordManager.WPF.Services.AppEvents.RaiseVaultDataChanged();
+            VaultGuard.WPF.Services.AppEvents.RaiseVaultDataChanged();
 
-            PasswordManager.WPF.Services.ToastService.Instance.Success(
+            VaultGuard.WPF.Services.ToastService.Instance.Success(
                 $"Removed {itemsDeleted} item(s) plus their categories, collections & tags. Your accounts were kept.",
                 "Seed data deleted");
         }
@@ -1114,7 +1223,7 @@ public sealed partial class SettingsPage : Page
 
     // Writes a "<db>.seeded" marker next to the SQLite database (matching AppStartupService) so the
     // startup demo-data seeder treats the now-empty vault as intentionally cleared, not brand new.
-    private static void TryMarkSeedComplete(PasswordManagerDbContext db)
+    private static void TryMarkSeedComplete(VaultGuardDbContext db)
     {
         try
         {
@@ -1163,9 +1272,9 @@ public sealed partial class SettingsPage : Page
             var success = await _viewModel.ClearAllDataAsync();
 
             if (success)
-                PasswordManager.WPF.Services.ToastService.Instance.Success("All data has been cleared.", "Done");
+                VaultGuard.WPF.Services.ToastService.Instance.Success("All data has been cleared.", "Done");
             else
-                PasswordManager.WPF.Services.ToastService.Instance.Error("Failed to clear data. Please try again.");
+                VaultGuard.WPF.Services.ToastService.Instance.Error("Failed to clear data. Please try again.");
 
             if (success)
             {
@@ -1177,24 +1286,78 @@ public sealed partial class SettingsPage : Page
 
     private async Task ShowChangePasswordDialog()
     {
-        var currentPasswordBox = new PasswordBox();
-        var newPasswordBox = new PasswordBox();
-        var confirmPasswordBox = new PasswordBox();
-        var passwordHintBox = new TextBox();
+        var pwStyle = Application.Current.Resources["ModernPasswordBoxStyle"] as Style;
+        var tbStyle = Application.Current.Resources["ModernTextBoxStyle"] as Style;
+        var labelBrush = (System.Windows.Media.Brush?)Application.Current.Resources["ModernTextSecondaryBrush"]
+                         ?? System.Windows.Media.Brushes.Gray;
+
+        TextBlock MakeLabel(string text, double topMargin = 12) => new()
+        {
+            Text = text, FontSize = 12, FontWeight = System.Windows.FontWeights.SemiBold,
+            Foreground = labelBrush, Margin = new System.Windows.Thickness(0, topMargin, 0, 4)
+        };
+
+        PasswordBox MakePw(string placeholder)
+        {
+            var box = new PasswordBox { Style = pwStyle };
+            ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(box, placeholder);
+            return box;
+        }
+
+        var currentPasswordBox = MakePw("Enter your current master password");
+        var newPasswordBox = MakePw("Choose a strong new password");
+        var confirmPasswordBox = MakePw("Re-enter the new password");
+        var passwordHintBox = new TextBox { Style = tbStyle };
+        ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(passwordHintBox, "Optional reminder — never store the password itself");
+
+        // Live strength meter under the new-password field.
+        var strengthTrack = new Border
+        {
+            Height = 6, Width = 360, CornerRadius = new System.Windows.CornerRadius(3),
+            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x33, 0x33, 0x33)),
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
+            Margin = new System.Windows.Thickness(0, 8, 0, 0)
+        };
+        var strengthFill = new Border
+        {
+            Height = 6, Width = 0, CornerRadius = new System.Windows.CornerRadius(3),
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Left
+        };
+        strengthTrack.Child = strengthFill;
+        var strengthLabel = new TextBlock { FontSize = 11, Margin = new System.Windows.Thickness(0, 4, 0, 0), Foreground = labelBrush };
+
+        newPasswordBox.PasswordChanged += (_, _) =>
+        {
+            var (score, text, color) = EstimatePasswordStrength(newPasswordBox.Password);
+            strengthFill.Width = 360 * score / 4.0;
+            strengthFill.Background = new System.Windows.Media.SolidColorBrush(color);
+            strengthLabel.Text = string.IsNullOrEmpty(newPasswordBox.Password) ? "" : $"Strength: {text}";
+            strengthLabel.Foreground = string.IsNullOrEmpty(newPasswordBox.Password)
+                ? labelBrush : new System.Windows.Media.SolidColorBrush(color);
+        };
 
         var errorTextBlock = new TextBlock
         {
-            Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red),
+            Foreground = (System.Windows.Media.Brush?)Application.Current.Resources["ModernErrorBrush"]
+                         ?? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red),
             TextWrapping = System.Windows.TextWrapping.Wrap,
+            FontSize = 12,
+            Margin = new System.Windows.Thickness(0, 12, 0, 0),
             Visibility = System.Windows.Visibility.Collapsed
         };
 
-        var stackPanel = new StackPanel { };
-        stackPanel.Children.Add(errorTextBlock);
+        var stackPanel = new StackPanel { MinWidth = 380, Margin = new System.Windows.Thickness(4) };
+        stackPanel.Children.Add(MakeLabel("Current master password", 0));
         stackPanel.Children.Add(currentPasswordBox);
+        stackPanel.Children.Add(MakeLabel("New master password"));
         stackPanel.Children.Add(newPasswordBox);
+        stackPanel.Children.Add(strengthTrack);
+        stackPanel.Children.Add(strengthLabel);
+        stackPanel.Children.Add(MakeLabel("Confirm new password"));
         stackPanel.Children.Add(confirmPasswordBox);
+        stackPanel.Children.Add(MakeLabel("Password hint (optional)"));
         stackPanel.Children.Add(passwordHintBox);
+        stackPanel.Children.Add(errorTextBlock);
 
         var dialog = new ModernWpf.Controls.ContentDialog
         {
@@ -1202,67 +1365,67 @@ public sealed partial class SettingsPage : Page
             Content = stackPanel,
             PrimaryButtonText = "Change Password",
             CloseButtonText = "Cancel",
-            // WPF: XamlRoot not needed
+            DefaultButton = ModernWpf.Controls.ContentDialogButton.Primary
+        };
+        dialog.Style = dialog.TryFindResource("Modern1PasswordDialogStyle") as Style;
+
+        // Validate (and perform the change) inside the primary-button handler with a deferral so the
+        // dialog stays open and shows inline errors instead of closing on every mistake.
+        dialog.PrimaryButtonClick += async (_, args) =>
+        {
+            var deferral = args.GetDeferral();
+            try
+            {
+                void Fail(string msg)
+                {
+                    errorTextBlock.Text = msg;
+                    errorTextBlock.Visibility = System.Windows.Visibility.Visible;
+                    args.Cancel = true;
+                }
+
+                if (string.IsNullOrEmpty(currentPasswordBox.Password)) { Fail("Enter your current master password."); return; }
+                if (string.IsNullOrEmpty(newPasswordBox.Password)) { Fail("Enter a new master password."); return; }
+                if (newPasswordBox.Password != confirmPasswordBox.Password) { Fail("The new passwords don't match."); return; }
+
+                var validation = ValidatePasswordStrength(newPasswordBox.Password);
+                if (!validation.IsValid) { Fail(validation.ErrorMessage); return; }
+
+                if (_authService == null) { Fail("Authentication service unavailable."); return; }
+
+                var ok = await _authService.ChangeMasterPasswordAsync(
+                    currentPasswordBox.Password, newPasswordBox.Password, passwordHintBox.Text);
+
+                if (!ok) { Fail("Couldn't change the password — check your current password and try again."); return; }
+            }
+            finally { deferral.Complete(); }
         };
 
-        var result = await dialog.ShowAsync();
-        if (result == ModernWpf.Controls.ContentDialogResult.Primary && _viewModel != null)
+        var result = await Helpers.DialogManager.ShowAsync(dialog);
+        if (result == ModernWpf.Controls.ContentDialogResult.Primary)
         {
-            // Validate inputs
-            if (string.IsNullOrEmpty(currentPasswordBox.Password))
-            {
-                await ShowErrorDialog("Please enter your current master password.");
-                return;
-            }
-
-            if (string.IsNullOrEmpty(newPasswordBox.Password))
-            {
-                await ShowErrorDialog("Please enter a new master password.");
-                return;
-            }
-
-            if (newPasswordBox.Password != confirmPasswordBox.Password)
-            {
-                await ShowErrorDialog("New passwords do not match. Please try again.");
-                return;
-            }
-
-            // Validate password strength
-            var validationResult = ValidatePasswordStrength(newPasswordBox.Password);
-            if (!validationResult.IsValid)
-            {
-                await ShowErrorDialog(validationResult.ErrorMessage);
-                return;
-            }
-
-            // Use the auth service to change the master password with hint
-            bool success;
-            if (_authService != null)
-            {
-                success = await _authService.ChangeMasterPasswordAsync(
-                    currentPasswordBox.Password,
-                    newPasswordBox.Password,
-                    passwordHintBox.Text);
-            }
-            else
-            {
-                success = false;
-            }
-
-            var message = success ?
-                "Master password changed successfully! Your new password will be required on next app startup." :
-                "Failed to change master password. Please check your current password and try again.";
-
-            var resultDialog = new ModernWpf.Controls.ContentDialog
-            {
-                Title = success ? "Success" : "Error",
-                Content = message,
-                CloseButtonText = "OK",
-                // WPF: XamlRoot not needed
-            };
-
-            await resultDialog.ShowAsync();
+            VaultGuard.WPF.Services.ToastService.Instance.Show(
+                "Master password changed. You'll use the new password next time the app starts.",
+                VaultGuard.WPF.Services.ToastType.Success, "Done");
         }
+    }
+
+    // Lightweight local strength estimate for the change-password meter (0-4 + label + colour).
+    private static (int Score, string Text, System.Windows.Media.Color Color) EstimatePasswordStrength(string pw)
+    {
+        if (string.IsNullOrEmpty(pw)) return (0, "", System.Windows.Media.Colors.Gray);
+        int score = 0;
+        if (pw.Length >= 8) score++;
+        if (pw.Length >= 12) score++;
+        if (pw.Any(char.IsUpper) && pw.Any(char.IsLower)) score++;
+        if (pw.Any(char.IsDigit) && pw.Any(c => !char.IsLetterOrDigit(c))) score++;
+        score = System.Math.Min(score, 4);
+        return score switch
+        {
+            <= 1 => (1, "Weak", System.Windows.Media.Color.FromRgb(0xEF, 0x44, 0x44)),
+            2 => (2, "Fair", System.Windows.Media.Color.FromRgb(0xF5, 0x9E, 0x0B)),
+            3 => (3, "Good", System.Windows.Media.Color.FromRgb(0x3B, 0x82, 0xF6)),
+            _ => (4, "Strong", System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81)),
+        };
     }
 
     private (bool IsValid, string ErrorMessage) ValidatePasswordStrength(string password)
@@ -1292,7 +1455,7 @@ public sealed partial class SettingsPage : Page
 
     private Task ShowErrorDialog(string message)
     {
-        PasswordManager.WPF.Services.ToastService.Instance.Show(message, PasswordManager.WPF.Services.ToastType.Error, "Error");
+        VaultGuard.WPF.Services.ToastService.Instance.Show(message, VaultGuard.WPF.Services.ToastType.Error, "Error");
         return Task.CompletedTask;
     }
 
@@ -1311,7 +1474,7 @@ public sealed partial class SettingsPage : Page
         _viewModel.IsLoading = true;
         var ok = await _viewModel.ConnectGoogleDriveAsync();
         if (ok)
-            PasswordManager.WPF.Services.ToastService.Instance.Show("Connected to Google Drive!", PasswordManager.WPF.Services.ToastType.Success);
+            VaultGuard.WPF.Services.ToastService.Instance.Show("Connected to Google Drive!", VaultGuard.WPF.Services.ToastType.Success);
         else
             await ShowErrorDialog("Google Drive connection failed. Make sure your Client ID and Secret are correct and that you allowed the authorisation in the browser.");
     }
@@ -1320,13 +1483,91 @@ public sealed partial class SettingsPage : Page
     {
         if (_viewModel == null) return;
         await _viewModel.DisconnectGoogleDriveAsync();
-        PasswordManager.WPF.Services.ToastService.Instance.Show("Disconnected from Google Drive.", PasswordManager.WPF.Services.ToastType.Info);
+        VaultGuard.WPF.Services.ToastService.Instance.Show("Disconnected from Google Drive.", VaultGuard.WPF.Services.ToastType.Info);
     }
 
     private void GDriveClientSecretBox_PasswordChanged(object sender, RoutedEventArgs e)
     {
         if (_viewModel != null && sender is PasswordBox pb)
             _viewModel.GoogleDriveClientSecret = pb.Password;
+    }
+
+    // ─── OneDrive handlers ──────────────────────────────────────────────────────
+
+    private async void ConnectOneDriveButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null) return;
+        _viewModel.IsLoading = true;
+        var ok = await _viewModel.ConnectOneDriveAsync();
+        if (ok)
+            VaultGuard.WPF.Services.ToastService.Instance.Show("Signed in with Microsoft!", VaultGuard.WPF.Services.ToastType.Success);
+        else
+            await ShowErrorDialog($"OneDrive sign-in failed.\n\n{_viewModel.LastOneDriveError ?? "Unknown error — check the app log for details."}");
+    }
+
+    private async void DisconnectOneDriveButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null) return;
+        await _viewModel.DisconnectOneDriveAsync();
+        VaultGuard.WPF.Services.ToastService.Instance.Show("Signed out of OneDrive.", VaultGuard.WPF.Services.ToastType.Info);
+    }
+
+    // ─── FTP / NAS handlers ─────────────────────────────────────────────────────
+
+    private void FtpPasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null && sender is PasswordBox pb)
+            _viewModel.FtpPassword = pb.Password;
+    }
+
+    private async void TestFtpConnectionButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null) return;
+        if (string.IsNullOrWhiteSpace(_viewModel.FtpHost))
+        {
+            await ShowErrorDialog("Please enter the FTP host first.");
+            return;
+        }
+
+        var ok = await _viewModel.TestFtpConnectionAsync();
+        if (ok)
+            VaultGuard.WPF.Services.ToastService.Instance.Show("FTP connection successful!", VaultGuard.WPF.Services.ToastType.Success);
+        else
+            VaultGuard.WPF.Services.ToastService.Instance.Show(_viewModel.FtpStatus, VaultGuard.WPF.Services.ToastType.Error);
+    }
+
+    // ─── NAS / network-drive handlers ───────────────────────────────────────────
+
+    private void NasPasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null && sender is PasswordBox pb)
+            _viewModel.NasPassword = pb.Password;
+    }
+
+    private void MappedDriveComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_viewModel != null && sender is ComboBox cb &&
+            cb.SelectedItem is VaultGuard.Models.DTOs.MappedDriveInfo drive)
+        {
+            // Prefer the UNC path (works without the drive being mapped on the target machine);
+            // fall back to the drive letter root.
+            _viewModel.NetworkPath = string.IsNullOrEmpty(drive.UncPath) ? drive.Root : drive.UncPath;
+        }
+    }
+
+    private void RefreshMappedDrivesButton_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel?.RefreshMappedDrives();
+    }
+
+    private async void TestNasConnectionButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null) return;
+        var ok = await _viewModel.TestNasConnectionAsync();
+        if (ok)
+            VaultGuard.WPF.Services.ToastService.Instance.Show("Network location reachable!", VaultGuard.WPF.Services.ToastType.Success);
+        else
+            VaultGuard.WPF.Services.ToastService.Instance.Show(_viewModel.NasStatus, VaultGuard.WPF.Services.ToastType.Error);
     }
 
     // Cloud Backup Event Handlers
@@ -1354,7 +1595,9 @@ public sealed partial class SettingsPage : Page
 
     private async void CreateBackupButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_viewModel != null)
+        if (_viewModel == null || _cloudBackupDialogBusy) return;
+        _cloudBackupDialogBusy = true;
+        try
         {
             // Show password dialog
             var passwordDialog = new ModernWpf.Controls.ContentDialog
@@ -1367,21 +1610,24 @@ public sealed partial class SettingsPage : Page
             };
 
             var result = await passwordDialog.ShowAsync();
-            if (result == ModernWpf.Controls.ContentDialogResult.Primary && passwordDialog.Content is PasswordBox passwordBox)
+            var passwordBox = (passwordDialog.Content as StackPanel)?.Children.OfType<PasswordBox>().FirstOrDefault();
+            if (result == ModernWpf.Controls.ContentDialogResult.Primary && passwordBox != null)
             {
                 var success = await _viewModel.CreateCloudBackupAsync(passwordBox.Password);
 
                 var message = success ? "Backup created successfully!" : "Backup creation failed. Please try again.";
-                var dialog = new ModernWpf.Controls.ContentDialog
-                {
-                    Title = success ? "Success" : "Error",
-                    Content = message,
-                    CloseButtonText = "OK",
-                    // WPF: XamlRoot not needed
-                };
+                var dialog = new VaultGuard.WPF.Dialogs.BackupResultDialog(
+                    success,
+                    message,
+                    _viewModel.LastBackupException,
+                    _viewModel.LastBackupErrorMessage);
 
                 await dialog.ShowAsync();
             }
+        }
+        finally
+        {
+            _cloudBackupDialogBusy = false;
         }
     }
 
@@ -1403,7 +1649,9 @@ public sealed partial class SettingsPage : Page
 
     private async void RestoreFromFileButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_viewModel != null)
+        if (_viewModel == null || _cloudBackupDialogBusy) return;
+        _cloudBackupDialogBusy = true;
+        try
         {
             var success = await _viewModel.RestoreFromFileAsync();
 
@@ -1421,12 +1669,19 @@ public sealed partial class SettingsPage : Page
 
             await dialog.ShowAsync();
         }
+        finally
+        {
+            _cloudBackupDialogBusy = false;
+        }
     }
 
     private async void RestoreBackupButton_Click(object sender, RoutedEventArgs e)
     {
         if (_viewModel == null || sender is not Button button || button.Tag is not CloudBackupInfo backup) return;
-
+        if (_cloudBackupDialogBusy) return;
+        _cloudBackupDialogBusy = true;
+        try
+        {
         // iPhone-style warning — red destructive action dialog
         var warningPanel = new StackPanel { Margin = new Thickness(0, 8, 0, 0) };
         var warningBorder = new Border
@@ -1474,12 +1729,20 @@ public sealed partial class SettingsPage : Page
             };
             await resultDlg.ShowAsync();
         }
+        }
+        finally
+        {
+            _cloudBackupDialogBusy = false;
+        }
     }
 
     private async void BrowseBackupButton_Click(object sender, RoutedEventArgs e)
     {
         if (_viewModel == null || sender is not Button button || button.Tag is not CloudBackupInfo backup) return;
-
+        if (_cloudBackupDialogBusy) return;
+        _cloudBackupDialogBusy = true;
+        try
+        {
         // Ask for master password first
         var pwBox = new PasswordBox { };
         var pwDialog = new ModernWpf.Controls.ContentDialog
@@ -1496,7 +1759,7 @@ public sealed partial class SettingsPage : Page
 
         // Download + decrypt + parse
         var backupService = _serviceProvider?.GetService<IDatabaseBackupService>();
-        var cloudManager = _serviceProvider?.GetService<PasswordManager.Services.Services.CloudBackupManager>();
+        var cloudManager = _serviceProvider?.GetService<VaultGuard.Services.Services.CloudBackupManager>();
         if (backupService == null || cloudManager == null) return;
 
         var downloadResult = await cloudManager.DownloadBackupDataAsync(backup);
@@ -1514,7 +1777,7 @@ public sealed partial class SettingsPage : Page
         }
 
         // Open browse dialog
-        var browseDialog = new PasswordManager.WPF.Dialogs.CloudBackupBrowseDialog(contents);
+        var browseDialog = new VaultGuard.WPF.Dialogs.CloudBackupBrowseDialog(contents);
         if (await browseDialog.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary)
         {
             var imported = await backupService.ImportSelectedItemsAsync(contents, browseDialog.SelectedIds);
@@ -1525,11 +1788,19 @@ public sealed partial class SettingsPage : Page
                 CloseButtonText = "OK"
             }.ShowAsync();
         }
+        }
+        finally
+        {
+            _cloudBackupDialogBusy = false;
+        }
     }
 
     private async void DeleteBackupButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_viewModel != null && sender is Button button && button.Tag is CloudBackupInfo backup)
+        if (_viewModel == null || sender is not Button button || button.Tag is not CloudBackupInfo backup) return;
+        if (_cloudBackupDialogBusy) return;
+        _cloudBackupDialogBusy = true;
+        try
         {
             var confirmDialog = new ModernWpf.Controls.ContentDialog
             {
@@ -1557,6 +1828,10 @@ public sealed partial class SettingsPage : Page
                     await errorDialog.ShowAsync();
                 }
             }
+        }
+        finally
+        {
+            _cloudBackupDialogBusy = false;
         }
     }
 
@@ -1586,7 +1861,10 @@ public sealed partial class SettingsPage : Page
         }
     }
 
-    private async Task<PasswordBox> CreateMasterPasswordInput()
+    // Returns the wrapping panel (label + PasswordBox) — the PasswordBox is already parented inside
+    // it, so it must never be returned/assigned as Content on its own (WPF throws "AddVisualChild" if
+    // a Visual already has a parent when you try to give it a second one).
+    private Task<StackPanel> CreateMasterPasswordInput()
     {
         var stackPanel = new StackPanel { };
 
@@ -1603,7 +1881,7 @@ public sealed partial class SettingsPage : Page
         };
         stackPanel.Children.Add(passwordBox);
 
-        return passwordBox;
+        return Task.FromResult(stackPanel);
     }
 
     // Handle changes to the selected database provider (show/hide sqlite path)
@@ -1641,7 +1919,7 @@ public sealed partial class SettingsPage : Page
         {
             try
             {
-                var resetService = _serviceProvider?.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+                var resetService = _serviceProvider?.GetService<VaultGuard.Services.Interfaces.IDatabaseResetService>();
                 if (resetService == null)
                 {
                     await ShowErrorDialog("Database reset service is not available.");
@@ -1674,7 +1952,7 @@ public sealed partial class SettingsPage : Page
         {
             try
             {
-                var resetService = _serviceProvider?.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+                var resetService = _serviceProvider?.GetService<VaultGuard.Services.Interfaces.IDatabaseResetService>();
                 if (resetService == null)
                 {
                     await ShowErrorDialog("Database reset service is not available.");
@@ -1683,9 +1961,9 @@ public sealed partial class SettingsPage : Page
 
                 var result = await resetService.ResetDataTablesAsync();
                 if (result.Success)
-                    PasswordManager.WPF.Services.ToastService.Instance.Show("Password data has been reset.", PasswordManager.WPF.Services.ToastType.Success, "Reset Complete");
+                    VaultGuard.WPF.Services.ToastService.Instance.Show("Password data has been reset.", VaultGuard.WPF.Services.ToastType.Success, "Reset Complete");
                 else
-                    PasswordManager.WPF.Services.ToastService.Instance.Show($"Reset failed: {result.Message}", PasswordManager.WPF.Services.ToastType.Error, "Reset Failed");
+                    VaultGuard.WPF.Services.ToastService.Instance.Show($"Reset failed: {result.Message}", VaultGuard.WPF.Services.ToastType.Error, "Reset Failed");
             }
             catch (Exception ex)
             {
@@ -1710,7 +1988,7 @@ public sealed partial class SettingsPage : Page
 
         try
         {
-            var resetService = _serviceProvider?.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+            var resetService = _serviceProvider?.GetService<VaultGuard.Services.Interfaces.IDatabaseResetService>();
             if (resetService == null)
             {
                 await ShowErrorDialog("Database reset service is not available.");
@@ -1719,13 +1997,13 @@ public sealed partial class SettingsPage : Page
 
             var result = await resetService.ClearNonAdminUsersAsync();
             if (result.Success)
-                PasswordManager.WPF.Services.ToastService.Instance.Success(result.Message, "Users deleted");
+                VaultGuard.WPF.Services.ToastService.Instance.Success(result.Message, "Users deleted");
             else
-                PasswordManager.WPF.Services.ToastService.Instance.Warning(result.Message, "Completed with errors");
+                VaultGuard.WPF.Services.ToastService.Instance.Warning(result.Message, "Completed with errors");
         }
         catch (Exception ex)
         {
-            PasswordManager.WPF.Services.ToastService.Instance.Error($"Failed to delete users: {ex.Message}", "Error");
+            VaultGuard.WPF.Services.ToastService.Instance.Error($"Failed to delete users: {ex.Message}", "Error");
         }
     }
 
@@ -1745,7 +2023,7 @@ public sealed partial class SettingsPage : Page
         {
             try
             {
-                var resetService = _serviceProvider?.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+                var resetService = _serviceProvider?.GetService<VaultGuard.Services.Interfaces.IDatabaseResetService>();
                 if (resetService == null)
                 {
                     await ShowErrorDialog("Database reset service is not available.");
@@ -1754,9 +2032,9 @@ public sealed partial class SettingsPage : Page
 
                 var result = await resetService.ResetAllTablesAsync(reseedData: false);
                 if (result.Success)
-                    PasswordManager.WPF.Services.ToastService.Instance.Show("All database tables have been reset.", PasswordManager.WPF.Services.ToastType.Success, "Reset Complete");
+                    VaultGuard.WPF.Services.ToastService.Instance.Show("All database tables have been reset.", VaultGuard.WPF.Services.ToastType.Success, "Reset Complete");
                 else
-                    PasswordManager.WPF.Services.ToastService.Instance.Show($"Reset failed: {result.Message}", PasswordManager.WPF.Services.ToastType.Error, "Reset Failed");
+                    VaultGuard.WPF.Services.ToastService.Instance.Show($"Reset failed: {result.Message}", VaultGuard.WPF.Services.ToastType.Error, "Reset Failed");
 
                 if (result.Success)
                 {
@@ -1774,7 +2052,7 @@ public sealed partial class SettingsPage : Page
     {
         try
         {
-            var resetService = _serviceProvider?.GetService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+            var resetService = _serviceProvider?.GetService<VaultGuard.Services.Interfaces.IDatabaseResetService>();
             if (resetService == null)
             {
                 await ShowErrorDialog("Database reset service is not available.");
@@ -1832,7 +2110,8 @@ public sealed partial class SettingsPage : Page
         try
         {
             var email = _authService?.CurrentUser?.Email;
-            await Helpers.QrSignInDialog.ShowAsync(_serviceProvider, email);
+            var userId = _authService?.CurrentUser?.Id;
+            await Helpers.QrSignInDialog.ShowAsync(_serviceProvider, email, userId);
         }
         catch (Exception ex)
         {
@@ -1935,7 +2214,7 @@ public sealed partial class SettingsPage : Page
                     o.SendDefaultPii = false;
                     o.Environment = "production";
                 });
-                PasswordManager.WPF.Services.ToastService.Instance.Success("Sentry error reporting enabled.", "Saved");
+                VaultGuard.WPF.Services.ToastService.Instance.Success("Sentry error reporting enabled.", "Saved");
             }
             catch (Exception ex)
             {
@@ -1944,22 +2223,23 @@ public sealed partial class SettingsPage : Page
         }
         else
         {
-            PasswordManager.WPF.Services.ToastService.Instance.Info("Sentry DSN cleared. Error reporting disabled.", "Saved");
+            VaultGuard.WPF.Services.ToastService.Instance.Info("Sentry DSN cleared. Error reporting disabled.", "Saved");
         }
     }
 
-    private PasswordManager.WPF.Services.UpdateInfo? _pendingUpdate;
+    private VaultGuard.WPF.Services.UpdateInfo? _pendingUpdate;
     private CancellationTokenSource? _updateCts;
 
     private async void CheckUpdatesButton_Click(object sender, RoutedEventArgs e)
     {
-        var updateService = _serviceProvider?.GetService<PasswordManager.WPF.Services.UpdateService>();
+        var updateService = _serviceProvider?.GetService<VaultGuard.WPF.Services.UpdateService>();
         if (updateService is null) return;
 
         CheckUpdatesButton.IsEnabled = false;
         CheckUpdatesButtonText.Text = "Checking…";
         UpdateStatusPanel.Visibility = System.Windows.Visibility.Visible;
         UpdateProgressBar.Visibility = System.Windows.Visibility.Collapsed;
+        UpdateFeaturesText.Visibility = System.Windows.Visibility.Collapsed;
         DownloadUpdateButton.Visibility = System.Windows.Visibility.Collapsed;
         OpenReleasesButton.Visibility = System.Windows.Visibility.Collapsed;
 
@@ -1967,7 +2247,8 @@ public sealed partial class SettingsPage : Page
         {
             _updateCts?.Cancel();
             _updateCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-            _pendingUpdate = await updateService.CheckForUpdateAsync(_updateCts.Token);
+            // Drive the check from the configured JSON manifest URL (falls back to GitHub releases).
+            _pendingUpdate = await updateService.CheckManifestAsync(_viewModel?.UpdateManifestUrl, _updateCts.Token);
 
             if (_pendingUpdate is null)
             {
@@ -1976,9 +2257,20 @@ public sealed partial class SettingsPage : Page
             }
             else
             {
+                var appName = string.IsNullOrWhiteSpace(_pendingUpdate.AppName) ? "Vault Guard" : _pendingUpdate.AppName;
                 UpdateStatusText.Text =
-                    $"Update available: v{_pendingUpdate.Version}  (you have v{updateService.GetCurrentVersion()})";
+                    $"{appName} v{_pendingUpdate.Version} is available (you have v{updateService.GetCurrentVersion()})"
+                    + (_pendingUpdate.RequiresRestart ? "  ·  a restart is required to apply it." : string.Empty);
                 UpdateStatusPanel.Background = new SolidColorBrush(Color.FromRgb(0x1D, 0x4E, 0xD8));
+
+                // Show the "what's new" feature list from the manifest.
+                if (_pendingUpdate.Features is { Count: > 0 })
+                {
+                    UpdateFeaturesText.Text = "What's new:\n" +
+                        string.Join("\n", _pendingUpdate.Features.Select(f => $"  •  {f}"));
+                    UpdateFeaturesText.Visibility = System.Windows.Visibility.Visible;
+                }
+
                 if (_pendingUpdate.InstallerDownloadUrl is not null)
                     DownloadUpdateButton.Visibility = System.Windows.Visibility.Visible;
                 OpenReleasesButton.Visibility = System.Windows.Visibility.Visible;
@@ -1998,7 +2290,7 @@ public sealed partial class SettingsPage : Page
 
     private async void DownloadUpdateButton_Click(object sender, RoutedEventArgs e)
     {
-        var updateService = _serviceProvider?.GetService<PasswordManager.WPF.Services.UpdateService>();
+        var updateService = _serviceProvider?.GetService<VaultGuard.WPF.Services.UpdateService>();
         if (updateService is null || _pendingUpdate?.InstallerDownloadUrl is null) return;
 
         DownloadUpdateButton.IsEnabled = false;
@@ -2022,9 +2314,33 @@ public sealed partial class SettingsPage : Page
             await updateService.DownloadInstallerAsync(
                 _pendingUpdate.InstallerDownloadUrl, savePath, progress, _updateCts.Token);
 
-            UpdateStatusText.Text = "Download complete. Launching installer…";
-            await Task.Delay(800);
-            updateService.LaunchInstallerAndExit(savePath);
+            UpdateProgressBar.Visibility = System.Windows.Visibility.Collapsed;
+
+            // Visual-Studio-style: prompt the user to restart to apply the update.
+            var restartDialog = new ModernWpf.Controls.ContentDialog
+            {
+                Title = "Update ready to install",
+                Content = _pendingUpdate.RequiresRestart
+                    ? $"Vault Guard {_pendingUpdate.Version} has been downloaded. The app needs to restart to finish installing. Restart now?"
+                    : $"Vault Guard {_pendingUpdate.Version} has been downloaded. Install it now?",
+                PrimaryButtonText = "Restart & Install",
+                CloseButtonText = "Later",
+                DefaultButton = ModernWpf.Controls.ContentDialogButton.Primary
+            };
+            restartDialog.Style = restartDialog.TryFindResource("Modern1PasswordDialogStyle") as Style;
+
+            if (await Helpers.DialogManager.ShowAsync(restartDialog) == ModernWpf.Controls.ContentDialogResult.Primary)
+            {
+                UpdateStatusText.Text = "Launching installer…";
+                await Task.Delay(400);
+                updateService.LaunchInstallerAndExit(savePath);
+            }
+            else
+            {
+                UpdateStatusText.Text = "Update downloaded. It will install when you restart Vault Guard.";
+                DownloadUpdateButton.IsEnabled = true;
+                CheckUpdatesButton.IsEnabled = true;
+            }
         }
         catch (Exception ex)
         {
@@ -2037,7 +2353,7 @@ public sealed partial class SettingsPage : Page
 
     private void OpenReleasesButton_Click(object sender, RoutedEventArgs e)
     {
-        var updateService = _serviceProvider?.GetService<PasswordManager.WPF.Services.UpdateService>();
+        var updateService = _serviceProvider?.GetService<VaultGuard.WPF.Services.UpdateService>();
         updateService?.OpenReleasesPage();
     }
 
@@ -2056,14 +2372,14 @@ public sealed partial class SettingsPage : Page
 
     // ── Toast notification appearance ────────────────────────────────────────────
 
-    private readonly Dictionary<PasswordManager.WPF.Services.ToastType, Border> _toastChips = new();
+    private readonly Dictionary<VaultGuard.WPF.Services.ToastType, Border> _toastChips = new();
 
-    private static readonly (PasswordManager.WPF.Services.ToastType Type, string Label)[] ToastRowDefs =
+    private static readonly (VaultGuard.WPF.Services.ToastType Type, string Label)[] ToastRowDefs =
     {
-        (PasswordManager.WPF.Services.ToastType.Success, "Success"),
-        (PasswordManager.WPF.Services.ToastType.Error,   "Error"),
-        (PasswordManager.WPF.Services.ToastType.Warning, "Warning"),
-        (PasswordManager.WPF.Services.ToastType.Info,    "Info"),
+        (VaultGuard.WPF.Services.ToastType.Success, "Success"),
+        (VaultGuard.WPF.Services.ToastType.Error,   "Error"),
+        (VaultGuard.WPF.Services.ToastType.Warning, "Warning"),
+        (VaultGuard.WPF.Services.ToastType.Info,    "Info"),
     };
 
     private void BuildToastRows()
@@ -2126,10 +2442,10 @@ public sealed partial class SettingsPage : Page
         }
     }
 
-    private void RefreshToastChip(PasswordManager.WPF.Services.ToastType type)
+    private void RefreshToastChip(VaultGuard.WPF.Services.ToastType type)
     {
         if (!_toastChips.TryGetValue(type, out var chip)) return;
-        var theme = PasswordManager.WPF.Services.ToastSettings.For(type);
+        var theme = VaultGuard.WPF.Services.ToastSettings.For(type);
 
         Brush Safe(string hex)
         {
@@ -2169,9 +2485,9 @@ public sealed partial class SettingsPage : Page
 
     private void CustomizeToast_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button btn || btn.Tag is not PasswordManager.WPF.Services.ToastType type) return;
-        var theme = PasswordManager.WPF.Services.ToastSettings.For(type);
-        var dialog = new PasswordManager.WPF.Dialogs.ToastColorPickerDialog($"Customize \"{type}\" toast", theme)
+        if (sender is not Button btn || btn.Tag is not VaultGuard.WPF.Services.ToastType type) return;
+        var theme = VaultGuard.WPF.Services.ToastSettings.For(type);
+        var dialog = new VaultGuard.WPF.Dialogs.ToastColorPickerDialog($"Customize \"{type}\" toast", theme)
         {
             Owner = Window.GetWindow(this)
         };
@@ -2184,24 +2500,24 @@ public sealed partial class SettingsPage : Page
 
     private void TestToast_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button btn || btn.Tag is not PasswordManager.WPF.Services.ToastType type) return;
-        PasswordManager.WPF.Services.ToastService.Instance.Show(
+        if (sender is not Button btn || btn.Tag is not VaultGuard.WPF.Services.ToastType type) return;
+        VaultGuard.WPF.Services.ToastService.Instance.Show(
             "This is a sample notification.", type, $"{type} preview");
     }
 
     private void SaveToastColors_Click(object sender, RoutedEventArgs e)
     {
-        PasswordManager.WPF.Services.ToastSettings.Save();
-        PasswordManager.WPF.Services.ToastService.Instance.Success(
+        VaultGuard.WPF.Services.ToastSettings.Save();
+        VaultGuard.WPF.Services.ToastService.Instance.Success(
             "Toast notification colours saved.", "Saved");
     }
 
     private void ResetToastColors_Click(object sender, RoutedEventArgs e)
     {
-        PasswordManager.WPF.Services.ToastSettings.ResetToDefaults();
-        PasswordManager.WPF.Services.ToastSettings.Save();
+        VaultGuard.WPF.Services.ToastSettings.ResetToDefaults();
+        VaultGuard.WPF.Services.ToastSettings.Save();
         foreach (var (type, _) in ToastRowDefs) RefreshToastChip(type);
-        PasswordManager.WPF.Services.ToastService.Instance.Info(
+        VaultGuard.WPF.Services.ToastService.Instance.Info(
             "Toast colours reset to defaults.", "Reset");
     }
 }

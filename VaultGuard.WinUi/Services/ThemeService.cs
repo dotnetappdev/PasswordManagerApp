@@ -5,7 +5,7 @@ using WinRT.Interop;
 using System;
 using Microsoft.UI.Xaml.Controls;
 
-namespace PasswordManager.WinUi.Services
+namespace VaultGuard.WinUi.Services
 {
     public enum AppTheme
     {

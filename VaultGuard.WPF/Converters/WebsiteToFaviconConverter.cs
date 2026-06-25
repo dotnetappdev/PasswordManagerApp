@@ -1,12 +1,12 @@
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
-using PasswordManager.Services.Utilities;
+using VaultGuard.Services.Utilities;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Globalization;
 
-namespace PasswordManager.WPF.Converters;
+namespace VaultGuard.WPF.Converters;
 
 public class WebsiteToFaviconConverter : IValueConverter
 {

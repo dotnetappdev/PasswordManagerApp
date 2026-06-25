@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using PasswordManager.API.Controllers;
+using VaultGuard.API.Controllers;
 
-namespace PasswordManager.BackEnd.Tests.Controllers;
+namespace VaultGuard.BackEnd.Tests.Controllers;
 
 [TestFixture]
 public class PasswordItemsControllerTests

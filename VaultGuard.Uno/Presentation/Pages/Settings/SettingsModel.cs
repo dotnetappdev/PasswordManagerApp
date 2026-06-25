@@ -1,11 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using PasswordManager.Uno.Services.Theme;
-using PasswordManager.Uno.Services.Backup;
-using PasswordManager.Uno.Services.Biometric;
-using PasswordManager.Uno.Services.AutoFill;
+using VaultGuard.Uno.Services.Theme;
+using VaultGuard.Uno.Services.Backup;
+using VaultGuard.Uno.Services.Biometric;
+using VaultGuard.Uno.Services.AutoFill;
 
-namespace PasswordManager.Mobile.Presentation.Pages.Settings;
+namespace VaultGuard.Mobile.Presentation.Pages.Settings;
 
 public partial class SettingsModel : ObservableObject
 {
@@ -245,7 +245,7 @@ public partial class SettingsModel : ObservableObject
             var enabled = await _autoFillService.RequestEnableAutoFillAsync();
             if (enabled)
             {
-                StatusMessage = "Please enable Password Manager in system settings";
+                StatusMessage = "Please enable Vault Guard in system settings";
                 // Recheck status after a delay
                 await Task.Delay(2000);
                 AutoFillEnabled = await _autoFillService.IsAutoFillEnabledAsync();

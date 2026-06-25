@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.Models.DTOs;
+namespace VaultGuard.Models.DTOs;
 
 /// <summary>
 /// DTO for SMS settings API operations
@@ -52,7 +52,7 @@ public class SmsSettingsDto
     /// <summary>
     /// SMS message template
     /// </summary>
-    public string MessageTemplate { get; set; } = "Your Password Manager verification code is: {code}. This code will expire in {expiration} minutes.";
+    public string MessageTemplate { get; set; } = "Your Vault Guard verification code is: {code}. This code will expire in {expiration} minutes.";
 
     /// <summary>
     /// Whether this is the active SMS configuration
@@ -111,7 +111,7 @@ public class CreateUpdateSmsSettingsDto
     /// <summary>
     /// SMS message template
     /// </summary>
-    public string MessageTemplate { get; set; } = "Your Password Manager verification code is: {code}. This code will expire in {expiration} minutes.";
+    public string MessageTemplate { get; set; } = "Your Vault Guard verification code is: {code}. This code will expire in {expiration} minutes.";
 
     /// <summary>
     /// Provider-specific settings
@@ -150,7 +150,7 @@ public class AwsSnsSettingsDto
     [Required]
     public string Region { get; set; } = "us-east-1";
 
-    public string SenderName { get; set; } = "Password Manager";
+    public string SenderName { get; set; } = "Vault Guard";
 }
 
 /// <summary>
@@ -174,5 +174,5 @@ public class TestSmsSettingsDto
     [Phone]
     public string PhoneNumber { get; set; } = string.Empty;
 
-    public string? TestMessage { get; set; } = "Test message from Password Manager SMS configuration.";
+    public string? TestMessage { get; set; } = "Test message from Vault Guard SMS configuration.";
 }

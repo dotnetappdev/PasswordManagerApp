@@ -1,6 +1,6 @@
 # WinUI Interface Screenshots
 
-This document contains screenshots of the Password Manager WinUI application interface, showcasing the native Windows application experience.
+This document contains screenshots of the Vault Guard WinUI application interface, showcasing the native Windows application experience.
 
 Documentation screenshots must show the full application frame (title bar, menus/toolbar, sidebar, and active content area) rather than isolated form crops.
 
@@ -238,7 +238,7 @@ The WinUI application provides a modern, native Windows interface for password m
 - Limited visual organization
 - Standard form layouts
 
-**After**: Professional Password Manager UX
+**After**: Professional Vault Guard UX
 - Three-column responsive layout
 - Real-time search and filtering
 - Context menus for quick actions
@@ -317,7 +317,7 @@ When running the WinUI application on Windows, follow these steps to update the 
 
 1. **Build and run the application:**
    ```bash
-   cd PasswordManager.WinUi
+   cd VaultGuard.WinUi
    dotnet run
    ```
 
@@ -394,7 +394,7 @@ When running the WinUI application on Windows, follow these steps to update the 
 
 ## Related Documentation
 
-- [WinUI Project README](PasswordManager.WinUi/README.md) - Technical implementation details
+- [WinUI Project README](VaultGuard.WinUi/README.md) - Technical implementation details
 - [Main README](README.md) - Overall project documentation
 - [User Guide](USER_GUIDE.md) - End-user documentation
 - [Development Guide](DEVELOPMENT.md) - Developer setup and contribution guide

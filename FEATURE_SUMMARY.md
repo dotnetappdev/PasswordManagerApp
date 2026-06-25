@@ -2,7 +2,7 @@
 
 ## What Was Implemented
 
-This PR adds comprehensive device management, enhanced QR code authentication, audit logging, and Sentry.io error tracking to the Password Manager application.
+This PR adds comprehensive device management, enhanced QR code authentication, audit logging, and Sentry.io error tracking to the Vault Guard application.
 
 ## 🚀 New Features
 
@@ -143,8 +143,8 @@ This PR adds comprehensive device management, enhanced QR code authentication, a
 
 ### Migration
 ```bash
-dotnet ef migrations add AddDeviceAndAuditLog --context PasswordManagerDbContext
-dotnet ef database update --context PasswordManagerDbContext
+dotnet ef migrations add AddDeviceAndAuditLog --context VaultGuardDbContext
+dotnet ef database update --context VaultGuardDbContext
 ```
 
 ## 🛠️ Technical Implementation
@@ -173,7 +173,7 @@ dotnet ef database update --context PasswordManagerDbContext
 ### Updated Configuration
 - `Program.cs` - Added Sentry initialization
 - `appsettings.json` - Added Sentry configuration
-- `PasswordManagerDbContext.cs` - Added Device and AuditLog DbSets
+- `VaultGuardDbContext.cs` - Added Device and AuditLog DbSets
 - `ApplicationUser.cs` - Added Devices and AuditLogs navigation properties
 
 ## 📚 Documentation
@@ -254,7 +254,7 @@ dotnet ef database update --context PasswordManagerDbContext
 
 ## 📱 Next Steps for UI Implementation
 
-### Uno Mobile App (PasswordManager.App)
+### Uno Mobile App (VaultGuard.App)
 1. **Device Management Page:**
    - List linked devices
    - View device details
@@ -271,7 +271,7 @@ dotnet ef database update --context PasswordManagerDbContext
    - Filter by action/date
    - Device-specific history
 
-### Blazor Web App (PasswordManager.Web)
+### Blazor Web App (VaultGuard.Web)
 1. **Settings Page:**
    - Device management section
    - Linked devices list
@@ -325,7 +325,7 @@ dotnet ef database update --context PasswordManagerDbContext
 ### Build Issues
 ```bash
 # Restore packages
-cd PasswordManager.API
+cd VaultGuard.API
 dotnet restore
 
 # Build
@@ -335,7 +335,7 @@ dotnet build
 ### Migration Issues
 ```bash
 # Apply migration
-dotnet ef database update --context PasswordManagerDbContext
+dotnet ef database update --context VaultGuardDbContext
 
 # Verify migration
 dotnet ef migrations list

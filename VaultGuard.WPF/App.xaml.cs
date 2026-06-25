@@ -4,15 +4,15 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
-using PasswordManager.Models.Configuration;
-using PasswordManager.WPF.Services;
-using PasswordManager.WPF.Helpers;
+using VaultGuard.Models.Configuration;
+using VaultGuard.WPF.Services;
+using VaultGuard.WPF.Helpers;
 using Sentry;
 
-namespace PasswordManager.WPF;
+namespace VaultGuard.WPF;
 
 /// <summary>
 /// Provides application-specific behavior to supplement the default Application class.
@@ -146,12 +146,12 @@ public partial class App : Application
         try
         {
             var configuration = _host.Services.GetRequiredService<IConfiguration>();
-            var sentryConfig = configuration.GetSection("Sentry").Get<SentryConfiguration>() ?? new PasswordManager.Models.Configuration.SentryConfiguration();
+            var sentryConfig = configuration.GetSection("Sentry").Get<SentryConfiguration>() ?? new VaultGuard.Models.Configuration.SentryConfiguration();
 
             // Local settings.json can override the DSN (configurable from the About tab in Settings).
             var localSettingsPath = System.IO.Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "PasswordManager", "settings.json");
+                "VaultGuard", "settings.json");
             if (System.IO.File.Exists(localSettingsPath))
             {
                 try
@@ -196,7 +196,7 @@ public partial class App : Application
         _ = LoadSavedTheme();
 
         // Load persisted toast accent colours so they're applied before any toast is shown.
-        PasswordManager.WPF.Services.ToastSettings.Load();
+        VaultGuard.WPF.Services.ToastSettings.Load();
 
         InitTrayIcon();
         m_window.Show();
@@ -364,7 +364,7 @@ public partial class App : Application
     {
         _trayIcon = new System.Windows.Forms.NotifyIcon
         {
-            Text    = "VaultGuard Password Manager",
+            Text    = "VaultGuard Vault Guard",
             Visible = true,
             Icon    = System.Drawing.SystemIcons.Shield
         };

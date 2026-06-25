@@ -1,6 +1,6 @@
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Default implementation of platform service for non-MAUI environments
@@ -22,7 +22,7 @@ public class DefaultPlatformService : IPlatformService
     {
         return Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "PasswordManager");
+            "VaultGuard");
     }
 
     public string GetDocumentsDirectory()

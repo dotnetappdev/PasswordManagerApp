@@ -1,8 +1,8 @@
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Auth;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Auth;
 using System.Text.Json;
 
-namespace PasswordManager.Tests.QrLogin;
+namespace VaultGuard.Tests.QrLogin;
 
 /// <summary>
 /// Tests for mobile authentication flow and security validation

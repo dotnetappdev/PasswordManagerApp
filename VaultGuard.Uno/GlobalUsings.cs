@@ -23,9 +23,9 @@ global using Microsoft.UI.Xaml.Media;
 global using Microsoft.UI.Xaml.Navigation;
 global using Microsoft.UI.Xaml.Shapes;
 
-global using PasswordManager.Mobile.Models;
-global using PasswordManager.Mobile.Presentation;
-global using PasswordManager.Mobile.Services.Endpoints;
+global using VaultGuard.Mobile.Models;
+global using VaultGuard.Mobile.Presentation;
+global using VaultGuard.Mobile.Services.Endpoints;
 
 global using Uno.Extensions;
 global using Uno.Extensions.Navigation;

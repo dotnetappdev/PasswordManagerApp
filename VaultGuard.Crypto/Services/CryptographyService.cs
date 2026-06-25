@@ -1,8 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
-using PasswordManager.Crypto.Interfaces;
+using VaultGuard.Crypto.Interfaces;
 
-namespace PasswordManager.Crypto.Services;
+namespace VaultGuard.Crypto.Services;
 
 /// <summary>
 /// Implementation of cryptographic operations using PBKDF2 and AES-256-GCM

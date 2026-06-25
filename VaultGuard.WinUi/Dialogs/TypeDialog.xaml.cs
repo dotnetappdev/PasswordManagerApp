@@ -5,7 +5,7 @@ using Microsoft.UI.Xaml.Shapes;
 using System;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WinUi.Dialogs;
+namespace VaultGuard.WinUi.Dialogs;
 
 public sealed partial class TypeDialog : ContentDialog
 {

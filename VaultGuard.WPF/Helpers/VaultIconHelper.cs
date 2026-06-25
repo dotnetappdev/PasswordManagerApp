@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace PasswordManager.WPF.Helpers;
+namespace VaultGuard.WPF.Helpers;
 
 /// <summary>
 /// Vault icons are stored as emoji so they render identically on Web (Blazor) and mobile (MAUI),

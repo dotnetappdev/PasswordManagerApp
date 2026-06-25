@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Configuration;
 using FileHelpers;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManagerImports.Bitwarden;
+namespace VaultGuardImports.Bitwarden;
 
 /// <summary>
 /// Bitwarden CSV import plugin
@@ -26,7 +26,7 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
             DisplayName = "Bitwarden",
             Description = "Import passwords from Bitwarden CSV export files",
             Version = "1.0.0",
-            Author = "PasswordManager Team",
+            Author = "VaultGuard Team",
             Website = "https://bitwarden.com",
             Created = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,

@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace PasswordManager.Mobile.Presentation.Pages.Vaults;
+namespace VaultGuard.Mobile.Presentation.Pages.Vaults;
 
 public partial class VaultsModel : ObservableObject
 {

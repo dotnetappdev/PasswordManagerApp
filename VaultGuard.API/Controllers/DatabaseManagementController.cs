@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.API.Controllers;
+namespace VaultGuard.API.Controllers;
 
 /// <summary>
 /// Controller for database management operations including reset and wipe

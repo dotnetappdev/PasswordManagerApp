@@ -1,7 +1,7 @@
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Device;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Device;
 
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 public interface IDeviceService
 {

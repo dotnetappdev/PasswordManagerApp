@@ -1,4 +1,4 @@
-namespace PasswordManager.Services.DTOs
+namespace VaultGuard.Services.DTOs
 {
     /// <summary>
     /// Status of database migrations

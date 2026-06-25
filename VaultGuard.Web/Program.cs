@@ -1,20 +1,21 @@
-using PasswordManager.Web.Components;
-using PasswordManager.Web.Middleware;
+using VaultGuard.Web.Components;
+using VaultGuard.Web.Middleware;
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL;
-using PasswordManager.DAL.SqlServer;
-using PasswordManager.DAL.MySql;
-using PasswordManager.DAL.SupaBase;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Services.Services;
-using PasswordManager.Services; // Add this line for the service classes
-using PasswordManager.Crypto.Extensions;
+using VaultGuard.DAL;
+using VaultGuard.DAL.SqlServer;
+using VaultGuard.DAL.MySql;
+using VaultGuard.DAL.SupaBase;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Services.Services;
+using VaultGuard.Services; // Add this line for the service classes
+using VaultGuard.Crypto.Extensions;
 using MudBlazor.Services;
 using Microsoft.AspNetCore.Identity;
-using PasswordManager.Models;
-using PasswordManager.Models.Configuration;
+using VaultGuard.Models;
+using VaultGuard.Models.Configuration;
 using Pomelo.EntityFrameworkCore.MySql;
-using PasswordManager.DAL.Interfaces;
+using VaultGuard.DAL.Interfaces;
+using VaultGuard.ExceptionReporting.Sentry;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +38,9 @@ if (sentryConfig?.IsConfigured == true)
 builder.Services.Configure<SentryConfiguration>(
     builder.Configuration.GetSection("Sentry"));
 
+// Exception reporting (Sentry-backed, swappable via IExceptionReporter)
+builder.Services.AddSentryExceptionReporting(builder.Configuration["ExceptionReporting:SentryDsn"], "Web");
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -55,7 +59,7 @@ builder.Services.AddMudServices(config =>
 });
 
 // Register AppNotificationService (thin toast wrapper)
-builder.Services.AddScoped<PasswordManager.Web.Services.AppNotificationService>();
+builder.Services.AddScoped<VaultGuard.Web.Services.AppNotificationService>();
 
 // Configure MudBlazor theme — steel blue, matches WPF brand
 builder.Services.AddScoped(sp => new MudBlazor.MudTheme()
@@ -87,7 +91,7 @@ builder.Services.AddScoped(sp => new MudBlazor.MudTheme()
 });
 
 // Add theme service for light/dark mode support
-builder.Services.AddScoped<PasswordManager.Components.Shared.Services.ThemeService>();
+builder.Services.AddScoped<VaultGuard.Components.Shared.Services.ThemeService>();
 
 // Configure Entity Framework based on database provider
 var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
@@ -102,9 +106,9 @@ if (databaseProvider.ToLower() == "supabase")
     if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseApiKey))
         throw new InvalidOperationException("Supabase configuration missing in appsettings.json");
 
-    builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+    builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
         options.UseNpgsql(supabaseUrl));
-    builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+    builder.Services.AddDbContext<VaultGuardDbContext>(options =>
         options.UseNpgsql(supabaseUrl));
 }
 else
@@ -121,30 +125,30 @@ else
 
     if (databaseProvider.ToLower() == "mysql")
     {
-        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+        builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
-        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        builder.Services.AddDbContext<VaultGuardDbContext>(options =>
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
     }
     else if (databaseProvider.ToLower() == "sqlite")
     {
-        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+        builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
             options.UseSqlite(connectionString));
-        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        builder.Services.AddDbContext<VaultGuardDbContext>(options =>
             options.UseSqlite(connectionString));
     }
     else
     {
-        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+        builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
             options.UseSqlServer(connectionString));
-        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        builder.Services.AddDbContext<VaultGuardDbContext>(options =>
             options.UseSqlServer(connectionString));
     }
 }
 
 // Register DbContext interfaces for DI
-builder.Services.AddScoped<IPasswordManagerDbContext>(sp => sp.GetRequiredService<PasswordManagerDbContext>());
-builder.Services.AddScoped<IPasswordManagerDbContextApp>(sp => sp.GetRequiredService<PasswordManagerDbContextApp>());
+builder.Services.AddScoped<IVaultGuardDbContext>(sp => sp.GetRequiredService<VaultGuardDbContext>());
+builder.Services.AddScoped<IVaultGuardDbContextApp>(sp => sp.GetRequiredService<VaultGuardDbContextApp>());
 
 // Add Identity services with roles
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -156,53 +160,54 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     options.Password.RequireUppercase = true;
     options.Password.RequireLowercase = true;
 })
-.AddEntityFrameworkStores<PasswordManagerDbContextApp>()
+.AddEntityFrameworkStores<VaultGuardDbContextApp>()
 .AddDefaultTokenProviders();
 
 // Register application services
-builder.Services.AddScoped<IPasswordItemService, PasswordManager.Services.PasswordItemService>();
-builder.Services.AddScoped<ITagService, PasswordManager.Services.TagService>();
-builder.Services.AddScoped<ICategoryInterface, PasswordManager.Services.Services.CategoryService>();
+builder.Services.AddScoped<IPasswordItemService, VaultGuard.Services.PasswordItemService>();
+builder.Services.AddScoped<ITagService, VaultGuard.Services.TagService>();
+builder.Services.AddScoped<ICategoryInterface, VaultGuard.Services.Services.CategoryService>();
 
 // Shared, stateless feature services (strength meter + TOTP authenticator codes + QR)
-builder.Services.AddSingleton<IPasswordStrengthService, PasswordManager.Services.Services.PasswordStrengthService>();
-builder.Services.AddSingleton<ITotpService, PasswordManager.Services.Services.TotpService>();
-builder.Services.AddSingleton<IQrCodeService, PasswordManager.Services.Services.QrCodeService>();
-builder.Services.AddSingleton<ISecurityAuditService, PasswordManager.Services.Services.SecurityAuditService>();
-builder.Services.AddSingleton<IPassphraseGenerator, PasswordManager.Services.Services.PassphraseGenerator>();
-builder.Services.AddScoped<ICollectionService, PasswordManager.Services.Services.CollectionService>();
-builder.Services.AddScoped<IAuthService, PasswordManager.Services.Services.AuthService>();
-builder.Services.AddScoped<IUserProfileService, PasswordManager.Services.Services.UserProfileService>();
-builder.Services.AddScoped<IApiKeyService, PasswordManager.Services.Services.ApiKeyService>();
-builder.Services.AddScoped<IVaultSessionService, PasswordManager.Services.Services.VaultSessionService>();
-builder.Services.AddScoped<IQrLoginService, PasswordManager.Services.Services.QrLoginService>();
-builder.Services.AddScoped<IDatabaseContextFactory, PasswordManager.Services.Services.DatabaseContextFactory>();
-builder.Services.AddScoped<IDatabaseConfigurationService, PasswordManager.Services.Services.DatabaseConfigurationService>();
-builder.Services.AddScoped<IPlatformService, PasswordManager.Services.Services.DefaultPlatformService>();
-builder.Services.AddScoped<IPasswordEncryptionService, PasswordManager.Services.Services.PasswordEncryptionService>();
-builder.Services.AddScoped<IPasskeyService, PasswordManager.Services.Services.PasskeyService>();
-builder.Services.AddScoped<IDatabaseMigrationService, PasswordManager.Services.Services.DatabaseMigrationService>();
-builder.Services.AddScoped<IDatabaseHealthService, PasswordManager.Services.Services.DatabaseHealthService>();
-builder.Services.AddScoped<IDatabaseResetService, PasswordManager.Services.Services.DatabaseResetService>();
-builder.Services.AddScoped<IPermissionService, PasswordManager.Services.Services.PermissionService>();
-builder.Services.AddScoped<IVaultService, PasswordManager.Services.Services.VaultService>();
-builder.Services.AddScoped<IAuditLogService, PasswordManager.Services.Services.AuditLogService>();
-builder.Services.AddScoped<ITwoFactorService, PasswordManager.Services.Services.TwoFactorService>();
-builder.Services.AddScoped<IDeviceService, PasswordManager.Services.Services.DeviceService>();
+builder.Services.AddSingleton<IPasswordStrengthService, VaultGuard.Services.Services.PasswordStrengthService>();
+builder.Services.AddSingleton<ITotpService, VaultGuard.Services.Services.TotpService>();
+builder.Services.AddSingleton<IQrCodeService, VaultGuard.Services.Services.QrCodeService>();
+builder.Services.AddSingleton<ISecurityAuditService, VaultGuard.Services.Services.SecurityAuditService>();
+builder.Services.AddSingleton<IPassphraseGenerator, VaultGuard.Services.Services.PassphraseGenerator>();
+builder.Services.AddScoped<ICollectionService, VaultGuard.Services.Services.CollectionService>();
+builder.Services.AddScoped<IAuthService, VaultGuard.Services.Services.AuthService>();
+builder.Services.AddScoped<IUserProfileService, VaultGuard.Services.Services.UserProfileService>();
+builder.Services.AddScoped<IApiKeyService, VaultGuard.Services.Services.ApiKeyService>();
+builder.Services.AddScoped<IVaultSessionService, VaultGuard.Services.Services.VaultSessionService>();
+builder.Services.AddScoped<IQrLoginService, VaultGuard.Services.Services.QrLoginService>();
+builder.Services.AddScoped<IDatabaseContextFactory, VaultGuard.Services.Services.DatabaseContextFactory>();
+builder.Services.AddScoped<IDatabaseConfigurationService, VaultGuard.Services.Services.DatabaseConfigurationService>();
+builder.Services.AddScoped<IPlatformService, VaultGuard.Services.Services.DefaultPlatformService>();
+builder.Services.AddScoped<IPasswordEncryptionService, VaultGuard.Services.Services.PasswordEncryptionService>();
+builder.Services.AddScoped<IPasskeyService, VaultGuard.Services.Services.PasskeyService>();
+builder.Services.AddScoped<IDatabaseMigrationService, VaultGuard.Services.Services.DatabaseMigrationService>();
+builder.Services.AddScoped<IDatabaseHealthService, VaultGuard.Services.Services.DatabaseHealthService>();
+builder.Services.AddScoped<IDatabaseResetService, VaultGuard.Services.Services.DatabaseResetService>();
+builder.Services.AddScoped<IPermissionService, VaultGuard.Services.Services.PermissionService>();
+builder.Services.AddScoped<IVaultService, VaultGuard.Services.Services.VaultService>();
+builder.Services.AddScoped<IAuditLogService, VaultGuard.Services.Services.AuditLogService>();
+builder.Services.AddScoped<ITwoFactorService, VaultGuard.Services.Services.TwoFactorService>();
+builder.Services.AddScoped<IDeviceService, VaultGuard.Services.Services.DeviceService>();
 
 // Cloud backup services
-builder.Services.AddScoped<PasswordManager.Services.Interfaces.IBackupEncryptionService, PasswordManager.Services.Services.BackupEncryptionService>();
-builder.Services.AddScoped<PasswordManager.Services.Interfaces.IDatabaseBackupService, PasswordManager.Services.Services.DatabaseBackupService>();
-builder.Services.AddScoped<PasswordManager.Services.Interfaces.IOneDriveBackupService, PasswordManager.Services.Services.OneDriveBackupService>();
-builder.Services.AddScoped<PasswordManager.Services.Interfaces.IiCloudBackupService, PasswordManager.Services.Services.iCloudBackupService>();
-builder.Services.AddScoped<PasswordManager.Services.Interfaces.INetworkLocationBackupService, PasswordManager.Services.Services.NetworkLocationBackupService>();
-builder.Services.AddSingleton<PasswordManager.Services.Interfaces.IGoogleDriveBackupService, PasswordManager.Services.Services.GoogleDriveBackupService>();
-builder.Services.AddScoped<PasswordManager.Services.Interfaces.IBackupSettingsService, PasswordManager.Services.Services.BackupSettingsService>();
-builder.Services.AddScoped<PasswordManager.Services.Services.CloudBackupManager>();
+builder.Services.AddScoped<VaultGuard.Services.Interfaces.IBackupEncryptionService, VaultGuard.Services.Services.BackupEncryptionService>();
+builder.Services.AddScoped<VaultGuard.Services.Interfaces.IDatabaseBackupService, VaultGuard.Services.Services.DatabaseBackupService>();
+builder.Services.AddScoped<VaultGuard.Services.Interfaces.IOneDriveBackupService, VaultGuard.Services.Services.OneDriveBackupService>();
+builder.Services.AddScoped<VaultGuard.Services.Interfaces.IiCloudBackupService, VaultGuard.Services.Services.iCloudBackupService>();
+builder.Services.AddScoped<VaultGuard.Services.Interfaces.INetworkLocationBackupService, VaultGuard.Services.Services.NetworkLocationBackupService>();
+builder.Services.AddSingleton<VaultGuard.Services.Interfaces.IGoogleDriveBackupService, VaultGuard.Services.Services.GoogleDriveBackupService>();
+builder.Services.AddSingleton<VaultGuard.Services.Interfaces.IFtpBackupService, VaultGuard.Services.Services.FtpBackupService>();
+builder.Services.AddScoped<VaultGuard.Services.Interfaces.IBackupSettingsService, VaultGuard.Services.Services.BackupSettingsService>();
+builder.Services.AddScoped<VaultGuard.Services.Services.CloudBackupManager>();
 
 // Register password import services (1Password 1pux/CSV, Bitwarden, etc.)
-builder.Services.AddSingleton<PasswordManager.Imports.Services.PluginDiscoveryService>();
-builder.Services.AddScoped<PasswordManager.Imports.Interfaces.IImportService, PasswordManager.Imports.Services.ImportService>();
+builder.Services.AddSingleton<VaultGuard.Imports.Services.PluginDiscoveryService>();
+builder.Services.AddScoped<VaultGuard.Imports.Interfaces.IImportService, VaultGuard.Imports.Services.ImportService>();
 
 // Register crypto services
 builder.Services.AddCryptographyServices();
@@ -213,7 +218,7 @@ builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
     var config = new Fido2NetLib.Fido2Configuration
     {
         ServerDomain = "localhost", // Update this for production
-        ServerName = "PasswordManager",
+        ServerName = "VaultGuard",
         Origins = new HashSet<string> { "https://localhost", "http://localhost" },
         TimestampDriftTolerance = 300000
     };
@@ -221,13 +226,13 @@ builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
 });
 
 // Register Identity data seeder
-builder.Services.AddScoped<PasswordManager.DAL.Seed.IdentityDataSeeder>();
+builder.Services.AddScoped<VaultGuard.DAL.Seed.IdentityDataSeeder>();
 
 // Add HttpClient for API calls
 builder.Services.AddHttpClient();
 
 // Add HttpClient for API communication with Bearer token support
-builder.Services.AddHttpClient("PasswordManagerAPI", client =>
+builder.Services.AddHttpClient("VaultGuardAPI", client =>
 {
     var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7001";
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -235,7 +240,7 @@ builder.Services.AddHttpClient("PasswordManagerAPI", client =>
 });
 
 // Add API service for external API communication if needed
-builder.Services.AddScoped<IAppSyncService, PasswordManager.Services.Services.AppSyncService>();
+builder.Services.AddScoped<IAppSyncService, VaultGuard.Services.Services.AppSyncService>();
 
 var app = builder.Build();
 
@@ -269,9 +274,9 @@ using (var scope = app.Services.CreateScope())
         // Use EnsureCreated to set up schema from current model (works without pending migrations)
         try
         {
-            var dbContextApp = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
+            var dbContextApp = scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>();
             await dbContextApp.Database.EnsureCreatedAsync();
-            Console.WriteLine("✅ PasswordManagerDbContextApp schema ensured");
+            Console.WriteLine("✅ VaultGuardDbContextApp schema ensured");
         }
         catch (Exception ensureEx)
         {
@@ -280,9 +285,9 @@ using (var scope = app.Services.CreateScope())
 
         try
         {
-            var dbContextMain = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+            var dbContextMain = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
             await dbContextMain.Database.EnsureCreatedAsync();
-            Console.WriteLine("✅ PasswordManagerDbContext schema ensured");
+            Console.WriteLine("✅ VaultGuardDbContext schema ensured");
         }
         catch (Exception ensureEx)
         {
@@ -307,7 +312,7 @@ using (var scope = app.Services.CreateScope())
         // Seed Identity data (roles and default users)
         try
         {
-            var identitySeeder = scope.ServiceProvider.GetRequiredService<PasswordManager.DAL.Seed.IdentityDataSeeder>();
+            var identitySeeder = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.Seed.IdentityDataSeeder>();
             await identitySeeder.SeedAsync();
             Console.WriteLine("✅ Identity data seeded successfully");
         }
@@ -318,7 +323,7 @@ using (var scope = app.Services.CreateScope())
 
         try
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
             if (!await dbContext.PasswordItems.AnyAsync())
             {
                 var seedUserId =
@@ -327,9 +332,9 @@ using (var scope = app.Services.CreateScope())
                         .Select(u => u.Id)
                         .FirstOrDefaultAsync()
                     ?? await dbContext.Users.Select(u => u.Id).FirstOrDefaultAsync()
-                    ?? PasswordManager.DAL.Seed.TestDataSeeder.TestUserId;
+                    ?? VaultGuard.DAL.Seed.TestDataSeeder.TestUserId;
 
-                PasswordManager.DAL.Seed.TestDataSeeder.SeedTestData(dbContext, seedUserId);
+                VaultGuard.DAL.Seed.TestDataSeeder.SeedTestData(dbContext, seedUserId);
                 Console.WriteLine("✅ Demo password data seeded successfully");
             }
         }

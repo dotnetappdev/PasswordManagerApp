@@ -1,4 +1,4 @@
-namespace PasswordManager.Models.DTOs;
+namespace VaultGuard.Models.DTOs;
 
 public class TagDto
 {

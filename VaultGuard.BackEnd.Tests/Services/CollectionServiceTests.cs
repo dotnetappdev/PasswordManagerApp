@@ -1,28 +1,28 @@
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Services.Services;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Services.Services;
 
-namespace PasswordManager.BackEnd.Tests.Services;
+namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
 public class CollectionServiceTests
 {
-    private DbContextOptions<PasswordManagerDbContext> _options = null!;
-    private PasswordManagerDbContext _context = null!;
+    private DbContextOptions<VaultGuardDbContext> _options = null!;
+    private VaultGuardDbContext _context = null!;
     private CollectionService _collectionService = null!;
     private const string TestUserId = "test-user-id";
 
     [SetUp]
     public void Setup()
     {
-        _options = new DbContextOptionsBuilder<PasswordManagerDbContext>()
+        _options = new DbContextOptionsBuilder<VaultGuardDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        _context = new PasswordManagerDbContext(_options);
+        _context = new VaultGuardDbContext(_options);
         _collectionService = new CollectionService(_context);
     }
 

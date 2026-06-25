@@ -1,4 +1,4 @@
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 /// <summary>
 /// Generates time-based one-time passwords (RFC 6238) for items that store an authenticator

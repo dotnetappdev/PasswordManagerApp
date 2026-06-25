@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace PasswordManager.Uno.Services.Biometric;
+namespace VaultGuard.Uno.Services.Biometric;
 
 /// <summary>
 /// Platform-agnostic biometric authentication service

@@ -1,11 +1,12 @@
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.WPF.ViewModels;
-using PasswordManager.Models.DTOs.Auth;
+using VaultGuard.WPF.ViewModels;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.Services.Interfaces;
 using System;
 
-namespace PasswordManager.WPF.Views;
+namespace VaultGuard.WPF.Views;
 
 public sealed partial class ProfilePage : Page
 {
@@ -25,7 +26,30 @@ public sealed partial class ProfilePage : Page
             _serviceProvider = serviceProvider;
             _viewModel = new ProfilePageViewModel(serviceProvider);
             this.DataContext = _viewModel;
+            _ = RefreshTwoFactorStatusAsync();
         }
+    }
+
+    private async System.Threading.Tasks.Task RefreshTwoFactorStatusAsync()
+    {
+        if (_serviceProvider == null || TwoFactorStatusText == null) return;
+        try
+        {
+            // CurrentUser loads asynchronously in the view model's constructor — give it a moment.
+            for (var i = 0; i < 20 && _viewModel?.CurrentUser == null; i++)
+                await System.Threading.Tasks.Task.Delay(50);
+
+            var enabled = await Helpers.TwoFactorDialogHelper.GetTwoFactorEnabledAsync(_serviceProvider, _viewModel?.CurrentUser?.Id);
+            TwoFactorStatusText.Text = enabled ? "Enabled" : "Not enabled";
+        }
+        catch { TwoFactorStatusText.Text = "Not enabled"; }
+    }
+
+    private async void TwoFactorManageButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_serviceProvider == null || _viewModel == null) return;
+        await Helpers.TwoFactorDialogHelper.OpenManageDialogAsync(_serviceProvider, _viewModel.CurrentUser?.Id, _viewModel.CurrentUser?.Email);
+        await RefreshTwoFactorStatusAsync();
     }
 
     private void EditProfileButton_Click(object sender, RoutedEventArgs e)
@@ -60,6 +84,34 @@ public sealed partial class ProfilePage : Page
     {
         if (sender is Button button && button.Tag is UserDto user && _viewModel != null)
         {
+            // Re-authenticate before switching into the target profile.
+            //  • If the target account has 2FA enabled, we only ask for the authenticator
+            //    (or recovery) code — no master password.
+            //  • Otherwise we fall back to the normal master-password workflow.
+            if (_serviceProvider != null)
+            {
+                var profileService = _serviceProvider.GetService<IUserProfileService>();
+                var twoFaEnabled = profileService != null && await profileService.IsTwoFactorEnabledAsync(user.Id);
+
+                bool verified;
+                if (twoFaEnabled)
+                {
+                    verified = await Helpers.SecurityGateHelper.PromptAndVerifyAsync(
+                        _serviceProvider, user.Id,
+                        "Verify it's you",
+                        $"Enter the authenticator code for {user.Email} to switch to this profile.");
+                }
+                else
+                {
+                    verified = await Helpers.SecurityGateHelper.PromptMasterPasswordAsync(
+                        _serviceProvider, user.Id,
+                        "Switch profile",
+                        $"Enter the master password for {user.Email} to switch to this profile.");
+                }
+
+                if (!verified) return;
+            }
+
             await _viewModel.SwitchToProfileAsync(user);
         }
     }

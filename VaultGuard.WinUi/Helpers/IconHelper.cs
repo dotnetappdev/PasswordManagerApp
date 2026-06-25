@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.WinUi.Helpers
+namespace VaultGuard.WinUi.Helpers
 {
     public static class IconHelper
     {

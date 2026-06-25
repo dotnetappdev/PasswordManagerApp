@@ -1,8 +1,8 @@
 using FileHelpers;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManagerImports.Firefox;
+namespace VaultGuardImports.Firefox;
 
 /// <summary>
 /// Mozilla Firefox browser CSV import plugin
@@ -24,7 +24,7 @@ public class FirefoxImportPlugin : IPasswordImportPlugin
             DisplayName = "Mozilla Firefox",
             Description = "Import passwords from Firefox CSV export files",
             Version = "1.0.0",
-            Author = "PasswordManager Team",
+            Author = "VaultGuard Team",
             Website = "https://www.mozilla.org/firefox",
             Created = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,

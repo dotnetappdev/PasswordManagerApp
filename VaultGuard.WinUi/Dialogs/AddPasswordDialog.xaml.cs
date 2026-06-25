@@ -1,15 +1,15 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 using System.Collections.Generic;
 using System;
-using PasswordManager.WinUi.Helpers;
+using VaultGuard.WinUi.Helpers;
 
-namespace PasswordManager.WinUi.Dialogs;
+namespace VaultGuard.WinUi.Dialogs;
 
 public sealed partial class AddPasswordDialog : ContentDialog
 {

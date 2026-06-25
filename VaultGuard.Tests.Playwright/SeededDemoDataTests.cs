@@ -1,6 +1,6 @@
 using Microsoft.Playwright;
 
-namespace PasswordManager.Tests.Playwright;
+namespace VaultGuard.Tests.Playwright;
 
 [TestClass]
 public class SeededDemoDataTests : BlazorWebTestBase

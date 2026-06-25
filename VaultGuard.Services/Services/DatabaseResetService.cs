@@ -1,17 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PasswordManager.DAL;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Services.Interfaces;
 using System.Security.Cryptography;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for resetting database tables
 /// </summary>
 public class DatabaseResetService : IDatabaseResetService
 {
-    private readonly PasswordManagerDbContext _dbContext;
+    private readonly VaultGuardDbContext _dbContext;
     private readonly ILogger<DatabaseResetService> _logger;
     private readonly IDatabaseConfigurationService? _databaseConfigurationService;
 
@@ -55,7 +55,7 @@ public class DatabaseResetService : IDatabaseResetService
     };
 
     public DatabaseResetService(
-        PasswordManagerDbContext dbContext,
+        VaultGuardDbContext dbContext,
         ILogger<DatabaseResetService> logger,
         IDatabaseConfigurationService? databaseConfigurationService = null)
     {
@@ -597,7 +597,7 @@ public class DatabaseResetService : IDatabaseResetService
 
             foreach (var (name, description, icon, color) in sampleCategories)
             {
-                var category = new PasswordManager.Models.Category
+                var category = new VaultGuard.Models.Category
                 {
                     Name = name,
                     Description = description,
@@ -623,15 +623,15 @@ public class DatabaseResetService : IDatabaseResetService
             {
                 // Note: Not adding actual passwords for security reasons
                 // Users can add these manually after seeing the sample structure
-                var item = new PasswordManager.Models.PasswordItem
+                var item = new VaultGuard.Models.PasswordItem
                 {
                     Title = title,
                     Website = website,
-                    Type = PasswordManager.Models.ItemType.Login,
+                    Type = VaultGuard.Models.ItemType.Login,
                     Description = "Sample password item - please update with real credentials",
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow,
-                    LoginItem = new PasswordManager.Models.LoginItem
+                    LoginItem = new VaultGuard.Models.LoginItem
                     {
                         Username = username,
                         EncryptedPassword = string.Empty // No password for security

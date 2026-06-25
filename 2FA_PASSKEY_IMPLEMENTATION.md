@@ -1,6 +1,6 @@
 # Two-Factor Authentication (2FA) and Passkey Implementation
 
-This document describes the implementation of Two-Factor Authentication (2FA) and WebAuthn Passkey support in the Password Manager App.
+This document describes the implementation of Two-Factor Authentication (2FA) and WebAuthn Passkey support in the Vault Guard App.
 
 ## Overview
 
@@ -175,7 +175,7 @@ builder.Services.AddScoped<IFido2>(provider =>
     var config = new Fido2Configuration
     {
         ServerDomain = "your-domain.com",
-        ServerName = "PasswordManager",
+        ServerName = "VaultGuard",
         Origins = new HashSet<string> { "https://your-domain.com" },
         TimestampDriftTolerance = 300000
     };

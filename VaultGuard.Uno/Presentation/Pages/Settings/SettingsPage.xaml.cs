@@ -1,7 +1,7 @@
-using PasswordManager.Uno.Services.Theme;
+using VaultGuard.Uno.Services.Theme;
 using Microsoft.UI.Xaml.Media;
 
-namespace PasswordManager.Mobile.Presentation.Pages.Settings;
+namespace VaultGuard.Mobile.Presentation.Pages.Settings;
 
 public sealed partial class SettingsPage : Page
 {

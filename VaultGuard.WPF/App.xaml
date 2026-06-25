@@ -1,8 +1,8 @@
 <Application
-    x:Class="PasswordManager.WPF.App"
+    x:Class="VaultGuard.WPF.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:converters="clr-namespace:PasswordManager.WPF.Converters">
+    xmlns:converters="clr-namespace:VaultGuard.WPF.Converters">
 
     <Application.Resources>
         <ResourceDictionary>
@@ -39,6 +39,9 @@
             <converters:HexColorToBrushConverter x:Key="HexColorToBrushConverter"/>
             <converters:BoolToVisibleConverter x:Key="BoolToVisibleConverter"/>
             <converters:BoolToHiddenConverter x:Key="BoolToHiddenConverter"/>
+            <converters:OnlineStatusToVisibilityConverter x:Key="OnlineStatusToVisibilityConverter"/>
+            <converters:OnlineStatusToBrushConverter x:Key="OnlineStatusToBrushConverter"/>
+            <converters:OnlineStatusToTextConverter x:Key="OnlineStatusToTextConverter"/>
 
             <!-- Removed WebsiteToColorConverter (likely already in ModernTheme.xaml) -->
         </ResourceDictionary>

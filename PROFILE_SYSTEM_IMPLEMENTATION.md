@@ -1,6 +1,6 @@
 # Netflix-Style Profile System Implementation
 
-This document explains the Netflix-style profile system implemented for the Password Manager WinUI application.
+This document explains the Netflix-style profile system implemented for the Vault Guard WinUI application.
 
 ## Overview
 
@@ -14,9 +14,9 @@ The profile system allows multiple users to:
 
 ### 1. User Profile Selection (Login Screen)
 
-**File**: `PasswordManager.WinUi/Views/LoginPage.xaml`
-**ViewModel**: `PasswordManager.WinUi/ViewModels/LoginViewModel.cs`
-**Profile ViewModel**: `PasswordManager.WinUi/ViewModels/UserProfileSelectionViewModel.cs`
+**File**: `VaultGuard.WinUi/Views/LoginPage.xaml`
+**ViewModel**: `VaultGuard.WinUi/ViewModels/LoginViewModel.cs`
+**Profile ViewModel**: `VaultGuard.WinUi/ViewModels/UserProfileSelectionViewModel.cs`
 
 Features:
 - Shows existing user profiles as Netflix-style cards
@@ -27,8 +27,8 @@ Features:
 
 ### 2. Profile Management (Profile Page)
 
-**File**: `PasswordManager.WinUi/Views/ProfilePage.xaml`
-**ViewModel**: `PasswordManager.WinUi/ViewModels/ProfilePageViewModel.cs`
+**File**: `VaultGuard.WinUi/Views/ProfilePage.xaml`
+**ViewModel**: `VaultGuard.WinUi/ViewModels/ProfilePageViewModel.cs`
 
 Features:
 - Edit current user profile information
@@ -39,7 +39,7 @@ Features:
 
 ### 3. User Data Isolation
 
-**Service**: `PasswordManager.WinUi/Services/UserContextService.cs`
+**Service**: `VaultGuard.WinUi/Services/UserContextService.cs`
 
 This service provides:
 - Current user context management

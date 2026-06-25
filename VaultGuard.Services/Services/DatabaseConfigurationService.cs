@@ -2,11 +2,11 @@ using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.Models.Configuration;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.Models.Configuration;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for managing database configuration with encryption
@@ -335,19 +335,19 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
                 try
                 {
                     // Get the DbContext services and create the database schema
-                    var dbContext = scope.ServiceProvider.GetService<PasswordManager.DAL.PasswordManagerDbContext>();
-                    var dbContextApp = scope.ServiceProvider.GetService<PasswordManager.DAL.PasswordManagerDbContextApp>();
+                    var dbContext = scope.ServiceProvider.GetService<VaultGuard.DAL.VaultGuardDbContext>();
+                    var dbContextApp = scope.ServiceProvider.GetService<VaultGuard.DAL.VaultGuardDbContextApp>();
                     
                     if (dbContext != null)
                     {
                         await dbContext.Database.EnsureCreatedAsync();
-                        _logger.LogInformation("Created PasswordManagerDbContext database schema");
+                        _logger.LogInformation("Created VaultGuardDbContext database schema");
                     }
                     
                     if (dbContextApp != null)
                     {
                         await dbContextApp.Database.EnsureCreatedAsync();
-                        _logger.LogInformation("Created PasswordManagerDbContextApp database schema");
+                        _logger.LogInformation("Created VaultGuardDbContextApp database schema");
                     }
                     
                     // Verify the database file was created
@@ -425,9 +425,9 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
             {
                 _logger.LogWarning(ex, "Could not create/read encryption key file, using fallback key");
                 // Fallback: derive key from device/app info (less secure but functional)
-                var fallbackSeed = $"{_platformService.GetDeviceIdentifier()}-PasswordManager";
+                var fallbackSeed = $"{_platformService.GetDeviceIdentifier()}-VaultGuard";
                 _encryptionKey = _cryptographyService.DeriveKey(fallbackSeed, 
-                    System.Text.Encoding.UTF8.GetBytes("PasswordManagerDbKey"), 
+                    System.Text.Encoding.UTF8.GetBytes("VaultGuardDbKey"), 
                     100000, 32);
                 return _encryptionKey;
             }
@@ -468,9 +468,9 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
         {
             _logger.LogWarning(ex, "Could not create/read encryption key file, using fallback key");
             // Fallback: derive key from device/app info (less secure but functional)
-            var fallbackSeed = $"{_platformService.GetDeviceIdentifier()}-PasswordManager";
+            var fallbackSeed = $"{_platformService.GetDeviceIdentifier()}-VaultGuard";
             return _cryptographyService.DeriveKey(fallbackSeed, 
-                System.Text.Encoding.UTF8.GetBytes("PasswordManagerDbKey"), 
+                System.Text.Encoding.UTF8.GetBytes("VaultGuardDbKey"), 
                 100000, 32);
         }
     }

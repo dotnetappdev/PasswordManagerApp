@@ -1,5 +1,5 @@
 @page "/auth"
-@using PasswordManager.Services.Interfaces
+@using VaultGuard.Services.Interfaces
 @inject IPlatformService PlatformService
 @inject IPasscodeService PasscodeService
 @inject NavigationManager Navigation
@@ -10,7 +10,7 @@
 }
 else if (showLogin)
 {
-    <PasswordManager.App.Components.Pages.Login />
+    <VaultGuard.App.Components.Pages.Login />
 }
 else
 {

@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using System.Text.Json;
 
-namespace PasswordManagerImports.OnePassword.Models;
+namespace VaultGuardImports.OnePassword.Models;
 
 // Root structure for 1PUX export.data JSON
 public class OnePasswordPuxExport

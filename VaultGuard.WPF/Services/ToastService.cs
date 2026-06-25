@@ -6,7 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 
-namespace PasswordManager.WPF.Services;
+namespace VaultGuard.WPF.Services;
 
 public enum ToastType { Success, Error, Warning, Info }
 

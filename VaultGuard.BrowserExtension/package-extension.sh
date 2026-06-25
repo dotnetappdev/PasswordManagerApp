@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Password Manager Browser Extension Packaging Script
+# Vault Guard Browser Extension Packaging Script
 # Creates distributable packages for Chrome and Edge browsers
 
 set -e
@@ -24,7 +24,7 @@ if [ -z "$VERSION" ]; then
 fi
 
 echo "================================================"
-echo "Password Manager Extension Packaging"
+echo "Vault Guard Extension Packaging"
 echo "Version: $VERSION"
 echo "================================================"
 echo ""

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Password Manager Extension",
+  "name": "Vault Guard Extension",
   "version": "1.0.0",
-  "description": "Browser extension for the Password Manager App - securely autofill login credentials and generate passwords",
+  "description": "Browser extension for the Vault Guard App - securely autofill login credentials and generate passwords",
   
   "permissions": [
     "activeTab",
@@ -26,7 +26,7 @@
   
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Password Manager",
+    "default_title": "Vault Guard",
     "default_icon": {
       "16": "icons/icon16.svg",
       "32": "icons/icon32.svg",

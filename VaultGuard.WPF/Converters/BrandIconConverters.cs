@@ -4,10 +4,10 @@ using System.IO;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using PasswordManager.Models;
-using PasswordManager.Services.Utilities;
+using VaultGuard.Models;
+using VaultGuard.Services.Utilities;
 
-namespace PasswordManager.WPF.Converters;
+namespace VaultGuard.WPF.Converters;
 
 /// <summary>
 /// Produces a stable, colourful background brush for a password item's brand badge — the same

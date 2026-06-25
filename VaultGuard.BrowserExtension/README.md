@@ -1,6 +1,6 @@
-# Password Manager Browser Extension
+# Vault Guard Browser Extension
 
-A secure browser extension that integrates directly with your local Password Manager SQLite database to provide seamless autofill functionality for login and registration forms.
+A secure browser extension that integrates directly with your local Vault Guard SQLite database to provide seamless autofill functionality for login and registration forms.
 
 ## Documentation
 
@@ -37,7 +37,7 @@ A secure browser extension that integrates directly with your local Password Man
 1. Clone the repository
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the `PasswordManager.BrowserExtension` folder
+4. Click "Load unpacked" and select the `VaultGuard.BrowserExtension` folder
 5. The extension will appear in your browser toolbar
 
 **Package for Distribution:**
@@ -57,7 +57,7 @@ See [PACKAGING.md](PACKAGING.md) for detailed packaging and distribution instruc
 ### Prerequisites
 
 1. **Native Messaging Host**: You must install the native messaging host component first
-   - See `PasswordManager.BrowserExtension.NativeHost/README.md` for detailed instructions
+   - See `VaultGuard.BrowserExtension.NativeHost/README.md` for detailed instructions
    - This component handles secure communication with your local database
 
 ### Browser Extension Installation
@@ -66,7 +66,7 @@ See [PACKAGING.md](PACKAGING.md) for detailed packaging and distribution instruc
 
 1. Open Chrome and navigate to `chrome://extensions/`
 2. Enable "Developer mode" in the top right
-3. Click "Load unpacked" and select the `PasswordManager.BrowserExtension` folder
+3. Click "Load unpacked" and select the `VaultGuard.BrowserExtension` folder
 4. The extension will appear in your browser toolbar
 
 #### For Firefox
@@ -97,7 +97,7 @@ The extension supports three connection modes:
    - Works completely offline
 
 3. **Web API**: Connect to API server
-   - Requires Password Manager API running
+   - Requires Vault Guard API running
    - Configure API URL in settings
    - Supports remote access
 
@@ -108,7 +108,7 @@ The extension supports three connection modes:
 ### Initial Setup Steps
 
 1. **Install Native Host** (for Native Messaging mode):
-   - Follow the installation guide in `PasswordManager.BrowserExtension.NativeHost/README.md`
+   - Follow the installation guide in `VaultGuard.BrowserExtension.NativeHost/README.md`
    
 2. **Configure Connection**:
    - Click the extension icon
@@ -123,7 +123,7 @@ The extension supports three connection modes:
    - Verify successful connection
 
 4. **Login**:
-   - Use your Password Manager email and master password to authenticate
+   - Use your Vault Guard email and master password to authenticate
    
 5. **Start Using**:
    - Visit any website with login forms
@@ -134,9 +134,9 @@ The extension supports three connection modes:
 For Native Messaging mode, you can configure a custom database path:
 
 - **Default Paths** (automatically detected):
-  - Windows: `%APPDATA%\PasswordManager\passwordmanager.db`
-  - macOS: `~/Library/Application Support/PasswordManager/passwordmanager.db`
-  - Linux: `~/.local/share/PasswordManager/passwordmanager.db`
+  - Windows: `%APPDATA%\VaultGuard\passwordmanager.db`
+  - macOS: `~/Library/Application Support/VaultGuard/passwordmanager.db`
+  - Linux: `~/.local/share/VaultGuard/passwordmanager.db`
 
 - **Custom Path**: 
   - Go to Settings → Database Path
@@ -168,7 +168,7 @@ The extension automatically scans web pages for:
 
 ## Database Integration
 
-The extension connects to your local Password Manager SQLite database through a native messaging host:
+The extension connects to your local Vault Guard SQLite database through a native messaging host:
 - **Direct SQLite Access**: No API server required - reads directly from your database
 - **Local Decryption**: Passwords are decrypted locally using your master password
 - **Offline Operation**: Works completely offline once authentication is complete
@@ -192,7 +192,7 @@ The extension requests minimal permissions:
 
 ### File Structure
 ```
-PasswordManager.BrowserExtension/
+VaultGuard.BrowserExtension/
 ├── manifest.json          # Extension manifest (Manifest V3)
 ├── background.js          # Service worker for API communication
 ├── content.js            # Content script for form detection
@@ -251,7 +251,7 @@ PasswordManager.BrowserExtension/
 
 ## Contributing
 
-This extension is part of the larger Password Manager App project. To contribute:
+This extension is part of the larger Vault Guard App project. To contribute:
 
 1. Fork the repository
 2. Create a feature branch
@@ -267,4 +267,4 @@ This extension is part of the larger Password Manager App project. To contribute
 
 ## License
 
-This extension is part of the Password Manager App and is licensed under the MIT License.
+This extension is part of the Vault Guard App and is licensed under the MIT License.

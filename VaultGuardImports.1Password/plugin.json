@@ -3,11 +3,11 @@
   "displayName": "1Password Importer (CSV and 1PUX)",
   "description": "Import passwords from 1Password export files. Supports both CSV (old and new formats) and 1PUX (ZIP archive) formats. 1Password vaults are mapped to categories.",
   "version": "1.2.0",
-  "author": "PasswordManager Team",
+  "author": "VaultGuard Team",
   "website": "https://1password.com",
   "iconUrl": "🔐",
-  "mainAssembly": "PasswordManagerImports.OnePassword.dll",
-  "mainClass": "PasswordManagerImports.OnePassword.OnePasswordImportPlugin",
+  "mainAssembly": "VaultGuardImports.OnePassword.dll",
+  "mainClass": "VaultGuardImports.OnePassword.OnePasswordImportPlugin",
   "supportedFileExtensions": [".csv", ".1pux"],
   "created": "2025-12-17T00:00:00Z",
   "lastUpdated": "2025-12-29T00:00:00Z",
@@ -20,7 +20,7 @@
     "supportedFormats": ["csv-legacy", "csv-new", "1pux"],
     "legacyCsvHeaders": "Title,Url,Username,Password,OTPAuth,Favorite,Archived,Tags,Notes",
     "newCsvHeaders": "Title,URL,Username,Password,Notes,Type",
-    "vaultMapping": "1Password vaults are mapped to categories in the Password Manager"
+    "vaultMapping": "1Password vaults are mapped to categories in the Vault Guard"
   },
   "requirements": {
     "minFrameworkVersion": "net9.0",
@@ -36,7 +36,7 @@
       "3. Go to File > Export > All Items",
       "4. Choose either '.csv' or '.1pux' format",
       "5. For CSV: Both old and new export formats are supported automatically",
-      "6. For 1PUX: Vault names will become categories in Password Manager",
+      "6. For 1PUX: Vault names will become categories in Vault Guard",
       "7. Save the export file securely",
       "8. Select the downloaded file below"
     ]

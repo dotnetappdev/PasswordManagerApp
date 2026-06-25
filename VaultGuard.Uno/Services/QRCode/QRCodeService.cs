@@ -1,7 +1,7 @@
 using ZXing;
 using ZXing.Common;
 
-namespace PasswordManager.Uno.Services.QRCode;
+namespace VaultGuard.Uno.Services.QRCode;
 
 /// <summary>
 /// QR code service implementation using ZXing

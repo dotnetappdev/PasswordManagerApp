@@ -2,7 +2,7 @@
 
 ## Overview
 
-This implementation adds SMS-based Two-Factor Authentication (2FA) to the Password Manager application. The OTP functionality is available on **web browsers**, **Android**, and **iOS** platforms only, excluding desktop applications as per requirements.
+This implementation adds SMS-based Two-Factor Authentication (2FA) to the Vault Guard application. The OTP functionality is available on **web browsers**, **Android**, and **iOS** platforms only, excluding desktop applications as per requirements.
 
 ## Features
 
@@ -89,7 +89,7 @@ Add the following configuration to `appsettings.json`:
     "ExpirationMinutes": 5,
     "MaxAttempts": 3,
     "MaxSmsPerHour": 10,
-    "MessageTemplate": "Your Password Manager verification code is: {code}. This code will expire in {expiration} minutes.",
+    "MessageTemplate": "Your Vault Guard verification code is: {code}. This code will expire in {expiration} minutes.",
     "Twilio": {
       "AccountSid": "your_twilio_account_sid",
       "AuthToken": "your_twilio_auth_token",
@@ -99,7 +99,7 @@ Add the following configuration to `appsettings.json`:
       "AccessKeyId": "your_aws_access_key",
       "SecretAccessKey": "your_aws_secret_key",
       "Region": "us-east-1",
-      "SenderName": "Password Manager"
+      "SenderName": "Vault Guard"
     },
     "AzureCommunication": {
       "ConnectionString": "your_azure_connection_string",
@@ -197,7 +197,7 @@ The implementation includes comprehensive error handling:
 Run the OTP tests with:
 
 ```bash
-dotnet test PasswordManager.Tests.OTP
+dotnet test VaultGuard.Tests.OTP
 ```
 
 The test suite includes:

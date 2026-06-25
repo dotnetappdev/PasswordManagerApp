@@ -1,6 +1,6 @@
-using PasswordManager.Models.DTOs;
+using VaultGuard.Models.DTOs;
 
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 /// <summary>
 /// Base interface for cloud backup services (OneDrive, iCloud, etc.)

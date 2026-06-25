@@ -1,4 +1,4 @@
-# Password Manager Mobile App - Build Instructions
+# Vault Guard Mobile App - Build Instructions
 
 Complete build and deployment guide for iOS, Android, Windows (via emulator), and Web (via React Native Web).
 
@@ -103,7 +103,7 @@ sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
 
 ```bash
 # Navigate to React Native project
-cd /path/to/PasswordManagerApp/react
+cd /path/to/VaultGuardApp/react
 
 # Install Node.js dependencies
 npm install
@@ -155,7 +155,7 @@ npx react-native run-ios --device "Your iPhone Name"
 ```
 
 **Option 5: Using Xcode**
-1. Open `ios/PasswordManagerMobile.xcworkspace` in Xcode
+1. Open `ios/VaultGuardMobile.xcworkspace` in Xcode
 2. Select your device/simulator from the scheme dropdown
 3. Click the Play (▶️) button or press `Cmd + R`
 
@@ -221,19 +221,19 @@ Since React Native doesn't natively support Windows UWP apps, develop on Windows
 
 #### Step 1: Configure Signing
 
-1. Open `ios/PasswordManagerMobile.xcworkspace` in Xcode
+1. Open `ios/VaultGuardMobile.xcworkspace` in Xcode
 2. Select the project in the navigator
-3. Select the target "PasswordManagerMobile"
+3. Select the target "VaultGuardMobile"
 4. Go to "Signing & Capabilities" tab
 5. Select your Team from dropdown
 6. Xcode will automatically create provisioning profiles
 
 #### Step 2: Update App Information
 
-Edit `ios/PasswordManagerMobile/Info.plist`:
+Edit `ios/VaultGuardMobile/Info.plist`:
 ```xml
 <key>CFBundleDisplayName</key>
-<string>Password Manager</string>
+<string>Vault Guard</string>
 <key>CFBundleIdentifier</key>
 <string>com.yourcompany.passwordmanager</string>
 <key>CFBundleVersion</key>
@@ -249,14 +249,14 @@ Edit `ios/PasswordManagerMobile/Info.plist`:
 cd ios
 
 # Clean build
-xcodebuild clean -workspace PasswordManagerMobile.xcworkspace -scheme PasswordManagerMobile
+xcodebuild clean -workspace VaultGuardMobile.xcworkspace -scheme VaultGuardMobile
 
 # Build for device
-xcodebuild -workspace PasswordManagerMobile.xcworkspace \
-  -scheme PasswordManagerMobile \
+xcodebuild -workspace VaultGuardMobile.xcworkspace \
+  -scheme VaultGuardMobile \
   -configuration Release \
   -destination 'generic/platform=iOS' \
-  -archivePath build/PasswordManagerMobile.xcarchive \
+  -archivePath build/VaultGuardMobile.xcarchive \
   archive
 ```
 
@@ -389,7 +389,7 @@ bundletool install-apks --apks=test.apks
 
 #### Enable Background Modes (for notifications)
 
-1. Open `ios/PasswordManagerMobile.xcworkspace` in Xcode
+1. Open `ios/VaultGuardMobile.xcworkspace` in Xcode
 2. Select project → Target → Signing & Capabilities
 3. Click "+ Capability"
 4. Add "Background Modes"
@@ -400,7 +400,7 @@ bundletool install-apks --apks=test.apks
 #### Configure Push Notifications
 
 1. Add "Push Notifications" capability in Xcode
-2. Update `ios/PasswordManagerMobile/Info.plist`:
+2. Update `ios/VaultGuardMobile/Info.plist`:
 ```xml
 <key>UIBackgroundModes</key>
 <array>
@@ -482,7 +482,7 @@ Update version in multiple locations:
 }
 ```
 
-**iOS** (`ios/PasswordManagerMobile/Info.plist`)
+**iOS** (`ios/VaultGuardMobile/Info.plist`)
 ```xml
 <key>CFBundleShortVersionString</key>
 <string>1.0.0</string>
@@ -505,7 +505,7 @@ android {
 #### iOS App Icon
 
 1. Create app icon in all sizes (see [Apple guidelines](https://developer.apple.com/design/human-interface-guidelines/app-icons))
-2. Add to `ios/PasswordManagerMobile/Images.xcassets/AppIcon.appiconset/`
+2. Add to `ios/VaultGuardMobile/Images.xcassets/AppIcon.appiconset/`
 3. Update `Contents.json` with icon references
 
 #### Android App Icon

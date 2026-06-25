@@ -6,11 +6,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.WPF.Services;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.WPF.Services;
 
-namespace PasswordManager.WPF.Views;
+namespace VaultGuard.WPF.Views;
 
 // Lightweight display model for a single passkey entry
 public sealed class PasskeyDisplayItem
@@ -295,7 +295,7 @@ public sealed partial class PasskeysPage : Page
         {
             if (_serviceProvider == null) return;
             using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetService<PasswordManager.DAL.PasswordManagerDbContext>();
+            var db = scope.ServiceProvider.GetService<VaultGuard.DAL.VaultGuardDbContext>();
             var auth = scope.ServiceProvider.GetService<IAuthService>();
             var userId = auth?.CurrentUser?.Id;
             if (db == null || string.IsNullOrEmpty(userId)) return;

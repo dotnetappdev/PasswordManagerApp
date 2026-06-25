@@ -1,9 +1,9 @@
 {
     "profiles": {
-        "PasswordManager.WinUi (Package)": {
+        "VaultGuard.WinUi (Package)": {
             "commandName": "MsixPackage"
         },
-        "PasswordManager.WinUi (Unpackaged)": {
+        "VaultGuard.WinUi (Unpackaged)": {
             "commandName": "Project"
         }
     }

@@ -1,11 +1,11 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 using System;
 using System.IO;
 using Windows.Storage.Pickers;
 
-namespace PasswordManager.WinUi.Dialogs;
+namespace VaultGuard.WinUi.Dialogs;
 
 public sealed partial class DatabaseConfigurationDialog : ContentDialog
 {
@@ -173,7 +173,7 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
             // Ensure Sqlite config is initialized
             if (config.Sqlite == null)
             {
-                config.Sqlite = new PasswordManager.Models.Configuration.SqliteConfig();
+                config.Sqlite = new VaultGuard.Models.Configuration.SqliteConfig();
             }
 
             config.Sqlite.DatabasePath = databasePath;

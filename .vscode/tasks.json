@@ -2,12 +2,12 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Build Password Manager API",
+			"label": "Build Vault Guard API",
 			"type": "shell",
 			"command": "dotnet",
 			"args": [
 				"build",
-				"/workspaces/PasswordManagerApp/PasswordManager.API"
+				"/workspaces/VaultGuardApp/VaultGuard.API"
 			],
 			"group": "build",
 			"problemMatcher": [
@@ -20,7 +20,7 @@
 			"command": "dotnet",
 			"args": [
 				"build",
-				"PasswordManager.sln"
+				"VaultGuard.sln"
 			],
 			"group": {
 				"kind": "build",
@@ -41,7 +41,7 @@
 			"args": [
 				"run",
 				"--project",
-				"PasswordManager.API"
+				"VaultGuard.API"
 			],
 			"group": "test",
 			"presentation": {
@@ -59,7 +59,7 @@
 			"args": [
 				"run",
 				"--project",
-				"PasswordManager.Web"
+				"VaultGuard.Web"
 			],
 			"group": "test",
 			"presentation": {

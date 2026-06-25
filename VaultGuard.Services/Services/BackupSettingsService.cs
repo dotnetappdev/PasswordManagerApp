@@ -1,21 +1,21 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PasswordManager.DAL.Interfaces;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for managing user backup settings in the database
 /// </summary>
 public class BackupSettingsService : IBackupSettingsService
 {
-    private readonly IPasswordManagerDbContext _context;
+    private readonly IVaultGuardDbContext _context;
     private readonly ILogger<BackupSettingsService> _logger;
 
-    public BackupSettingsService(IPasswordManagerDbContext context, ILogger<BackupSettingsService> logger)
+    public BackupSettingsService(IVaultGuardDbContext context, ILogger<BackupSettingsService> logger)
     {
         _context = context;
         _logger = logger;

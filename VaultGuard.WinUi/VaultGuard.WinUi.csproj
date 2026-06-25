@@ -4,7 +4,7 @@
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
 		<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-		<RootNamespace>PasswordManager.WinUi</RootNamespace>
+		<RootNamespace>VaultGuard.WinUi</RootNamespace>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<Platforms>x86;x64;ARM64</Platforms>
 		<RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
@@ -17,7 +17,7 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>PasswordManager WinUI</ApplicationTitle>
+		<ApplicationTitle>VaultGuard WinUI</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>com.companyname.passwordmanager.winui</ApplicationId>
@@ -97,13 +97,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\PasswordManager.DAL\PasswordManager.DAL.csproj" />
-		<ProjectReference Include="..\PasswordManager.Models\PasswordManager.Models.csproj" />
-		<ProjectReference Include="..\PasswordManager.Services\PasswordManager.Services.csproj" />
-		<ProjectReference Include="..\PasswordManager.Imports\PasswordManager.Imports.csproj" />
-		<ProjectReference Include="..\PasswordManagerImports.1Password\PasswordManagerImports.1Password.csproj" />
-		<ProjectReference Include="..\PasswordManagerImports.Bitwarden\PasswordManagerImports.Bitwarden.csproj" />
-		<ProjectReference Include="..\PasswordManager.Crypto\PasswordManager.Crypto.csproj" />
+		<ProjectReference Include="..\VaultGuard.DAL\VaultGuard.DAL.csproj" />
+		<ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
+		<ProjectReference Include="..\VaultGuard.Services\VaultGuard.Services.csproj" />
+		<ProjectReference Include="..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
+		<ProjectReference Include="..\VaultGuardImports.1Password\VaultGuardImports.1Password.csproj" />
+		<ProjectReference Include="..\VaultGuardImports.Bitwarden\VaultGuardImports.Bitwarden.csproj" />
+		<ProjectReference Include="..\VaultGuard.Crypto\VaultGuard.Crypto.csproj" />
+		<ProjectReference Include="..\VaultGuard.ExceptionReporting\VaultGuard.ExceptionReporting.csproj" />
+		<ProjectReference Include="..\VaultGuard.ExceptionReporting.Sentry\VaultGuard.ExceptionReporting.Sentry.csproj" />
 	</ItemGroup>
 
 	<!-- Exclude XAML and Windows-specific files on non-Windows platforms -->
@@ -152,28 +154,28 @@
 		<MakeDir Directories="$(OutputPath)plugins\SqlServer" />
 		<MakeDir Directories="$(OutputPath)plugins\MySql" />
 		<MakeDir Directories="$(OutputPath)plugins\Postgres" />
-		<Copy SourceFiles="$(SolutionDir)PasswordManager.DAL.SqlServer\bin\$(Configuration)\net10.0\PasswordManager.DAL.SqlServer.dll" DestinationFolder="$(OutputPath)plugins\SqlServer" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)PasswordManager.DAL.SqlServer\bin\$(Configuration)\net10.0\PasswordManager.DAL.SqlServer.dll')" />
-		<Copy SourceFiles="$(SolutionDir)PasswordManager.DAL.MySql\bin\$(Configuration)\net10.0\PasswordManager.DAL.MySql.dll" DestinationFolder="$(OutputPath)plugins\MySql" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)PasswordManager.DAL.MySql\bin\$(Configuration)\net10.0\PasswordManager.DAL.MySql.dll')" />
-		<Copy SourceFiles="$(SolutionDir)PasswordManager.DAL.Postgres\bin\$(Configuration)\net10.0\PasswordManager.DAL.Postgres.dll" DestinationFolder="$(OutputPath)plugins\Postgres" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)PasswordManager.DAL.Postgres\bin\$(Configuration)\net10.0\PasswordManager.DAL.Postgres.dll')" />
+		<Copy SourceFiles="$(SolutionDir)VaultGuard.DAL.SqlServer\bin\$(Configuration)\net10.0\VaultGuard.DAL.SqlServer.dll" DestinationFolder="$(OutputPath)plugins\SqlServer" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)VaultGuard.DAL.SqlServer\bin\$(Configuration)\net10.0\VaultGuard.DAL.SqlServer.dll')" />
+		<Copy SourceFiles="$(SolutionDir)VaultGuard.DAL.MySql\bin\$(Configuration)\net10.0\VaultGuard.DAL.MySql.dll" DestinationFolder="$(OutputPath)plugins\MySql" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)VaultGuard.DAL.MySql\bin\$(Configuration)\net10.0\VaultGuard.DAL.MySql.dll')" />
+		<Copy SourceFiles="$(SolutionDir)VaultGuard.DAL.Postgres\bin\$(Configuration)\net10.0\VaultGuard.DAL.Postgres.dll" DestinationFolder="$(OutputPath)plugins\Postgres" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)VaultGuard.DAL.Postgres\bin\$(Configuration)\net10.0\VaultGuard.DAL.Postgres.dll')" />
 
-		<!-- Generic: discover all import plugin DLLs under PasswordManagerImports.* projects and copy each into its own discovery folder -->
+		<!-- Generic: discover all import plugin DLLs under VaultGuardImports.* projects and copy each into its own discovery folder -->
 		<ItemGroup>
-			<!-- match plugin assemblies copied into the WinUI output (these come from ProjectReference to PasswordManagerImports.*)
+			<!-- match plugin assemblies copied into the WinUI output (these come from ProjectReference to VaultGuardImports.*)
 			     Search common output and RID-specific subfolders as project reference outputs can land in e.g. $(OutputPath)win-x64 or $(OutputPath)$(RuntimeIdentifier). -->
-			<PluginDlls Include="$(OutputPath)**\PasswordManagerImports.*.dll" />
+			<PluginDlls Include="$(OutputPath)**\VaultGuardImports.*.dll" />
 			<!-- Also look directly in referenced projects' bin folders to cover scenarios where outputs are placed under project/bin/<rid> -->
-			<PluginDlls Include="$(SolutionDir)PasswordManagerImports.*\bin\$(Configuration)\**\PasswordManagerImports.*.dll" />
+			<PluginDlls Include="$(SolutionDir)VaultGuardImports.*\bin\$(Configuration)\**\VaultGuardImports.*.dll" />
 		</ItemGroup>
 
 		<!-- Compute per-plugin folder and filename metadata -->
 		<ItemGroup>
 			<_PluginsToCopy Include="@(PluginDlls)">
 				<!-- Derive a stable plugin folder name from the DLL filename.
-				     Example: PasswordManagerImports.OnePassword.dll -> OnePassword
+				     Example: VaultGuardImports.OnePassword.dll -> OnePassword
 				     This avoids fragile nested GetDirectoryName expressions that may
 				     end up embedded as literal $() expressions in paths during evaluation. -->
 				<PluginFileName>$([System.IO.Path]::GetFileName('%(Identity)'))</PluginFileName>
-				<PluginFolder>$([System.Text.RegularExpressions.Regex]::Replace($([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)')), '^PasswordManagerImports\.', ''))</PluginFolder>
+				<PluginFolder>$([System.Text.RegularExpressions.Regex]::Replace($([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)')), '^VaultGuardImports\.', ''))</PluginFolder>
 			</_PluginsToCopy>
 		</ItemGroup>
 
@@ -193,15 +195,15 @@
 			Condition=" '@(_PluginsToCopy)' != '' " />
 
 		<!-- Copy plugin.json files manually for known plugins -->
-		<Copy SourceFiles="$(SolutionDir)PasswordManagerImports.1Password\plugin.json"
+		<Copy SourceFiles="$(SolutionDir)VaultGuardImports.1Password\plugin.json"
 			DestinationFolder="$(OutputPath)imports\otherpasswordmanagers\OnePassword"
 			SkipUnchangedFiles="true"
-			Condition="Exists('$(SolutionDir)PasswordManagerImports.1Password\plugin.json')" />
+			Condition="Exists('$(SolutionDir)VaultGuardImports.1Password\plugin.json')" />
 		
-		<Copy SourceFiles="$(SolutionDir)PasswordManagerImports.Bitwarden\plugin.json"
+		<Copy SourceFiles="$(SolutionDir)VaultGuardImports.Bitwarden\plugin.json"
 			DestinationFolder="$(OutputPath)imports\otherpasswordmanagers\Bitwarden"
 			SkipUnchangedFiles="true"
-			Condition="Exists('$(SolutionDir)PasswordManagerImports.Bitwarden\plugin.json')" />
+			Condition="Exists('$(SolutionDir)VaultGuardImports.Bitwarden\plugin.json')" />
 	</Target>
 
 	<!-- Prevent duplicate appsettings.*.json from referenced projects (API/Web) during publish -->
@@ -210,13 +212,13 @@
 			<!-- Remove API/Web appsettings.json (keep WinUi's own) -->
 			<ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
 				Condition="'%(ResolvedFileToPublish.RelativePath)' == 'appsettings.json'
-					 And ( %(ResolvedFileToPublish.Identity.IndexOf('PasswordManager.API')) != -1
-						   Or %(ResolvedFileToPublish.Identity.IndexOf('PasswordManager.Web')) != -1 )" />
+					 And ( %(ResolvedFileToPublish.Identity.IndexOf('VaultGuard.API')) != -1
+						   Or %(ResolvedFileToPublish.Identity.IndexOf('VaultGuard.Web')) != -1 )" />
 			<!-- Remove API/Web appsettings.Development.json (keep WinUi's own if present) -->
 			<ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
 				Condition="'%(ResolvedFileToPublish.RelativePath)' == 'appsettings.Development.json'
-					 And ( %(ResolvedFileToPublish.Identity.IndexOf('PasswordManager.API')) != -1
-						   Or %(ResolvedFileToPublish.Identity.IndexOf('PasswordManager.Web')) != -1 )" />
+					 And ( %(ResolvedFileToPublish.Identity.IndexOf('VaultGuard.API')) != -1
+						   Or %(ResolvedFileToPublish.Identity.IndexOf('VaultGuard.Web')) != -1 )" />
 		</ItemGroup>
 	</Target>
 

@@ -4,7 +4,7 @@
 set -e
 
 echo "================================================"
-echo "Password Manager - Docker HTTPS Certificate Setup"
+echo "Vault Guard - Docker HTTPS Certificate Setup"
 echo "================================================"
 echo ""
 

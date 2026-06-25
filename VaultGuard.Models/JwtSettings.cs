@@ -1,4 +1,4 @@
-namespace PasswordManager.Models;
+namespace VaultGuard.Models;
 
 public class JwtSettings
 {

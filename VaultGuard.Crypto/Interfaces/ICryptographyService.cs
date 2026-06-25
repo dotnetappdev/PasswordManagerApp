@@ -1,4 +1,4 @@
-namespace PasswordManager.Crypto.Interfaces;
+namespace VaultGuard.Crypto.Interfaces;
 
 /// <summary>
 /// Interface for cryptographic operations including PBKDF2 key derivation and AES-256-GCM encryption

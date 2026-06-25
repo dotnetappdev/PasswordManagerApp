@@ -1,20 +1,20 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Audit;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Audit;
+using VaultGuard.Services.Interfaces;
 using System.Text.Json;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 public class AuditLogService : IAuditLogService
 {
-    private readonly PasswordManagerDbContext _dbContext;
+    private readonly VaultGuardDbContext _dbContext;
     private readonly ILogger<AuditLogService> _logger;
 
     public AuditLogService(
-        PasswordManagerDbContext dbContext,
+        VaultGuardDbContext dbContext,
         ILogger<AuditLogService> logger)
     {
         _dbContext = dbContext;

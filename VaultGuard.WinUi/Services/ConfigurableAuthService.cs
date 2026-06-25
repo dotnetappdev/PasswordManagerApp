@@ -3,13 +3,13 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.Services.Interfaces;
 using Microsoft.Extensions.Logging;
-using PasswordManager.WinUi.Services;
+using VaultGuard.WinUi.Services;
 
-namespace PasswordManager.WinUi.Services;
+namespace VaultGuard.WinUi.Services;
 
 /// <summary>
 /// Configurable authentication service that can switch between local database and API server modes

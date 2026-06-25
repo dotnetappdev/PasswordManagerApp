@@ -1,7 +1,7 @@
 ﻿using ObjCRuntime;
 using UIKit;
 
-namespace PasswordManager.App;
+namespace VaultGuard.App;
 
 public class Program
 {

@@ -1,4 +1,4 @@
-namespace PasswordManager.Uno.Services.AutoFill;
+namespace VaultGuard.Uno.Services.AutoFill;
 
 /// <summary>
 /// Platform-agnostic AutoFill service

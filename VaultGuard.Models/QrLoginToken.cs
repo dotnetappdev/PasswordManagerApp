@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using PasswordManager.Models.DTOs.Auth;
+using VaultGuard.Models.DTOs.Auth;
 
-namespace PasswordManager.Models;
+namespace VaultGuard.Models;
 
 public class QrLoginToken
 {

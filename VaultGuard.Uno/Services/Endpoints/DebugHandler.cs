@@ -1,4 +1,4 @@
-namespace PasswordManager.Mobile.Services.Endpoints;
+namespace VaultGuard.Mobile.Services.Endpoints;
 
 internal class DebugHttpHandler : DelegatingHandler
 {

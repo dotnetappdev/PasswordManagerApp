@@ -3,9 +3,9 @@ using System.IO;
 using Microsoft.Maui.Devices;
 using Microsoft.Maui.Storage;
 using Microsoft.Maui.ApplicationModel;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.App.Services;
+namespace VaultGuard.App.Services;
 
 /// <summary>
 /// MAUI-specific implementation of platform service
@@ -45,7 +45,7 @@ public class MauiPlatformService : IPlatformService
             if (DeviceInfo.Platform == DevicePlatform.WinUI)
             {
                 var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                var appDir = Path.Combine(localAppData, "PasswordManager");
+                var appDir = Path.Combine(localAppData, "VaultGuard");
                 
                 // Ensure directory exists
                 if (!Directory.Exists(appDir))
@@ -57,7 +57,7 @@ public class MauiPlatformService : IPlatformService
             }
             
             // For other platforms, use the platform-specific app data directory
-            return Path.Combine(FileSystem.AppDataDirectory, "PasswordManager");
+            return Path.Combine(FileSystem.AppDataDirectory, "VaultGuard");
         }
         catch
         {
@@ -75,15 +75,15 @@ public class MauiPlatformService : IPlatformService
             if (string.IsNullOrEmpty(docs))
             {
                 // Last-resort: use AppData
-                return Path.Combine(FileSystem.AppDataDirectory, "PasswordManager");
+                return Path.Combine(FileSystem.AppDataDirectory, "VaultGuard");
             }
 
-            return Path.Combine(docs, "PasswordManager");
+            return Path.Combine(docs, "VaultGuard");
         }
         catch
         {
             // Ensure we always return a usable path
-            return Path.Combine(FileSystem.AppDataDirectory, "PasswordManager");
+            return Path.Combine(FileSystem.AppDataDirectory, "VaultGuard");
         }
     }
 

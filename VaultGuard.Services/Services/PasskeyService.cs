@@ -1,24 +1,24 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.DAL.Interfaces;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.DAL.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.Services.Interfaces;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Fido2NetLib;
 using Fido2NetLib.Objects;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for managing WebAuthn Passkey operations
 /// </summary>
 public class PasskeyService : IPasskeyService
 {
-    private readonly IPasswordManagerDbContext _context;
+    private readonly IVaultGuardDbContext _context;
     private readonly IPasswordCryptoService _passwordCryptoService;
     private readonly IPasswordEncryptionService _passwordEncryptionService;
     private readonly ILogger<PasskeyService> _logger;
@@ -26,7 +26,7 @@ public class PasskeyService : IPasskeyService
     private readonly Dictionary<string, (string Challenge, string UserId, DateTime Expiry)> _challenges;
 
     public PasskeyService(
-        IPasswordManagerDbContext context,
+        IVaultGuardDbContext context,
         IPasswordCryptoService passwordCryptoService,
         IPasswordEncryptionService passwordEncryptionService,
         ILogger<PasskeyService> logger,

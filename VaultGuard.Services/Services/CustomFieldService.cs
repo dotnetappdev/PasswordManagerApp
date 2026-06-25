@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 public class CustomFieldService : ICustomFieldService
 {

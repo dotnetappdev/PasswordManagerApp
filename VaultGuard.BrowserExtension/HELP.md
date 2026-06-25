@@ -1,10 +1,10 @@
-# Password Manager Browser Extension - Help Guide
+# Vault Guard Browser Extension - Help Guide
 
 ## Version 1.0.0
 
 ## Getting Started
 
-The Password Manager Browser Extension seamlessly integrates with your Password Manager app to provide secure password autofill and generation right in your browser.
+The Vault Guard Browser Extension seamlessly integrates with your Vault Guard app to provide secure password autofill and generation right in your browser.
 
 ## Features
 

@@ -2,19 +2,19 @@
 
 ## Overview
 
-I have created the foundation for the WPF version of the Password Manager application. This involved porting 78 files from the WinUI version to WPF, including all views, dialogs, ViewModels, services, converters, helpers, and themes.
+I have created the foundation for the WPF version of the Vault Guard application. This involved porting 78 files from the WinUI version to WPF, including all views, dialogs, ViewModels, services, converters, helpers, and themes.
 
 ## What Has Been Completed
 
 ### 1. Automated Conversion System
 Created two conversion scripts that:
-- Copied all 78 files from PasswordManager.WinUi to PasswordManager.WPF
+- Copied all 78 files from VaultGuard.WinUi to VaultGuard.WPF
 - Performed automated namespace conversions
 - Replaced WinUI-specific APIs with WPF equivalents
 - Fixed many XAML syntax differences
 
 ### 2. Project Setup (100% Complete)
-- ✅ Created `PasswordManager.WPF.csproj` with proper SDK configuration
+- ✅ Created `VaultGuard.WPF.csproj` with proper SDK configuration
 - ✅ Added all necessary NuGet packages:
   - ModernWpfUI (for modern Windows look and feel)
   - Entity Framework Core 9.0.8
@@ -101,7 +101,7 @@ These differences require case-by-case manual review and adjustment.
 To complete the WPF version, you have three options:
 
 ### Option 1: Complete Manual Fixes (Recommended if WPF is required)
-Fix the 22 XAML errors one by one. I've documented each issue in `PasswordManager.WPF/README.md`. Estimated time: 4-6 hours for someone familiar with both frameworks.
+Fix the 22 XAML errors one by one. I've documented each issue in `VaultGuard.WPF/README.md`. Estimated time: 4-6 hours for someone familiar with both frameworks.
 
 ### Option 2: Simplified WPF Version
 Create a simpler WPF version using standard WPF controls instead of ModernWPF. This would:
@@ -120,8 +120,8 @@ The WinUI version is already complete and working. WinUI3 is Microsoft's modern 
 ## Files Created
 
 ```
-PasswordManager.WPF/
-├── PasswordManager.WPF.csproj (project file)
+VaultGuard.WPF/
+├── VaultGuard.WPF.csproj (project file)
 ├── README.md (detailed status doc)
 ├── App.xaml & App.xaml.cs
 ├── MainWindow.xaml & MainWindow.xaml.cs
@@ -165,4 +165,4 @@ I've successfully created the infrastructure for a WPF version with automated co
 
 The remaining work is primarily XAML fixes to account for WinUI→WPF differences. This represents approximately 85% completion of a complex framework migration task.
 
-The detailed list of remaining fixes is in `PasswordManager.WPF/README.md`.
+The detailed list of remaining fixes is in `VaultGuard.WPF/README.md`.

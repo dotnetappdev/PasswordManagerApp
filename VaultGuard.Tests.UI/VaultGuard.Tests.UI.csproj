@@ -28,10 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../PasswordManager.Services/PasswordManager.Services.csproj" />
-    <ProjectReference Include="../PasswordManager.Models/PasswordManager.Models.csproj" />
-    <ProjectReference Include="../PasswordManager.DAL/PasswordManager.DAL.csproj" />
-    <ProjectReference Include="../PasswordManager.Crypto/PasswordManager.Crypto.csproj" />
+    <ProjectReference Include="../VaultGuard.Services/VaultGuard.Services.csproj" />
+    <ProjectReference Include="../VaultGuard.Models/VaultGuard.Models.csproj" />
+    <ProjectReference Include="../VaultGuard.DAL/VaultGuard.DAL.csproj" />
+    <ProjectReference Include="../VaultGuard.Crypto/VaultGuard.Crypto.csproj" />
   </ItemGroup>
 
 </Project>

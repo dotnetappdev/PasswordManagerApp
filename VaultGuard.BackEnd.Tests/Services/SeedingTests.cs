@@ -1,11 +1,11 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
-using PasswordManager.DAL;
-using PasswordManager.DAL.Seed;
-using PasswordManager.Models;
+using VaultGuard.DAL;
+using VaultGuard.DAL.Seed;
+using VaultGuard.Models;
 
-namespace PasswordManager.BackEnd.Tests.Services;
+namespace VaultGuard.BackEnd.Tests.Services;
 
 /// <summary>
 /// Seeding tests backed by a real SQLite in-memory connection so that FK
@@ -17,17 +17,17 @@ namespace PasswordManager.BackEnd.Tests.Services;
 public class SeedingTests
 {
     private SqliteConnection  _connection = null!;
-    private PasswordManagerDbContext _db = null!;
+    private VaultGuardDbContext _db = null!;
     private const string UserId = "seed-test-user-001";
 
     // ── Helpers ─────────────────────────────────────────────────────────────
 
-    private static PasswordManagerDbContext BuildContext(SqliteConnection conn)
+    private static VaultGuardDbContext BuildContext(SqliteConnection conn)
     {
-        var opts = new DbContextOptionsBuilder<PasswordManagerDbContext>()
+        var opts = new DbContextOptionsBuilder<VaultGuardDbContext>()
             .UseSqlite(conn)
             .Options;
-        return new PasswordManagerDbContext(opts);
+        return new VaultGuardDbContext(opts);
     }
 
     private void EnsureUser()

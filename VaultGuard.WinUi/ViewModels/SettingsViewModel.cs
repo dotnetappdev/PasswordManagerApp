@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.WinUi.Services;
+using VaultGuard.WinUi.Services;
 
-namespace PasswordManager.WinUi.ViewModels;
+namespace VaultGuard.WinUi.ViewModels;
 
 public class SettingsViewModel : BaseViewModel
 {
@@ -184,8 +184,8 @@ public class SettingsViewModel : BaseViewModel
                 : "passwordmanager.db";
 
             ExportPath = localSettings.Values.ContainsKey("ExportPath")
-                ? localSettings.Values["ExportPath"]?.ToString() ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport")
-                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport");
+                ? localSettings.Values["ExportPath"]?.ToString() ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "VaultGuardExport")
+                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "VaultGuardExport");
 
             ApplyTheme();
         }
@@ -197,7 +197,7 @@ public class SettingsViewModel : BaseViewModel
             AuthenticationMode = "Local Database";
             ApiBaseUrl = "https://localhost:7001/api";
             DatabaseProvider = "SQLite";
-            ExportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PasswordManagerExport");
+            ExportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "VaultGuardExport");
             ApplyTheme();
         }
         finally

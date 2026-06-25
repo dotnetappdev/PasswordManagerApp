@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using ModernWpf.Controls;
 
-namespace PasswordManager.WPF.Helpers;
+namespace VaultGuard.WPF.Helpers;
 
 // Lets a plain Button placed inside a ContentDialog's control template act as the
 // dialog's title-bar "X" close button, without needing code-behind in the XAML

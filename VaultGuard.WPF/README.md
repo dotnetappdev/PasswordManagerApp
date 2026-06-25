@@ -1,6 +1,6 @@
-# PasswordManager.WPF - WPF Version Implementation Status
+# VaultGuard.WPF - WPF Version Implementation Status
 
-This directory contains the WPF version of the Password Manager application, ported from the WinUI version located in `PasswordManager.WinUi`.
+This directory contains the WPF version of the Vault Guard application, ported from the WinUI version located in `VaultGuard.WinUi`.
 
 ## Current Status: IN PROGRESS
 
@@ -9,7 +9,7 @@ The basic structure has been created through automated conversion scripts, but m
 ## What Has Been Completed
 
 ### ✅ Project Setup
-- Created `PasswordManager.WPF.csproj` with correct SDK and dependencies
+- Created `VaultGuard.WPF.csproj` with correct SDK and dependencies
 - Added project to solution file
 - Configured NuGet packages including:
   - ModernWpfUI for modern Windows look
@@ -38,7 +38,7 @@ All files have been copied and initially converted from WinUI:
 - `UserContextService.cs` - User context management
 
 ### ✅ Code Conversions
-- Namespace changes: `PasswordManager.WinUi` → `PasswordManager.WPF`
+- Namespace changes: `VaultGuard.WinUi` → `VaultGuard.WPF`
 - Service name changes: `WinUiAuthService` → `WpfAuthService`
 - Basic API replacements completed
 
@@ -158,11 +158,11 @@ WPF vs WinUI differences that may affect functionality:
 ## Build Command
 
 ```bash
-dotnet build PasswordManager.WPF/PasswordManager.WPF.csproj
+dotnet build VaultGuard.WPF/VaultGuard.WPF.csproj
 ```
 
 ## Run Command (after build succeeds)
 
 ```bash
-dotnet run --project PasswordManager.WPF/PasswordManager.WPF.csproj
+dotnet run --project VaultGuard.WPF/VaultGuard.WPF.csproj
 ```

@@ -1,6 +1,6 @@
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.Services.Utilities;
+namespace VaultGuard.Services.Utilities;
 
 public static class BrandIconHelper
 {

@@ -1,8 +1,8 @@
 using NUnit.Framework;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Services.Services;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Services.Services;
 
-namespace PasswordManager.BackEnd.Tests.Services;
+namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
 public class PassphraseGeneratorTests

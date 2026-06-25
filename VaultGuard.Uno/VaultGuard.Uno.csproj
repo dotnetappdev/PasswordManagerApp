@@ -6,16 +6,16 @@
     <UnoSingleProject>true</UnoSingleProject>
 
     <!-- Display name -->
-    <ApplicationTitle>Password Manager</ApplicationTitle>
+    <ApplicationTitle>Vault Guard</ApplicationTitle>
     <!-- App Identifier -->
     <ApplicationId>com.passwordmanager.mobile</ApplicationId>
     <!-- Versions -->
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
     <!-- Package Publisher -->
-    <ApplicationPublisher>Password Manager</ApplicationPublisher>
+    <ApplicationPublisher>Vault Guard</ApplicationPublisher>
     <!-- Package Description -->
-    <Description>Password Manager Mobile App - Secure password management on Android and iOS</Description>
+    <Description>Vault Guard Mobile App - Secure password management on Android and iOS</Description>
 
     <!--
       UnoFeatures are used to quickly add and manage features enabled for your app.
@@ -61,8 +61,8 @@
 
   <ItemGroup>
     <!-- Project references to shared libraries -->
-    <ProjectReference Include="..\PasswordManager.Models\PasswordManager.Models.csproj" />
-    <ProjectReference Include="..\PasswordManager.Crypto\PasswordManager.Crypto.csproj" />
+    <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
+    <ProjectReference Include="..\VaultGuard.Crypto\VaultGuard.Crypto.csproj" />
   </ItemGroup>
 
 </Project>

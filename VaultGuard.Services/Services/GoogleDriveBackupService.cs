@@ -6,10 +6,10 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
-using PasswordManager.Models.DTOs;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Google Drive backup service using Drive v3 REST API.
@@ -26,7 +26,7 @@ public class GoogleDriveBackupService : IGoogleDriveBackupService
     private readonly HttpClient _http;
 
     private const string TokenFile = "gdrive_token.json";
-    private const string SettingsDir = "PasswordManager";
+    private const string SettingsDir = "VaultGuard";
     private const string BackupMimeType = "application/octet-stream";
     private const string DriveFilesUrl = "https://www.googleapis.com/drive/v3/files";
     private const string DriveUploadUrl = "https://www.googleapis.com/upload/drive/v3/files";

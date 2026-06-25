@@ -3,14 +3,14 @@ using System.Windows;
 using System.Windows.Controls;
 using ListView = System.Windows.Controls.ListView;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.WPF.ViewModels;
-using PasswordManager.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.WPF.ViewModels;
+using VaultGuard.Models;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WPF.Views;
+namespace VaultGuard.WPF.Views;
 
 /// <summary>
 /// Main dashboard page showing password items and navigation

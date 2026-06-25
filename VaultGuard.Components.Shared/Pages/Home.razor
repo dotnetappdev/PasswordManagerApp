@@ -1,11 +1,11 @@
 ﻿@page "/home"
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using Microsoft.AspNetCore.Components.Forms
-@using PasswordManager.Models
-@using PasswordManager.Services.Interfaces
-@using PasswordManager.Imports.Interfaces
-@using PasswordManager.Crypto.Interfaces
-@* @using PasswordManager.App.Components *@
+@using VaultGuard.Models
+@using VaultGuard.Services.Interfaces
+@using VaultGuard.Imports.Interfaces
+@using VaultGuard.Crypto.Interfaces
+@* @using VaultGuard.App.Components *@
 @inject IPasswordItemService PasswordItemService
 @inject ITagService TagService
 @inject ICategoryInterface CategoryService
@@ -14,7 +14,7 @@
 @inject IAuthService AuthService
 @inject IUserProfileService UserProfileService
 @inject NavigationManager Navigation
-@inject PasswordManager.Imports.Interfaces.IImportService ImportService
+@inject VaultGuard.Imports.Interfaces.IImportService ImportService
 @inject IVaultSessionService VaultSessionService
 @inject IPasswordRevealService PasswordRevealService
 
@@ -543,7 +543,7 @@
         <div class="sidebar-header">
             <div class="logo-section">
                 <span class="logo-icon">🔐</span>
-                <h2>Password Manager</h2>
+                <h2>Vault Guard</h2>
             </div>
             <button class="logout-btn" @onclick="LogoutAsync" title="Logout">
                 <span>🚪</span>
@@ -810,7 +810,7 @@
         @* Temporarily commented out due to cross-project dependency issue *@
         @* @if (showSettingsPopup)
         {
-            <PasswordManager.App.Components.SettingsPopup ShowSettings="showSettingsPopup"
+            <VaultGuard.App.Components.SettingsPopup ShowSettings="showSettingsPopup"
                 ShowSettingsChanged="OnSettingsPopupChanged" />
         } *@
         @code {
@@ -1440,7 +1440,7 @@
                                         aria-checked="@(selectedProvider?.ProviderName == provider.ProviderName ? "true" : "false")"
                                         aria-label="@provider.DisplayName import provider">
                                         <div class="provider-info">
-                                            @if (provider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin plugin)
+                                            @if (provider is VaultGuard.Imports.Interfaces.IPasswordImportPlugin plugin)
                                             {
                                                 <div class="plugin-header">
                                                     @if (!string.IsNullOrEmpty(plugin.Metadata.IconUrl))
@@ -1532,7 +1532,7 @@
                         
                         <div class="import-step">
                             <h4 id="select-file-label">Select File</h4>
-                            @if (selectedProvider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin plugin &&
+                            @if (selectedProvider is VaultGuard.Imports.Interfaces.IPasswordImportPlugin plugin &&
                                             !string.IsNullOrEmpty(plugin.Metadata.Website))
                             {
                                 <div class="import-help">
@@ -1570,7 +1570,7 @@
                                 <h4>Import Preview</h4>
                                 <p>Ready to import from <strong>@selectedProvider.DisplayName</strong></p>
                                 <p>File: <strong>@selectedFile.Name</strong></p>
-                                @if (selectedProvider is PasswordManager.Imports.Interfaces.IPasswordImportPlugin pluginProvider)
+                                @if (selectedProvider is VaultGuard.Imports.Interfaces.IPasswordImportPlugin pluginProvider)
                                 {
                                     <p>Plugin version: <strong>@pluginProvider.Metadata.Version</strong></p>
                                 }
@@ -1802,15 +1802,15 @@
     private Collection newCollection = new() { Color = "#ffffff", ParentCollectionId = null };
 
     // Import related properties
-    private List<PasswordManager.Imports.Interfaces.IPasswordImportProvider> availableProviders = new();
-    private PasswordManager.Imports.Interfaces.IPasswordImportProvider? selectedProvider;
+    private List<VaultGuard.Imports.Interfaces.IPasswordImportProvider> availableProviders = new();
+    private VaultGuard.Imports.Interfaces.IPasswordImportProvider? selectedProvider;
     private IBrowserFile? selectedFile;
     private bool importInProgress = false;
-    private PasswordManager.Imports.Interfaces.ImportResult? importResult;
+    private VaultGuard.Imports.Interfaces.ImportResult? importResult;
     private int importProgress = 0;
     private string importProgressText = "Processing your file, please wait...";
     private string selectedImportUserOption = "current"; // "current", "all", or "multiple"
-    private List<PasswordManager.Models.DTOs.Auth.UserDto> availableUsers = new();
+    private List<VaultGuard.Models.DTOs.Auth.UserDto> availableUsers = new();
     private HashSet<string> selectedUserIds = new();
 
     // Validation state
@@ -2873,7 +2873,7 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
         StateHasChanged();
     }
 
-    private void SelectProvider(PasswordManager.Imports.Interfaces.IPasswordImportProvider provider)
+    private void SelectProvider(VaultGuard.Imports.Interfaces.IPasswordImportProvider provider)
     {
         selectedProvider = provider;
         selectedFile = null; // Reset file selection when provider changes
@@ -2944,7 +2944,7 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
                 // Import for multiple selected users
                 if (selectedUserIds.Count == 0)
                 {
-                    importResult = new PasswordManager.Imports.Interfaces.ImportResult
+                    importResult = new VaultGuard.Imports.Interfaces.ImportResult
                     {
                         Success = false,
                         ErrorMessage = "Please select at least one user"
@@ -2991,7 +2991,7 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
             }
             
             // Create combined result
-            importResult = new PasswordManager.Imports.Interfaces.ImportResult
+            importResult = new VaultGuard.Imports.Interfaces.ImportResult
             {
                 Success = totalProcessed > 0,
                 SuccessfulImports = totalSuccessful,
@@ -3009,7 +3009,7 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
         }
         catch (Exception ex)
         {
-            importResult = new PasswordManager.Imports.Interfaces.ImportResult
+            importResult = new VaultGuard.Imports.Interfaces.ImportResult
             {
                 Success = false,
                 ErrorMessage = $"Failed to process file: {ex.Message}"

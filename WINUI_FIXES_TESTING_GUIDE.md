@@ -74,17 +74,17 @@ This guide documents how to test the fixes made for issue #329.
 ## Technical Implementation Details
 
 ### Dialog Centering Changes
-- **File:** `PasswordManager.WinUi/Themes/ModernTheme.xaml`
+- **File:** `VaultGuard.WinUi/Themes/ModernTheme.xaml`
 - **Changes:** Added `HorizontalAlignment="Center"`, `VerticalAlignment="Center"`, `Margin="20"`, and `ThemeShadow`
 - **Style:** `Modern1PasswordDialogStyle`
 
 ### Search Auto-Filter Changes  
-- **File:** `PasswordManager.WinUi/MainWindow.xaml.cs`
+- **File:** `VaultGuard.WinUi/MainWindow.xaml.cs`
 - **Method:** `SearchBox_TextChanged`
 - **Changes:** Added auto-navigation and immediate filtering when user types ≥2 characters
 
 ### Category Navigation
-- **File:** `PasswordManager.WinUi/MainWindow.xaml.cs`
+- **File:** `VaultGuard.WinUi/MainWindow.xaml.cs`
 - **Method:** `RefreshCategoriesAsync()` (existing - verified working)
 - **Trigger:** Called automatically after category creation via event handler
 

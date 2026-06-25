@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.DAL.SupaBase;
+using VaultGuard.DAL.SupaBase;
 
-namespace PasswordManager.API.Extensions
+namespace VaultGuard.API.Extensions
 {
     public static class SupabaseServiceCollectionExtensions
     {

@@ -3,7 +3,7 @@
   "displayName": "Dashlane",
   "description": "Import passwords from Dashlane CSV export files",
   "version": "1.0.0",
-  "author": "PasswordManager Team",
+  "author": "VaultGuard Team",
   "website": "https://www.dashlane.com",
   "created": "2024-12-18T00:00:00Z",
   "lastUpdated": "2024-12-18T00:00:00Z",

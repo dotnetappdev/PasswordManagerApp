@@ -1,6 +1,6 @@
-using PasswordManager.Imports.Interfaces;
+using VaultGuard.Imports.Interfaces;
 
-namespace PasswordManager.Imports.Interfaces;
+namespace VaultGuard.Imports.Interfaces;
 
 public interface IImportService
 {

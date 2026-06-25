@@ -1,8 +1,8 @@
 using FileHelpers;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManagerImports.Edge;
+namespace VaultGuardImports.Edge;
 
 /// <summary>
 /// Microsoft Edge browser CSV import plugin
@@ -25,7 +25,7 @@ public class EdgeImportPlugin : IPasswordImportPlugin
             DisplayName = "Microsoft Edge",
             Description = "Import passwords from Edge CSV export files",
             Version = "1.0.0",
-            Author = "PasswordManager Team",
+            Author = "VaultGuard Team",
             Website = "https://www.microsoft.com/edge",
             Created = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,

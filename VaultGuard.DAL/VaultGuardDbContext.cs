@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.Models;
-using PasswordManager.DAL.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.DAL.Interfaces;
 
-namespace PasswordManager.DAL;
+namespace VaultGuard.DAL;
 
-public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
+public class VaultGuardDbContext : DbContext, IVaultGuardDbContext
 {
-    public PasswordManagerDbContext(DbContextOptions<PasswordManagerDbContext> options) : base(options)
+    public VaultGuardDbContext(DbContextOptions<VaultGuardDbContext> options) : base(options)
     {
     }
 
@@ -396,7 +396,7 @@ public class PasswordManagerDbContext : DbContext, IPasswordManagerDbContext
             entity.HasIndex(e => e.NextBackupAt); // For scheduled backup queries
         });
 
-        // Map Device and AuditLog to their actual table names (created by PasswordManagerDbContextApp with singular names)
+        // Map Device and AuditLog to their actual table names (created by VaultGuardDbContextApp with singular names)
         modelBuilder.Entity<Device>().ToTable("Device");
         modelBuilder.Entity<AuditLog>().ToTable("AuditLog");
     }

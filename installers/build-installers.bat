@@ -9,7 +9,7 @@ set "OUTPUT_DIR=%SCRIPT_DIR%output"
 set "INNO_SETUP=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 
 echo ================================================
-echo Password Manager - Installer Build Script
+echo Vault Guard - Installer Build Script
 echo ================================================
 echo.
 
@@ -37,7 +37,7 @@ echo.
 
 REM Publish Web API
 echo Publishing Web API...
-cd "%PROJECT_ROOT%\PasswordManager.API"
+cd "%PROJECT_ROOT%\VaultGuard.API"
 dotnet publish -c Release -o bin\Release\net9.0\publish
 if %ERRORLEVEL% neq 0 (
     echo Error: Failed to publish Web API
@@ -48,7 +48,7 @@ echo.
 
 REM Publish WinUI Application
 echo Publishing WinUI Application...
-cd "%PROJECT_ROOT%\PasswordManager.WinUi"
+cd "%PROJECT_ROOT%\VaultGuard.WinUi"
 dotnet publish -c Release -p:Platform=x64 -o bin\x64\Release\net9.0-windows10.0.19041.0\win-x64\publish
 if %ERRORLEVEL% neq 0 (
     echo Error: Failed to publish WinUI Application

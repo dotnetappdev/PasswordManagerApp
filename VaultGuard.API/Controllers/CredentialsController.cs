@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models.DTOs;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Models.DTOs;
 
-namespace PasswordManager.API.Controllers;
+namespace VaultGuard.API.Controllers;
 
 /// <summary>
 /// Extension-facing alias for password items — matches the /api/credentials routes

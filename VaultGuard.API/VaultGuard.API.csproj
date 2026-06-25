@@ -29,12 +29,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PasswordManager.Models\PasswordManager.Models.csproj" />
-    <ProjectReference Include="..\PasswordManager.DAL\PasswordManager.DAL.csproj" />
-    <ProjectReference Include="..\PasswordManager.DAL.SupaBase\PasswordManager.DAL.SupaBase.csproj" />
-    <ProjectReference Include="..\PasswordManager.Crypto\PasswordManager.Crypto.csproj" />
-    <ProjectReference Include="..\PasswordManager.Services\PasswordManager.Services.csproj" />
-    <ProjectReference Include="..\PasswordManager.Imports\PasswordManager.Imports.csproj" />
+    <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
+    <ProjectReference Include="..\VaultGuard.DAL\VaultGuard.DAL.csproj" />
+    <ProjectReference Include="..\VaultGuard.DAL.SupaBase\VaultGuard.DAL.SupaBase.csproj" />
+    <ProjectReference Include="..\VaultGuard.Crypto\VaultGuard.Crypto.csproj" />
+    <ProjectReference Include="..\VaultGuard.Services\VaultGuard.Services.csproj" />
+    <ProjectReference Include="..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
+    <ProjectReference Include="..\VaultGuard.ExceptionReporting\VaultGuard.ExceptionReporting.csproj" />
+    <ProjectReference Include="..\VaultGuard.ExceptionReporting.Sentry\VaultGuard.ExceptionReporting.Sentry.csproj" />
   </ItemGroup>
 
   <!-- Ensure Development config is not copied into outputs/publish (prevents MSIX duplicate payloads) -->

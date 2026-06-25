@@ -1,5 +1,5 @@
 @inherits LayoutComponentBase
-@inject PasswordManager.Components.Shared.Services.ThemeService ThemeService
+@inject VaultGuard.Components.Shared.Services.ThemeService ThemeService
 
 <MudThemeProvider Theme="_theme" IsDarkMode="@_isDarkMode" />
 <MudPopoverProvider />
@@ -9,7 +9,7 @@
 <MudLayout>
     <MudAppBar Elevation="0" Color="Color.Transparent" Style="background: var(--mud-palette-drawer-background); border-bottom: 1px solid rgba(255,255,255,0.08);">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Style="font-weight:700; background: linear-gradient(135deg, #2563EB, #60A5FA); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">🔐 Password Manager</MudText>
+        <MudText Typo="Typo.h6" Style="font-weight:700; background: linear-gradient(135deg, #2563EB, #60A5FA); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">🔐 Vault Guard</MudText>
         <MudSpacer />
         <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" Color="Color.Inherit" OnClick="@ToggleDarkMode" />
         <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" Direction="Direction.Bottom" OffsetY="true">
@@ -62,7 +62,7 @@
             <MudAvatar Color="Color.Primary" Style="width:64px; height:64px;" Class="mb-3">
                 <MudIcon Icon="@Icons.Material.Filled.Shield" Style="font-size:2rem;" />
             </MudAvatar>
-            <MudText Typo="Typo.h6" Style="font-weight:700;">VaultGuard Password Manager</MudText>
+            <MudText Typo="Typo.h6" Style="font-weight:700;">VaultGuard Vault Guard</MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary">Version 1.0.0 · Web (Blazor · .NET 10)</MudText>
             <MudText Typo="Typo.body2" Class="mt-3">
                 The best open-source password manager for Windows and Web.

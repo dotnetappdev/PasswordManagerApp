@@ -4,7 +4,7 @@ REM Setup script for generating HTTPS development certificates for Docker (Windo
 setlocal enabledelayedexpansion
 
 echo ================================================
-echo Password Manager - Docker HTTPS Certificate Setup
+echo Vault Guard - Docker HTTPS Certificate Setup
 echo ================================================
 echo.
 

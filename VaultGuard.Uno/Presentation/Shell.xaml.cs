@@ -1,4 +1,4 @@
-namespace PasswordManager.Mobile.Presentation;
+namespace VaultGuard.Mobile.Presentation;
 
 public sealed partial class Shell : UserControl
 {

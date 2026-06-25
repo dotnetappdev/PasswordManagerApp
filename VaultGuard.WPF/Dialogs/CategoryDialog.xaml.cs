@@ -1,14 +1,15 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Shapes;
 
-namespace PasswordManager.WPF.Dialogs;
+namespace VaultGuard.WPF.Dialogs;
 
 public sealed partial class CategoryDialog : ModernWpf.Controls.ContentDialog
 {
@@ -16,6 +17,8 @@ public sealed partial class CategoryDialog : ModernWpf.Controls.ContentDialog
     private readonly IAuthService _authService;
     private Category? _category;
     private readonly bool _isEditMode;
+    // Set when the user picks a colour outside the preset list via the old-school colour dialog.
+    private string? _customColor;
 
     public Category? Result { get; private set; }
 
@@ -53,7 +56,7 @@ public sealed partial class CategoryDialog : ModernWpf.Controls.ContentDialog
         CategoryDescriptionTextBox.Text = _category.Description ?? string.Empty;
 
         // Set color based on existing value
-        var colorIndex = _category.Color switch
+        var presetIndex = _category.Color?.ToLowerInvariant() switch
         {
             "#3b82f6" => 0, // Blue
             "#10b981" => 1, // Green
@@ -62,9 +65,17 @@ public sealed partial class CategoryDialog : ModernWpf.Controls.ContentDialog
             "#8b5cf6" => 4, // Purple
             "#ec4899" => 5, // Pink
             "#6b7280" => 6, // Gray
-            _ => 0          // Default to blue
+            _ => -1         // Not a preset — treat as a custom colour
         };
-        CategoryColorComboBox.SelectedIndex = colorIndex;
+        if (presetIndex >= 0)
+        {
+            CategoryColorComboBox.SelectedIndex = presetIndex;
+        }
+        else if (!string.IsNullOrWhiteSpace(_category.Color))
+        {
+            _customColor = _category.Color;
+            ApplyCustomColorPreview(_category.Color!);
+        }
 
         // Set icon based on existing glyph value
         var iconIndex = _category.Icon switch
@@ -84,6 +95,8 @@ public sealed partial class CategoryDialog : ModernWpf.Controls.ContentDialog
 
     private void CategoryColorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        // Choosing a preset clears any custom colour.
+        _customColor = null;
         if (CategoryColorComboBox.SelectedItem is ComboBoxItem selectedItem)
         {
             // Extract color from the selected item
@@ -94,6 +107,29 @@ public sealed partial class CategoryDialog : ModernWpf.Controls.ContentDialog
                 ColorPreview.Fill = colorBrush;
             }
         }
+    }
+
+    private void CustomColorButton_Click(object sender, RoutedEventArgs e)
+    {
+        var owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+                    ?? Application.Current.MainWindow;
+        var current = _customColor ?? GetSelectedColor();
+        var picked = Helpers.ColorPickerDialog.Show(current, owner);
+        if (!string.IsNullOrWhiteSpace(picked))
+        {
+            _customColor = picked;
+            ApplyCustomColorPreview(picked);
+        }
+    }
+
+    private void ApplyCustomColorPreview(string hex)
+    {
+        try
+        {
+            var color = (Color)ColorConverter.ConvertFromString(hex);
+            ColorPreview.Fill = new SolidColorBrush(color);
+        }
+        catch { /* leave preview unchanged on a bad value */ }
     }
 
     private async void CategoryDialog_PrimaryButtonClick(ModernWpf.Controls.ContentDialog sender, ModernWpf.Controls.ContentDialogButtonClickEventArgs args)
@@ -192,6 +228,9 @@ public sealed partial class CategoryDialog : ModernWpf.Controls.ContentDialog
 
     private string GetSelectedColor()
     {
+        // A custom-picked colour wins over the preset combo.
+        if (!string.IsNullOrWhiteSpace(_customColor)) return _customColor!;
+
         var selectedIndex = CategoryColorComboBox.SelectedIndex;
         return selectedIndex switch
         {

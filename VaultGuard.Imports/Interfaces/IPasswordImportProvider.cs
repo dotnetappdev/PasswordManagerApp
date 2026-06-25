@@ -1,6 +1,6 @@
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.Imports.Interfaces;
+namespace VaultGuard.Imports.Interfaces;
 
 public interface IPasswordImportProvider
 {

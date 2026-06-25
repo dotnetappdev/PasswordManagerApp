@@ -1,9 +1,9 @@
-using PasswordManager.Models.DTOs;
+using VaultGuard.Models.DTOs;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace PasswordManager.Models;
+namespace VaultGuard.Models;
 
 public class LoginItem
 {

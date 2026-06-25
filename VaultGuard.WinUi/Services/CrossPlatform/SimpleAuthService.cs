@@ -1,7 +1,7 @@
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.WinUi.Services.CrossPlatform;
+namespace VaultGuard.WinUi.Services.CrossPlatform;
 
 /// <summary>
 /// Simple authentication service for cross-platform builds.

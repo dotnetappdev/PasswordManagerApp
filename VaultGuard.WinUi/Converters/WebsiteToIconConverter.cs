@@ -2,7 +2,7 @@ using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using System;
 
-namespace PasswordManager.WinUi.Converters;
+namespace VaultGuard.WinUi.Converters;
 
 public class WebsiteToIconConverter : IValueConverter
 {

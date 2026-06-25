@@ -7,9 +7,9 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using ModernWpf.Controls;
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.WPF.Helpers;
+namespace VaultGuard.WPF.Helpers;
 
 /// <summary>
 /// Builds 1Password-style custom field rows:

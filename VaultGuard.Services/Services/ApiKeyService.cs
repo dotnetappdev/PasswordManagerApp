@@ -1,21 +1,21 @@
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs;
-using PasswordManager.Models.Configuration;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Models.Configuration;
+using VaultGuard.Services.Interfaces;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace PasswordManager.Services.Services
+namespace VaultGuard.Services.Services
 {
     public class ApiKeyService : IApiKeyService
     {
-        private readonly PasswordManagerDbContext _context;
+        private readonly VaultGuardDbContext _context;
         private readonly IDatabaseConfigurationService _databaseConfigService;
         
-        public ApiKeyService(PasswordManagerDbContext context, IDatabaseConfigurationService databaseConfigService)
+        public ApiKeyService(VaultGuardDbContext context, IDatabaseConfigurationService databaseConfigService)
         {
             _context = context;
             _databaseConfigService = databaseConfigService;

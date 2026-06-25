@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PasswordManager.Models.Configuration;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models.Configuration;
+using VaultGuard.Services.Interfaces;
 using System.Text;
 using System.Text.Json;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Twilio SMS service implementation

@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using Microsoft.Extensions.Logging;
 
-namespace PasswordManager.WinUi.Services.FileLogging
+namespace VaultGuard.Services.Logging
 {
-    internal class FileLogger : ILogger
+    public class FileLogger : ILogger
     {
         private readonly string _categoryName;
         private readonly string _baseLogPath;

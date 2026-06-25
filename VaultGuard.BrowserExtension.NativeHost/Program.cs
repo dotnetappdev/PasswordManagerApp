@@ -6,11 +6,11 @@ using System.Security.Cryptography;
 using System.Text;
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.BrowserExtension.NativeHost;
+namespace VaultGuard.BrowserExtension.NativeHost;
 
 public class Program
 {
-    private static PasswordManagerDbContext? _dbContext;
+    private static VaultGuardDbContext? _dbContext;
     private static string _currentDbPath = "";
     private static readonly Dictionary<string, (string userId, byte[] masterKey)> _sessions = new();
 
@@ -36,11 +36,11 @@ public class Program
     {
         // Initialize database context
         _currentDbPath = ResolveDatabasePath();
-        var options = new DbContextOptionsBuilder<PasswordManagerDbContext>()
+        var options = new DbContextOptionsBuilder<VaultGuardDbContext>()
             .UseSqlite($"Data Source={_currentDbPath}")
             .Options;
 
-        _dbContext = new PasswordManagerDbContext(options);
+        _dbContext = new VaultGuardDbContext(options);
     }
 
     private static string GetDatabasePath() => $"Data Source={ResolveDatabasePath()}";
@@ -52,10 +52,10 @@ public class Program
         var possiblePaths = new[]
         {
             "passwordmanager_dev.db",
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PasswordManager", "passwordmanager.db"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PasswordManager", "passwordmanager.db"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VaultGuard", "passwordmanager.db"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultGuard", "passwordmanager.db"),
             // For development - look for the API's database
-            Path.Combine(Directory.GetCurrentDirectory(), "..", "PasswordManager.API", "passwordmanager_dev.db"),
+            Path.Combine(Directory.GetCurrentDirectory(), "..", "VaultGuard.API", "passwordmanager_dev.db"),
             Path.Combine(Directory.GetCurrentDirectory(), "passwordmanager_dev.db")
         };
 
@@ -68,7 +68,7 @@ public class Program
         }
 
         // If not found, use default path (will be created if needed)
-        return Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PasswordManager", "passwordmanager.db"));
+        return Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VaultGuard", "passwordmanager.db"));
     }
 
     private static async Task ProcessNativeMessages()
@@ -148,11 +148,11 @@ public class Program
                 var fullPath = Path.GetFullPath(customDbPath);
                 if (!string.Equals(fullPath, _currentDbPath, StringComparison.OrdinalIgnoreCase))
                 {
-                    var options = new DbContextOptionsBuilder<PasswordManagerDbContext>()
+                    var options = new DbContextOptionsBuilder<VaultGuardDbContext>()
                         .UseSqlite($"Data Source={fullPath}")
                         .Options;
 
-                    _dbContext = new PasswordManagerDbContext(options);
+                    _dbContext = new VaultGuardDbContext(options);
                     _currentDbPath = fullPath;
                     _passkeySchemaEnsured = false;
                     _customFieldSchemaEnsured = false; // re-check the schema on the new DB
@@ -1264,9 +1264,9 @@ public class CustomField
     public PasswordItem PasswordItem { get; set; } = null!;
 }
 
-public class PasswordManagerDbContext : IdentityDbContext<ApplicationUser>
+public class VaultGuardDbContext : IdentityDbContext<ApplicationUser>
 {
-    public PasswordManagerDbContext(DbContextOptions<PasswordManagerDbContext> options) : base(options)
+    public VaultGuardDbContext(DbContextOptions<VaultGuardDbContext> options) : base(options)
     {
     }
 

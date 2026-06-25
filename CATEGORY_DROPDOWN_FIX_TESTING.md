@@ -13,7 +13,7 @@ Modified the database initialization flow to:
 
 ### Test 1: Fresh Installation (Clean Database)
 1. Delete the existing database file if it exists:
-   - Location: `C:\Users\{username}\AppData\Local\PasswordManager\passwordmanager.db`
+   - Location: `C:\Users\{username}\AppData\Local\VaultGuard\passwordmanager.db`
 2. Launch the WinUI app
 3. Wait for the database to initialize (check logs for "Seeding categories" message)
 4. Click the "+" button to add a new item
@@ -93,6 +93,6 @@ If this fix causes issues, you can rollback by:
 2. Manually seeding categories using a SQL script if needed
 
 ## Related Files
-- `PasswordManager.Services/Services/AppStartupService.cs`
-- `PasswordManager.DAL/Seed/TestDataSeeder.cs`
-- `PasswordManager.WinUi/Dialogs/AddPasswordDialog.xaml.cs`
+- `VaultGuard.Services/Services/AppStartupService.cs`
+- `VaultGuard.DAL/Seed/TestDataSeeder.cs`
+- `VaultGuard.WinUi/Dialogs/AddPasswordDialog.xaml.cs`

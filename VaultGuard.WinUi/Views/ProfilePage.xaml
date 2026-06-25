@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Page x:Class="PasswordManager.WinUi.Views.ProfilePage"
+<Page x:Class="VaultGuard.WinUi.Views.ProfilePage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:converters="using:PasswordManager.WinUi.Converters"
+      xmlns:converters="using:VaultGuard.WinUi.Converters"
       Background="#2D2D2D">
 
     <Page.Resources>

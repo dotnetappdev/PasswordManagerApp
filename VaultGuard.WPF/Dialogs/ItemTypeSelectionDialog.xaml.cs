@@ -1,8 +1,8 @@
 using System.Windows.Controls;
 using System.Windows;
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.WPF.Dialogs;
+namespace VaultGuard.WPF.Dialogs;
 
 public sealed partial class ItemTypeSelectionDialog : ModernWpf.Controls.ContentDialog
 {

@@ -4,7 +4,7 @@
 
 ### End-to-End Encryption
 
-Your Password Manager uses **true end-to-end encryption** to protect your data:
+Your Vault Guard uses **true end-to-end encryption** to protect your data:
 
 - 🔐 **Your passwords are encrypted on your device** before syncing
 - 🔑 **Your master key never leaves your device** - it exists only in memory
@@ -37,7 +37,7 @@ Your master password is the most important secret in the system:
 
 ## Overview
 
-The Password Manager provides secure storage for your passwords, credit cards, secure notes, and WiFi credentials across multiple platforms. This guide covers how to use all the features effectively.
+The Vault Guard provides secure storage for your passwords, credit cards, secure notes, and WiFi credentials across multiple platforms. This guide covers how to use all the features effectively.
 
 ## Platforms
 

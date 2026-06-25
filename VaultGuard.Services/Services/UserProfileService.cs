@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 public class UserProfileService : IUserProfileService
 {
@@ -361,6 +361,47 @@ public class UserProfileService : IUserProfileService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting user {UserId}", userId);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Verifies the supplied master password against the user's stored hash. Mirrors the
+    /// verification used during sign-in so the non-2FA profile-switch flow re-authenticates
+    /// for real instead of just swapping the displayed profile.
+    /// </summary>
+    public async Task<bool> VerifyMasterPasswordAsync(string userId, string masterPassword)
+    {
+        try
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || string.IsNullOrEmpty(user.MasterPasswordHash) || string.IsNullOrEmpty(user.UserSalt))
+                return false;
+
+            var salt = Convert.FromBase64String(user.UserSalt);
+            return _passwordCryptoService.VerifyMasterPassword(
+                masterPassword, user.MasterPasswordHash, salt, user.MasterPasswordIterations);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error verifying master password for user {UserId}", userId);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Returns whether the user has 2FA enabled, so callers can choose the right step-up flow.
+    /// </summary>
+    public async Task<bool> IsTwoFactorEnabledAsync(string userId)
+    {
+        try
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            return user?.TwoFactorEnabled == true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error reading 2FA status for user {UserId}", userId);
             return false;
         }
     }

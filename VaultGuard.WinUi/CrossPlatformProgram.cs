@@ -1,20 +1,20 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL;
-using PasswordManager.Services;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Services.Services;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Imports.Services;
+using VaultGuard.DAL;
+using VaultGuard.Services;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Services.Services;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Imports.Services;
 using Microsoft.Extensions.Configuration;
-using PasswordManager.Crypto.Extensions;
+using VaultGuard.Crypto.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
-using PasswordManager.Models;
-using PasswordManager.WinUi.Services.CrossPlatform;
+using VaultGuard.Models;
+using VaultGuard.WinUi.Services.CrossPlatform;
 
-namespace PasswordManager.WinUi;
+namespace VaultGuard.WinUi;
 
 #if CROSSPLATFORM
 /// <summary>
@@ -26,7 +26,7 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        Console.WriteLine("PasswordManager WinUI - Cross-platform build");
+        Console.WriteLine("VaultGuard WinUI - Cross-platform build");
         Console.WriteLine("Note: This build excludes WinUI functionality for non-Windows platforms.");
 
         var host = CreateHostBuilder(args).Build();
@@ -80,10 +80,10 @@ public class Program
                     Directory.CreateDirectory(appDataDir);
                 }
 
-                services.AddDbContext<PasswordManagerDbContextApp>(options =>
+                services.AddDbContext<VaultGuardDbContextApp>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
 
-                services.AddDbContext<PasswordManagerDbContext>(options =>
+                services.AddDbContext<VaultGuardDbContext>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
 
                 services.AddIdentityCore<ApplicationUser>(options =>
@@ -96,7 +96,7 @@ public class Program
                     options.Password.RequireLowercase = true;
                 })
                 .AddRoles<ApplicationRole>()
-                .AddEntityFrameworkStores<PasswordManagerDbContextApp>();
+                .AddEntityFrameworkStores<VaultGuardDbContextApp>();
 
                 services.AddScoped<IAuthService, SimpleAuthService>();
                 services.AddScoped<IPasswordItemService, PasswordItemService>();
@@ -111,7 +111,7 @@ public class Program
                 services.AddScoped<IUserProfileService, UserProfileService>();
                 services.AddScoped<IVaultSessionService, VaultSessionService>();
                 services.AddScoped<IPasscodeService, PasscodeService>();
-                services.AddScoped<PasswordManager.DAL.Seed.IdentityDataSeeder>();
+                services.AddScoped<VaultGuard.DAL.Seed.IdentityDataSeeder>();
 
                 services.AddHttpClient();
                 services.AddSingleton<PluginDiscoveryService>();

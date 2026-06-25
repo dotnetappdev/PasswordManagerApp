@@ -9,8 +9,8 @@
 
 #define MyAppName "VaultGuard Web API"
 #define MyAppPublisher "VaultGuard"
-#define MyAppURL "https://github.com/dotnetappdev/PasswordManagerApp"
-#define MyAppExeName "PasswordManager.API.exe"
+#define MyAppURL "https://github.com/dotnetappdev/VaultGuardApp"
+#define MyAppExeName "VaultGuard.API.exe"
 #define DotNetRuntimeURL "https://aka.ms/dotnet/10.0/aspnetcore-runtime-win-x64.exe"
 
 [Setup]
@@ -34,7 +34,7 @@ WizardStyle=modern
 ArchitecturesAllowed=x64 arm64
 ArchitecturesInstallIn64BitMode=x64 arm64
 PrivilegesRequired=admin
-SetupIconFile=..\PasswordManager.WinUi\Assets\Square44x44Logo.scale-200.png
+SetupIconFile=..\VaultGuard.WinUi\Assets\Square44x44Logo.scale-200.png
 UninstallDisplayIcon={app}\{#MyAppExeName}
 
 [Languages]
@@ -56,7 +56,7 @@ Name: "generatecert"; Description: "Generate HTTPS development certificate"; Gro
 [Files]
 ; API Files - Source should point to published API output
 ; Note: Run 'dotnet publish -c Release' before building installer
-Source: "..\PasswordManager.API\bin\Release\net10.0\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\VaultGuard.API\bin\Release\net10.0\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Configuration template
 Source: "config\appsettings.json.template"; DestDir: "{app}"; DestName: "appsettings.json"; Flags: onlyifdoesntexist confirmoverwrite
 
@@ -79,24 +79,24 @@ Filename: "dotnet"; Parameters: "dev-certs https --clean"; StatusMsg: "Cleaning 
 Filename: "dotnet"; Parameters: "dev-certs https --trust"; StatusMsg: "Generating and trusting HTTPS certificate..."; Tasks: generatecert
 
 ; Create firewall rules if requested
-Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""Password Manager API HTTPS"" dir=in action=allow protocol=TCP localport=51650"; StatusMsg: "Creating firewall rule for HTTPS..."; Flags: runhidden; Tasks: createfirewall
-Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""Password Manager API HTTP"" dir=in action=allow protocol=TCP localport=51651"; StatusMsg: "Creating firewall rule for HTTP..."; Flags: runhidden; Tasks: createfirewall
+Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""Vault Guard API HTTPS"" dir=in action=allow protocol=TCP localport=51650"; StatusMsg: "Creating firewall rule for HTTPS..."; Flags: runhidden; Tasks: createfirewall
+Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""Vault Guard API HTTP"" dir=in action=allow protocol=TCP localport=51651"; StatusMsg: "Creating firewall rule for HTTP..."; Flags: runhidden; Tasks: createfirewall
 
 ; Install Windows service if requested
-Filename: "sc"; Parameters: "create ""PasswordManagerAPI"" binPath= ""{app}\{#MyAppExeName}"" start= auto DisplayName= ""Password Manager API Service"""; StatusMsg: "Installing Windows service..."; Flags: runhidden; Tasks: installservice
-Filename: "sc"; Parameters: "description ""PasswordManagerAPI"" ""Password Manager Web API Service - Secure password management backend"""; Flags: runhidden; Tasks: installservice
+Filename: "sc"; Parameters: "create ""VaultGuardAPI"" binPath= ""{app}\{#MyAppExeName}"" start= auto DisplayName= ""Vault Guard API Service"""; StatusMsg: "Installing Windows service..."; Flags: runhidden; Tasks: installservice
+Filename: "sc"; Parameters: "description ""VaultGuardAPI"" ""Vault Guard Web API Service - Secure password management backend"""; Flags: runhidden; Tasks: installservice
 
 ; Prompt user to run configuration wizard after install
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; Tasks: not installservice
 
 [UninstallRun]
 ; Stop and remove Windows service
-Filename: "sc"; Parameters: "stop ""PasswordManagerAPI"""; Flags: runhidden; Tasks: installservice
-Filename: "sc"; Parameters: "delete ""PasswordManagerAPI"""; Flags: runhidden; Tasks: installservice
+Filename: "sc"; Parameters: "stop ""VaultGuardAPI"""; Flags: runhidden; Tasks: installservice
+Filename: "sc"; Parameters: "delete ""VaultGuardAPI"""; Flags: runhidden; Tasks: installservice
 
 ; Remove firewall rules
-Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""Password Manager API HTTPS"""; Flags: runhidden; Tasks: createfirewall
-Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""Password Manager API HTTP"""; Flags: runhidden; Tasks: createfirewall
+Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""Vault Guard API HTTPS"""; Flags: runhidden; Tasks: createfirewall
+Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""Vault Guard API HTTP"""; Flags: runhidden; Tasks: createfirewall
 
 [Code]
 var
@@ -198,7 +198,7 @@ begin
   
   { Database Name }
   DatabasePage.Add('Database Name:', False);
-  DatabasePage.Values[2] := 'PasswordManagerDB';
+  DatabasePage.Values[2] := 'VaultGuardDB';
   
   { Database Username }
   DatabasePage.Add('Database Username:', False);

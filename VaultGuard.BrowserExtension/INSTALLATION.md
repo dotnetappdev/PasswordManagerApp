@@ -1,6 +1,6 @@
-# Password Manager Browser Extension Installation Guide
+# Vault Guard Browser Extension Installation Guide
 
-This guide will help you install and set up the Password Manager browser extension to work with your Password Manager App, including configuration for both API mode and local SQLite database mode.
+This guide will help you install and set up the Vault Guard browser extension to work with your Vault Guard App, including configuration for both API mode and local SQLite database mode.
 
 > **Note:** For information about packaging the extension for distribution, see [PACKAGING.md](PACKAGING.md).
 
@@ -8,12 +8,12 @@ This guide will help you install and set up the Password Manager browser extensi
 
 Before installing the extension, ensure you have:
 
-1. **Password Manager App Installed**: 
+1. **Vault Guard App Installed**: 
    - Either the WinUI Desktop App or the API Server should be running
    - For WinUI App: Ensure your SQLite database is accessible
    - For API Server: Default URL is `http://localhost:5000`
 
-2. **User Account**: You need a valid user account in the Password Manager system
+2. **User Account**: You need a valid user account in the Vault Guard system
 
 3. **Supported Browser**: 
    - Chrome 88+ (recommended)
@@ -31,7 +31,7 @@ You can use the extension in two modes:
 - Most secure option
 
 ### Method 2: API Mode
-- Connects to Password Manager API server
+- Connects to Vault Guard API server
 - Requires network connection
 - Suitable for remote access
 
@@ -43,13 +43,13 @@ You can use the extension in two modes:
 
 **For Chrome:**
 1. Visit the Chrome Web Store
-2. Search for "Password Manager Extension"
+2. Search for "Vault Guard Extension"
 3. Click "Add to Chrome"
 4. Extension installs automatically
 
 **For Edge:**
 1. Visit Microsoft Edge Add-ons
-2. Search for "Password Manager Extension"
+2. Search for "Vault Guard Extension"
 3. Click "Get"
 4. Extension installs automatically
 
@@ -60,7 +60,7 @@ This method is for developers and testers who want to use the extension directly
 #### For Chrome/Edge
 
 1. **Download the Extension**
-   - Navigate to the `PasswordManager.BrowserExtension` folder in the repository
+   - Navigate to the `VaultGuard.BrowserExtension` folder in the repository
    - This is your extension folder
 
 2. **Enable Developer Mode**
@@ -70,18 +70,18 @@ This method is for developers and testers who want to use the extension directly
 
 3. **Load the Extension**
    - Click "Load unpacked"
-   - Select the `PasswordManager.BrowserExtension` folder
+   - Select the `VaultGuard.BrowserExtension` folder
    - The extension should appear in your extensions list
 
 4. **Pin the Extension** (Optional but Recommended)
    - Click the puzzle piece icon in the Chrome toolbar
-   - Find "Password Manager Extension" and click the pin icon
+   - Find "Vault Guard Extension" and click the pin icon
    - The extension icon will now appear in your toolbar
 
 #### For Firefox
 
 1. **Download the Extension**
-   - Navigate to the `PasswordManager.BrowserExtension` folder
+   - Navigate to the `VaultGuard.BrowserExtension` folder
 
 2. **Load Temporary Add-on**
    - Open Firefox and go to `about:debugging#/runtime/this-firefox`
@@ -111,14 +111,14 @@ Choose one of the installation options above (Chrome Web Store, Edge Add-ons, or
 
 1. **Build the Native Host**
    ```cmd
-   cd PasswordManager.BrowserExtension.NativeHost
+   cd VaultGuard.BrowserExtension.NativeHost
    dotnet publish -c Release -r win-x64 --self-contained true -o publish
    ```
 
 2. **Copy Files to Program Location**
    ```cmd
-   mkdir "C:\Program Files\PasswordManager"
-   copy publish\PasswordManager.BrowserExtension.NativeHost.exe "C:\Program Files\PasswordManager\"
+   mkdir "C:\Program Files\VaultGuard"
+   copy publish\VaultGuard.BrowserExtension.NativeHost.exe "C:\Program Files\VaultGuard\"
    ```
 
 3. **Update the Manifest File**
@@ -127,8 +127,8 @@ Choose one of the installation options above (Chrome Web Store, Edge Add-ons, or
      ```json
      {
        "name": "com.passwordmanager.native_host",
-       "description": "Password Manager Native Messaging Host",
-       "path": "C:\\Program Files\\PasswordManager\\PasswordManager.BrowserExtension.NativeHost.exe",
+       "description": "Vault Guard Native Messaging Host",
+       "path": "C:\\Program Files\\VaultGuard\\VaultGuard.BrowserExtension.NativeHost.exe",
        "type": "stdio",
        "allowed_origins": [
          "chrome-extension://YOUR_EXTENSION_ID/"
@@ -153,13 +153,13 @@ Choose one of the installation options above (Chrome Web Store, Edge Add-ons, or
 
 1. **Build the Native Host**
    ```bash
-   cd PasswordManager.BrowserExtension.NativeHost
+   cd VaultGuard.BrowserExtension.NativeHost
    dotnet publish -c Release -r linux-x64 --self-contained true -o publish
    ```
 
 2. **Install to System**
    ```bash
-   sudo cp publish/PasswordManager.BrowserExtension.NativeHost /usr/local/bin/passwordmanager-native-host
+   sudo cp publish/VaultGuard.BrowserExtension.NativeHost /usr/local/bin/passwordmanager-native-host
    sudo chmod +x /usr/local/bin/passwordmanager-native-host
    ```
 
@@ -172,7 +172,7 @@ Choose one of the installation options above (Chrome Web Store, Edge Add-ons, or
 
 1. **Build the Native Host**
    ```bash
-   cd PasswordManager.BrowserExtension.NativeHost
+   cd VaultGuard.BrowserExtension.NativeHost
    dotnet publish -c Release -r osx-x64 --self-contained true -o publish
    ```
 
@@ -189,7 +189,7 @@ The browser extension includes a comprehensive settings screen that allows you t
 
 #### Accessing Settings
 
-1. Click the Password Manager extension icon in your browser toolbar
+1. Click the Vault Guard extension icon in your browser toolbar
 2. Click the "Settings" gear icon (⚙️) in the top-right corner
 3. Or click "Settings" link on the login screen
 
@@ -210,9 +210,9 @@ The browser extension includes a comprehensive settings screen that allows you t
 When using Native Host mode, you need to configure where your SQLite database is located:
 
 ##### Default Database Locations:
-- **Windows**: `%APPDATA%\PasswordManager\passwordmanager.db`
-- **Linux**: `~/.local/share/PasswordManager/passwordmanager.db`  
-- **macOS**: `~/Library/Application Support/PasswordManager/passwordmanager.db`
+- **Windows**: `%APPDATA%\VaultGuard\passwordmanager.db`
+- **Linux**: `~/.local/share/VaultGuard/passwordmanager.db`  
+- **macOS**: `~/Library/Application Support/VaultGuard/passwordmanager.db`
 
 ##### Custom Database Path:
 
@@ -227,8 +227,8 @@ To use a custom database location (like 1Password's vault selection):
    - Click "Browse" or "Set Database Path"
    - Navigate to your SQLite database file
    - Common locations:
-     - WinUI App database: `%LOCALAPPDATA%\PasswordManager.WinUi\passwordmanager.db`
-     - Desktop App: `Documents\PasswordManager\vault.db`
+     - WinUI App database: `%LOCALAPPDATA%\VaultGuard.WinUi\passwordmanager.db`
+     - Desktop App: `Documents\VaultGuard\vault.db`
      - Custom location: Any `.db` file you specify
 
 4. **Test Connection**
@@ -265,14 +265,14 @@ For Native Host mode, the database path can be configured in multiple ways:
 #### Option 1: Settings File (Recommended)
 
 The native host reads database path from:
-- **Windows**: `%APPDATA%\PasswordManager\config.json`
-- **Linux**: `~/.config/PasswordManager/config.json`
-- **macOS**: `~/Library/Application Support/PasswordManager/config.json`
+- **Windows**: `%APPDATA%\VaultGuard\config.json`
+- **Linux**: `~/.config/VaultGuard/config.json`
+- **macOS**: `~/Library/Application Support/VaultGuard/config.json`
 
 Example `config.json`:
 ```json
 {
-  "databasePath": "C:\\Users\\YourName\\Documents\\PasswordManager\\vault.db",
+  "databasePath": "C:\\Users\\YourName\\Documents\\VaultGuard\\vault.db",
   "enableLogging": false,
   "logPath": ""
 }
@@ -297,7 +297,7 @@ export PASSWORD_MANAGER_DB_PATH="$HOME/Documents/vault.db"
 Modify the native host manifest to pass the database path:
 ```json
 {
-  "path": "C:\\Program Files\\PasswordManager\\PasswordManager.BrowserExtension.NativeHost.exe",
+  "path": "C:\\Program Files\\VaultGuard\\VaultGuard.BrowserExtension.NativeHost.exe",
   "arguments": ["--database", "C:\\path\\to\\vault.db"]
 }
 ```
@@ -307,7 +307,7 @@ Modify the native host manifest to pass the database path:
 ### For Native Host Mode
 
 1. **Open Extension Popup**
-   - Click the Password Manager extension icon
+   - Click the Vault Guard extension icon
 
 2. **Configure Settings**
    - Click "Settings"
@@ -402,7 +402,7 @@ Modify the native host manifest to pass the database path:
 
 **Issue**: "Connection failed" or login errors (API Mode)
 - **Solution 1**: Verify API URL in extension settings
-- **Solution 2**: Check if Password Manager API is running (`http://localhost:5000`)
+- **Solution 2**: Check if Vault Guard API is running (`http://localhost:5000`)
 - **Solution 3**: Check browser console for CORS or network errors
 - **Solution 4**: Ensure the API accepts requests from `chrome-extension://` origins
 
@@ -468,8 +468,8 @@ You can switch between different databases (like 1Password vaults):
 To sync your database (like 1Password):
 
 1. **Place Database in Cloud Folder**
-   - Save database in: `Dropbox\PasswordManager\vault.db`
-   - Or: `OneDrive\PasswordManager\vault.db`
+   - Save database in: `Dropbox\VaultGuard\vault.db`
+   - Or: `OneDrive\VaultGuard\vault.db`
 
 2. **Configure Extension Path**
    - Point extension to cloud folder path
@@ -485,7 +485,7 @@ To sync your database (like 1Password):
 For production use with HTTPS:
 
 1. Update API URL in extension settings to use `https://`
-2. Ensure your Password Manager API has valid SSL certificates
+2. Ensure your Vault Guard API has valid SSL certificates
 3. Update `host_permissions` in `manifest.json` if needed
 
 ## Getting Help

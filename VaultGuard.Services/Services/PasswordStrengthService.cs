@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Estimates password strength using a lightweight entropy model with penalties for the common

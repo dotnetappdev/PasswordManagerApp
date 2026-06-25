@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.Models
+namespace VaultGuard.Models
 {
     /// <summary>
     /// Represents an API request for testing purposes

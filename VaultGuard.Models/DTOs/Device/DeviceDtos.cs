@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.Models.DTOs.Device;
+namespace VaultGuard.Models.DTOs.Device;
 
 public class DeviceDto
 {

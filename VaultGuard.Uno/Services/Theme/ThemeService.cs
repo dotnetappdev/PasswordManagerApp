@@ -1,6 +1,6 @@
 using Microsoft.UI.Xaml;
 
-namespace PasswordManager.Uno.Services.Theme;
+namespace VaultGuard.Uno.Services.Theme;
 
 /// <summary>
 /// Service for managing application theme and color palette

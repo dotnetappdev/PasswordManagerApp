@@ -1,13 +1,13 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.WinUi.ViewModels;
-using PasswordManager.Models;
-using PasswordManager.WinUi.Dialogs;
+using VaultGuard.WinUi.ViewModels;
+using VaultGuard.Models;
+using VaultGuard.WinUi.Dialogs;
 using System;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WinUi.Views;
+namespace VaultGuard.WinUi.Views;
 
 public sealed partial class CategoriesPage : Page
 {
@@ -141,7 +141,7 @@ public sealed partial class CategoriesPage : Page
             try
             {
                 // Check if category has password items
-                var categoryService = _serviceProvider.GetRequiredService<PasswordManager.Services.Interfaces.ICategoryInterface>();
+                var categoryService = _serviceProvider.GetRequiredService<VaultGuard.Services.Interfaces.ICategoryInterface>();
                 var hasPasswordItems = await categoryService.HasPasswordItemsAsync(category.Id);
                 
                 if (hasPasswordItems)
@@ -187,7 +187,7 @@ public sealed partial class CategoriesPage : Page
         {
             try
             {
-                var categoryService = _serviceProvider.GetRequiredService<PasswordManager.Services.Interfaces.ICategoryInterface>();
+                var categoryService = _serviceProvider.GetRequiredService<VaultGuard.Services.Interfaces.ICategoryInterface>();
                 category.IsFavorite = !category.IsFavorite;
                 await categoryService.UpdateAsync(category);
                 

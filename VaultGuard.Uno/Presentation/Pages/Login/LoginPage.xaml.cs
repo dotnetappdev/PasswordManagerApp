@@ -1,4 +1,4 @@
-namespace PasswordManager.Mobile.Presentation.Pages.Login;
+namespace VaultGuard.Mobile.Presentation.Pages.Login;
 
 public sealed partial class LoginPage : Page
 {

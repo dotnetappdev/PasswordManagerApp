@@ -1,7 +1,7 @@
 @page "/settings"
-@using PasswordManager.Services.Interfaces
-@using PasswordManager.Models
-@using PasswordManager.Models.DTOs.Auth
+@using VaultGuard.Services.Interfaces
+@using VaultGuard.Models
+@using VaultGuard.Models.DTOs.Auth
 @inject IAuthService AuthService
 @inject IUserProfileService UserProfileService
 @inject IVaultService VaultService
@@ -314,10 +314,10 @@
                     }
                     else if (_vaults.Any())
                     {
-                        <MudList T="PasswordManager.Models.Vault" Dense="true">
+                        <MudList T="VaultGuard.Models.Vault" Dense="true">
                             @foreach (var vault in _vaults)
                             {
-                                <MudListItem T="PasswordManager.Models.Vault">
+                                <MudListItem T="VaultGuard.Models.Vault">
                                     <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Style="width:100%">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                                             <div style="@($"width:12px; height:12px; border-radius:50%; background:{vault.Color ?? "#2563EB"};")"></div>
@@ -897,7 +897,7 @@
 
     // ── Vaults ──────────────────────────────────────────────────────────────────
 
-    List<PasswordManager.Models.Vault> _vaults = new();
+    List<VaultGuard.Models.Vault> _vaults = new();
     bool _vaultsLoading = true;
 
     protected override async Task OnInitializedAsync()

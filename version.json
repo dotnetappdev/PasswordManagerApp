@@ -1,0 +1,19 @@
+{
+  "appName": "Vault Guard",
+  "version": "1.0.0",
+  "releaseDate": "2026-06-23",
+  "requiresRestart": true,
+  "mandatory": false,
+  "features": [
+    "Separate NAS / network-drive backup with mapped-drive detection and credentials",
+    "OneDrive personal accounts",
+    "Old-school colour picker with hex input on vault and category colours",
+    "WhatsApp-style linked devices with QR pairing and remove",
+    "In-app updater driven by this version manifest",
+    "Old-school File / Help menu bar"
+  ],
+  "downloadUrl": "https://github.com/dotnetappdev/VaultGuardApp/releases/download/v1.0.0/VaultGuardSetup-1.0.0.exe",
+  "installerSize": 0,
+  "notes": "Initial Vault Guard release.",
+  "notesUrl": "https://github.com/dotnetappdev/VaultGuardApp/releases"
+}

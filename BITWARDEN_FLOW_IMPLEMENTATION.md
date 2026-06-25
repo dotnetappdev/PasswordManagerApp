@@ -1,6 +1,6 @@
-# Bitwarden-Style Password Manager Flow
+# Bitwarden-Style Vault Guard Flow
 
-This document demonstrates how the Password Manager now follows the exact Bitwarden approach while maintaining OWASP 2024 security standards.
+This document demonstrates how the Vault Guard now follows the exact Bitwarden approach while maintaining OWASP 2024 security standards.
 
 ## 🔄 Complete Flow Implementation
 

@@ -1,8 +1,8 @@
-# Password Manager Encryption Implementation
+# Vault Guard Encryption Implementation
 
 ## Overview
 
-This Password Manager implements **true end-to-end encryption (E2E)** with a zero-knowledge architecture. This means:
+This Vault Guard implements **true end-to-end encryption (E2E)** with a zero-knowledge architecture. This means:
 - 🔒 **Your data is encrypted on your device** before it ever leaves your local storage
 - 🔐 **Only you can decrypt your data** - not even the server or database administrators can access your passwords
 - 🔑 **Your master key never leaves your device** - it exists only in memory during your session
@@ -19,7 +19,7 @@ The system follows Bitwarden's proven security architecture with PBKDF2 key deri
 - **Encrypted sync**: Only encrypted data is synchronized across devices
 - **Cross-platform consistency**: Same encryption across Blazor Web, WinUI, iOS, Android, and Linux
 
-### 2. **PasswordManager.Crypto DLL**
+### 2. **VaultGuard.Crypto DLL**
 - Created a separate cryptographic library with clean interfaces
 - Implements PBKDF2 with 600,000+ iterations (OWASP 2024 recommendation)
 - Uses AES-256-GCM for authenticated encryption
@@ -93,7 +93,7 @@ Master Key → AES-256-GCM → Encrypted Password Data
 ## 📁 Project Structure
 
 ```
-PasswordManager.Crypto/
+VaultGuard.Crypto/
 ├── Interfaces/
 │   ├── ICryptographyService.cs      # Core crypto operations
 │   └── IPasswordCryptoService.cs    # Password-specific operations
@@ -170,7 +170,7 @@ var password = _passwordCrypto.DecryptPassword(encryptedData, masterPassword, us
 
 Run the crypto test suite to verify all operations:
 ```csharp
-PasswordManager.Crypto.Tests.CryptoTest.RunTests();
+VaultGuard.Crypto.Tests.CryptoTest.RunTests();
 ```
 
 ## 🔄 Migration Required
@@ -179,8 +179,8 @@ To use the new encryption system, you'll need to:
 
 1. **Create Database Migration**
    ```bash
-   dotnet ef migrations add AddEncryptionFields --project PasswordManager.DAL --startup-project PasswordManager.API
-   dotnet ef database update --project PasswordManager.DAL --startup-project PasswordManager.API
+   dotnet ef migrations add AddEncryptionFields --project VaultGuard.DAL --startup-project VaultGuard.API
+   dotnet ef database update --project VaultGuard.DAL --startup-project VaultGuard.API
    ```
 
 2. **Update Existing Data**
@@ -226,15 +226,15 @@ Even if someone gains access to your synced database, they CANNOT decrypt your p
 
 ## 🌍 Cross-Platform Encryption Consistency
 
-The encryption is identical across all platforms because they all use the **same PasswordManager.Crypto library**:
+The encryption is identical across all platforms because they all use the **same VaultGuard.Crypto library**:
 
 | Platform | Encryption Library | Master Key Storage | Notes |
 |----------|-------------------|-------------------|-------|
-| **Blazor Web** | PasswordManager.Crypto | VaultSessionService (server memory) | Master key in server session |
-| **WinUI Desktop** | PasswordManager.Crypto | VaultSessionService (app memory) | Master key in app process |
-| **iOS (Uno)** | PasswordManager.Crypto | VaultSessionService (app memory) | Same crypto, mobile runtime |
-| **Android (Uno)** | PasswordManager.Crypto | VaultSessionService (app memory) | Same crypto, mobile runtime |
-| **Linux** | PasswordManager.Crypto | VaultSessionService (app memory) | Same .NET libraries |
+| **Blazor Web** | VaultGuard.Crypto | VaultSessionService (server memory) | Master key in server session |
+| **WinUI Desktop** | VaultGuard.Crypto | VaultSessionService (app memory) | Master key in app process |
+| **iOS (Uno)** | VaultGuard.Crypto | VaultSessionService (app memory) | Same crypto, mobile runtime |
+| **Android (Uno)** | VaultGuard.Crypto | VaultSessionService (app memory) | Same crypto, mobile runtime |
+| **Linux** | VaultGuard.Crypto | VaultSessionService (app memory) | Same .NET libraries |
 
 **Result**: A password encrypted on iOS can be decrypted on Windows, Android, Linux, or Blazor Web using the same master password, because the encryption algorithm, iterations, and key derivation are identical across all platforms.
 

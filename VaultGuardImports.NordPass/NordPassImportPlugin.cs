@@ -1,8 +1,8 @@
 using FileHelpers;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManagerImports.NordPass;
+namespace VaultGuardImports.NordPass;
 
 /// <summary>
 /// NordPass CSV import plugin
@@ -24,7 +24,7 @@ public class NordPassImportPlugin : IPasswordImportPlugin
             DisplayName = "NordPass",
             Description = "Import passwords from NordPass CSV export files",
             Version = "1.0.0",
-            Author = "PasswordManager Team",
+            Author = "VaultGuard Team",
             Website = "https://nordpass.com",
             Created = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,

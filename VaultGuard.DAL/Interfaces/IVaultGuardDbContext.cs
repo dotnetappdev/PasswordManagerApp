@@ -1,16 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.DAL.Interfaces;
+namespace VaultGuard.DAL.Interfaces;
 
-public interface IPasswordManagerDbContext : IDisposable
+public interface IVaultGuardDbContext : IDisposable
 {
     DatabaseFacade Database { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     DbSet<PasswordItem> PasswordItems { get; set; }
     DbSet<Category> Categories { get; set; }
     DbSet<Collection> Collections { get; set; }
+    DbSet<Vault> Vaults { get; set; }
     DbSet<Tag> Tags { get; set; }
     DbSet<ApplicationUser> Users { get; set; }
     DbSet<LoginItem> LoginItems { get; set; }

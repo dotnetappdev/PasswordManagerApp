@@ -1,5 +1,5 @@
 <ContentDialog
-    x:Class="PasswordManager.WinUi.Dialogs.DatabaseConfigurationDialog"
+    x:Class="VaultGuard.WinUi.Dialogs.DatabaseConfigurationDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="Database Configuration"

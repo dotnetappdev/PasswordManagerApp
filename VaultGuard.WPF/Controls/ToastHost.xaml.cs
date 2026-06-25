@@ -1,7 +1,7 @@
 using System.Windows.Controls;
-using PasswordManager.WPF.Services;
+using VaultGuard.WPF.Services;
 
-namespace PasswordManager.WPF.Controls;
+namespace VaultGuard.WPF.Controls;
 
 public partial class ToastHost : UserControl
 {

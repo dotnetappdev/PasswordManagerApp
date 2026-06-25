@@ -1,6 +1,6 @@
 @page "/setup"
-@using PasswordManager.Models.Configuration
-@using PasswordManager.Services.Interfaces
+@using VaultGuard.Models.Configuration
+@using VaultGuard.Services.Interfaces
 @inject IDatabaseConfigurationService DatabaseConfigService
 @inject IServiceProvider ServiceProvider
 @inject NavigationManager Navigation
@@ -97,7 +97,7 @@
                             <div class="fg f1"><label>Instance</label><input class="fc" type="text" @bind="_ss.InstanceName" placeholder="optional" /></div>
                             <div class="fg fport"><label>Port</label><input class="fc" type="number" @bind="_ss.Port" /></div>
                         </div>
-                        <div class="fg"><label>Database *</label><input class="fc" type="text" @bind="_ss.Database" placeholder="PasswordManager" /></div>
+                        <div class="fg"><label>Database *</label><input class="fc" type="text" @bind="_ss.Database" placeholder="VaultGuard" /></div>
                         <div class="fg">
                             <label>Authentication</label>
                             <select class="fc" @bind="_ss.AuthMode">
@@ -174,7 +174,7 @@
                             <div class="fg f2"><label>Server *</label><input class="fc" type="text" @bind="_my.Host" placeholder="localhost" /></div>
                             <div class="fg fport"><label>Port</label><input class="fc" type="number" @bind="_my.Port" /></div>
                         </div>
-                        <div class="fg"><label>Database *</label><input class="fc" type="text" @bind="_my.Database" placeholder="PasswordManager" /></div>
+                        <div class="fg"><label>Database *</label><input class="fc" type="text" @bind="_my.Database" placeholder="VaultGuard" /></div>
                         <div class="fg"><label>Username *</label><input class="fc" type="text" @bind="_my.Username" /></div>
                         <div class="fg"><label>Password</label><input class="fc" type="password" @bind="_myPass" /></div>
                     }
@@ -227,7 +227,7 @@
                             <div class="fg f2"><label>Server *</label><input class="fc" type="text" @bind="_pg.Host" placeholder="localhost" /></div>
                             <div class="fg fport"><label>Port</label><input class="fc" type="number" @bind="_pg.Port" /></div>
                         </div>
-                        <div class="fg"><label>Database *</label><input class="fc" type="text" @bind="_pg.Database" placeholder="PasswordManager" /></div>
+                        <div class="fg"><label>Database *</label><input class="fc" type="text" @bind="_pg.Database" placeholder="VaultGuard" /></div>
                         <div class="fg"><label>Username *</label><input class="fc" type="text" @bind="_pg.Username" /></div>
                         <div class="fg"><label>Password</label><input class="fc" type="password" @bind="_pgPass" /></div>
                     }

@@ -1,4 +1,4 @@
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 /// <summary>
 /// Options for generating a memorable, word-based passphrase (e.g. "Brave-Ocean-Maple-7").

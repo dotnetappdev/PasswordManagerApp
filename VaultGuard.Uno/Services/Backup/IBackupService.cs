@@ -1,4 +1,4 @@
-namespace PasswordManager.Uno.Services.Backup;
+namespace VaultGuard.Uno.Services.Backup;
 
 /// <summary>
 /// Interface for cloud backup services

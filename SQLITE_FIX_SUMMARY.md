@@ -4,7 +4,7 @@
 
 The WinUI application had critical issues with SQLite database initialization:
 
-1. **Database directory not being created**: `C:\Users\davidb\AppData\Local\PasswordManager\` was not being created
+1. **Database directory not being created**: `C:\Users\davidb\AppData\Local\VaultGuard\` was not being created
 2. **Database file not being created**: `passwordmanager.db` file was missing
 3. **Data not persisting**: Application showed success messages but data was not actually saved
 4. **Entity Framework Core failing silently**: EF Core operations were failing without clear error messages
@@ -12,12 +12,12 @@ The WinUI application had critical issues with SQLite database initialization:
 ## Root Causes
 
 ### 1. Missing SQLite Package Reference
-The WinUI project (`PasswordManager.WinUi.csproj`) did not explicitly reference the `Microsoft.EntityFrameworkCore.Sqlite` package. While the DAL project had it, it wasn't being loaded at runtime in the WinUI application.
+The WinUI project (`VaultGuard.WinUi.csproj`) did not explicitly reference the `Microsoft.EntityFrameworkCore.Sqlite` package. While the DAL project had it, it wasn't being loaded at runtime in the WinUI application.
 
 ### 2. Inconsistent Database Paths
 Different parts of the codebase used inconsistent paths:
-- Some used: `{AppData}\PasswordManager\data\passwordmanager.db` ❌
-- Others used: `{AppData}\PasswordManager\passwordmanager.db` ✅
+- Some used: `{AppData}\VaultGuard\data\passwordmanager.db` ❌
+- Others used: `{AppData}\VaultGuard\passwordmanager.db` ✅
 
 This caused confusion and made debugging difficult.
 
@@ -34,7 +34,7 @@ While `WinUiPlatformService.GetAppDataDirectory()` did create the directory, it 
 
 ### 1. Added SQLite Package to WinUI Project ✅
 
-**File**: `PasswordManager.WinUi/PasswordManager.WinUi.csproj`
+**File**: `VaultGuard.WinUi/VaultGuard.WinUi.csproj`
 
 ```xml
 <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.8" />
@@ -45,9 +45,9 @@ This ensures the SQLite provider is available at runtime when the WinUI applicat
 ### 2. Fixed Path Consistency ✅
 
 **Files Modified**:
-- `PasswordManager.Services/Services/DatabaseConfigurationService.cs`
-- `PasswordManager.WinUi/CrossPlatformProgram.cs`
-- `PasswordManager.App/MauiProgram.cs`
+- `VaultGuard.Services/Services/DatabaseConfigurationService.cs`
+- `VaultGuard.WinUi/CrossPlatformProgram.cs`
+- `VaultGuard.App/MauiProgram.cs`
 
 **Before**:
 ```csharp
@@ -59,11 +59,11 @@ Path.Combine(platformService.GetAppDataDirectory(), "data", "passwordmanager.db"
 Path.Combine(platformService.GetAppDataDirectory(), "passwordmanager.db")
 ```
 
-All paths now consistently use: `{AppData}\PasswordManager\passwordmanager.db`
+All paths now consistently use: `{AppData}\VaultGuard\passwordmanager.db`
 
 ### 3. Enhanced Directory Creation and Validation ✅
 
-**File**: `PasswordManager.Services/Services/DatabaseConfigurationService.cs`
+**File**: `VaultGuard.Services/Services/DatabaseConfigurationService.cs`
 
 **Before**:
 ```csharp
@@ -134,7 +134,7 @@ Key tests that verify the fix:
 
 ### On First Launch
 1. ✅ WinUI application starts
-2. ✅ Platform service creates `C:\Users\{username}\AppData\Local\PasswordManager\` directory
+2. ✅ Platform service creates `C:\Users\{username}\AppData\Local\VaultGuard\` directory
 3. ✅ Database configuration service validates directory exists
 4. ✅ Entity Framework creates `passwordmanager.db` file with schema
 5. ✅ Identity tables (AspNetUsers, etc.) are created
@@ -147,7 +147,7 @@ Key tests that verify the fix:
 4. ✅ Database can be found at the displayed path in Settings
 
 ### Database Location
-Windows: `C:\Users\{username}\AppData\Local\PasswordManager\passwordmanager.db`
+Windows: `C:\Users\{username}\AppData\Local\VaultGuard\passwordmanager.db`
 
 This path is:
 - ✅ Consistent across all components
@@ -160,14 +160,14 @@ To verify the fix works correctly:
 
 1. **Delete existing database** (if any):
    ```
-   C:\Users\{username}\AppData\Local\PasswordManager\passwordmanager.db
+   C:\Users\{username}\AppData\Local\VaultGuard\passwordmanager.db
    ```
 
 2. **Launch the WinUI application**
 
 3. **Check directory was created**:
    ```
-   C:\Users\{username}\AppData\Local\PasswordManager\
+   C:\Users\{username}\AppData\Local\VaultGuard\
    ```
    Should exist with the database file inside.
 
@@ -183,11 +183,11 @@ To verify the fix works correctly:
 
 | File | Change Summary |
 |------|---------------|
-| `PasswordManager.WinUi/PasswordManager.WinUi.csproj` | Added SQLite package reference |
-| `PasswordManager.WinUi/Services/ServiceConfiguration.cs` | Removed redundant directory creation |
-| `PasswordManager.WinUi/CrossPlatformProgram.cs` | Fixed default path, removed "data" subdirectory |
-| `PasswordManager.App/MauiProgram.cs` | Fixed default path, removed "data" subdirectory |
-| `PasswordManager.Services/Services/DatabaseConfigurationService.cs` | Enhanced directory creation with validation and logging |
+| `VaultGuard.WinUi/VaultGuard.WinUi.csproj` | Added SQLite package reference |
+| `VaultGuard.WinUi/Services/ServiceConfiguration.cs` | Removed redundant directory creation |
+| `VaultGuard.WinUi/CrossPlatformProgram.cs` | Fixed default path, removed "data" subdirectory |
+| `VaultGuard.App/MauiProgram.cs` | Fixed default path, removed "data" subdirectory |
+| `VaultGuard.Services/Services/DatabaseConfigurationService.cs` | Enhanced directory creation with validation and logging |
 
 ## Security Summary
 
@@ -214,8 +214,8 @@ If users already have a database at the old path with "data" subdirectory:
 
 ### Recommended Migration (if needed)
 ```
-Old: C:\Users\{username}\AppData\Local\PasswordManager\data\passwordmanager.db
-New: C:\Users\{username}\AppData\Local\PasswordManager\passwordmanager.db
+Old: C:\Users\{username}\AppData\Local\VaultGuard\data\passwordmanager.db
+New: C:\Users\{username}\AppData\Local\VaultGuard\passwordmanager.db
 
 Copy the file from old location to new location before first launch after update.
 ```

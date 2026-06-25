@@ -1,6 +1,6 @@
 # Screenshots Directory
 
-This directory contains interface screenshots for the Password Manager WinUI application.
+This directory contains interface screenshots for the Vault Guard WinUI application.
 
 ## Directory Structure
 

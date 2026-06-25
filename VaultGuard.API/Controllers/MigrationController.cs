@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.API.Controllers
+namespace VaultGuard.API.Controllers
 {
     /// <summary>
     /// Controller for managing database migrations

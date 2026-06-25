@@ -1,4 +1,4 @@
-<Page x:Class="PasswordManager.WinUi.Views.CategoriesPage"
+<Page x:Class="VaultGuard.WinUi.Views.CategoriesPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       Background="{StaticResource ModernBackgroundBrush}">

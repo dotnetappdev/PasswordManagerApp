@@ -1,9 +1,9 @@
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 using System;
 using System.IO;
 using Windows.Storage;
 
-namespace PasswordManager.WinUi.Services;
+namespace VaultGuard.WinUi.Services;
 
 public class WinUiPlatformService : IPlatformService
 {
@@ -17,9 +17,9 @@ public class WinUiPlatformService : IPlatformService
         }
         catch
         {
-            // Fallback for unpackaged: %LocalAppData%\PasswordManager
+            // Fallback for unpackaged: %LocalAppData%\VaultGuard
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var appDir = Path.Combine(localAppData, "PasswordManager");
+            var appDir = Path.Combine(localAppData, "VaultGuard");
             return appDir;
         }
     }

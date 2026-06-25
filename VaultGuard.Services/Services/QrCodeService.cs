@@ -1,7 +1,7 @@
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 using QRCoder;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// QR code rendering backed by QRCoder's <see cref="PngByteQRCode"/>, which emits PNG bytes without

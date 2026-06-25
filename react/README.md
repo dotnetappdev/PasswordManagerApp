@@ -1,4 +1,4 @@
-# Password Manager Mobile App (React Native)
+# Vault Guard Mobile App (React Native)
 
 A secure, cross-platform mobile password manager built with React Native, featuring SQLite local storage and API synchronization capabilities.
 
@@ -86,7 +86,7 @@ npm run android
 - **API Mode**: 
   - ✅ User selects in Settings screen
   - User provides their own API URL and API Key
-  - Connect to Password Manager API for cloud sync across devices
+  - Connect to Vault Guard API for cloud sync across devices
   - Test connection button to verify API
   
 - **Easy Mode Switching**: 
@@ -219,7 +219,7 @@ Users can switch between two database modes at any time:
 
 #### API Mode
 - ✅ **User selectable** in Settings → Database Mode
-- Connects to Password Manager API
+- Connects to Vault Guard API
 - Enables cloud synchronization
 - Requires API URL and API key
 - Data synced across devices
@@ -375,7 +375,7 @@ react/
 
 ## API Integration
 
-The app integrates with the Password Manager API using best practices:
+The app integrates with the Vault Guard API using best practices:
 
 ### Features
 - **Automatic retry** on network failures (configurable)
@@ -426,14 +426,14 @@ For detailed build instructions including Windows development, code signing, and
 **iOS Production Build:**
 ```bash
 # Using Xcode (Recommended)
-# 1. Open ios/PasswordManagerMobile.xcworkspace
+# 1. Open ios/VaultGuardMobile.xcworkspace
 # 2. Product → Archive
 # 3. Distribute to App Store
 
 # Using Command Line
 cd ios
-xcodebuild -workspace PasswordManagerMobile.xcworkspace \
-  -scheme PasswordManagerMobile \
+xcodebuild -workspace VaultGuardMobile.xcworkspace \
+  -scheme VaultGuardMobile \
   -configuration Release \
   archive
 ```
@@ -618,7 +618,7 @@ npm start
 
 **Issue:** "Database is locked"
 - Close app completely
-- Clear app data: Settings → Apps → Password Manager → Storage → Clear Data
+- Clear app data: Settings → Apps → Vault Guard → Storage → Clear Data
 - Reinstall app
 
 **Issue:** "No such table"
@@ -783,7 +783,7 @@ MIT License - See LICENSE file for details
 ## 🤝 Support
 
 For issues and questions:
-- **Issues**: [Open an issue on GitHub](https://github.com/dotnetappdev/PasswordManagerApp/issues)
+- **Issues**: [Open an issue on GitHub](https://github.com/dotnetappdev/VaultGuardApp/issues)
 - **Documentation**: Check [README.md](README.md), [BUILD.md](BUILD.md), and [SETUP.md](SETUP.md)
 - **API Docs**: See main project documentation
 - **Community**: Join discussions on GitHub
@@ -840,7 +840,7 @@ npm run lint -- --fix        # Fix code style issues
 ### iOS Specific
 ```bash
 # Open Xcode workspace
-open ios/PasswordManagerMobile.xcworkspace
+open ios/VaultGuardMobile.xcworkspace
 
 # Update Pods
 cd ios && pod install && pod update && cd ..

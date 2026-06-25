@@ -1,8 +1,8 @@
 using Bunit;
 using NUnit.Framework;
-using PasswordManager.Web.Components.Pages;
+using VaultGuard.Web.Components.Pages;
 
-namespace PasswordManager.Web.Tests.Components;
+namespace VaultGuard.Web.Tests.Components;
 
 [TestFixture]
 public class CounterComponentTests : Bunit.TestContext

@@ -18,7 +18,7 @@
 
 ## Install from a Release (recommended for end-users)
 
-Download the latest installer from the [GitHub Releases](https://github.com/dotnetappdev/PasswordManagerApp/releases) page:
+Download the latest installer from the [GitHub Releases](https://github.com/dotnetappdev/VaultGuardApp/releases) page:
 
 | File | What it is |
 |------|-----------|
@@ -34,8 +34,8 @@ The app checks for updates automatically. Go to **Settings → About → Check f
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/dotnetappdev/PasswordManagerApp.git
-cd PasswordManagerApp
+git clone https://github.com/dotnetappdev/VaultGuardApp.git
+cd VaultGuardApp
 ```
 
 ### 2. Restore dependencies
@@ -47,14 +47,14 @@ dotnet restore
 ### 3. Run the desktop app (WPF)
 
 ```bash
-dotnet run --project PasswordManager.WPF
+dotnet run --project VaultGuard.WPF
 ```
 
 ### 4. Run the API (optional — only needed for sync / web access)
 
 ```bash
 # Apply migrations first (SQLite, no setup required)
-cd PasswordManager.API
+cd VaultGuard.API
 dotnet ef database update
 dotnet run
 ```
@@ -62,7 +62,7 @@ dotnet run
 ### 5. Run the Blazor web app (optional)
 
 ```bash
-cd PasswordManager.Web
+cd VaultGuard.Web
 dotnet run
 ```
 
@@ -139,7 +139,7 @@ The WPF app has a built-in update checker:
 3. If a newer version is on GitHub Releases, a download button appears
 4. Click **Download & Install** — the installer launches and the app exits cleanly
 
-Updates are distributed as signed EXE + MSI on every tagged GitHub release via [GitHub Actions](https://github.com/dotnetappdev/PasswordManagerApp/actions).
+Updates are distributed as signed EXE + MSI on every tagged GitHub release via [GitHub Actions](https://github.com/dotnetappdev/VaultGuardApp/actions).
 
 ---
 

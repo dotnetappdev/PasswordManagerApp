@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace PasswordManager.WPF.ViewModels;
+namespace VaultGuard.WPF.ViewModels;
 
 public class BaseViewModel : INotifyPropertyChanged
 {

@@ -70,7 +70,7 @@ Initiates 2FA setup process, generates secret key and QR code.
 ```json
 {
   "secretKey": "JBSWY3DPEHPK3PXP",
-  "qrCodeUri": "otpauth://totp/PasswordManager:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=PasswordManager",
+  "qrCodeUri": "otpauth://totp/VaultGuard:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=VaultGuard",
   "backupCodes": [
     "ABC12345",
     "DEF67890",

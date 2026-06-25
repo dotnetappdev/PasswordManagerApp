@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ui:ContentDialog xmlns:ui="http://schemas.modernwpf.com/2019" x:Class="PasswordManager.WPF.Dialogs.ItemTypeSelectionDialog"
+<ui:ContentDialog xmlns:ui="http://schemas.modernwpf.com/2019" x:Class="VaultGuard.WPF.Dialogs.ItemTypeSelectionDialog"
                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                Title="What would you like to add?"
@@ -395,7 +395,7 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Migrate data into PasswordManager"
+                    <TextBlock Text="Migrate data into VaultGuard"
                                FontSize="18"
                                Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                VerticalAlignment="Center"/>

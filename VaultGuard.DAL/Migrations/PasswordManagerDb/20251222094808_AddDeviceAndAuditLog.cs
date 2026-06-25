@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace PasswordManager.DAL.Migrations.PasswordManagerDb
+namespace VaultGuard.DAL.Migrations.VaultGuardDb
 {
     /// <inheritdoc />
     public partial class AddDeviceAndAuditLog : Migration
@@ -11,7 +11,7 @@ namespace PasswordManager.DAL.Migrations.PasswordManagerDb
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // QrLoginTokens is already created by PasswordManagerDbContextApp's firstmigration
+            // QrLoginTokens is already created by VaultGuardDbContextApp's firstmigration
             // when both contexts share the same SQLite file. Use IF NOT EXISTS to be idempotent.
             migrationBuilder.Sql(@"CREATE TABLE IF NOT EXISTS ""QrLoginTokens"" (
     ""Token"" TEXT NOT NULL CONSTRAINT ""PK_QrLoginTokens"" PRIMARY KEY,

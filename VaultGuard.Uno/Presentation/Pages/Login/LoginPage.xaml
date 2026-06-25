@@ -1,7 +1,7 @@
-<Page x:Class="PasswordManager.Mobile.Presentation.Pages.Login.LoginPage"
+<Page x:Class="VaultGuard.Mobile.Presentation.Pages.Login.LoginPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:local="using:PasswordManager.Mobile.Presentation.Pages.Login"
+      xmlns:local="using:VaultGuard.Mobile.Presentation.Pages.Login"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:utu="using:Uno.Toolkit.UI"
@@ -32,7 +32,7 @@
                                VerticalAlignment="Center"/>
                 </Border>
 
-                <TextBlock Text="Password Manager"
+                <TextBlock Text="Vault Guard"
                            FontSize="32"
                            FontWeight="SemiBold"
                            HorizontalAlignment="Center"

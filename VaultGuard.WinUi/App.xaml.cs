@@ -4,15 +4,15 @@ using Microsoft.UI.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
-using PasswordManager.Models.Configuration;
-using PasswordManager.WinUi.Services;
-using PasswordManager.WinUi.Helpers;
+using VaultGuard.Models.Configuration;
+using VaultGuard.WinUi.Services;
+using VaultGuard.WinUi.Helpers;
 using Sentry;
 
-namespace PasswordManager.WinUi;
+namespace VaultGuard.WinUi;
 
 /// <summary>
 /// Provides application-specific behavior to supplement the default Application class.
@@ -137,13 +137,13 @@ public partial class App : Application
                 {
                     var theme = savedTheme switch
                     {
-                        "Light" => PasswordManager.WinUi.Services.AppTheme.Light,
-                        "Dark" => PasswordManager.WinUi.Services.AppTheme.Dark,
-                        "System" => PasswordManager.WinUi.Services.AppTheme.System,
-                        _ => PasswordManager.WinUi.Services.AppTheme.System
+                        "Light" => VaultGuard.WinUi.Services.AppTheme.Light,
+                        "Dark" => VaultGuard.WinUi.Services.AppTheme.Dark,
+                        "System" => VaultGuard.WinUi.Services.AppTheme.System,
+                        _ => VaultGuard.WinUi.Services.AppTheme.System
                     };
 
-                    PasswordManager.WinUi.Services.ThemeHelper.SetTheme(theme);
+                    VaultGuard.WinUi.Services.ThemeHelper.SetTheme(theme);
                     return;
                 }
             }
@@ -156,13 +156,13 @@ public partial class App : Application
             {
                 var theme = savedThemeFromSecure switch
                 {
-                    "Light" => PasswordManager.WinUi.Services.AppTheme.Light,
-                    "Dark" => PasswordManager.WinUi.Services.AppTheme.Dark,
-                    "System" => PasswordManager.WinUi.Services.AppTheme.System,
-                    _ => PasswordManager.WinUi.Services.AppTheme.System
+                    "Light" => VaultGuard.WinUi.Services.AppTheme.Light,
+                    "Dark" => VaultGuard.WinUi.Services.AppTheme.Dark,
+                    "System" => VaultGuard.WinUi.Services.AppTheme.System,
+                    _ => VaultGuard.WinUi.Services.AppTheme.System
                 };
 
-                PasswordManager.WinUi.Services.ThemeHelper.SetTheme(theme);
+                VaultGuard.WinUi.Services.ThemeHelper.SetTheme(theme);
 
                 localSettings.Values["SelectedTheme"] = savedThemeFromSecure;
             }
@@ -170,7 +170,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             SentrySdk.CaptureException(ex);
-            PasswordManager.WinUi.Services.ThemeHelper.SetTheme(PasswordManager.WinUi.Services.AppTheme.System);
+            VaultGuard.WinUi.Services.ThemeHelper.SetTheme(VaultGuard.WinUi.Services.AppTheme.System);
         }
     }
 

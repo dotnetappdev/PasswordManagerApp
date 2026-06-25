@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Windows.Security.Credentials;
 #endif
 
-namespace PasswordManager.WPF.Services;
+namespace VaultGuard.WPF.Services;
 
 public enum HelloResult { Success, Cancelled, NotConfigured, NotAvailable, Failed }
 

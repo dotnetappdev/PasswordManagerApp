@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Identity;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Auth;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Auth;
 
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 public interface IUserProfileService
 {
@@ -71,4 +71,17 @@ public interface IUserProfileService
     /// Permanently deletes a user account
     /// </summary>
     Task<bool> DeleteUserAsync(string userId);
+
+    /// <summary>
+    /// Verifies that the supplied master password matches the stored hash for the given user.
+    /// Used by the normal (non-2FA) profile-switch / step-up flow.
+    /// </summary>
+    Task<bool> VerifyMasterPasswordAsync(string userId, string masterPassword);
+
+    /// <summary>
+    /// Returns true if the given user has two-factor authentication enabled. Lets callers
+    /// pick the correct step-up workflow (authenticator code vs. master password) without
+    /// loading the full user entity.
+    /// </summary>
+    Task<bool> IsTwoFactorEnabledAsync(string userId);
 }

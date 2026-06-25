@@ -1,11 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for managing scheduled backups with background processing

@@ -1,9 +1,9 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.Models;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.ComponentModel;
@@ -11,7 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Windows.UI;
 
-namespace PasswordManager.WinUi.Dialogs;
+namespace VaultGuard.WinUi.Dialogs;
 
 /// <summary>
 /// Dialog for creating new user accounts with role-based restrictions

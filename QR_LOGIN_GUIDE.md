@@ -89,7 +89,7 @@ Open `qr-login-demo.html` in a browser to see the UI demonstration.
 
 #### Start the API Server
 ```bash
-cd PasswordManager.API
+cd VaultGuard.API
 dotnet run
 ```
 
@@ -119,7 +119,7 @@ curl -X POST https://localhost:7001/api/auth/qr/authenticate \
 
 #### Start the Web App
 ```bash
-cd PasswordManager.Web
+cd VaultGuard.Web
 dotnet run
 ```
 

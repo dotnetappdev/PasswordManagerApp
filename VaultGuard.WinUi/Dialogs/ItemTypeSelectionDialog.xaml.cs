@@ -1,8 +1,8 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.WinUi.Dialogs;
+namespace VaultGuard.WinUi.Dialogs;
 
 public sealed partial class ItemTypeSelectionDialog : ContentDialog
 {

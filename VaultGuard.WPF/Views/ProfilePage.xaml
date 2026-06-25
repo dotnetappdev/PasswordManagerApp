@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Page x:Class="PasswordManager.WPF.Views.ProfilePage"
+<Page x:Class="VaultGuard.WPF.Views.ProfilePage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:converters="clr-namespace:PasswordManager.WPF.Converters"
+      xmlns:converters="clr-namespace:VaultGuard.WPF.Converters"
       Background="{DynamicResource ModernSurfaceBrush}">
 
     <Page.Resources>
@@ -321,13 +321,14 @@
                             <StackPanel Grid.Column="1" Margin="14,0,14,0" VerticalAlignment="Center">
                                 <TextBlock Text="Two-Factor Authentication"
                                            Style="{StaticResource ModernBodyStyle}"/>
-                                <TextBlock Text="Enabled"
+                                <TextBlock x:Name="TwoFactorStatusText" Text="Checking..."
                                            Style="{StaticResource ModernCaptionStyle}"
                                            Foreground="{StaticResource ModernSuccessBrush}"/>
                             </StackPanel>
                             <Button Grid.Column="2" Content="Manage"
                                     Style="{StaticResource ModernSecondaryButtonStyle}"
-                                    VerticalAlignment="Center"/>
+                                    VerticalAlignment="Center"
+                                    Click="TwoFactorManageButton_Click"/>
                         </Grid>
 
                         <!-- Biometric Authentication -->

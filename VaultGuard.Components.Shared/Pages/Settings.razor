@@ -1,12 +1,12 @@
 @page "/settings"
 @attribute [Authorize]
-@using PasswordManager.Services.Interfaces
-@using PasswordManager.Components.Shared.Services
-@using PasswordManager.Components.Shared.Components
+@using VaultGuard.Services.Interfaces
+@using VaultGuard.Components.Shared.Services
+@using VaultGuard.Components.Shared.Components
 @using Microsoft.Extensions.DependencyInjection
-@using PasswordManager.Models
-@using PasswordManager.Models.DTOs.Auth
-@using PasswordManager.Models.Configuration
+@using VaultGuard.Models
+@using VaultGuard.Models.DTOs.Auth
+@using VaultGuard.Models.Configuration
 @inject IUserProfileService UserProfileService
 @inject IApiKeyService ApiKeyService
 @inject IDatabaseConfigurationService DatabaseConfigurationService
@@ -212,7 +212,7 @@
                                  Label="API URL" 
                                  Variant="Variant.Outlined"
                                 
-                                 HelperText="URL of the Password Manager API for sync operations" />
+                                 HelperText="URL of the Vault Guard API for sync operations" />
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudTextField T="string" @bind-value="apiKey" 
@@ -380,6 +380,27 @@
                         </MudButton>
                     </MudStack>
                 </MudPaper>
+            </MudStack>
+        </MudPaper>
+
+        <!-- Security -->
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Style="margin-bottom: 16px;">
+                <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Medium" Style="vertical-align: middle; margin-right: 8px;" />
+                Security
+            </MudText>
+            <MudText Typo="Typo.caption" Style="color: #cccccc; margin-bottom: 16px; display: block;">
+                Step-up verification only takes effect when two-factor authentication is enabled for your account.
+                When on, the matching action first asks for a current authenticator or recovery code.
+            </MudText>
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.subtitle2">Require authenticator code for</MudText>
+                <MudSwitch T="bool" Value="requireCodeOnVaultDelete" Color="Color.Primary"
+                           Label="Deleting a vault"
+                           ValueChanged="@(async (bool v) => { requireCodeOnVaultDelete = v; await TwoFactorGate.SetToggleAsync(JSRuntime, TwoFactorGate.GateAction.VaultDelete, v); })" />
+                <MudSwitch T="bool" Value="requireCodeOnItemDelete" Color="Color.Primary"
+                           Label="Deleting a password item"
+                           ValueChanged="@(async (bool v) => { requireCodeOnItemDelete = v; await TwoFactorGate.SetToggleAsync(JSRuntime, TwoFactorGate.GateAction.ItemDelete, v); })" />
             </MudStack>
         </MudPaper>
 
@@ -641,15 +662,15 @@
     private bool isConnectingGDrive = false;
     private bool isCreatingBackup = false;
     private bool isLoadingBackups = false;
-    private List<PasswordManager.Models.DTOs.CloudBackupInfo> cloudBackups = new();
+    private List<VaultGuard.Models.DTOs.CloudBackupInfo> cloudBackups = new();
 
     // Browse / selective restore state
-    private PasswordManager.Models.DTOs.BackupContentsDto? browseContents = null;
+    private VaultGuard.Models.DTOs.BackupContentsDto? browseContents = null;
     private string browseFilter = string.Empty;
     private bool browseSelectAll = true;
     private int browseSelectedCount = 0;
 
-    private List<PasswordManager.Models.DTOs.BackupItemDto> BrowseVisible(List<PasswordManager.Models.DTOs.BackupItemDto> src)
+    private List<VaultGuard.Models.DTOs.BackupItemDto> BrowseVisible(List<VaultGuard.Models.DTOs.BackupItemDto> src)
         => string.IsNullOrWhiteSpace(browseFilter)
             ? src
             : src.Where(i => i.Title.Contains(browseFilter, StringComparison.OrdinalIgnoreCase)
@@ -765,7 +786,7 @@
                 // Create provider-specific API key
                 if (Enum.TryParse<DatabaseProvider>(selectedProviderForApiKey, out var provider))
                 {
-                    var request = new PasswordManager.Models.DTOs.ApiKeyRequestDto
+                    var request = new VaultGuard.Models.DTOs.ApiKeyRequestDto
                     {
                         Name = newApiKeyName,
                         Provider = provider,
@@ -1156,7 +1177,7 @@
         }
     }
 
-    private async Task RestoreBackup(PasswordManager.Models.DTOs.CloudBackupInfo backup)
+    private async Task RestoreBackup(VaultGuard.Models.DTOs.CloudBackupInfo backup)
     {
         // Two-step warning — first confirm destructive action, then ask for password
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
@@ -1169,8 +1190,8 @@
 
         try
         {
-            var backupSvc = ServiceProvider.GetService<PasswordManager.Services.Interfaces.IDatabaseBackupService>();
-            var cloudMgr = ServiceProvider.GetService<PasswordManager.Services.Services.CloudBackupManager>();
+            var backupSvc = ServiceProvider.GetService<VaultGuard.Services.Interfaces.IDatabaseBackupService>();
+            var cloudMgr = ServiceProvider.GetService<VaultGuard.Services.Services.CloudBackupManager>();
             if (backupSvc == null || cloudMgr == null)
             {
                 await JSRuntime.InvokeVoidAsync("alert", "Restore service unavailable.");
@@ -1189,7 +1210,7 @@
         }
     }
 
-    private async Task BrowseBackup(PasswordManager.Models.DTOs.CloudBackupInfo backup)
+    private async Task BrowseBackup(VaultGuard.Models.DTOs.CloudBackupInfo backup)
     {
         var password = await JSRuntime.InvokeAsync<string>("prompt",
             $"Enter master password to browse backup from {backup.CreatedAtFormatted}:");
@@ -1197,8 +1218,8 @@
 
         try
         {
-            var backupSvc = ServiceProvider.GetService<PasswordManager.Services.Interfaces.IDatabaseBackupService>();
-            var cloudMgr = ServiceProvider.GetService<PasswordManager.Services.Services.CloudBackupManager>();
+            var backupSvc = ServiceProvider.GetService<VaultGuard.Services.Interfaces.IDatabaseBackupService>();
+            var cloudMgr = ServiceProvider.GetService<VaultGuard.Services.Services.CloudBackupManager>();
             if (backupSvc == null || cloudMgr == null) return;
             var rawData = await cloudMgr.DownloadBackupDataAsync(backup);
             if (rawData == null) { await JSRuntime.InvokeVoidAsync("alert", "Could not download backup."); return; }
@@ -1229,7 +1250,7 @@
 
         try
         {
-            var backupSvc = ServiceProvider.GetService<PasswordManager.Services.Interfaces.IDatabaseBackupService>();
+            var backupSvc = ServiceProvider.GetService<VaultGuard.Services.Interfaces.IDatabaseBackupService>();
             if (backupSvc == null) return;
             var imported = await backupSvc.ImportSelectedItemsAsync(browseContents, selectedIds);
             browseContents = null;
@@ -1241,7 +1262,7 @@
         }
     }
 
-    private async Task DeleteBackup(PasswordManager.Models.DTOs.CloudBackupInfo backup)
+    private async Task DeleteBackup(VaultGuard.Models.DTOs.CloudBackupInfo backup)
     {
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
             $"Delete backup from {backup.CreatedAtFormatted}? This cannot be undone.");
@@ -1249,7 +1270,7 @@
 
         try
         {
-            var cloudMgr = ServiceProvider.GetService<PasswordManager.Services.Services.CloudBackupManager>();
+            var cloudMgr = ServiceProvider.GetService<VaultGuard.Services.Services.CloudBackupManager>();
             if (cloudMgr != null) await cloudMgr.DeleteBackupAsync(backup.Provider, backup.Id);
             cloudBackups.Remove(backup);
             StateHasChanged();

@@ -3,9 +3,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using PasswordManager.WPF.Services;
+using VaultGuard.WPF.Services;
 
-namespace PasswordManager.WPF.Dialogs
+namespace VaultGuard.WPF.Dialogs
 {
     /// <summary>
     /// Old-school (MS Paint style) colour picker for a single toast type. Lets the user choose a

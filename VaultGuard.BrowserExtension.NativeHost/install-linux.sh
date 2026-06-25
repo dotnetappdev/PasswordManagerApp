@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Password Manager Native Host Installer"
+echo "Vault Guard Native Host Installer"
 echo "====================================="
 echo
 
@@ -8,7 +8,7 @@ echo
 INSTALL_DIR="$HOME/.local/bin/passwordmanager-native-host"
 MANIFEST_DIR="$HOME/.config/google-chrome/NativeMessagingHosts"
 
-echo "Installing Password Manager Native Host..."
+echo "Installing Vault Guard Native Host..."
 echo "Installation directory: $INSTALL_DIR"
 echo "Manifest directory: $MANIFEST_DIR"
 echo
@@ -36,16 +36,16 @@ if [ $? -ne 0 ]; then
 fi
 
 # Make the executable... executable
-chmod +x "$INSTALL_DIR/PasswordManager.BrowserExtension.NativeHost"
+chmod +x "$INSTALL_DIR/VaultGuard.BrowserExtension.NativeHost"
 
 # Create the manifest file with correct paths
 MANIFEST_FILE="$MANIFEST_DIR/com.passwordmanager.native_host.json"
-EXECUTABLE_PATH="$INSTALL_DIR/PasswordManager.BrowserExtension.NativeHost"
+EXECUTABLE_PATH="$INSTALL_DIR/VaultGuard.BrowserExtension.NativeHost"
 
 cat > "$MANIFEST_FILE" << EOF
 {
   "name": "com.passwordmanager.native_host",
-  "description": "Password Manager Native Messaging Host",
+  "description": "Vault Guard Native Messaging Host",
   "path": "$EXECUTABLE_PATH",
   "type": "stdio",
   "allowed_origins": [

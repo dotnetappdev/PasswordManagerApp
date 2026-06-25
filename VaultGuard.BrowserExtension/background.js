@@ -1,5 +1,5 @@
-// Background script for Password Manager browser extension
-class PasswordManagerBackground {
+// Background script for Vault Guard browser extension
+class VaultGuardBackground {
   constructor() {
     this.nativeHostName = 'com.passwordmanager.native_host';
     this.authToken = null;
@@ -24,7 +24,7 @@ class PasswordManagerBackground {
         this.authToken = result.authToken;
       }
     } catch (error) {
-      console.error('Password Manager: Error loading settings:', error);
+      console.error('Vault Guard: Error loading settings:', error);
     }
   }
 
@@ -63,7 +63,7 @@ class PasswordManagerBackground {
           sendResponse({ success: false, error: 'Unknown action' });
       }
     } catch (error) {
-      console.error('Password Manager: Error handling message:', error);
+      console.error('Vault Guard: Error handling message:', error);
       sendResponse({ success: false, error: error.message });
     }
   }
@@ -162,7 +162,7 @@ class PasswordManagerBackground {
       try {
         return await this.sendLocalStorageMessage(action, data);
       } catch (localError) {
-        console.log('Password Manager: localStorage failed:', localError.message);
+        console.log('Vault Guard: localStorage failed:', localError.message);
         // Don't fallback if user explicitly chose localStorage
         throw localError;
       }
@@ -176,7 +176,7 @@ class PasswordManagerBackground {
           ...data
         });
       } catch (nativeError) {
-        console.log('Password Manager: Native host failed:', nativeError.message);
+        console.log('Vault Guard: Native host failed:', nativeError.message);
         
         // If native was explicitly chosen, don't fallback
         if (connectionMode === 'native') {
@@ -190,7 +190,7 @@ class PasswordManagerBackground {
       try {
         return await this.sendWebApiMessage(action, data);
       } catch (apiError) {
-        console.log('Password Manager: Web API failed:', apiError.message);
+        console.log('Vault Guard: Web API failed:', apiError.message);
         
         // If API was explicitly chosen, don't fallback
         if (connectionMode === 'api') {
@@ -300,7 +300,7 @@ class PasswordManagerBackground {
         });
       }
     } catch (error) {
-      console.error('Password Manager: Error fetching credentials:', error);
+      console.error('Vault Guard: Error fetching credentials:', error);
       sendResponse({ 
         success: false, 
         error: `Failed to communicate with password manager: ${error.message}` 
@@ -332,7 +332,7 @@ class PasswordManagerBackground {
         });
       }
     } catch (error) {
-      console.error('Password Manager: Error fetching credit cards:', error);
+      console.error('Vault Guard: Error fetching credit cards:', error);
       sendResponse({ 
         success: false, 
         error: `Failed to communicate with password manager: ${error.message}` 
@@ -389,7 +389,7 @@ class PasswordManagerBackground {
         });
       }
     } catch (error) {
-      console.error('Password Manager: Error generating password:', error);
+      console.error('Vault Guard: Error generating password:', error);
       sendResponse({ 
         success: false, 
         error: 'Failed to communicate with native host for password generation' 
@@ -425,7 +425,7 @@ class PasswordManagerBackground {
         });
       }
     } catch (error) {
-      console.error('Password Manager: Login error:', error);
+      console.error('Vault Guard: Login error:', error);
       sendResponse({
         success: false,
         error: `Login failed: ${error.message}. Check your backend setting (Local app vs API) in Settings.`
@@ -443,7 +443,7 @@ class PasswordManagerBackground {
         message: 'Logged out successfully' 
       });
     } catch (error) {
-      console.error('Password Manager: Logout error:', error);
+      console.error('Vault Guard: Logout error:', error);
       sendResponse({ 
         success: false, 
         error: 'Logout failed' 
@@ -463,7 +463,7 @@ class PasswordManagerBackground {
         }
       });
     } catch (error) {
-      console.error('Password Manager: Error getting settings:', error);
+      console.error('Vault Guard: Error getting settings:', error);
       sendResponse({ 
         success: false, 
         error: 'Failed to get settings' 
@@ -489,7 +489,7 @@ class PasswordManagerBackground {
       });
       sendResponse(response || { success: false, error: 'No response from backend', fallback: true });
     } catch (error) {
-      console.error('Password Manager: Passkey request failed:', error);
+      console.error('Vault Guard: Passkey request failed:', error);
       // fallback:true lets the page use the platform authenticator if our backend is unavailable.
       sendResponse({ success: false, error: error.message, fallback: true });
     }
@@ -516,7 +516,7 @@ class PasswordManagerBackground {
         });
       }
     } catch (error) {
-      console.error('Password Manager: Connection test failed:', error);
+      console.error('Vault Guard: Connection test failed:', error);
       sendResponse({
         success: false,
         error: `Connection failed: ${error.message}. Check your backend setting in Settings.`
@@ -587,4 +587,4 @@ class PasswordManagerBackground {
 }
 
 // Initialize the background script
-new PasswordManagerBackground();
+new VaultGuardBackground();

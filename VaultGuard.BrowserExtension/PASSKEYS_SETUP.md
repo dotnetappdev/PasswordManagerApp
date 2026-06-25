@@ -1,6 +1,6 @@
-# Setting up Passkeys (WebAuthn) with the Password Manager
+# Setting up Passkeys (WebAuthn) with the Vault Guard
 
-This guide explains how to turn the Password Manager into a **virtual passkey
+This guide explains how to turn the Vault Guard into a **virtual passkey
 authenticator** for third‑party websites — the same model 1Password uses.
 
 When set up, registering for a passkey‑enabled site (e.g. github.com, google.com,
@@ -65,10 +65,10 @@ The rest of this guide covers the **Local SQLite** setup, which is what passkeys
 ## Prerequisites
 
 - Windows 10/11 (these steps use Windows; macOS/Linux scripts exist in
-  `PasswordManager.BrowserExtension.NativeHost/`).
+  `VaultGuard.BrowserExtension.NativeHost/`).
 - [.NET SDK 8.0+](https://dotnet.microsoft.com/download) installed (to build the host).
 - Google Chrome or Microsoft Edge.
-- A Password Manager account already created (you need your **email + master password**).
+- A Vault Guard account already created (you need your **email + master password**).
 
 ---
 
@@ -80,16 +80,16 @@ The native host is the bridge that reads your SQLite vault and does the cryptogr
 2. Run the installer:
 
    ```bat
-   cd PasswordManager.BrowserExtension.NativeHost
+   cd VaultGuard.BrowserExtension.NativeHost
    install-windows.bat
    ```
 
-   This builds a self‑contained `PasswordManager.BrowserExtension.NativeHost.exe`
-   into `C:\Program Files\PasswordManager\NativeHost\` and writes a native‑host
+   This builds a self‑contained `VaultGuard.BrowserExtension.NativeHost.exe`
+   into `C:\Program Files\VaultGuard\NativeHost\` and writes a native‑host
    manifest (`com.passwordmanager.native_host.json`) next to it.
 
 > The host auto‑locates your vault DB (`passwordmanager.db` in
-> `%APPDATA%\PasswordManager\` or `%LOCALAPPDATA%\PasswordManager\`). If yours lives
+> `%APPDATA%\VaultGuard\` or `%LOCALAPPDATA%\VaultGuard\`). If yours lives
 > elsewhere, point the extension at it (see *Pointing the extension at the same vault*
 > below); the path is passed to the host as `databasePath`.
 
@@ -103,7 +103,7 @@ So the extension shares the **same** `passwordmanager.db` as the desktop app:
    - Click **Detect from app** — the native host reports the DB it resolved and fills
      the field for you (recommended), **or**
    - Paste the full path to the same `.db` file the desktop app uses (e.g.
-     `C:\Users\You\AppData\Roaming\PasswordManager\passwordmanager.db`). Leave it blank
+     `C:\Users\You\AppData\Roaming\VaultGuard\passwordmanager.db`). Leave it blank
      to let the host auto‑detect.
 4. Click **Save Settings**, then **Test Connection** — it shows the **active database
    path** the host is using so you can confirm it matches the desktop app's vault.
@@ -114,7 +114,7 @@ So the extension shares the **same** `passwordmanager.db` as the desktop app:
 
 1. Go to `chrome://extensions` (or `edge://extensions`).
 2. Turn on **Developer mode** (top‑right).
-3. Click **Load unpacked** and select the `PasswordManager.BrowserExtension` folder.
+3. Click **Load unpacked** and select the `VaultGuard.BrowserExtension` folder.
 4. Copy the **Extension ID** shown on the card (a long string like
    `abcdefghijklmnopabcdefghijklmnop`).
 
@@ -125,14 +125,14 @@ So the extension shares the **same** `passwordmanager.db` as the desktop app:
 The host only talks to your specific extension ID, so you must put that ID into the
 host manifest and register it.
 
-1. Edit `C:\Program Files\PasswordManager\NativeHost\com.passwordmanager.native_host.json`
+1. Edit `C:\Program Files\VaultGuard\NativeHost\com.passwordmanager.native_host.json`
    and replace the placeholder with your real ID:
 
    ```json
    {
      "name": "com.passwordmanager.native_host",
-     "description": "Password Manager Native Messaging Host",
-     "path": "C:\\Program Files\\PasswordManager\\NativeHost\\PasswordManager.BrowserExtension.NativeHost.exe",
+     "description": "Vault Guard Native Messaging Host",
+     "path": "C:\\Program Files\\VaultGuard\\NativeHost\\VaultGuard.BrowserExtension.NativeHost.exe",
      "type": "stdio",
      "allowed_origins": [
        "chrome-extension://YOUR_EXTENSION_ID_HERE/"
@@ -144,12 +144,12 @@ host manifest and register it.
 
    **Chrome**
    ```bat
-   reg add "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.passwordmanager.native_host" /ve /t REG_SZ /d "C:\Program Files\PasswordManager\NativeHost\com.passwordmanager.native_host.json" /f
+   reg add "HKCU\Software\Google\Chrome\NativeMessagingHosts\com.passwordmanager.native_host" /ve /t REG_SZ /d "C:\Program Files\VaultGuard\NativeHost\com.passwordmanager.native_host.json" /f
    ```
 
    **Edge**
    ```bat
-   reg add "HKCU\Software\Microsoft\Edge\NativeMessagingHosts\com.passwordmanager.native_host" /ve /t REG_SZ /d "C:\Program Files\PasswordManager\NativeHost\com.passwordmanager.native_host.json" /f
+   reg add "HKCU\Software\Microsoft\Edge\NativeMessagingHosts\com.passwordmanager.native_host" /ve /t REG_SZ /d "C:\Program Files\VaultGuard\NativeHost\com.passwordmanager.native_host.json" /f
    ```
 
 3. **Fully restart** the browser (close all windows).
@@ -160,7 +160,7 @@ host manifest and register it.
 
 Passkey signing requires an unlocked vault, so sign in once per browser session:
 
-1. Click the Password Manager extension icon.
+1. Click the Vault Guard extension icon.
 2. Enter your **email** and **master password** and sign in.
 3. Click **Test connection** if available — it should report the database connection
    is successful.
@@ -188,7 +188,7 @@ Use **https://webauthn.io**:
 2. Enter any username → **Register**. It should succeed and show the credential.
 3. Click **Authenticate**. It should succeed using the stored key.
 
-Open the page's **DevTools → Console** to watch for `Password Manager` log lines if
+Open the page's **DevTools → Console** to watch for `Vault Guard` log lines if
 something goes wrong.
 
 ---
@@ -201,7 +201,7 @@ something goes wrong.
 | Site uses the OS/Windows Hello prompt instead of the vault | The hook **gracefully falls back** when the vault is locked or no matching key exists. Sign in first; for a fresh site, register a new passkey. |
 | `Specified native messaging host not found` | The registry key or `allowed_origins` extension ID is wrong. Re‑check Step 3 and restart the browser. |
 | Registration fails on a specific site | Some sites require RS256 (`-257`); v1 issues ES256 (`-7`). The site's native authenticator is used as fallback. |
-| Host can't find the database | Set the DB path in the extension options, or confirm `passwordmanager.db` exists under `%APPDATA%\PasswordManager`. |
+| Host can't find the database | Set the DB path in the extension options, or confirm `passwordmanager.db` exists under `%APPDATA%\VaultGuard`. |
 | Nothing happens at all | Reload the extension at `chrome://extensions`, then reload the website tab so `inpage.js` re‑injects. |
 
 ---

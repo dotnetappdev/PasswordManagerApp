@@ -1,4 +1,4 @@
-# Password Manager WinUI App
+# Vault Guard WinUI App
 
 This is a comprehensive WinUI 3 desktop application that provides the same functionality as the existing Blazor MAUI app using a native Windows interface.
 
@@ -41,7 +41,7 @@ All accounts use the common master key `CommonMaster123!` for authentication.
 - **Platform Services**: Windows-specific implementations (WinUiPlatformService, WinUiSecureStorageService)
 - **Secure Storage**: Windows DPAPI-based secure storage service for encrypted local storage
 - **Database Support**: Same database providers as original (SQLite, SQL Server, MySQL, PostgreSQL)
-- **Service Integration**: Reuses all business logic from PasswordManager.Services
+- **Service Integration**: Reuses all business logic from VaultGuard.Services
 
 ### Advanced User Interface
 - **Modern Design**: Windows 11 Fluent Design with proper theming
@@ -71,7 +71,7 @@ All accounts use the common master key `CommonMaster123!` for authentication.
 ## Project Structure
 
 ```
-PasswordManager.WinUi/
+VaultGuard.WinUi/
 ├── App.xaml & App.xaml.cs          # Application entry point with DI container
 ├── MainWindow.xaml & .cs           # Main application window and navigation
 ├── Services/
@@ -101,11 +101,11 @@ PasswordManager.WinUi/
 ## Dependencies & Integration
 
 The WinUI app seamlessly integrates with existing shared libraries:
-- **PasswordManager.Models**: All data models and entities
-- **PasswordManager.Services**: Complete business logic layer
-- **PasswordManager.DAL**: Database access with Entity Framework
-- **PasswordManager.Crypto**: Encryption and security services
-- **PasswordManager.Imports**: Import functionality for 1Password, Bitwarden, etc.
+- **VaultGuard.Models**: All data models and entities
+- **VaultGuard.Services**: Complete business logic layer
+- **VaultGuard.DAL**: Database access with Entity Framework
+- **VaultGuard.Crypto**: Encryption and security services
+- **VaultGuard.Imports**: Import functionality for 1Password, Bitwarden, etc.
 
 ## Key Advantages Over Blazor Version
 
@@ -193,7 +193,7 @@ To complete for production use:
 
 ```bash
 # Navigate to the project directory
-cd PasswordManager.WinUi
+cd VaultGuard.WinUi
 
 # Run the application
 dotnet run
@@ -209,13 +209,13 @@ The WinUI application supports both packaged (MSIX) and unpackaged execution mod
 - App runs in a sandboxed environment
 - Default app data location: `Windows.Storage.ApplicationData.Current.LocalFolder.Path` (typically `%LocalAppData%\Packages\[PackageId]\LocalState\`)
 - Deployed via MSIX installer or Microsoft Store
-- Launch Profile: "PasswordManager.WinUi (Package)"
+- Launch Profile: "VaultGuard.WinUi (Package)"
 
 #### Unpackaged Mode
 - App runs with traditional desktop permissions
-- Default app data location: `%LocalAppData%\PasswordManager`
+- Default app data location: `%LocalAppData%\VaultGuard`
 - Deployed as standalone executable
-- Launch Profile: "PasswordManager.WinUi (Unpackaged)"
+- Launch Profile: "VaultGuard.WinUi (Unpackaged)"
 - Requires `trustInfo` section in app.manifest for proper execution
 
 #### Custom Database Path

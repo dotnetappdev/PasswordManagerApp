@@ -1,6 +1,6 @@
 using Uno.UI.Hosting;
 
-namespace PasswordManager.Mobile;
+namespace VaultGuard.Mobile;
 
 internal class Program
 {

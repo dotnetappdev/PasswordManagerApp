@@ -1,13 +1,13 @@
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.API.Interfaces;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Sync;
+using VaultGuard.API.Interfaces;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Sync;
 
-namespace PasswordManager.API.Services;
+namespace VaultGuard.API.Services;
 
-public class SyncService : PasswordManager.API.Interfaces.ISyncService
+public class SyncService : VaultGuard.API.Interfaces.ISyncService
 {
     private readonly IDatabaseContextFactory _contextFactory;
     private readonly ILogger<SyncService> _logger;
@@ -49,22 +49,22 @@ public class SyncService : PasswordManager.API.Interfaces.ISyncService
                 switch (entityType.ToLower())
                 {
                     case "passworditems":
-                        var passwordItemStats = await SyncPasswordItems((PasswordManagerDbContext)sourceContext, (PasswordManagerDbContext)targetContext, request.LastSyncTime, request.ConflictResolution);
+                        var passwordItemStats = await SyncPasswordItems((VaultGuardDbContext)sourceContext, (VaultGuardDbContext)targetContext, request.LastSyncTime, request.ConflictResolution);
                         statistics = MergeStatistics(statistics, passwordItemStats.statistics);
                         conflicts.AddRange(passwordItemStats.conflicts);
                         break;
                     case "categories":
-                        var categoryStats = await SyncCategories((PasswordManagerDbContext)sourceContext, (PasswordManagerDbContext)targetContext, request.LastSyncTime, request.ConflictResolution);
+                        var categoryStats = await SyncCategories((VaultGuardDbContext)sourceContext, (VaultGuardDbContext)targetContext, request.LastSyncTime, request.ConflictResolution);
                         statistics = MergeStatistics(statistics, categoryStats.statistics);
                         conflicts.AddRange(categoryStats.conflicts);
                         break;
                     case "collections":
-                        var collectionStats = await SyncCollections((PasswordManagerDbContext)sourceContext, (PasswordManagerDbContext)targetContext, request.LastSyncTime, request.ConflictResolution);
+                        var collectionStats = await SyncCollections((VaultGuardDbContext)sourceContext, (VaultGuardDbContext)targetContext, request.LastSyncTime, request.ConflictResolution);
                         statistics = MergeStatistics(statistics, collectionStats.statistics);
                         conflicts.AddRange(collectionStats.conflicts);
                         break;
                     case "tags":
-                        var tagStats = await SyncTags((PasswordManagerDbContext)sourceContext, (PasswordManagerDbContext)targetContext, request.LastSyncTime, request.ConflictResolution);
+                        var tagStats = await SyncTags((VaultGuardDbContext)sourceContext, (VaultGuardDbContext)targetContext, request.LastSyncTime, request.ConflictResolution);
                         statistics = MergeStatistics(statistics, tagStats.statistics);
                         conflicts.AddRange(tagStats.conflicts);
                         break;
@@ -172,8 +172,8 @@ public class SyncService : PasswordManager.API.Interfaces.ISyncService
     }
 
     private async Task<(SyncStatisticsDto statistics, List<SyncConflictDto> conflicts)> SyncPasswordItems(
-        PasswordManagerDbContext sourceContext, 
-        PasswordManagerDbContext targetContext, 
+        VaultGuardDbContext sourceContext, 
+        VaultGuardDbContext targetContext, 
         DateTime? lastSyncTime, 
         SyncConflictResolution conflictResolution)
     {
@@ -258,8 +258,8 @@ public class SyncService : PasswordManager.API.Interfaces.ISyncService
     }
 
     private async Task<(SyncStatisticsDto statistics, List<SyncConflictDto> conflicts)> SyncCategories(
-        PasswordManagerDbContext sourceContext, 
-        PasswordManagerDbContext targetContext, 
+        VaultGuardDbContext sourceContext, 
+        VaultGuardDbContext targetContext, 
         DateTime? lastSyncTime, 
         SyncConflictResolution conflictResolution)
     {
@@ -304,8 +304,8 @@ public class SyncService : PasswordManager.API.Interfaces.ISyncService
     }
 
     private async Task<(SyncStatisticsDto statistics, List<SyncConflictDto> conflicts)> SyncCollections(
-        PasswordManagerDbContext sourceContext, 
-        PasswordManagerDbContext targetContext, 
+        VaultGuardDbContext sourceContext, 
+        VaultGuardDbContext targetContext, 
         DateTime? lastSyncTime, 
         SyncConflictResolution conflictResolution)
     {
@@ -350,8 +350,8 @@ public class SyncService : PasswordManager.API.Interfaces.ISyncService
     }
 
     private async Task<(SyncStatisticsDto statistics, List<SyncConflictDto> conflicts)> SyncTags(
-        PasswordManagerDbContext sourceContext, 
-        PasswordManagerDbContext targetContext, 
+        VaultGuardDbContext sourceContext, 
+        VaultGuardDbContext targetContext, 
         DateTime? lastSyncTime, 
         SyncConflictResolution conflictResolution)
     {

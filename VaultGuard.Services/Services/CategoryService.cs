@@ -1,16 +1,16 @@
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.DAL;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.DAL;
 using Microsoft.EntityFrameworkCore;
 
-namespace PasswordManager.Services.Services
+namespace VaultGuard.Services.Services
 {
     public class CategoryService : ICategoryInterface
     {
-        private readonly PasswordManagerDbContext _db;
-        private readonly PasswordManager.Services.Interfaces.IAuthService _authService;
+        private readonly VaultGuardDbContext _db;
+        private readonly VaultGuard.Services.Interfaces.IAuthService _authService;
 
-        public CategoryService(PasswordManagerDbContext db, PasswordManager.Services.Interfaces.IAuthService authService)
+        public CategoryService(VaultGuardDbContext db, VaultGuard.Services.Interfaces.IAuthService authService)
         {
             _db = db;
             _authService = authService;

@@ -1,8 +1,8 @@
 using FileHelpers;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManagerImports.Apple;
+namespace VaultGuardImports.Apple;
 
 /// <summary>
 /// Apple Passwords CSV import plugin
@@ -24,7 +24,7 @@ public class AppleImportPlugin : IPasswordImportPlugin
             DisplayName = "Apple Passwords",
             Description = "Import passwords from Apple Passwords CSV export files",
             Version = "1.0.0",
-            Author = "PasswordManager Team",
+            Author = "VaultGuard Team",
             Website = "https://apple.com",
             Created = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,

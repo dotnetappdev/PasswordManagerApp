@@ -1,6 +1,6 @@
 using SQLite;
 
-namespace PasswordManager.Uno.Services.LocalDatabase;
+namespace VaultGuard.Uno.Services.LocalDatabase;
 
 /// <summary>
 /// Service for managing local SQLite database operations

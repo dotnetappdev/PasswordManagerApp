@@ -1,7 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @implements IDisposable
 @using MudBlazor
-@using PasswordManager.Components.Shared.Services
+@using VaultGuard.Components.Shared.Services
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @inject ThemeService ThemeService
@@ -15,7 +15,7 @@
     <MudAppBar Color="@(_isDarkMode ? Color.Dark : Color.Default)" Fixed="true" Dense="true"
                Style="@(_isDarkMode ? "background: linear-gradient(135deg,#0F1117 0%,#1A1D27 100%); border-bottom: 1px solid rgba(255,255,255,0.07);" : "background: linear-gradient(135deg,#ffffff 0%,#f5f7ff 100%); border-bottom: 1px solid rgba(0,0,0,0.06);")">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Style="@(_isDarkMode ? "font-weight:700; background: linear-gradient(90deg,#60A5FA,#A78BFA); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:-0.02em;" : "font-weight:700; color:#1a1a2e; letter-spacing:-0.02em;")">🔐 Password Manager</MudText>
+        <MudText Typo="Typo.h6" Style="@(_isDarkMode ? "font-weight:700; background: linear-gradient(90deg,#60A5FA,#A78BFA); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:-0.02em;" : "font-weight:700; color:#1a1a2e; letter-spacing:-0.02em;")">🔐 Vault Guard</MudText>
         <MudSpacer />
         <MudMenu>
             <ActivatorContent>
@@ -47,7 +47,7 @@
         <MudDrawerHeader>
             <MudText Typo="Typo.h6" Style="@(_isDarkMode ? "color: white;" : "color: inherit;")">
                 <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Small" Style="margin-right: 8px;" />
-                Password Manager
+                Vault Guard
             </MudText>
         </MudDrawerHeader>
         <MudNavMenu>

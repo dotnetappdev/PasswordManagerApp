@@ -1,5 +1,5 @@
-// Password Manager Browser Extension Popup Script
-class PasswordManagerPopup {
+// Vault Guard Browser Extension Popup Script
+class VaultGuardPopup {
   constructor() {
     this.currentScreen = 'loading';
     this.currentTab = 'credentials';
@@ -549,5 +549,5 @@ class PasswordManagerPopup {
 
 // Initialize popup when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  new PasswordManagerPopup();
+  new VaultGuardPopup();
 });

@@ -1,5 +1,5 @@
 @page "/api-testing"
-@using PasswordManager.Models
+@using VaultGuard.Models
 @using System.Net.Http
 @using System.Text
 @using System.Text.Json
@@ -257,7 +257,7 @@
                 <!-- Request URL Row -->
                 <div class="request-url-row">
                     <select @bind="selectedRequest.Method" class="form-control method-dropdown">
-                        @foreach (var method in Enum.GetValues<PasswordManager.Models.HttpMethod>())
+                        @foreach (var method in Enum.GetValues<VaultGuard.Models.HttpMethod>())
                         {
                             <option value="@method">@method</option>
                         }
@@ -416,7 +416,7 @@
             <div class="form-group" style="margin: 15px 0;">
                 <label>Method</label>
                 <select @bind="newRequestMethod" class="form-control">
-                    @foreach (var method in Enum.GetValues<PasswordManager.Models.HttpMethod>())
+                    @foreach (var method in Enum.GetValues<VaultGuard.Models.HttpMethod>())
                     {
                         <option value="@method">@method</option>
                     }
@@ -470,7 +470,7 @@
     private string newCollectionDescription = string.Empty;
     private string newRequestName = string.Empty;
     private string newRequestUrl = string.Empty;
-    private PasswordManager.Models.HttpMethod newRequestMethod = PasswordManager.Models.HttpMethod.GET;
+    private VaultGuard.Models.HttpMethod newRequestMethod = VaultGuard.Models.HttpMethod.GET;
     
     protected override async Task OnInitializedAsync()
     {
@@ -497,7 +497,7 @@
                         Id = 1,
                         Name = "Get Users",
                         Url = "https://jsonplaceholder.typicode.com/users",
-                        Method = PasswordManager.Models.HttpMethod.GET,
+                        Method = VaultGuard.Models.HttpMethod.GET,
                         ApiCollectionId = 1
                     },
                     new ApiRequest
@@ -505,7 +505,7 @@
                         Id = 2,
                         Name = "Create User",
                         Url = "https://jsonplaceholder.typicode.com/users",
-                        Method = PasswordManager.Models.HttpMethod.POST,
+                        Method = VaultGuard.Models.HttpMethod.POST,
                         Body = "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\"\n}",
                         ContentType = "application/json",
                         ApiCollectionId = 1
@@ -515,7 +515,7 @@
             new ApiCollection
             {
                 Id = 2,
-                Name = "Password Manager API",
+                Name = "Vault Guard API",
                 Description = "Testing the password manager endpoints",
                 Icon = "🔐",
                 Color = "#28a745",
@@ -526,7 +526,7 @@
                         Id = 3,
                         Name = "Get API Keys",
                         Url = "http://localhost:5000/api/apikeys",
-                        Method = PasswordManager.Models.HttpMethod.GET,
+                        Method = VaultGuard.Models.HttpMethod.GET,
                         Headers = "{\"X-API-Key\":\"your-api-key-here\"}",
                         ApiCollectionId = 2
                     }
@@ -646,9 +646,9 @@
             }
             
             // Add body for POST, PUT, PATCH requests
-            if (selectedRequest.Method == PasswordManager.Models.HttpMethod.POST || 
-                selectedRequest.Method == PasswordManager.Models.HttpMethod.PUT || 
-                selectedRequest.Method == PasswordManager.Models.HttpMethod.PATCH)
+            if (selectedRequest.Method == VaultGuard.Models.HttpMethod.POST || 
+                selectedRequest.Method == VaultGuard.Models.HttpMethod.PUT || 
+                selectedRequest.Method == VaultGuard.Models.HttpMethod.PATCH)
             {
                 if (!string.IsNullOrEmpty(selectedRequest.Body))
                 {
@@ -801,7 +801,7 @@
         newRequestCollectionId = collectionId;
         newRequestName = string.Empty;
         newRequestUrl = string.Empty;
-        newRequestMethod = PasswordManager.Models.HttpMethod.GET;
+        newRequestMethod = VaultGuard.Models.HttpMethod.GET;
         showAddRequestModal = true;
         StateHasChanged();
     }

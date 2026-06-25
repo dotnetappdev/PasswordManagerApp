@@ -1,7 +1,7 @@
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Auth;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Auth;
 
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 /// <summary>
 /// Service for managing Two-Factor Authentication (2FA) operations
@@ -79,7 +79,7 @@ public interface ITwoFactorService
     /// <param name="secretKey">Base32-encoded secret key</param>
     /// <param name="issuer">Application name/issuer</param>
     /// <returns>QR code URI</returns>
-    string GenerateQrCodeUri(string userEmail, string secretKey, string issuer = "PasswordManager");
+    string GenerateQrCodeUri(string userEmail, string secretKey, string issuer = "VaultGuard");
 
     /// <summary>
     /// Generates a set of backup codes

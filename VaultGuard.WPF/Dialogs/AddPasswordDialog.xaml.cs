@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Services.Utilities;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Services.Utilities;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.WPF.Helpers;
+using VaultGuard.WPF.Helpers;
 
-namespace PasswordManager.WPF.Dialogs;
+namespace VaultGuard.WPF.Dialogs;
 
 public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 {
@@ -371,7 +371,6 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                 return;
             }
 
-            VaultPickerPanel.Visibility = Visibility.Visible;
             VaultComboBox.ItemsSource = vaults;
 
             int? selectedVaultId = TargetVaultId;
@@ -393,6 +392,13 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                 selectedVaultId = (await _vaultService.GetDefaultVaultAsync())?.Id;
 
             VaultComboBox.SelectedItem = vaults.FirstOrDefault(v => v.Id == selectedVaultId) ?? vaults.FirstOrDefault();
+
+            // Already know which vault this item belongs to (came in pre-selected from the vault the
+            // user was viewing) — no need to make them confirm it again. Only show the picker when
+            // we genuinely don't know, so the user can choose.
+            VaultPickerPanel.Visibility = TargetVaultId.HasValue && _editingItem == null
+                ? Visibility.Collapsed
+                : Visibility.Visible;
         }
         catch
         {

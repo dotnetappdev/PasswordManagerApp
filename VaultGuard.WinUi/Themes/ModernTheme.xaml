@@ -3,10 +3,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- 
-    Modern Theme for Password Manager (WinUI)
+    Modern Theme for Vault Guard (WinUI)
     
-    This theme implements the Password Manager UI Design System.
-    Colors are aligned with PasswordManager.Models/UI/UIConstants.cs
+    This theme implements the Vault Guard UI Design System.
+    Colors are aligned with VaultGuard.Models/UI/UIConstants.cs
     
     For full documentation, see: UI_DESIGN_SYSTEM.md
     -->

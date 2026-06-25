@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System;
 using System.Collections.Generic;
 
-namespace PasswordManager.Models;
+namespace VaultGuard.Models;
 
 public class Tag
 {

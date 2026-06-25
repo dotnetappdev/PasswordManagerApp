@@ -1,4 +1,4 @@
-namespace PasswordManager.Models.Configuration;
+namespace VaultGuard.Models.Configuration;
 
 /// <summary>
 /// Configuration for Sentry.io error tracking

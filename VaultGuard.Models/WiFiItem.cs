@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.Models;
+namespace VaultGuard.Models;
 
 public class WiFiItem
 {

@@ -1,6 +1,6 @@
-# Password Manager Browser Extension Native Host
+# Vault Guard Browser Extension Native Host
 
-This native messaging host enables the Password Manager browser extension to communicate directly with your local SQLite database, eliminating the need for a running API server.
+This native messaging host enables the Vault Guard browser extension to communicate directly with your local SQLite database, eliminating the need for a running API server.
 
 ## Features
 
@@ -16,7 +16,7 @@ This native messaging host enables the Password Manager browser extension to com
 First, build the native messaging host executable:
 
 ```bash
-cd PasswordManager.BrowserExtension.NativeHost
+cd VaultGuard.BrowserExtension.NativeHost
 dotnet publish -c Release -r win-x64 --self-contained true --single-file
 ```
 
@@ -28,7 +28,7 @@ For other platforms:
 
 #### Windows (Chrome/Edge)
 
-1. Copy the built executable to a permanent location (e.g., `C:\Program Files\PasswordManager\PasswordManagerNativeHost.exe`)
+1. Copy the built executable to a permanent location (e.g., `C:\Program Files\VaultGuard\VaultGuardNativeHost.exe`)
 
 2. Update the manifest file `com.passwordmanager.native_host.json`:
    - Replace `PASSWORD_MANAGER_NATIVE_HOST_PATH` with the full path to the executable
@@ -69,9 +69,9 @@ For other platforms:
 The native host will automatically look for your password database in these locations:
 
 1. `passwordmanager_dev.db` in the current directory
-2. `%APPDATA%\PasswordManager\passwordmanager.db` (Windows)
-3. `~/.local/share/PasswordManager/passwordmanager.db` (Linux)
-4. `~/Library/Application Support/PasswordManager/passwordmanager.db` (macOS)
+2. `%APPDATA%\VaultGuard\passwordmanager.db` (Windows)
+3. `~/.local/share/VaultGuard/passwordmanager.db` (Linux)
+4. `~/Library/Application Support/VaultGuard/passwordmanager.db` (macOS)
 
 If your database is in a different location, you may need to modify the `GetDatabasePath()` method in `Program.cs`.
 

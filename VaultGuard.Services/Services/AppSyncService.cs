@@ -1,12 +1,12 @@
 using Microsoft.Extensions.Logging;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models.DTOs.Sync;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Models.DTOs.Sync;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for synchronizing data with the web API

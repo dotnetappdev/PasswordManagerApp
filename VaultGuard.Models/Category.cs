@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace PasswordManager.Models
+namespace VaultGuard.Models
 {
     public class Category
     {

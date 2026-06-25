@@ -8,14 +8,14 @@ The Settings page was displaying an incorrect database path with a `data` subdir
 ### Settings Page Display
 ```
 Current SQLite Database Location:
-C:\Users\davidb\AppData\Local\PasswordManager\data\passwordmanager.db
+C:\Users\davidb\AppData\Local\VaultGuard\data\passwordmanager.db
                                                  ^^^^
                                               (This folder doesn't exist!)
 ```
 
 ### Actual Database Location
 ```
-C:\Users\davidb\AppData\Local\PasswordManager\passwordmanager.db
+C:\Users\davidb\AppData\Local\VaultGuard\passwordmanager.db
 ```
 
 ### Code Issue
@@ -36,7 +36,7 @@ var defaultDbPath = Path.Combine(appDataDir, "passwordmanager.db");
 ### Settings Page Display (Corrected)
 ```
 Current SQLite Database Location:
-C:\Users\davidb\AppData\Local\PasswordManager\passwordmanager.db
+C:\Users\davidb\AppData\Local\VaultGuard\passwordmanager.db
 ```
 
 ### Code Fix
@@ -112,6 +112,6 @@ When clicked, the button:
 To verify the fix:
 1. Open Settings page
 2. Check "Current SQLite Database Location" field
-3. Expected: `C:\Users\{username}\AppData\Local\PasswordManager\passwordmanager.db`
-4. Click "Open Folder" - should open `C:\Users\{username}\AppData\Local\PasswordManager\`
+3. Expected: `C:\Users\{username}\AppData\Local\VaultGuard\passwordmanager.db`
+4. Click "Open Folder" - should open `C:\Users\{username}\AppData\Local\VaultGuard\`
 5. Click "Seed Essential Data" - should populate categories if missing

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Components;
 
-namespace PasswordManager.App.Components
+namespace VaultGuard.App.Components
 {
     public partial class App : ComponentBase
     {

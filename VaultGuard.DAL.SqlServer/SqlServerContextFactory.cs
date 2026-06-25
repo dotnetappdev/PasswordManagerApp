@@ -2,22 +2,22 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using System.IO;
-using PasswordManager.DAL;
+using VaultGuard.DAL;
 
-namespace PasswordManager.DAL.SqlServer
+namespace VaultGuard.DAL.SqlServer
 {
-public class SqlServerContextFactory : IDesignTimeDbContextFactory<PasswordManagerDbContextApp>
+public class SqlServerContextFactory : IDesignTimeDbContextFactory<VaultGuardDbContextApp>
     {
-    public PasswordManagerDbContextApp CreateDbContext(string[] args)
+    public VaultGuardDbContextApp CreateDbContext(string[] args)
         {
             var config = new  ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true)
                 .Build();
             var connectionString = config.GetConnectionString("SqlServerConnection");
-        var optionsBuilder = new DbContextOptionsBuilder<PasswordManagerDbContextApp>();
+        var optionsBuilder = new DbContextOptionsBuilder<VaultGuardDbContextApp>();
             optionsBuilder.UseSqlServer(connectionString);
-        return new PasswordManagerDbContextApp(optionsBuilder.Options);
+        return new VaultGuardDbContextApp(optionsBuilder.Options);
         }
     }
 }

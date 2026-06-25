@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 
-namespace PasswordManager.WPF.Helpers;
+namespace VaultGuard.WPF.Helpers;
 
 /// <summary>
 /// Extension methods for WPF Dispatcher to provide async operations similar to DispatcherQueue

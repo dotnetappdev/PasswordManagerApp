@@ -1,13 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.DAL.Interfaces;
+namespace VaultGuard.DAL.Interfaces;
 
 /// <summary>
-/// Interface for the Password Manager Database Context
+/// Interface for the Vault Guard Database Context
 /// </summary>
-public interface IPasswordManagerDbContextApp : IDisposable
+public interface IVaultGuardDbContextApp : IDisposable
 {
     /// <summary>
     /// Gets or sets the password items

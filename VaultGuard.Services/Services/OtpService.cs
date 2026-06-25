@@ -1,30 +1,30 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.DAL.Interfaces;
-using PasswordManager.Models;
-using PasswordManager.Models.Configuration;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.DAL.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Models.Configuration;
+using VaultGuard.Services.Interfaces;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for managing One-Time Passcodes (OTP)
 /// </summary>
 public class OtpService : IOtpService
 {
-    private readonly IPasswordManagerDbContext _context;
+    private readonly IVaultGuardDbContext _context;
     private readonly ISmsService _smsService;
     private readonly SmsConfiguration _config;
     private readonly ICryptographyService _cryptoService;
     private readonly ILogger<OtpService> _logger;
 
     public OtpService(
-        IPasswordManagerDbContext context,
+        IVaultGuardDbContext context,
         ISmsService smsService,
         IOptions<SmsConfiguration> config,
         ICryptographyService cryptoService,

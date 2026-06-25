@@ -1,6 +1,6 @@
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 public static class DataFilterService
 {

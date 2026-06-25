@@ -1,8 +1,8 @@
 using NUnit.Framework;
-using PasswordManager.Models;
-using PasswordManager.Services.Utilities;
+using VaultGuard.Models;
+using VaultGuard.Services.Utilities;
 
-namespace PasswordManager.BackEnd.Tests.Services;
+namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
 public class ProtectedItemHelperTests

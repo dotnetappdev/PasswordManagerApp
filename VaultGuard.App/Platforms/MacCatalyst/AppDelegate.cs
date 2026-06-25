@@ -1,6 +1,6 @@
 ﻿using Foundation;
 
-namespace PasswordManager.App;
+namespace VaultGuard.App;
 
 [Register("AppDelegate")]
 public class AppDelegate : MauiUIApplicationDelegate

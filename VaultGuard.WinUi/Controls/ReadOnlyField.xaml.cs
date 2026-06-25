@@ -2,7 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 
-namespace PasswordManager.WinUi.Controls
+namespace VaultGuard.WinUi.Controls
 {
     public sealed partial class ReadOnlyField : UserControl
     {

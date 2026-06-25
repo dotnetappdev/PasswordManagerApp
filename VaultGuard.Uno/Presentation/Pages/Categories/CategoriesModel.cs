@@ -1,9 +1,9 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using PasswordManager.Uno.Services.LocalDatabase;
+using VaultGuard.Uno.Services.LocalDatabase;
 using System.Collections.ObjectModel;
 
-namespace PasswordManager.Mobile.Presentation.Pages.Categories;
+namespace VaultGuard.Mobile.Presentation.Pages.Categories;
 
 public partial class CategoriesModel : ObservableObject
 {

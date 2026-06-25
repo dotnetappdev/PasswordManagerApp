@@ -1,4 +1,4 @@
-; VaultGuard Password Manager — WPF Desktop Installer
+; VaultGuard Vault Guard — WPF Desktop Installer
 ; Inno Setup 6.x Script  (https://jrsoftware.org/isdl.php)
 ;
 ; Build from project root:
@@ -12,10 +12,10 @@
 #endif
 
 #define MyAppName      "VaultGuard"
-#define MyAppFullName  "VaultGuard Password Manager"
+#define MyAppFullName  "VaultGuard Vault Guard"
 #define MyAppPublisher "VaultGuard"
-#define MyAppURL       "https://github.com/dotnetappdev/PasswordManagerApp"
-#define MyAppExeName   "PasswordManager.WPF.exe"
+#define MyAppURL       "https://github.com/dotnetappdev/VaultGuardApp"
+#define MyAppExeName   "VaultGuard.WPF.exe"
 #define MyAppGUID      "{{6E4A2C3B-8D1F-4E7C-A9B5-2F3D6C0E1A48}"
 #define DotNetRuntimeURL "https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-x64.exe"
 #define PublishDir     "..\publish\wpf"

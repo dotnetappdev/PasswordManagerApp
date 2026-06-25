@@ -3,21 +3,21 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.WPF.ViewModels;
-using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.Models;
-using PasswordManager.Crypto.Interfaces;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.WPF.ViewModels;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.Models;
+using VaultGuard.Crypto.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WPF.Views;
+namespace VaultGuard.WPF.Views;
 
 /// <summary>
-/// Login page for the Password Manager application with master password authentication
+/// Login page for the Vault Guard application with master password authentication
 /// </summary>
 public sealed partial class LoginPage : Page
 {
@@ -31,7 +31,7 @@ public sealed partial class LoginPage : Page
     private static readonly string _prefFile =
         System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "PasswordManager", "show_pw_pref.txt");
+            "VaultGuard", "show_pw_pref.txt");
 
     public LoginPage()
     {
@@ -122,7 +122,7 @@ public sealed partial class LoginPage : Page
             // seeder ("no such table: AspNetRoles"). Make sure the schema is in place first.
             await EnsureIdentitySchemaAsync(scope.ServiceProvider);
 
-            var seeder = scope.ServiceProvider.GetService<PasswordManager.DAL.Seed.IdentityDataSeeder>();
+            var seeder = scope.ServiceProvider.GetService<VaultGuard.DAL.Seed.IdentityDataSeeder>();
             if (seeder == null)
             {
                 await ShowLoginMessageAsync("Unavailable", "The account seeder could not be loaded.");
@@ -145,10 +145,9 @@ public sealed partial class LoginPage : Page
             }
             catch { /* refresh is best-effort */ }
 
-            await ShowLoginMessageAsync(
-                "Default accounts ready",
-                "The built-in accounts were created.\n\nSign in with:\n" +
-                "admin@passwordmanager.local\n\nMaster key: CommonMaster123!");
+            await ShowAccountsReadyDialogAsync(
+                "admin@passwordmanager.local",
+                "CommonMaster123!");
         }
         catch (Exception ex)
         {
@@ -170,7 +169,7 @@ public sealed partial class LoginPage : Page
     {
         try
         {
-            var appCtx = scopedProvider.GetService<PasswordManager.DAL.PasswordManagerDbContextApp>();
+            var appCtx = scopedProvider.GetService<VaultGuard.DAL.VaultGuardDbContextApp>();
             if (appCtx == null) return;
 
             if (await TableExistsAsync(appCtx, "AspNetRoles")) return;
@@ -241,8 +240,8 @@ public sealed partial class LoginPage : Page
 
         try
         {
-            var ctx = scopedProvider.GetService<PasswordManager.DAL.PasswordManagerDbContext>();
-            var crypto = scopedProvider.GetService<PasswordManager.Crypto.Interfaces.IPasswordCryptoService>();
+            var ctx = scopedProvider.GetService<VaultGuard.DAL.VaultGuardDbContext>();
+            var crypto = scopedProvider.GetService<VaultGuard.Crypto.Interfaces.IPasswordCryptoService>();
             if (ctx == null || crypto == null) return;
 
             foreach (var (email, first, last) in defaults)
@@ -295,6 +294,98 @@ public sealed partial class LoginPage : Page
         await dialog.ShowAsync();
     }
 
+    // Styled "default accounts created" confirmation — replaces the plain text ContentDialog with
+    // a card-style layout that highlights the sign-in email and master key as copyable chips.
+    private static async Task ShowAccountsReadyDialogAsync(string email, string masterKey)
+    {
+        var accent = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+
+        var iconBadge = new Border
+        {
+            Width = 56,
+            Height = 56,
+            CornerRadius = new CornerRadius(28),
+            Background = new SolidColorBrush(Color.FromArgb(0x26, 0x10, 0xB9, 0x81)),
+            Margin = new Thickness(0, 0, 0, 16),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Child = new TextBlock
+            {
+                Text = "",
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
+                FontSize = 26,
+                Foreground = accent,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            }
+        };
+
+        var subtitle = new TextBlock
+        {
+            Text = "The built-in accounts were created. Sign in with:",
+            Foreground = new SolidColorBrush(Color.FromRgb(0xA1, 0xA8, 0xB8)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 16)
+        };
+
+        var credentialsCard = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(16, 12, 16, 12),
+            Child = new StackPanel
+            {
+                Children =
+                {
+                    BuildCredentialRow("Email", email),
+                    new Border { Height = 10 },
+                    BuildCredentialRow("Master key", masterKey)
+                }
+            }
+        };
+
+        var content = new StackPanel
+        {
+            Margin = new Thickness(4, 8, 4, 0),
+            Children = { iconBadge, subtitle, credentialsCard }
+        };
+
+        var dialog = new ModernWpf.Controls.ContentDialog
+        {
+            Title = "Default accounts ready",
+            Content = content,
+            CloseButtonText = "OK"
+        };
+        await dialog.ShowAsync();
+    }
+
+    private static StackPanel BuildCredentialRow(string label, string value)
+    {
+        return new StackPanel
+        {
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = label,
+                    FontSize = 11,
+                    Foreground = new SolidColorBrush(Color.FromRgb(0x80, 0x88, 0x99)),
+                    Margin = new Thickness(0, 0, 0, 2)
+                },
+                new TextBlock
+                {
+                    Text = value,
+                    FontFamily = new FontFamily("Consolas"),
+                    FontSize = 14,
+                    FontWeight = FontWeights.SemiBold,
+                    Foreground = Brushes.White
+                }
+            }
+        };
+    }
+
     private async Task CheckAuthenticationStatusAsync()
     {
         try
@@ -322,6 +413,13 @@ public sealed partial class LoginPage : Page
             return;
         }
 
+        // 2FA-only quick unlock: the master-password textbox isn't shown at all, so skip
+        // straight to code verification instead of reading password fields.
+        if (_viewModel.RequiresTwoFactor)
+        {
+            await DoTwoFactorActionAsync();
+            return;
+        }
 
         // Resolve UI elements once for this handler
         var primaryActionButton = this.FindName("PrimaryActionButton") as Button;
@@ -372,6 +470,64 @@ public sealed partial class LoginPage : Page
             if (primaryActionButton != null) primaryActionButton.IsEnabled = true;
             if (authProgressRing != null) authProgressRing.IsActive = false;
         }
+    }
+
+    // ── 2FA-only quick unlock ────────────────────────────────────────────
+    private async Task DoTwoFactorActionAsync()
+    {
+        if (_viewModel == null) return;
+
+        var primaryActionButton = this.FindName("PrimaryActionButton") as Button;
+        var authProgressRing = this.FindName("AuthProgressRing") as ModernWpf.Controls.ProgressRing;
+
+        try
+        {
+            if (primaryActionButton != null) primaryActionButton.IsEnabled = false;
+            if (authProgressRing != null) authProgressRing.IsActive = true;
+
+            var success = await _viewModel.AuthenticateWithTwoFactorAsync();
+
+            if (success)
+            {
+                if (TwoFactorCodeBox != null) TwoFactorCodeBox.Text = string.Empty;
+
+                if (GetMainWindow() is MainWindow mainWindow)
+                    mainWindow.NavigateToHome();
+            }
+            else
+            {
+                TwoFactorCodeBox?.Focus();
+            }
+        }
+        catch (Exception)
+        {
+            TwoFactorCodeBox?.Focus();
+        }
+        finally
+        {
+            if (primaryActionButton != null) primaryActionButton.IsEnabled = true;
+            if (authProgressRing != null) authProgressRing.IsActive = false;
+        }
+    }
+
+    private async void TwoFactorCodeBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter)
+        {
+            await DoTwoFactorActionAsync();
+        }
+    }
+
+    private void ToggleBackupCodeButton_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel?.ToggleBackupCodeMode();
+        TwoFactorCodeBox?.Focus();
+    }
+
+    private void UseMasterPasswordButton_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel?.SwitchToMasterPasswordEntry();
+        FocusActivePasswordField();
     }
 
     // Event handler remains async void for XAML Click binding
@@ -573,7 +729,7 @@ public sealed partial class LoginPage : Page
             // and also fixes existing databases that are missing columns.
             using (var migScope = _serviceProvider.CreateScope())
             {
-                var dbCtxApp = migScope.ServiceProvider.GetRequiredService<PasswordManager.DAL.PasswordManagerDbContextApp>();
+                var dbCtxApp = migScope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContextApp>();
                 await dbCtxApp.Database.MigrateAsync();
             }
 

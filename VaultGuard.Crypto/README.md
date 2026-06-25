@@ -1,4 +1,4 @@
-# PasswordManager.Crypto
+# VaultGuard.Crypto
 
 A comprehensive cryptographic library for secure password management, implementing PBKDF2 key derivation and AES-256-GCM encryption similar to Bitwarden's approach.
 
@@ -182,7 +182,7 @@ Add to `appsettings.json`:
 Run the test suite to verify cryptographic operations:
 
 ```csharp
-PasswordManager.Crypto.Tests.CryptoTest.RunTests();
+VaultGuard.Crypto.Tests.CryptoTest.RunTests();
 ```
 
 ## Dependencies

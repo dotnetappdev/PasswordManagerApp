@@ -3,7 +3,7 @@ using AuthenticationServices;
 using Foundation;
 using Security;
 
-namespace PasswordManager.Uno.Services.AutoFill;
+namespace VaultGuard.Uno.Services.AutoFill;
 
 /// <summary>
 /// iOS AutoFill credential provider service using Keychain
@@ -11,7 +11,7 @@ namespace PasswordManager.Uno.Services.AutoFill;
 public class iOSAutoFillService
 {
     private readonly ILogger _logger;
-    private const string ServiceName = "PasswordManager";
+    private const string ServiceName = "VaultGuard";
 
     public iOSAutoFillService(ILogger logger)
     {

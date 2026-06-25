@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-echo Password Manager Native Host Installer
+echo Vault Guard Native Host Installer
 echo =====================================
 echo.
 
@@ -15,9 +15,9 @@ if %errorLevel% neq 0 (
 )
 
 REM Default installation directory
-set "INSTALL_DIR=%ProgramFiles%\PasswordManager\NativeHost"
+set "INSTALL_DIR=%ProgramFiles%\VaultGuard\NativeHost"
 
-echo Installing Password Manager Native Host...
+echo Installing Vault Guard Native Host...
 echo Installation directory: %INSTALL_DIR%
 echo.
 
@@ -42,13 +42,13 @@ if !errorLevel! neq 0 (
 
 REM Update the manifest file with correct paths
 set "MANIFEST_FILE=%INSTALL_DIR%\com.passwordmanager.native_host.json"
-set "EXECUTABLE_PATH=%INSTALL_DIR%\PasswordManager.BrowserExtension.NativeHost.exe"
+set "EXECUTABLE_PATH=%INSTALL_DIR%\VaultGuard.BrowserExtension.NativeHost.exe"
 
 REM Create the manifest file with correct paths
 (
 echo {
 echo   "name": "com.passwordmanager.native_host",
-echo   "description": "Password Manager Native Messaging Host",
+echo   "description": "Vault Guard Native Messaging Host",
 echo   "path": "%EXECUTABLE_PATH:\=\\%",
 echo   "type": "stdio",
 echo   "allowed_origins": [

@@ -1,4 +1,4 @@
-namespace PasswordManager.Uno.Services.AutoFill;
+namespace VaultGuard.Uno.Services.AutoFill;
 
 /// <summary>
 /// Interface for AutoFill credential provider service

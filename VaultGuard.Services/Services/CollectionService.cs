@@ -1,19 +1,19 @@
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PasswordManager.Services.Services
+namespace VaultGuard.Services.Services
 {
     public class CollectionService : ICollectionService
     {
-        private readonly PasswordManagerDbContext _db;
+        private readonly VaultGuardDbContext _db;
 
-        public CollectionService(PasswordManagerDbContext db)
+        public CollectionService(VaultGuardDbContext db)
         {
             _db = db;
         }

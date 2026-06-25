@@ -5,7 +5,7 @@ using Android.Gms.Auth.Api.SignIn;
 using Android.Gms.Common.Apis;
 using Java.IO;
 
-namespace PasswordManager.Uno.Services.Backup;
+namespace VaultGuard.Uno.Services.Backup;
 
 /// <summary>
 /// Google Drive backup service for Android

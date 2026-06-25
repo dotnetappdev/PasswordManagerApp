@@ -1,18 +1,18 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.DAL.Interfaces;
-using PasswordManager.Models.Configuration;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Services.Services;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.DAL.Interfaces;
+using VaultGuard.Models.Configuration;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Services.Services;
 using Xunit;
 
-namespace PasswordManager.Tests.OTP;
+namespace VaultGuard.Tests.OTP;
 
 public class OtpServiceTests
 {
-    private readonly Mock<IPasswordManagerDbContext> _mockContext;
+    private readonly Mock<IVaultGuardDbContext> _mockContext;
     private readonly Mock<ISmsService> _mockSmsService;
     private readonly Mock<ICryptographyService> _mockCryptoService;
     private readonly Mock<ILogger<OtpService>> _mockLogger;
@@ -21,7 +21,7 @@ public class OtpServiceTests
 
     public OtpServiceTests()
     {
-        _mockContext = new Mock<IPasswordManagerDbContext>();
+        _mockContext = new Mock<IVaultGuardDbContext>();
         _mockSmsService = new Mock<ISmsService>();
         _mockCryptoService = new Mock<ICryptographyService>();
         _mockLogger = new Mock<ILogger<OtpService>>();
@@ -81,7 +81,7 @@ public class PlatformDetectionServiceTests
     [InlineData("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", PlatformType.Web)]
     [InlineData("Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36", PlatformType.MobileAndroid)]
     [InlineData("Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15", PlatformType.MobileIOS)]
-    [InlineData("PasswordManager/1.0 (Windows NT 10.0; MAUI)", PlatformType.DesktopWindows)]
+    [InlineData("VaultGuard/1.0 (Windows NT 10.0; MAUI)", PlatformType.DesktopWindows)]
     [InlineData("", PlatformType.Unknown)]
     [InlineData(null, PlatformType.Unknown)]
     public void DetectPlatform_ShouldReturnCorrectPlatformType(string? userAgent, PlatformType expectedPlatform)
@@ -97,8 +97,8 @@ public class PlatformDetectionServiceTests
     [InlineData("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", true)]  // Web
     [InlineData("Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36", true)]  // Android
     [InlineData("Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15", true)]  // iOS
-    [InlineData("PasswordManager/1.0 (Windows NT 10.0; MAUI)", false)]  // Desktop Windows
-    [InlineData("PasswordManager/1.0 (Macintosh; MAUI)", false)]  // Desktop macOS
+    [InlineData("VaultGuard/1.0 (Windows NT 10.0; MAUI)", false)]  // Desktop Windows
+    [InlineData("VaultGuard/1.0 (Macintosh; MAUI)", false)]  // Desktop macOS
     [InlineData("", false)]  // Unknown
     [InlineData(null, false)]  // Unknown
     public void IsOtpSupported_ShouldReturnCorrectSupport(string? userAgent, bool expectedSupport)

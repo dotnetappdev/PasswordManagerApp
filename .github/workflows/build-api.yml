@@ -5,30 +5,30 @@ on:
     branches: [ devmain, main, develop ]
     tags:     [ 'v*' ]
     paths:
-      - 'PasswordManager.API/**'
-      - 'PasswordManager.Models/**'
-      - 'PasswordManager.DAL/**'
-      - 'PasswordManager.Services/**'
-      - 'PasswordManager.Crypto/**'
-      - 'PasswordManager.DAL.SqlServer/**'
-      - 'PasswordManager.DAL.MySql/**'
-      - 'PasswordManager.DAL.Postgres/**'
-      - 'PasswordManager.DAL.SupaBase/**'
+      - 'VaultGuard.API/**'
+      - 'VaultGuard.Models/**'
+      - 'VaultGuard.DAL/**'
+      - 'VaultGuard.Services/**'
+      - 'VaultGuard.Crypto/**'
+      - 'VaultGuard.DAL.SqlServer/**'
+      - 'VaultGuard.DAL.MySql/**'
+      - 'VaultGuard.DAL.Postgres/**'
+      - 'VaultGuard.DAL.SupaBase/**'
   pull_request:
     branches: [ devmain, main, develop ]
     paths:
-      - 'PasswordManager.API/**'
-      - 'PasswordManager.Models/**'
-      - 'PasswordManager.DAL/**'
-      - 'PasswordManager.Services/**'
-      - 'PasswordManager.Crypto/**'
-      - 'PasswordManager.DAL.SqlServer/**'
-      - 'PasswordManager.DAL.MySql/**'
-      - 'PasswordManager.DAL.Postgres/**'
-      - 'PasswordManager.DAL.SupaBase/**'
+      - 'VaultGuard.API/**'
+      - 'VaultGuard.Models/**'
+      - 'VaultGuard.DAL/**'
+      - 'VaultGuard.Services/**'
+      - 'VaultGuard.Crypto/**'
+      - 'VaultGuard.DAL.SqlServer/**'
+      - 'VaultGuard.DAL.MySql/**'
+      - 'VaultGuard.DAL.Postgres/**'
+      - 'VaultGuard.DAL.SupaBase/**'
 
 env:
-  PROJECT: PasswordManager.API/PasswordManager.API.csproj
+  PROJECT: VaultGuard.API/VaultGuard.API.csproj
   PUBLISH_DIR: publish/api
   DOTNET_VERSION: '10.0.x'
 
@@ -65,8 +65,8 @@ jobs:
 
       - name: Test
         run: |
-          if [ -d "PasswordManager.API.Tests" ]; then
-            dotnet test PasswordManager.API.Tests --no-build --configuration Release
+          if [ -d "VaultGuard.API.Tests" ]; then
+            dotnet test VaultGuard.API.Tests --no-build --configuration Release
           else
             echo "No API tests found, skipping"
           fi

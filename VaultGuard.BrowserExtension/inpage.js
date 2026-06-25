@@ -1,6 +1,6 @@
 // inpage.js — runs in the PAGE world (not the isolated content-script world) so it can
 // override the real navigator.credentials. This is the interception point that makes the
-// Password Manager act as a virtual WebAuthn authenticator (1Password-style).
+// Vault Guard act as a virtual WebAuthn authenticator (1Password-style).
 //
 // Flow: we override navigator.credentials.create/get, build the clientDataJSON ourselves,
 // hand the request to the content script (which relays to the native host via the background

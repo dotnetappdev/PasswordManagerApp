@@ -1,4 +1,4 @@
-# PasswordManager.Components.Shared
+# VaultGuard.Components.Shared
 
 A shared Blazor component library that provides reusable UI components for both the .NET MAUI mobile app and Blazor Server web app, ensuring consistent user experience across all platforms.
 
@@ -72,9 +72,9 @@ The library uses a shared component approach where:
 - **MudBlazor**: Material Design components for rich UI
 - **Microsoft.AspNetCore.Components**: Core Blazor functionality
 - **Microsoft.AspNetCore.Components.Authorization**: Authentication components
-- **PasswordManager.Models**: Shared data models
-- **PasswordManager.Services**: Business logic services
-- **PasswordManager.Crypto**: Cryptographic operations
+- **VaultGuard.Models**: Shared data models
+- **VaultGuard.Services**: Business logic services
+- **VaultGuard.Crypto**: Cryptographic operations
 
 ## Usage
 
@@ -83,7 +83,7 @@ The library uses a shared component approach where:
 ```csharp
 // MauiProgram.cs
 builder.Services.AddMauiBlazorWebView();
-builder.Services.AddPasswordManagerComponents();
+builder.Services.AddVaultGuardComponents();
 ```
 
 ### In Blazor Server App
@@ -92,7 +92,7 @@ builder.Services.AddPasswordManagerComponents();
 // Program.cs
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddPasswordManagerComponents();
+builder.Services.AddVaultGuardComponents();
 ```
 
 ### Component Discovery
@@ -102,7 +102,7 @@ The library automatically discovers and registers routes for both platforms:
 ```csharp
 // In App.razor or Routes.razor
 <Router AppAssembly="@typeof(App).Assembly"
-        AdditionalAssemblies="new[] { typeof(PasswordManager.Components.Shared.Pages.Vault).Assembly }">
+        AdditionalAssemblies="new[] { typeof(VaultGuard.Components.Shared.Pages.Vault).Assembly }">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
     </Found>
@@ -114,13 +114,13 @@ The library automatically discovers and registers routes for both platforms:
 ### Building
 
 ```bash
-dotnet build PasswordManager.Components.Shared
+dotnet build VaultGuard.Components.Shared
 ```
 
 ### Testing
 
 ```bash
-dotnet test PasswordManager.Components.Shared.Tests
+dotnet test VaultGuard.Components.Shared.Tests
 ```
 
 ### Adding New Components
@@ -203,4 +203,4 @@ This project is licensed under the MIT License - see the [LICENSE](../LICENSE) f
 
 ---
 
-**Part of the PasswordManager.App suite - Built with .NET 9, Blazor, and MudBlazor**
+**Part of the VaultGuard.App suite - Built with .NET 9, Blazor, and MudBlazor**

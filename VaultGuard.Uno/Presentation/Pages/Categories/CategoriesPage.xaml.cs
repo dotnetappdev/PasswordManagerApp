@@ -1,4 +1,4 @@
-namespace PasswordManager.Mobile.Presentation.Pages.Categories;
+namespace VaultGuard.Mobile.Presentation.Pages.Categories;
 
 public sealed partial class CategoriesPage : Page
 {

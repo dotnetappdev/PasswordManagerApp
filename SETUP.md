@@ -39,8 +39,8 @@ dotnet --version
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/dotnetappdev/PasswordManagerApp.git
-   cd PasswordManagerApp
+   git clone https://github.com/dotnetappdev/VaultGuardApp.git
+   cd VaultGuardApp
    ```
 
 2. **Restore NuGet packages**
@@ -90,7 +90,7 @@ For production deployments or when you need enterprise features.
 {
   "DatabaseProvider": "sqlserver",
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=PasswordManager;Trusted_Connection=true;TrustServerCertificate=true;"
+    "DefaultConnection": "Server=localhost;Database=VaultGuard;Trusted_Connection=true;TrustServerCertificate=true;"
   }
 }
 ```
@@ -100,7 +100,7 @@ For production deployments or when you need enterprise features.
 {
   "DatabaseProvider": "sqlserver",
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=PasswordManager;User Id=sa;Password=YourPassword;TrustServerCertificate=true;"
+    "DefaultConnection": "Server=localhost;Database=VaultGuard;User Id=sa;Password=YourPassword;TrustServerCertificate=true;"
   }
 }
 ```
@@ -129,16 +129,16 @@ brew install mysql
 {
   "DatabaseProvider": "mysql",
   "ConnectionStrings": {
-    "MySqlConnection": "Server=localhost;Database=PasswordManager;User=root;Password=yourpassword;Port=3306;"
+    "MySqlConnection": "Server=localhost;Database=VaultGuard;User=root;Password=yourpassword;Port=3306;"
   }
 }
 ```
 
 **Setup Steps:**
 1. Start MySQL service
-2. Create database: `CREATE DATABASE PasswordManager;`
+2. Create database: `CREATE DATABASE VaultGuard;`
 3. Create user (optional): `CREATE USER 'pmuser'@'localhost' IDENTIFIED BY 'password';`
-4. Grant permissions: `GRANT ALL PRIVILEGES ON PasswordManager.* TO 'pmuser'@'localhost';`
+4. Grant permissions: `GRANT ALL PRIVILEGES ON VaultGuard.* TO 'pmuser'@'localhost';`
 
 📋 **For detailed MySQL setup, see [MySQL Setup Guide](MYSQL_SETUP_GUIDE.md)**
 
@@ -225,15 +225,15 @@ The application uses `appsettings.json` for configuration. Here's a complete con
   "DatabaseProvider": "sqlite",
   "ConnectionStrings": {
     "SqliteConnection": "Data Source=passwordmanager.db",
-    "DefaultConnection": "Server=localhost;Database=PasswordManager;Trusted_Connection=true;TrustServerCertificate=true;",
-    "MySqlConnection": "Server=localhost;Database=PasswordManager;User=root;Password=yourpassword;Port=3306;",
+    "DefaultConnection": "Server=localhost;Database=VaultGuard;Trusted_Connection=true;TrustServerCertificate=true;",
+    "MySqlConnection": "Server=localhost;Database=VaultGuard;User=root;Password=yourpassword;Port=3306;",
     "PostgresConnection": "Host=localhost;Database=passwordmanager;Username=postgres;Password=yourpassword;Port=5432;"
   },
   
   "JwtSettings": {
     "SecretKey": "your-256-bit-secret-key-here-must-be-at-least-32-characters-long",
-    "Issuer": "PasswordManagerAPI",
-    "Audience": "PasswordManagerApp",
+    "Issuer": "VaultGuardAPI",
+    "Audience": "VaultGuardApp",
     "ExpirationHours": 24
   },
   
@@ -289,7 +289,7 @@ Create environment-specific configuration files:
   },
   "DatabaseProvider": "sqlserver",
   "ConnectionStrings": {
-    "DefaultConnection": "Server=production-server;Database=PasswordManager;User Id=pmuser;Password=production-password;"
+    "DefaultConnection": "Server=production-server;Database=VaultGuard;User Id=pmuser;Password=production-password;"
   }
 }
 ```
@@ -300,17 +300,17 @@ Database migrations are handled by Entity Framework Core. Follow these steps:
 
 ### 1. Navigate to the API Project
 ```bash
-cd PasswordManager.API
+cd VaultGuard.API
 ```
 
 ### 2. Add Migration (when creating new migrations)
 ```bash
-dotnet ef migrations add InitialCreate --project ../PasswordManager.DAL --startup-project .
+dotnet ef migrations add InitialCreate --project ../VaultGuard.DAL --startup-project .
 ```
 
 ### 3. Update Database
 ```bash
-dotnet ef database update --project ../PasswordManager.DAL --startup-project .
+dotnet ef database update --project ../VaultGuard.DAL --startup-project .
 ```
 
 ### 4. Provider-Specific Migrations
@@ -319,36 +319,36 @@ For different database providers, you may need to create provider-specific migra
 
 **SQL Server:**
 ```bash
-dotnet ef migrations add InitialCreate --project ../PasswordManager.DAL.SqlServer --startup-project .
-dotnet ef database update --project ../PasswordManager.DAL.SqlServer --startup-project .
+dotnet ef migrations add InitialCreate --project ../VaultGuard.DAL.SqlServer --startup-project .
+dotnet ef database update --project ../VaultGuard.DAL.SqlServer --startup-project .
 ```
 
 **MySQL:**
 ```bash
-dotnet ef migrations add InitialCreate --project ../PasswordManager.DAL.MySql --startup-project .
-dotnet ef database update --project ../PasswordManager.DAL.MySql --startup-project .
+dotnet ef migrations add InitialCreate --project ../VaultGuard.DAL.MySql --startup-project .
+dotnet ef database update --project ../VaultGuard.DAL.MySql --startup-project .
 ```
 
 **PostgreSQL:**
 ```bash
-dotnet ef migrations add InitialCreate --project ../PasswordManager.DAL.Postgres --startup-project .
-dotnet ef database update --project ../PasswordManager.DAL.Postgres --startup-project .
+dotnet ef migrations add InitialCreate --project ../VaultGuard.DAL.Postgres --startup-project .
+dotnet ef database update --project ../VaultGuard.DAL.Postgres --startup-project .
 ```
 
 ### 5. Migration Commands Reference
 
 ```bash
 # List migrations
-dotnet ef migrations list --project ../PasswordManager.DAL --startup-project .
+dotnet ef migrations list --project ../VaultGuard.DAL --startup-project .
 
 # Remove last migration
-dotnet ef migrations remove --project ../PasswordManager.DAL --startup-project .
+dotnet ef migrations remove --project ../VaultGuard.DAL --startup-project .
 
 # Generate SQL script
-dotnet ef migrations script --project ../PasswordManager.DAL --startup-project .
+dotnet ef migrations script --project ../VaultGuard.DAL --startup-project .
 
 # Update to specific migration
-dotnet ef database update MigrationName --project ../PasswordManager.DAL --startup-project .
+dotnet ef database update MigrationName --project ../VaultGuard.DAL --startup-project .
 ```
 
 ## Running the Application
@@ -357,21 +357,21 @@ dotnet ef database update MigrationName --project ../PasswordManager.DAL --start
 
 1. **Start the API (Terminal 1):**
    ```bash
-   cd PasswordManager.API
+   cd VaultGuard.API
    dotnet run
    ```
    API will be available at: `https://localhost:5001`
 
 2. **Start the Web App (Terminal 2):**
    ```bash
-   cd PasswordManager.Web
+   cd VaultGuard.Web
    dotnet run
    ```
    Web app will be available at: `https://localhost:7001`
 
 3. **Start the MAUI App (Terminal 3):**
    ```bash
-   cd PasswordManager.App
+   cd VaultGuard.App
    dotnet run
    ```
 
@@ -379,25 +379,25 @@ dotnet ef database update MigrationName --project ../PasswordManager.DAL --start
 
 1. **Publish the API:**
    ```bash
-   cd PasswordManager.API
+   cd VaultGuard.API
    dotnet publish -c Release -o ./publish
    ```
 
 2. **Publish the Web App:**
    ```bash
-   cd PasswordManager.Web
+   cd VaultGuard.Web
    dotnet publish -c Release -o ./publish
    ```
 
 3. **Run published applications:**
    ```bash
    # API
-   cd PasswordManager.API/publish
-   dotnet PasswordManager.API.dll
+   cd VaultGuard.API/publish
+   dotnet VaultGuard.API.dll
 
    # Web App
-   cd PasswordManager.Web/publish
-   dotnet PasswordManager.Web.dll
+   cd VaultGuard.Web/publish
+   dotnet VaultGuard.Web.dll
    ```
 
 ## Releases & Auto-Update
@@ -411,7 +411,7 @@ git tag v1.2.3
 git push origin v1.2.3
 ```
 
-This produces on the [Releases page](https://github.com/dotnetappdev/PasswordManagerApp/releases):
+This produces on the [Releases page](https://github.com/dotnetappdev/VaultGuardApp/releases):
 
 | Asset | Workflow |
 |-------|---------|
@@ -422,7 +422,7 @@ This produces on the [Releases page](https://github.com/dotnetappdev/PasswordMan
 
 ### In-app update check
 
-The WPF desktop app polls `https://api.github.com/repos/dotnetappdev/PasswordManagerApp/releases/latest`, compares the tag version with the running assembly version, and offers a one-click **Download & Install** when a newer version is available (**Settings → About → Check for Updates**).
+The WPF desktop app polls `https://api.github.com/repos/dotnetappdev/VaultGuardApp/releases/latest`, compares the tag version with the running assembly version, and offers a one-click **Download & Install** when a newer version is available (**Settings → About → Check for Updates**).
 
 ---
 
@@ -431,14 +431,14 @@ The WPF desktop app polls `https://api.github.com/repos/dotnetappdev/PasswordMan
 ### IDE Configuration
 
 **Visual Studio 2022:**
-1. Open `PasswordManager.sln`
+1. Open `VaultGuard.sln`
 2. Set multiple startup projects:
-   - `PasswordManager.API`
-   - `PasswordManager.Web`
+   - `VaultGuard.API`
+   - `VaultGuard.Web`
 3. Configure launch profiles for different environments
 
 **JetBrains Rider:**
-1. Open `PasswordManager.sln`
+1. Open `VaultGuard.sln`
 2. Create compound run configuration
 3. Add both API and Web projects
 4. Configure environment variables
@@ -462,11 +462,11 @@ dotnet dev-certs https --trust
 Enable hot reload for faster development:
 ```bash
 # API with hot reload
-cd PasswordManager.API
+cd VaultGuard.API
 dotnet watch run
 
 # Web app with hot reload
-cd PasswordManager.Web
+cd VaultGuard.Web
 dotnet watch run
 ```
 
@@ -477,9 +477,9 @@ We welcome contributions! Here's how to get started:
 ### 1. Fork and Clone
 ```bash
 # Fork the repository on GitHub
-git clone https://github.com/YOUR-USERNAME/PasswordManagerApp.git
-cd PasswordManagerApp
-git remote add upstream https://github.com/dotnetappdev/PasswordManagerApp.git
+git clone https://github.com/YOUR-USERNAME/VaultGuardApp.git
+cd VaultGuardApp
+git remote add upstream https://github.com/dotnetappdev/VaultGuardApp.git
 ```
 
 ### 2. Create a Branch
@@ -509,7 +509,7 @@ dotnet test
 dotnet test --collect:"XPlat Code Coverage"
 
 # Run specific test project
-dotnet test PasswordManager.Tests/
+dotnet test VaultGuard.Tests/
 ```
 
 ### 4. Submit Changes
@@ -594,8 +594,8 @@ dotnet dev-certs https --trust
 ### Getting Help
 
 - **Documentation**: Check our [documentation files](README.md)
-- **Issues**: Create an issue on [GitHub](https://github.com/dotnetappdev/PasswordManagerApp/issues)
-- **Discussions**: Join [GitHub Discussions](https://github.com/dotnetappdev/PasswordManagerApp/discussions)
+- **Issues**: Create an issue on [GitHub](https://github.com/dotnetappdev/VaultGuardApp/issues)
+- **Discussions**: Join [GitHub Discussions](https://github.com/dotnetappdev/VaultGuardApp/discussions)
 - **Email**: Contact support@passwordmanager.dev
 
 ### Performance Tips

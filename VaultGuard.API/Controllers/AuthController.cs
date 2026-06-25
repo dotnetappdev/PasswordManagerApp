@@ -1,16 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
-using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.Models;
-using PasswordManager.DAL;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.DAL;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using PasswordManager.Models.Configuration;
+using VaultGuard.Models.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace PasswordManager.API.Controllers;
+namespace VaultGuard.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -27,7 +27,7 @@ public class AuthController : ControllerBase
     private readonly IPasskeyService _passkeyService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly PasswordManagerDbContext _dbContext;
+    private readonly VaultGuardDbContext _dbContext;
     private readonly SmsConfiguration _smsConfig;
     private readonly ILogger<AuthController> _logger;
 
@@ -42,7 +42,7 @@ public class AuthController : ControllerBase
  
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
-        PasswordManagerDbContext dbContext,
+        VaultGuardDbContext dbContext,
         IOptions<SmsConfiguration> smsConfig,
         ILogger<AuthController> logger)
     {

@@ -2,7 +2,7 @@ using Microsoft.UI.Dispatching;
 using System;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WinUi.Helpers;
+namespace VaultGuard.WinUi.Helpers;
 
 public static class DispatcherQueueExtensions
 {

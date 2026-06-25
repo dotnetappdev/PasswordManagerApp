@@ -1,13 +1,13 @@
 using Microsoft.Extensions.Configuration;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Services.Utilities;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Services.Utilities;
 using System.Reflection;
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace PasswordManager.Imports.Services;
+namespace VaultGuard.Imports.Services;
 
 public class ImportService : IImportService
 {

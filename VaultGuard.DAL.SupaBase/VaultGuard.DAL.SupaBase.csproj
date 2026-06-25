@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PasswordManager.Models\PasswordManager.Models.csproj" />
+    <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
   </ItemGroup>
 
 </Project>

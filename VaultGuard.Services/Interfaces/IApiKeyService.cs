@@ -1,8 +1,8 @@
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs;
-using PasswordManager.Models.Configuration;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Models.Configuration;
 
-namespace PasswordManager.Services.Interfaces
+namespace VaultGuard.Services.Interfaces
 {
     public interface IApiKeyService
     {

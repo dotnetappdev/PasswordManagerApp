@@ -1,7 +1,7 @@
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs;
 
-namespace PasswordManager.Services.Helpers;
+namespace VaultGuard.Services.Helpers;
 
 public static class MappingHelper
 {

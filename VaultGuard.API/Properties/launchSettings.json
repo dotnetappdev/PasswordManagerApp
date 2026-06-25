@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "PasswordManager.API": {
+    "VaultGuard.API": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {

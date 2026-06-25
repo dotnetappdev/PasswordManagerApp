@@ -1,8 +1,8 @@
-using PasswordManager.Uno.Services.LocalDatabase;
+using VaultGuard.Uno.Services.LocalDatabase;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-namespace PasswordManager.Uno.Services.Sync;
+namespace VaultGuard.Uno.Services.Sync;
 
 /// <summary>
 /// Service for syncing data between local SQLite database and the API

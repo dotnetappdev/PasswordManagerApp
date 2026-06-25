@@ -1,28 +1,28 @@
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
-using PasswordManager.DAL;
-using PasswordManager.Models;
-using PasswordManager.Services;
-using PasswordManager.Services.Utilities;
+using VaultGuard.DAL;
+using VaultGuard.Models;
+using VaultGuard.Services;
+using VaultGuard.Services.Utilities;
 
-namespace PasswordManager.BackEnd.Tests.Services;
+namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
 public class PasswordItemServiceTests
 {
-    private DbContextOptions<PasswordManagerDbContext> _options = null!;
-    private PasswordManagerDbContext _context = null!;
+    private DbContextOptions<VaultGuardDbContext> _options = null!;
+    private VaultGuardDbContext _context = null!;
     private PasswordItemService _service = null!;
     private const string TestUserId = "test-user-id";
 
     [SetUp]
     public void Setup()
     {
-        _options = new DbContextOptionsBuilder<PasswordManagerDbContext>()
+        _options = new DbContextOptionsBuilder<VaultGuardDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
-        _context = new PasswordManagerDbContext(_options);
+        _context = new VaultGuardDbContext(_options);
         _service = new PasswordItemService(_context);
     }
 

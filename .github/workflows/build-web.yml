@@ -5,34 +5,34 @@ on:
     branches: [ devmain, main, develop ]
     tags:     [ 'v*' ]
     paths:
-      - 'PasswordManager.Web/**'
-      - 'PasswordManager.Models/**'
-      - 'PasswordManager.Components.Shared/**'
-      - 'PasswordManager.DAL/**'
-      - 'PasswordManager.Services/**'
-      - 'PasswordManager.Crypto/**'
-      - 'PasswordManager.Imports/**'
-      - 'PasswordManager.DAL.SqlServer/**'
-      - 'PasswordManager.DAL.MySql/**'
-      - 'PasswordManager.DAL.Postgres/**'
-      - 'PasswordManager.DAL.SupaBase/**'
+      - 'VaultGuard.Web/**'
+      - 'VaultGuard.Models/**'
+      - 'VaultGuard.Components.Shared/**'
+      - 'VaultGuard.DAL/**'
+      - 'VaultGuard.Services/**'
+      - 'VaultGuard.Crypto/**'
+      - 'VaultGuard.Imports/**'
+      - 'VaultGuard.DAL.SqlServer/**'
+      - 'VaultGuard.DAL.MySql/**'
+      - 'VaultGuard.DAL.Postgres/**'
+      - 'VaultGuard.DAL.SupaBase/**'
   pull_request:
     branches: [ devmain, main, develop ]
     paths:
-      - 'PasswordManager.Web/**'
-      - 'PasswordManager.Models/**'
-      - 'PasswordManager.Components.Shared/**'
-      - 'PasswordManager.DAL/**'
-      - 'PasswordManager.Services/**'
-      - 'PasswordManager.Crypto/**'
-      - 'PasswordManager.Imports/**'
-      - 'PasswordManager.DAL.SqlServer/**'
-      - 'PasswordManager.DAL.MySql/**'
-      - 'PasswordManager.DAL.Postgres/**'
-      - 'PasswordManager.DAL.SupaBase/**'
+      - 'VaultGuard.Web/**'
+      - 'VaultGuard.Models/**'
+      - 'VaultGuard.Components.Shared/**'
+      - 'VaultGuard.DAL/**'
+      - 'VaultGuard.Services/**'
+      - 'VaultGuard.Crypto/**'
+      - 'VaultGuard.Imports/**'
+      - 'VaultGuard.DAL.SqlServer/**'
+      - 'VaultGuard.DAL.MySql/**'
+      - 'VaultGuard.DAL.Postgres/**'
+      - 'VaultGuard.DAL.SupaBase/**'
 
 env:
-  PROJECT: PasswordManager.Web/PasswordManager.Web.csproj
+  PROJECT: VaultGuard.Web/VaultGuard.Web.csproj
   PUBLISH_DIR: publish/web
   DOTNET_VERSION: '10.0.x'
 
@@ -69,8 +69,8 @@ jobs:
 
       - name: Test
         run: |
-          if [ -d "PasswordManager.Web.Tests" ]; then
-            dotnet test PasswordManager.Web.Tests --no-build --configuration Release
+          if [ -d "VaultGuard.Web.Tests" ]; then
+            dotnet test VaultGuard.Web.Tests --no-build --configuration Release
           else
             echo "No Web tests found, skipping"
           fi

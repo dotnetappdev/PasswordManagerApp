@@ -1,4 +1,4 @@
-namespace PasswordManager.Uno.Services.Theme;
+namespace VaultGuard.Uno.Services.Theme;
 
 /// <summary>
 /// Interface for theme management service

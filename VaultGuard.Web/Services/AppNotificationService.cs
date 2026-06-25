@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using MudBlazor;
 
-namespace PasswordManager.Web.Services;
+namespace VaultGuard.Web.Services;
 
 public enum AppNotificationType { Success, Error, Warning, Info }
 

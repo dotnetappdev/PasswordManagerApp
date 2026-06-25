@@ -1,4 +1,4 @@
-namespace PasswordManager.Models.DTOs.Auth;
+namespace VaultGuard.Models.DTOs.Auth;
 
 /// <summary>
 /// Request to create (register) a software passkey for a third-party site, stored encrypted

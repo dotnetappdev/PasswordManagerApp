@@ -2,13 +2,13 @@ using System.IO.Compression;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.DAL;
-using PasswordManager.Models.DTOs;
-using PasswordManager.Models;
-using PasswordManager.Crypto.Interfaces;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Models.DTOs;
+using VaultGuard.Models;
+using VaultGuard.Crypto.Interfaces;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for creating and restoring database backups
@@ -19,17 +19,70 @@ public class DatabaseBackupService : IDatabaseBackupService
     private readonly IDatabaseContextFactory _contextFactory;
     private readonly IPasswordEncryptionService _encryptionService;
     private readonly IBackupEncryptionService _backupEncryption;
+    private readonly IAuthService? _authService;
 
     public DatabaseBackupService(
         ILogger<DatabaseBackupService> logger,
         IDatabaseContextFactory contextFactory,
         IPasswordEncryptionService encryptionService,
-        IBackupEncryptionService backupEncryption)
+        IBackupEncryptionService backupEncryption,
+        IAuthService? authService = null)
     {
         _logger = logger;
         _contextFactory = contextFactory;
         _encryptionService = encryptionService;
         _backupEncryption = backupEncryption;
+        _authService = authService;
+    }
+
+    // Finds (or creates) the vault + its default collection for the given name, so a restored item
+    // lands back in the vault it came from instead of wherever its old, possibly-stale CollectionId
+    // happens to point. Returns null if there's no vault name to resolve or no signed-in user.
+    private async Task<int?> ResolveCollectionIdForVaultNameAsync(VaultGuard.DAL.Interfaces.IVaultGuardDbContext context, string? vaultName)
+    {
+        if (string.IsNullOrWhiteSpace(vaultName)) return null;
+        var userId = _authService?.CurrentUser?.Id;
+        if (string.IsNullOrEmpty(userId)) return null;
+
+        var vault = await context.Vaults.FirstOrDefaultAsync(v => v.UserId == userId && v.Name == vaultName);
+        if (vault == null)
+        {
+            vault = new Vault
+            {
+                Name = vaultName,
+                Description = $"Restored from backup",
+                Icon = "🔐",
+                Color = "#2563EB",
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            context.Vaults.Add(vault);
+            await context.SaveChangesAsync();
+        }
+
+        var collection = await context.Collections.FirstOrDefaultAsync(c => c.VaultId == vault.Id && c.IsDefault)
+                       ?? await context.Collections.FirstOrDefaultAsync(c => c.VaultId == vault.Id);
+        if (collection == null)
+        {
+            collection = new Collection
+            {
+                Name = vault.Name,
+                Description = vault.Description,
+                Icon = vault.Icon,
+                Color = vault.Color,
+                IsDefault = true,
+                VaultId = vault.Id,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                LastModified = DateTime.UtcNow
+            };
+            context.Collections.Add(collection);
+            await context.SaveChangesAsync();
+        }
+
+        return collection.Id;
     }
 
     public async Task<DatabaseBackupResult> CreateBackupAsync(string encryptionKey, bool compress = true)
@@ -52,6 +105,7 @@ public class DatabaseBackupService : IDatabaseBackupService
                 passwordItems = await context.PasswordItems.ToListAsync(),
                 categories = await context.Categories.ToListAsync(),
                 tags = await context.Tags.ToListAsync(),
+                vaults = await context.Vaults.ToListAsync(),
                 collections = await context.Collections.ToListAsync(),
                 customFields = await context.CustomFields.ToListAsync(),
                 loginItems = await context.LoginItems.ToListAsync(),
@@ -153,25 +207,29 @@ public class DatabaseBackupService : IDatabaseBackupService
                     : DateTime.UtcNow
             };
 
+            // Build CollectionId -> VaultName so each item can remember which vault it came from,
+            // even though PasswordItem itself only stores a CollectionId.
+            var collectionToVaultName = BuildCollectionToVaultNameMap(root);
+
             if (root.TryGetProperty("loginItems", out var logins))
             {
                 foreach (var el in logins.EnumerateArray())
-                    contents.LoginItems.Add(MapElement(el, "Login"));
+                    contents.LoginItems.Add(MapElement(el, "Login", collectionToVaultName));
             }
             if (root.TryGetProperty("secureNoteItems", out var notes))
             {
                 foreach (var el in notes.EnumerateArray())
-                    contents.SecureNotes.Add(MapElement(el, "Secure Note"));
+                    contents.SecureNotes.Add(MapElement(el, "Secure Note", collectionToVaultName));
             }
             if (root.TryGetProperty("creditCardItems", out var cards))
             {
                 foreach (var el in cards.EnumerateArray())
-                    contents.CreditCards.Add(MapElement(el, "Credit Card"));
+                    contents.CreditCards.Add(MapElement(el, "Credit Card", collectionToVaultName));
             }
             if (root.TryGetProperty("wifiItems", out var wifi))
             {
                 foreach (var el in wifi.EnumerateArray())
-                    contents.WifiItems.Add(MapElement(el, "Wi-Fi"));
+                    contents.WifiItems.Add(MapElement(el, "Wi-Fi", collectionToVaultName));
             }
             // Also pull top-level passwordItems that may not have sub-type rows
             if (root.TryGetProperty("passwordItems", out var passwords))
@@ -186,7 +244,7 @@ public class DatabaseBackupService : IDatabaseBackupService
                                || contents.CreditCards.Any(x => x.Id == id)
                                || contents.WifiItems.Any(x => x.Id == id);
                     if (!exists)
-                        contents.LoginItems.Add(MapElement(el, "Login"));
+                        contents.LoginItems.Add(MapElement(el, "Login", collectionToVaultName));
                 }
             }
             return contents;
@@ -198,7 +256,38 @@ public class DatabaseBackupService : IDatabaseBackupService
         }
     }
 
-    private static BackupItemDto MapElement(JsonElement el, string itemType)
+    // Maps Collection.Id -> the name of the vault it belongs to, by cross-referencing the backup's
+    // "collections" (which carry VaultId) against its "vaults" (which carry the vault Name).
+    private static Dictionary<int, string> BuildCollectionToVaultNameMap(JsonElement root)
+    {
+        var map = new Dictionary<int, string>();
+        try
+        {
+            if (!root.TryGetProperty("vaults", out var vaultsEl) || !root.TryGetProperty("collections", out var collectionsEl))
+                return map;
+
+            var vaultNameById = new Dictionary<int, string>();
+            foreach (var v in vaultsEl.EnumerateArray())
+            {
+                if (v.TryGetProperty("Id", out var vid) && v.TryGetProperty("Name", out var vname))
+                    vaultNameById[vid.GetInt32()] = vname.GetString() ?? "";
+            }
+
+            foreach (var c in collectionsEl.EnumerateArray())
+            {
+                if (!c.TryGetProperty("Id", out var cid)) continue;
+                if (c.TryGetProperty("VaultId", out var vIdEl) && vIdEl.ValueKind == JsonValueKind.Number
+                    && vaultNameById.TryGetValue(vIdEl.GetInt32(), out var vaultName) && !string.IsNullOrWhiteSpace(vaultName))
+                {
+                    map[cid.GetInt32()] = vaultName;
+                }
+            }
+        }
+        catch { /* best-effort — items just won't carry a vault name */ }
+        return map;
+    }
+
+    private static BackupItemDto MapElement(JsonElement el, string itemType, Dictionary<int, string>? collectionToVaultName = null)
     {
         // Id is int in the DB — use it as string for the DTO key
         string id;
@@ -213,11 +302,21 @@ public class DatabaseBackupService : IDatabaseBackupService
         else if (el.TryGetProperty("CardHolderName", out var ch)) subtitle = ch.GetString();
         else if (el.TryGetProperty("NetworkName", out var nn)) subtitle = nn.GetString();
         DateTime created = el.TryGetProperty("CreatedAt", out var c) ? c.GetDateTime() : DateTime.UtcNow;
+
+        string? vaultName = null;
+        if (collectionToVaultName != null
+            && el.TryGetProperty("CollectionId", out var collIdEl)
+            && collIdEl.ValueKind == JsonValueKind.Number)
+        {
+            collectionToVaultName.TryGetValue(collIdEl.GetInt32(), out vaultName);
+        }
+
         return new BackupItemDto
         {
             Id = id, Title = title, Subtitle = subtitle,
             ItemType = itemType, CreatedAt = created,
-            IsSelected = true, RawJson = el.GetRawText()
+            IsSelected = true, RawJson = el.GetRawText(),
+            VaultName = vaultName
         };
     }
 
@@ -247,7 +346,39 @@ public class DatabaseBackupService : IDatabaseBackupService
             {
                 var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var list = JsonSerializer.Deserialize<List<PasswordItem>>(items.GetRawText(), opts);
-                if (list != null) context.PasswordItems.AddRange(list);
+                if (list != null)
+                {
+                    // RestoreFullAsync wipes items but leaves Collections/Vaults untouched, so an item's
+                    // old CollectionId usually still resolves correctly. But when restoring into a fresh
+                    // database (or one where those collections were since deleted), re-home the item by
+                    // vault name instead of leaving it pointing at a row that no longer exists.
+                    var collectionToVaultName = BuildCollectionToVaultNameMap(root);
+                    var existingCollectionIds = (await context.Collections.Select(c => c.Id).ToListAsync()).ToHashSet();
+                    var resolvedByVaultName = new Dictionary<string, int>();
+
+                    foreach (var pi in list)
+                    {
+                        if (pi.CollectionId.HasValue && existingCollectionIds.Contains(pi.CollectionId.Value))
+                            continue; // still valid, leave as-is
+
+                        var vaultName = pi.CollectionId.HasValue && collectionToVaultName.TryGetValue(pi.CollectionId.Value, out var vn)
+                            ? vn
+                            : null;
+                        if (string.IsNullOrWhiteSpace(vaultName)) continue;
+
+                        if (!resolvedByVaultName.TryGetValue(vaultName, out var newCollectionId))
+                        {
+                            var resolved = await ResolveCollectionIdForVaultNameAsync(context, vaultName);
+                            if (!resolved.HasValue) continue;
+                            newCollectionId = resolved.Value;
+                            resolvedByVaultName[vaultName] = newCollectionId;
+                            existingCollectionIds.Add(newCollectionId);
+                        }
+                        pi.CollectionId = newCollectionId;
+                    }
+
+                    context.PasswordItems.AddRange(list);
+                }
             }
             if (root.TryGetProperty("loginItems", out var li))
             {
@@ -308,6 +439,13 @@ public class DatabaseBackupService : IDatabaseBackupService
                     if (pi == null) continue;
                     pi.Id = 0; // let EF assign a new PK
                     pi.Title = $"{pi.Title} (restored)";
+
+                    // Put it back in the vault it came from (creating the vault if it no longer
+                    // exists) rather than trusting its old CollectionId, which may point at nothing.
+                    var resolvedCollectionId = await ResolveCollectionIdForVaultNameAsync(context, item.VaultName);
+                    if (resolvedCollectionId.HasValue)
+                        pi.CollectionId = resolvedCollectionId.Value;
+
                     context.PasswordItems.Add(pi);
                     count++;
                 }

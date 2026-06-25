@@ -1,11 +1,11 @@
 using Moq;
 using NUnit.Framework;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.Crypto.Services;
-using PasswordManager.Models;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.Crypto.Services;
+using VaultGuard.Models;
 using System.Text;
 
-namespace PasswordManager.BackEnd.Tests.Services;
+namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
 public class PasswordCryptoServiceTests

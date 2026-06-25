@@ -1,7 +1,7 @@
 using NUnit.Framework;
-using PasswordManager.Services.Helpers;
+using VaultGuard.Services.Helpers;
 
-namespace PasswordManager.BackEnd.Tests.Helpers;
+namespace VaultGuard.BackEnd.Tests.Helpers;
 
 [TestFixture]
 public class InputValidationHelperTests

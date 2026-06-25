@@ -1,10 +1,10 @@
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.WPF.ViewModels;
-using PasswordManager.WPF.Services;
+using VaultGuard.WPF.ViewModels;
+using VaultGuard.WPF.Services;
 
-namespace PasswordManager.WPF.Views;
+namespace VaultGuard.WPF.Views;
 
 public sealed partial class ImportPage : Page
 {
@@ -120,8 +120,8 @@ public sealed partial class ImportPage : Page
     private async System.Threading.Tasks.Task RunMaintenanceAsync(
         string title,
         string message,
-        Func<PasswordManager.Services.Interfaces.IDatabaseResetService,
-             System.Threading.Tasks.Task<PasswordManager.Services.Interfaces.DatabaseResetResult>> operation)
+        Func<VaultGuard.Services.Interfaces.IDatabaseResetService,
+             System.Threading.Tasks.Task<VaultGuard.Services.Interfaces.DatabaseResetResult>> operation)
     {
         var serviceProvider = _serviceProvider ?? (App.Current as App)?.Services;
         if (serviceProvider == null) return;
@@ -141,7 +141,7 @@ public sealed partial class ImportPage : Page
         {
             using var scope = serviceProvider.CreateScope();
             var resetService = scope.ServiceProvider
-                .GetRequiredService<PasswordManager.Services.Interfaces.IDatabaseResetService>();
+                .GetRequiredService<VaultGuard.Services.Interfaces.IDatabaseResetService>();
             var result = await operation(resetService);
 
             var resultDialog = new ModernWpf.Controls.ContentDialog

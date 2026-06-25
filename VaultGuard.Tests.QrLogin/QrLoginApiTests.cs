@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.API;
-using PasswordManager.Models.DTOs.Auth;
+using VaultGuard.API;
+using VaultGuard.Models.DTOs.Auth;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 
-namespace PasswordManager.Tests.QrLogin;
+namespace VaultGuard.Tests.QrLogin;
 
 public class QrLoginApiTests : IClassFixture<WebApplicationFactory<Program>>
 {

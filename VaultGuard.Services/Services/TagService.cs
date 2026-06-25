@@ -1,16 +1,16 @@
 
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.DAL;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManager.Services;
+namespace VaultGuard.Services;
 
 public class TagService : ITagService
 {
-    private readonly PasswordManagerDbContext _context;
+    private readonly VaultGuardDbContext _context;
 
-    public TagService(PasswordManagerDbContext context)
+    public TagService(VaultGuardDbContext context)
     {
         _context = context;
     }

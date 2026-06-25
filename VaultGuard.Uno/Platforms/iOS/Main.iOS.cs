@@ -1,7 +1,7 @@
 using UIKit;
 using Uno.UI.Hosting;
 
-namespace PasswordManager.Mobile.iOS;
+namespace VaultGuard.Mobile.iOS;
 
 public class EntryPoint
 {

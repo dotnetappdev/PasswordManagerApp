@@ -1,8 +1,8 @@
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
-using PasswordManagerImports.OnePassword.Providers;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
+using VaultGuardImports.OnePassword.Providers;
 
-namespace PasswordManagerImports.OnePassword;
+namespace VaultGuardImports.OnePassword;
 
 /// <summary>
 /// 1Password import plugin that wraps the OnePasswordImportProvider
@@ -29,7 +29,7 @@ public class OnePasswordImportPlugin : IPasswordImportPlugin
             DisplayName = "1Password",
             Description = "Import passwords from 1Password CSV or 1PUX export files",
             Version = "1.0.0",
-            Author = "PasswordManager Team",
+            Author = "VaultGuard Team",
             Website = "https://1password.com",
             Created = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,

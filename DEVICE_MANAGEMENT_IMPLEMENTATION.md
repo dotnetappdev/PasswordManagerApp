@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the device management system implemented for the Password Manager application, enabling WhatsApp-like multi-device functionality with device linking, tracking, and management.
+This document describes the device management system implemented for the Vault Guard application, enabling WhatsApp-like multi-device functionality with device linking, tracking, and management.
 
 ## Features Implemented
 
@@ -180,8 +180,8 @@ Created tables for:
 
 **Applied via Entity Framework:**
 ```bash
-dotnet ef migrations add AddDeviceAndAuditLog --context PasswordManagerDbContext
-dotnet ef database update --context PasswordManagerDbContext
+dotnet ef migrations add AddDeviceAndAuditLog --context VaultGuardDbContext
+dotnet ef database update --context VaultGuardDbContext
 ```
 
 ## Security Features
@@ -269,7 +269,7 @@ curl -X GET "https://api.passwordmanager.com/api/auditlogs/entity/PasswordItem/i
 ## Testing the Implementation
 
 ### 1. Test Device Linking
-1. Start the API: `dotnet run --project PasswordManager.API`
+1. Start the API: `dotnet run --project VaultGuard.API`
 2. Login to get session token
 3. Link a device using the `/api/devices/link` endpoint
 4. Verify device appears in `/api/devices` list

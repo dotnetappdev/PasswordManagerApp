@@ -1,6 +1,6 @@
-@using PasswordManager.Models.Configuration
-@using PasswordManager.Services.Interfaces
-@using PasswordManager.Services.DTOs
+@using VaultGuard.Models.Configuration
+@using VaultGuard.Services.Interfaces
+@using VaultGuard.Services.DTOs
 @inject IDatabaseConfigurationService DatabaseConfigService
 @inject IDatabaseMigrationService MigrationService
 @inject IJSRuntime JSRuntime
@@ -273,7 +273,7 @@
                                                 <InputText @bind-Value="Configuration.SqlServer!.ApplicationName"
                                                            id="sqlAppName"
                                                            class="form-control"
-                                                           placeholder="PasswordManager" />
+                                                           placeholder="VaultGuard" />
                                             </div>
                                         </div>
                                         <div class="form-group">
@@ -668,7 +668,7 @@
                                             <InputText @bind-Value="Configuration.PostgreSql!.ApplicationName"
                                                        id="pgAppName"
                                                        class="form-control"
-                                                       placeholder="PasswordManager" />
+                                                       placeholder="VaultGuard" />
                                         </div>
                                         <div class="form-group">
                                             <label for="pgSearchPath">Search Path</label>
@@ -1124,10 +1124,10 @@
     {
         return Configuration.Provider switch
         {
-            DatabaseProvider.SqlServer => Configuration.SqlServer?.Database ?? "PasswordManager",
-            DatabaseProvider.MySql => Configuration.MySql?.Database ?? "PasswordManager",
-            DatabaseProvider.PostgreSql => Configuration.PostgreSql?.Database ?? "PasswordManager",
-            _ => "PasswordManager"
+            DatabaseProvider.SqlServer => Configuration.SqlServer?.Database ?? "VaultGuard",
+            DatabaseProvider.MySql => Configuration.MySql?.Database ?? "VaultGuard",
+            DatabaseProvider.PostgreSql => Configuration.PostgreSql?.Database ?? "VaultGuard",
+            _ => "VaultGuard"
         };
     }
 }

@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System;
 
-namespace PasswordManager.WPF.Services
+namespace VaultGuard.WPF.Services
 {
     public enum AppTheme
     {
@@ -63,6 +63,10 @@ namespace PasswordManager.WPF.Services
             ModernWpf.ThemeManager.Current.ApplicationTheme = actualTheme == AppTheme.Dark
                 ? ModernWpf.ApplicationTheme.Dark
                 : ModernWpf.ApplicationTheme.Light;
+
+            // Use the Windows 11 Settings accent blue (#0067C0) so ToggleSwitches and other accented
+            // controls read as the familiar Windows 11 "on" blue regardless of the system accent.
+            ModernWpf.ThemeManager.Current.AccentColor = (Color)ColorConverter.ConvertFromString("#0067C0");
 
             // Update our custom resource dictionaries
             UpdateThemeResources(actualTheme);

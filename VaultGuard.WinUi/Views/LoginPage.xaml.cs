@@ -1,18 +1,18 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.WinUi.ViewModels;
-using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.WinUi.ViewModels;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.Models;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WinUi.Views;
+namespace VaultGuard.WinUi.Views;
 
 /// <summary>
-/// Login page for the Password Manager application with master password authentication
+/// Login page for the Vault Guard application with master password authentication
 /// </summary>
 public sealed partial class LoginPage : Page
 {

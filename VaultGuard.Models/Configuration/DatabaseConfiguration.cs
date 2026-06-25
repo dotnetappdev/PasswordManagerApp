@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.Models.Configuration;
+namespace VaultGuard.Models.Configuration;
 
 public enum DatabaseProvider
 {
@@ -96,7 +96,7 @@ public class SqlServerConfig
     public int Port { get; set; } = 1433;
 
     [Required]
-    public string Database { get; set; } = "PasswordManager";
+    public string Database { get; set; } = "VaultGuard";
 
     public SqlServerAuthMode AuthMode { get; set; } = SqlServerAuthMode.SqlServerAuthentication;
 
@@ -121,7 +121,7 @@ public class SqlServerConfig
 
     public int CommandTimeout { get; set; } = 30;
 
-    public string ApplicationName { get; set; } = "PasswordManager";
+    public string ApplicationName { get; set; } = "VaultGuard";
 
     public string? WorkstationId { get; set; }
 
@@ -156,7 +156,7 @@ public class MySqlConfig
     public int Port { get; set; } = 3306;
 
     [Required]
-    public string Database { get; set; } = "PasswordManager";
+    public string Database { get; set; } = "VaultGuard";
 
     [Required]
     public string Username { get; set; } = string.Empty;
@@ -202,7 +202,7 @@ public class PostgreSqlConfig
     public int Port { get; set; } = 5432;
 
     [Required]
-    public string Database { get; set; } = "PasswordManager";
+    public string Database { get; set; } = "VaultGuard";
 
     [Required]
     public string Username { get; set; } = string.Empty;
@@ -223,7 +223,7 @@ public class PostgreSqlConfig
 
     public int CommandTimeout { get; set; } = 30;
 
-    public string ApplicationName { get; set; } = "PasswordManager";
+    public string ApplicationName { get; set; } = "VaultGuard";
 
     public string? SearchPath { get; set; }
 

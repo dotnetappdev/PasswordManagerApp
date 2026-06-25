@@ -1,4 +1,4 @@
-<Window x:Class="PasswordManager.WPF.Dialogs.DatabaseConfigurationDialog"
+<Window x:Class="VaultGuard.WPF.Dialogs.DatabaseConfigurationDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
@@ -321,7 +321,7 @@
                                     <TextBlock Text="Application Name" Style="{StaticResource FieldLabelStyle}"/>
                                     <TextBox x:Name="SqlServerAppNameTextBox"
                                              MinWidth="200"
-                                             Text="PasswordManager"/>
+                                             Text="VaultGuard"/>
                                 </StackPanel>
 
                                 <!-- Workstation ID -->
@@ -824,7 +824,7 @@
                                     <TextBlock Text="Application Name" Style="{StaticResource FieldLabelStyle}"/>
                                     <TextBox x:Name="PgAppNameTextBox"
                                              MinWidth="200"
-                                             Text="PasswordManager"/>
+                                             Text="VaultGuard"/>
                                 </StackPanel>
 
                                 <StackPanel Margin="0,0,0,8">

@@ -1,30 +1,30 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OtpNet;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.DAL.Interfaces;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.DAL.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.Services.Interfaces;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace PasswordManager.Services.Services;
+namespace VaultGuard.Services.Services;
 
 /// <summary>
 /// Service for managing Two-Factor Authentication (2FA) operations
 /// </summary>
 public class TwoFactorService : ITwoFactorService
 {
-    private readonly IPasswordManagerDbContext _context;
+    private readonly IVaultGuardDbContext _context;
     private readonly IPasswordCryptoService _passwordCryptoService;
     private readonly ILogger<TwoFactorService> _logger;
-    private const string DefaultIssuer = "PasswordManager";
+    private const string DefaultIssuer = "VaultGuard";
     private const int BackupCodeLength = 8;
     private const int DefaultBackupCodeCount = 10;
 
     public TwoFactorService(
-        IPasswordManagerDbContext context,
+        IVaultGuardDbContext context,
         IPasswordCryptoService passwordCryptoService,
         ILogger<TwoFactorService> logger)
     {
@@ -347,7 +347,7 @@ public class TwoFactorService : ITwoFactorService
         return Base32Encoding.ToString(keyBytes);
     }
 
-    public string GenerateQrCodeUri(string userEmail, string secretKey, string issuer = "PasswordManager")
+    public string GenerateQrCodeUri(string userEmail, string secretKey, string issuer = "VaultGuard")
     {
         var encodedIssuer = Uri.EscapeDataString(issuer);
         var encodedEmail = Uri.EscapeDataString(userEmail);
@@ -416,15 +416,18 @@ public class TwoFactorService : ITwoFactorService
 
     private string GenerateBackupCode()
     {
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        var random = new Random();
-        var code = new StringBuilder();
-        
+        // Recovery codes must be unguessable, so they are drawn from a cryptographically
+        // secure RNG (NOT System.Random, which is predictable). Exclude visually ambiguous
+        // characters (0/O, 1/I) so users can transcribe the codes reliably.
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        var code = new StringBuilder(BackupCodeLength);
+
         for (int i = 0; i < BackupCodeLength; i++)
         {
-            code.Append(chars[random.Next(chars.Length)]);
+            var index = RandomNumberGenerator.GetInt32(chars.Length);
+            code.Append(chars[index]);
         }
-        
+
         return code.ToString();
     }
 

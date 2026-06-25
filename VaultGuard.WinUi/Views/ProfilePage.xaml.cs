@@ -1,11 +1,11 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.WinUi.ViewModels;
-using PasswordManager.Models.DTOs.Auth;
+using VaultGuard.WinUi.ViewModels;
+using VaultGuard.Models.DTOs.Auth;
 using System;
 
-namespace PasswordManager.WinUi.Views;
+namespace VaultGuard.WinUi.Views;
 
 public sealed partial class ProfilePage : Page
 {

@@ -1,6 +1,6 @@
 # WinUI MSIX Packaging Guide
 
-This guide explains how to create and distribute MSIX packages for the Password Manager WinUI application.
+This guide explains how to create and distribute MSIX packages for the Vault Guard WinUI application.
 
 ## 📋 Table of Contents
 
@@ -43,7 +43,7 @@ MSIX is the modern Windows app package format that provides:
 
 1. **Open the solution in Visual Studio**
    ```
-   PasswordManager.sln
+   VaultGuard.sln
    ```
 
 2. **Set configuration to Release**
@@ -51,7 +51,7 @@ MSIX is the modern Windows app package format that provides:
    - Select **x64** platform
 
 3. **Configure MSIX packaging**
-   - Right-click **PasswordManager.WinUi** project
+   - Right-click **VaultGuard.WinUi** project
    - Select **Publish → Create App Packages**
 
 4. **Choose distribution method**
@@ -65,13 +65,13 @@ MSIX is the modern Windows app package format that provides:
 6. **Configure package settings**
    - **Version**: Update version number (e.g., 1.1.0.0)
    - **Architecture**: x64, x86, ARM64 (choose one or all)
-   - **Package name**: PasswordManager.WinUi
+   - **Package name**: VaultGuard.WinUi
 
 7. **Generate package**
    - Click **Create**
    - Packages will be created in:
      ```
-     PasswordManager.WinUi\AppPackages\
+     VaultGuard.WinUi\AppPackages\
      ```
 
 ### Method 2: Command Line
@@ -79,7 +79,7 @@ MSIX is the modern Windows app package format that provides:
 #### Create MSIX Package
 
 ```cmd
-cd PasswordManager.WinUi
+cd VaultGuard.WinUi
 
 REM Build and package for x64
 dotnet publish -c Release -f net9.0-windows10.0.19041.0 -p:Platform=x64 -p:GenerateAppxPackageOnBuild=true -p:AppxPackageSigningEnabled=false
@@ -92,13 +92,13 @@ dotnet publish -c Release -f net9.0-windows10.0.19041.0 -p:Platform=ARM64 -p:Gen
 
 Packages are created at:
 ```
-PasswordManager.WinUi\bin\{Platform}\Release\net9.0-windows10.0.19041.0\{Platform}\AppPackages\
+VaultGuard.WinUi\bin\{Platform}\Release\net9.0-windows10.0.19041.0\{Platform}\AppPackages\
 ```
 
 ### Method 3: MSBuild
 
 ```cmd
-msbuild PasswordManager.WinUi.csproj /p:Configuration=Release /p:Platform=x64 /p:AppxBundle=Always /p:GenerateAppxPackageOnBuild=true
+msbuild VaultGuard.WinUi.csproj /p:Configuration=Release /p:Platform=x64 /p:AppxBundle=Always /p:GenerateAppxPackageOnBuild=true
 ```
 
 ## 🔐 Signing Packages
@@ -107,31 +107,31 @@ msbuild PasswordManager.WinUi.csproj /p:Configuration=Release /p:Platform=x64 /p
 
 ```powershell
 # Create certificate
-New-SelfSignedCertificate -Type Custom -Subject "CN=PasswordManager" -KeyUsage DigitalSignature -FriendlyName "Password Manager Certificate" -CertStoreLocation "Cert:\CurrentUser\My" -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
+New-SelfSignedCertificate -Type Custom -Subject "CN=VaultGuard" -KeyUsage DigitalSignature -FriendlyName "Vault Guard Certificate" -CertStoreLocation "Cert:\CurrentUser\My" -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
 
 # Export certificate
 $pwd = ConvertTo-SecureString -String "YourPassword" -Force -AsPlainText
-Export-PfxCertificate -Cert "Cert:\CurrentUser\My\<thumbprint>" -FilePath "PasswordManager.pfx" -Password $pwd
+Export-PfxCertificate -Cert "Cert:\CurrentUser\My\<thumbprint>" -FilePath "VaultGuard.pfx" -Password $pwd
 
 # Export public key for installation
-Export-Certificate -Cert "Cert:\CurrentUser\My\<thumbprint>" -FilePath "PasswordManager.cer"
+Export-Certificate -Cert "Cert:\CurrentUser\My\<thumbprint>" -FilePath "VaultGuard.cer"
 ```
 
 ### Sign Package with Certificate
 
 ```cmd
 REM Using SignTool
-"C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" sign /fd SHA256 /a /f PasswordManager.pfx /p YourPassword "PasswordManager.WinUi_1.1.0.0_x64.msix"
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" sign /fd SHA256 /a /f VaultGuard.pfx /p YourPassword "VaultGuard.WinUi_1.1.0.0_x64.msix"
 ```
 
 ### Configure in Project
 
-Edit `PasswordManager.WinUi.csproj`:
+Edit `VaultGuard.WinUi.csproj`:
 
 ```xml
 <PropertyGroup>
   <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
-  <PackageCertificateKeyFile>PasswordManager.pfx</PackageCertificateKeyFile>
+  <PackageCertificateKeyFile>VaultGuard.pfx</PackageCertificateKeyFile>
   <PackageCertificatePassword>YourPassword</PackageCertificatePassword>
 </PropertyGroup>
 ```
@@ -144,10 +144,10 @@ Before installing the MSIX package, install the certificate:
 
 ```powershell
 # Install certificate to Trusted Root
-Import-Certificate -FilePath "PasswordManager.cer" -CertStoreLocation "Cert:\LocalMachine\Root"
+Import-Certificate -FilePath "VaultGuard.cer" -CertStoreLocation "Cert:\LocalMachine\Root"
 ```
 
-Or double-click `PasswordManager.cer` and follow the wizard.
+Or double-click `VaultGuard.cer` and follow the wizard.
 
 ### Install MSIX Package
 
@@ -160,31 +160,31 @@ Or double-click `PasswordManager.cer` and follow the wizard.
 #### Method 2: PowerShell
 
 ```powershell
-Add-AppxPackage -Path "PasswordManager.WinUi_1.1.0.0_x64.msix"
+Add-AppxPackage -Path "VaultGuard.WinUi_1.1.0.0_x64.msix"
 ```
 
 #### Method 3: App Installer
 
 ```powershell
 # Install via App Installer
-Start-Process "ms-appinstaller:?source=C:\path\to\PasswordManager.WinUi_1.1.0.0_x64.msix"
+Start-Process "ms-appinstaller:?source=C:\path\to\VaultGuard.WinUi_1.1.0.0_x64.msix"
 ```
 
 ### Verify Installation
 
 ```powershell
 # List installed packages
-Get-AppxPackage | Where-Object {$_.Name -like "*PasswordManager*"}
+Get-AppxPackage | Where-Object {$_.Name -like "*VaultGuard*"}
 
 # Get package details
-Get-AppxPackage -Name "PasswordManager.WinUi"
+Get-AppxPackage -Name "VaultGuard.WinUi"
 ```
 
 ### Uninstall Package
 
 ```powershell
 # Remove package
-Remove-AppxPackage -Package "PasswordManager.WinUi_1.1.0.0_x64__<publisherid>"
+Remove-AppxPackage -Package "VaultGuard.WinUi_1.1.0.0_x64__<publisherid>"
 
 # Or uninstall via Settings → Apps
 ```
@@ -229,8 +229,8 @@ Create an `.appinstaller` file:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
-<AppInstaller Uri="https://yoursite.com/PasswordManager.appinstaller" Version="1.1.0.0" xmlns="http://schemas.microsoft.com/appx/appinstaller/2021">
-  <MainPackage Name="PasswordManager.WinUi" Publisher="CN=PasswordManager" Version="1.1.0.0" Uri="https://yoursite.com/PasswordManager.WinUi_1.1.0.0_x64.msix" ProcessorArchitecture="x64"/>
+<AppInstaller Uri="https://yoursite.com/VaultGuard.appinstaller" Version="1.1.0.0" xmlns="http://schemas.microsoft.com/appx/appinstaller/2021">
+  <MainPackage Name="VaultGuard.WinUi" Publisher="CN=VaultGuard" Version="1.1.0.0" Uri="https://yoursite.com/VaultGuard.WinUi_1.1.0.0_x64.msix" ProcessorArchitecture="x64"/>
   <UpdateSettings>
     <OnLaunch HoursBetweenUpdateChecks="24" />
   </UpdateSettings>
@@ -241,7 +241,7 @@ Host the `.appinstaller` and `.msix` files on your web server.
 
 Users can install via:
 ```
-https://yoursite.com/PasswordManager.appinstaller
+https://yoursite.com/VaultGuard.appinstaller
 ```
 
 ### Option 4: Direct Download
@@ -257,8 +257,8 @@ Provide direct download link to `.msix` file:
 
 1. **Edit Package.appxmanifest:**
    ```xml
-   <Identity Name="PasswordManager.WinUi"
-             Publisher="CN=PasswordManager"
+   <Identity Name="VaultGuard.WinUi"
+             Publisher="CN=VaultGuard"
              Version="1.1.0.0" />
    ```
 
@@ -277,7 +277,7 @@ Provide direct download link to `.msix` file:
 
 ### Automatic Version Increment
 
-Add to `PasswordManager.WinUi.csproj`:
+Add to `VaultGuard.WinUi.csproj`:
 
 ```xml
 <PropertyGroup>
@@ -303,7 +303,7 @@ Edit `Package.appxmanifest` to add capabilities:
 
 ```cmd
 REM Create bundle with multiple architectures
-makeappx bundle /d "AppPackages" /p "PasswordManager_1.1.0.0.msixbundle"
+makeappx bundle /d "AppPackages" /p "VaultGuard_1.1.0.0.msixbundle"
 ```
 
 ### Optimize Package Size
@@ -327,7 +327,7 @@ makeappx bundle /d "AppPackages" /p "PasswordManager_1.1.0.0.msixbundle"
 **Check certificate:**
 ```powershell
 # Verify certificate is installed
-Get-ChildItem Cert:\LocalMachine\Root | Where-Object {$_.Subject -like "*PasswordManager*"}
+Get-ChildItem Cert:\LocalMachine\Root | Where-Object {$_.Subject -like "*VaultGuard*"}
 ```
 
 **Enable sideloading:**
@@ -353,12 +353,12 @@ Get-AppxPackage | Where-Object {$_.Name -like "*Microsoft.WindowsAppRuntime*"}
 
 **Trust certificate:**
 ```cmd
-certutil -addstore "TrustedPeople" PasswordManager.cer
+certutil -addstore "TrustedPeople" VaultGuard.cer
 ```
 
 **Verify signature:**
 ```cmd
-signtool verify /pa "PasswordManager.WinUi_1.1.0.0_x64.msix"
+signtool verify /pa "VaultGuard.WinUi_1.1.0.0_x64.msix"
 ```
 
 ### Update Fails
@@ -366,10 +366,10 @@ signtool verify /pa "PasswordManager.WinUi_1.1.0.0_x64.msix"
 **Clear cache:**
 ```powershell
 # Remove old package
-Remove-AppxPackage -Package "PasswordManager.WinUi_1.0.0.0_x64__<publisherid>"
+Remove-AppxPackage -Package "VaultGuard.WinUi_1.0.0.0_x64__<publisherid>"
 
 # Install new package
-Add-AppxPackage -Path "PasswordManager.WinUi_1.1.0.0_x64.msix"
+Add-AppxPackage -Path "VaultGuard.WinUi_1.1.0.0_x64.msix"
 ```
 
 ## 📚 Additional Resources
@@ -385,7 +385,7 @@ For issues with MSIX packaging:
 
 1. Check the [Troubleshooting](#troubleshooting) section
 2. Review [Microsoft MSIX Documentation](https://docs.microsoft.com/windows/msix/)
-3. Check [GitHub Issues](https://github.com/dotnetappdev/PasswordManagerApp/issues)
+3. Check [GitHub Issues](https://github.com/dotnetappdev/VaultGuardApp/issues)
 4. Create a new issue with:
    - Windows version
    - Package manifest

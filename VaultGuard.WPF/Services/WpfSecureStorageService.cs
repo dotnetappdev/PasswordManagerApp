@@ -1,13 +1,13 @@
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace PasswordManager.WPF.Services;
+namespace VaultGuard.WPF.Services;
 
 public class WpfSecureStorageService : ISecureStorageService
 {
-    private readonly string _applicationName = "PasswordManagerWPF";
+    private readonly string _applicationName = "VaultGuardWPF";
 
     public async Task<string?> GetAsync(string key)
     {

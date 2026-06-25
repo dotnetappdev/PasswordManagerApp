@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PasswordManager.Models.Configuration;
+namespace VaultGuard.Models.Configuration;
 
 public class SmsConfiguration
 {
@@ -49,7 +49,7 @@ public class SmsConfiguration
     /// <summary>
     /// SMS message template. Use {code} placeholder for the OTP code
     /// </summary>
-    public string MessageTemplate { get; set; } = "Your Password Manager verification code is: {code}. This code will expire in {expiration} minutes.";
+    public string MessageTemplate { get; set; } = "Your Vault Guard verification code is: {code}. This code will expire in {expiration} minutes.";
     
     /// <summary>
     /// Provider-specific settings
@@ -82,7 +82,7 @@ public class AwsSnsSettings
     [Required]
     public string Region { get; set; } = "us-east-1";
     
-    public string SenderName { get; set; } = "Password Manager";
+    public string SenderName { get; set; } = "Vault Guard";
 }
 
 public class AzureCommunicationSettings

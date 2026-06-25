@@ -24,7 +24,7 @@ services:
       start_period: 30s
     restart: unless-stopped
 
-  # Password Manager Web API
+  # Vault Guard Web API
   api:
     build:
       context: ..
@@ -37,7 +37,7 @@ services:
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
       - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD:-}
       - DatabaseProvider=SqlServer
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=PasswordManagerDB;User Id=sa;Password=${SQL_SA_PASSWORD:-YourStrong@Password123};TrustServerCertificate=true;MultipleActiveResultSets=true
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=VaultGuardDB;User Id=sa;Password=${SQL_SA_PASSWORD:-YourStrong@Password123};TrustServerCertificate=true;MultipleActiveResultSets=true
     ports:
       - "51650:443"
       - "51651:80"
@@ -57,7 +57,7 @@ services:
       retries: 3
       start_period: 40s
 
-  # Password Manager Blazor Web App
+  # Vault Guard Blazor Web App
   web:
     build:
       context: ..
@@ -67,7 +67,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
       - ASPNETCORE_URLS=http://+:80
       - DatabaseProvider=SqlServer
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=PasswordManagerDB;User Id=sa;Password=${SQL_SA_PASSWORD:-YourStrong@Password123};TrustServerCertificate=true;MultipleActiveResultSets=true
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=VaultGuardDB;User Id=sa;Password=${SQL_SA_PASSWORD:-YourStrong@Password123};TrustServerCertificate=true;MultipleActiveResultSets=true
     ports:
       - "8080:80"
     volumes:

@@ -3,10 +3,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Microsoft.Win32;
-using PasswordManager.Models.Configuration;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models.Configuration;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.WPF.Dialogs;
+namespace VaultGuard.WPF.Dialogs;
 
 public partial class DatabaseConfigurationDialog : Window
 {
@@ -139,7 +139,7 @@ public partial class DatabaseConfigurationDialog : Window
                 if (SqlServerPacketSizeTextBox    != null) SqlServerPacketSizeTextBox.Text  = ss.PacketSize.ToString();
                 if (SqlServerConnTimeoutTextBox   != null) SqlServerConnTimeoutTextBox.Text  = ss.ConnectionTimeout.ToString();
                 if (SqlServerCmdTimeoutTextBox    != null) SqlServerCmdTimeoutTextBox.Text   = ss.CommandTimeout.ToString();
-                if (SqlServerAppNameTextBox       != null) SqlServerAppNameTextBox.Text      = ss.ApplicationName ?? "PasswordManager";
+                if (SqlServerAppNameTextBox       != null) SqlServerAppNameTextBox.Text      = ss.ApplicationName ?? "VaultGuard";
                 if (SqlServerWorkstationTextBox   != null) SqlServerWorkstationTextBox.Text  = ss.WorkstationId ?? string.Empty;
                 if (SqlServerMarsCheckBox         != null) SqlServerMarsCheckBox.IsChecked   = ss.MultipleActiveResultSets;
                 if (SqlServerAppIntentComboBox    != null)
@@ -205,7 +205,7 @@ public partial class DatabaseConfigurationDialog : Window
                 if (PgSslRootCertTextBox != null) PgSslRootCertTextBox.Text = pg.SslRootCertPath ?? string.Empty;
                 if (PgConnTimeoutTextBox != null) PgConnTimeoutTextBox.Text = pg.ConnectionTimeout.ToString();
                 if (PgCmdTimeoutTextBox  != null) PgCmdTimeoutTextBox.Text  = pg.CommandTimeout.ToString();
-                if (PgAppNameTextBox     != null) PgAppNameTextBox.Text     = pg.ApplicationName ?? "PasswordManager";
+                if (PgAppNameTextBox     != null) PgAppNameTextBox.Text     = pg.ApplicationName ?? "VaultGuard";
                 if (PgSearchPathTextBox  != null) PgSearchPathTextBox.Text  = pg.SearchPath ?? string.Empty;
                 if (PgPoolingCheckBox    != null) PgPoolingCheckBox.IsChecked = pg.Pooling;
                 if (PgMinPoolTextBox     != null) PgMinPoolTextBox.Text = pg.MinPoolSize.ToString();
@@ -558,7 +558,7 @@ public partial class DatabaseConfigurationDialog : Window
             PacketSize               = ParseInt(SqlServerPacketSizeTextBox?.Text, 4096),
             ConnectionTimeout        = ParseInt(SqlServerConnTimeoutTextBox?.Text, 15),
             CommandTimeout           = ParseInt(SqlServerCmdTimeoutTextBox?.Text, 30),
-            ApplicationName          = SqlServerAppNameTextBox?.Text?.Trim() ?? "PasswordManager",
+            ApplicationName          = SqlServerAppNameTextBox?.Text?.Trim() ?? "VaultGuard",
             WorkstationId            = NullIfEmpty(SqlServerWorkstationTextBox?.Text),
             MultipleActiveResultSets = SqlServerMarsCheckBox?.IsChecked == true,
             ApplicationIntent        = SqlServerAppIntentComboBox?.SelectedIndex == 1
@@ -627,7 +627,7 @@ public partial class DatabaseConfigurationDialog : Window
             SslRootCertPath   = NullIfEmpty(PgSslRootCertTextBox?.Text),
             ConnectionTimeout = ParseInt(PgConnTimeoutTextBox?.Text, 30),
             CommandTimeout    = ParseInt(PgCmdTimeoutTextBox?.Text, 30),
-            ApplicationName   = PgAppNameTextBox?.Text?.Trim() ?? "PasswordManager",
+            ApplicationName   = PgAppNameTextBox?.Text?.Trim() ?? "VaultGuard",
             SearchPath        = NullIfEmpty(PgSearchPathTextBox?.Text),
             Pooling     = PgPoolingCheckBox?.IsChecked == true,
             MinPoolSize = ParseInt(PgMinPoolTextBox?.Text, 1),

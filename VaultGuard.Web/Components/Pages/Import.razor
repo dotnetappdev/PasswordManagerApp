@@ -1,7 +1,7 @@
 @page "/import"
 @using Microsoft.AspNetCore.Components.Forms
-@using PasswordManager.Services.Interfaces
-@using PasswordManager.Imports.Interfaces
+@using VaultGuard.Services.Interfaces
+@using VaultGuard.Imports.Interfaces
 @inject IDatabaseResetService ResetService
 @inject IImportService ImportService
 @inject IAuthService AuthService
@@ -192,9 +192,9 @@
     bool isImporting = false;
     (bool Success, string Message)? importResult;
 
-    record PasswordManagerInfo(string Name, string Icon, string Format, string Instructions, string FileTypes);
+    record VaultGuardInfo(string Name, string Icon, string Format, string Instructions, string FileTypes);
 
-    readonly Dictionary<string, PasswordManagerInfo> passwordManagers = new()
+    readonly Dictionary<string, VaultGuardInfo> passwordManagers = new()
     {
         ["1password"] = new("1Password", "🔐", "1PUX / CSV",
             "In 1Password, go to File → Export → All Vaults. Choose 1PUX or CSV format.",
@@ -212,7 +212,7 @@
             "In KeePass, go to File → Export. Choose KeePass XML 2.x format for full data.",
             ".xml,.csv"),
         ["chrome"] = new("Google Chrome", "🌐", "CSV",
-            "In Chrome, go to Settings → Autofill → Password Manager → Export passwords.",
+            "In Chrome, go to Settings → Autofill → Vault Guard → Export passwords.",
             ".csv"),
         ["firefox"] = new("Firefox", "🦊", "CSV",
             "In Firefox, go to Passwords → ⋮ menu → Export Passwords.",
@@ -266,8 +266,8 @@
     {
         // Register the built-in providers explicitly. Referencing the provider types forces their
         // assemblies to load so ImportService can resolve them by name.
-        ImportService.RegisterProvider(new PasswordManagerImports.OnePassword.Providers.OnePasswordImportProvider());
-        ImportService.RegisterProvider(new PasswordManagerImports.Bitwarden.BitwardenImportPlugin());
+        ImportService.RegisterProvider(new VaultGuardImports.OnePassword.Providers.OnePasswordImportProvider());
+        ImportService.RegisterProvider(new VaultGuardImports.Bitwarden.BitwardenImportPlugin());
     }
 
     // Returns a short, upper-case format label from a file name so 1PUX and CSV are easy to tell apart.

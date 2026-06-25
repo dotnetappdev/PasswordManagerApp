@@ -1,13 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Models;
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL;
-using PasswordManager.Crypto.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Crypto.Interfaces;
 using System;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WinUi.Helpers
+namespace VaultGuard.WinUi.Helpers
 {
     public static class SampleDataSeeder
     {
@@ -19,7 +19,7 @@ namespace PasswordManager.WinUi.Helpers
                 var passwordItemService = serviceProvider.GetRequiredService<IPasswordItemService>();
                 var collectionService = serviceProvider.GetRequiredService<ICollectionService>();
                 var cryptoService = serviceProvider.GetRequiredService<IPasswordCryptoService>();
-                var db = serviceProvider.GetService<PasswordManager.DAL.PasswordManagerDbContext>();
+                var db = serviceProvider.GetService<VaultGuard.DAL.VaultGuardDbContext>();
                 // Ensure there is at least one user to own seeded data
                 string seedUserId;
                 if (db != null)
@@ -39,7 +39,7 @@ namespace PasswordManager.WinUi.Helpers
                         // Create master key identifier for lookup during master key login
                         var masterKeyIdentifier = cryptoService.CreateMasterKeyIdentifier(demoMasterPassword, userSalt);
 
-                        var demoUser = new PasswordManager.Models.ApplicationUser
+                        var demoUser = new VaultGuard.Models.ApplicationUser
                         {
                             Id = Guid.NewGuid().ToString(),
                             Email = "demo@local",

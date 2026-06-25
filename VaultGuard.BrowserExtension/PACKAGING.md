@@ -1,6 +1,6 @@
 # Browser Extension Packaging Guide
 
-This guide explains how to package and distribute the Password Manager browser extension for Chrome and Edge browsers.
+This guide explains how to package and distribute the Vault Guard browser extension for Chrome and Edge browsers.
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@ This guide explains how to package and distribute the Password Manager browser e
 
 ## Overview
 
-The Password Manager browser extension can be distributed in several ways:
+The Vault Guard browser extension can be distributed in several ways:
 
 1. **Chrome Web Store** - Official distribution channel for Chrome users
 2. **Microsoft Edge Add-ons** - Official distribution channel for Edge users  
@@ -30,13 +30,13 @@ The Password Manager browser extension can be distributed in several ways:
 
 **Linux/macOS:**
 ```bash
-cd PasswordManager.BrowserExtension
+cd VaultGuard.BrowserExtension
 ./package-extension.sh
 ```
 
 **Windows:**
 ```cmd
-cd PasswordManager.BrowserExtension
+cd VaultGuard.BrowserExtension
 package-extension.bat
 ```
 
@@ -73,7 +73,7 @@ Use the provided scripts to create distribution packages:
 #### Linux/macOS
 
 ```bash
-cd PasswordManager.BrowserExtension
+cd VaultGuard.BrowserExtension
 ./package-extension.sh
 ```
 
@@ -83,7 +83,7 @@ cd PasswordManager.BrowserExtension
 #### Windows
 
 ```cmd
-cd PasswordManager.BrowserExtension
+cd VaultGuard.BrowserExtension
 package-extension.bat
 ```
 
@@ -150,7 +150,7 @@ zip -r password-manager-extension.zip \
    - Complete developer account setup
 
 2. **Prepare Store Listing**
-   - Extension name: "Password Manager Extension"
+   - Extension name: "Vault Guard Extension"
    - Description: Clear explanation of features
    - Screenshots: 1280x800px or 640x400px
    - Privacy policy: Required if handling user data
@@ -317,7 +317,7 @@ Chrome removed inline installation in 2018. It's no longer supported.
 
 3. **Load Extension**
    - Click "Load unpacked"
-   - Select `PasswordManager.BrowserExtension` directory
+   - Select `VaultGuard.BrowserExtension` directory
    - Extension loads immediately
 
 4. **Test Changes**

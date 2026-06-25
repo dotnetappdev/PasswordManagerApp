@@ -1,16 +1,17 @@
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.DAL;
-using PasswordManager.Crypto.Extensions;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Services.Services;
-using PasswordManager.API.Extensions;
-using PasswordManager.API.Middleware;
-using PasswordManager.DAL.Interfaces;
+using VaultGuard.DAL;
+using VaultGuard.Crypto.Extensions;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Services.Services;
+using VaultGuard.API.Extensions;
+using VaultGuard.API.Middleware;
+using VaultGuard.DAL.Interfaces;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Identity;
-using PasswordManager.Models;
-using PasswordManager.Models.Configuration;
+using VaultGuard.Models;
+using VaultGuard.Models.Configuration;
+using VaultGuard.ExceptionReporting.Sentry;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,29 +72,29 @@ else
 switch (databaseProvider.ToLower())
 {
     case "sqlite":
-        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        builder.Services.AddDbContext<VaultGuardDbContext>(options =>
             options.UseSqlite(connectionString));
-        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+        builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
             options.UseSqlite(connectionString));
         break;
     case "postgres":
     case "postgresql":
-        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        builder.Services.AddDbContext<VaultGuardDbContext>(options =>
             options.UseNpgsql(connectionString));
-        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+        builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
             options.UseNpgsql(connectionString));
         break;
     case "mysql":
-        // builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        // builder.Services.AddDbContext<VaultGuardDbContext>(options =>
         //     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
         break;
     case "supabase":
         builder.Services.AddSupabaseDbContext(builder.Configuration);
         break;
     default:
-        builder.Services.AddDbContext<PasswordManagerDbContext>(options =>
+        builder.Services.AddDbContext<VaultGuardDbContext>(options =>
             options.UseSqlServer(connectionString));
-        builder.Services.AddDbContext<PasswordManagerDbContextApp>(options =>
+        builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
             options.UseSqlServer(connectionString));
         break;
 }
@@ -108,70 +109,73 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     options.Password.RequireUppercase = true;
     options.Password.RequireLowercase = true;
 })
-.AddEntityFrameworkStores<PasswordManagerDbContextApp>()
+.AddEntityFrameworkStores<VaultGuardDbContextApp>()
 .AddDefaultTokenProviders()
 .AddApiEndpoints(); // Enable .NET 9 Identity API endpoints
 
 // Register application services
-builder.Services.AddScoped<IPasswordManagerDbContext>(provider =>
+builder.Services.AddScoped<IVaultGuardDbContext>(provider =>
 {
-    var dbContext = provider.GetRequiredService<PasswordManagerDbContext>();
-    return new PasswordManager.API.Services.PasswordManagerDbContextWrapper(dbContext);
+    var dbContext = provider.GetRequiredService<VaultGuardDbContext>();
+    return new VaultGuard.API.Services.VaultGuardDbContextWrapper(dbContext);
 });
-builder.Services.AddScoped<IPasswordItemApiService, PasswordManager.Services.Services.PasswordItemApiService>();
-builder.Services.AddScoped<ICategoryApiService, PasswordManager.Services.Services.CategoryApiService>();
-builder.Services.AddScoped<ICollectionApiService, PasswordManager.Services.Services.CollectionApiService>();
-builder.Services.AddScoped<ITagApiService, PasswordManager.Services.Services.TagApiService>();
-builder.Services.AddScoped<IVaultApiService, PasswordManager.Services.Services.VaultApiService>();
-builder.Services.AddScoped<IVaultService, PasswordManager.Services.Services.VaultService>();
-builder.Services.AddScoped<ISyncService, PasswordManager.Services.Services.SyncService>();
-builder.Services.AddScoped<IDatabaseContextFactory, PasswordManager.Services.Services.DatabaseContextFactory>();
-builder.Services.AddScoped<IPasswordEncryptionService, PasswordManager.Services.Services.PasswordEncryptionService>();
-builder.Services.AddScoped<IJwtService, PasswordManager.Services.Services.JwtService>();
+builder.Services.AddScoped<IPasswordItemApiService, VaultGuard.Services.Services.PasswordItemApiService>();
+builder.Services.AddScoped<ICategoryApiService, VaultGuard.Services.Services.CategoryApiService>();
+builder.Services.AddScoped<ICollectionApiService, VaultGuard.Services.Services.CollectionApiService>();
+builder.Services.AddScoped<ITagApiService, VaultGuard.Services.Services.TagApiService>();
+builder.Services.AddScoped<IVaultApiService, VaultGuard.Services.Services.VaultApiService>();
+builder.Services.AddScoped<IVaultService, VaultGuard.Services.Services.VaultService>();
+builder.Services.AddScoped<ISyncService, VaultGuard.Services.Services.SyncService>();
+builder.Services.AddScoped<IDatabaseContextFactory, VaultGuard.Services.Services.DatabaseContextFactory>();
+builder.Services.AddScoped<IPasswordEncryptionService, VaultGuard.Services.Services.PasswordEncryptionService>();
+builder.Services.AddScoped<IJwtService, VaultGuard.Services.Services.JwtService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
-builder.Services.AddScoped<IVaultSessionService, PasswordManager.Services.Services.VaultSessionService>();
-builder.Services.AddScoped<IQrLoginService, PasswordManager.Services.Services.QrLoginService>();
-builder.Services.AddScoped<IApiKeyService, PasswordManager.Services.Services.ApiKeyService>();
-builder.Services.AddScoped<IDatabaseMigrationService, PasswordManager.Services.Services.DatabaseMigrationService>();
-builder.Services.AddScoped<ITwoFactorService, PasswordManager.Services.Services.TwoFactorService>();
-builder.Services.AddScoped<IPasskeyService, PasswordManager.Services.Services.PasskeyService>();
-builder.Services.AddScoped<IPermissionService, PasswordManager.Services.Services.PermissionService>();
-builder.Services.AddScoped<IDeviceService, PasswordManager.Services.Services.DeviceService>();
-builder.Services.AddScoped<IAuditLogService, PasswordManager.Services.Services.AuditLogService>();
-builder.Services.AddHostedService<PasswordManager.Services.Services.AutoSyncService>();
+builder.Services.AddScoped<IVaultSessionService, VaultGuard.Services.Services.VaultSessionService>();
+builder.Services.AddScoped<IQrLoginService, VaultGuard.Services.Services.QrLoginService>();
+builder.Services.AddScoped<IApiKeyService, VaultGuard.Services.Services.ApiKeyService>();
+builder.Services.AddScoped<IDatabaseMigrationService, VaultGuard.Services.Services.DatabaseMigrationService>();
+builder.Services.AddScoped<ITwoFactorService, VaultGuard.Services.Services.TwoFactorService>();
+builder.Services.AddScoped<IPasskeyService, VaultGuard.Services.Services.PasskeyService>();
+builder.Services.AddScoped<IPermissionService, VaultGuard.Services.Services.PermissionService>();
+builder.Services.AddScoped<IDeviceService, VaultGuard.Services.Services.DeviceService>();
+builder.Services.AddScoped<IAuditLogService, VaultGuard.Services.Services.AuditLogService>();
+builder.Services.AddHostedService<VaultGuard.Services.Services.AutoSyncService>();
 
 // Register import/export services
-builder.Services.AddSingleton<PasswordManager.Imports.Services.PluginDiscoveryService>();
-builder.Services.AddScoped<PasswordManager.Imports.Interfaces.IImportService, PasswordManager.Imports.Services.ImportService>();
+builder.Services.AddSingleton<VaultGuard.Imports.Services.PluginDiscoveryService>();
+builder.Services.AddScoped<VaultGuard.Imports.Interfaces.IImportService, VaultGuard.Imports.Services.ImportService>();
 
 // Register cryptography services
 builder.Services.AddCryptographyServices();
 
 
 // Register platform and database configuration services
-builder.Services.AddScoped<IPlatformService, PasswordManager.Services.Services.DefaultPlatformService>();
+builder.Services.AddScoped<IPlatformService, VaultGuard.Services.Services.DefaultPlatformService>();
 // Register platform service (needed for database configuration)
-builder.Services.AddSingleton<IPlatformService, PasswordManager.Services.Services.DefaultPlatformService>();
+builder.Services.AddSingleton<IPlatformService, VaultGuard.Services.Services.DefaultPlatformService>();
 
 // Register database configuration service (needed by ApiKeyService)
 
-builder.Services.AddScoped<IDatabaseConfigurationService, PasswordManager.Services.Services.DatabaseConfigurationService>();
+builder.Services.AddScoped<IDatabaseConfigurationService, VaultGuard.Services.Services.DatabaseConfigurationService>();
 
 
 // Configure SMS settings
-builder.Services.Configure<PasswordManager.Models.Configuration.SmsConfiguration>(
-    builder.Configuration.GetSection(PasswordManager.Models.Configuration.SmsConfiguration.SectionName));
+builder.Services.Configure<VaultGuard.Models.Configuration.SmsConfiguration>(
+    builder.Configuration.GetSection(VaultGuard.Models.Configuration.SmsConfiguration.SectionName));
 
 // Configure Sentry settings
 builder.Services.Configure<SentryConfiguration>(
     builder.Configuration.GetSection("Sentry"));
 
+// Exception reporting (Sentry-backed, swappable via IExceptionReporter)
+builder.Services.AddSentryExceptionReporting(builder.Configuration["ExceptionReporting:SentryDsn"], "API");
+
 // Register SMS and OTP services
-builder.Services.AddHttpClient<PasswordManager.Services.Services.TwilioSmsService>();
-builder.Services.AddScoped<ISmsService, PasswordManager.Services.Services.TwilioSmsService>();
-builder.Services.AddScoped<IOtpService, PasswordManager.Services.Services.OtpService>();
-builder.Services.AddScoped<IPlatformDetectionService, PasswordManager.Services.Services.PlatformDetectionService>();
-builder.Services.AddScoped<ISmsSettingsService, PasswordManager.Services.Services.SmsSettingsService>();
+builder.Services.AddHttpClient<VaultGuard.Services.Services.TwilioSmsService>();
+builder.Services.AddScoped<ISmsService, VaultGuard.Services.Services.TwilioSmsService>();
+builder.Services.AddScoped<IOtpService, VaultGuard.Services.Services.OtpService>();
+builder.Services.AddScoped<IPlatformDetectionService, VaultGuard.Services.Services.PlatformDetectionService>();
+builder.Services.AddScoped<ISmsSettingsService, VaultGuard.Services.Services.SmsSettingsService>();
 
 // Register Fido2 service for passkeys
 builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
@@ -179,7 +183,7 @@ builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
     var config = new Fido2NetLib.Fido2Configuration
     {
         ServerDomain = "localhost", // Update this for production
-        ServerName = "PasswordManager",
+        ServerName = "VaultGuard",
         Origins = new HashSet<string> { "https://localhost", "http://localhost" },
         TimestampDriftTolerance = 300000
     };
@@ -212,7 +216,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", builder.Configuration["ApiSettings:Title"] ?? "Password Manager API");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", builder.Configuration["ApiSettings:Title"] ?? "Vault Guard API");
     });
 }
 
@@ -235,8 +239,8 @@ app.MapHealthChecks("/health");
 // Initialize database with migration handling
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContext>();
-    var contextApp = scope.ServiceProvider.GetRequiredService<PasswordManagerDbContextApp>();
+    var context = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
+    var contextApp = scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>();
     try
     {
         // Check for pending migrations before applying
@@ -245,10 +249,10 @@ using (var scope = app.Services.CreateScope())
 
         if (pendingMigrations.Any())
         {
-            Log.Warning("Pending migrations found for PasswordManagerDbContextApp: {Migrations}", string.Join(", ", pendingMigrations));
-            Log.Information("Applying pending migrations for PasswordManagerDbContextApp...");
+            Log.Warning("Pending migrations found for VaultGuardDbContextApp: {Migrations}", string.Join(", ", pendingMigrations));
+            Log.Information("Applying pending migrations for VaultGuardDbContextApp...");
             await contextApp.Database.MigrateAsync();
-            Log.Information("Migrations applied successfully for PasswordManagerDbContextApp");
+            Log.Information("Migrations applied successfully for VaultGuardDbContextApp");
         }
         else
         {
@@ -257,20 +261,20 @@ using (var scope = app.Services.CreateScope())
             if (!appliedMigrations.Any())
             {
                 await contextApp.Database.EnsureCreatedAsync();
-                Log.Information("Database created for PasswordManagerDbContextApp using EnsureCreated");
+                Log.Information("Database created for VaultGuardDbContextApp using EnsureCreated");
             }
             else
             {
-                Log.Information("Database already exists for PasswordManagerDbContextApp");
+                Log.Information("Database already exists for VaultGuardDbContextApp");
             }
         }
 
         if (pendingMigrationsApi.Any())
         {
-            Log.Warning("Pending migrations found for PasswordManagerDbContext: {Migrations}", string.Join(", ", pendingMigrationsApi));
-            Log.Information("Applying pending migrations for PasswordManagerDbContext...");
+            Log.Warning("Pending migrations found for VaultGuardDbContext: {Migrations}", string.Join(", ", pendingMigrationsApi));
+            Log.Information("Applying pending migrations for VaultGuardDbContext...");
             await context.Database.MigrateAsync();
-            Log.Information("Migrations applied successfully for PasswordManagerDbContext");
+            Log.Information("Migrations applied successfully for VaultGuardDbContext");
         }
         else
         {
@@ -279,11 +283,11 @@ using (var scope = app.Services.CreateScope())
             if (!appliedMigrationsApi.Any())
             {
                 await context.Database.EnsureCreatedAsync();
-                Log.Information("Database created for PasswordManagerDbContext using EnsureCreated");
+                Log.Information("Database created for VaultGuardDbContext using EnsureCreated");
             }
             else
             {
-                Log.Information("Database already exists for PasswordManagerDbContext");
+                Log.Information("Database already exists for VaultGuardDbContext");
             }
         }
 
@@ -328,7 +332,7 @@ if (app.Configuration.GetValue<bool>("Imports:PreloadInApi", false))
         {
             Log.Information("Preloading import provider assemblies (API mode)...");
             var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            var importDlls = Directory.GetFiles(baseDirectory, "PasswordManagerImports.*.dll");
+            var importDlls = Directory.GetFiles(baseDirectory, "VaultGuardImports.*.dll");
             Log.Information("Found {Count} import provider DLLs", importDlls.Length);
 
             foreach (var dllPath in importDlls)
@@ -336,15 +340,15 @@ if (app.Configuration.GetValue<bool>("Imports:PreloadInApi", false))
                 try
                 {
                     var fileName = Path.GetFileName(dllPath);
-                    if (!fileName.StartsWith("PasswordManagerImports.", StringComparison.OrdinalIgnoreCase))
+                    if (!fileName.StartsWith("VaultGuardImports.", StringComparison.OrdinalIgnoreCase))
                         continue;
 
                     var assembly = System.Reflection.Assembly.LoadFrom(dllPath);
                     var providerTypes = assembly.GetTypes()
-                        .Where(t => typeof(PasswordManager.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
+                        .Where(t => typeof(VaultGuard.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
                                  && !t.IsInterface && !t.IsAbstract);
 
-                    var importService = scope.ServiceProvider.GetService<PasswordManager.Imports.Interfaces.IImportService>();
+                    var importService = scope.ServiceProvider.GetService<VaultGuard.Imports.Interfaces.IImportService>();
                     if (importService != null)
                     {
                         foreach (var providerType in providerTypes)
@@ -355,7 +359,7 @@ if (app.Configuration.GetValue<bool>("Imports:PreloadInApi", false))
                                 continue;
                             }
 
-                            var provider = Activator.CreateInstance(providerType) as PasswordManager.Imports.Interfaces.IPasswordImportProvider;
+                            var provider = Activator.CreateInstance(providerType) as VaultGuard.Imports.Interfaces.IPasswordImportProvider;
                             if (provider != null)
                             {
                                 importService.RegisterProvider(provider);
@@ -382,7 +386,7 @@ else
     Log.Information("API import provider preload disabled (Imports:PreloadInApi=false). WinUI client should load UI plugins.");
 }
 
-Log.Information("Password Manager API starting up...");
+Log.Information("Vault Guard API starting up...");
 Log.Information("Database Provider: {Provider}", databaseProvider);
 Log.Information("API Documentation available at: /scalar/v1");
 

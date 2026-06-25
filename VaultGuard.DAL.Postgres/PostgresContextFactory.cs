@@ -1,23 +1,23 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
-using PasswordManager.Models;
+using VaultGuard.Models;
 using System.IO;
 
-namespace PasswordManager.DAL.Postgres
+namespace VaultGuard.DAL.Postgres
 {
-public class PostgresContextFactory : IDesignTimeDbContextFactory<PasswordManagerDbContextApp>
+public class PostgresContextFactory : IDesignTimeDbContextFactory<VaultGuardDbContextApp>
     {
-    public PasswordManagerDbContextApp CreateDbContext(string[] args)
+    public VaultGuardDbContextApp CreateDbContext(string[] args)
         {
             var config = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true)
                 .Build();
             var connectionString = config.GetConnectionString("PostgresConnection");
-        var optionsBuilder = new DbContextOptionsBuilder<PasswordManagerDbContextApp>();
+        var optionsBuilder = new DbContextOptionsBuilder<VaultGuardDbContextApp>();
             optionsBuilder.UseNpgsql(connectionString);
-        return new PasswordManagerDbContextApp(optionsBuilder.Options);
+        return new VaultGuardDbContextApp(optionsBuilder.Options);
         }
     }
 }

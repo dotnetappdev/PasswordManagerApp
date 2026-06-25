@@ -1,7 +1,7 @@
 # MySQL Database Setup Guide
 
 ## Overview
-The Password Manager API now supports MySQL as a database provider alongside SQL Server, PostgreSQL, and SQLite. This guide explains how to configure and use MySQL with the application.
+The Vault Guard API now supports MySQL as a database provider alongside SQL Server, PostgreSQL, and SQLite. This guide explains how to configure and use MySQL with the application.
 
 ## Prerequisites
 - MySQL Server 8.0 or higher
@@ -20,13 +20,13 @@ Connect to MySQL as root and run the following commands:
 
 ```sql
 -- Create database
-CREATE DATABASE PasswordManagerDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE VaultGuardDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Create user for the application
 CREATE USER 'passwordmgr'@'localhost' IDENTIFIED BY 'your_secure_password';
 
 -- Grant privileges
-GRANT ALL PRIVILEGES ON PasswordManagerDB.* TO 'passwordmgr'@'localhost';
+GRANT ALL PRIVILEGES ON VaultGuardDB.* TO 'passwordmgr'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
@@ -37,7 +37,7 @@ FLUSH PRIVILEGES;
 {
   "DatabaseProvider": "mysql",
   "ConnectionStrings": {
-    "MySqlConnection": "Server=localhost;Database=PasswordManagerDB;User=passwordmgr;Password=your_secure_password;Port=3306;"
+    "MySqlConnection": "Server=localhost;Database=VaultGuardDB;User=passwordmgr;Password=your_secure_password;Port=3306;"
   }
 }
 ```
@@ -46,7 +46,7 @@ FLUSH PRIVILEGES;
 ```json
 {
   "ConnectionStrings": {
-    "MySqlConnection": "Server=localhost;Database=PasswordManagerDB_Dev;User=passwordmgr;Password=dev_password;Port=3306;"
+    "MySqlConnection": "Server=localhost;Database=VaultGuardDB_Dev;User=passwordmgr;Password=dev_password;Port=3306;"
   }
 }
 ```
@@ -56,7 +56,7 @@ FLUSH PRIVILEGES;
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | Server | MySQL server hostname/IP | `localhost`, `192.168.1.100` |
-| Database | Database name | `PasswordManagerDB` |
+| Database | Database name | `VaultGuardDB` |
 | User | MySQL username | `passwordmgr` |
 | Password | User password | `your_secure_password` |
 | Port | MySQL port (default: 3306) | `3306` |
@@ -65,7 +65,7 @@ FLUSH PRIVILEGES;
 
 ### Advanced Connection String Options
 ```
-Server=localhost;Database=PasswordManagerDB;User=passwordmgr;Password=your_password;Port=3306;SslMode=Required;CharSet=utf8mb4;AllowUserVariables=true;UseAffectedRows=false;
+Server=localhost;Database=VaultGuardDB;User=passwordmgr;Password=your_password;Port=3306;SslMode=Required;CharSet=utf8mb4;AllowUserVariables=true;UseAffectedRows=false;
 ```
 
 ## Database Migration
@@ -73,10 +73,10 @@ Server=localhost;Database=PasswordManagerDB;User=passwordmgr;Password=your_passw
 ### Initial Setup
 ```bash
 # Navigate to API project
-cd PasswordManager.API
+cd VaultGuard.API
 
 # Add migration for MySQL
-dotnet ef migrations add InitialCreate --context PasswordManagerDbContext
+dotnet ef migrations add InitialCreate --context VaultGuardDbContext
 
 # Update database
 dotnet ef database update
@@ -87,10 +87,10 @@ If you need separate migrations for different providers:
 
 ```bash
 # MySQL-specific migration
-dotnet ef migrations add MySqlInitial --context PasswordManagerDbContext --output-dir Migrations/MySQL
+dotnet ef migrations add MySqlInitial --context VaultGuardDbContext --output-dir Migrations/MySQL
 
 # Apply migration
-dotnet ef database update --context PasswordManagerDbContext
+dotnet ef database update --context VaultGuardDbContext
 ```
 
 ## Performance Optimization
@@ -132,19 +132,19 @@ The application automatically optimizes queries for MySQL using Entity Framework
 1. **Connection Timeout**
    ```
    Solution: Increase connection timeout in connection string:
-   Server=localhost;Database=PasswordManagerDB;User=passwordmgr;Password=password;Port=3306;Connection Timeout=30;
+   Server=localhost;Database=VaultGuardDB;User=passwordmgr;Password=password;Port=3306;Connection Timeout=30;
    ```
 
 2. **Character Encoding Issues**
    ```
    Solution: Ensure UTF-8 encoding:
-   Server=localhost;Database=PasswordManagerDB;User=passwordmgr;Password=password;Port=3306;CharSet=utf8mb4;
+   Server=localhost;Database=VaultGuardDB;User=passwordmgr;Password=password;Port=3306;CharSet=utf8mb4;
    ```
 
 3. **SSL Connection Errors**
    ```
    Solution: Adjust SSL mode:
-   Server=localhost;Database=PasswordManagerDB;User=passwordmgr;Password=password;Port=3306;SslMode=None;
+   Server=localhost;Database=VaultGuardDB;User=passwordmgr;Password=password;Port=3306;SslMode=None;
    ```
 
 ### Logging
@@ -178,7 +178,7 @@ services:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: PasswordManagerDB
+      MYSQL_DATABASE: VaultGuardDB
       MYSQL_USER: passwordmgr
       MYSQL_PASSWORD: password
     ports:

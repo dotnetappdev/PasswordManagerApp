@@ -1,256 +1,103 @@
-# 🔐 VaultGuard – Password Manager
+# Vault Guard
 
-[![API Build](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-api.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-api.yml)
-[![Web App Build](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml)
-[![WPF Installer](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-wpf.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-wpf.yml)
-[![Unit Tests](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/run-tests.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/run-tests.yml)
+Vault Guard is an open-source password manager for Windows and the web. It keeps logins, secure
+notes, cards and Wi-Fi credentials in an encrypted local vault, and can optionally back that vault
+up to a NAS, an FTP site, OneDrive or Google Drive. Everything is encrypted on your machine before
+it ever touches disk or the network, so a backup file is useless to anyone without your master
+password.
 
-A full-featured, self-hosted password manager built with **Blazor Server (.NET 10)**, **MudBlazor**, **Entity Framework Core**, and **ASP.NET Core Identity**.
+The same core runs across several front-ends: a WPF desktop app, a Blazor web app, an API server,
+a MAUI/Uno mobile app, and a browser extension. They share the model, data-access, crypto and
+service layers, so behaviour stays consistent wherever you use it.
 
----
+## Downloads
 
-## ✨ Features
+Tagged releases publish ready-to-run Windows installers on the [Releases](../../releases) page:
 
-- 🔑 **Multiple item types**: Login, Password, Passkey, SecureNote, WiFi, CreditCard
-- 🏛️ **Vaults** – organize items into separate vaults
-- 📂 **Categories & Collections** – flexible organization
-- 🏷️ **Tags** – quick filtering and labeling
-- 🌙 **Dark / Light mode** – fully themed UI
-- 🔐 **Audit Logs** – track every change
-- 📱 **Responsive** – works on desktop and mobile
-- 🧪 **Seeded demo data** – ready to explore out of the box
+- **Vault Guard Setup (.exe)** — Inno Setup installer, recommended for most people.
+- **Vault Guard Setup (.msi)** — for managed/enterprise deployment.
 
----
+Both bundle the .NET runtime, so there's nothing else to install. The web app and API are run from
+source or Docker (see below).
 
-## 📸 Screenshots
+## Requirements
 
-### 🖥️ Desktop – Dark Mode
+To run the desktop app you don't need anything beyond the installer. To build from source:
 
-| Dashboard | All Items |
-|-----------|-----------|
-| ![Dashboard Dark](screenshots/blazor/dark/dashboard.png) | ![All Items Dark](screenshots/blazor/dark/all-items.png) |
+- .NET 10 SDK (10.0.301 or newer — the repo pins this in `global.json`)
+- Visual Studio 2026 or JetBrains Rider, or just the `dotnet` CLI
+- For the mobile app: the MAUI workloads (`dotnet workload install maui`)
 
-| Vaults | Categories |
-|--------|-----------|
-| ![Vaults Dark](screenshots/blazor/dark/vaults.png) | ![Categories Dark](screenshots/blazor/dark/categories.png) |
-
-| Collections | Tags |
-|-------------|------|
-| ![Collections Dark](screenshots/blazor/dark/collections.png) | ![Tags Dark](screenshots/blazor/dark/tags.png) |
-
-| Settings (Security) | Audit Logs |
-|---------------------|------------|
-| ![Settings Dark](screenshots/blazor/dark/settings.png) | ![Audit Logs Dark](screenshots/blazor/dark/audit-logs.png) |
-
----
-
-### ☀️ Desktop – Light Mode
-
-| Dashboard | All Items |
-|-----------|-----------|
-| ![Dashboard Light](screenshots/blazor/light/dashboard.png) | ![All Items Light](screenshots/blazor/light/all-items.png) |
-
-| Collections |
-|-------------|
-| ![Collections Light](screenshots/blazor/light/collections.png) |
-
----
-
-### 🏷️ Login Brand Icons
-
-Login items can now render an automatically resolved company icon in the item list, with uploaded custom icons taking priority when an override is present.
-
-![Login brand icons](https://github.com/user-attachments/assets/bfb22548-b0c4-45bf-843b-c1b2ab903c25)
-
----
-
-### 📱 Mobile – Light Mode (390 × 844)
-
-| Dashboard |
-|-----------|
-| ![Mobile Dashboard Light](screenshots/blazor/mobile-light/dashboard.png) |
-
----
-
-### 🪟 WinUI Desktop Screenshots
-
-- WinUI screenshot capture and coverage guide: [screenshots/SCREENSHOT_GUIDE.md](screenshots/SCREENSHOT_GUIDE.md)
-- WinUI screenshot folder and naming conventions: [screenshots/README.md](screenshots/README.md)
-- Current WinUI dashboard/login placeholders:
-  - [screenshots/winui-dashboard-placeholders.md](screenshots/winui-dashboard-placeholders.md)
-  - [screenshots/winui-login-light.placeholder](screenshots/winui-login-light.placeholder)
-  - [screenshots/winui-login-dark.placeholder](screenshots/winui-login-dark.placeholder)
-
----
-
-### 🧩 Item Templates & Custom Fields (Desktop / MAUI-style forms)
-
-| Login | Password | Secure Note |
-|------|----------|-------------|
-| ![Login Form](screenshots/password-form.png) | ![Password Form](screenshots/api-credentials-form.png) | ![Secure Note Form](screenshots/secure-note-form.png) |
-
-| Credit Card | Credit Card + Date | Credit Card + Custom Field |
-|-------------|--------------------|----------------------------|
-| ![Credit Card Form](screenshots/credit-card-form.png) | ![Credit Card Form with Date](screenshots/credit-card-form-with-date-field.png) | ![Credit Card Form with Custom Field](screenshots/credit-card-form-with-custom-field.png) |
-
-| API Credentials + Custom Field | Identity |
-|--------------------------------|----------|
-| ![API Credentials with Custom Field](screenshots/api-credentials-form-with-custom-field.png) | ![Identity Form](screenshots/identity-form.png) |
-
----
-
-### 📲 iOS & Biometric Support
-
-- iOS app support is available via the mobile implementations with Face ID / Touch ID support:
-  - [REACT_NATIVE_MOBILE_APP.md](REACT_NATIVE_MOBILE_APP.md) (feature-complete cross-platform mobile app)
-  - [PasswordManager.App](PasswordManager.App) (MAUI app with iOS target support)
-  - [PasswordManager.Uno](PasswordManager.Uno) (Uno Platform mobile support)
-- Capture workflow and screenshot checklist: [MOBILE_SCREENSHOTS.md](MOBILE_SCREENSHOTS.md)
-- Mobile screenshot folder structure: [screenshots/mobile/README.md](screenshots/mobile/README.md)
-- Biometric implementation details: [BIOMETRIC_AUTH_IMPLEMENTATION.md](BIOMETRIC_AUTH_IMPLEMENTATION.md)
-
----
-
-## 🌙 Design
-
-Both the **WPF desktop app** and the **Blazor web app** share the same dark-mode design system:
-
-| Token | Value |
-|-------|-------|
-| Background | `#1A1A1A` |
-| Surface | `#2D2D2D` |
-| Primary (blue) | `#2563EB` |
-| Text Primary | `#E5E5E5` |
-| Text Secondary | `#9D9D9D` |
-| Border | `rgba(255,255,255,0.11)` |
-
-The Blazor app defaults to **dark mode** and uses the same steel-blue primary colour as the WPF app. The dark-mode toggle in the top-right of the Blazor UI lets you switch between light and dark.
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- SQLite (bundled via EF Core)
-
-### Run the Blazor Web App
+## Building from source
 
 ```bash
-cd PasswordManager.Web
-dotnet run
+git clone <repo-url>
+cd VaultGuardApp
+
+# Desktop app
+dotnet build VaultGuard.WPF/VaultGuard.WPF.csproj -c Release
+
+# Web app + API
+dotnet build VaultGuard.Web/VaultGuard.Web.csproj -c Release
+dotnet build VaultGuard.API/VaultGuard.API.csproj -c Release
 ```
 
-Navigate to `http://localhost:5169` and log in with any of the seeded accounts:
+To produce the Windows installers locally, see `installers/README.md`. CI builds them automatically
+for every `v*` tag (`.github/workflows/build-wpf.yml`) and attaches the `.exe` and `.msi` to the
+GitHub release.
 
-| Role | Email | Master Password |
-|------|-------|-----------------|
-| Admin | `admin@passwordmanager.local` | `CommonMaster123!` |
-| Parent | `parent@passwordmanager.local` | `CommonMaster123!` |
-| Standard User | `user@passwordmanager.local` | `CommonMaster123!` |
-| Child | `child@passwordmanager.local` | `CommonMaster123!` |
-
-### Run the WPF Desktop App
+## Running in development
 
 ```bash
-cd PasswordManager.WPF
-dotnet run
+# API
+cd VaultGuard.API && dotnet run
+
+# Web app (separate terminal)
+cd VaultGuard.Web && dotnet run
+
+# Desktop app
+cd VaultGuard.WPF && dotnet run
 ```
 
-On first launch the setup wizard runs to configure the database. After setup, log in — demo data is seeded automatically for your account on first login.
+The first run creates a local SQLite database and walks you through setting a master password. You
+can switch the database provider (SQLite, SQL Server, MySQL, PostgreSQL) from Settings.
 
-> If no users exist yet a demo account is auto-created: `demo@local` / `DemoPassword123!`
+## Project layout
 
----
-
-## 📥 Downloads & Installers
-
-Pre-built Windows installers (EXE + MSI) are published automatically to **[GitHub Releases](https://github.com/dotnetappdev/PasswordManagerApp/releases)** for every `v*` tag.
-
-| Platform | Installer | Source |
-|----------|-----------|--------|
-| Windows (WPF desktop) | `VaultGuardSetup-<version>.exe` / `.msi` | [installer/setup.iss](installer/setup.iss), [installer/setup.wxs](installer/setup.wxs) |
-| Windows (WinUI) | Inno Setup script | [installers/winui-installer.iss](installers/winui-installer.iss) |
-| API (self-host) | Inno Setup script | [installers/api-installer.iss](installers/api-installer.iss) |
-
-> Until the first tagged release is published, build locally (below) or grab the artifacts attached to the latest **WPF Installer** workflow run.
-
-### Building installers locally
-
-```powershell
-# 1. Publish a self-contained build
-dotnet publish PasswordManager.WPF/PasswordManager.WPF.csproj -c Release -r win-x64 --self-contained true -o publish/wpf
-
-# 2a. EXE installer (needs Inno Setup 6 — https://jrsoftware.org/isdl.php)
-iscc /DMyAppVersion=1.0.0 installer/setup.iss
-
-# 2b. MSI installer (needs WiX v4 — dotnet tool install --global wix --version 4.*)
-wix build installer/setup.wxs -ext WixToolset.UI.wixext -d Version=1.0.0 -d PublishDir=publish/wpf -o installer/output/VaultGuardSetup-1.0.0.msi
+```
+VaultGuardApp/
+  VaultGuard.Models/             Shared models and DTOs
+  VaultGuard.Crypto/             Key derivation and AES-256-GCM encryption
+  VaultGuard.DAL/                Data access layer (EF Core)
+  VaultGuard.DAL.SqlServer/      SQL Server provider
+  VaultGuard.DAL.MySql/          MySQL provider
+  VaultGuard.DAL.Postgres/       PostgreSQL provider
+  VaultGuard.Services/           Business logic (vaults, items, backups, TOTP, passkeys)
+  VaultGuard.Imports/            Import framework + per-vendor plugins (1Password, Bitwarden, ...)
+  VaultGuard.API/                ASP.NET Core Web API
+  VaultGuard.Web/                Blazor web app
+  VaultGuard.Components.Shared/  Shared Blazor components
+  VaultGuard.WPF/                Windows desktop app
+  VaultGuard.WinUi/              WinUI 3 desktop app
+  VaultGuard.App/                MAUI mobile app
+  VaultGuard.Uno/                Uno Platform mobile/WASM app
+  VaultGuard.BrowserExtension/   Cross-browser extension + native messaging host
 ```
 
-The convenience scripts [installers/build-installers.bat](installers/build-installers.bat) / [.sh](installers/build-installers.sh) wrap these steps.
+## Security
 
-### Automated build & release (CI)
+- Your master password never leaves the device and is never stored. It derives the encryption key.
+- Keys use PBKDF2 (600,000 iterations); data is sealed with AES-256-GCM authenticated encryption.
+- Backups are encrypted locally before upload, so cloud and NAS targets only ever see ciphertext.
 
-The [`build-wpf.yml`](.github/workflows/build-wpf.yml) workflow runs on every push/PR to `devmain`/`main` (uploads installers as artifacts) and, **when you push a `v*` tag, builds the EXE + MSI and attaches them to a GitHub Release automatically**:
+See `ENCRYPTION_IMPLEMENTATION.md` and `MASTER_PASSWORD_SECURITY.md` for the details.
 
-```bash
-git tag v1.0.0
-git push origin v1.0.0   # → triggers the installer build + GitHub Release
-```
+## Contributing
 
-### App icons
+See `DEVELOPMENT.md` for build commands, the migration workflow and how to add an import plugin.
+Pull requests are welcome — keep changes focused, add tests where it makes sense, and run
+`dotnet test` before opening one.
 
-The WPF app icon lives at [PasswordManager.WPF/Assets/AppIcon.ico](PasswordManager.WPF/Assets/AppIcon.ico) and should bundle the standard Windows sizes — **16×16, 32×32, 48×48, 64×64, 128×128, 256×256** — in a single multi-resolution `.ico`. To regenerate from a 1024×1024 source PNG with ImageMagick:
+## License
 
-```bash
-magick source-1024.png -define icon:auto-resize=256,128,64,48,32,16 PasswordManager.WPF/Assets/AppIcon.ico
-```
-
----
-
-## 🌱 Seeding Demo Data
-
-Demo data (categories, collections, tags, and sample password items) is seeded automatically **per user** the first time they log in to either app. No manual steps are required.
-
-### How it works
-
-| What | When | Where |
-|------|------|-------|
-| Categories, Collections, Tags | App startup (for the system test user) and on first page load per real user | `TestDataSeeder` + `SampleDataSeeder` |
-| Sample password items | First visit to **All Items** page when the user has no items | `SampleDataSeeder.SeedSampleDataAsync` |
-
-### Manual re-seed (WPF)
-
-If you need to wipe and re-seed all data:
-
-1. Delete the SQLite database file (`PasswordManager.db` in the app data folder, or wherever configured).
-2. Restart the app — the setup wizard will re-run and fresh seed data will be created on first login.
-
-### Manual re-seed (Blazor / EF CLI)
-
-```bash
-# Drop and re-create the database
-dotnet ef database drop --project PasswordManager.DAL --startup-project PasswordManager.Web
-dotnet ef database update --project PasswordManager.DAL --startup-project PasswordManager.Web
-# The Identity seeder runs automatically on next app start
-```
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Blazor Server + MudBlazor 8 |
-| Backend | ASP.NET Core (.NET 10) |
-| ORM | Entity Framework Core 9 |
-| Auth | ASP.NET Core Identity |
-| Database | SQLite (dev) / MySQL (prod) |
-
----
-
-## 📄 License
-
-MIT
+See `LICENSE` for terms.

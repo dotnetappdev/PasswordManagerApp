@@ -3,16 +3,16 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Services.Interfaces;
-using PasswordManager.Crypto.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Services.Interfaces;
+using VaultGuard.Crypto.Interfaces;
+using VaultGuard.Models;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WPF.Dialogs;
+namespace VaultGuard.WPF.Dialogs;
 
 /// <summary>
 /// Dialog for creating new user accounts with role-based restrictions
@@ -239,7 +239,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
             // Guards against the startup race condition and missing-column issues.
             using (var migScope = _serviceProvider.CreateScope())
             {
-                var dbCtxApp = migScope.ServiceProvider.GetRequiredService<PasswordManager.DAL.PasswordManagerDbContextApp>();
+                var dbCtxApp = migScope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContextApp>();
                 await dbCtxApp.Database.MigrateAsync();
             }
 

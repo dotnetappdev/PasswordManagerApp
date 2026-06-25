@@ -1,6 +1,6 @@
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.Services.Utilities;
+namespace VaultGuard.Services.Utilities;
 
 /// <summary>
 /// Marks an item (typically a secure note) as "protected", so its sensitive content is masked in

@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using PasswordManager.DAL;
+using VaultGuard.DAL;
 
 #nullable disable
 
-namespace PasswordManager.DAL.Migrations
+namespace VaultGuard.DAL.Migrations
 {
-    [DbContext(typeof(PasswordManagerDbContextApp))]
+    [DbContext(typeof(VaultGuardDbContextApp))]
     [Migration("20260611175512_AddMissingUserColumns")]
     partial class AddMissingUserColumns
     {
@@ -137,7 +137,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("PasswordItemTag");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.ApiKey", b =>
+            modelBuilder.Entity("VaultGuard.Models.ApiKey", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -180,7 +180,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("ApiKeys");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.ApplicationRole", b =>
+            modelBuilder.Entity("VaultGuard.Models.ApplicationRole", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
@@ -222,7 +222,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("AspNetRoles", (string)null);
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.ApplicationUser", b =>
+            modelBuilder.Entity("VaultGuard.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
@@ -362,7 +362,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.AuditLog", b =>
+            modelBuilder.Entity("VaultGuard.Models.AuditLog", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
@@ -425,7 +425,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("AuditLog");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.Category", b =>
+            modelBuilder.Entity("VaultGuard.Models.Category", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -476,7 +476,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.ChildPermissionConfig", b =>
+            modelBuilder.Entity("VaultGuard.Models.ChildPermissionConfig", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -557,7 +557,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("ChildPermissionConfigs");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.Collection", b =>
+            modelBuilder.Entity("VaultGuard.Models.Collection", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -613,7 +613,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("Collections");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.CreditCardItem", b =>
+            modelBuilder.Entity("VaultGuard.Models.CreditCardItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -816,7 +816,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("CreditCardItems");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.CustomField", b =>
+            modelBuilder.Entity("VaultGuard.Models.CustomField", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -859,7 +859,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("CustomField");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.Device", b =>
+            modelBuilder.Entity("VaultGuard.Models.Device", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
@@ -916,7 +916,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("Device");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.LoginItem", b =>
+            modelBuilder.Entity("VaultGuard.Models.LoginItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1105,7 +1105,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("LoginItems");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.OtpCode", b =>
+            modelBuilder.Entity("VaultGuard.Models.OtpCode", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1156,7 +1156,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("OtpCodes");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.PasskeyItem", b =>
+            modelBuilder.Entity("VaultGuard.Models.PasskeyItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1244,7 +1244,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("PasskeyItem");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.PasswordItem", b =>
+            modelBuilder.Entity("VaultGuard.Models.PasswordItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1308,7 +1308,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("PasswordItems");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.QrLoginToken", b =>
+            modelBuilder.Entity("VaultGuard.Models.QrLoginToken", b =>
                 {
                     b.Property<string>("Token")
                         .HasMaxLength(32)
@@ -1346,7 +1346,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("QrLoginTokens");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.SecureNoteItem", b =>
+            modelBuilder.Entity("VaultGuard.Models.SecureNoteItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1447,7 +1447,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("SecureNoteItems");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.SmsSettings", b =>
+            modelBuilder.Entity("VaultGuard.Models.SmsSettings", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1540,7 +1540,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("SmsSettings");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.Tag", b =>
+            modelBuilder.Entity("VaultGuard.Models.Tag", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1581,7 +1581,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("Tags");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.UserBackupSettings", b =>
+            modelBuilder.Entity("VaultGuard.Models.UserBackupSettings", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1642,7 +1642,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("UserBackupSettings");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.UserPasskey", b =>
+            modelBuilder.Entity("VaultGuard.Models.UserPasskey", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1703,7 +1703,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("UserPasskeys");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.UserRelationship", b =>
+            modelBuilder.Entity("VaultGuard.Models.UserRelationship", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1752,7 +1752,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("UserRelationships");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.UserTwoFactorBackupCode", b =>
+            modelBuilder.Entity("VaultGuard.Models.UserTwoFactorBackupCode", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1792,7 +1792,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("UserTwoFactorBackupCodes");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.Vault", b =>
+            modelBuilder.Entity("VaultGuard.Models.Vault", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1835,7 +1835,7 @@ namespace PasswordManager.DAL.Migrations
                     b.ToTable("Vault");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.WiFiItem", b =>
+            modelBuilder.Entity("VaultGuard.Models.WiFiItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -2032,7 +2032,7 @@ namespace PasswordManager.DAL.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationRole", null)
+                    b.HasOne("VaultGuard.Models.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2041,7 +2041,7 @@ namespace PasswordManager.DAL.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", null)
+                    b.HasOne("VaultGuard.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2050,7 +2050,7 @@ namespace PasswordManager.DAL.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", null)
+                    b.HasOne("VaultGuard.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2059,13 +2059,13 @@ namespace PasswordManager.DAL.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationRole", null)
+                    b.HasOne("VaultGuard.Models.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PasswordManager.Models.ApplicationUser", null)
+                    b.HasOne("VaultGuard.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2074,7 +2074,7 @@ namespace PasswordManager.DAL.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", null)
+                    b.HasOne("VaultGuard.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2083,22 +2083,22 @@ namespace PasswordManager.DAL.Migrations
 
             modelBuilder.Entity("PasswordItemTag", b =>
                 {
-                    b.HasOne("PasswordManager.Models.PasswordItem", null)
+                    b.HasOne("VaultGuard.Models.PasswordItem", null)
                         .WithMany()
                         .HasForeignKey("PasswordItemsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PasswordManager.Models.Tag", null)
+                    b.HasOne("VaultGuard.Models.Tag", null)
                         .WithMany()
                         .HasForeignKey("TagsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.ApiKey", b =>
+            modelBuilder.Entity("VaultGuard.Models.ApiKey", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("ApiKeys")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2107,9 +2107,9 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.AuditLog", b =>
+            modelBuilder.Entity("VaultGuard.Models.AuditLog", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("AuditLogs")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2118,17 +2118,17 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.Category", b =>
+            modelBuilder.Entity("VaultGuard.Models.Category", b =>
                 {
-                    b.HasOne("PasswordManager.Models.Collection", "Collection")
+                    b.HasOne("VaultGuard.Models.Collection", "Collection")
                         .WithMany("Categories")
                         .HasForeignKey("CollectionId");
 
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("Categories")
                         .HasForeignKey("UserId");
 
-                    b.HasOne("PasswordManager.Models.Vault", "Vault")
+                    b.HasOne("VaultGuard.Models.Vault", "Vault")
                         .WithMany("Categories")
                         .HasForeignKey("VaultId");
 
@@ -2139,15 +2139,15 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("Vault");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.ChildPermissionConfig", b =>
+            modelBuilder.Entity("VaultGuard.Models.ChildPermissionConfig", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "ChildUser")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "ChildUser")
                         .WithMany("ChildPermissionConfigs")
                         .HasForeignKey("ChildUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "ParentUser")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "ParentUser")
                         .WithMany("ManagedChildPermissions")
                         .HasForeignKey("ParentUserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -2158,13 +2158,13 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("ParentUser");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.Collection", b =>
+            modelBuilder.Entity("VaultGuard.Models.Collection", b =>
                 {
-                    b.HasOne("PasswordManager.Models.Collection", "ParentCollection")
+                    b.HasOne("VaultGuard.Models.Collection", "ParentCollection")
                         .WithMany("Children")
                         .HasForeignKey("ParentCollectionId");
 
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("Collections")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2175,15 +2175,15 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.CreditCardItem", b =>
+            modelBuilder.Entity("VaultGuard.Models.CreditCardItem", b =>
                 {
-                    b.HasOne("PasswordManager.Models.PasswordItem", "PasswordItem")
+                    b.HasOne("VaultGuard.Models.PasswordItem", "PasswordItem")
                         .WithOne("CreditCardItem")
-                        .HasForeignKey("PasswordManager.Models.CreditCardItem", "PasswordItemId")
+                        .HasForeignKey("VaultGuard.Models.CreditCardItem", "PasswordItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("CreditCardItems")
                         .HasForeignKey("UserId");
 
@@ -2192,9 +2192,9 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.CustomField", b =>
+            modelBuilder.Entity("VaultGuard.Models.CustomField", b =>
                 {
-                    b.HasOne("PasswordManager.Models.PasswordItem", "PasswordItem")
+                    b.HasOne("VaultGuard.Models.PasswordItem", "PasswordItem")
                         .WithMany("CustomFields")
                         .HasForeignKey("PasswordItemId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2203,9 +2203,9 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("PasswordItem");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.Device", b =>
+            modelBuilder.Entity("VaultGuard.Models.Device", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("Devices")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2214,15 +2214,15 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.LoginItem", b =>
+            modelBuilder.Entity("VaultGuard.Models.LoginItem", b =>
                 {
-                    b.HasOne("PasswordManager.Models.PasswordItem", "PasswordItem")
+                    b.HasOne("VaultGuard.Models.PasswordItem", "PasswordItem")
                         .WithOne("LoginItem")
-                        .HasForeignKey("PasswordManager.Models.LoginItem", "PasswordItemId")
+                        .HasForeignKey("VaultGuard.Models.LoginItem", "PasswordItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("LoginItems")
                         .HasForeignKey("UserId");
 
@@ -2231,9 +2231,9 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.OtpCode", b =>
+            modelBuilder.Entity("VaultGuard.Models.OtpCode", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2242,15 +2242,15 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.PasskeyItem", b =>
+            modelBuilder.Entity("VaultGuard.Models.PasskeyItem", b =>
                 {
-                    b.HasOne("PasswordManager.Models.PasswordItem", "PasswordItem")
+                    b.HasOne("VaultGuard.Models.PasswordItem", "PasswordItem")
                         .WithOne("PasskeyItem")
-                        .HasForeignKey("PasswordManager.Models.PasskeyItem", "PasswordItemId")
+                        .HasForeignKey("VaultGuard.Models.PasskeyItem", "PasswordItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId");
 
@@ -2259,21 +2259,21 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.PasswordItem", b =>
+            modelBuilder.Entity("VaultGuard.Models.PasswordItem", b =>
                 {
-                    b.HasOne("PasswordManager.Models.Category", "Category")
+                    b.HasOne("VaultGuard.Models.Category", "Category")
                         .WithMany("PasswordItems")
                         .HasForeignKey("CategoryId");
 
-                    b.HasOne("PasswordManager.Models.Collection", "Collection")
+                    b.HasOne("VaultGuard.Models.Collection", "Collection")
                         .WithMany("PasswordItems")
                         .HasForeignKey("CollectionId");
 
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("PasswordItems")
                         .HasForeignKey("UserId");
 
-                    b.HasOne("PasswordManager.Models.Vault", "Vault")
+                    b.HasOne("VaultGuard.Models.Vault", "Vault")
                         .WithMany("PasswordItems")
                         .HasForeignKey("VaultId");
 
@@ -2286,15 +2286,15 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("Vault");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.SecureNoteItem", b =>
+            modelBuilder.Entity("VaultGuard.Models.SecureNoteItem", b =>
                 {
-                    b.HasOne("PasswordManager.Models.PasswordItem", "PasswordItem")
+                    b.HasOne("VaultGuard.Models.PasswordItem", "PasswordItem")
                         .WithOne("SecureNoteItem")
-                        .HasForeignKey("PasswordManager.Models.SecureNoteItem", "PasswordItemId")
+                        .HasForeignKey("VaultGuard.Models.SecureNoteItem", "PasswordItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("SecureNoteItems")
                         .HasForeignKey("UserId");
 
@@ -2303,9 +2303,9 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.SmsSettings", b =>
+            modelBuilder.Entity("VaultGuard.Models.SmsSettings", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("SmsSettings")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2314,18 +2314,18 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.Tag", b =>
+            modelBuilder.Entity("VaultGuard.Models.Tag", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("Tags")
                         .HasForeignKey("UserId");
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.UserBackupSettings", b =>
+            modelBuilder.Entity("VaultGuard.Models.UserBackupSettings", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2334,9 +2334,9 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.UserPasskey", b =>
+            modelBuilder.Entity("VaultGuard.Models.UserPasskey", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("UserPasskeys")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2345,15 +2345,15 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.UserRelationship", b =>
+            modelBuilder.Entity("VaultGuard.Models.UserRelationship", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "ChildUser")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "ChildUser")
                         .WithMany("ParentRelationships")
                         .HasForeignKey("ChildUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "ParentUser")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "ParentUser")
                         .WithMany("ChildRelationships")
                         .HasForeignKey("ParentUserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -2364,9 +2364,9 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("ParentUser");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.UserTwoFactorBackupCode", b =>
+            modelBuilder.Entity("VaultGuard.Models.UserTwoFactorBackupCode", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("TwoFactorBackupCodes")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2375,9 +2375,9 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.Vault", b =>
+            modelBuilder.Entity("VaultGuard.Models.Vault", b =>
                 {
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("Vaults")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2386,15 +2386,15 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.WiFiItem", b =>
+            modelBuilder.Entity("VaultGuard.Models.WiFiItem", b =>
                 {
-                    b.HasOne("PasswordManager.Models.PasswordItem", "PasswordItem")
+                    b.HasOne("VaultGuard.Models.PasswordItem", "PasswordItem")
                         .WithOne("WiFiItem")
-                        .HasForeignKey("PasswordManager.Models.WiFiItem", "PasswordItemId")
+                        .HasForeignKey("VaultGuard.Models.WiFiItem", "PasswordItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PasswordManager.Models.ApplicationUser", "User")
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("WiFiItems")
                         .HasForeignKey("UserId");
 
@@ -2403,7 +2403,7 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.ApplicationUser", b =>
+            modelBuilder.Entity("VaultGuard.Models.ApplicationUser", b =>
                 {
                     b.Navigation("ApiKeys");
 
@@ -2444,12 +2444,12 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("WiFiItems");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.Category", b =>
+            modelBuilder.Entity("VaultGuard.Models.Category", b =>
                 {
                     b.Navigation("PasswordItems");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.Collection", b =>
+            modelBuilder.Entity("VaultGuard.Models.Collection", b =>
                 {
                     b.Navigation("Categories");
 
@@ -2458,7 +2458,7 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("PasswordItems");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.PasswordItem", b =>
+            modelBuilder.Entity("VaultGuard.Models.PasswordItem", b =>
                 {
                     b.Navigation("CreditCardItem");
 
@@ -2473,7 +2473,7 @@ namespace PasswordManager.DAL.Migrations
                     b.Navigation("WiFiItem");
                 });
 
-            modelBuilder.Entity("PasswordManager.Models.Vault", b =>
+            modelBuilder.Entity("VaultGuard.Models.Vault", b =>
                 {
                     b.Navigation("Categories");
 

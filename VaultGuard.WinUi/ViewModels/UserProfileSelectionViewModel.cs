@@ -1,11 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
-using PasswordManager.Models.DTOs.Auth;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Models.DTOs.Auth;
+using VaultGuard.Services.Interfaces;
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
-namespace PasswordManager.WinUi.ViewModels;
+namespace VaultGuard.WinUi.ViewModels;
 
 public class UserProfileSelectionViewModel : BaseViewModel
 {

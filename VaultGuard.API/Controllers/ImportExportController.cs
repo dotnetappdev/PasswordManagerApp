@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
+using VaultGuard.Services.Interfaces;
 
-namespace PasswordManager.API.Controllers;
+namespace VaultGuard.API.Controllers;
 
 [Authorize]
 [ApiController]

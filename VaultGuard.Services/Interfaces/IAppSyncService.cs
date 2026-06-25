@@ -1,6 +1,6 @@
-using PasswordManager.Models.DTOs.Sync;
+using VaultGuard.Models.DTOs.Sync;
 
-namespace PasswordManager.Services.Interfaces;
+namespace VaultGuard.Services.Interfaces;
 
 /// <summary>
 /// Service for synchronizing data with the web API

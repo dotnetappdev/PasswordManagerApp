@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using PasswordManager.Models;
-using PasswordManager.Models.DTOs.Sync;
+using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Sync;
 
-namespace PasswordManager.API.Interfaces;
+namespace VaultGuard.API.Interfaces;
 
 public interface ISyncService
 {

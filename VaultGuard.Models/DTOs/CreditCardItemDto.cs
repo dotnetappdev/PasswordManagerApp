@@ -1,6 +1,6 @@
-using PasswordManager.Models;
+using VaultGuard.Models;
 
-namespace PasswordManager.Models.DTOs;
+namespace VaultGuard.Models.DTOs;
 
 public class CreditCardItemDto
 {

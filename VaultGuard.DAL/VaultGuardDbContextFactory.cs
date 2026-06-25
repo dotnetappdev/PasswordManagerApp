@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace PasswordManager.DAL
+namespace VaultGuard.DAL
 {
-    public class PasswordManagerDbContextFactory : IDesignTimeDbContextFactory<PasswordManagerDbContextApp>
+    public class VaultGuardDbContextFactory : IDesignTimeDbContextFactory<VaultGuardDbContextApp>
     {
-        public PasswordManagerDbContextApp CreateDbContext(string[] args)
+        public VaultGuardDbContextApp CreateDbContext(string[] args)
         {
-            var optionsBuilder = new DbContextOptionsBuilder<PasswordManagerDbContextApp>();
+            var optionsBuilder = new DbContextOptionsBuilder<VaultGuardDbContextApp>();
             // For migrations, we'll use a path in AppData folder to match runtime behavior
             var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var dbPath = Path.Combine(appDataPath, "PasswordManager", "data", "passwordmanager.db");
+            var dbPath = Path.Combine(appDataPath, "VaultGuard", "data", "passwordmanager.db");
             
             // Ensure the directory exists
             var dbDirectory = Path.GetDirectoryName(dbPath);
@@ -25,7 +25,7 @@ namespace PasswordManager.DAL
             }
             
             optionsBuilder.UseSqlite($"Data Source={dbPath}");
-            return new PasswordManagerDbContextApp(optionsBuilder.Options);
+            return new VaultGuardDbContextApp(optionsBuilder.Options);
         }
     }
 }

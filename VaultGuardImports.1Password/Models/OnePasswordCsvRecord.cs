@@ -1,6 +1,6 @@
 using FileHelpers;
 
-namespace PasswordManagerImports.OnePassword.Models;
+namespace VaultGuardImports.OnePassword.Models;
 
 // Old 1Password CSV export format (pre-2023):
 // Title,Url,Username,Password,OTPAuth,Favorite,Archived,Tags,Notes

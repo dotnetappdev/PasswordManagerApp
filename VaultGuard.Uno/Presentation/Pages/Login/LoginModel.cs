@@ -1,11 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using PasswordManager.Uno.Services.Sync;
-using PasswordManager.Uno.Services.Biometric;
+using VaultGuard.Uno.Services.Sync;
+using VaultGuard.Uno.Services.Biometric;
 using System.Net.Http.Json;
 using System.Text;
 
-namespace PasswordManager.Mobile.Presentation.Pages.Login;
+namespace VaultGuard.Mobile.Presentation.Pages.Login;
 
 public partial class LoginModel : ObservableObject
 {
@@ -118,7 +118,7 @@ public partial class LoginModel : ObservableObject
 
         try
         {
-            var client = _httpClientFactory.CreateClient("PasswordManagerApi");
+            var client = _httpClientFactory.CreateClient("VaultGuardApi");
             var loginRequest = new { Email, Password };
             
             var response = await client.PostAsJsonAsync("/api/auth/login", loginRequest);

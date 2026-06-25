@@ -1,8 +1,8 @@
 using FileHelpers;
-using PasswordManager.Imports.Interfaces;
-using PasswordManager.Models;
+using VaultGuard.Imports.Interfaces;
+using VaultGuard.Models;
 
-namespace PasswordManagerImports.Safari;
+namespace VaultGuardImports.Safari;
 
 /// <summary>
 /// Apple Safari browser CSV import plugin
@@ -24,7 +24,7 @@ public class SafariImportPlugin : IPasswordImportPlugin
             DisplayName = "Apple Safari",
             Description = "Import passwords from Safari CSV export files",
             Version = "1.0.0",
-            Author = "PasswordManager Team",
+            Author = "VaultGuard Team",
             Website = "https://www.apple.com/safari",
             Created = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow,

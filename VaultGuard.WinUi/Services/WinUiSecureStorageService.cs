@@ -1,12 +1,12 @@
-using PasswordManager.Services.Interfaces;
+using VaultGuard.Services.Interfaces;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace PasswordManager.WinUi.Services;
+namespace VaultGuard.WinUi.Services;
 
 public class WinUiSecureStorageService : ISecureStorageService
 {
-    private readonly string _applicationName = "PasswordManagerWinUI";
+    private readonly string _applicationName = "VaultGuardWinUI";
 
     public async Task<string?> GetAsync(string key)
     {
