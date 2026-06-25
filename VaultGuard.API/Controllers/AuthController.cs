@@ -494,11 +494,10 @@ public class AuthController : ControllerBase
             user.PhoneNumberConfirmed = true;
             user.PhoneNumberConfirmedAt = DateTime.UtcNow;
             
-            // Store encrypted backup codes (in a real implementation, this would use the user's master key)
-            var masterKey = new byte[32]; // This would come from vault session
-            var backupCodesJson = System.Text.Json.JsonSerializer.Serialize(backupCodes);
-            var encryptedBackupCodes = _passwordCryptoService.EncryptPasswordWithKey(backupCodesJson, masterKey);
-            user.BackupCodes = System.Text.Json.JsonSerializer.Serialize(encryptedBackupCodes);
+            // Store the backup codes as salted PBKDF2 hashes — they are shown to the user once here
+            // and are never recoverable from the database. (Previously these were "encrypted" with an
+            // all-zero key, i.e. effectively plaintext.)
+            user.BackupCodes = _otpService.HashBackupCodesForStorage(backupCodes);
             user.BackupCodesUsed = 0;
 
             await _userManager.UpdateAsync(user);

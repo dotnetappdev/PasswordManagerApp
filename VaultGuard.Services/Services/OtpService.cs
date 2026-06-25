@@ -183,46 +183,83 @@ public class OtpService : IOtpService
         return codes;
     }
 
+    // PBKDF2 work factor for backup-code hashing. Backup codes are high-entropy, so this only needs
+    // to blunt offline guessing, not match the 600k used for the (low-entropy) master password.
+    private const int BackupCodeHashIterations = 100_000;
+
+    /// <summary>
+    /// Serializes recovery/backup codes for storage as salted PBKDF2-SHA256 hashes. The plaintext
+    /// codes are shown to the user once and never persisted in a reversible form — a database leak
+    /// exposes only hashes. (Replaces the previous zero-key "encryption", which was effectively
+    /// plaintext.)
+    /// </summary>
+    public string HashBackupCodesForStorage(IEnumerable<string> codes)
+    {
+        var entries = codes.Select(code =>
+        {
+            var salt = RandomNumberGenerator.GetBytes(16);
+            var hash = Rfc2898DeriveBytes.Pbkdf2(code, salt, BackupCodeHashIterations, HashAlgorithmName.SHA256, 32);
+            return new BackupCodeHash
+            {
+                Salt = Convert.ToBase64String(salt),
+                Hash = Convert.ToBase64String(hash)
+            };
+        }).ToList();
+
+        return JsonSerializer.Serialize(entries);
+    }
+
     public async Task<bool> VerifyBackupCodeAsync(string userId, string backupCode, CancellationToken cancellationToken = default)
     {
         try
         {
             var user = await _context.Users.FindAsync(new object[] { userId }, cancellationToken);
-            if (user?.BackupCodes == null)
+            if (string.IsNullOrEmpty(user?.BackupCodes))
             {
                 return false;
             }
 
-            // Decrypt and parse backup codes
-            var encryptedCodes = user.BackupCodes;
-            var masterKey = new byte[32]; // This would need to come from the vault session in a real implementation
-            
-            // Convert the encrypted JSON string to EncryptedData
-            var encryptedData = JsonSerializer.Deserialize<EncryptedData>(encryptedCodes);
-            if (encryptedData == null)
+            List<BackupCodeHash>? entries;
+            try
             {
+                entries = JsonSerializer.Deserialize<List<BackupCodeHash>>(user.BackupCodes);
+            }
+            catch
+            {
+                // Legacy/corrupt format — treat as no valid codes rather than throwing.
                 return false;
             }
-            
-            var decryptedCodes = _cryptoService.DecryptAes256Gcm(encryptedData, masterKey);
-            
-            var backupCodes = JsonSerializer.Deserialize<List<string>>(decryptedCodes);
-            if (backupCodes == null || !backupCodes.Contains(backupCode))
+
+            if (entries == null || entries.Count == 0)
             {
                 return false;
             }
 
-            // Remove the used backup code
-            backupCodes.Remove(backupCode);
+            // Constant-time compare each stored hash against the supplied code.
+            BackupCodeHash? match = null;
+            foreach (var entry in entries)
+            {
+                var salt = Convert.FromBase64String(entry.Salt);
+                var computed = Rfc2898DeriveBytes.Pbkdf2(backupCode, salt, BackupCodeHashIterations, HashAlgorithmName.SHA256, 32);
+                if (CryptographicOperations.FixedTimeEquals(computed, Convert.FromBase64String(entry.Hash)))
+                {
+                    match = entry;
+                    break;
+                }
+            }
+
+            if (match == null)
+            {
+                return false;
+            }
+
+            // Single-use: remove the consumed code and persist the remaining hashes.
+            entries.Remove(match);
             user.BackupCodesUsed++;
-            
-            // Re-encrypt and save
-            var updatedCodesJson = JsonSerializer.Serialize(backupCodes);
-            var encryptedUpdatedCodes = _cryptoService.EncryptAes256Gcm(updatedCodesJson, masterKey);
-            user.BackupCodes = JsonSerializer.Serialize(encryptedUpdatedCodes);
-            
+            user.BackupCodes = JsonSerializer.Serialize(entries);
+
             await _context.SaveChangesAsync(cancellationToken);
-            
+
             _logger.LogInformation("Backup code used successfully for user {UserId}", userId);
             return true;
         }
@@ -231,6 +268,13 @@ public class OtpService : IOtpService
             _logger.LogError(ex, "Exception occurred while verifying backup code for user {UserId}", userId);
             return false;
         }
+    }
+
+    /// <summary>A salted PBKDF2 hash of a single backup/recovery code.</summary>
+    private sealed class BackupCodeHash
+    {
+        public string Salt { get; set; } = string.Empty;
+        public string Hash { get; set; } = string.Empty;
     }
 
     public async Task ClearPendingOtpAsync(string userId, CancellationToken cancellationToken = default)
