@@ -79,7 +79,13 @@ public interface IOtpService
     /// <param name="count">Number of backup codes to generate</param>
     /// <returns>List of backup codes</returns>
     List<string> GenerateBackupCodes(int count = 10);
-    
+
+    /// <summary>
+    /// Serializes backup/recovery codes for storage as salted PBKDF2 hashes (never reversible).
+    /// The plaintext codes are shown to the user once and must not be persisted in clear form.
+    /// </summary>
+    string HashBackupCodesForStorage(IEnumerable<string> codes);
+
     /// <summary>
     /// Verify backup code
     /// </summary>
