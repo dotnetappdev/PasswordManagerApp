@@ -1,0 +1,36 @@
+name: Build MAUI
+
+on:
+  push:
+    branches: [ devmain, main ]
+    tags:     [ 'v*' ]
+  pull_request:
+    branches: [ devmain, main ]
+
+env:
+  PROJECT: VaultGuard.App/VaultGuard.App.csproj
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui --skip-manifest-update
+
+      - name: Restore
+        run: dotnet restore ${{ env.PROJECT }}
+
+      # The csproj targets net10.0-windows when building on Windows, so this validates the
+      # Windows head of the MAUI app (and, transitively, the shared Blazor UI it hosts).
+      - name: Build
+        run: dotnet build ${{ env.PROJECT }} --configuration Release --no-restore
