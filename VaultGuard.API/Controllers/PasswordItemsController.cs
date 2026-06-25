@@ -44,6 +44,28 @@ public class PasswordItemsController : ControllerBase
         _logger = logger;
     }
 
+    // Resolves the calling user from the identity/API-key claims.
+    private string? GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    /// <summary>
+    /// Loads a password item and confirms the caller is allowed to act on it. Returns 404 (not 403)
+    /// on a missing item OR an ownership/permission mismatch, so we never disclose that another
+    /// user's item id exists. This is the single guard used by every id-scoped endpoint to prevent
+    /// IDOR (one user reading/mutating another user's items by guessing integer ids).
+    /// </summary>
+    private async Task<(PasswordItemDto? Item, ActionResult? Error)> LoadOwnedItemAsync(int id, string permission)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+            return (null, Unauthorized());
+
+        var item = await _passwordItemService.GetByIdAsync(id);
+        if (item == null || !await _permissionService.CanAccessResourceAsync(userId, item.UserId, permission))
+            return (null, NotFound($"Password item with ID {id} not found"));
+
+        return (item, null);
+    }
+
     /// <summary>
     /// Get all password items (with permission checks)
     /// </summary>
@@ -92,9 +114,9 @@ public class PasswordItemsController : ControllerBase
     {
         try
         {
-            var item = await _passwordItemService.GetByIdAsync(id);
-            if (item == null)
-                return NotFound($"Password item with ID {id} not found");
+            var (item, error) = await LoadOwnedItemAsync(id, Permissions.Passwords.View);
+            if (error != null)
+                return error;
 
             return Ok(item);
         }
@@ -113,8 +135,13 @@ public class PasswordItemsController : ControllerBase
     {
         try
         {
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            // Scope to the caller's own items so one user can't enumerate another's via a shared id.
             var items = await _passwordItemService.GetByCollectionIdAsync(collectionId);
-            return Ok(items);
+            return Ok(items.Where(i => i.UserId == userId));
         }
         catch (Exception ex)
         {
@@ -131,8 +158,12 @@ public class PasswordItemsController : ControllerBase
     {
         try
         {
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
             var items = await _passwordItemService.GetByCategoryIdAsync(categoryId);
-            return Ok(items);
+            return Ok(items.Where(i => i.UserId == userId));
         }
         catch (Exception ex)
         {
@@ -149,8 +180,12 @@ public class PasswordItemsController : ControllerBase
     {
         try
         {
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
             var items = await _passwordItemService.GetByTagIdAsync(tagId);
-            return Ok(items);
+            return Ok(items.Where(i => i.UserId == userId));
         }
         catch (Exception ex)
         {
@@ -170,8 +205,12 @@ public class PasswordItemsController : ControllerBase
             if (string.IsNullOrWhiteSpace(searchTerm))
                 return BadRequest("Search term cannot be empty");
 
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
             var items = await _passwordItemService.SearchAsync(searchTerm);
-            return Ok(items);
+            return Ok(items.Where(i => i.UserId == userId));
         }
         catch (Exception ex)
         {
@@ -282,6 +321,10 @@ public class PasswordItemsController : ControllerBase
     {
         try
         {
+            var (_, error) = await LoadOwnedItemAsync(id, Permissions.Passwords.Delete);
+            if (error != null)
+                return error;
+
             var success = await _passwordItemService.DeleteAsync(id);
             if (!success)
                 return NotFound($"Password item with ID {id} not found");
@@ -303,6 +346,10 @@ public class PasswordItemsController : ControllerBase
     {
         try
         {
+            var (_, error) = await LoadOwnedItemAsync(id, Permissions.Passwords.Delete);
+            if (error != null)
+                return error;
+
             var success = await _passwordItemService.SoftDeleteAsync(id);
             if (!success)
                 return NotFound($"Password item with ID {id} not found");
@@ -324,6 +371,10 @@ public class PasswordItemsController : ControllerBase
     {
         try
         {
+            var (_, error) = await LoadOwnedItemAsync(id, Permissions.Passwords.Delete);
+            if (error != null)
+                return error;
+
             var success = await _passwordItemService.RestoreAsync(id);
             if (!success)
                 return NotFound($"Password item with ID {id} not found or not deleted");
@@ -345,18 +396,9 @@ public class PasswordItemsController : ControllerBase
     {
         try
         {
-            var userId = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized();
-            }
-
-            // Get the item to check ownership
-            var existingItem = await _passwordItemService.GetByIdAsync(id);
-            if (existingItem == null || existingItem.UserId != userId)
-            {
-                return NotFound($"Password item with ID {id} not found");
-            }
+            var (_, error) = await LoadOwnedItemAsync(id, Permissions.Passwords.Edit);
+            if (error != null)
+                return error;
 
             var success = await _passwordItemService.ToggleFavoriteAsync(id);
             if (!success)
@@ -379,6 +421,10 @@ public class PasswordItemsController : ControllerBase
     {
         try
         {
+            var (_, error) = await LoadOwnedItemAsync(id, Permissions.Passwords.Edit);
+            if (error != null)
+                return error;
+
             var success = await _passwordItemService.ArchiveAsync(id);
             if (!success)
                 return NotFound($"Password item with ID {id} not found");
@@ -400,6 +446,10 @@ public class PasswordItemsController : ControllerBase
     {
         try
         {
+            var (_, error) = await LoadOwnedItemAsync(id, Permissions.Passwords.Edit);
+            if (error != null)
+                return error;
+
             var success = await _passwordItemService.UnarchiveAsync(id);
             if (!success)
                 return NotFound($"Password item with ID {id} not found");
