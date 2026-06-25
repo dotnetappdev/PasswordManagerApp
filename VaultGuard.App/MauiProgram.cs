@@ -127,6 +127,10 @@ public static class MauiProgram
 		builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 		builder.Services.AddScoped<ITwoFactorService, TwoFactorService>();
 		builder.Services.AddScoped<IDeviceService, DeviceService>();
+
+		// "Remember this device" master-key cache (platform SecureStorage) so a 2FA-enabled
+		// account can sign in code-only on a trusted device.
+		builder.Services.AddScoped<VaultGuard.Components.Shared.Services.IMasterKeyCacheService, VaultGuard.App.Services.MauiMasterKeyCacheService>();
 		builder.Services.AddScoped<IPasskeyService, PasskeyService>();
 		builder.Services.AddScoped<ICustomFieldService, CustomFieldService>();
 

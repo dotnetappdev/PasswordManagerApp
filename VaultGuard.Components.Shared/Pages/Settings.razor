@@ -15,6 +15,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject IServiceProvider ServiceProvider
+@inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.Medium" Style="padding: 20px;">
     <MudStack Spacing="4">
@@ -401,6 +402,19 @@
                 <MudSwitch T="bool" Value="requireCodeOnItemDelete" Color="Color.Primary"
                            Label="Deleting a password item"
                            ValueChanged="@(async (bool v) => { requireCodeOnItemDelete = v; await TwoFactorGate.SetToggleAsync(JSRuntime, TwoFactorGate.GateAction.ItemDelete, v); })" />
+
+                <MudDivider Class="my-2" />
+                <MudText Typo="Typo.subtitle2">This device</MudText>
+                <MudText Typo="Typo.caption" Style="color:#cccccc;">
+                    When 2FA is on, this device is remembered so you can sign in with just your authenticator code.
+                    Forget it to require your master password again on the next sign-in.
+                </MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Warning"
+                           StartIcon="@Icons.Material.Filled.PhonelinkErase"
+                           Style="align-self:flex-start;"
+                           OnClick="ForgetThisDevice">
+                    Forget this device
+                </MudButton>
             </MudStack>
         </MudPaper>
 
@@ -700,6 +714,30 @@
         await LoadUserProfile();
         await LoadApiKeys();
         await LoadDatabaseConfiguration();
+        requireCodeOnVaultDelete = await TwoFactorGate.GetToggleAsync(JSRuntime, TwoFactorGate.GateAction.VaultDelete);
+        requireCodeOnItemDelete = await TwoFactorGate.GetToggleAsync(JSRuntime, TwoFactorGate.GateAction.ItemDelete);
+    }
+
+    private bool requireCodeOnVaultDelete = false;
+    private bool requireCodeOnItemDelete = false;
+
+    private async Task ForgetThisDevice()
+    {
+        try
+        {
+            var authService = ServiceProvider.GetService(typeof(IAuthService)) as IAuthService;
+            var cache = ServiceProvider.GetService(typeof(IMasterKeyCacheService)) as IMasterKeyCacheService;
+            var userId = authService is null ? null : await authService.GetCurrentUserIdAsync();
+            if (cache is not null && !string.IsNullOrEmpty(userId))
+            {
+                await cache.ForgetAsync(userId);
+                Snackbar.Add("This device has been forgotten. You'll need your master password next time.", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Couldn't forget this device: {ex.Message}", Severity.Error);
+        }
     }
 
     private AppThemeMode SelectedTheme

@@ -7,6 +7,8 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject IDialogService DialogService
+@inject IMasterKeyCacheService MasterKeyCache
+@inject ITwoFactorService TwoFactorService
 @using VaultGuard.Components.Shared.Services
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="pa-0" Style="height: 100vh; display: flex;">
@@ -191,21 +193,46 @@
                         </MudStack>
                     }
 
-                    <!-- Master Password Input -->
-                    <MudForm @ref="loginForm" @bind-IsValid="@loginFormValid">
+                    @if (codeOnlyMode)
+                    {
+                        <!-- 2FA enabled + device remembered: authenticator code replaces the master password -->
                         <MudStack Spacing="3">
-                            <MudTextField @bind-value="masterPassword" 
-                                         Label="Master Password" 
+                            <MudText Typo="Typo.body2" Style="color:#B0B0B0; text-align:center;">
+                                Two-factor authentication is on for this profile. Enter your @(useRecoveryCode ? "recovery" : "authenticator") code.
+                            </MudText>
+                            <MudTextField @bind-value="twoFactorCode"
+                                         Label="@(useRecoveryCode ? "Recovery code" : "Authenticator code")"
                                          Variant="Variant.Outlined"
                                          Required="true"
-                                         InputType="@(showPassword ? InputType.Text : InputType.Password)"
+                                         MaxLength="12"
                                          Style="background-color: #2a2a2a; min-width: 300px;"
-                                         Adornment="Adornment.End"
-                                         AdornmentIcon="@(showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
-                                         OnAdornmentClick="TogglePasswordVisibility"
                                          @onkeyup="OnKeyUp" />
+                            <MudCheckBox @bind-Value="useRecoveryCode" Color="Color.Primary" Dense="true"
+                                         Label="Use a recovery code" />
+                            <MudButton Variant="Variant.Text" Color="Color.Secondary" Style="align-self:center;"
+                                      OnClick="UseMasterPasswordInstead">
+                                Use master password instead
+                            </MudButton>
                         </MudStack>
-                    </MudForm>
+                    }
+                    else
+                    {
+                        <!-- Master Password Input -->
+                        <MudForm @ref="loginForm" @bind-IsValid="@loginFormValid">
+                            <MudStack Spacing="3">
+                                <MudTextField @bind-value="masterPassword"
+                                             Label="Master Password"
+                                             Variant="Variant.Outlined"
+                                             Required="true"
+                                             InputType="@(showPassword ? InputType.Text : InputType.Password)"
+                                             Style="background-color: #2a2a2a; min-width: 300px;"
+                                             Adornment="Adornment.End"
+                                             AdornmentIcon="@(showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                                             OnAdornmentClick="TogglePasswordVisibility"
+                                             @onkeyup="OnKeyUp" />
+                            </MudStack>
+                        </MudForm>
+                    }
 
                     @if (!string.IsNullOrEmpty(errorMessage))
                     {
@@ -222,11 +249,11 @@
                                   StartIcon="@Icons.Material.Filled.ArrowBack">
                             Back
                         </MudButton>
-                        <MudButton Variant="Variant.Filled" 
-                                  Color="Color.Primary" 
+                        <MudButton Variant="Variant.Filled"
+                                  Color="Color.Primary"
                                   FullWidth="true"
-                                  Disabled="isLoggingIn || !loginFormValid"
-                                  OnClick="Login"
+                                  Disabled="@(isLoggingIn || (codeOnlyMode ? string.IsNullOrWhiteSpace(twoFactorCode) : !loginFormValid))"
+                                  OnClick="SubmitAsync"
                                   StartIcon="@Icons.Material.Filled.Lock">
                             @if (isLoggingIn)
                             {
@@ -257,6 +284,12 @@
     private bool showPassword = false;
     private bool isLoggingIn = false;
     private bool isCreating = false;
+
+    // 2FA / remember-this-device state
+    private bool codeOnlyMode = false;   // 2FA enabled AND this device is remembered → ask code only
+    private bool twoFaEnabled = false;
+    private string twoFactorCode = "";
+    private bool useRecoveryCode = false;
     
     private MudForm? loginForm;
     private MudForm? createProfileForm;
@@ -295,13 +328,91 @@
         }
     }
 
-    private void SelectProfile(UserDto profile)
+    private async Task SelectProfile(UserDto profile)
     {
         selectedProfile = profile;
         showProfileSelection = false;
         showCreateProfile = false;
         masterPassword = "";
+        twoFactorCode = "";
+        useRecoveryCode = false;
         errorMessage = "";
+
+        // If this profile has 2FA AND this device is remembered, swap to code-only entry —
+        // the authenticator code replaces the master password (the key is cached on the device).
+        try
+        {
+            twoFaEnabled = await UserProfileService.IsTwoFactorEnabledAsync(profile.Id);
+            codeOnlyMode = twoFaEnabled && await MasterKeyCache.HasCachedAsync(profile.Id);
+        }
+        catch
+        {
+            twoFaEnabled = false;
+            codeOnlyMode = false;
+        }
+    }
+
+    private void UseMasterPasswordInstead()
+    {
+        // Escape hatch when the device is remembered but the user would rather type their password.
+        codeOnlyMode = false;
+        twoFactorCode = "";
+        errorMessage = "";
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (codeOnlyMode)
+            await QuickUnlockAsync();
+        else
+            await Login();
+    }
+
+    private async Task QuickUnlockAsync()
+    {
+        if (selectedProfile == null || string.IsNullOrWhiteSpace(twoFactorCode))
+            return;
+
+        try
+        {
+            isLoggingIn = true;
+            errorMessage = "";
+
+            var verified = await TwoFactorService.VerifyTwoFactorCodeAsync(
+                selectedProfile.Id, twoFactorCode.Replace(" ", string.Empty).Trim(), useRecoveryCode);
+            if (!verified)
+            {
+                errorMessage = useRecoveryCode ? "That recovery code didn't match." : "That code didn't match. Try again.";
+                return;
+            }
+
+            var cachedPassword = await MasterKeyCache.GetCachedAsync(selectedProfile.Id);
+            if (string.IsNullOrEmpty(cachedPassword))
+            {
+                // The remembered key was cleared between selecting the profile and submitting —
+                // fall back to the master-password flow.
+                codeOnlyMode = false;
+                errorMessage = "This device is no longer remembered. Please enter your master password.";
+                return;
+            }
+
+            var success = await AuthService.LoginAsync(selectedProfile.Email, cachedPassword);
+            if (success)
+                Navigation.NavigateTo("/");
+            else
+            {
+                codeOnlyMode = false;
+                errorMessage = "Saved sign-in failed. Please enter your master password.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Verification failed: {ex.Message}";
+        }
+        finally
+        {
+            isLoggingIn = false;
+        }
     }
 
     private void ShowCreateProfile()
@@ -362,6 +473,10 @@
                         errorMessage = "Two-factor verification is required to sign in.";
                         return;
                     }
+
+                    // Remember this device so future sign-ins for this 2FA account can use the
+                    // authenticator code alone (the master password is stored encrypted at rest).
+                    try { await MasterKeyCache.CacheAsync(selectedProfile.Id, masterPassword); } catch { }
                 }
 
                 Navigation.NavigateTo("/");

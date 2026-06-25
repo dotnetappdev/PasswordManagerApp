@@ -112,6 +112,11 @@ public class LoginViewModel : BaseViewModel
                     {
                         PageTitle = "Welcome back!";
                     }
+
+                    // Single-user setups skip the profile picker, so evaluate 2FA quick-unlock here
+                    // too — otherwise a 2FA-enabled single user with a cached master password would
+                    // still be shown the master-password box instead of the authenticator field.
+                    _ = EvaluateTwoFactorQuickUnlockAsync(singleUser);
                 }
                 else
                 {
@@ -457,6 +462,40 @@ public class LoginViewModel : BaseViewModel
             // If we have a selected user, we need to authenticate against that specific user
             if (SelectedUser != null)
             {
+                // Enforce 2FA as a genuine second factor. If the profile has 2FA enabled, the
+                // master password ALONE must NOT unlock the vault — previously it did, silently
+                // skipping the code. Verify the password, cache it (so the existing TOTP path can
+                // finish the unlock), then switch the UI to the authenticator-code step.
+                if (_twoFactorService != null && !RequiresTwoFactor)
+                {
+                    var status = await _twoFactorService.GetTwoFactorStatusAsync(SelectedUser.Id);
+                    if (status.IsEnabled)
+                    {
+                        var passwordOk = await _userProfileService.VerifyMasterPasswordAsync(SelectedUser.Id, MasterPassword);
+                        if (!passwordOk)
+                        {
+                            var userDetails = await _userProfileService.GetUserByIdAsync(SelectedUser.Id);
+                            ErrorMessage = userDetails is UserProfileDetailsDto d && !string.IsNullOrEmpty(d.MasterPasswordHint)
+                                ? $"Incorrect master password. Hint: {d.MasterPasswordHint}"
+                                : "Incorrect master password. Please try again.";
+                            return false;
+                        }
+
+                        // Cache the verified password so AuthenticateWithTwoFactorAsync can complete
+                        // the unlock once the code is verified — the user won't retype it.
+                        if (_masterPasswordCacheService != null)
+                        {
+                            await _masterPasswordCacheService.CacheMasterPasswordAsync(SelectedUser.Id, MasterPassword);
+                        }
+
+                        UseBackupCode = false;
+                        TwoFactorCode = string.Empty;
+                        ErrorMessage = string.Empty;
+                        RequiresTwoFactor = true; // Flip the UI to the authenticator-code step.
+                        return false; // Not signed in yet — awaiting the 2FA code.
+                    }
+                }
+
                 return await AuthenticateSpecificUserAsync(SelectedUser, MasterPassword);
             }
 
@@ -465,6 +504,19 @@ public class LoginViewModel : BaseViewModel
 
             if (loginResult)
             {
+                // Cache the master password (DPAPI) for the authenticated user so that a 2FA-enabled
+                // profile can quick-unlock next time with just the authenticator code — no retyping.
+                // Without this the fallback path never armed the cache and 2FA users kept being asked
+                // for their master password every sign-in.
+                if (_masterPasswordCacheService != null)
+                {
+                    var uid = _authService.CurrentUser?.Id ?? await _authService.GetCurrentUserIdAsync();
+                    if (!string.IsNullOrEmpty(uid))
+                    {
+                        await _masterPasswordCacheService.CacheMasterPasswordAsync(uid, MasterPassword);
+                    }
+                }
+
                 return true;
             }
             else

@@ -194,6 +194,11 @@ builder.Services.AddScoped<IAuditLogService, VaultGuard.Services.Services.AuditL
 builder.Services.AddScoped<ITwoFactorService, VaultGuard.Services.Services.TwoFactorService>();
 builder.Services.AddScoped<IDeviceService, VaultGuard.Services.Services.DeviceService>();
 
+// "Remember this device" master-key cache (encrypted with server data-protection keys) so a
+// 2FA-enabled account can sign in code-only on a remembered browser.
+builder.Services.AddScoped<Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedLocalStorage>();
+builder.Services.AddScoped<VaultGuard.Components.Shared.Services.IMasterKeyCacheService, VaultGuard.Web.Services.WebMasterKeyCacheService>();
+
 // Cloud backup services
 builder.Services.AddScoped<VaultGuard.Services.Interfaces.IBackupEncryptionService, VaultGuard.Services.Services.BackupEncryptionService>();
 builder.Services.AddScoped<VaultGuard.Services.Interfaces.IDatabaseBackupService, VaultGuard.Services.Services.DatabaseBackupService>();
