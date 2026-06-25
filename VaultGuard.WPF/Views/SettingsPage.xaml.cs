@@ -16,6 +16,7 @@ using VaultGuard.DAL;
 using VaultGuard.DAL.Seed;
 using Microsoft.EntityFrameworkCore;
 using Sentry;
+using VaultGuard.ExceptionReporting;
 
 namespace VaultGuard.WPF.Views;
 
@@ -1610,20 +1611,54 @@ public sealed partial class SettingsPage : Page
             };
 
             var result = await passwordDialog.ShowAsync();
-            var passwordBox = (passwordDialog.Content as StackPanel)?.Children.OfType<PasswordBox>().FirstOrDefault();
-            if (result == ModernWpf.Controls.ContentDialogResult.Primary && passwordBox != null)
+            if (result != ModernWpf.Controls.ContentDialogResult.Primary) return;
+
+            var panel = passwordDialog.Content as StackPanel;
+            var passwordBox = panel?.Children.OfType<PasswordBox>().FirstOrDefault();
+            if (passwordBox == null) return;
+
+            if (string.IsNullOrEmpty(passwordBox.Password))
             {
-                var success = await _viewModel.CreateCloudBackupAsync(passwordBox.Password);
-
-                var message = success ? "Backup created successfully!" : "Backup creation failed. Please try again.";
-                var dialog = new VaultGuard.WPF.Dialogs.BackupResultDialog(
-                    success,
-                    message,
-                    _viewModel.LastBackupException,
-                    _viewModel.LastBackupErrorMessage);
-
-                await dialog.ShowAsync();
+                await new ModernWpf.Controls.ContentDialog
+                {
+                    Title = "Master password required",
+                    Content = "Please enter your master password so the backup can be encrypted.",
+                    CloseButtonText = "OK"
+                }.ShowAsync();
+                return;
             }
+
+            // If 2FA is enabled, require and verify a valid authenticator (or backup) code first.
+            if (await IsTwoFactorEnabledAsync())
+            {
+                var codeBox = panel?.Children.OfType<TextBox>().FirstOrDefault();
+                var code = codeBox?.Text?.Trim() ?? string.Empty;
+                if (!await VerifyBackupTwoFactorAsync(code))
+                {
+                    await new ModernWpf.Controls.ContentDialog
+                    {
+                        Title = "Verification failed",
+                        Content = "That two-factor code wasn't valid. Please check your authenticator app and try again.",
+                        CloseButtonText = "OK"
+                    }.ShowAsync();
+                    return;
+                }
+            }
+
+            var success = await _viewModel.CreateCloudBackupAsync(passwordBox.Password);
+
+            var message = success ? "Backup created successfully!" : "Backup creation failed. Please try again.";
+            var dialog = new VaultGuard.WPF.Dialogs.BackupResultDialog(
+                success,
+                message,
+                _viewModel.LastBackupException,
+                _viewModel.LastBackupErrorMessage);
+
+            await dialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            await ReportBackupErrorAsync("CreateCloudBackup", ex);
         }
         finally
         {
@@ -1633,9 +1668,14 @@ public sealed partial class SettingsPage : Page
 
     private async void RefreshBackupsButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_viewModel != null)
+        if (_viewModel == null) return;
+        try
         {
             await _viewModel.LoadAvailableBackupsAsync();
+        }
+        catch (Exception ex)
+        {
+            await ReportBackupErrorAsync("RefreshBackups", ex);
         }
     }
 
@@ -1653,21 +1693,102 @@ public sealed partial class SettingsPage : Page
         _cloudBackupDialogBusy = true;
         try
         {
-            var success = await _viewModel.RestoreFromFileAsync();
+            // 1. Pick the backup file.
+            var filePicker = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Select Backup File",
+                Filter = "VaultGuard backups (*.pwmbackup)|*.pwmbackup|All files (*.*)|*.*",
+                FilterIndex = 1,
+                CheckFileExists = true,
+                CheckPathExists = true
+            };
+            if (filePicker.ShowDialog() != true) return;
+            var filePath = filePicker.FileName;
+
+            // 2. Confirm — restoring replaces everything — and collect the master password (+2FA if on).
+            var warningPanel = new StackPanel { MinWidth = 360 };
+            var warningBorder = new Border
+            {
+                Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(30, 220, 50, 50)),
+                BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(100, 220, 50, 50)),
+                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(12, 10, 12, 10), Margin = new Thickness(0, 0, 0, 14)
+            };
+            warningBorder.Child = new TextBlock
+            {
+                Text = "This will permanently remove all your current passwords, notes, credit cards, and Wi-Fi entries and replace them with the backup.\n\nThis cannot be undone.",
+                TextWrapping = TextWrapping.Wrap, FontSize = 13, LineHeight = 20
+            };
+            warningPanel.Children.Add(warningBorder);
+            warningPanel.Children.Add(new TextBlock { Text = $"File:  {System.IO.Path.GetFileName(filePath)}", FontSize = 12, Opacity = 0.7, Margin = new Thickness(0, 0, 0, 12) });
+
+            warningPanel.Children.Add(new TextBlock { Text = "Master password", FontSize = 12, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 6) });
+            var pwBox = new PasswordBox();
+            ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(pwBox, "Enter the backup's master password");
+            warningPanel.Children.Add(pwBox);
+
+            var twoFaEnabled = await IsTwoFactorEnabledAsync();
+            if (twoFaEnabled)
+            {
+                warningPanel.Children.Add(new TextBlock { Text = "Two-factor code", FontSize = 12, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 16, 0, 6) });
+                var codeBox = new TextBox { MaxLength = 8 };
+                ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(codeBox, "6-digit code");
+                warningPanel.Children.Add(codeBox);
+            }
+
+            var confirmDialog = new ModernWpf.Controls.ContentDialog
+            {
+                Title = "Restore from File",
+                Content = warningPanel,
+                PrimaryButtonText = "Restore All",
+                CloseButtonText = "Cancel",
+            };
+            if (await confirmDialog.ShowAsync() != ModernWpf.Controls.ContentDialogResult.Primary) return;
+
+            if (string.IsNullOrEmpty(pwBox.Password))
+            {
+                await new ModernWpf.Controls.ContentDialog
+                {
+                    Title = "Master password required",
+                    Content = "Please enter the master password the backup was encrypted with.",
+                    CloseButtonText = "OK"
+                }.ShowAsync();
+                return;
+            }
+
+            // 3. Verify 2FA when enabled.
+            if (twoFaEnabled)
+            {
+                var code = warningPanel.Children.OfType<TextBox>().FirstOrDefault()?.Text?.Trim() ?? string.Empty;
+                if (!await VerifyBackupTwoFactorAsync(code))
+                {
+                    await new ModernWpf.Controls.ContentDialog
+                    {
+                        Title = "Verification failed",
+                        Content = "That two-factor code wasn't valid. Please check your authenticator app and try again.",
+                        CloseButtonText = "OK"
+                    }.ShowAsync();
+                    return;
+                }
+            }
+
+            // 4. Restore.
+            var success = await _viewModel.RestoreFromFileAsync(filePath, pwBox.Password);
 
             var message = success ?
-                "Database restored successfully from file!" :
+                "Database restored successfully from file. Please restart the app." :
                 "Failed to restore database from file. Please check the file and master password.";
 
-            var dialog = new ModernWpf.Controls.ContentDialog
+            await new ModernWpf.Controls.ContentDialog
             {
-                Title = success ? "Success" : "Error",
+                Title = success ? "Restored" : "Error",
                 Content = message,
                 CloseButtonText = "OK",
-                // WPF: XamlRoot not needed
-            };
-
-            await dialog.ShowAsync();
+            }.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            await ReportBackupErrorAsync("RestoreFromFile", ex);
         }
         finally
         {
@@ -1730,6 +1851,10 @@ public sealed partial class SettingsPage : Page
             await resultDlg.ShowAsync();
         }
         }
+        catch (Exception ex)
+        {
+            await ReportBackupErrorAsync("RestoreCloudBackup", ex);
+        }
         finally
         {
             _cloudBackupDialogBusy = false;
@@ -1789,6 +1914,10 @@ public sealed partial class SettingsPage : Page
             }.ShowAsync();
         }
         }
+        catch (Exception ex)
+        {
+            await ReportBackupErrorAsync("BrowseBackup", ex);
+        }
         finally
         {
             _cloudBackupDialogBusy = false;
@@ -1829,6 +1958,10 @@ public sealed partial class SettingsPage : Page
                 }
             }
         }
+        catch (Exception ex)
+        {
+            await ReportBackupErrorAsync("DeleteBackup", ex);
+        }
         finally
         {
             _cloudBackupDialogBusy = false;
@@ -1864,24 +1997,118 @@ public sealed partial class SettingsPage : Page
     // Returns the wrapping panel (label + PasswordBox) — the PasswordBox is already parented inside
     // it, so it must never be returned/assigned as Content on its own (WPF throws "AddVisualChild" if
     // a Visual already has a parent when you try to give it a second one).
-    private Task<StackPanel> CreateMasterPasswordInput()
+    private async Task<StackPanel> CreateMasterPasswordInput()
     {
-        var stackPanel = new StackPanel { };
+        var panel = new StackPanel { MinWidth = 360 };
 
-        stackPanel.Children.Add(new TextBlock
+        panel.Children.Add(new TextBlock
         {
-            Text = "Enter your master password:",
-            Style = Application.Current.Resources["ModernBodyStyle"] as Style
+            Text = "Your backup is encrypted with your master password. You'll need the same password to restore it, so keep it safe.",
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 13,
+            Opacity = 0.75,
+            Margin = new Thickness(0, 0, 0, 18)
         });
 
-        var passwordBox = new PasswordBox
+        panel.Children.Add(new TextBlock
         {
-            // PlaceholderText = "Master Password",
-            Width = 300
-        };
-        stackPanel.Children.Add(passwordBox);
+            Text = "Master password",
+            FontSize = 12,
+            FontWeight = FontWeights.SemiBold,
+            Margin = new Thickness(0, 0, 0, 6)
+        });
 
-        return Task.FromResult(stackPanel);
+        var passwordBox = new PasswordBox();
+        ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(passwordBox, "Enter your master password");
+        panel.Children.Add(passwordBox);
+
+        // Only surface the 2FA field when the account actually has two-factor enabled.
+        if (await IsTwoFactorEnabledAsync())
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Two-factor code",
+                FontSize = 12,
+                FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(0, 16, 0, 6)
+            });
+
+            var codeBox = new TextBox { MaxLength = 8 };
+            ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(codeBox, "6-digit code");
+            panel.Children.Add(codeBox);
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Enter the code from your authenticator app, or one of your backup codes.",
+                FontSize = 11,
+                TextWrapping = TextWrapping.Wrap,
+                Opacity = 0.6,
+                Margin = new Thickness(0, 6, 0, 0)
+            });
+        }
+
+        return panel;
+    }
+
+    // Central place to log + Sentry-report a backup-related failure and tell the user about it.
+    private async Task ReportBackupErrorAsync(string operation, Exception ex)
+    {
+        await _logger.LogErrorAsync("SettingsPage", $"Backup operation '{operation}' failed", ex);
+        _serviceProvider?.GetService<IExceptionReporter>()?.CaptureException(ex,
+            new Dictionary<string, string> { ["operation"] = operation });
+        try
+        {
+            VaultGuard.WPF.Services.ToastService.Instance.Show(
+                $"Something went wrong: {ex.Message}", VaultGuard.WPF.Services.ToastType.Error);
+        }
+        catch { /* toast is best-effort */ }
+    }
+
+    // True when the signed-in user has two-factor authentication enabled.
+    private async Task<bool> IsTwoFactorEnabledAsync()
+    {
+        try
+        {
+            if (_serviceProvider == null) return false;
+            var twoFactorService = _serviceProvider.GetService<ITwoFactorService>();
+            var userId = _authService?.CurrentUser?.Id ?? await _authService?.GetCurrentUserIdAsync()!;
+            if (twoFactorService == null || string.IsNullOrEmpty(userId)) return false;
+
+            var status = await twoFactorService.GetTwoFactorStatusAsync(userId);
+            return status.IsEnabled;
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Failed to check two-factor status for backup", ex);
+            _serviceProvider?.GetService<IExceptionReporter>()?.CaptureException(ex,
+                new Dictionary<string, string> { ["operation"] = "BackupTwoFactorStatus" });
+            // Fail safe: if we can't determine 2FA state, don't block the backup behind a code we can't verify.
+            return false;
+        }
+    }
+
+    // Verifies a TOTP / backup code for the current user before a backup is allowed.
+    private async Task<bool> VerifyBackupTwoFactorAsync(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return false;
+        try
+        {
+            if (_serviceProvider == null) return false;
+            var twoFactorService = _serviceProvider.GetService<ITwoFactorService>();
+            var userId = _authService?.CurrentUser?.Id ?? await _authService?.GetCurrentUserIdAsync()!;
+            if (twoFactorService == null || string.IsNullOrEmpty(userId)) return false;
+
+            // Treat a longer code as a backup code (TOTP codes are 6 digits).
+            var isBackupCode = code.Length > 6;
+            return await twoFactorService.VerifyTwoFactorCodeAsync(userId, code, isBackupCode);
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Failed to verify two-factor code for backup", ex);
+            _serviceProvider?.GetService<IExceptionReporter>()?.CaptureException(ex,
+                new Dictionary<string, string> { ["operation"] = "BackupTwoFactorVerify" });
+            return false;
+        }
     }
 
     // Handle changes to the selected database provider (show/hide sqlite path)

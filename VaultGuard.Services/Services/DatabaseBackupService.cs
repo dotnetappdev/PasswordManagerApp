@@ -2,8 +2,10 @@ using System.IO.Compression;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 using VaultGuard.Services.Interfaces;
 using VaultGuard.DAL;
+using VaultGuard.DAL.Interfaces;
 using VaultGuard.Models.DTOs;
 using VaultGuard.Models;
 using VaultGuard.Crypto.Interfaces;
@@ -20,19 +22,34 @@ public class DatabaseBackupService : IDatabaseBackupService
     private readonly IPasswordEncryptionService _encryptionService;
     private readonly IBackupEncryptionService _backupEncryption;
     private readonly IAuthService? _authService;
+    private readonly VaultGuard.ExceptionReporting.IExceptionReporter? _exceptionReporter;
+
+    private static readonly JsonSerializerOptions BackupSerializerOptions = new()
+    {
+        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
+    };
 
     public DatabaseBackupService(
         ILogger<DatabaseBackupService> logger,
         IDatabaseContextFactory contextFactory,
         IPasswordEncryptionService encryptionService,
         IBackupEncryptionService backupEncryption,
-        IAuthService? authService = null)
+        IAuthService? authService = null,
+        VaultGuard.ExceptionReporting.IExceptionReporter? exceptionReporter = null)
     {
         _logger = logger;
         _contextFactory = contextFactory;
         _encryptionService = encryptionService;
         _backupEncryption = backupEncryption;
         _authService = authService;
+        _exceptionReporter = exceptionReporter;
+    }
+
+    // Logs an exception and forwards it to Sentry (when configured) with the operation name as context.
+    private void Report(Exception ex, string operation)
+    {
+        _logger.LogError(ex, "DatabaseBackupService.{Operation} failed", operation);
+        _exceptionReporter?.CaptureException(ex, new Dictionary<string, string> { ["operation"] = operation });
     }
 
     // Finds (or creates) the vault + its default collection for the given name, so a restored item
@@ -89,52 +106,20 @@ public class DatabaseBackupService : IDatabaseBackupService
     {
         try
         {
-            using var context = _contextFactory.CreateDbContext();
-            
-            // Create backup data
-            var backupData = new
+            string dbPath;
+            int passwordCount;
+            using (var context = _contextFactory.CreateDbContext())
             {
-                metadata = new BackupMetadata
-                {
-                    CreatedAt = DateTime.UtcNow,
-                    DatabaseVersion = "1.0", // Version from database schema
-                    ApplicationVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(),
-                    IsCompressed = compress,
-                    PasswordCount = await context.PasswordItems.CountAsync()
-                },
-                passwordItems = await context.PasswordItems.ToListAsync(),
-                categories = await context.Categories.ToListAsync(),
-                tags = await context.Tags.ToListAsync(),
-                vaults = await context.Vaults.ToListAsync(),
-                collections = await context.Collections.ToListAsync(),
-                customFields = await context.CustomFields.ToListAsync(),
-                loginItems = await context.LoginItems.ToListAsync(),
-                secureNoteItems = await context.SecureNoteItems.ToListAsync(),
-                creditCardItems = await context.CreditCardItems.ToListAsync(),
-                wifiItems = await context.WiFiItems.ToListAsync(),
-                userPasskeys = await context.UserPasskeys.ToListAsync()
-            };
-
-            // Serialize to JSON
-            var jsonData = JsonSerializer.Serialize(backupData);
-            var jsonBytes = System.Text.Encoding.UTF8.GetBytes(jsonData);
-
-            // Compress if requested
-            byte[] finalData;
-            if (compress)
-            {
-                using var compressedStream = new MemoryStream();
-                using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
-                {
-                    await gzipStream.WriteAsync(jsonBytes);
-                }
-                finalData = compressedStream.ToArray();
-            }
-            else
-            {
-                finalData = jsonBytes;
+                dbPath = GetSqliteFilePath(context);
+                passwordCount = await context.PasswordItems.CountAsync();
             }
 
+            // The cloud backup is simply the SQLite database file. Take a consistent snapshot via the
+            // SQLite online-backup API (safe even while the app holds the database open), optionally
+            // gzip it, then encrypt. Restore just decrypts and writes the database back. No per-entity
+            // JSON serialization is involved.
+            var dbBytes = CreateDatabaseSnapshot(dbPath);
+            var finalData = compress ? Compress(dbBytes) : dbBytes;
             var encryptedData = string.IsNullOrEmpty(encryptionKey)
                 ? finalData
                 : _backupEncryption.Encrypt(finalData, encryptionKey);
@@ -143,12 +128,19 @@ public class DatabaseBackupService : IDatabaseBackupService
             {
                 Success = true,
                 BackupData = encryptedData,
-                Metadata = backupData.metadata
+                Metadata = new BackupMetadata
+                {
+                    CreatedAt = DateTime.UtcNow,
+                    DatabaseVersion = "1.0",
+                    ApplicationVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(),
+                    IsCompressed = compress,
+                    PasswordCount = passwordCount
+                }
             };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create database backup");
+            Report(ex, "CreateBackup");
             return new DatabaseBackupResult
             {
                 Success = false,
@@ -157,167 +149,91 @@ public class DatabaseBackupService : IDatabaseBackupService
         }
     }
 
-    public async Task<bool> RestoreBackupAsync(byte[] backupData, string encryptionKey)
-    {
-        try
-        {
-            var decryptedData = string.IsNullOrEmpty(encryptionKey)
-                ? backupData
-                : _backupEncryption.Decrypt(backupData, encryptionKey);
-
-            // Check if compressed and decompress
-            var jsonData = await DecompressIfNeeded(decryptedData);
-
-            // Deserialize backup data
-            var backupObject = JsonSerializer.Deserialize<JsonElement>(jsonData);
-            
-            // Validate backup structure
-            if (!backupObject.TryGetProperty("metadata", out var metadataElement))
-            {
-                throw new InvalidOperationException("Invalid backup format: missing metadata");
-            }
-
-            // TODO: Implement full restore logic
-            // This would need careful transaction handling to replace database contents
-            _logger.LogInformation("Backup restore would be implemented here");
-            
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to restore database backup");
-            return false;
-        }
-    }
+    public Task<bool> RestoreBackupAsync(byte[] backupData, string encryptionKey)
+        => RestoreFullAsync(backupData, encryptionKey);
 
     public async Task<BackupContentsDto?> BrowseBackupAsync(byte[] encryptedData, string masterPassword)
     {
         try
         {
-            var decrypted = string.IsNullOrEmpty(masterPassword)
-                ? encryptedData
-                : _backupEncryption.Decrypt(encryptedData, masterPassword);
-            var json = await DecompressIfNeeded(decrypted);
-            var root = JsonSerializer.Deserialize<JsonElement>(json);
+            // The backup is a SQLite database file. Open the decrypted copy as a throwaway context and
+            // read the items straight out of it so the user can preview / selectively restore them.
+            using var handle = await OpenBackupForReadAsync(encryptedData, masterPassword);
+            var ctx = handle.Context;
 
-            var contents = new BackupContentsDto
+            // Map each CollectionId to the name of the vault it belonged to, so a previewed item can
+            // remember its origin vault (PasswordItem itself only stores a CollectionId).
+            var vaultNameById = await ctx.Vaults.AsNoTracking()
+                .ToDictionaryAsync(v => v.Id, v => v.Name ?? string.Empty);
+            var collectionToVaultName = new Dictionary<int, string>();
+            foreach (var c in await ctx.Collections.AsNoTracking().ToListAsync())
             {
-                CreatedAt = root.TryGetProperty("metadata", out var meta) && meta.TryGetProperty("CreatedAt", out var ts)
-                    ? ts.GetDateTime()
-                    : DateTime.UtcNow
-            };
+                if (c.VaultId.HasValue && vaultNameById.TryGetValue(c.VaultId.Value, out var vn) && !string.IsNullOrWhiteSpace(vn))
+                    collectionToVaultName[c.Id] = vn;
+            }
 
-            // Build CollectionId -> VaultName so each item can remember which vault it came from,
-            // even though PasswordItem itself only stores a CollectionId.
-            var collectionToVaultName = BuildCollectionToVaultNameMap(root);
+            var items = await ctx.PasswordItems.AsNoTracking()
+                .Include(p => p.LoginItem)
+                .Include(p => p.SecureNoteItem)
+                .Include(p => p.CreditCardItem)
+                .Include(p => p.WiFiItem)
+                .ToListAsync();
 
-            if (root.TryGetProperty("loginItems", out var logins))
+            var contents = new BackupContentsDto { CreatedAt = DateTime.UtcNow };
+            foreach (var pi in items)
             {
-                foreach (var el in logins.EnumerateArray())
-                    contents.LoginItems.Add(MapElement(el, "Login", collectionToVaultName));
-            }
-            if (root.TryGetProperty("secureNoteItems", out var notes))
-            {
-                foreach (var el in notes.EnumerateArray())
-                    contents.SecureNotes.Add(MapElement(el, "Secure Note", collectionToVaultName));
-            }
-            if (root.TryGetProperty("creditCardItems", out var cards))
-            {
-                foreach (var el in cards.EnumerateArray())
-                    contents.CreditCards.Add(MapElement(el, "Credit Card", collectionToVaultName));
-            }
-            if (root.TryGetProperty("wifiItems", out var wifi))
-            {
-                foreach (var el in wifi.EnumerateArray())
-                    contents.WifiItems.Add(MapElement(el, "Wi-Fi", collectionToVaultName));
-            }
-            // Also pull top-level passwordItems that may not have sub-type rows
-            if (root.TryGetProperty("passwordItems", out var passwords))
-            {
-                foreach (var el in passwords.EnumerateArray())
+                string? vaultName = pi.CollectionId.HasValue
+                    && collectionToVaultName.TryGetValue(pi.CollectionId.Value, out var vn)
+                        ? vn
+                        : null;
+
+                var dto = new BackupItemDto
                 {
-                    // Only add if not already represented via a sub-type above
-                    var idProp = el.TryGetProperty("Id", out var idEl);
-                    var id = idProp ? (idEl.ValueKind == JsonValueKind.Number ? idEl.GetInt32().ToString() : (idEl.GetString() ?? "")) : "";
-                    bool exists = contents.LoginItems.Any(x => x.Id == id)
-                               || contents.SecureNotes.Any(x => x.Id == id)
-                               || contents.CreditCards.Any(x => x.Id == id)
-                               || contents.WifiItems.Any(x => x.Id == id);
-                    if (!exists)
-                        contents.LoginItems.Add(MapElement(el, "Login", collectionToVaultName));
+                    Id = pi.Id.ToString(),
+                    Title = string.IsNullOrWhiteSpace(pi.Title) ? "(untitled)" : pi.Title,
+                    CreatedAt = pi.CreatedAt,
+                    IsSelected = true,
+                    VaultName = vaultName,
+                    // Keep a serialized copy of the whole item so ImportSelectedItemsAsync can re-insert it.
+                    RawJson = JsonSerializer.Serialize(pi, BackupSerializerOptions)
+                };
+
+                if (pi.LoginItem != null)
+                {
+                    dto.ItemType = "Login";
+                    dto.Subtitle = pi.LoginItem.Username;
+                    contents.LoginItems.Add(dto);
+                }
+                else if (pi.CreditCardItem != null)
+                {
+                    dto.ItemType = "Credit Card";
+                    dto.Subtitle = pi.CreditCardItem.CardholderName;
+                    contents.CreditCards.Add(dto);
+                }
+                else if (pi.WiFiItem != null)
+                {
+                    dto.ItemType = "Wi-Fi";
+                    dto.Subtitle = pi.WiFiItem.NetworkName;
+                    contents.WifiItems.Add(dto);
+                }
+                else if (pi.SecureNoteItem != null)
+                {
+                    dto.ItemType = "Secure Note";
+                    contents.SecureNotes.Add(dto);
+                }
+                else
+                {
+                    dto.ItemType = "Login";
+                    contents.LoginItems.Add(dto);
                 }
             }
             return contents;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to browse backup");
+            Report(ex, "BrowseBackup");
             return null;
         }
-    }
-
-    // Maps Collection.Id -> the name of the vault it belongs to, by cross-referencing the backup's
-    // "collections" (which carry VaultId) against its "vaults" (which carry the vault Name).
-    private static Dictionary<int, string> BuildCollectionToVaultNameMap(JsonElement root)
-    {
-        var map = new Dictionary<int, string>();
-        try
-        {
-            if (!root.TryGetProperty("vaults", out var vaultsEl) || !root.TryGetProperty("collections", out var collectionsEl))
-                return map;
-
-            var vaultNameById = new Dictionary<int, string>();
-            foreach (var v in vaultsEl.EnumerateArray())
-            {
-                if (v.TryGetProperty("Id", out var vid) && v.TryGetProperty("Name", out var vname))
-                    vaultNameById[vid.GetInt32()] = vname.GetString() ?? "";
-            }
-
-            foreach (var c in collectionsEl.EnumerateArray())
-            {
-                if (!c.TryGetProperty("Id", out var cid)) continue;
-                if (c.TryGetProperty("VaultId", out var vIdEl) && vIdEl.ValueKind == JsonValueKind.Number
-                    && vaultNameById.TryGetValue(vIdEl.GetInt32(), out var vaultName) && !string.IsNullOrWhiteSpace(vaultName))
-                {
-                    map[cid.GetInt32()] = vaultName;
-                }
-            }
-        }
-        catch { /* best-effort — items just won't carry a vault name */ }
-        return map;
-    }
-
-    private static BackupItemDto MapElement(JsonElement el, string itemType, Dictionary<int, string>? collectionToVaultName = null)
-    {
-        // Id is int in the DB — use it as string for the DTO key
-        string id;
-        if (el.TryGetProperty("Id", out var idEl))
-            id = idEl.ValueKind == JsonValueKind.Number ? idEl.GetInt32().ToString() : (idEl.GetString() ?? Guid.NewGuid().ToString());
-        else
-            id = Guid.NewGuid().ToString();
-
-        var title = el.TryGetProperty("Title", out var t) ? t.GetString() ?? "(untitled)" : "(untitled)";
-        string? subtitle = null;
-        if (el.TryGetProperty("Username", out var u)) subtitle = u.GetString();
-        else if (el.TryGetProperty("CardHolderName", out var ch)) subtitle = ch.GetString();
-        else if (el.TryGetProperty("NetworkName", out var nn)) subtitle = nn.GetString();
-        DateTime created = el.TryGetProperty("CreatedAt", out var c) ? c.GetDateTime() : DateTime.UtcNow;
-
-        string? vaultName = null;
-        if (collectionToVaultName != null
-            && el.TryGetProperty("CollectionId", out var collIdEl)
-            && collIdEl.ValueKind == JsonValueKind.Number)
-        {
-            collectionToVaultName.TryGetValue(collIdEl.GetInt32(), out vaultName);
-        }
-
-        return new BackupItemDto
-        {
-            Id = id, Title = title, Subtitle = subtitle,
-            ItemType = itemType, CreatedAt = created,
-            IsSelected = true, RawJson = el.GetRawText(),
-            VaultName = vaultName
-        };
     }
 
     public async Task<bool> RestoreFullAsync(byte[] encryptedData, string masterPassword)
@@ -327,90 +243,24 @@ public class DatabaseBackupService : IDatabaseBackupService
             var decrypted = string.IsNullOrEmpty(masterPassword)
                 ? encryptedData
                 : _backupEncryption.Decrypt(encryptedData, masterPassword);
-            var json = await DecompressIfNeeded(decrypted);
-            var root = JsonSerializer.Deserialize<JsonElement>(json);
+            var dbBytes = DecompressBytesIfNeeded(decrypted);
 
-            using var context = _contextFactory.CreateDbContext();
+            if (!IsSqliteDatabase(dbBytes))
+                throw new InvalidOperationException("Backup is not a valid database file (wrong master password?).");
 
-            // Clear existing data in dependency order
-            context.CustomFields.RemoveRange(context.CustomFields);
-            context.LoginItems.RemoveRange(context.LoginItems);
-            context.SecureNoteItems.RemoveRange(context.SecureNoteItems);
-            context.CreditCardItems.RemoveRange(context.CreditCardItems);
-            context.WiFiItems.RemoveRange(context.WiFiItems);
-            context.PasswordItems.RemoveRange(context.PasswordItems);
-            await context.SaveChangesAsync();
+            string targetPath;
+            using (var context = _contextFactory.CreateDbContext())
+                targetPath = GetSqliteFilePath(context);
 
-            // Re-insert password items (with sub-types inline)
-            if (root.TryGetProperty("passwordItems", out var items))
-            {
-                var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var list = JsonSerializer.Deserialize<List<PasswordItem>>(items.GetRawText(), opts);
-                if (list != null)
-                {
-                    // RestoreFullAsync wipes items but leaves Collections/Vaults untouched, so an item's
-                    // old CollectionId usually still resolves correctly. But when restoring into a fresh
-                    // database (or one where those collections were since deleted), re-home the item by
-                    // vault name instead of leaving it pointing at a row that no longer exists.
-                    var collectionToVaultName = BuildCollectionToVaultNameMap(root);
-                    var existingCollectionIds = (await context.Collections.Select(c => c.Id).ToListAsync()).ToHashSet();
-                    var resolvedByVaultName = new Dictionary<string, int>();
-
-                    foreach (var pi in list)
-                    {
-                        if (pi.CollectionId.HasValue && existingCollectionIds.Contains(pi.CollectionId.Value))
-                            continue; // still valid, leave as-is
-
-                        var vaultName = pi.CollectionId.HasValue && collectionToVaultName.TryGetValue(pi.CollectionId.Value, out var vn)
-                            ? vn
-                            : null;
-                        if (string.IsNullOrWhiteSpace(vaultName)) continue;
-
-                        if (!resolvedByVaultName.TryGetValue(vaultName, out var newCollectionId))
-                        {
-                            var resolved = await ResolveCollectionIdForVaultNameAsync(context, vaultName);
-                            if (!resolved.HasValue) continue;
-                            newCollectionId = resolved.Value;
-                            resolvedByVaultName[vaultName] = newCollectionId;
-                            existingCollectionIds.Add(newCollectionId);
-                        }
-                        pi.CollectionId = newCollectionId;
-                    }
-
-                    context.PasswordItems.AddRange(list);
-                }
-            }
-            if (root.TryGetProperty("loginItems", out var li))
-            {
-                var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var list = JsonSerializer.Deserialize<List<LoginItem>>(li.GetRawText(), opts);
-                if (list != null) context.LoginItems.AddRange(list);
-            }
-            if (root.TryGetProperty("secureNoteItems", out var sn))
-            {
-                var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var list = JsonSerializer.Deserialize<List<SecureNoteItem>>(sn.GetRawText(), opts);
-                if (list != null) context.SecureNoteItems.AddRange(list);
-            }
-            if (root.TryGetProperty("creditCardItems", out var cc))
-            {
-                var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var list = JsonSerializer.Deserialize<List<CreditCardItem>>(cc.GetRawText(), opts);
-                if (list != null) context.CreditCardItems.AddRange(list);
-            }
-            if (root.TryGetProperty("wifiItems", out var wi))
-            {
-                var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var list = JsonSerializer.Deserialize<List<WiFiItem>>(wi.GetRawText(), opts);
-                if (list != null) context.WiFiItems.AddRange(list);
-            }
-
-            await context.SaveChangesAsync();
+            // A full restore simply replaces the live database with the backup file's contents,
+            // page-for-page, via the SQLite online-backup API.
+            RestoreDatabaseSnapshot(dbBytes, targetPath);
+            _logger.LogInformation("Database restored from backup into {Path}", targetPath);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "RestoreFullAsync failed");
+            Report(ex, "RestoreFull");
             return false;
         }
     }
@@ -440,6 +290,13 @@ public class DatabaseBackupService : IDatabaseBackupService
                     pi.Id = 0; // let EF assign a new PK
                     pi.Title = $"{pi.Title} (restored)";
 
+                    // Reset the sub-item primary/foreign keys too so EF inserts fresh rows and links
+                    // them to the new PasswordItem instead of colliding with existing keys.
+                    if (pi.LoginItem != null) { pi.LoginItem.Id = 0; pi.LoginItem.PasswordItemId = 0; }
+                    if (pi.SecureNoteItem != null) { pi.SecureNoteItem.Id = 0; pi.SecureNoteItem.PasswordItemId = 0; }
+                    if (pi.CreditCardItem != null) { pi.CreditCardItem.Id = 0; pi.CreditCardItem.PasswordItemId = 0; }
+                    if (pi.WiFiItem != null) { pi.WiFiItem.Id = 0; pi.WiFiItem.PasswordItemId = 0; }
+
                     // Put it back in the vault it came from (creating the vault if it no longer
                     // exists) rather than trusting its old CollectionId, which may point at nothing.
                     var resolvedCollectionId = await ResolveCollectionIdForVaultNameAsync(context, item.VaultName);
@@ -457,7 +314,7 @@ public class DatabaseBackupService : IDatabaseBackupService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "ImportSelectedItemsAsync failed");
+            Report(ex, "ImportSelectedItems");
             return 0;
         }
     }
@@ -486,7 +343,7 @@ public class DatabaseBackupService : IDatabaseBackupService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to export to browser format {Format}", format);
+            Report(ex, $"ExportToBrowser:{format}");
             return new BrowserExportResult
             {
                 Success = false,
@@ -495,37 +352,144 @@ public class DatabaseBackupService : IDatabaseBackupService
         }
     }
 
-    public async Task<BackupMetadata?> GetBackupMetadataAsync(byte[] backupData)
+    public Task<BackupMetadata?> GetBackupMetadataAsync(byte[] backupData)
     {
+        // The backup is the raw (encrypted) database file with no embedded metadata header, so there
+        // is nothing to read without the master password. Callers derive timestamp/size from the
+        // cloud listing instead.
+        return Task.FromResult<BackupMetadata?>(null);
+    }
+
+    // ── SQLite backup file helpers ──────────────────────────────────────────────
+
+    private static readonly byte[] SqliteHeader = System.Text.Encoding.ASCII.GetBytes("SQLite format 3\0");
+
+    // Returns the on-disk SQLite file backing the context. Cloud backup only supports SQLite.
+    private static string GetSqliteFilePath(IVaultGuardDbContext context)
+    {
+        var connection = context.Database.GetDbConnection();
+        if (connection is SqliteConnection sqlite && !string.IsNullOrWhiteSpace(sqlite.DataSource))
+            return sqlite.DataSource;
+        throw new InvalidOperationException("Cloud backup is only supported for SQLite databases.");
+    }
+
+    // Produces a consistent copy of the live database via the SQLite online-backup API, returning
+    // the raw bytes of the snapshot file. Safe to call while the app still has the database open.
+    private static byte[] CreateDatabaseSnapshot(string sourceDbPath)
+    {
+        var tempPath = Path.Combine(Path.GetTempPath(), $"vgbackup_{Guid.NewGuid():N}.db");
         try
         {
-            // For now, we'll need to decrypt and parse to get metadata
-            // In a real implementation, we might store metadata separately
-            _logger.LogInformation("Backup metadata extraction would be implemented here");
-            return null;
+            using (var source = new SqliteConnection($"Data Source={sourceDbPath}"))
+            using (var dest = new SqliteConnection($"Data Source={tempPath};Pooling=False"))
+            {
+                source.Open();
+                dest.Open();
+                source.BackupDatabase(dest);
+            }
+            return File.ReadAllBytes(tempPath);
         }
-        catch (Exception ex)
+        finally
         {
-            _logger.LogError(ex, "Failed to extract backup metadata");
-            return null;
+            TryDeleteFile(tempPath);
         }
     }
 
-    private async Task<string> DecompressIfNeeded(byte[] data)
+    // Writes the snapshot bytes to a temp file and copies it page-for-page into the live database
+    // via the online-backup API, replacing all current contents.
+    private static void RestoreDatabaseSnapshot(byte[] dbBytes, string targetDbPath)
     {
+        var tempPath = Path.Combine(Path.GetTempPath(), $"vgrestore_{Guid.NewGuid():N}.db");
         try
         {
-            // Try to decompress first
-            using var compressedStream = new MemoryStream(data);
-            using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
-            using var resultStream = new MemoryStream();
-            await gzipStream.CopyToAsync(resultStream);
-            return System.Text.Encoding.UTF8.GetString(resultStream.ToArray());
+            File.WriteAllBytes(tempPath, dbBytes);
+            using (var source = new SqliteConnection($"Data Source={tempPath};Pooling=False"))
+            using (var dest = new SqliteConnection($"Data Source={targetDbPath}"))
+            {
+                source.Open();
+                dest.Open();
+                source.BackupDatabase(dest);
+            }
+            SqliteConnection.ClearAllPools();
         }
-        catch
+        finally
         {
-            // If decompression fails, assume it's uncompressed
-            return System.Text.Encoding.UTF8.GetString(data);
+            TryDeleteFile(tempPath);
+        }
+    }
+
+    // Decrypts + decompresses a backup into a temporary SQLite file and opens it as a read context.
+    // The caller MUST dispose the returned handle (disposes the context and deletes the temp file).
+    private async Task<BackupReadHandle> OpenBackupForReadAsync(byte[] encryptedData, string masterPassword)
+    {
+        var decrypted = string.IsNullOrEmpty(masterPassword)
+            ? encryptedData
+            : _backupEncryption.Decrypt(encryptedData, masterPassword);
+        var dbBytes = DecompressBytesIfNeeded(decrypted);
+
+        if (!IsSqliteDatabase(dbBytes))
+            throw new InvalidOperationException("Backup is not a valid database file (wrong master password?).");
+
+        var tempPath = Path.Combine(Path.GetTempPath(), $"vgread_{Guid.NewGuid():N}.db");
+        await File.WriteAllBytesAsync(tempPath, dbBytes);
+
+        var options = new DbContextOptionsBuilder<VaultGuardDbContext>()
+            .UseSqlite($"Data Source={tempPath};Pooling=False")
+            .Options;
+        return new BackupReadHandle(new VaultGuardDbContext(options), tempPath);
+    }
+
+    private static byte[] Compress(byte[] data)
+    {
+        using var output = new MemoryStream();
+        using (var gzip = new GZipStream(output, CompressionMode.Compress))
+            gzip.Write(data, 0, data.Length);
+        return output.ToArray();
+    }
+
+    // gzip starts with the magic bytes 0x1F 0x8B; anything else is treated as already-uncompressed.
+    private static byte[] DecompressBytesIfNeeded(byte[] data)
+    {
+        if (data.Length < 2 || data[0] != 0x1f || data[1] != 0x8b)
+            return data;
+
+        using var input = new MemoryStream(data);
+        using var gzip = new GZipStream(input, CompressionMode.Decompress);
+        using var output = new MemoryStream();
+        gzip.CopyTo(output);
+        return output.ToArray();
+    }
+
+    private static bool IsSqliteDatabase(byte[] data)
+    {
+        if (data.Length < SqliteHeader.Length) return false;
+        for (int i = 0; i < SqliteHeader.Length; i++)
+            if (data[i] != SqliteHeader[i]) return false;
+        return true;
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        try { if (File.Exists(path)) File.Delete(path); } catch { /* best effort */ }
+    }
+
+    // Holds an open context over a temporary backup database file; disposing cleans up both.
+    private sealed class BackupReadHandle : IDisposable
+    {
+        private readonly string _tempPath;
+        public VaultGuardDbContext Context { get; }
+
+        public BackupReadHandle(VaultGuardDbContext context, string tempPath)
+        {
+            Context = context;
+            _tempPath = tempPath;
+        }
+
+        public void Dispose()
+        {
+            Context.Dispose();
+            SqliteConnection.ClearAllPools();
+            TryDeleteFile(_tempPath);
         }
     }
 

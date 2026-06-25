@@ -431,6 +431,9 @@ public class SettingsViewModel : BaseViewModel
 
     public List<CloudBackupInfo> AvailableBackups { get; set; } = new();
 
+    // Drives the "no backups yet" empty-state placeholder under the save-points list.
+    public bool HasNoBackups => AvailableBackups == null || AvailableBackups.Count == 0;
+
     // NOTE: these must be cached single instances, NOT new lists per get. A ComboBox with a
     // TwoWay SelectedItem binding compares the selected value against the *current* ItemsSource;
     // if the getter hands back a fresh collection each time, the selector loses sync and the
@@ -693,8 +696,15 @@ public class SettingsViewModel : BaseViewModel
             if (manager == null) return;
             AvailableBackups = await manager.ListAllBackupsAsync();
             OnPropertyChanged(nameof(AvailableBackups));
+            OnPropertyChanged(nameof(HasNoBackups));
         }
-        catch { AvailableBackups = new(); }
+        catch (Exception ex)
+        {
+            ReportBackupError("LoadAvailableBackups", ex);
+            AvailableBackups = new();
+            OnPropertyChanged(nameof(AvailableBackups));
+            OnPropertyChanged(nameof(HasNoBackups));
+        }
     }
 
     // Set on every CreateCloudBackupAsync() failure — the real reason, surfaced by SettingsPage
@@ -893,10 +903,21 @@ public class SettingsViewModel : BaseViewModel
         finally { IsLoading = false; }
     }
 
-    public async Task<bool> RestoreFromFileAsync()
+    public async Task<bool> RestoreFromFileAsync(string filePath, string masterPassword)
     {
-        await Task.Delay(50);
-        return true;
+        try
+        {
+            IsLoading = true;
+            var manager = _serviceProvider.GetService<CloudBackupManager>();
+            if (manager == null) return false;
+            return await manager.RestoreFromFileAsync(filePath, masterPassword);
+        }
+        catch (Exception ex)
+        {
+            ReportBackupError("RestoreFromFile", ex);
+            return false;
+        }
+        finally { IsLoading = false; }
     }
 
     public async Task<bool> RestoreCloudBackupAsync(CloudBackupInfo backup, string masterPassword)
@@ -912,7 +933,11 @@ public class SettingsViewModel : BaseViewModel
             if (backupSvc == null) return false;
             return await backupSvc.RestoreFullAsync(rawData, masterPassword);
         }
-        catch { return false; }
+        catch (Exception ex)
+        {
+            ReportBackupError("RestoreCloudBackup", ex);
+            return false;
+        }
         finally { IsLoading = false; }
     }
 
@@ -926,7 +951,19 @@ public class SettingsViewModel : BaseViewModel
             if (ok) await LoadAvailableBackupsAsync();
             return ok;
         }
-        catch { return false; }
+        catch (Exception ex)
+        {
+            ReportBackupError("DeleteCloudBackup", ex);
+            return false;
+        }
+    }
+
+    // Logs + Sentry-reports a backup failure from the view-model layer.
+    private void ReportBackupError(string operation, Exception ex)
+    {
+        _serviceProvider.GetService<ILogger<SettingsViewModel>>()?.LogError(ex, "{Operation} failed", operation);
+        _serviceProvider.GetService<IExceptionReporter>()?.CaptureException(ex,
+            new Dictionary<string, string> { ["operation"] = operation });
     }
 
     public async Task<ExportResult> ExportToBrowserAsync(string format)
