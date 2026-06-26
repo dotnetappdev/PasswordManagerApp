@@ -720,13 +720,17 @@
                 <ControlTemplate TargetType="ui:NavigationViewItem">
                     <Border x:Name="LayoutRoot"
                             Background="{TemplateBinding Background}"
-                            Margin="{TemplateBinding Margin}">
+                            Margin="{TemplateBinding Margin}"
+                            CornerRadius="4">
                         <Grid>
+                            <!-- Windows 11 selection pill: a short, fully-rounded accent bar,
+                                 vertically centred, shown only when the item is selected. -->
                             <Border x:Name="SelectionIndicator"
-                                    Width="3"
+                                    Width="3" Height="16"
                                     HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
                                     Background="{StaticResource ModernPrimaryBrush}"
-                                    CornerRadius="0,2,2,0"
+                                    CornerRadius="1.5"
                                     Opacity="0"/>
 
                             <Grid x:Name="ContentGrid"
@@ -763,9 +767,20 @@
                                           VerticalAlignment="Center"/>
                             </Grid>
                         </Grid>
-
-                        
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="LayoutRoot" Property="Background"
+                                    Value="{DynamicResource NavigationViewItemBackgroundPointerOver}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="SelectionIndicator" Property="Opacity" Value="1"/>
+                            <Setter TargetName="LayoutRoot" Property="Background"
+                                    Value="{DynamicResource NavigationViewItemBackgroundSelected}"/>
+                            <Setter TargetName="ContentPresenter" Property="TextBlock.Foreground"
+                                    Value="{DynamicResource NavigationViewItemForegroundSelected}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

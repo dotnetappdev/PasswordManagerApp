@@ -8,10 +8,12 @@ This guide will help you install and set up the Vault Guard browser extension to
 
 Before installing the extension, ensure you have:
 
-1. **Vault Guard App Installed**: 
-   - Either the WinUI Desktop App or the API Server should be running
-   - For WinUI App: Ensure your SQLite database is accessible
-   - For API Server: Default URL is `http://localhost:5000`
+1. **Vault Guard App Installed**:
+   - Any one of the desktop apps (WPF — the flagship Windows app, or WinUI), or the API Server
+   - For a desktop app: the extension talks to your local SQLite vault directly via the native
+     host — the app itself does **not** need to be running (but close it before a native-host
+     session if both might write at once, to avoid a locked database)
+   - For API Server: default URL is `http://localhost:5000`
 
 2. **User Account**: You need a valid user account in the Vault Guard system
 
@@ -213,6 +215,10 @@ When using Native Host mode, you need to configure where your SQLite database is
 - **Windows**: `%APPDATA%\VaultGuard\passwordmanager.db`
 - **Linux**: `~/.local/share/VaultGuard/passwordmanager.db`  
 - **macOS**: `~/Library/Application Support/VaultGuard/passwordmanager.db`
+
+> The native host auto-discovers the vault, checking (in order): `passwordmanager_dev.db` in the
+> working directory, `%APPDATA%\VaultGuard\passwordmanager.db`, then
+> `%LOCALAPPDATA%\VaultGuard\passwordmanager.db`. Set a custom path (below) to override this.
 
 ##### Custom Database Path:
 
@@ -437,6 +443,19 @@ Modify the native host manifest to pass the database path:
 3. **Search**: Type in the search box to filter credentials
 4. **Fill Manually**: Click any credential to fill it into the current tab
 
+### Passkeys (WebAuthn)
+
+In Native Host mode the extension doubles as a **software passkey authenticator** — it can create
+and use passkeys for websites, with the private keys stored AES‑256‑GCM encrypted inside your vault
+(zero‑knowledge; the browser never sees them).
+
+1. **Unlock the vault** in the extension first (passkeys are gated behind your master password).
+2. On a site's "Create a passkey" prompt, choose Vault Guard — the host generates a P‑256 key pair,
+   encrypts the private key under your master key and saves it to the `UserPasskeys` table.
+3. On sign‑in, the host decrypts the key and signs the challenge; the site logs you in.
+
+See [PASSKEYS_SETUP.md](PASSKEYS_SETUP.md) for the full setup and supported‑site notes.
+
 ## Security Notes
 
 - **Native Host Mode**: Most secure - no network communication, direct encrypted database access
@@ -496,7 +515,12 @@ If you encounter issues:
 2. **Verify Configuration**: Review settings in extension
 3. **Test Connection**: Use "Test Connection" button in settings
 4. **Check Permissions**: Ensure extension has necessary permissions
-5. **Review Logs**: Check native host logs (if available)
+5. **Review Logs**: The native host writes durable, dated logs (never to the console, which it
+   reserves for the browser protocol). Check:
+   - **Windows**: `%LOCALAPPDATA%\VaultGuard\logs\{year}\{Month}\{day}.txt`
+   - **Linux**: `~/.local/share/VaultGuard/logs/{year}/{Month}/{day}.txt`
+   - **macOS**: `~/Library/Application Support/VaultGuard/logs/{year}/{Month}/{day}.txt`
+   These record connection, schema and decryption failures — secrets are never logged.
 
 ## Updating the Extension
 

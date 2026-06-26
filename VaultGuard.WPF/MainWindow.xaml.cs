@@ -97,14 +97,14 @@ public sealed partial class MainWindow : Window
             // Hide login frame and show main navigation
             LoginFrame.Visibility = Visibility.Collapsed;
             MainNavigationView.Visibility = Visibility.Visible;
-            MainMenuBar.Visibility = Visibility.Visible;
+            TopBar.Visibility = Visibility.Visible;
         }
         else
         {
             // Show login frame and hide main navigation
             LoginFrame.Visibility = Visibility.Visible;
             MainNavigationView.Visibility = Visibility.Collapsed;
-            MainMenuBar.Visibility = Visibility.Collapsed;
+            TopBar.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -520,65 +520,116 @@ public sealed partial class MainWindow : Window
 
     private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
     {
-        // Handle search text changes and provide suggestions + auto-filter
-        if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+        // Only react to typing (not programmatic text changes).
+        if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput) return;
+
+        var query = sender.Text?.Trim() ?? "";
+
+        if (!string.IsNullOrWhiteSpace(query) && query.Length >= 2)
         {
-            var query = sender.Text?.ToLower() ?? "";
+            // Populate the dropdown with real, icon-bearing item results (like other managers).
+            _ = UpdateSearchSuggestionsAsync(sender, query);
 
-            if (!string.IsNullOrWhiteSpace(query) && query.Length >= 2)
+            // Live-filter the items page as the user types.
+            try
             {
-                // Provide basic search suggestions
-                var suggestions = new List<string>();
+                NavigateToPage("AllItems");
+                Dispatcher.BeginInvoke(new Action(() => PassSearchQueryToPage(query)));
+            }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
+        }
+        else
+        {
+            sender.ItemsSource = null;
 
-                // Add common search categories as suggestions
-                var commonSearches = new[] { "logins", "passwords", "credit cards", "secure notes", "wifi", "favorites" };
-                foreach (var category in commonSearches)
-                {
-                    if (category.Contains(query))
-                    {
-                        suggestions.Add(category);
-                    }
-                }
-
-                // Add "search for" prefix for better UX
-                if (suggestions.Count == 0)
-                {
-                    suggestions.Add($"Search for '{query}'");
-                }
-
-                sender.ItemsSource = suggestions;
-
-                // Auto-filter: Navigate to passwords page and apply search immediately
-                try
-                {
-                    NavigateToPage("AllItems");
-
-                    // Apply auto-filter with slight delay to ensure page is loaded
-                    Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        PassSearchQueryToPage(query);
-                    }));
-                }
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                try { Dispatcher.BeginInvoke(new Action(() => PassSearchQueryToPage(""))); }
                 catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
             }
-            else
-            {
-                sender.ItemsSource = null;
-
-                // Clear filters when search is empty
-                if (string.IsNullOrWhiteSpace(query))
-                {
-                    try
-                    {
-                        Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            PassSearchQueryToPage("");
-                        }));
-                    }
-                    catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
-                }
-            }
         }
+    }
+
+    // Builds up to 8 icon-bearing search results for the global search dropdown.
+    private async Task UpdateSearchSuggestionsAsync(AutoSuggestBox box, string query)
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var svc = scope.ServiceProvider.GetService<IPasswordItemService>();
+            if (svc == null) return;
+
+            var matches = (await svc.SearchAsync(query)).Take(8).ToList();
+
+            // The user may have typed more while we were querying — only apply if still current.
+            if (!string.Equals(box.Text?.Trim(), query, StringComparison.Ordinal)) return;
+
+            var suggestions = matches.Select(item =>
+            {
+                var (glyph, _) = SearchIconFor(item.Type);
+                var subtitle = item.Username;
+                if (string.IsNullOrWhiteSpace(subtitle)) subtitle = item.Website;
+
+                // Real brand icon (custom icon or website favicon) + brand colour, reusing the same
+                // converters the item list uses; the type glyph stays as the fallback underneath.
+                var brush = _brandBrushConverter.Convert(item, typeof(System.Windows.Media.Brush), null!,
+                                System.Globalization.CultureInfo.InvariantCulture)
+                            as System.Windows.Media.Brush ?? System.Windows.Media.Brushes.Gray;
+                var brandImage = _brandImageConverter.Convert(item, typeof(System.Windows.Media.ImageSource), null!,
+                                System.Globalization.CultureInfo.InvariantCulture)
+                            as System.Windows.Media.ImageSource;
+
+                return new Models.SearchSuggestion
+                {
+                    ItemId = item.Id,
+                    Title = string.IsNullOrWhiteSpace(item.Title) ? "(untitled)" : item.Title,
+                    Subtitle = subtitle ?? string.Empty,
+                    Glyph = glyph,
+                    IconBrush = brush,
+                    BrandImage = brandImage
+                };
+            }).ToList();
+
+            box.ItemsSource = suggestions.Count > 0 ? suggestions : null;
+        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Search suggestion lookup failed", ex); }
+    }
+
+    private void SearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+    {
+        if (args.SelectedItem is Models.SearchSuggestion s)
+        {
+            sender.Text = s.Title;
+            try
+            {
+                NavigateToPage("AllItems");
+                Dispatcher.BeginInvoke(new Action(() => PassSearchQueryToPage(s.Title)));
+            }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
+        }
+    }
+
+    // Reused for global-search result icons (same brand icon/colour as the item list rows).
+    private static readonly Converters.ItemToBrandImageConverter _brandImageConverter = new();
+    private static readonly Converters.ItemToBrandBrushConverter _brandBrushConverter = new();
+
+    // Maps an item type to a Segoe Fluent glyph + a colour-coded tile brush for search results.
+    private static (string Glyph, System.Windows.Media.Brush Brush) SearchIconFor(ItemType type)
+    {
+        static System.Windows.Media.Brush B(string hex) =>
+            (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString(hex)!;
+
+        return type switch
+        {
+            ItemType.Login      => ("", B("#2563EB")),
+            ItemType.Password   => ("", B("#2563EB")),
+            ItemType.CreditCard => ("", B("#059669")),
+            ItemType.SecureNote => ("", B("#D97706")),
+            ItemType.WiFi       => ("", B("#0891B2")),
+            ItemType.Identity   => ("", B("#7C3AED")),
+            ItemType.Passkey    => ("", B("#EC4899")),
+            _                   => ("", B("#6B7280")),
+        };
     }
 
     private void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
@@ -1038,16 +1089,9 @@ public sealed partial class MainWindow : Window
                     {
                         try
                         {
-                            var confirmDialog = new ModernWpf.Controls.ContentDialog
-                            {
-                                Title = "Delete Vault",
-                                Content = MakeDialogMessage($"Delete \"{vault.Name}\"? This cannot be undone."),
-                                PrimaryButtonText = "Delete",
-                                CloseButtonText = "Cancel",
-                                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close
-                            };
-                            ApplyDialogStyle(confirmDialog);
-                            if (await Helpers.DialogManager.ShowAsync(confirmDialog) != ModernWpf.Controls.ContentDialogResult.Primary)
+                            if (!await Helpers.ConfirmDialog.ShowDeleteAsync(
+                                    "Delete Vault",
+                                    $"Delete “{vault.Name}”? This cannot be undone."))
                                 return;
 
                             var delVaultService = _serviceProvider.GetService<IVaultService>();
@@ -1496,18 +1540,9 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
-            // Show confirmation dialog
-            var confirmDialog = new ModernWpf.Controls.ContentDialog
-            {
-                Title = "Confirm Deletion",
-                Content = $"Are you sure you want to delete '{tag}'? This action cannot be undone.",
-                PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
-                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close};
-            ApplyDialogStyle(confirmDialog);
-
-            var result = await Helpers.DialogManager.ShowAsync(confirmDialog);
-            if (result == ModernWpf.Controls.ContentDialogResult.Primary)
+            // Show a polished destructive confirmation dialog
+            if (await Helpers.ConfirmDialog.ShowDeleteAsync(
+                    "Delete Item", $"Are you sure you want to delete “{tag}”? This action cannot be undone."))
             {
                 // Handle deletion based on the item type
                 switch (tag)
@@ -1558,17 +1593,9 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
-            var confirmDialog = new ModernWpf.Controls.ContentDialog
-            {
-                Title = "Delete Category",
-                Content = $"Are you sure you want to delete this category? Items in this category will not be deleted, but they will lose their category assignment.",
-                PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
-                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close};
-            ApplyDialogStyle(confirmDialog);
-
-            var result = await Helpers.DialogManager.ShowAsync(confirmDialog);
-            if (result == ModernWpf.Controls.ContentDialogResult.Primary)
+            if (await Helpers.ConfirmDialog.ShowDeleteAsync(
+                    "Delete Category",
+                    "Are you sure you want to delete this category? Items in it won’t be deleted, but they will lose this category assignment."))
             {
                 try
                 {

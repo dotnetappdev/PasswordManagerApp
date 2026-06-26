@@ -15,6 +15,27 @@ This means:
 - Server administrators and database administrators cannot decrypt your data
 - Even with full database access, your passwords remain encrypted without your master password
 
+## Recent Security Updates (2026-06)
+
+The following hardening was completed since the original verification and is now part of the
+baseline the app adheres to:
+
+- **Secret-safe, tamper-evident logging.** All diagnostics flow through a single `AppLogger`
+  facade that writes durable, dated log files and forwards to the host pipeline. **No secret
+  values are ever logged** — master passwords, derived/master keys, TOTP secrets, recovery codes,
+  CVV, session tokens, API keys and password hints are excluded; emails/PII are redacted via
+  `AppLogger.Redact`. **No swallowed exceptions:** every `catch` now records the failure (the only
+  intentional silent catches are inside the logger itself), giving auditable failure trails for
+  incident response. The browser native host logs to file/stderr only — never to its stdout
+  protocol channel.
+- **Passkeys / WebAuthn (FIDO2).** Account passkeys use server-verified Fido2 ceremonies; the
+  vault also acts as a zero-knowledge software authenticator for third-party sites (private keys
+  AES-256-GCM encrypted under the master key). Local biometric unlock **fails closed** — it
+  releases a securely-cached master key only after a genuine platform assertion. A prior
+  passkey-login auth-bypass (a client returning `true` with no verification) was removed.
+- **Fail-closed posture.** Authentication/verification helpers default to denying access on error
+  rather than allowing it (e.g. assertion verification, challenge checks).
+
 ## Encryption Verification Results
 
 ### ✅ Master Key Security - VERIFIED
@@ -216,26 +237,52 @@ _sessions[sessionId] = (session.userId, null, false);
 5. ✅ Follow the existing encryption patterns
 
 ### Future Enhancements
-1. 🔄 Consider: Hardware security key support (FIDO2/WebAuthn)
-2. 🔄 Consider: Password-less authentication with passkeys
-3. 🔄 Consider: Encrypted password sharing between users
+1. ✅ **Done:** Passkey / FIDO2-WebAuthn support (account passkeys + software authenticator for
+   third-party sites + local biometric unlock)
+2. 🔄 Consider: Breach / compromised-password monitoring (HaveIBeenPwned)
+3. 🔄 Consider: Encrypted password sharing between users (one-time "Send")
 4. 🔄 Consider: Emergency access with time-delayed decryption
-5. 🔄 Consider: Post-quantum cryptography migration path
+5. 🔄 Consider: WebAuthn PRF for true passkey-only vault-key wrapping
+6. 🔄 Consider: Post-quantum cryptography migration path
 
 ## Compliance and Standards
 
-### Industry Standards
-- ✅ OWASP Password Storage Cheat Sheet (600,000 iterations)
-- ✅ NIST SP 800-132 (PBKDF2 recommendations)
-- ✅ FIPS 197 (AES encryption)
-- ✅ NIST SP 800-38D (GCM mode)
+> **Scope note:** Vault Guard is **designed and built to align with** the standards below. This is
+> a statement of engineering practice, not a claim of formal certification or third-party audit.
+
+### Cryptography & Key Management
+- ✅ **OWASP Password Storage Cheat Sheet** — PBKDF2-HMAC-SHA256, 600,000 iterations (exceeds the
+  2024 minimum)
+- ✅ **NIST SP 800-132** — PBKDF2 key derivation with per-user 256-bit salts
+- ✅ **FIPS 197** — AES; **NIST SP 800-38D** — AES-256-GCM authenticated encryption (AEAD)
+- ✅ **NIST SP 800-63B** — memorized-secret and biometric/authenticator guidance (master password
+  + platform-authenticator unlock)
+
+### Authentication & Passkeys
+- ✅ **W3C WebAuthn / FIDO2** — passkey registration & assertion (Fido2NetLib), server-verified
+- ✅ **Fail-closed authentication** — verification denies on error; challenges are single-use and
+  time-bound
+
+### Application Security
+- ✅ **OWASP ASVS** alignment — V2 Authentication, V6 Cryptography, V7 Error Handling & Logging,
+  V9 Communications
+- ✅ **OWASP Top 10** mitigations — injection (parameterised EF Core), broken access control
+  (per-user/IDOR fixes), cryptographic failures (above), security logging failures (below)
+- ✅ **OWASP Logging Cheat Sheet** — security-relevant events are logged with timestamps; **secrets
+  and full PII are never written to logs**; no exceptions are silently swallowed
+
+### Privacy & Data Handling
+- ✅ **Data minimisation (GDPR-aligned)** — only data needed to operate is stored; secrets are
+  encrypted at rest; logs exclude personal data / are redacted
+- ✅ **Zero-knowledge architecture** — operators cannot decrypt user vaults
+- ✅ **Right to erasure** — account deletion removes the user's passwords, categories, collections
+  and tags
 
 ### Security Best Practices
-- ✅ Zero-knowledge architecture
-- ✅ Authenticated encryption (AEAD)
-- ✅ Memory safety (clearing sensitive data)
-- ✅ Defense in depth (multiple security layers)
-- ✅ Separation of concerns (authentication vs. encryption)
+- ✅ Authenticated encryption (AEAD) everywhere secrets are stored
+- ✅ Memory safety — cryptographic material zeroed (`Array.Clear`) on lock/logout
+- ✅ Defense in depth (multiple security layers) and separation of concerns (auth vs. encryption)
+- ✅ Durable, secret-free audit logging across every platform
 
 ## Testing
 
@@ -269,6 +316,6 @@ Key achievements:
 
 ---
 
-**Verified by**: GitHub Copilot  
-**Date**: 2025-12-22  
+**Originally verified**: 2025-12-22  
+**Last updated**: 2026-06-27 (logging hygiene, passkeys/WebAuthn, expanded compliance mapping)  
 **Version**: Current (post-security-enhancement)

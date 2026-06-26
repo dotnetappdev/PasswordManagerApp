@@ -16,11 +16,23 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Old-school menu bar (shown after authentication) -->
-        <Menu x:Name="MainMenuBar" Grid.Row="0" Visibility="Collapsed"
-              Background="{DynamicResource ModernSurfaceBrush}"
-              Foreground="{DynamicResource ModernTextPrimaryBrush}"
-              Padding="4,2">
+        <!-- Top bar: menu (left) + global search (centre). Shown after authentication. -->
+        <Border x:Name="TopBar" Grid.Row="0" Visibility="Collapsed"
+                Background="{DynamicResource ModernSurfaceBrush}"
+                BorderThickness="0,0,0,1"
+                BorderBrush="{DynamicResource ModernBorderBrush}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Menu x:Name="MainMenuBar" Grid.Column="0"
+                      Background="Transparent"
+                      Foreground="{DynamicResource ModernTextPrimaryBrush}"
+                      VerticalAlignment="Center"
+                      Padding="4,2">
             <MenuItem Header="_File">
                 <MenuItem Header="_Settings" Click="MenuSettings_Click" InputGestureText="Ctrl+,">
                     <MenuItem.Icon>
@@ -40,7 +52,55 @@
                 <Separator/>
                 <MenuItem Header="_About Vault Guard" Click="MenuAbout_Click"/>
             </MenuItem>
-        </Menu>
+                </Menu>
+
+                <!-- Global search: a single search box that searches the whole vault from anywhere. -->
+                <ui:AutoSuggestBox x:Name="SearchBox" Grid.Column="1"
+                                   QueryIcon="Find"
+                                   ui:ControlHelper.PlaceholderText="Search Vault Guard…"
+                                   TextChanged="SearchBox_TextChanged"
+                                   QuerySubmitted="SearchBox_QuerySubmitted"
+                                   SuggestionChosen="SearchBox_SuggestionChosen"
+                                   TextMemberPath="Title"
+                                   Style="{StaticResource ModernAutoSuggestBoxStyle}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Width="480"
+                                   Margin="12,6">
+                    <ui:AutoSuggestBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="2,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <!-- Brand favicon over a colour-coded tile, with the type glyph as a
+                                     fallback when no icon is available — like other password managers. -->
+                                <Border Grid.Column="0" Width="30" Height="30" CornerRadius="7"
+                                        Margin="0,0,12,0" Background="{Binding IconBrush}">
+                                    <Grid>
+                                        <ui:FontIcon Glyph="{Binding Glyph}" FontSize="14" Foreground="White"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <Image Source="{Binding BrandImage}" Width="18" Height="18"
+                                               Stretch="Uniform"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="Medium"
+                                               TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                    <TextBlock Text="{Binding Subtitle}" FontSize="11"
+                                               TextTrimming="CharacterEllipsis"
+                                               Visibility="{Binding Subtitle, Converter={StaticResource StringToVisibilityConverter}}"
+                                               Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ui:AutoSuggestBox.ItemTemplate>
+                </ui:AutoSuggestBox>
+            </Grid>
+        </Border>
 
         <!-- Login Frame (shown during authentication) -->
         <Frame x:Name="LoginFrame"
@@ -56,9 +116,11 @@
                         Grid.Row="1"
                         IsBackButtonVisible="Collapsed"
                         IsSettingsVisible="False"
-                        IsPaneToggleButtonVisible="False"
+                        IsPaneToggleButtonVisible="True"
+                        IsPaneOpen="True"
                         PaneDisplayMode="Left"
                         OpenPaneLength="260"
+                        CompactPaneLength="48"
                         CompactModeThresholdWidth="0"
                         ExpandedModeThresholdWidth="0"
                         SelectionChanged="MainNavigationView_SelectionChanged"
@@ -145,16 +207,7 @@
                         </Grid>
                     </Button>
 
-                    <!-- Search -->
-                    <Border Padding="12,6">
-                        <ui:AutoSuggestBox x:Name="SearchBox"
-                                        QueryIcon="Find"
-                                        ui:ControlHelper.PlaceholderText="Search..."
-                                        TextChanged="SearchBox_TextChanged"
-                                        QuerySubmitted="SearchBox_QuerySubmitted"
-                                        Style="{StaticResource ModernAutoSuggestBoxStyle}"
-                                        Height="34"/>
-                    </Border>
+                    <!-- Search moved to the global top bar (see TopBar above). -->
 
                     <!-- New Item button -->
                     <Border Padding="12,0,12,10">

@@ -424,17 +424,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     {
         if (_selectedItem == null || _viewModel == null) return;
 
-        var dialog = new ModernWpf.Controls.ContentDialog
-        {
-            Title = "Delete Item",
-            Content = $"Are you sure you want to delete '{_selectedItem.Title}'?",
-            PrimaryButtonText = "Delete",
-            CloseButtonText = "Cancel",
-            DefaultButton = ModernWpf.Controls.ContentDialogButton.Close
-        };
-        ConfigureDialogForCentering(dialog);
-
-        if (await dialog.ShowAsync() == ModernWpf.Controls.ContentDialogResult.Primary)
+        if (await Helpers.ConfirmDialog.ShowDeleteAsync(
+                "Delete Item", $"Are you sure you want to delete “{_selectedItem.Title}”? This cannot be undone."))
         {
             if (_serviceProvider != null &&
                 !await Helpers.SecurityGateHelper.RequireCodeForActionAsync(
@@ -1419,16 +1410,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             menuItem.DataContext is PasswordItem item &&
             _viewModel != null)
         {
-            var dialog = new ModernWpf.Controls.ContentDialog
-            {
-                Title = "Delete Password Item",
-                Content = $"Are you sure you want to delete '{item.Title}'?",
-                PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
-                DefaultButton = ModernWpf.Controls.ContentDialogButton.Close};
-
-            var result = await dialog.ShowAsync();
-            if (result == ModernWpf.Controls.ContentDialogResult.Primary)
+            if (await Helpers.ConfirmDialog.ShowDeleteAsync(
+                    "Delete Password Item", $"Are you sure you want to delete “{item.Title}”? This cannot be undone."))
             {
                 if (_serviceProvider != null &&
                     !await Helpers.SecurityGateHelper.RequireCodeForActionAsync(
