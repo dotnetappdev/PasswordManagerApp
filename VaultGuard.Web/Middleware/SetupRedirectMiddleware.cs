@@ -41,16 +41,15 @@ public class SetupRedirectMiddleware
                 return;
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            // Timeout checking configuration - allow request to continue
-            // This prevents hanging on slow file systems
+            VaultGuard.Services.Logging.AppLogger.Error($"Setup redirect middleware timeout", ex);
         }
         catch (Exception ex)
         {
             // Log the error but allow the request to continue
             // Configuration check failures shouldn't block access
-            Console.WriteLine($"Setup redirect middleware error: {ex.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"Setup redirect middleware error", ex);
         }
 
         await _next(context);

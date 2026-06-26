@@ -1023,7 +1023,7 @@
         catch (Exception ex)
         {
             MigrationStatus = null;
-            System.Diagnostics.Debug.WriteLine($"Migration status check failed: {ex.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"Migration status check failed", ex);
         }
     }
 

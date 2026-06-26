@@ -43,7 +43,7 @@ public sealed partial class CategoriesPage : Page
         }
         catch (Exception ex)
         {
-            // Fallback - no action needed in WPF
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to apply dialog centering style", ex);
         }
     }
 

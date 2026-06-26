@@ -82,7 +82,12 @@
     {
         isLoading = true;
         try { tags = (await TagService.GetUserTagsAsync())?.ToList() ?? new(); }
-        catch { try { tags = (await TagService.GetAllAsync())?.ToList() ?? new(); } catch { } }
+        catch (Exception userTagsEx)
+        {
+            VaultGuard.Services.Logging.AppLogger.Warning("Failed to load user tags; falling back to all tags", userTagsEx);
+            try { tags = (await TagService.GetAllAsync())?.ToList() ?? new(); }
+            catch (Exception allTagsEx) { VaultGuard.Services.Logging.AppLogger.Error("Failed to load tags", allTagsEx); }
+        }
         finally { isLoading = false; }
     }
 

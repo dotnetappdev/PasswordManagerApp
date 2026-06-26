@@ -292,9 +292,8 @@ public class SeedDatabaseAndUserRegistrationTests : IDisposable
             {
                 File.Delete(_testDbPath);
             }
-            catch
-            {
-                // Ignore cleanup errors
+            catch (Exception ex) {
+                System.Diagnostics.Debug.WriteLine($"Unhandled exception: {ex.Message}");
             }
         }
     }

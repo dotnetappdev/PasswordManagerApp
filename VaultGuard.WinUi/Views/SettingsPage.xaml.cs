@@ -64,8 +64,8 @@ public sealed partial class SettingsPage : Page
                     var candidateDirs = new List<string>();
 
                     // App base and AppContext
-                    try { candidateDirs.Add(AppDomain.CurrentDomain.BaseDirectory); } catch { }
-                    try { candidateDirs.Add(AppContext.BaseDirectory); } catch { }
+                    try { candidateDirs.Add(AppDomain.CurrentDomain.BaseDirectory); } catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", "Failed to add base directory candidate", ex); }
+                    try { candidateDirs.Add(AppContext.BaseDirectory); } catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", "Failed to add AppContext base directory candidate", ex); }
 
                     // Executing assembly location
                     try
@@ -73,19 +73,19 @@ public sealed partial class SettingsPage : Page
                         var execPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         if (!string.IsNullOrEmpty(execPath)) candidateDirs.Add(System.IO.Path.GetDirectoryName(execPath)!);
                     }
-                    catch { }
+                    catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", "Failed to add executing assembly directory candidate", ex); }
 
                     // Current directory
-                    try { candidateDirs.Add(Environment.CurrentDirectory); } catch { }
+                    try { candidateDirs.Add(Environment.CurrentDirectory); } catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", "Failed to add current directory candidate", ex); }
 
                     // Per-user imports folder (LocalAppData)
-                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultGuard", "imports")); } catch { }
+                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultGuard", "imports")); } catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", "Failed to add per-user imports folder candidate", ex); }
 
                     // Machine-wide imports folder (ProgramData)
-                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "VaultGuard", "imports")); } catch { }
+                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "VaultGuard", "imports")); } catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", "Failed to add machine-wide imports folder candidate", ex); }
 
                     // Standard plugin discovery folder used by PluginDiscoveryService
-                    try { candidateDirs.Add(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "imports", "otherpasswordmanagers")); } catch { }
+                    try { candidateDirs.Add(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "imports", "otherpasswordmanagers")); } catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", "Failed to add plugin discovery folder candidate", ex); }
 
                     // Collect DLLs from all candidate directories
                     foreach (var dir in candidateDirs.Where(d => !string.IsNullOrEmpty(d)).Distinct())
@@ -98,7 +98,10 @@ public sealed partial class SettingsPage : Page
                                 importDllsList.AddRange(Directory.GetFiles(dir, "VaultGuardImports.*.dll", SearchOption.TopDirectoryOnly));
                             }
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            await _logger.LogErrorAsync("SettingsPage", $"Failed to scan directory {dir} for import DLLs", ex);
+                        }
                     }
                     var importDlls = importDllsList.ToArray();
                     await _logger.LogAsync("SettingsPage", $"Found {importDlls.Length} import DLLs");
@@ -318,6 +321,7 @@ public sealed partial class SettingsPage : Page
         }
         catch (Exception ex)
         {
+            await _logger.LogErrorAsync("SettingsPage", "Error populating import types", ex);
         }
     }
 
@@ -566,7 +570,10 @@ public sealed partial class SettingsPage : Page
             {
                 await _logger.LogAsync("SettingsPage", $"Available providers: {string.Join(", ", providers.Select(p => p.ProviderName + " (" + p.DisplayName + ")"))}");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                VaultGuard.Services.Logging.AppLogger.Error($"Failed to log available providers", ex);
+            }
 
             // Get provider name from ComboBoxItem Tag
             string providerName = selectedItem.Tag?.ToString() ?? "";
@@ -605,13 +612,13 @@ public sealed partial class SettingsPage : Page
                 ImportStatusText.Text = "Import failed";
                 ImportResultText.Text = $"Import provider '{providerName}' not found. Available providers: {string.Join(", ", providers.Select(p => p.ProviderName))}";
                 // Also log the failure for diagnostics
-                try { await _logger.LogAsync("SettingsPage", $"Provider resolution failed for '{providerName}'. Available: {string.Join(",", providers.Select(p => p.ProviderName))}"); } catch { }
+                try { await _logger.LogAsync("SettingsPage", $"Provider resolution failed for '{providerName}'. Available: {string.Join(",", providers.Select(p => p.ProviderName))}"); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to log provider resolution failure", ex); }
                 StartImportButton.IsEnabled = true;
                 return;
             }
 
             // Log the chosen provider
-            try { await _logger.LogAsync("SettingsPage", $"Resolved provider '{providerName}' to '{provider.ProviderName}' ({provider.DisplayName})"); } catch { }
+            try { await _logger.LogAsync("SettingsPage", $"Resolved provider '{providerName}' to '{provider.ProviderName}' ({provider.DisplayName})"); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to log resolved provider", ex); }
 
             // Update progress
             ImportStatusText.Text = $"Importing from {selectedType}...";
@@ -669,17 +676,24 @@ public sealed partial class SettingsPage : Page
                                             break;
                                         }
                                     }
-                                    catch { }
+                                    catch (Exception ex)
+                                    {
+                                        VaultGuard.Services.Logging.AppLogger.Error($"Failed to instantiate candidate provider type {ct.FullName}", ex);
+                                    }
                                 }
 
                                 if (provider != null) break;
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                VaultGuard.Services.Logging.AppLogger.Error($"Failed to scan assembly {asm.FullName} for provider types", ex);
+                            }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
+                    VaultGuard.Services.Logging.AppLogger.Error($"Failed fallback 1Password provider resolution", ex);
                 }
             }
 
@@ -1456,7 +1470,10 @@ public sealed partial class SettingsPage : Page
                     : Visibility.Collapsed;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to update SQLite path panel visibility", ex);
+        }
     }
 
     private async void SecureWipeButton_Click(object sender, RoutedEventArgs e)

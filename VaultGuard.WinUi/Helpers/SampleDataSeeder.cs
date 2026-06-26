@@ -219,9 +219,8 @@ namespace VaultGuard.WinUi.Helpers
                 };
                 await passwordItemService.CreateAsync(sampleCreditCard);
             }
-            catch (Exception)
-            {
-                // Silently fail if seeding fails
+            catch (Exception ex) {
+                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
             }
         }
     }

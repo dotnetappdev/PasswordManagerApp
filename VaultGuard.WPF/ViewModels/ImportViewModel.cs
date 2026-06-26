@@ -217,7 +217,7 @@ public class ImportViewModel : BaseViewModel
                 if (string.IsNullOrEmpty(userId) && authService != null)
                     userId = await authService.GetCurrentUserIdAsync();
             }
-            catch { /* fall back to null — import still runs */ }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to resolve current user for import", ex); }
 
             // Perform import (report a live percentage in the status text)
             using var fileStream = new FileStream(SelectedFilePath, FileMode.Open, FileAccess.Read);
@@ -235,7 +235,7 @@ public class ImportViewModel : BaseViewModel
                 if (secureStorage != null)
                     sessionId = await secureStorage.GetAsync("sessionId");
             }
-            catch { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to get vault session id", ex); }
 
             var result = await _importService.ImportPasswordsAsync(providerName, fileStream, fileName, userId, progress, sessionId);
 

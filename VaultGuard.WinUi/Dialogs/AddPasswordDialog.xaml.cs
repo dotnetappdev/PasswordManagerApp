@@ -95,9 +95,8 @@ public sealed partial class AddPasswordDialog : ContentDialog
             this.VerticalAlignment = Microsoft.UI.Xaml.VerticalAlignment.Center;
             this.Margin = new Microsoft.UI.Xaml.Thickness(0);
         }
-        catch (Exception)
-        {
-            // Silently ignore; dialog will still show with default behavior
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -184,9 +183,8 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 }
             }
         }
-        catch
-        {
-            // Defensive: if CustomFieldsContainer is missing or children are not controls, ignore
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
 
         // Safely show/hide the generate button if it's present in the template/XAML
@@ -293,13 +291,12 @@ public sealed partial class AddPasswordDialog : ContentDialog
                     }
                 }
             }
-            catch
-            {
-                // Defensive: ignore any timing-related issues here
+            catch (Exception ex) {
+                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -347,9 +344,8 @@ public sealed partial class AddPasswordDialog : ContentDialog
                 IdentityFieldsPanel.Visibility = Visibility.Collapsed;
             }
         }
-        catch
-        {
-            // Defensive: if panels are renamed in XAML, ignore and allow existing behavior
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
 
         // Select category
@@ -577,9 +573,8 @@ public sealed partial class AddPasswordDialog : ContentDialog
                         item.CollectionId = defaultCollection.Id;
                     }
                 }
-                catch (Exception ex)
-                {
-                    // Continue without collection ID - let the service handle it
+                catch (Exception ex) {
+                    VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
                 }
             }
 
@@ -730,9 +725,8 @@ public sealed partial class AddPasswordDialog : ContentDialog
             // Disable primary button during loading
             this.IsPrimaryButtonEnabled = !show;
         }
-        catch
-        {
-            // Ignore if UI elements not found
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 

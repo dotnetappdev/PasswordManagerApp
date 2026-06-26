@@ -53,6 +53,7 @@ namespace VaultGuard.WPF.Dialogs
         public ToastColorPickerDialog(string title, ToastTheme current)
         {
             InitializeComponent();
+            Helpers.Win11Chrome.Apply(this);
             HeaderText.Text = title;
 
             _primary = current.Accent;
@@ -222,7 +223,7 @@ namespace VaultGuard.WPF.Dialogs
         private static Brush SafeBrush(string hex)
         {
             try { return (Brush)new BrushConverter().ConvertFrom(hex)!; }
-            catch { return Brushes.Gray; }
+            catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return Brushes.Gray; }
         }
 
         private void Ok_Click(object sender, RoutedEventArgs e)

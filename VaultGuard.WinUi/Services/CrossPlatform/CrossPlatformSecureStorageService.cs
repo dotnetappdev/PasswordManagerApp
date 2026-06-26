@@ -32,8 +32,8 @@ public class CrossPlatformSecureStorageService : ISecureStorageService
                 return Task.FromResult<string?>(content);
             }
         }
-        catch (Exception)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
         return Task.FromResult<string?>(null);
     }
@@ -45,8 +45,8 @@ public class CrossPlatformSecureStorageService : ISecureStorageService
             var filePath = Path.Combine(_storageDirectory, $"{key}.dat");
             File.WriteAllText(filePath, value);
         }
-        catch (Exception)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
         return Task.CompletedTask;
     }
@@ -62,8 +62,8 @@ public class CrossPlatformSecureStorageService : ISecureStorageService
                 return Task.FromResult(true);
             }
         }
-        catch (Exception)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
         return Task.FromResult(false);
     }
@@ -79,8 +79,8 @@ public class CrossPlatformSecureStorageService : ISecureStorageService
                 return true;
             }
         }
-        catch (Exception)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
         return false;
     }
@@ -95,8 +95,8 @@ public class CrossPlatformSecureStorageService : ISecureStorageService
                 Directory.CreateDirectory(_storageDirectory);
             }
         }
-        catch (Exception)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
         return Task.CompletedTask;
     }
@@ -111,8 +111,8 @@ public class CrossPlatformSecureStorageService : ISecureStorageService
                 Directory.CreateDirectory(_storageDirectory);
             }
         }
-        catch (Exception)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 }

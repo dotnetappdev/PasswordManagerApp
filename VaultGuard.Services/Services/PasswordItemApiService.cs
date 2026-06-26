@@ -462,6 +462,6 @@ public class PasswordItemApiService : IPasswordItemApiService
     private static string ExtractHostname(string url)
     {
         try { return new Uri(url.Contains("://") ? url : $"https://{url}").Host; }
-        catch { return url; }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return url; }
     }
 }

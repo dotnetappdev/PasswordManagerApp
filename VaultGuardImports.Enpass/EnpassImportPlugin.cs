@@ -146,9 +146,7 @@ public class EnpassImportPlugin : IPasswordImportPlugin
                 FailedImports = 0
             };
         }
-        catch (Exception ex)
-        {
-            return new ImportResult
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return new ImportResult
             {
                 Success = false,
                 ErrorMessage = $"Failed to import Enpass file: {ex.Message}",
@@ -157,8 +155,7 @@ public class EnpassImportPlugin : IPasswordImportPlugin
                 SuccessfulImports = 0,
                 FailedImports = 1,
                 Warnings = new List<string> { ex.Message }
-            };
-        }
+            }; }
     }
 
     public async Task<bool> CanProcessFileAsync(Stream stream, string fileName)
@@ -177,10 +174,7 @@ public class EnpassImportPlugin : IPasswordImportPlugin
             using var doc = JsonDocument.Parse(content);
             return doc.RootElement.TryGetProperty("items", out _);
         }
-        catch
-        {
-            return false;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public async Task<IEnumerable<PasswordItem>> GetImportPreviewAsync(Stream stream, string fileName)
@@ -234,10 +228,7 @@ public class EnpassImportPlugin : IPasswordImportPlugin
 
             return previewItems;
         }
-        catch
-        {
-            return new List<PasswordItem>();
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return new List<PasswordItem>(); }
     }
 }
 

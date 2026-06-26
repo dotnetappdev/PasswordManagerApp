@@ -14,9 +14,8 @@ public static class ResourceHelper
                 return Application.Current.Resources[key] as T;
             }
         }
-        catch
-        {
-            // ignore and return default
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
         return default;
     }

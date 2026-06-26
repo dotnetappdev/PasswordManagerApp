@@ -29,8 +29,9 @@ public class WebMasterKeyCacheService : IMasterKeyCacheService
             var result = await _storage.GetAsync<string>(Key(userId));
             return result.Success ? result.Value : null;
         }
-        catch
+        catch (Exception ex)
         {
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to read cached master key", ex);
             return null;
         }
     }
@@ -38,12 +39,12 @@ public class WebMasterKeyCacheService : IMasterKeyCacheService
     public async Task CacheAsync(string userId, string masterPassword)
     {
         try { await _storage.SetAsync(Key(userId), masterPassword); }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to cache master key", ex); }
     }
 
     public async Task ForgetAsync(string userId)
     {
         try { await _storage.DeleteAsync(Key(userId)); }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to forget cached master key", ex); }
     }
 }

@@ -231,9 +231,9 @@ namespace VaultGuard.WPF.Services
                     UpdateResourceIfExists(resources, "ComboBoxItemForegroundSelectedPointerOver", "#FFFFFF");
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Silently ignore theme update errors
+                VaultGuard.Services.Logging.AppLogger.Error($"Theme update failed", ex);
             }
         }
 
@@ -261,9 +261,9 @@ namespace VaultGuard.WPF.Services
                     resources[key] = new SolidColorBrush(color);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Silently ignore resource update errors
+                VaultGuard.Services.Logging.AppLogger.Error($"Resource update failed", ex);
             }
         }
 
@@ -284,9 +284,9 @@ namespace VaultGuard.WPF.Services
                 
                 return AppTheme.Light;
             }
-            catch
+            catch (Exception ex)
             {
-                // Default to light if we can't detect system theme
+                VaultGuard.Services.Logging.AppLogger.Error($"Failed to detect system theme, defaulting to light", ex);
                 return AppTheme.Light;
             }
         }

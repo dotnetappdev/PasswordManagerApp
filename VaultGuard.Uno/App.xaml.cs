@@ -178,7 +178,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             // Log error but don't crash the app
-            System.Diagnostics.Debug.WriteLine($"Failed to initialize Sentry: {ex.Message}");
+            VaultGuard.Uno.Logging.UnoLogger.Error("Failed to initialize Sentry", ex);
         }
     }
 }

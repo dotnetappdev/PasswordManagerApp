@@ -41,6 +41,7 @@ public partial class DatabaseConfigurationDialog : Window
     {
         _databaseConfigService = databaseConfigService;
         InitializeComponent();
+        Helpers.Win11Chrome.Apply(this);
 
         // Wait for Loaded so every named control is fully materialised before
         // async population runs — avoids NullReferenceException on TabControl items
@@ -70,7 +71,7 @@ public partial class DatabaseConfigurationDialog : Window
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to load configuration: {ex.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to load configuration", ex);
         }
     }
 
@@ -752,7 +753,7 @@ public partial class DatabaseConfigurationDialog : Window
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"SetStatus error: {ex.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"SetStatus error", ex);
         }
     }
 

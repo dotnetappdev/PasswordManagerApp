@@ -86,9 +86,9 @@ public class ItemToBrandImageConverter : IValueConverter
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Fall through to null → coloured emoji fallback.
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to resolve brand image", ex);
         }
 
         return null;
@@ -113,10 +113,7 @@ public class ItemToBrandImageConverter : IValueConverter
             bitmap.Freeze();
             return bitmap;
         }
-        catch
-        {
-            return null;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return null; }
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

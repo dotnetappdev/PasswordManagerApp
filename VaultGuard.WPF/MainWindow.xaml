@@ -4,9 +4,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:VaultGuard.WPF.Controls"
         Icon="Assets/AppIcon.ico"
+        Background="{DynamicResource ModernBackgroundBrush}"
         PreviewKeyDown="MainWindow_PreviewKeyDown">
 
-    <Grid Background="{DynamicResource ModernBackgroundBrush}">
+    <!-- Background is Transparent so the Windows 11 Mica backdrop shows through the translucent
+         nav pane. On Windows 10 the Win11Chrome helper leaves the opaque Window.Background above
+         as the fallback. The content frame paints its own opaque surface, so reading stays solid. -->
+    <Grid Background="Transparent">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>

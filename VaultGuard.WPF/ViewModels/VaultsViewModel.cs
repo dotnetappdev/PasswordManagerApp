@@ -26,9 +26,9 @@ public class VaultsViewModel : BaseViewModel
             {
                 await LoadVaultsAsync();
             }
-            catch
+            catch (Exception ex)
             {
-                // Error already logged in LoadVaultsAsync
+                VaultGuard.Services.Logging.AppLogger.Error($"Failed to load vaults during initialization", ex);
             }
         });
     }
@@ -70,7 +70,7 @@ public class VaultsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            // Log error
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to load vaults", ex);
         }
         finally
         {
@@ -122,10 +122,7 @@ public class VaultsViewModel : BaseViewModel
             
             return false;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;
@@ -156,10 +153,7 @@ public class VaultsViewModel : BaseViewModel
             
             return false;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;
@@ -177,10 +171,7 @@ public class VaultsViewModel : BaseViewModel
             OnPropertyChanged(nameof(HasNoVaults));
             return true;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;
@@ -197,7 +188,7 @@ public class VaultsViewModel : BaseViewModel
                 v.IsDefault = (v.Id == vault.Id);
             OnPropertyChanged(nameof(Vaults));
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to set default vault", ex); }
     }
 
     public async Task RefreshAsync()

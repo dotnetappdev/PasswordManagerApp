@@ -149,7 +149,7 @@ public class OnePasswordImportPlugin : IPasswordImportPlugin
         catch (Exception ex)
         {
             // Surface the error so callers know the preview failed
-            System.Diagnostics.Debug.WriteLine($"[1Password] GetImportPreviewAsync failed: {ex.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"[1Password] GetImportPreviewAsync failed", ex);
             return new List<PasswordItem>();
         }
     }

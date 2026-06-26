@@ -89,16 +89,24 @@ public class PasskeyRegistrationCompleteDto
 {
     [Required]
     public string Challenge { get; set; } = string.Empty;
-    
+
     [Required]
     public string CredentialResponse { get; set; } = string.Empty;
-    
+
+    /// <summary>
+    /// The exact CredentialCreationOptions JSON returned by the matching "start" call, echoed
+    /// back by the client. Required so the server verifies the attestation against the original
+    /// challenge/rp/user rather than a reconstructed approximation.
+    /// </summary>
+    [Required]
+    public string OriginalOptionsJson { get; set; } = string.Empty;
+
     [Required]
     [MaxLength(100)]
     public string PasskeyName { get; set; } = string.Empty;
-    
+
     public bool StoreInVault { get; set; } = true;
-    
+
     [MaxLength(50)]
     public string? DeviceType { get; set; }
 }
@@ -120,9 +128,16 @@ public class PasskeyAuthenticationCompleteDto
 {
     [Required]
     public string Challenge { get; set; } = string.Empty;
-    
+
     [Required]
     public string CredentialResponse { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The exact AssertionOptions JSON returned by the matching "start" call, echoed back by
+    /// the client so the server verifies the assertion against the original challenge.
+    /// </summary>
+    [Required]
+    public string OriginalOptionsJson { get; set; } = string.Empty;
 }
 
 public class PasskeyDto

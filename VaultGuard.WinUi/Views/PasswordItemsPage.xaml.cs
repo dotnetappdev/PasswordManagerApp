@@ -36,10 +36,7 @@ public sealed partial class PasswordItemsPage : Page
         {
             return this.FindName(name) as T;
         }
-        catch
-        {
-            return null;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return null; }
     }
 
     protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
@@ -83,8 +80,8 @@ public sealed partial class PasswordItemsPage : Page
                     _allTags = (await _tagService.GetAllAsync()).ToList();
                 }
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
+                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
             }
 
             // Reload view model items after seeding to ensure UI shows newly created items
@@ -95,8 +92,8 @@ public sealed partial class PasswordItemsPage : Page
                     await _viewModel.RefreshAsync();
                 }
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
+                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
             }
         }
     }
@@ -155,8 +152,8 @@ public sealed partial class PasswordItemsPage : Page
                 await PopulateCategoryDropdownAsync();
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -236,9 +233,8 @@ public sealed partial class PasswordItemsPage : Page
                         });
                     }
                 }
-                catch
-                {
-                    // Ignore count errors
+                catch (Exception ex) {
+                    VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
                 }
             }
 
@@ -305,9 +301,8 @@ public sealed partial class PasswordItemsPage : Page
                 selectedButton.Background = Helpers.ResourceHelper.GetBrush("ModernPrimaryBrush", new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent));
             }
         }
-        catch
-        {
-            // Defensive: if FindName or resource lookup fails, ignore and continue
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -422,8 +417,8 @@ public sealed partial class PasswordItemsPage : Page
             Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
             await ShowTemporaryMessageAsync("Password copied to clipboard");
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -443,8 +438,8 @@ public sealed partial class PasswordItemsPage : Page
             var uri = new Uri(url);
             await Windows.System.Launcher.LaunchUriAsync(uri);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -478,9 +473,8 @@ public sealed partial class PasswordItemsPage : Page
                 await dialog.ShowAsync();
             }
         }
-        catch
-        {
-            // Fallback to debug output if UI updates fail
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -563,8 +557,8 @@ public sealed partial class PasswordItemsPage : Page
                 editTagsPanel.ItemsSource = item.Tags ?? new List<Tag>();
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -768,7 +762,9 @@ public sealed partial class PasswordItemsPage : Page
                 sender.ItemsSource = suggestions;
             }
         }
-        catch { }
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
+        }
     }
 
     private async void TagSuggestBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
@@ -781,7 +777,9 @@ public sealed partial class PasswordItemsPage : Page
             sender.Text = string.Empty;
             sender.ItemsSource = null;
         }
-        catch { }
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
+        }
     }
 
     private async void TagSuggestBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
@@ -794,7 +792,9 @@ public sealed partial class PasswordItemsPage : Page
             sender.Text = string.Empty;
             sender.ItemsSource = null;
         }
-        catch { }
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
+        }
     }
 
     private async Task AddTagByNameToSelectedItemAsync(string tagName)
@@ -844,8 +844,8 @@ public sealed partial class PasswordItemsPage : Page
                 if (detailTags != null) detailTags.ItemsSource = _selectedItem.Tags;
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -878,8 +878,8 @@ public sealed partial class PasswordItemsPage : Page
                 }
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -899,8 +899,8 @@ public sealed partial class PasswordItemsPage : Page
                 Frame?.Navigate(typeof(CategoriesPage), _serviceProvider);
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -1077,8 +1077,8 @@ public sealed partial class PasswordItemsPage : Page
             // Show feedback to user
             ShowFilterAppliedFeedback();
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -1113,9 +1113,8 @@ public sealed partial class PasswordItemsPage : Page
                 }
             }
         }
-        catch
-        {
-            // Ignore feedback errors
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -1212,8 +1211,8 @@ public sealed partial class PasswordItemsPage : Page
             Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
             await ShowTemporaryMessageAsync("Username copied to clipboard");
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -1234,8 +1233,8 @@ public sealed partial class PasswordItemsPage : Page
                 passwordBox.Password = password;
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -1358,8 +1357,8 @@ public sealed partial class PasswordItemsPage : Page
                 customFieldsContainer.Children.Add(fieldGrid);
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 }

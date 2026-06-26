@@ -45,7 +45,7 @@ public class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error initializing services: {ex.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"Error initializing services", ex);
         }
         finally
         {

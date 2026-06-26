@@ -167,10 +167,7 @@ public sealed partial class CategoryDialog : ModernWpf.Controls.ContentDialog
                         _category.UserId = uid;
                     }
                 }
-                catch
-                {
-                    // Ignore - leave UserId as-is if we cannot resolve it
-                }
+                catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
 
                 await _categoryService.UpdateAsync(_category);
                 Result = _category;
@@ -197,7 +194,7 @@ public sealed partial class CategoryDialog : ModernWpf.Controls.ContentDialog
                     if (!string.IsNullOrWhiteSpace(uid))
                         newCategory.UserId = uid;
                 }
-                catch { }
+                catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
 
                 await _categoryService.CreateAsync(newCategory);
                 Result = newCategory;

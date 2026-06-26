@@ -40,10 +40,7 @@ public class MasterPasswordCacheService : IMasterPasswordCacheService
             var decryptedData = ProtectedData.Unprotect(encryptedData, null, DataProtectionScope.CurrentUser);
             return Task.FromResult<string?>(Encoding.UTF8.GetString(decryptedData));
         }
-        catch
-        {
-            return Task.FromResult<string?>(null);
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return Task.FromResult<string?>(null); }
     }
 
     public Task CacheMasterPasswordAsync(string userId, string masterPassword)
@@ -62,10 +59,7 @@ public class MasterPasswordCacheService : IMasterPasswordCacheService
 
             File.WriteAllBytes(filePath, encryptedData);
         }
-        catch
-        {
-            // Caching failures shouldn't crash the app - just fall back to manual entry next time.
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
 
         return Task.CompletedTask;
     }
@@ -80,10 +74,7 @@ public class MasterPasswordCacheService : IMasterPasswordCacheService
                 File.Delete(filePath);
             }
         }
-        catch
-        {
-            // Best-effort.
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
 
         return Task.CompletedTask;
     }
@@ -94,10 +85,7 @@ public class MasterPasswordCacheService : IMasterPasswordCacheService
         {
             return Task.FromResult(File.Exists(GetFilePath(userId)));
         }
-        catch
-        {
-            return Task.FromResult(false);
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return Task.FromResult(false); }
     }
 
     private static string GetFilePath(string userId)

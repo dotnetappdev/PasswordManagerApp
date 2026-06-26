@@ -113,9 +113,8 @@ public class PasswordItemsViewModel : BaseViewModel
 
             await ApplyFiltersAsync();
         }
-        catch (Exception ex)
-        {
-            // Handle error - could show a message to user
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
         finally
         {
@@ -209,8 +208,8 @@ public class PasswordItemsViewModel : BaseViewModel
             }
             OnPropertyChanged(nameof(HasNoItems));
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -238,8 +237,8 @@ public class PasswordItemsViewModel : BaseViewModel
             _allItems.Remove(item); // Also remove from the cached all items list
             OnPropertyChanged(nameof(HasNoItems));
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 }

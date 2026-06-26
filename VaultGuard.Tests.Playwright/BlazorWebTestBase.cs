@@ -112,11 +112,11 @@ public abstract class BlazorWebTestBase : PageTest
                 _appProcess.WaitForExit(5000);
             }
         }
-        catch { /* best-effort */ }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Best-effort app stop failed: {ex.Message}"); }
 
         if (_tempDbPath is not null && File.Exists(_tempDbPath))
         {
-            try { File.Delete(_tempDbPath); } catch { }
+            try { File.Delete(_tempDbPath); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Failed to delete temp db: {ex.Message}"); }
         }
 
         return Task.CompletedTask;
@@ -151,7 +151,7 @@ public abstract class BlazorWebTestBase : PageTest
                 if ((int)response.StatusCode < 500)
                     return;
             }
-            catch { /* not ready yet */ }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"App not ready yet: {ex.Message}"); }
 
             await Task.Delay(1000);
         }

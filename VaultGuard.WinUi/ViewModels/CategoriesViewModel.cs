@@ -62,8 +62,8 @@ public class CategoriesViewModel : BaseViewModel
                 Categories.Add(category);
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
         finally
         {
@@ -116,10 +116,7 @@ public class CategoriesViewModel : BaseViewModel
             
             return false;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;
@@ -147,10 +144,7 @@ public class CategoriesViewModel : BaseViewModel
             
             return false;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;
@@ -168,10 +162,7 @@ public class CategoriesViewModel : BaseViewModel
             OnPropertyChanged(nameof(HasNoCategories));
             return true;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;

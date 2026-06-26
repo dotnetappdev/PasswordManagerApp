@@ -104,7 +104,7 @@ public sealed class ToastService
         Brush SafeBrush(string hex, string fallback)
         {
             try { return (Brush)new BrushConverter().ConvertFrom(hex)!; }
-            catch { return (Brush)new BrushConverter().ConvertFrom(fallback)!; }
+            catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return (Brush)new BrushConverter().ConvertFrom(fallback)!; }
         }
 
         var accentBrush  = SafeBrush(accent, "#60A5FA");

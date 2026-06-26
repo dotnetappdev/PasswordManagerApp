@@ -112,7 +112,7 @@
             vaultCount = (await VaultService.GetAllAsync())?.Count ?? 0;
             categoryCount = (await CategoryService.GetAllAsync())?.Count ?? 0;
         }
-        catch { }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
         finally { isLoading = false; }
     }
 

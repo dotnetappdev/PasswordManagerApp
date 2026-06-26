@@ -26,7 +26,8 @@ public class Program
         }
         catch (Exception ex)
         {
-            // Log error to stderr (not visible to browser extension)
+            // Durable log + stderr (stdout is reserved for the native-messaging protocol).
+            NativeHostLogger.Error("Fatal native host error", ex);
             await Console.Error.WriteLineAsync($"Native Host Error: {ex.Message}");
             Environment.Exit(1);
         }
@@ -85,6 +86,7 @@ public class Program
             }
             catch (Exception ex)
             {
+                NativeHostLogger.Error("Error processing native message", ex);
                 var errorResponse = new { success = false, error = ex.Message };
                 await WriteNativeMessage(errorResponse);
             }
@@ -177,6 +179,7 @@ public class Program
         }
         catch (Exception ex)
         {
+            NativeHostLogger.Error($"Error dispatching action '{action}'", ex);
             return new { success = false, error = ex.Message };
         }
     }
@@ -286,9 +289,10 @@ public class Program
                         };
                         decryptedPassword = DecryptPasswordWithKey(encryptedData, session.masterKey);
                     }
-                    catch
+                    catch (Exception decryptEx)
                     {
-                        // If decryption fails, leave password empty
+                        // SECURITY: log the failure and item id only — never the value or key.
+                        NativeHostLogger.Warning($"Failed to decrypt stored password for item {item.Id}", decryptEx);
                         decryptedPassword = "";
                     }
                 }
@@ -366,9 +370,10 @@ public class Program
                         };
                         decryptedCardNumber = DecryptPasswordWithKey(encryptedData, session.masterKey);
                     }
-                    catch
+                    catch (Exception decryptEx)
                     {
-                        // If decryption fails, use unencrypted version if available
+                        // SECURITY: log the failure and item id only — never the card number or key.
+                        NativeHostLogger.Warning($"Failed to decrypt card number for item {item.Id}", decryptEx);
                         decryptedCardNumber = item.CreditCardItem.CardNumber ?? "";
                     }
                 }
@@ -392,9 +397,10 @@ public class Program
                         };
                         decryptedCvv = DecryptPasswordWithKey(encryptedData, session.masterKey);
                     }
-                    catch
+                    catch (Exception decryptEx)
                     {
-                        // If decryption fails, use unencrypted version if available
+                        // SECURITY: log the failure and item id only — never the CVV or key.
+                        NativeHostLogger.Warning($"Failed to decrypt CVV for item {item.Id}", decryptEx);
                         decryptedCvv = item.CreditCardItem.CVV ?? "";
                     }
                 }
@@ -512,9 +518,9 @@ public class Program
         {
             await _dbContext!.Database.ExecuteSqlRawAsync("ALTER TABLE \"UserPasskeys\" ADD COLUMN \"RpId\" TEXT NULL");
         }
-        catch
+        catch (Exception ex)
         {
-            // Column already exists (or table is being created elsewhere) — fine.
+            NativeHostLogger.Info($"Passkey schema column add skipped (likely already present): {ex.Message}");
         }
         _passkeySchemaEnsured = true;
     }
@@ -538,9 +544,9 @@ public class Program
                     ""LastModified""   TEXT NOT NULL
                 )");
         }
-        catch
+        catch (Exception ex)
         {
-            // Table already exists — fine.
+            NativeHostLogger.Info($"CustomFields table create skipped (likely already present): {ex.Message}");
         }
         _customFieldSchemaEnsured = true;
     }
@@ -1021,9 +1027,10 @@ public class Program
                    urlDomain.EndsWith("." + currentCleanDomain) ||
                    currentCleanDomain.EndsWith("." + urlDomain);
         }
-        catch
+        catch (Exception ex)
         {
-            // Fallback to simple string matching
+            // Malformed URL — fall back to simple string matching.
+            NativeHostLogger.Warning("Domain match URL parse failed; using substring match", ex);
             return websiteUrl.ToLower().Contains(currentDomain.ToLower());
         }
     }

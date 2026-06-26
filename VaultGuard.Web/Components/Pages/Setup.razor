@@ -718,7 +718,7 @@
                 if (existing.Supabase != null) { _supaUrl = existing.Supabase.Url; _supaKey = existing.Supabase.ServiceKey; }
             }
         }
-        catch { }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
     private void SelectProvider(DatabaseProvider provider)

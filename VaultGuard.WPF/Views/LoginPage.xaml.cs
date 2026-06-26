@@ -51,7 +51,7 @@ public sealed partial class LoginPage : Page
                 TogglePasswordVisibility(MasterPasswordBox, MasterPasswordVisibleBox, MasterRevealIcon, true);
             }
         }
-        catch { /* preference read failure is non-fatal */ }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to read master password visibility preference", ex); }
 
         FocusActivePasswordField();
     }
@@ -143,7 +143,7 @@ public sealed partial class LoginPage : Page
                 if (this.FindName("UserProfilesList") is ItemsControl userProfilesList)
                     userProfilesList.ItemsSource = _profileSelectionViewModel.UserProfiles;
             }
-            catch { /* refresh is best-effort */ }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to refresh user profiles list", ex); }
 
             await ShowAccountsReadyDialogAsync(
                 "admin@passwordmanager.local",
@@ -175,7 +175,7 @@ public sealed partial class LoginPage : Page
             if (await TableExistsAsync(appCtx, "AspNetRoles")) return;
 
             // 1) Try the normal migration path first.
-            try { await appCtx.Database.MigrateAsync(); } catch { }
+            try { await appCtx.Database.MigrateAsync(); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Identity schema migration failed", ex); }
             if (await TableExistsAsync(appCtx, "AspNetRoles")) return;
 
             // 2) Migration didn't create the Identity tables (this project's dual-context setup leaves
@@ -186,10 +186,10 @@ public sealed partial class LoginPage : Page
             foreach (var statement in SplitSqlStatements(script))
             {
                 try { await appCtx.Database.ExecuteSqlRawAsync(statement); }
-                catch { /* table/index already exists - ignore */ }
+                catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Identity schema statement failed (likely already exists)", ex); }
             }
         }
-        catch { /* best-effort; the seeder surfaces a clear error if schema is still missing */ }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to ensure identity schema", ex); }
     }
 
     private static System.Collections.Generic.IEnumerable<string> SplitSqlStatements(string script)
@@ -218,8 +218,9 @@ public sealed partial class LoginPage : Page
             cmd.Parameters.Add(p);
             return await cmd.ExecuteScalarAsync() != null;
         }
-        catch
+        catch (Exception ex)
         {
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to check table existence", ex);
             return false;
         }
     }
@@ -280,7 +281,7 @@ public sealed partial class LoginPage : Page
 
             await ctx.SaveChangesAsync();
         }
-        catch { /* best-effort; if it still fails the login error will make it clear */ }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to ensure default accounts are loginable", ex); }
     }
 
     private static async Task ShowLoginMessageAsync(string title, string message)
@@ -402,8 +403,7 @@ public sealed partial class LoginPage : Page
                 }
             }
         }
-        catch (Exception ex)
-        { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     private async Task DoPrimaryActionAsync()
@@ -598,7 +598,7 @@ public sealed partial class LoginPage : Page
             System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_prefFile)!);
             System.IO.File.WriteAllText(_prefFile, keep ? "1" : "0");
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to persist master password visibility preference", ex); }
 
         if (keep && !_showMasterPassword)
         {

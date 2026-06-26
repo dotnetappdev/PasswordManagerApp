@@ -93,10 +93,7 @@ public class MauiPlatformService : IPlatformService
         {
             return $"{DeviceInfo.Model}-{DeviceInfo.Platform}-{AppInfo.Name}";
         }
-        catch
-        {
-            return "unknown-device";
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return "unknown-device"; }
     }
 
     public bool IsMobilePlatform()

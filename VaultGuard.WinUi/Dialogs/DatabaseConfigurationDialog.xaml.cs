@@ -145,10 +145,7 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
 
             return true;
         }
-        catch
-        {
-            return false;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     private async void OnCloseButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
@@ -158,9 +155,8 @@ public sealed partial class DatabaseConfigurationDialog : ContentDialog
         {
             await SaveConfigurationAsync(_defaultPath);
         }
-        catch (Exception ex)
-        {
-            // Continue anyway - allow app to use defaults
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 

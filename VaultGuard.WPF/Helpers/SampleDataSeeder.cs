@@ -61,7 +61,7 @@ namespace VaultGuard.WPF.Helpers
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[SampleDataSeeder] Failed: {ex.Message}\n{ex.StackTrace}");
+                VaultGuard.Services.Logging.AppLogger.Debug($"[SampleDataSeeder] Failed: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -161,7 +161,7 @@ namespace VaultGuard.WPF.Helpers
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[SampleDataSeeder] EnsureSchema failed: {ex.Message}");
+                VaultGuard.Services.Logging.AppLogger.Error($"[SampleDataSeeder] EnsureSchema failed", ex);
             }
         }
 

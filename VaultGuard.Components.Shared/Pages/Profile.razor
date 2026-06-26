@@ -209,7 +209,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading user profile: {ex.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"Error loading user profile", ex);
         }
     }
 
@@ -225,7 +225,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading statistics: {ex.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"Error loading statistics", ex);
         }
     }
 
@@ -245,7 +245,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving profile: {ex.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"Error saving profile", ex);
         }
         finally
         {

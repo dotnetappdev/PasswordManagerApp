@@ -268,10 +268,7 @@ public class AppStartupService : IAppStartupService
             var isFirstRun = await _databaseConfigService.IsFirstRunAsync();
             return !isFirstRun;
         }
-        catch
-        {
-            return false;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     private async Task PerformStartupSyncAsync()

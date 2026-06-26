@@ -57,7 +57,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
                     break;
             }
         }
-        catch { /* swallow display errors */ }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to load item details for display", ex); }
     }
 
     private async Task LoadLoginAsync()
@@ -96,7 +96,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
                     PasswordText.CopyText = pwd;
             }
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to pre-decrypt password", ex); }
     }
 
     private void LoadCreditCard()
@@ -315,7 +315,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
                 ToastService.Instance.Show("Password copied.", ToastType.Info);
             }
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy password", ex); }
     }
 
     private void CopyCardholderButton_Click(object sender, RoutedEventArgs e)
@@ -361,7 +361,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
         if (!string.IsNullOrEmpty(url))
         {
             try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = url, UseShellExecute = true }); }
-            catch { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to open URL", ex); }
         }
     }
 
@@ -408,7 +408,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
             var storage = _serviceProvider.GetService<ISecureStorageService>();
             return storage != null ? await storage.GetAsync("sessionId") : null;
         }
-        catch { return null; }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return null; }
     }
 
 }

@@ -717,10 +717,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
             await connection.OpenAsync();
             return (true, string.Empty);
         }
-        catch (Exception ex)
-        {
-            return (false, ex.Message);
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return (false, ex.Message); }
     }
 
     private async Task<(bool Success, string ErrorMessage)> TestSqlServerConnectionAsync(string connectionString)
@@ -731,10 +728,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
             await connection.OpenAsync();
             return (true, string.Empty);
         }
-        catch (Exception ex)
-        {
-            return (false, ex.Message);
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return (false, ex.Message); }
     }
 
     private async Task<(bool Success, string ErrorMessage)> TestMySqlConnectionAsync(string connectionString)
@@ -745,10 +739,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
             await connection.OpenAsync();
             return (true, string.Empty);
         }
-        catch (Exception ex)
-        {
-            return (false, ex.Message);
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return (false, ex.Message); }
     }
 
     private async Task<(bool Success, string ErrorMessage)> TestPostgreSqlConnectionAsync(string connectionString)
@@ -759,10 +750,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
             await connection.OpenAsync();
             return (true, string.Empty);
         }
-        catch (Exception ex)
-        {
-            return (false, ex.Message);
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return (false, ex.Message); }
     }
 
     private async Task<(bool Success, string ErrorMessage)> TestSupabaseConnectionAsync(string connectionString)
@@ -774,9 +762,6 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
             await connection.OpenAsync();
             return (true, string.Empty);
         }
-        catch (Exception ex)
-        {
-            return (false, ex.Message);
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return (false, ex.Message); }
     }
 }

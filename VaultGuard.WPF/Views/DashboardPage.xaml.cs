@@ -40,7 +40,7 @@ public sealed partial class DashboardPage : System.Windows.Controls.Page
             if (_viewModel != null)
                 await _viewModel.RefreshAsync();
         }
-        catch { /* refresh is best-effort */ }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to refresh dashboard on vault data change", ex); }
     }
 
     public void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
@@ -241,9 +241,9 @@ public sealed partial class DashboardPage : System.Windows.Controls.Page
                     var uri = new Uri($"https://{website}");
                     Process.Start(new ProcessStartInfo(uri.ToString()) { UseShellExecute = true });
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Handle error - could show a message to user
+                    VaultGuard.Services.Logging.AppLogger.Error($"Failed to open website with https fallback", ex);
                 }
             }
         }
@@ -255,9 +255,9 @@ public sealed partial class DashboardPage : System.Windows.Controls.Page
         {
             System.Windows.Clipboard.SetText(text);
         }
-        catch
+        catch (Exception ex)
         {
-            // Handle clipboard error
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy text to clipboard", ex);
         }
     }
 

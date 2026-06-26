@@ -67,7 +67,9 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
                         {
                             ModerateInfoBar.Message = $"'{_passwordItem.Title}' has been deleted.";
                         }
-                        catch { }
+                        catch (Exception ex) {
+                            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
+                        }
                     }
                 }
 
@@ -76,8 +78,8 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
                 this.Hide();
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -109,8 +111,8 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
                 }
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -150,8 +152,8 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
                 }
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -180,8 +182,8 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
                     TogglePasswordButton.Content = "👁️ Show";
                 }
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
+                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
             }
         }
     }
@@ -201,8 +203,8 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
                 await Task.Delay(2000);
                 CopyUsernameButton.Content = "📋 Copy";
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
+                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
             }
         }
     }
@@ -225,8 +227,8 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
                     CopyPasswordButton.Content = "📋 Copy";
                 }
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
+                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
             }
         }
     }
@@ -245,8 +247,8 @@ public sealed partial class PasswordDetailsDialog : ContentDialog
                 };
                 System.Diagnostics.Process.Start(startInfo);
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
+                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
             }
         }
     }

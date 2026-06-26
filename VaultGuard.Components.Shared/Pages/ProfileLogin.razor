@@ -476,7 +476,7 @@
 
                     // Remember this device so future sign-ins for this 2FA account can use the
                     // authenticator code alone (the master password is stored encrypted at rest).
-                    try { await MasterKeyCache.CacheAsync(selectedProfile.Id, masterPassword); } catch { }
+                    try { await MasterKeyCache.CacheAsync(selectedProfile.Id, masterPassword); } catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
                 }
 
                 Navigation.NavigateTo("/");

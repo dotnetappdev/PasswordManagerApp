@@ -51,7 +51,9 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
         catch (Exception ex)
         {
             // Disable primary action so user cannot proceed when dialog is in an invalid state
-            try { this.IsPrimaryButtonEnabled = false; } catch { }
+            try { this.IsPrimaryButtonEnabled = false; } catch (Exception innerEx) {
+                VaultGuard.Services.Logging.AppLogger.Debug($"Unhandled exception: {innerEx.Message}");
+            }
         }
 
         // Wire up events (guard against null subscription)
@@ -59,8 +61,8 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
         {
             this.PrimaryButtonClick += UserRegistrationDialog_PrimaryButtonClick;
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -152,8 +154,8 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
                 UpdateRoleDescription();
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -164,8 +166,8 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
             if (RoleComboBox == null) return;
             UpdateRoleDescription();
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -192,8 +194,8 @@ public sealed partial class UserRegistrationDialog : ContentDialog, INotifyPrope
                 RoleDescriptionTextBlock.Text = "Standard users can manage their own passwords and access all features.";
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 

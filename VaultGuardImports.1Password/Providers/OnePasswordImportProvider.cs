@@ -511,10 +511,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
             var uri = new Uri(url);
             return uri.Host.Replace("www.", "");
         }
-        catch
-        {
-            return url;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return url; }
     }
 
     private bool IsEmail(string input)

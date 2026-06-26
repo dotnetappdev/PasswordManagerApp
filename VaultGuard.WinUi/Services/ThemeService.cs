@@ -144,9 +144,8 @@ namespace VaultGuard.WinUi.Services
                     UpdateResourceIfExists(resources, "NavigationViewTopPaneBackground", "#F8FAFC");
                 }
             }
-            catch (Exception)
-            {
-                // Silently ignore theme update errors
+            catch (Exception ex) {
+                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
             }
         }
 
@@ -172,9 +171,8 @@ namespace VaultGuard.WinUi.Services
                     resources[key] = new Microsoft.UI.Xaml.Media.SolidColorBrush(color);
                 }
             }
-            catch (Exception)
-            {
-                // Silently ignore resource update errors
+            catch (Exception ex) {
+                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
             }
         }
 
@@ -243,9 +241,8 @@ namespace VaultGuard.WinUi.Services
                     }
                 }
             }
-            catch (Exception)
-            {
-                // Title bar customization might not be supported on all systems
+            catch (Exception ex) {
+                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
             }
         }
     }

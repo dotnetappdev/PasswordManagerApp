@@ -39,10 +39,7 @@ public sealed class TotpService : ITotpService
             int otp = binary % (int)Math.Pow(10, digits);
             return otp.ToString().PadLeft(digits, '0');
         }
-        catch
-        {
-            return null;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return null; }
     }
 
     public int GetRemainingSeconds(int periodSeconds = 30, DateTimeOffset? time = null)
@@ -76,10 +73,7 @@ public sealed class TotpService : ITotpService
                 if (query.TryGetValue("period", out var ps) && int.TryParse(ps, out var p) && p > 0) periodSeconds = p;
                 return secretBase32.Length > 0;
             }
-            catch
-            {
-                return false;
-            }
+            catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
         }
 
         // Treat as a raw Base32 secret (ignore spaces commonly shown in setup keys).

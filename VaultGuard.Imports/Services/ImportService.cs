@@ -82,8 +82,7 @@ public class ImportService : IImportService
         }
         catch (Exception ex)
         {
-            // Log error but don't fail the service
-            // In production, use proper logging instead of Console.WriteLine
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to load import plugins", ex);
         }
     }
 
@@ -115,21 +114,21 @@ public class ImportService : IImportService
                                 RegisterProvider(provider);
                             }
                         }
-                        catch
+                        catch (Exception ex)
                         {
-                            // Failed to instantiate provider, continue with others
+                            VaultGuard.Services.Logging.AppLogger.Error($"Failed to instantiate import provider {providerType}", ex);
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Skip assemblies that can't be reflected over (system assemblies, etc.)
+                    VaultGuard.Services.Logging.AppLogger.Error($"Skipped assembly {assembly.FullName} that could not be reflected over", ex);
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Error loading built-in providers, continue without them
+            VaultGuard.Services.Logging.AppLogger.Error($"Error loading built-in import providers", ex);
         }
     }
 
@@ -309,10 +308,7 @@ public class ImportService : IImportService
                 collection.CreatedAt = DateTime.UtcNow;
                 return await _collectionService.CreateAsync(collection);
             }
-            catch
-            {
-                return null;
-            }
+            catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return null; }
         }
     }
 
@@ -387,7 +383,7 @@ public class ImportService : IImportService
             {
                 item.LoginItem.EncryptedPassword = _vaultSessionService.EncryptPassword(item.LoginItem.Password, sid);
             }
-            catch { /* vault may be locked; skip encryption, password will be missing */ }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Vault may be locked; skipping password encryption during import", ex); }
         }
 
         if (item.LoginItem != null && !string.IsNullOrEmpty(item.LoginItem.Notes))
@@ -396,7 +392,7 @@ public class ImportService : IImportService
             {
                 item.LoginItem.EncryptedNotes = _vaultSessionService.EncryptPassword(item.LoginItem.Notes, sid);
             }
-            catch { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to encrypt notes during import", ex); }
         }
 
         if (item.LoginItem != null && !string.IsNullOrEmpty(item.LoginItem.TotpSecret))
@@ -405,7 +401,7 @@ public class ImportService : IImportService
             {
                 item.LoginItem.EncryptedTotpSecret = _vaultSessionService.EncryptPassword(item.LoginItem.TotpSecret, sid);
             }
-            catch { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to encrypt TOTP secret during import", ex); }
         }
     }
 }

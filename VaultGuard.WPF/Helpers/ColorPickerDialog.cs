@@ -43,6 +43,7 @@ public sealed class ColorPickerDialog : Window
         ResizeMode = ResizeMode.NoResize;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = false;
+        Win11Chrome.Apply(this);
         Background = ResBrush("ModernBackgroundBrush", Color.FromRgb(0x1A, 0x1A, 0x1A));
         Foreground = ResBrush("ModernTextPrimaryBrush", Colors.White);
 
@@ -183,7 +184,7 @@ public sealed class ColorPickerDialog : Window
             var obj = ColorConverter.ConvertFromString(hex);
             if (obj is Color c) { color = c; return true; }
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to parse color string", ex); }
         return false;
     }
 

@@ -369,3 +369,5 @@ FodyWeavers.xsd
 PasswordManager.BrowserExtension/dist/
 *.crx
 *.pem
+# Claude Code local worktrees/config
+.claude/

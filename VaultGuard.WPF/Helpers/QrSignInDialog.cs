@@ -91,7 +91,7 @@ public static class QrSignInDialog
 
             ListDevicesResponseDto list;
             try { list = await deviceService.GetUserDevicesAsync(userId); }
-            catch { return; }
+            catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return; }
 
             if (list.Devices.Count == 0)
             {

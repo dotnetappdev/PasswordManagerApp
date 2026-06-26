@@ -28,6 +28,12 @@ public partial class App : Application
     {
         this.InitializeComponent();
         _host = CreateHostBuilder().Build();
+
+        // Route the AppLogger facade through the host's logging pipeline (durable file logs).
+        VaultGuard.Services.Logging.AppLogger.Initialize(
+            Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions
+                .GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>(_host.Services));
+
         InitializeSentry();
     }
 
@@ -51,9 +57,8 @@ public partial class App : Application
                 });
             }
         }
-        catch (Exception)
-        {
-            // Silently fail if Sentry initialization fails
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -119,9 +124,8 @@ public partial class App : Application
                 });
             }
         }
-        catch (Exception)
-        {
-            // Continue with startup even if dialog fails
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 

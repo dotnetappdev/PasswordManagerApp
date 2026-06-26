@@ -74,10 +74,7 @@ public class UserContextService
             _currentUser = targetUser;
             return true;
         }
-        catch (Exception)
-        {
-            return false;
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     /// <summary>

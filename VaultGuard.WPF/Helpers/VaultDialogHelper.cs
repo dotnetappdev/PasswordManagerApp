@@ -164,7 +164,7 @@ public static class VaultDialogHelper
         {
             dialog.Style = dialog.TryFindResource("Modern1PasswordDialogStyle") as Style;
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to apply dialog style", ex); }
     }
 
     private static TextBlock MakeLabel(string text) =>
@@ -176,6 +176,6 @@ public static class VaultDialogHelper
     private static System.Windows.Media.SolidColorBrush TryParseBrush(string hex)
     {
         try { return new((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex)); }
-        catch { return new(System.Windows.Media.Color.FromRgb(0x37, 0x37, 0x37)); }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return new(System.Windows.Media.Color.FromRgb(0x37, 0x37, 0x37)); }
     }
 }

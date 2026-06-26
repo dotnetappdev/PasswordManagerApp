@@ -217,9 +217,8 @@ public sealed partial class DashboardPage : Page
                     var uri = new Uri($"https://{website}");
                     Process.Start(new ProcessStartInfo(uri.ToString()) { UseShellExecute = true });
                 }
-                catch
-                {
-                    // Handle error - could show a message to user
+                catch (Exception ex) {
+                    VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
                 }
             }
         }
@@ -233,9 +232,8 @@ public sealed partial class DashboardPage : Page
             dataPackage.SetText(text);
             Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
         }
-        catch
-        {
-            // Handle clipboard error
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 

@@ -76,7 +76,7 @@ namespace VaultGuard.Services.Services
             {
                 normalized = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(normalized.ToLower());
             }
-            catch { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to title-case category name", ex); }
 
             category.Name = normalized;
 

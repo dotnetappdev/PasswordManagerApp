@@ -53,7 +53,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         catch (Exception ex)
         {
             // Disable primary action so user cannot proceed when dialog is in an invalid state
-            try { this.IsPrimaryButtonEnabled = false; } catch { }
+            try { this.IsPrimaryButtonEnabled = false; } catch (Exception disableEx) { VaultGuard.Services.Logging.AppLogger.Debug($"Failed to disable primary button: {disableEx.Message}"); }
         }
 
         // Wire up events (guard against null subscription)
@@ -63,6 +63,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         }
         catch (Exception ex)
         {
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to wire up primary button click event", ex);
         }
     }
 
@@ -157,6 +158,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         }
         catch (Exception ex)
         {
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to handle admin toggle", ex);
         }
     }
 
@@ -169,6 +171,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         }
         catch (Exception ex)
         {
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to handle role selection change", ex);
         }
     }
 
@@ -197,6 +200,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
         }
         catch (Exception ex)
         {
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to update role description", ex);
         }
     }
 

@@ -31,10 +31,7 @@ public class PasscodeService : IPasscodeService
             var hash = await _secureStorage.GetAsync(PASSCODE_HASH_KEY);
             return !string.IsNullOrEmpty(hash);
         }
-        catch (Exception)
-        {
-            return false;
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public async Task<bool> SetPasscodeAsync(string passcode)
@@ -58,10 +55,7 @@ public class PasscodeService : IPasscodeService
             
             return true;
         }
-        catch (Exception)
-        {
-            return false;
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public async Task<bool> VerifyPasscodeAsync(string passcode)
@@ -103,10 +97,7 @@ public class PasscodeService : IPasscodeService
 
             return isValid;
         }
-        catch (Exception)
-        {
-            return false;
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public async Task<bool> RemovePasscodeAsync()
@@ -118,10 +109,7 @@ public class PasscodeService : IPasscodeService
             await ResetFailedAttemptsAsync();
             return true;
         }
-        catch (Exception)
-        {
-            return false;
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public async Task<bool> ChangePasscodeAsync(string currentPasscode, string newPasscode)
@@ -142,10 +130,7 @@ public class PasscodeService : IPasscodeService
             var attempts = await _secureStorage.GetAsync(FAILED_ATTEMPTS_KEY);
             return int.TryParse(attempts, out var count) ? count : 0;
         }
-        catch (Exception)
-        {
-            return 0;
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return 0; }
     }
 
     public async Task IncrementFailedAttemptsAsync()
@@ -164,9 +149,9 @@ public class PasscodeService : IPasscodeService
                 await _secureStorage.SetAsync(LOCKOUT_TIME_KEY, lockoutUntil.ToBinary().ToString());
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Ignore errors when incrementing attempts
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to increment failed attempts", ex);
         }
     }
 
@@ -177,9 +162,9 @@ public class PasscodeService : IPasscodeService
             _secureStorage.Remove(FAILED_ATTEMPTS_KEY);
             _secureStorage.Remove(LOCKOUT_TIME_KEY);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Ignore errors when resetting attempts
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to reset failed attempts", ex);
         }
     }
 
@@ -199,9 +184,9 @@ public class PasscodeService : IPasscodeService
                 return DateTime.UtcNow < lockoutTime;
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // If we can't determine lockout status, assume not locked
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to determine lockout status", ex);
         }
 
         return false;
@@ -224,9 +209,9 @@ public class PasscodeService : IPasscodeService
                 return remaining > 0 ? (int)remaining : 0;
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // If we can't determine time remaining, assume not locked
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to determine lockout time remaining", ex);
         }
 
         return 0;

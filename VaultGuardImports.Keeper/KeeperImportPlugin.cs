@@ -111,9 +111,7 @@ public class KeeperImportPlugin : IPasswordImportPlugin
                 FailedImports = 0
             };
         }
-        catch (Exception ex)
-        {
-            return new ImportResult
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return new ImportResult
             {
                 Success = false,
                 ErrorMessage = $"Failed to import Keeper file: {ex.Message}",
@@ -122,8 +120,7 @@ public class KeeperImportPlugin : IPasswordImportPlugin
                 SuccessfulImports = 0,
                 FailedImports = 1,
                 Warnings = new List<string> { ex.Message }
-            };
-        }
+            }; }
     }
 
     public async Task<bool> CanProcessFileAsync(Stream stream, string fileName)
@@ -144,10 +141,7 @@ public class KeeperImportPlugin : IPasswordImportPlugin
                    firstLine?.Contains("Password") == true &&
                    firstLine?.Contains("Website Address") == true;
         }
-        catch
-        {
-            return false;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public async Task<IEnumerable<PasswordItem>> GetImportPreviewAsync(Stream stream, string fileName)
@@ -187,10 +181,7 @@ public class KeeperImportPlugin : IPasswordImportPlugin
 
             return previewItems;
         }
-        catch
-        {
-            return new List<PasswordItem>();
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return new List<PasswordItem>(); }
     }
 }
 

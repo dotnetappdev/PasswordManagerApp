@@ -25,10 +25,7 @@ public class WinUiSecureStorageService : ISecureStorageService
             
             return result;
         }
-        catch (Exception)
-        {
-            return null;
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return null; }
     }
 
     public async Task SetAsync(string key, string value)
@@ -47,9 +44,8 @@ public class WinUiSecureStorageService : ISecureStorageService
 
             await File.WriteAllBytesAsync(filePath, encryptedData);
         }
-        catch (Exception)
-        {
-            // Don't throw - secure storage failures shouldn't crash the app
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -65,10 +61,7 @@ public class WinUiSecureStorageService : ISecureStorageService
             }
             return Task.FromResult(false);
         }
-        catch
-        {
-            return Task.FromResult(false);
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return Task.FromResult(false); }
     }
 
     public Task RemoveAllAsync()
@@ -101,10 +94,7 @@ public class WinUiSecureStorageService : ISecureStorageService
             }
             return false;
         }
-        catch
-        {
-            return false;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public void RemoveAll()
@@ -117,9 +107,8 @@ public class WinUiSecureStorageService : ISecureStorageService
                 Directory.Delete(directory, true);
             }
         }
-        catch
-        {
-            // Log error but don't throw
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 

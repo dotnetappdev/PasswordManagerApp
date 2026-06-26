@@ -300,7 +300,7 @@ public class NotZeroToBoolConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         try { return System.Convert.ToInt64(value) != 0; }
-        catch { return false; }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -349,7 +349,7 @@ public class HexColorToBrushConverter : IValueConverter
                 return new SolidColorBrush(color);
             }
         }
-        catch { }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
         return Fallback;
     }
 

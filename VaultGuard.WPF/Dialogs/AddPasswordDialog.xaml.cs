@@ -129,9 +129,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             StrengthLabel.Foreground = onBrush;
             StrengthCrackTime.Text = $"Crack time: {result.CrackTimeDisplay}";
         }
-        catch
+        catch (Exception ex)
         {
-            // Non-fatal cosmetic feature.
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to update password strength UI", ex);
         }
     }
 
@@ -147,9 +147,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 
             // WPF ContentDialog centers automatically
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Silently ignore; dialog will still show with default behavior
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to configure dialog centering", ex);
         }
     }
 
@@ -238,9 +238,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Defensive: if CustomFieldsContainer is missing or children are not controls, ignore
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to toggle read-only state on custom fields", ex);
         }
 
         // Safely show/hide the generate button if it's present in the template/XAML
@@ -346,13 +346,14 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                     }
                 }
             }
-            catch
+            catch (Exception innerEx)
             {
-                // Defensive: ignore any timing-related issues here
+                VaultGuard.Services.Logging.AppLogger.Debug($"Failed to refresh fields after LoadData: {innerEx.Message}");
             }
         }
         catch (Exception ex)
         {
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to load dialog data", ex);
         }
     }
 
@@ -400,9 +401,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                 ? Visibility.Collapsed
                 : Visibility.Visible;
         }
-        catch
+        catch (Exception ex)
         {
-            // Non-fatal — saving falls back to the user's default vault.
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to load vaults", ex);
         }
     }
 
@@ -421,9 +422,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                 .OrderBy(u => u, StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
-        catch
+        catch (Exception ex)
         {
-            // Non-fatal — the field still works as plain free text without suggestions.
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to load known usernames", ex);
         }
     }
 
@@ -438,7 +439,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                 ? _knownUsernames
                 : _knownUsernames.Where(u => u.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to filter username suggestions", ex); }
     }
 
     private void UsernameTextBox_SuggestionChosen(ModernWpf.Controls.AutoSuggestBox sender, ModernWpf.Controls.AutoSuggestBoxSuggestionChosenEventArgs args)
@@ -553,9 +554,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                 IdentityFieldsPanel.Visibility = Visibility.Collapsed;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Defensive: if panels are renamed in XAML, ignore and allow existing behavior
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to apply Identity category layout", ex);
         }
 
         // Select category
@@ -1142,7 +1143,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                     if (vaultId.HasValue)
                         item.CollectionId = await _vaultService.GetDefaultCollectionIdAsync(vaultId.Value);
                 }
-                catch { /* non-fatal — item is still saved without a vault assignment */ }
+                catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to assign item to vault", ex); }
             }
 
 
@@ -1246,9 +1247,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                         || (PasskeyIsBackedUpCheckBox.IsChecked ?? false);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Non-fatal: if the Windows credential store is unavailable we still save the item.
+                VaultGuard.Services.Logging.AppLogger.Error($"Failed to register passkey with Windows Hello", ex);
             }
         }
 
@@ -1407,9 +1408,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             // Disable primary button during loading
             this.IsPrimaryButtonEnabled = !show;
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore if UI elements not found
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to toggle loading indicator", ex);
         }
     }
 

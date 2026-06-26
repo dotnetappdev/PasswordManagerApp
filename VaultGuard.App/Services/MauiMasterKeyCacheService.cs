@@ -16,19 +16,19 @@ public class MauiMasterKeyCacheService : IMasterKeyCacheService
     public async Task<string?> GetCachedAsync(string userId)
     {
         try { return await SecureStorage.GetAsync(Key(userId)); }
-        catch { return null; }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to read cached master key", ex); return null; }
     }
 
     public async Task CacheAsync(string userId, string masterPassword)
     {
         try { await SecureStorage.SetAsync(Key(userId), masterPassword); }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to cache master key", ex); }
     }
 
     public Task ForgetAsync(string userId)
     {
         try { SecureStorage.Remove(Key(userId)); }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to forget cached master key", ex); }
         return Task.CompletedTask;
     }
 }

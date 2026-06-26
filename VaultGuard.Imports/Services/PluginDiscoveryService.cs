@@ -39,7 +39,7 @@ public class PluginDiscoveryService
             catch (Exception ex)
             {
                 // Log error but continue with other plugins
-                Console.WriteLine($"Failed to load plugin from {pluginDir}: {ex.Message}");
+                VaultGuard.Services.Logging.AppLogger.Error($"Failed to load plugin from {pluginDir}", ex);
             }
         }
 

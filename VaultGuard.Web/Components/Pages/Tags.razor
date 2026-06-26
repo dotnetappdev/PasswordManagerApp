@@ -243,7 +243,7 @@ else
 
         // Check for duplicate name
         bool exists = false;
-        try { exists = await TagService.ExistsAsync(_editingTag.Name); } catch { }
+        try { exists = await TagService.ExistsAsync(_editingTag.Name); } catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
         if (exists && _editingTag.Id == 0)
         {
             Snackbar.Add($"A tag named \"{_editingTag.Name}\" already exists.", Severity.Warning);

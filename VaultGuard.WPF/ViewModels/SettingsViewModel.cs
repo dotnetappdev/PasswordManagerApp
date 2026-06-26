@@ -92,7 +92,7 @@ public class SettingsViewModel : BaseViewModel
                 }
             }
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to read update manifest URL", ex); }
         return VaultGuard.WPF.Services.UpdateService.DefaultManifestUrl;
     }
 
@@ -103,7 +103,7 @@ public class SettingsViewModel : BaseViewModel
             if (File.Exists(SettingsFilePath))
                 return JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsFilePath)) ?? new();
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to load local settings", ex); }
         return new();
     }
 
@@ -114,7 +114,7 @@ public class SettingsViewModel : BaseViewModel
             Directory.CreateDirectory(Path.GetDirectoryName(SettingsFilePath)!);
             File.WriteAllText(SettingsFilePath, JsonSerializer.Serialize(values));
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to save local settings", ex); }
     }
 
     private readonly IServiceProvider _serviceProvider;
@@ -495,7 +495,7 @@ public class SettingsViewModel : BaseViewModel
                         : "Connected to Google Drive";
                 }
             }
-            catch { }
+            catch (Exception ex) { _serviceProvider.GetService<ILogger<SettingsViewModel>>()?.LogWarning(ex, "Failed to check Google Drive connection status"); }
 
             // Check if OneDrive is already connected
             try
@@ -510,7 +510,7 @@ public class SettingsViewModel : BaseViewModel
                     _ = RefreshOneDriveStatusAsync();
                 }
             }
-            catch { }
+            catch (Exception ex) { _serviceProvider.GetService<ILogger<SettingsViewModel>>()?.LogWarning(ex, "Failed to check OneDrive connection status"); }
 
             // Push the loaded FTP connection settings into the service so it's ready to use
             // immediately, without requiring the user to re-enter/re-test anything this session.
@@ -530,7 +530,7 @@ public class SettingsViewModel : BaseViewModel
                     });
                 }
             }
-            catch { }
+            catch (Exception ex) { _serviceProvider.GetService<ILogger<SettingsViewModel>>()?.LogWarning(ex, "Failed to apply saved FTP connection settings"); }
 
             // Enumerate mapped network drives and push any saved NAS connection into the service.
             try
@@ -548,7 +548,7 @@ public class SettingsViewModel : BaseViewModel
                     });
                 }
             }
-            catch { }
+            catch (Exception ex) { _serviceProvider.GetService<ILogger<SettingsViewModel>>()?.LogWarning(ex, "Failed to apply saved network location connection settings"); }
 
             ApplyTheme();
         }
@@ -609,10 +609,7 @@ public class SettingsViewModel : BaseViewModel
             
             return true;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;
@@ -640,10 +637,7 @@ public class SettingsViewModel : BaseViewModel
             await Task.Delay(2000); // Simulate export
             return true;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;
@@ -659,10 +653,7 @@ public class SettingsViewModel : BaseViewModel
             await Task.Delay(1000);
             return true;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;
@@ -678,10 +669,7 @@ public class SettingsViewModel : BaseViewModel
             await Task.Delay(1000);
             return true;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;
@@ -765,7 +753,7 @@ public class SettingsViewModel : BaseViewModel
             }
             return ok;
         }
-        catch { return false; }
+        catch (Exception ex) { _serviceProvider.GetService<ILogger<SettingsViewModel>>()?.LogError(ex, "Failed to connect Google Drive"); return false; }
         finally { IsLoading = false; }
     }
 
@@ -863,7 +851,7 @@ public class SettingsViewModel : BaseViewModel
             var nas = _serviceProvider.GetService<INetworkLocationBackupService>();
             MappedDrives = nas?.GetMappedDrives().ToList() ?? new List<MappedDriveInfo>();
         }
-        catch { MappedDrives = new List<MappedDriveInfo>(); }
+        catch (Exception ex) { _serviceProvider.GetService<ILogger<SettingsViewModel>>()?.LogWarning(ex, "Failed to refresh mapped drives"); MappedDrives = new List<MappedDriveInfo>(); }
         OnPropertyChanged(nameof(MappedDrives));
     }
 

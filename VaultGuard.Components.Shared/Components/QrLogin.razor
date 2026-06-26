@@ -356,14 +356,8 @@
                 }
             }
         }
-        catch (HttpRequestException)
-        {
-            // API might not be available - silently continue polling
-        }
-        catch (Exception)
-        {
-            // Silently fail - polling errors are not critical
-        }
+        catch (HttpRequestException logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
         
         await InvokeAsync(StateHasChanged);
     }

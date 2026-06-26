@@ -629,9 +629,9 @@ public class IdentityAuthService : IAuthService
                     await _jsRuntime.InvokeVoidAsync("sessionStorage.clear");
                     await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "userId");
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Ignore JS errors during cleanup
+                    _logger.LogWarning(ex, "Ignored JS error during account-delete cleanup");
                 }
                 
                 _logger.LogInformation("User {UserId} deleted their account and all associated data (passwords, categories, collections, tags)", userId);

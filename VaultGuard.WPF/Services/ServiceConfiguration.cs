@@ -136,25 +136,25 @@ public static class ServiceConfiguration
                 // If path is not secure, fall through to default
             }
         }
-        catch (FileNotFoundException)
+        catch (FileNotFoundException ex)
         {
-            // Configuration file doesn't exist, use default
+            VaultGuard.Services.Logging.AppLogger.Error($"Configuration file doesn't exist, using default", ex);
         }
-        catch (System.Text.Json.JsonException)
+        catch (System.Text.Json.JsonException ex)
         {
-            // JSON deserialization failed, fall back to default
+            VaultGuard.Services.Logging.AppLogger.Error($"JSON deserialization failed, falling back to default", ex);
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
-            // Cannot access the file or create directory, fall back to default
+            VaultGuard.Services.Logging.AppLogger.Error($"Cannot access the file or create directory, falling back to default", ex);
         }
-        catch (IOException)
+        catch (IOException ex)
         {
-            // File I/O error, fall back to default
+            VaultGuard.Services.Logging.AppLogger.Error($"File I/O error, falling back to default", ex);
         }
-        catch
+        catch (Exception ex)
         {
-            // Any other error accessing config, fall back to default
+            VaultGuard.Services.Logging.AppLogger.Error($"Error accessing config, falling back to default", ex);
         }
         
         // Default path - GetAppDataDirectory already ensures directory exists
@@ -191,9 +191,9 @@ public static class ServiceConfiguration
             
             return true;
         }
-        catch
+        catch (Exception ex)
         {
-            // If we can't validate the path, consider it insecure
+            VaultGuard.Services.Logging.AppLogger.Error($"Path validation failed, treating as insecure", ex);
             return false;
         }
     }

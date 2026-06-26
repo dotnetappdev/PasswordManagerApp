@@ -111,9 +111,7 @@ public class NordPassImportPlugin : IPasswordImportPlugin
                 FailedImports = 0
             };
         }
-        catch (Exception ex)
-        {
-            return new ImportResult
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return new ImportResult
             {
                 Success = false,
                 ErrorMessage = $"Failed to import NordPass file: {ex.Message}",
@@ -122,8 +120,7 @@ public class NordPassImportPlugin : IPasswordImportPlugin
                 SuccessfulImports = 0,
                 FailedImports = 1,
                 Warnings = new List<string> { ex.Message }
-            };
-        }
+            }; }
     }
 
     public async Task<bool> CanProcessFileAsync(Stream stream, string fileName)
@@ -145,10 +142,7 @@ public class NordPassImportPlugin : IPasswordImportPlugin
                    firstLine?.Contains("password") == true &&
                    firstLine?.Contains("folders") == true;
         }
-        catch
-        {
-            return false;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public async Task<IEnumerable<PasswordItem>> GetImportPreviewAsync(Stream stream, string fileName)
@@ -188,10 +182,7 @@ public class NordPassImportPlugin : IPasswordImportPlugin
 
             return previewItems;
         }
-        catch
-        {
-            return new List<PasswordItem>();
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return new List<PasswordItem>(); }
     }
 }
 

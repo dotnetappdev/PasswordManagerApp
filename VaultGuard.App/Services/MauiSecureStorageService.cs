@@ -18,10 +18,7 @@ public class MauiSecureStorageService : ISecureStorageService
         {
             return await SecureStorage.GetAsync(key);
         }
-        catch (Exception)
-        {
-            return null;
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return null; }
     }
 
     public bool Remove(string key)
@@ -30,10 +27,7 @@ public class MauiSecureStorageService : ISecureStorageService
         {
             return SecureStorage.Remove(key);
         }
-        catch (Exception)
-        {
-            return false;
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public void RemoveAll()
@@ -42,9 +36,9 @@ public class MauiSecureStorageService : ISecureStorageService
         {
             SecureStorage.RemoveAll();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Ignore errors during cleanup
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to remove all secure storage entries", ex);
         }
     }
 }

@@ -128,7 +128,7 @@ public class PasswordItemsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[PasswordItemsViewModel] LoadPasswordItemsAsync failed: {ex}");
+            VaultGuard.Services.Logging.AppLogger.Error($"[PasswordItemsViewModel] LoadPasswordItemsAsync failed", ex);
             ErrorMessage = $"Could not load items: {ex.Message}";
             OnPropertyChanged(nameof(HasError));
         }
@@ -236,6 +236,7 @@ public class PasswordItemsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to apply filters", ex);
         }
     }
 
@@ -265,6 +266,7 @@ public class PasswordItemsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to delete item", ex);
         }
     }
 }

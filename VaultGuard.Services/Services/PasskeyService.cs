@@ -5,9 +5,11 @@ using VaultGuard.DAL.Interfaces;
 using VaultGuard.Models;
 using VaultGuard.Models.DTOs.Auth;
 using VaultGuard.Services.Interfaces;
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using Fido2NetLib;
 using Fido2NetLib.Objects;
 
@@ -23,21 +25,26 @@ public class PasskeyService : IPasskeyService
     private readonly IPasswordEncryptionService _passwordEncryptionService;
     private readonly ILogger<PasskeyService> _logger;
     private readonly IFido2 _fido2;
-    private readonly Dictionary<string, (string Challenge, string UserId, DateTime Expiry)> _challenges;
+    private readonly IJwtService? _jwtService;
+
+    // Process-wide so a challenge issued by the scoped "start" instance is still found by the
+    // scoped "complete" instance (Blazor circuits / separate requests get different instances).
+    private static readonly ConcurrentDictionary<string, (string Challenge, string UserId, DateTime Expiry)> _challenges = new();
 
     public PasskeyService(
         IVaultGuardDbContext context,
         IPasswordCryptoService passwordCryptoService,
         IPasswordEncryptionService passwordEncryptionService,
         ILogger<PasskeyService> logger,
-        IFido2 fido2)
+        IFido2 fido2,
+        IJwtService? jwtService = null)
     {
         _context = context;
         _passwordCryptoService = passwordCryptoService;
         _passwordEncryptionService = passwordEncryptionService;
         _logger = logger;
         _fido2 = fido2;
-        _challenges = new Dictionary<string, (string, string, DateTime)>();
+        _jwtService = jwtService;
     }
 
     public async Task<PasskeyRegistrationStartResponseDto?> StartPasskeyRegistrationAsync(string userId, PasskeyRegistrationStartDto startDto)
@@ -87,7 +94,9 @@ public class PasskeyService : IPasskeyService
             return new PasskeyRegistrationStartResponseDto
             {
                 Challenge = challenge,
-                CredentialCreationOptions = JsonSerializer.Serialize(options)
+                // Fido2's ToJson() emits the WebAuthn-correct shape (base64url byte fields) that
+                // the browser's navigator.credentials.create() expects.
+                CredentialCreationOptions = options.ToJson()
             };
         }
         catch (Exception ex)
@@ -116,14 +125,18 @@ public class PasskeyService : IPasskeyService
                 return false;
             }
 
-            // Verify attestation
-            var options = new CredentialCreateOptions
+            // Rebuild the ORIGINAL options the browser was challenged with (echoed back by the
+            // client). Verifying against a reconstructed-from-challenge stub would skip rp/user
+            // checks; using the real options makes Fido2 enforce them.
+            var options = CredentialCreateOptions.FromJson(completeDto.OriginalOptionsJson);
+            if (!options.Challenge.SequenceEqual(Convert.FromBase64String(completeDto.Challenge)))
             {
-                Challenge = Convert.FromBase64String(completeDto.Challenge),
-                // Add other required options based on your setup
-            };
+                _logger.LogWarning("Challenge mismatch between options and request for passkey registration: {UserId}", userId);
+                return false;
+            }
 
-            var result = await _fido2.MakeNewCredentialAsync(credentialResponse, options, null);
+            // Fido2 performs the full attestation verification (origin, rp id hash, signature).
+            var result = await _fido2.MakeNewCredentialAsync(credentialResponse, options, IsCredentialIdUniqueToUserAsync);
             if (result.Status != "ok")
             {
                 _logger.LogWarning("Passkey registration failed: {Result}", result.ErrorMessage);
@@ -217,7 +230,7 @@ public class PasskeyService : IPasskeyService
             return new PasskeyAuthenticationStartResponseDto
             {
                 Challenge = challenge,
-                CredentialRequestOptions = JsonSerializer.Serialize(options)
+                CredentialRequestOptions = options.ToJson()
             };
         }
         catch (Exception ex)
@@ -258,14 +271,18 @@ public class PasskeyService : IPasskeyService
                 return null;
             }
 
-            // Verify assertion
-            var options = new AssertionOptions
+            // Rebuild the ORIGINAL assertion options the browser was challenged with.
+            var options = AssertionOptions.FromJson(completeDto.OriginalOptionsJson);
+            if (!options.Challenge.SequenceEqual(Convert.FromBase64String(completeDto.Challenge)))
             {
-                Challenge = Convert.FromBase64String(completeDto.Challenge),
-                // Add other required options
-            };
+                _logger.LogWarning("Challenge mismatch for passkey authentication: {UserId}", passkey.UserId);
+                return null;
+            }
 
-            var result = await _fido2.MakeAssertionAsync(credentialResponse, options, Convert.FromBase64String(passkey.PublicKey), passkey.SignatureCounter, null);
+            // Fido2 verifies the signature against the stored public key and the signature counter.
+            var result = await _fido2.MakeAssertionAsync(
+                credentialResponse, options, Convert.FromBase64String(passkey.PublicKey),
+                passkey.SignatureCounter, IsUserHandleOwnerOfCredentialIdAsync);
             if (result.Status != "ok")
             {
                 _logger.LogWarning("Passkey authentication failed: {Result}", result.ErrorMessage);
@@ -281,28 +298,17 @@ public class PasskeyService : IPasskeyService
 
             await _context.SaveChangesAsync();
 
-            // Generate JWT token (assuming you have a JWT service)
-            // This would need to be implemented based on your existing JWT service
-            
             _logger.LogInformation("Passkey authentication successful for user: {UserId}", passkey.UserId);
-            
-            // Return a basic response - you'll need to implement JWT generation
-            return new AuthResponseDto
+
+            // Issue a real signed token + refresh token via the JWT service. Without it we cannot
+            // mint a valid session, so fail closed rather than return a placeholder token.
+            if (_jwtService == null)
             {
-                Token = "jwt_token_here", // Replace with actual JWT generation
-                RefreshToken = "refresh_token_here",
-                ExpiresAt = DateTime.UtcNow.AddHours(24),
-                User = new UserDto
-                {
-                    Id = passkey.User.Id,
-                    Email = passkey.User.Email ?? "",
-                    FirstName = passkey.User.FirstName,
-                    LastName = passkey.User.LastName,
-                    CreatedAt = passkey.User.CreatedAt,
-                    LastLoginAt = passkey.User.LastLoginAt,
-                    IsActive = passkey.User.IsActive
-                }
-            };
+                _logger.LogError("Passkey authentication succeeded but no IJwtService is registered to issue a token.");
+                return null;
+            }
+
+            return await _jwtService.CreateAuthResponseAsync(passkey.User);
         }
         catch (Exception ex)
         {
@@ -483,9 +489,18 @@ public class PasskeyService : IPasskeyService
 
     public async Task<bool> VerifyPasskeyAssertionAsync(string credentialId, string clientDataJson, string authenticatorData, string signature, string challenge)
     {
-        // This would implement the WebAuthn assertion verification
-        // For now, returning a basic implementation
-        return true;
+        // SECURITY: this previously returned true unconditionally, which would treat any
+        // assertion as valid. Full WebAuthn assertion verification is performed by
+        // CompletePasskeyAuthenticationAsync (Fido2.MakeAssertionAsync) and, for third-party
+        // site passkeys, by AssertVaultPasskeyAsync. Until this lower-level helper performs a
+        // real ECDSA/RSA signature check against the stored COSE public key it MUST fail closed
+        // rather than report success.
+        await Task.CompletedTask;
+        _logger.LogWarning(
+            "VerifyPasskeyAssertionAsync called for credential {CredentialId} but low-level " +
+            "verification is not implemented; failing closed. Use CompletePasskeyAuthenticationAsync.",
+            credentialId);
+        return false;
     }
 
     public string GenerateChallenge()
@@ -509,15 +524,12 @@ public class PasskeyService : IPasskeyService
             var expiredChallenges = _challenges.Where(c => c.Value.Expiry < DateTime.UtcNow).ToList();
             foreach (var expired in expiredChallenges)
             {
-                _challenges.Remove(expired.Key);
+                _challenges.TryRemove(expired.Key, out _);
             }
             
             return true;
         }
-        catch
-        {
-            return false;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public async Task<bool> VerifyAndRemoveChallengeAsync(string challenge, string userId)
@@ -528,20 +540,17 @@ public class PasskeyService : IPasskeyService
             {
                 if (storedChallenge.UserId == userId && storedChallenge.Expiry > DateTime.UtcNow)
                 {
-                    _challenges.Remove(challenge);
+                    _challenges.TryRemove(challenge, out _);
                     return true;
                 }
                 else
                 {
-                    _challenges.Remove(challenge); // Remove expired or invalid challenge
+                    _challenges.TryRemove(challenge, out _); // Remove expired or invalid challenge
                 }
             }
             return false;
         }
-        catch
-        {
-            return false;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     // Marks software (third-party site) passkeys so they're not confused with PM-login passkeys.
@@ -708,13 +717,13 @@ public class PasskeyService : IPasskeyService
     {
         // DB stores standard base64; normalize to standard base64 string of the raw bytes.
         try { return Convert.ToBase64String(Convert.FromBase64String(credentialId)); }
-        catch { return credentialId; }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return credentialId; }
     }
 
     private static byte[]? SafeBase64UrlDecode(string s)
     {
         try { return WebAuthnSoftwareAuthenticator.Base64UrlDecode(s); }
-        catch { return null; }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return null; }
     }
 
     private VaultPasskeySecret? TryDecryptSecret(UserPasskey passkey, byte[] masterKey)
@@ -727,10 +736,7 @@ public class PasskeyService : IPasskeyService
             var json = _passwordCryptoService.DecryptPasswordWithKey(enc, masterKey);
             return JsonSerializer.Deserialize<VaultPasskeySecret>(json);
         }
-        catch
-        {
-            return null;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return null; }
     }
 
     private sealed class VaultPasskeySecret
@@ -742,6 +748,33 @@ public class PasskeyService : IPasskeyService
     }
 
     #region Private Methods
+
+    // Fido2 callback: the new credential id must not already be registered to any user.
+    private async Task<bool> IsCredentialIdUniqueToUserAsync(IsCredentialIdUniqueToUserParams args, CancellationToken cancellationToken)
+    {
+        var credentialId = Convert.ToBase64String(args.CredentialId);
+        return !await _context.UserPasskeys.AnyAsync(p => p.CredentialId == credentialId, cancellationToken);
+    }
+
+    // Fido2 callback: the asserting user handle must actually own the credential. Registration
+    // sets the WebAuthn user.Id to UTF-8 bytes of the VaultGuard user id, so decode and match.
+    private async Task<bool> IsUserHandleOwnerOfCredentialIdAsync(IsUserHandleOwnerOfCredentialIdParams args, CancellationToken cancellationToken)
+    {
+        var credentialId = Convert.ToBase64String(args.CredentialId);
+
+        // For non-resident credentials the authenticator may omit the user handle. Ownership is
+        // still established because the caller already located the passkey by credential id, so
+        // confirm that an active passkey with this credential id exists.
+        if (args.UserHandle == null || args.UserHandle.Length == 0)
+        {
+            return await _context.UserPasskeys.AnyAsync(
+                p => p.CredentialId == credentialId && p.IsActive, cancellationToken);
+        }
+
+        var userId = Encoding.UTF8.GetString(args.UserHandle);
+        return await _context.UserPasskeys.AnyAsync(
+            p => p.CredentialId == credentialId && p.UserId == userId && p.IsActive, cancellationToken);
+    }
 
     private async Task<bool> VerifyMasterPasswordAsync(ApplicationUser user, string masterPassword)
     {

@@ -26,9 +26,8 @@ public class VaultsViewModel : BaseViewModel
             {
                 await LoadVaultsAsync();
             }
-            catch
-            {
-                // Error already logged in LoadVaultsAsync
+            catch (Exception ex) {
+                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
             }
         });
     }
@@ -68,9 +67,8 @@ public class VaultsViewModel : BaseViewModel
                 Vaults.Add(vault);
             }
         }
-        catch (Exception ex)
-        {
-            // Log error
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
         finally
         {
@@ -124,10 +122,7 @@ public class VaultsViewModel : BaseViewModel
             
             return false;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;
@@ -158,10 +153,7 @@ public class VaultsViewModel : BaseViewModel
             
             return false;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;
@@ -179,10 +171,7 @@ public class VaultsViewModel : BaseViewModel
             OnPropertyChanged(nameof(HasNoVaults));
             return true;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;

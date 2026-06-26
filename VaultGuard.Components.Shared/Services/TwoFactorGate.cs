@@ -35,13 +35,13 @@ public static class TwoFactorGate
             var raw = await js.InvokeAsync<string?>("localStorage.getItem", KeyFor(action));
             return raw == "true";
         }
-        catch { return false; }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to read 2FA gate toggle", ex); return false; }
     }
 
     public static async Task SetToggleAsync(IJSRuntime js, GateAction action, bool value)
     {
         try { await js.InvokeVoidAsync("localStorage.setItem", KeyFor(action), value ? "true" : "false"); }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to set 2FA gate toggle", ex); }
     }
 
     /// <summary>

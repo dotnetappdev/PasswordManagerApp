@@ -52,7 +52,7 @@ public sealed partial class VaultsPage : Page
         {
             dialog.Style = dialog.TryFindResource("Modern1PasswordDialogStyle") as Style;
         }
-        catch { }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
     private async void AddVaultButton_Click(object sender, RoutedEventArgs e)

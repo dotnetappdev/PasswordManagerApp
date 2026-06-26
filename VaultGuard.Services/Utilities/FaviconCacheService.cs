@@ -22,7 +22,7 @@ namespace VaultGuard.Services.Utilities
             _http = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             var baseDir = AppDomain.CurrentDomain.BaseDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             _cacheDir = Path.Combine(baseDir, "favicons");
-            try { Directory.CreateDirectory(_cacheDir); } catch { }
+            try { Directory.CreateDirectory(_cacheDir); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to create favicon cache dir", ex); }
         }
 
         /// <summary>
@@ -43,9 +43,9 @@ namespace VaultGuard.Services.Utilities
                 var uri = new Uri(host);
                 host = uri.Host.Replace("www.", "");
             }
-            catch
+            catch (Exception ex)
             {
-                // if parsing fails, use the raw string sanitized
+                VaultGuard.Services.Logging.AppLogger.Error($"Favicon host parsing failed", ex);
                 host = hostOrUrl.Replace("/", "_").Replace(":", "_");
             }
 
@@ -70,9 +70,9 @@ namespace VaultGuard.Services.Utilities
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // swallow - return null below
+                VaultGuard.Services.Logging.AppLogger.Error($"Favicon download failed", ex);
             }
 
             return null;

@@ -37,6 +37,12 @@ public partial class App : Application
         ApplyComboBoxDarkResources();
 
         _host = CreateHostBuilder().Build();
+
+        // Route the AppLogger facade through the host's logging pipeline (Debug + durable file logs).
+        VaultGuard.Services.Logging.AppLogger.Initialize(
+            Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions
+                .GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>(_host.Services));
+
         InitializeSentry();
 
         // ModernWpf bug: ScrollBarHelper animates a frozen brush's Color when IsEnabled
@@ -161,7 +167,7 @@ public partial class App : Application
                     if (localSettings.TryGetValue("SentryDsn", out var localDsn) && !string.IsNullOrWhiteSpace(localDsn))
                         sentryConfig.Dsn = localDsn;
                 }
-                catch { }
+                catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to read local Sentry DSN override", ex); }
             }
 
             if (sentryConfig.IsConfigured)
@@ -177,9 +183,9 @@ public partial class App : Application
                 });
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Silently fail if Sentry initialization fails
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to initialize Sentry", ex);
         }
     }
 
@@ -233,7 +239,7 @@ public partial class App : Application
             // Ensure window is initialized
             if (m_window == null)
             {
-                System.Diagnostics.Debug.WriteLine("Main window not initialized, skipping database configuration dialog.");
+                VaultGuard.Services.Logging.AppLogger.Debug("Main window not initialized, skipping database configuration dialog.");
                 return;
             }
 
@@ -253,13 +259,13 @@ public partial class App : Application
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("IsFirstRunAsync timed out, assuming not first run.");
+                VaultGuard.Services.Logging.AppLogger.Debug("IsFirstRunAsync timed out, assuming not first run.");
                 return;
             }
 
             if (isFirstRun)
             {
-                System.Diagnostics.Debug.WriteLine("First run detected, showing database configuration dialog.");
+                VaultGuard.Services.Logging.AppLogger.Debug("First run detected, showing database configuration dialog.");
 
                 // Show the database configuration dialog on UI thread with error handling
                 try
@@ -273,11 +279,11 @@ public partial class App : Application
                                 Owner = m_window
                             };
                             var result = dialog.ShowDialog();
-                            System.Diagnostics.Debug.WriteLine($"Database configuration dialog result: {result}");
+                            VaultGuard.Services.Logging.AppLogger.Debug($"Database configuration dialog result: {result}");
                         }
                         catch (Exception dialogEx)
                         {
-                            System.Diagnostics.Debug.WriteLine($"Error in dialog construction/display: {dialogEx.Message}");
+                            VaultGuard.Services.Logging.AppLogger.Debug($"Error in dialog construction/display: {dialogEx.Message}");
                             SentrySdk.CaptureException(dialogEx);
                             MessageBox.Show(
                                 $"Failed to show database configuration dialog: {dialogEx.Message}\n\nThe application will continue with default settings.",
@@ -289,19 +295,19 @@ public partial class App : Application
                 }
                 catch (Exception dispatcherEx)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error invoking on dispatcher: {dispatcherEx.Message}");
+                    VaultGuard.Services.Logging.AppLogger.Debug($"Error invoking on dispatcher: {dispatcherEx.Message}");
                     SentrySdk.CaptureException(dispatcherEx);
                 }
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("Not first run, skipping database configuration dialog.");
+                VaultGuard.Services.Logging.AppLogger.Debug("Not first run, skipping database configuration dialog.");
             }
         }
         catch (Exception ex)
         {
             // Continue with startup even if dialog fails
-            System.Diagnostics.Debug.WriteLine($"Error in ShowDatabaseConfigurationIfNeededAsync: {ex.Message}\nStackTrace: {ex.StackTrace}");
+            VaultGuard.Services.Logging.AppLogger.Debug($"Error in ShowDatabaseConfigurationIfNeededAsync: {ex.Message}\nStackTrace: {ex.StackTrace}");
             SentrySdk.CaptureException(ex);
         }
     }

@@ -15,6 +15,10 @@ using VaultGuard.ExceptionReporting.Sentry;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Durable serial file logging for the whole app: logs/{yyyy}/{MMMM}/{dd}.txt.
+builder.Logging.AddProvider(new VaultGuard.Services.Logging.FileLoggerProvider(
+    minLevel: Microsoft.Extensions.Logging.LogLevel.Information));
+
 // Configure Sentry.io
 var sentryConfig = builder.Configuration.GetSection("Sentry").Get<SentryConfiguration>();
 if (sentryConfig?.IsConfigured == true)
@@ -219,6 +223,10 @@ builder.Services.AddCors(options =>
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
+
+// Route the AppLogger facade through the configured logging pipeline (console, Sentry, file).
+VaultGuard.Services.Logging.AppLogger.Initialize(
+    app.Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

@@ -14,9 +14,9 @@ public static class ResourceHelper
                 return Application.Current.Resources[key] as T;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // ignore and return default
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to get resource '{key}'", ex);
         }
         return default;
     }

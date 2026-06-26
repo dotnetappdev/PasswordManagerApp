@@ -86,6 +86,7 @@ public class UserProfileSelectionViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to load user profiles", ex);
         }
         finally
         {
@@ -162,10 +163,7 @@ public class UserProfileSelectionViewModel : BaseViewModel
 
             return false;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
     }
 
     public string GetProfileDisplayName(UserDto profile)

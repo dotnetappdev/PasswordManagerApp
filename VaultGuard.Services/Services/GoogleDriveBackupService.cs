@@ -170,7 +170,7 @@ public class GoogleDriveBackupService : IGoogleDriveBackupService
         if (_token.ExpiresAt < DateTimeOffset.UtcNow)
         {
             try { await RefreshAccessTokenAsync(); }
-            catch { return false; }
+            catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
         }
         return _token != null;
     }

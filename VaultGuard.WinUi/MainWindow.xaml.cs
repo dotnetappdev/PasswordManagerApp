@@ -154,8 +154,8 @@ public sealed partial class MainWindow : Window
             {
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -277,8 +277,8 @@ public sealed partial class MainWindow : Window
                         PassSearchQueryToPage(query);
                     });
                 }
-                catch (Exception ex)
-                {
+                catch (Exception ex) {
+                    VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
                 }
             }
             else
@@ -295,8 +295,8 @@ public sealed partial class MainWindow : Window
                             PassSearchQueryToPage("");
                         });
                     }
-                    catch (Exception ex)
-                    {
+                    catch (Exception ex) {
+                        VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
                     }
                 }
             }
@@ -340,8 +340,8 @@ public sealed partial class MainWindow : Window
                     });
                 });
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
+                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
             }
         }
     }
@@ -439,9 +439,8 @@ public sealed partial class MainWindow : Window
                 return items.Count().ToString();
             }
         }
-        catch
-        {
-            // Ignore errors for now
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
         return "N/A";
     }
@@ -594,9 +593,8 @@ public sealed partial class MainWindow : Window
                                     icon.Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, r, g, b));
                                 }
                             }
-                            catch (Exception ex)
-                            {
-                                // Use default color on parse error
+                            catch (Exception ex) {
+                                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
                             }
                         }
                         
@@ -629,8 +627,8 @@ public sealed partial class MainWindow : Window
                 }
             });
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -685,7 +683,9 @@ public sealed partial class MainWindow : Window
                                 border.Background = new SolidColorBrush(color);
                         }
                     }
-                    catch { }
+                    catch (Exception ex) {
+                        VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
+                    }
 
                     var txt = new TextBlock
                     {
@@ -719,15 +719,17 @@ public sealed partial class MainWindow : Window
                             };
                             ContentFrame.Navigate(typeof(Views.PasswordItemsPage), filterData);
                         }
-                        catch { }
+                        catch (Exception ex) {
+                            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
+                        }
                     };
 
                     tagsPanel.Children.Add(btn);
                 }
             });
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -1038,7 +1040,9 @@ public sealed partial class MainWindow : Window
             if (Application.Current.Resources.TryGetValue("ModernNavigationViewItemStyle", out var appStyle) && appStyle is Style s3)
                 return s3;
         }
-        catch { }
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
+        }
         return null; // fallback - style optional
     }
     

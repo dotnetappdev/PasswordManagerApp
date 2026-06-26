@@ -92,10 +92,7 @@ public class WinUiPlatformService : IPlatformService
             });
             return true;
         }
-        catch (Exception)
-        {
-            return false;
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public async Task<bool> ShareTextAsync(string title, string text)
@@ -112,10 +109,7 @@ public class WinUiPlatformService : IPlatformService
             });
             return true;
         }
-        catch (Exception)
-        {
-            return false;
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public Task<string?> ShowFilePickerAsync(string[] allowedExtensions)
@@ -139,9 +133,6 @@ public class WinUiPlatformService : IPlatformService
             File.WriteAllBytes(downloadsPath, data);
             return Task.FromResult(true);
         }
-        catch (Exception)
-        {
-            return Task.FromResult(false);
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return Task.FromResult(false); }
     }
 }

@@ -44,6 +44,14 @@
             <converters:OnlineStatusToTextConverter x:Key="OnlineStatusToTextConverter"/>
 
             <!-- Removed WebsiteToColorConverter (likely already in ModernTheme.xaml) -->
+
+            <!-- Windows 11 polish: the Segoe UI Variable system font + crisp ClearType rendering
+                 on every top-level window (ContentDialogs inherit it from their host window). -->
+            <Style TargetType="{x:Type Window}">
+                <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI"/>
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

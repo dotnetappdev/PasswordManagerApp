@@ -146,10 +146,7 @@ public class NetworkLocationBackupService : INetworkLocationBackupService
             var result = NativeMethods.WNetGetConnection(letter, sb, ref length);
             return result == NativeMethods.NO_ERROR ? sb.ToString() : string.Empty;
         }
-        catch
-        {
-            return string.Empty;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return string.Empty; }
     }
 
     public async Task<bool> ValidateNetworkLocationAsync()
@@ -169,10 +166,7 @@ public class NetworkLocationBackupService : INetworkLocationBackupService
                     if (!EnsureConnected()) return false;
                     return Directory.Exists(_networkPath);
                 }
-                catch
-                {
-                    return false;
-                }
+                catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
             });
         }
         catch (Exception ex)

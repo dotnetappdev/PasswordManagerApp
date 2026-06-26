@@ -641,7 +641,7 @@
         {
             await PasswordItemService.UpdateAsync(selectedItem);
         }
-        catch { }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
         _dragSourceIdx = -1;
     }
 
@@ -650,7 +650,7 @@
         if (selectedItem == null) return;
         selectedItem.CustomFields?.Remove(field);
         try { await PasswordItemService.UpdateAsync(selectedItem); }
-        catch { }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
     private async Task SaveDetailChangesAsync()
@@ -661,7 +661,7 @@
             await PasswordItemService.UpdateAsync(selectedItem);
             Snackbar.Add("Changes saved.", Severity.Success);
         }
-        catch { }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
     private async Task AddCustomField(CustomFieldType type)

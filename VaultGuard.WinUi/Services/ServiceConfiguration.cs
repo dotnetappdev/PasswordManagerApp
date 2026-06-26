@@ -131,26 +131,11 @@ public static class ServiceConfiguration
                 // If path is not secure, fall through to default
             }
         }
-        catch (FileNotFoundException)
-        {
-            // Configuration file doesn't exist, use default
-        }
-        catch (System.Text.Json.JsonException)
-        {
-            // JSON deserialization failed, fall back to default
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // Cannot access the file or create directory, fall back to default
-        }
-        catch (IOException)
-        {
-            // File I/O error, fall back to default
-        }
-        catch
-        {
-            // Any other error accessing config, fall back to default
-        }
+        catch (FileNotFoundException logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
+        catch (System.Text.Json.JsonException logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
+        catch (UnauthorizedAccessException logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
+        catch (IOException logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
         
         // Default path - GetAppDataDirectory already ensures directory exists
         return Path.Combine(platformService.GetAppDataDirectory(), "passwordmanager.db");

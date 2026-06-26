@@ -63,9 +63,9 @@ namespace VaultGuard.Components.Shared.Services
                         ThemeChanged?.Invoke(this, _isDarkMode);
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // If detection fails, keep current theme
+                    VaultGuard.Services.Logging.AppLogger.Error($"System theme detection failed", ex);
                 }
             }
         }

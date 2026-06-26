@@ -84,8 +84,8 @@ public class UserProfileSelectionViewModel : BaseViewModel
 
             OnPropertyChanged(nameof(HasUserProfiles));
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
         finally
         {
@@ -162,10 +162,7 @@ public class UserProfileSelectionViewModel : BaseViewModel
 
             return false;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
     }
 
     public string GetProfileDisplayName(UserDto profile)

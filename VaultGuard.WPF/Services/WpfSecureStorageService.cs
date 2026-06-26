@@ -26,10 +26,7 @@ public class WpfSecureStorageService : ISecureStorageService
             
             return result;
         }
-        catch (Exception)
-        {
-            return null;
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return null; }
     }
 
     public async Task SetAsync(string key, string value)
@@ -48,10 +45,7 @@ public class WpfSecureStorageService : ISecureStorageService
 
             await File.WriteAllBytesAsync(filePath, encryptedData);
         }
-        catch (Exception)
-        {
-            // Don't throw - secure storage failures shouldn't crash the app
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
     public Task<bool> RemoveAsync(string key)
@@ -66,10 +60,7 @@ public class WpfSecureStorageService : ISecureStorageService
             }
             return Task.FromResult(false);
         }
-        catch
-        {
-            return Task.FromResult(false);
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return Task.FromResult(false); }
     }
 
     public Task RemoveAllAsync()
@@ -102,10 +93,7 @@ public class WpfSecureStorageService : ISecureStorageService
             }
             return false;
         }
-        catch
-        {
-            return false;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public void RemoveAll()
@@ -118,9 +106,9 @@ public class WpfSecureStorageService : ISecureStorageService
                 Directory.Delete(directory, true);
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Log error but don't throw
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to remove all secure storage", ex);
         }
     }
 

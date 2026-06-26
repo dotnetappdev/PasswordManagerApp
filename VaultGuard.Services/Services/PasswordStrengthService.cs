@@ -152,10 +152,7 @@ public sealed class PasswordStrengthService : IPasswordStrengthService
         {
             seconds = Math.Pow(2, entropyBits) / 2.0 / 1e10;
         }
-        catch
-        {
-            return "centuries";
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return "centuries"; }
 
         if (double.IsInfinity(seconds) || seconds > 3.15e9 * 100) return "centuries";
         if (seconds < 1) return "instantly";

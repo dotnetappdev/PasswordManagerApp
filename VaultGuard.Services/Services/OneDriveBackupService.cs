@@ -211,10 +211,7 @@ public class OneDriveBackupService : IOneDriveBackupService
             var desc = root.TryGetProperty("error_description", out var d) ? d.GetString() : null;
             return desc != null ? $"{code}: {desc}" : code;
         }
-        catch
-        {
-            return null;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return null; }
     }
 
     public Task<bool> ConnectPersonalAsync(CancellationToken ct = default) =>
@@ -250,10 +247,7 @@ public class OneDriveBackupService : IOneDriveBackupService
             var resp = await _http.SendAsync(request, timeoutCts.Token);
             return resp.IsSuccessStatusCode;
         }
-        catch
-        {
-            return false;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public async Task<bool> AuthenticateAsync()
@@ -271,7 +265,7 @@ public class OneDriveBackupService : IOneDriveBackupService
         if (_token.ExpiresAt < DateTimeOffset.UtcNow)
         {
             try { await RefreshAccessTokenAsync(); }
-            catch { return false; }
+            catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
         }
         return _token != null;
     }
@@ -387,10 +381,7 @@ public class OneDriveBackupService : IOneDriveBackupService
             var accountInfo = await GetAccountInfoAsync();
             return accountInfo?.AvailableSpace ?? 0;
         }
-        catch
-        {
-            return 0;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return 0; }
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────

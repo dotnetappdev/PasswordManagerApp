@@ -42,7 +42,7 @@ public static class SecurityGateHelper
                     return val;
             }
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to read security gate setting", ex); }
         return false;
     }
 

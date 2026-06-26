@@ -163,9 +163,8 @@ public class LoginViewModel : BaseViewModel
             }
             
         }
-        catch (Exception ex)
-        {
-            // Continue anyway, let the normal error handling deal with it
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -563,8 +562,8 @@ public class LoginViewModel : BaseViewModel
             {
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 }

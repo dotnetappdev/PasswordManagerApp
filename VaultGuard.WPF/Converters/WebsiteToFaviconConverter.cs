@@ -41,10 +41,10 @@ public class WebsiteToFaviconConverter : IValueConverter
                     _ = _cache.GetOrCreateFaviconAsync(host);
                     return new BitmapImage(favUrl);
                 }
-                catch { }
+                catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to build remote favicon URL", ex); }
             }
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to convert website to favicon", ex); }
 
         return null!;
     }
@@ -63,10 +63,7 @@ public class WebsiteToFaviconConverter : IValueConverter
             var path = await _cache.GetOrCreateFaviconAsync(host);
             return path;
         }
-        catch
-        {
-            return null;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return null; }
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

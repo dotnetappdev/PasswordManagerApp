@@ -4,11 +4,13 @@
 @using Microsoft.JSInterop
 @using VaultGuard.Crypto.Interfaces
 @using VaultGuard.Services.Interfaces
+@using VaultGuard.Components.Shared.Services
 @using MudBlazor
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject IAuthService AuthService
 @inject IVaultSessionService VaultSessionService
+@inject IMasterKeyCacheService MasterKeyCache
 @inject ISnackbar Snackbar
 
 <div class="auth-container">
@@ -491,46 +493,147 @@
         }
     }
 
+    // localStorage keys for the device-bound unlock passkey.
+    private const string PasskeyCredKey = "vg.passkey.credId";
+    private const string PasskeyUserKey = "vg.passkey.userId";
+
+    // Enables passkey (biometric/PIN) unlock for this device. This requires the real master
+    // key so the vault key can be cached behind the platform authenticator — a passkey alone
+    // cannot decrypt a zero-knowledge vault. Enrolment therefore validates the master key
+    // first, then binds a device credential and caches the key for later release.
     private async Task RegisterPasskey()
     {
+        errorMessage = string.Empty;
+
+        var keyToUse = !string.IsNullOrEmpty(loginKey) ? loginKey : masterKey;
+        if (string.IsNullOrEmpty(keyToUse))
+        {
+            errorMessage = "Enter your master key first, then enable passkey unlock.";
+            Snackbar.Add(errorMessage, Severity.Warning);
+            return;
+        }
+
         try
         {
-            var id = await JSRuntime.InvokeAsync<string>("passkey.register");
-            passkeyId = id;
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "passkeyId", id);
-            errorMessage = "Passkey registered! You can now sign in with your device.";
+            // Make sure WebAuthn/biometrics are actually available before we enrol.
+            var available = await JSRuntime.InvokeAsync<bool>("passkey.isAvailable");
+            if (!available)
+            {
+                errorMessage = "This device has no biometric/passkey authenticator available.";
+                Snackbar.Add(errorMessage, Severity.Warning);
+                return;
+            }
+
+            // Validate the master key by actually unlocking the vault.
+            var unlocked = await AuthService.AuthenticateAsync(keyToUse);
+            if (!unlocked)
+            {
+                errorMessage = "Incorrect master key. Passkey unlock was not enabled.";
+                loginKeyError = true;
+                Snackbar.Add(errorMessage, Severity.Error);
+                return;
+            }
+
+            var userId = await AuthService.GetCurrentUserIdAsync();
+            if (string.IsNullOrEmpty(userId))
+            {
+                errorMessage = "Could not determine the vault user. Passkey unlock was not enabled.";
+                Snackbar.Add(errorMessage, Severity.Error);
+                return;
+            }
+
+            // Enrol a platform credential bound to this device (prompts biometric/PIN).
+            var credId = await JSRuntime.InvokeAsync<string>(
+                "passkey.enroll", AuthService.CurrentUser?.Email ?? "vault-user", "Vault Guard");
+            if (string.IsNullOrEmpty(credId))
+            {
+                errorMessage = "Passkey enrolment was cancelled.";
+                return;
+            }
+
+            // Cache the master key behind the platform authenticator and remember the binding.
+            await MasterKeyCache.CacheAsync(userId, keyToUse);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", PasskeyCredKey, credId);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", PasskeyUserKey, userId);
+
+            Snackbar.Add("Passkey unlock enabled for this device.", Severity.Success);
+            Navigation.NavigateTo("/home");
         }
         catch (Exception ex)
         {
-            errorMessage = "Passkey registration failed: " + ex.Message;
+            VaultGuard.Services.Logging.AppLogger.Error("Passkey enrolment failed", ex);
+            errorMessage = "Passkey registration failed. Please try again.";
+            Snackbar.Add(errorMessage, Severity.Error);
         }
     }
 
+    // Unlocks the vault with the device passkey. This fails CLOSED: it grants access only when
+    // a real platform assertion succeeds for the enrolled credential AND a cached master key is
+    // present AND that key actually unlocks the vault. A passkey assertion alone never unlocks.
     private async Task LoginWithPasskey()
     {
+        errorMessage = string.Empty;
+
         try
         {
-            var id = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "passkeyId");
-            if (string.IsNullOrEmpty(id))
+            var credId = await JSRuntime.InvokeAsync<string?>("localStorage.getItem", PasskeyCredKey);
+            var userId = await JSRuntime.InvokeAsync<string?>("localStorage.getItem", PasskeyUserKey);
+            if (string.IsNullOrEmpty(credId) || string.IsNullOrEmpty(userId))
             {
-                errorMessage = "No passkey registered. Please register first.";
+                errorMessage = "No passkey set up on this device. Sign in with your master key, then enable passkey unlock.";
+                Snackbar.Add(errorMessage, Severity.Info);
                 return;
             }
-            var result = await JSRuntime.InvokeAsync<bool>("passkey.login", id);
-            if (result)
+
+            // Real platform assertion — triggers the biometric/PIN prompt. Throws if cancelled.
+            string assertedId;
+            try
             {
-                // For passkey authentication, we need to implement a separate flow
-                // This would require additional security measures
+                assertedId = await JSRuntime.InvokeAsync<string>("passkey.assert", credId);
+            }
+            catch (Exception)
+            {
+                errorMessage = "Passkey verification was cancelled or failed.";
+                Snackbar.Add(errorMessage, Severity.Error);
+                return;
+            }
+
+            // The authenticator must have asserted the exact credential we enrolled.
+            if (!string.Equals(assertedId, credId, StringComparison.Ordinal))
+            {
+                errorMessage = "Passkey verification failed.";
+                Snackbar.Add(errorMessage, Severity.Error);
+                return;
+            }
+
+            // Only now release the cached master key and unlock through the normal path.
+            var cached = await MasterKeyCache.GetCachedAsync(userId);
+            if (string.IsNullOrEmpty(cached))
+            {
+                errorMessage = "Passkey unlock has expired. Please sign in with your master key.";
+                Snackbar.Add(errorMessage, Severity.Warning);
+                return;
+            }
+
+            var success = await AuthService.AuthenticateAsync(cached);
+            if (success)
+            {
+                Snackbar.Add("Unlocked with passkey.", Severity.Success);
                 Navigation.NavigateTo("/home");
             }
             else
             {
-                errorMessage = "Passkey login failed.";
+                // The cached key no longer works (master key changed) — drop it and force manual unlock.
+                await MasterKeyCache.ForgetAsync(userId);
+                errorMessage = "Passkey unlock failed. Please sign in with your master key.";
+                Snackbar.Add(errorMessage, Severity.Error);
             }
         }
         catch (Exception ex)
         {
-            errorMessage = "Passkey login failed: " + ex.Message;
+            VaultGuard.Services.Logging.AppLogger.Error("Passkey unlock failed", ex);
+            errorMessage = "Passkey login failed. Please sign in with your master key.";
+            Snackbar.Add(errorMessage, Severity.Error);
         }
     }
 

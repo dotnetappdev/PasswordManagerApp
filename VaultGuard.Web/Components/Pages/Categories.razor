@@ -225,7 +225,7 @@ else
     async Task DeleteCategory(Category cat)
     {
         bool hasItems = false;
-        try { hasItems = await CategoryService.HasPasswordItemsAsync(cat.Id); } catch { }
+        try { hasItems = await CategoryService.HasPasswordItemsAsync(cat.Id); } catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
 
         string message = hasItems
             ? $"Category \"{cat.Name}\" contains password items. Deleting it may affect those items. Continue?"

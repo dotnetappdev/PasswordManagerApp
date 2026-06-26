@@ -34,7 +34,7 @@ public sealed class WindowsHelloService : IWindowsHelloService
     public async Task<bool> IsAvailableAsync()
     {
         try { return await KeyCredentialManager.IsSupportedAsync(); }
-        catch { return false; }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public async Task<HelloResult> VerifyAsync(string reason = "Verify it's you")
@@ -59,7 +59,7 @@ public sealed class WindowsHelloService : IWindowsHelloService
             var signResult = await open.Credential.RequestSignAsync(buffer);
             return MapStatus(signResult.Status);
         }
-        catch { return HelloResult.Failed; }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return HelloResult.Failed; }
     }
 
     public async Task<HelloResult> RegisterKeyAsync(string keyName)
@@ -72,7 +72,7 @@ public sealed class WindowsHelloService : IWindowsHelloService
                 keyName, KeyCredentialCreationOption.ReplaceExisting);
             return MapStatus(result.Status);
         }
-        catch { return HelloResult.Failed; }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return HelloResult.Failed; }
     }
 
     public async Task<bool> KeyExistsAsync(string keyName)
@@ -82,13 +82,13 @@ public sealed class WindowsHelloService : IWindowsHelloService
             var open = await KeyCredentialManager.OpenAsync(keyName);
             return open.Status == KeyCredentialStatus.Success;
         }
-        catch { return false; }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public async Task<bool> DeleteKeyAsync(string keyName)
     {
         try { await KeyCredentialManager.DeleteAsync(keyName); return true; }
-        catch { return false; }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     private static HelloResult MapStatus(KeyCredentialStatus status) => status switch

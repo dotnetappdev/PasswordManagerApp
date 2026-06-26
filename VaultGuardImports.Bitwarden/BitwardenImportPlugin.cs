@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using FileHelpers;
 using VaultGuard.Imports.Interfaces;
 using VaultGuard.Models;
@@ -127,9 +127,7 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
                 FailedImports = 0
             };
         }
-        catch (Exception ex)
-        {
-            return new ImportResult
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return new ImportResult
             {
                 Success = false,
                 ErrorMessage = $"Failed to import Bitwarden file: {ex.Message}",
@@ -138,8 +136,7 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
                 SuccessfulImports = 0,
                 FailedImports = 1,
                 Warnings = new List<string> { ex.Message }
-            };
-        }
+            }; }
     }
 
     public async Task<bool> CanProcessFileAsync(Stream stream, string fileName)
@@ -157,10 +154,7 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
             // Check if it looks like a Bitwarden CSV export
             return firstLine?.Contains("folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp") == true;
         }
-        catch
-        {
-            return false;
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public async Task<IEnumerable<PasswordItem>> GetImportPreviewAsync(Stream stream, string fileName)
@@ -198,10 +192,7 @@ public class BitwardenImportPlugin : IPasswordImportPlugin
 
             return previewItems;
         }
-        catch
-        {
-            return new List<PasswordItem>();
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return new List<PasswordItem>(); }
     }
 }
 

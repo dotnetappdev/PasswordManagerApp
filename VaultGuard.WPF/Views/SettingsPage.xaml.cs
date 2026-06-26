@@ -88,7 +88,7 @@ public sealed partial class SettingsPage : Page
             var buildDate = File.GetLastWriteTime(asm.Location);
             if (BuildDateText != null) BuildDateText.Text = buildDate.ToString("MMMM yyyy");
         }
-        catch { /* About info is cosmetic — never let it break the page */ }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"About info load failed", ex); }
     }
 
     public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
@@ -130,8 +130,8 @@ public sealed partial class SettingsPage : Page
                     var candidateDirs = new List<string>();
 
                     // App base and AppContext
-                    try { candidateDirs.Add(AppDomain.CurrentDomain.BaseDirectory); } catch { }
-                    try { candidateDirs.Add(AppContext.BaseDirectory); } catch { }
+                    try { candidateDirs.Add(AppDomain.CurrentDomain.BaseDirectory); } catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", "Failed to add BaseDirectory candidate", ex); }
+                    try { candidateDirs.Add(AppContext.BaseDirectory); } catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", "Failed to add AppContext.BaseDirectory candidate", ex); }
 
                     // Executing assembly location
                     try
@@ -139,19 +139,19 @@ public sealed partial class SettingsPage : Page
                         var execPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         if (!string.IsNullOrEmpty(execPath)) candidateDirs.Add(System.IO.Path.GetDirectoryName(execPath)!);
                     }
-                    catch { }
+                    catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", "Failed to add executing assembly directory candidate", ex); }
 
                     // Current directory
-                    try { candidateDirs.Add(Environment.CurrentDirectory); } catch { }
+                    try { candidateDirs.Add(Environment.CurrentDirectory); } catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", "Failed to add current directory candidate", ex); }
 
                     // Per-user imports folder (LocalAppData)
-                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultGuard", "imports")); } catch { }
+                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultGuard", "imports")); } catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", "Failed to add LocalApplicationData imports candidate", ex); }
 
                     // Machine-wide imports folder (ProgramData)
-                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "VaultGuard", "imports")); } catch { }
+                    try { candidateDirs.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "VaultGuard", "imports")); } catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", "Failed to add CommonApplicationData imports candidate", ex); }
 
                     // Standard plugin discovery folder used by PluginDiscoveryService
-                    try { candidateDirs.Add(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "imports", "otherpasswordmanagers")); } catch { }
+                    try { candidateDirs.Add(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "imports", "otherpasswordmanagers")); } catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", "Failed to add plugin discovery folder candidate", ex); }
 
                     // Collect DLLs from all candidate directories
                     foreach (var dir in candidateDirs.Where(d => !string.IsNullOrEmpty(d)).Distinct())
@@ -164,7 +164,7 @@ public sealed partial class SettingsPage : Page
                                 importDllsList.AddRange(Directory.GetFiles(dir, "VaultGuardImports.*.dll", SearchOption.TopDirectoryOnly));
                             }
                         }
-                        catch { }
+                        catch (Exception ex) { await _logger.LogErrorAsync("SettingsPage", $"Failed to enumerate import DLLs in {dir}", ex); }
                     }
                     var importDlls = importDllsList.ToArray();
                     await _logger.LogAsync("SettingsPage", $"Found {importDlls.Length} import DLLs");
@@ -371,8 +371,7 @@ public sealed partial class SettingsPage : Page
                 ImportTypeComboBox.SelectedIndex = 0;
             }
         }
-        catch (Exception ex)
-        { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     private async void TwoFactorButton_Click(object sender, RoutedEventArgs e)
@@ -431,7 +430,10 @@ public sealed partial class SettingsPage : Page
             var status = await twoFactorService.GetTwoFactorStatusAsync(userId);
             TwoFactorStatusText.Text = status.IsEnabled ? "Enabled" : "Not enabled";
         }
-        catch { }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Error loading two-factor status", ex);
+        }
     }
 
     private async void PasscodeToggle_Toggled(object sender, RoutedEventArgs e)
@@ -664,7 +666,7 @@ public sealed partial class SettingsPage : Page
             {
                 await _logger.LogAsync("SettingsPage", $"Available providers: {string.Join(", ", providers.Select(p => p.ProviderName + " (" + p.DisplayName + ")"))}");
             }
-            catch { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to log available providers", ex); }
 
             // Get provider name from ComboBoxItem Tag
             string providerName = selectedItem.Tag?.ToString() ?? "";
@@ -703,13 +705,13 @@ public sealed partial class SettingsPage : Page
                 ImportStatusText.Text = "Import failed";
                 ImportResultText.Text = $"Import provider '{providerName}' not found. Available providers: {string.Join(", ", providers.Select(p => p.ProviderName))}";
                 // Also log the failure for diagnostics
-                try { await _logger.LogAsync("SettingsPage", $"Provider resolution failed for '{providerName}'. Available: {string.Join(",", providers.Select(p => p.ProviderName))}"); } catch { }
+                try { await _logger.LogAsync("SettingsPage", $"Provider resolution failed for '{providerName}'. Available: {string.Join(",", providers.Select(p => p.ProviderName))}"); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to log provider resolution failure", ex); }
                 StartImportButton.IsEnabled = true;
                 return;
             }
 
             // Log the chosen provider
-            try { await _logger.LogAsync("SettingsPage", $"Resolved provider '{providerName}' to '{provider.ProviderName}' ({provider.DisplayName})"); } catch { }
+            try { await _logger.LogAsync("SettingsPage", $"Resolved provider '{providerName}' to '{provider.ProviderName}' ({provider.DisplayName})"); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to log resolved provider", ex); }
 
             // Update progress
             ImportStatusText.Text = $"Importing from {selectedType}...";
@@ -767,17 +769,17 @@ public sealed partial class SettingsPage : Page
                                             break;
                                         }
                                     }
-                                    catch { }
+                                    catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to instantiate candidate provider type", ex); }
                                 }
 
                                 if (provider != null) break;
                             }
-                            catch { }
+                            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to load assembly for 1Password fallback resolution", ex); }
                         }
                     }
                 }
                 catch (Exception ex)
-                { }
+                { VaultGuard.Services.Logging.AppLogger.Error($"1Password provider fallback resolution failed", ex); }
             }
 
             // Perform import
@@ -1252,7 +1254,7 @@ public sealed partial class SettingsPage : Page
                 }
             }
         }
-        catch { /* best-effort */ }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to write seed marker", ex); }
     }
 
     private async void ClearDataButton_Click(object sender, RoutedEventArgs e)
@@ -2061,7 +2063,7 @@ public sealed partial class SettingsPage : Page
             VaultGuard.WPF.Services.ToastService.Instance.Show(
                 $"Something went wrong: {ex.Message}", VaultGuard.WPF.Services.ToastType.Error);
         }
-        catch { /* toast is best-effort */ }
+        catch (Exception toastEx) { VaultGuard.Services.Logging.AppLogger.Debug($"Failed to show backup error toast: {toastEx.Message}"); }
     }
 
     // True when the signed-in user has two-factor authentication enabled.
@@ -2127,7 +2129,7 @@ public sealed partial class SettingsPage : Page
                     : Visibility.Collapsed;
             }
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to update SQLite path panel visibility", ex); }
     }
 
     private async void SecureWipeButton_Click(object sender, RoutedEventArgs e)
@@ -2311,7 +2313,7 @@ public sealed partial class SettingsPage : Page
             var mainWindow = (Application.Current as App)?.MainWindow;
             mainWindow?.NavigateToPage("Vaults");
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to navigate to Vaults page", ex); }
     }
 
     private void ManagePasskeysButton_Click(object sender, RoutedEventArgs e)
@@ -2321,7 +2323,7 @@ public sealed partial class SettingsPage : Page
             var mainWindow = (Application.Current as App)?.MainWindow;
             mainWindow?.NavigateToPage("Passkeys");
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to navigate to Passkeys page", ex); }
     }
 
     private async void PasskeysToggle_Toggled(object sender, RoutedEventArgs e)
@@ -2400,7 +2402,7 @@ public sealed partial class SettingsPage : Page
             var pwd = new string(bytes.Select(b => charSet[b % charSet.Length]).ToArray());
             if (GeneratedPasswordPreview != null) GeneratedPasswordPreview.Text = pwd;
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to generate preview password", ex); }
     }
 
     private void OpenImportLogButton_Click(object sender, RoutedEventArgs e)
@@ -2594,7 +2596,7 @@ public sealed partial class SettingsPage : Page
                 UseShellExecute = true
             });
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to open documentation link", ex); }
     }
 
     // ── Toast notification appearance ────────────────────────────────────────────
@@ -2677,7 +2679,7 @@ public sealed partial class SettingsPage : Page
         Brush Safe(string hex)
         {
             try { return (Brush)new BrushConverter().ConvertFrom(hex)!; }
-            catch { return Brushes.Gray; }
+            catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return Brushes.Gray; }
         }
 
         var accent = Safe(theme.Accent);

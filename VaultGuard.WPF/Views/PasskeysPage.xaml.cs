@@ -96,7 +96,7 @@ public sealed partial class PasskeysPage : Page
                     System.Windows.Media.Color.FromRgb(0x9D, 0x9D, 0x9D));
             }
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to refresh Hello status UI", ex); }
     }
 
     private T? GetElement<T>(string name) where T : class => this.FindName(name) as T;
@@ -125,14 +125,14 @@ public sealed partial class PasskeysPage : Page
                     }
                 }
             }
-            catch { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to check Windows Hello key existence", ex); }
 
             PasskeysList.ItemsSource = _passkeys;
             TotalCount.Text = _passkeys.Count.ToString();
             BackedUpCount.Text = _passkeys.Count(p => p.IsBackedUp || p.IsInWindows).ToString();
             EmptyStateBorder.Visibility = _passkeys.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to load passkeys", ex); }
     }
 
     private static PasskeyDisplayItem ToDisplay(PasswordItem item)
@@ -208,7 +208,7 @@ public sealed partial class PasskeysPage : Page
                 ConfigureDialog(dialog);
                 await dialog.ShowAsync();
             }
-            catch { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to show passkey view dialog", ex); }
         }
     }
 
@@ -216,7 +216,7 @@ public sealed partial class PasskeysPage : Page
     {
         if (sender is Button { Tag: PasskeyDisplayItem item } && !string.IsNullOrEmpty(item.Website))
         {
-            try { Clipboard.SetText(item.Website); } catch { }
+            try { Clipboard.SetText(item.Website); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy website to clipboard", ex); }
         }
     }
 
@@ -309,7 +309,7 @@ public sealed partial class PasskeysPage : Page
                 await db.SaveChangesAsync();
             }
         }
-        catch { /* preference persistence is best-effort */ }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to persist passkeys preference", ex); }
     }
 
     private async void SetupHelloButton_Click(object sender, RoutedEventArgs e)
@@ -374,7 +374,7 @@ public sealed partial class PasskeysPage : Page
                 UseShellExecute = true
             });
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to open learn more link", ex); }
     }
 
     private void ConfigureDialog(ModernWpf.Controls.ContentDialog dialog)
@@ -384,7 +384,7 @@ public sealed partial class PasskeysPage : Page
             if (dialog.Style == null && Application.Current.Resources.Contains("Modern1PasswordDialogStyle"))
                 dialog.Style = Application.Current.Resources["Modern1PasswordDialogStyle"] as Style;
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to configure dialog style", ex); }
     }
 
     private async Task ShowMsgAsync(string title, string msg)

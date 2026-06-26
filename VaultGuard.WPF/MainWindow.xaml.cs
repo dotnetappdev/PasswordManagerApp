@@ -51,11 +51,17 @@ public sealed partial class MainWindow : Window
     {
         _serviceProvider = serviceProvider;
         this.InitializeComponent();
-        this.Title = "Vault Guard - WPF";
+        this.Title = "Vault Guard";
 
-        // Set window size
+        // Windows 11 desktop polish: default + minimum size, centred launch, the Win11 UI font,
+        // and the Mica backdrop / immersive dark title bar / rounded corners.
         this.Width = 1200;
         this.Height = 800;
+        this.MinWidth = 960;
+        this.MinHeight = 640;
+        this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        this.FontFamily = new System.Windows.Media.FontFamily("Segoe UI Variable Text, Segoe UI");
+        Helpers.Win11Chrome.Apply(this, dark: true);
 
         // Cache style early (after resources loaded by InitializeComponent)
         _navItemStyle = TryGetNavItemStyle();
@@ -118,7 +124,7 @@ public sealed partial class MainWindow : Window
                 UseShellExecute = true
             });
         }
-        catch { }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
     private async void MenuCheckUpdates_Click(object sender, RoutedEventArgs e)
@@ -177,7 +183,7 @@ public sealed partial class MainWindow : Window
                     return url;
             }
         }
-        catch { }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
         return Services.UpdateService.DefaultManifestUrl;
     }
 
@@ -246,7 +252,7 @@ public sealed partial class MainWindow : Window
         _appScale.ScaleY = _zoom;
         if (this.Content is System.Windows.FrameworkElement root && root.LayoutTransform != _appScale)
             root.LayoutTransform = _appScale;
-        try { Services.ToastService.Instance.Info($"Zoom {(int)(_zoom * 100)}%"); } catch { }
+        try { Services.ToastService.Instance.Info($"Zoom {(int)(_zoom * 100)}%"); } catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
     private void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -385,10 +391,10 @@ public sealed partial class MainWindow : Window
                         UseShellExecute = true
                     });
                 }
-                catch { }
+                catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
             }
         }
-        catch { }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
     public void NavigateToPage(string pageTag)
@@ -432,8 +438,7 @@ public sealed partial class MainWindow : Window
             if (ContentFrame != null)
                 ContentFrame.Navigate(page, navigationParameter);
         }
-        catch (Exception ex)
-        { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     private object CreateNavigationParameter(string pageTag)
@@ -554,8 +559,7 @@ public sealed partial class MainWindow : Window
                         PassSearchQueryToPage(query);
                     }));
                 }
-                catch (Exception ex)
-                { }
+                catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
             }
             else
             {
@@ -571,8 +575,7 @@ public sealed partial class MainWindow : Window
                             PassSearchQueryToPage("");
                         }));
                     }
-                    catch (Exception ex)
-                    { }
+                    catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
                 }
             }
         }
@@ -615,8 +618,7 @@ public sealed partial class MainWindow : Window
                     });
                 }));
             }
-            catch (Exception ex)
-            { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
         }
     }
 
@@ -761,10 +763,7 @@ public sealed partial class MainWindow : Window
                 return items.Count().ToString();
             }
         }
-        catch
-        {
-            // Ignore errors for now
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
         return "N/A";
     }
 
@@ -1075,7 +1074,7 @@ public sealed partial class MainWindow : Window
                 HighlightSelectedVault();
             });
         }
-        catch { }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
     // Highlights the selected vault row in the sidebar (like a selected NavigationViewItem) and
@@ -1261,8 +1260,7 @@ public sealed partial class MainWindow : Window
                 }
             });
         }
-        catch (Exception ex)
-        { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     // Populate the SidebarTagsPanel with tag chips
@@ -1315,7 +1313,7 @@ public sealed partial class MainWindow : Window
                                 border.Background = new SolidColorBrush(color);
                         }
                     }
-                    catch { }
+                    catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
 
                     var txt = new TextBlock
                     {
@@ -1349,15 +1347,14 @@ public sealed partial class MainWindow : Window
                             };
                             ContentFrame.Navigate(new Views.PasswordItemsPage(), filterData);
                         }
-                        catch { }
+                        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
                     };
 
                     tagsPanel.Children.Add(btn);
                 }
             });
         }
-        catch (Exception ex)
-        { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     // Delete category navigation handler removed (UI buttons removed). Kept method removed per request.
@@ -1633,7 +1630,7 @@ public sealed partial class MainWindow : Window
         {
             dialog.Style = dialog.TryFindResource("Modern1PasswordDialogStyle") as Style;
         }
-        catch { }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
     // Helper methods for dialogs
@@ -1687,7 +1684,7 @@ public sealed partial class MainWindow : Window
                     return s3;
             }
         }
-        catch { }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
         return null; // fallback - style optional
     }
     

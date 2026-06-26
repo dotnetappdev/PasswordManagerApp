@@ -906,10 +906,10 @@
         {
             _vaults = await VaultService.GetAllAsync();
         }
-        catch { }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
         finally { _vaultsLoading = false; }
 
-        try { await LoadTwoFactorStatusAsync(); } catch { }
+        try { await LoadTwoFactorStatusAsync(); } catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
     // ── Generator ────────────────────────────────────────────────────────────────

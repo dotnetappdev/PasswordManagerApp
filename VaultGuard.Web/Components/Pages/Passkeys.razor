@@ -2,9 +2,11 @@
 @using VaultGuard.Services.Interfaces
 @using VaultGuard.Models
 @using VaultGuard.Models.DTOs.Auth
+@using Microsoft.JSInterop
 @inject IPasskeyService PasskeyService
 @inject IAuthService AuthService
 @inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
@@ -359,19 +361,50 @@ else
         isRegistering = true;
         try
         {
-            var dto = new PasskeyRegistrationStartDto
+            // 1. Ask the server for WebAuthn creation options (validates the master password).
+            var startDto = new PasskeyRegistrationStartDto
             {
                 PasskeyName = _passkeyName,
                 MasterPassword = _masterPasswordForPasskey,
                 StoreInVault = _storeInVault
             };
-            var response = await PasskeyService.StartPasskeyRegistrationAsync(userId, dto);
-            if (response == null)
+            var start = await PasskeyService.StartPasskeyRegistrationAsync(userId, startDto);
+            if (start == null)
             { Snackbar.Add("Failed to start registration. Check your master password.", Severity.Error); return; }
 
-            Snackbar.Add("Registration started — complete the browser prompt to finish.", Severity.Info);
-            _registerDialogVisible = false;
-            await LoadPasskeys();
+            // 2. Run the browser WebAuthn ceremony (prompts biometric/PIN/security key).
+            string attestationJson;
+            try
+            {
+                attestationJson = await JSRuntime.InvokeAsync<string>("passkey.createForServer", start.CredentialCreationOptions);
+            }
+            catch (Exception)
+            {
+                Snackbar.Add("Passkey creation was cancelled or is not supported on this device.", Severity.Warning);
+                return;
+            }
+
+            // 3. Send the attestation back; the SERVER cryptographically verifies it before saving.
+            var completeDto = new PasskeyRegistrationCompleteDto
+            {
+                Challenge = start.Challenge,
+                CredentialResponse = attestationJson,
+                OriginalOptionsJson = start.CredentialCreationOptions,
+                PasskeyName = _passkeyName,
+                StoreInVault = _storeInVault,
+                DeviceType = "web"
+            };
+            var ok = await PasskeyService.CompletePasskeyRegistrationAsync(userId, completeDto);
+            if (ok)
+            {
+                Snackbar.Add($"Passkey \"{_passkeyName}\" registered.", Severity.Success);
+                _registerDialogVisible = false;
+                await LoadPasskeys();
+            }
+            else
+            {
+                Snackbar.Add("Passkey registration could not be verified. Please try again.", Severity.Error);
+            }
         }
         catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
         finally { isRegistering = false; }

@@ -179,10 +179,7 @@ public class LoginViewModel : BaseViewModel
             }
             
         }
-        catch (Exception ex)
-        {
-            // Continue anyway, let the normal error handling deal with it
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     private void UpdateUIForSetupMode()
@@ -843,8 +840,6 @@ public class LoginViewModel : BaseViewModel
             {
             }
         }
-        catch (Exception ex)
-        {
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 }

@@ -139,6 +139,6 @@ public sealed partial class SecurityPage : Page
     private static SolidColorBrush ParseBrush(string hex)
     {
         try { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)); }
-        catch { return new SolidColorBrush(Colors.Gray); }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return new SolidColorBrush(Colors.Gray); }
     }
 }

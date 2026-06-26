@@ -21,7 +21,7 @@ public partial class VaultsModel : ObservableObject
         }
         catch (Exception ex)
         {
-            // Log error
+            VaultGuard.Uno.Logging.UnoLogger.Error("Failed to load vaults", ex);
         }
         finally
         {

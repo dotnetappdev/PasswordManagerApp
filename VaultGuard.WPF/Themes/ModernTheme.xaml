@@ -130,9 +130,9 @@
     ═══════════════════════════════════════════ -->
 
     <!-- Pane backgrounds -->
-    <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground"      Color="#111111"/>
-    <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground"     Color="#111111"/>
-    <SolidColorBrush x:Key="NavigationViewTopPaneBackground"          Color="#111111"/>
+    <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground"      Color="#D9111111"/>
+    <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground"     Color="#D9111111"/>
+    <SolidColorBrush x:Key="NavigationViewTopPaneBackground"          Color="#D9111111"/>
     <SolidColorBrush x:Key="NavigationViewContentBackground"          Color="#181818"/>
     <SolidColorBrush x:Key="NavigationViewContentGridBackground"      Color="#181818"/>
 
@@ -165,9 +165,9 @@
     <Thickness x:Key="NavigationViewContentGridMargin">0</Thickness>
 
     <!-- Keep the ui: prefixed versions too for any path that reads them -->
-    <SolidColorBrush x:Key="ui:NavigationViewDefaultPaneBackground"   Color="#111111"/>
-    <SolidColorBrush x:Key="ui:NavigationViewExpandedPaneBackground"  Color="#111111"/>
-    <SolidColorBrush x:Key="ui:NavigationViewTopPaneBackground"       Color="#111111"/>
+    <SolidColorBrush x:Key="ui:NavigationViewDefaultPaneBackground"   Color="#D9111111"/>
+    <SolidColorBrush x:Key="ui:NavigationViewExpandedPaneBackground"  Color="#D9111111"/>
+    <SolidColorBrush x:Key="ui:NavigationViewTopPaneBackground"       Color="#D9111111"/>
     <SolidColorBrush x:Key="ui:NavigationViewContentBackground"       Color="#181818"/>
     <SolidColorBrush x:Key="ui:NavigationViewContentGridBackground"   Color="#181818"/>
     <Thickness x:Key="ui:NavigationViewContentMargin">0</Thickness>

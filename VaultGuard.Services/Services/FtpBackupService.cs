@@ -173,10 +173,9 @@ public class FtpBackupService : IFtpBackupService
             var request = CreateRequest(string.Empty, WebRequestMethods.Ftp.MakeDirectory, rootOnly: true);
             using var response = (FtpWebResponse)await request.GetResponseAsync();
         }
-        catch
+        catch (Exception ex)
         {
-            // Directory already exists (most common case) or couldn't be created — either way,
-            // the upload itself will surface a clear error if the path is genuinely unusable.
+            _logger.LogWarning(ex, "Failed to ensure remote FTP directory exists");
         }
     }
 

@@ -19,6 +19,10 @@ using VaultGuard.ExceptionReporting.Sentry;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Durable serial file logging for the whole app: logs/{yyyy}/{MMMM}/{dd}.txt.
+builder.Logging.AddProvider(new VaultGuard.Services.Logging.FileLoggerProvider(
+    minLevel: Microsoft.Extensions.Logging.LogLevel.Information));
+
 // Configure Sentry.io
 var sentryConfig = builder.Configuration.GetSection("Sentry").Get<SentryConfiguration>();
 if (sentryConfig?.IsConfigured == true)
@@ -249,6 +253,10 @@ builder.Services.AddScoped<IAppSyncService, VaultGuard.Services.Services.AppSync
 
 var app = builder.Build();
 
+// Route the AppLogger facade through the configured logging pipeline (console, Sentry, file).
+VaultGuard.Services.Logging.AppLogger.Initialize(
+    app.Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -281,22 +289,22 @@ using (var scope = app.Services.CreateScope())
         {
             var dbContextApp = scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>();
             await dbContextApp.Database.EnsureCreatedAsync();
-            Console.WriteLine("✅ VaultGuardDbContextApp schema ensured");
+            VaultGuard.Services.Logging.AppLogger.Info("VaultGuardDbContextApp schema ensured");
         }
         catch (Exception ensureEx)
         {
-            Console.WriteLine($"⚠️  Schema ensure warning (App): {ensureEx.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"⚠️  Schema ensure warning (App)", ensureEx);
         }
 
         try
         {
             var dbContextMain = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
             await dbContextMain.Database.EnsureCreatedAsync();
-            Console.WriteLine("✅ VaultGuardDbContext schema ensured");
+            VaultGuard.Services.Logging.AppLogger.Info("VaultGuardDbContext schema ensured");
         }
         catch (Exception ensureEx)
         {
-            Console.WriteLine($"⚠️  Schema ensure warning (Main): {ensureEx.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"⚠️  Schema ensure warning (Main)", ensureEx);
         }
 
         // Also run the migration service for any remaining work (table creation, etc.)
@@ -306,11 +314,11 @@ using (var scope = app.Services.CreateScope())
             try
             {
                 await migrationService.EnsurePasswordItemTagsTableExistsAsync();
-                Console.WriteLine("Ensured PasswordItemTags junction table exists");
+                VaultGuard.Services.Logging.AppLogger.Info("Ensured PasswordItemTags junction table exists");
             }
             catch (Exception ensureEx)
             {
-                Console.WriteLine($"Warning: could not ensure PasswordItemTags table: {ensureEx.Message}");
+                VaultGuard.Services.Logging.AppLogger.Error($"Warning: could not ensure PasswordItemTags table", ensureEx);
             }
         }
 
@@ -319,11 +327,11 @@ using (var scope = app.Services.CreateScope())
         {
             var identitySeeder = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.Seed.IdentityDataSeeder>();
             await identitySeeder.SeedAsync();
-            Console.WriteLine("✅ Identity data seeded successfully");
+            VaultGuard.Services.Logging.AppLogger.Info("Identity data seeded successfully");
         }
         catch (Exception seedEx)
         {
-            Console.WriteLine($"⚠️  Identity seeding warning: {seedEx.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"⚠️  Identity seeding warning", seedEx);
         }
 
         try
@@ -340,18 +348,18 @@ using (var scope = app.Services.CreateScope())
                     ?? VaultGuard.DAL.Seed.TestDataSeeder.TestUserId;
 
                 VaultGuard.DAL.Seed.TestDataSeeder.SeedTestData(dbContext, seedUserId);
-                Console.WriteLine("✅ Demo password data seeded successfully");
+                VaultGuard.Services.Logging.AppLogger.Info("Demo password data seeded successfully");
             }
         }
         catch (Exception seedEx)
         {
-            Console.WriteLine($"⚠️  Demo data seeding warning: {seedEx.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"⚠️  Demo data seeding warning", seedEx);
         }
     }
     catch (Exception ex)
     {
         // Log the error but don't stop the application
-        Console.WriteLine($"⚠️  Database initialization warning: {ex.Message}");
+        VaultGuard.Services.Logging.AppLogger.Error($"⚠️  Database initialization warning", ex);
         Console.WriteLine("🚀 Application will continue to start...");
         Console.WriteLine("💡 If you encounter database issues, you may need to:");
         Console.WriteLine("   1. Run 'dotnet ef database update' manually");

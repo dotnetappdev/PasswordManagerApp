@@ -95,9 +95,9 @@ public static class BrandIconHelper
             {
                 domain = new Uri(domain).Host;
             }
-            catch
+            catch (Exception ex)
             {
-                // Fall back to the raw input if it isn't a URL.
+                VaultGuard.Services.Logging.AppLogger.Error($"Brand icon URL parsing failed, falling back to raw input", ex);
             }
         }
 

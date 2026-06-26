@@ -131,6 +131,18 @@ public static class MauiProgram
 		// "Remember this device" master-key cache (platform SecureStorage) so a 2FA-enabled
 		// account can sign in code-only on a trusted device.
 		builder.Services.AddScoped<VaultGuard.Components.Shared.Services.IMasterKeyCacheService, VaultGuard.App.Services.MauiMasterKeyCacheService>();
+		// Fido2 (WebAuthn) — required by PasskeyService. MAUI runs as a Blazor hybrid WebView, so
+		// the "origin" is the WebView's local origin; full platform WebAuthn in a hybrid WebView is
+		// limited, but registering this keeps the DI graph valid so IPasskeyService resolves (vault/
+		// site passkeys, passkey status and local biometric unlock all work).
+		builder.Services.AddScoped<Fido2NetLib.IFido2>(_ =>
+			new Fido2NetLib.Fido2(new Fido2NetLib.Fido2Configuration
+			{
+				ServerDomain = "0.0.0.0",
+				ServerName = "VaultGuard",
+				Origins = new HashSet<string> { "https://0.0.0.0", "app://0.0.0.0", "https://localhost" },
+				TimestampDriftTolerance = 300000
+			}));
 		builder.Services.AddScoped<IPasskeyService, PasskeyService>();
 		builder.Services.AddScoped<ICustomFieldService, CustomFieldService>();
 
@@ -150,6 +162,10 @@ public static class MauiProgram
 		builder.Logging.AddProvider(new VaultGuard.Services.Logging.FileLoggerProvider(minLevel: LogLevel.Debug));
 
 		var app = builder.Build();
+
+		// Route the AppLogger facade through the configured logging pipeline (Debug + durable file logs).
+		VaultGuard.Services.Logging.AppLogger.Initialize(
+			app.Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
 
 		return app;
 	}

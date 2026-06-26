@@ -226,10 +226,7 @@ public class SettingsViewModel : BaseViewModel
             
             return true;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;
@@ -257,10 +254,7 @@ public class SettingsViewModel : BaseViewModel
             await Task.Delay(2000); // Simulate export
             return true;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;
@@ -276,10 +270,7 @@ public class SettingsViewModel : BaseViewModel
             await Task.Delay(1000);
             return true;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;
@@ -295,10 +286,7 @@ public class SettingsViewModel : BaseViewModel
             await Task.Delay(1000);
             return true;
         }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", ex); return false; }
         finally
         {
             IsLoading = false;

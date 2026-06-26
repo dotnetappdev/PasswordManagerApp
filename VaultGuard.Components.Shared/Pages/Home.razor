@@ -1,4 +1,4 @@
-﻿@page "/home"
+@page "/home"
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using Microsoft.AspNetCore.Components.Forms
 @using VaultGuard.Models
@@ -1738,7 +1738,7 @@
                 var uri = new Uri(domain);
                 domain = uri.Host;
             }
-            catch { }
+            catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
         }
         // Remove www.
         if (domain.StartsWith("www."))
@@ -2381,7 +2381,7 @@
         catch (Exception ex)
         {
             // Log the error and return a placeholder
-            Console.WriteLine($"Error decrypting password: {ex.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"Error decrypting password", ex);
             return "Error decrypting password";
         }
     }
@@ -2405,7 +2405,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error copying decrypted password: {ex.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"Error copying decrypted password", ex);
         }
     }
 
@@ -2788,18 +2788,16 @@
             availableProviders = (await ImportService.GetAvailableProvidersAsync()).ToList();
 
 #if DEBUG
-System.Diagnostics.Debug.WriteLine($"Loaded {availableProviders.Count} import providers");
+VaultGuard.Services.Logging.AppLogger.Debug($"Loaded {availableProviders.Count} import providers");
 foreach (var provider in availableProviders)
 {
-System.Diagnostics.Debug.WriteLine($"Provider: {provider.ProviderName} - {provider.DisplayName}");
+VaultGuard.Services.Logging.AppLogger.Debug($"Provider: {provider.ProviderName} - {provider.DisplayName}");
 }
 #endif
         }
         catch (Exception ex)
         {
-#if DEBUG
-System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message}");
-#endif
+VaultGuard.Services.Logging.AppLogger.Error($"Error loading import providers", ex);
         }
     }
 
@@ -2831,9 +2829,7 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
         }
         catch (Exception ex)
         {
-#if DEBUG
-            System.Diagnostics.Debug.WriteLine($"Error loading users: {ex.Message}");
-#endif
+            VaultGuard.Services.Logging.AppLogger.Error($"Error loading users", ex);
         }
     }
     
@@ -2935,7 +2931,7 @@ System.Diagnostics.Debug.WriteLine($"Error loading import providers: {ex.Message
                 catch (Exception ex)
                 {
                     // Log error but continue with null userId (will import for all users as fallback)
-                    System.Diagnostics.Debug.WriteLine($"Failed to get current user ID for import: {ex.Message}");
+                    VaultGuard.Services.Logging.AppLogger.Error($"Failed to get current user ID for import", ex);
                     targetUserIds.Add(null);
                 }
             }
@@ -3093,7 +3089,7 @@ new Category { Name = "Shopping", Icon = "🛒", Color = "#ef4444" }
         catch (Exception ex)
         {
             // Sample data creation failed, but don't break the application
-            System.Diagnostics.Debug.WriteLine($"Failed to create sample data: {ex.Message}");
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to create sample data", ex);
         }
     }
 }

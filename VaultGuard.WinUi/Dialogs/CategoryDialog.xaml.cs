@@ -132,9 +132,8 @@ public sealed partial class CategoryDialog : ContentDialog
                         _category.UserId = uid;
                     }
                 }
-                catch
-                {
-                    // Ignore - leave UserId as-is if we cannot resolve it
+                catch (Exception ex) {
+                    VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
                 }
 
                 await _categoryService.UpdateAsync(_category);
@@ -162,7 +161,9 @@ public sealed partial class CategoryDialog : ContentDialog
                     if (!string.IsNullOrWhiteSpace(uid))
                         newCategory.UserId = uid;
                 }
-                catch { }
+                catch (Exception ex) {
+                    VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
+                }
 
                 await _categoryService.CreateAsync(newCategory);
                 Result = newCategory;

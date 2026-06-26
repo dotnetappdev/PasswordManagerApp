@@ -20,9 +20,9 @@ public class WpfPlatformService : IPlatformService
                 Directory.CreateDirectory(appDir);
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Directory creation failed, will return path anyway
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to create app data directory", ex);
         }
 
         return appDir;
@@ -96,10 +96,7 @@ public class WpfPlatformService : IPlatformService
             });
             return true;
         }
-        catch (Exception)
-        {
-            return false;
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public async Task<bool> ShareTextAsync(string title, string text)
@@ -113,10 +110,7 @@ public class WpfPlatformService : IPlatformService
             });
             return true;
         }
-        catch (Exception)
-        {
-            return false;
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return false; }
     }
 
     public Task<string?> ShowFilePickerAsync(string[] allowedExtensions)
@@ -132,10 +126,7 @@ public class WpfPlatformService : IPlatformService
             var result = dialog.ShowDialog();
             return Task.FromResult(result == true ? dialog.FileName : null);
         }
-        catch
-        {
-            return Task.FromResult<string?>(null);
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return Task.FromResult<string?>(null); }
     }
 
     public Task<string?> ShowFolderPickerAsync()
@@ -146,10 +137,7 @@ public class WpfPlatformService : IPlatformService
             var result = dialog.ShowDialog();
             return Task.FromResult(result == System.Windows.Forms.DialogResult.OK ? dialog.SelectedPath : null);
         }
-        catch
-        {
-            return Task.FromResult<string?>(null);
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return Task.FromResult<string?>(null); }
     }
 
     public Task<bool> SaveFileAsync(string filename, byte[] data)
@@ -160,9 +148,6 @@ public class WpfPlatformService : IPlatformService
             File.WriteAllBytes(downloadsPath, data);
             return Task.FromResult(true);
         }
-        catch (Exception)
-        {
-            return Task.FromResult(false);
-        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return Task.FromResult(false); }
     }
 }

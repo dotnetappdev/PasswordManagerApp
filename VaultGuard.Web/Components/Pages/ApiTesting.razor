@@ -579,10 +579,7 @@
                     requestHeaders.AddRange(headers.Select(h => new KeyValueModel { Key = h.Key, Value = h.Value }));
                 }
             }
-            catch
-            {
-                // Invalid JSON, ignore
-            }
+            catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
         }
         
         // Load query parameters
@@ -597,10 +594,7 @@
                     queryParams.AddRange(qParams.Select(q => new KeyValueModel { Key = q.Key, Value = q.Value }));
                 }
             }
-            catch
-            {
-                // Invalid JSON, ignore
-            }
+            catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
         }
     }
     
@@ -639,10 +633,7 @@
                 {
                     requestMessage.Headers.Add(header.Key, header.Value);
                 }
-                catch
-                {
-                    // Invalid header, skip
-                }
+                catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
             }
             
             // Add body for POST, PUT, PATCH requests

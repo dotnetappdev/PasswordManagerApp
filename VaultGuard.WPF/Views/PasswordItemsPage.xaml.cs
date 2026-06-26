@@ -62,7 +62,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 await _viewModel.RefreshAsync();
             await LoadCategoriesAsync();
         }
-        catch { /* refresh is best-effort */ }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to refresh after vault data change", ex); }
     }
 
     private T? GetElement<T>(string name) where T : class
@@ -71,8 +71,9 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         {
             return this.FindName(name) as T;
         }
-        catch
+        catch (Exception ex)
         {
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to resolve named element '{name}'", ex);
             return null;
         }
     }
@@ -125,8 +126,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                     _allTags = (await _tagService.GetAllAsync()).ToList();
                 }
             }
-            catch (Exception ex)
-            { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
 
             // Reload view model items after seeding to ensure UI shows newly created items
             try
@@ -136,8 +136,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                     await _viewModel.RefreshAsync();
                 }
             }
-            catch (Exception ex)
-            { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
         }
     }
 
@@ -209,8 +208,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 await PopulateCategoryDropdownAsync();
             }
         }
-        catch (Exception ex)
-        { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     // De-duplicates categories by trimmed, case-insensitive name so the dropdown never repeats
@@ -265,7 +263,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                     if (converter.ConvertFromString(category.Color) is System.Windows.Media.SolidColorBrush parsed)
                         colorBrush = parsed;
                 }
-                catch { }
+                catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to parse category color", ex); }
             }
 
             stackPanel.Children.Add(new Border
@@ -304,10 +302,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                         });
                     }
                 }
-                catch
-                {
-                    // Ignore count errors
-                }
+                catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
             }
 
             item.Content = stackPanel;
@@ -500,10 +495,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 selectedButton.Background = Helpers.ResourceHelper.GetBrush("ModernPrimaryBrush", new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent));
             }
         }
-        catch
-        {
-            // Defensive: if FindName or resource lookup fails, ignore and continue
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
     private void UpdateContentTitles(string filterType)
@@ -601,7 +593,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                         }
                     }
                 }
-                catch { }
+                catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to reveal decrypted password for detail view", ex); }
             }
             // Fallback: show raw CopyText if decrypt failed
             var raw = detailPassword.CopyText ?? string.Empty;
@@ -646,7 +638,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             var storage = _serviceProvider?.GetService<ISecureStorageService>();
             return storage != null ? await storage.GetAsync("sessionId") : null;
         }
-        catch { return null; }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Recovered from a suppressed exception", logEx); return null; }
     }
 
     /// <summary>
@@ -699,19 +691,19 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         // Copy username now, then the password a few seconds later so each is ready to paste in turn.
         if (!string.IsNullOrEmpty(username))
         {
-            try { System.Windows.Clipboard.SetText(username); } catch { }
+            try { System.Windows.Clipboard.SetText(username); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy username to clipboard", ex); }
             ToastService.Instance.Info("Username copied — paste it (Ctrl+V), then Tab to the password field.");
 
             if (!string.IsNullOrEmpty(password))
             {
                 await Task.Delay(9000);
-                try { System.Windows.Clipboard.SetText(password); } catch { }
+                try { System.Windows.Clipboard.SetText(password); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy password to clipboard", ex); }
                 ToastService.Instance.Success("Password copied — paste it into the password field.");
             }
         }
         else if (!string.IsNullOrEmpty(password))
         {
-            try { System.Windows.Clipboard.SetText(password); } catch { }
+            try { System.Windows.Clipboard.SetText(password); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy password to clipboard", ex); }
             ToastService.Instance.Success("Password copied — paste it into the password field.");
         }
     }
@@ -735,8 +727,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 UseShellExecute = true
             });
         }
-        catch (Exception ex)
-        { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     private Task ShowTemporaryMessageAsync(string message)
@@ -801,7 +792,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (string.IsNullOrEmpty(url)) url = _selectedItem?.Website ?? _selectedItem?.LoginItem?.WebsiteUrl;
         if (!string.IsNullOrEmpty(url))
         {
-            try { System.Windows.Clipboard.SetText(url); ToastService.Instance.Success("Website copied to clipboard"); } catch { }
+            try { System.Windows.Clipboard.SetText(url); ToastService.Instance.Success("Website copied to clipboard"); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy website URL to clipboard", ex); }
         }
     }
 
@@ -834,7 +825,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     private void CopyCvvButton_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrEmpty(_currentCardCvv)) return;
-        try { System.Windows.Clipboard.SetText(_currentCardCvv); ToastService.Instance.Success("CVV copied to clipboard"); } catch { }
+        try { System.Windows.Clipboard.SetText(_currentCardCvv); ToastService.Instance.Success("CVV copied to clipboard"); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy CVV to clipboard", ex); }
     }
 
     private void ShowItemDetails(PasswordItem item)
@@ -1039,11 +1030,11 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             if (notesBorder != null)
                 notesBorder.MinHeight = item.Type == ItemType.CreditCard ? 160 : 64;
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Operation failed", ex); }
 
         // Custom fields — always visible, refresh list
         try { RefreshDetailCustomFields(); }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Operation failed", ex); }
 
         // Tags
         try
@@ -1054,7 +1045,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             var editTagsPanel = GetElement<ItemsControl>("EditTagsPanel");
             if (editTagsPanel != null) editTagsPanel.ItemsSource = item.Tags ?? new List<Tag>();
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Operation failed", ex); }
 
         // Live verification code (TOTP)
         SetupTotp(item);
@@ -1063,7 +1054,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         UpdateFavoriteVisuals();
 
         // Wire drag handles on all static field rows
-        try { WireFieldDragHandles(); } catch { }
+        try { WireFieldDragHandles(); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to wire field drag handles", ex); }
     }
 
     // ── Favorites ───────────────────────────────────────────────────────────────
@@ -1278,7 +1269,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 ToastService.Instance.Success("Verification code copied to clipboard");
             }
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Operation failed", ex); }
     }
 
     private string GetTypeIcon(string type)
@@ -1538,7 +1529,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 sender.ItemsSource = suggestions;
             }
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Operation failed", ex); }
     }
 
     private async void TagSuggestBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
@@ -1551,7 +1542,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             sender.Text = string.Empty;
             sender.ItemsSource = null;
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Operation failed", ex); }
     }
 
     private async void TagSuggestBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
@@ -1564,7 +1555,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             sender.Text = string.Empty;
             sender.ItemsSource = null;
         }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Operation failed", ex); }
     }
 
     private async Task AddTagByNameToSelectedItemAsync(string tagName)
@@ -1614,8 +1605,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 if (detailTags != null) detailTags.ItemsSource = _selectedItem.Tags;
             }
         }
-        catch (Exception ex)
-        { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     private async void RemoveTagButton_Click(object sender, RoutedEventArgs e)
@@ -1647,8 +1637,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 }
             }
         }
-        catch (Exception ex)
-        { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     private void AddCategoryButton_Click(object sender, RoutedEventArgs e)
@@ -1668,8 +1657,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 win?.NavigateToPage("Categories");
             }
         }
-        catch (Exception ex)
-        { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     private MainWindow? GetMainWindow()
@@ -1698,10 +1686,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 }
             }
         }
-        catch (Exception ex)
-        {
-            // Fallback - no action needed
-        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     private void ItemsList_DoubleTapped(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -1827,8 +1812,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             // Show feedback to user
             ShowFilterAppliedFeedback();
         }
-        catch (Exception ex)
-        { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     private void ShowFilterAppliedFeedback()
@@ -1861,10 +1845,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 }
             }
         }
-        catch
-        {
-            // Ignore feedback errors
-        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
     private void CategorySearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -1921,7 +1902,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                     if (converter.ConvertFromString(category.Color) is System.Windows.Media.SolidColorBrush parsed)
                         colorBrush = parsed;
                 }
-                catch { }
+                catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Operation failed", ex); }
             }
 
             stackPanel.Children.Add(new Border
@@ -1965,8 +1946,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             System.Windows.Clipboard.SetText(username);
             ToastService.Instance.Success("Username copied to clipboard");
         }
-        catch (Exception ex)
-        { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     private void GeneratePasswordButton_Click(object sender, RoutedEventArgs e)
@@ -1986,8 +1966,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 passwordBox.Password = password;
             }
         }
-        catch (Exception ex)
-        { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }
 
     private async void EditDetailButton_Click(object sender, RoutedEventArgs e)
@@ -2085,7 +2064,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (_passwordItemService != null)
         {
             try { await _passwordItemService.UpdateAsync(_selectedItem); }
-            catch { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Operation failed", ex); }
         }
 
         RefreshDetailCustomFields();
@@ -2130,7 +2109,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (_passwordItemService != null && _selectedItem != null)
         {
             try { await _passwordItemService.UpdateAsync(_selectedItem); }
-            catch { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Operation failed", ex); }
         }
     }
 
@@ -2140,7 +2119,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (_passwordItemService != null && _selectedItem != null)
         {
             try { await _passwordItemService.UpdateAsync(_selectedItem); }
-            catch { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Operation failed", ex); }
         }
         RefreshDetailCustomFields();
     }
@@ -2162,7 +2141,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (_passwordItemService != null)
         {
             try { await _passwordItemService.UpdateAsync(_selectedItem); }
-            catch { }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Operation failed", ex); }
         }
         RefreshDetailCustomFields();
     }
@@ -2179,6 +2158,6 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     {
         if (_selectedItem == null || _passwordItemService == null) return;
         try { await _passwordItemService.UpdateAsync(_selectedItem); }
-        catch { }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Operation failed", ex); }
     }
 }

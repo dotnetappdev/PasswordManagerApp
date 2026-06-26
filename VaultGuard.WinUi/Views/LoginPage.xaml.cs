@@ -85,8 +85,8 @@ public sealed partial class LoginPage : Page
                 }
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
@@ -139,9 +139,8 @@ public sealed partial class LoginPage : Page
                 }
             }
         }
-        catch (Exception ex)
-        {
-            // Error handling is done in ViewModel
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
         finally
         {
@@ -215,8 +214,8 @@ public sealed partial class LoginPage : Page
                     }
                 }
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
+                VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
             }
 
             // Create and show the registration dialog
@@ -261,8 +260,8 @@ public sealed partial class LoginPage : Page
                 }
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
+            VaultGuard.Services.Logging.AppLogger.Error($"Unhandled exception", ex);
         }
     }
 
