@@ -287,8 +287,13 @@ public sealed partial class MainWindow : Window
 
         if (ctrl && e.Key == System.Windows.Input.Key.F)
         {
-            if (itemsPage != null) { itemsPage.FocusSearch(); e.Handled = true; }
-            else NavigateToPage("AllItems");
+            // Search is global now — focus the top-bar search box from anywhere.
+            if (SearchBox != null)
+            {
+                SearchBox.Focus();
+                System.Windows.Input.Keyboard.Focus(SearchBox);
+            }
+            e.Handled = true;
             return;
         }
 

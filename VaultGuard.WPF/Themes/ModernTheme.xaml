@@ -1570,17 +1570,18 @@
          visible transparency / content bleed-through from whatever is
          underneath. ModernWPF's default flyout presenter brushes are
          semi-transparent by design (acrylic-style); these keys override
-         them with a solid, near-opaque dark surface plus a subtle border
+         them with a FULLY opaque dark surface plus a subtle border
          and drop shadow so nothing shows through.
     ═══════════════════════════════════════════ -->
 
     <!-- ModernWPF flyout/menu presenter background — read via DynamicResource
-         by ui:AutoSuggestBox's suggestion popup, ui:Flyout, and ui:MenuFlyout. -->
-    <SolidColorBrush x:Key="FlyoutPresenterBackground"            Color="#FA1E1E1E"/>
-    <SolidColorBrush x:Key="MenuFlyoutPresenterBackground"        Color="#FA1E1E1E"/>
-    <SolidColorBrush x:Key="SystemControlBackgroundChromeMediumLowBrush" Color="#FA1E1E1E"/>
-    <SolidColorBrush x:Key="SystemControlBackgroundAltMediumHighBrush"   Color="#FA1E1E1E"/>
-    <SolidColorBrush x:Key="SystemControlTransientBackgroundBrush"       Color="#FA1E1E1E"/>
+         by ui:AutoSuggestBox's suggestion popup, ui:Flyout, and ui:MenuFlyout.
+         Fully opaque (#FF) so menus and the global search dropdown never look translucent. -->
+    <SolidColorBrush x:Key="FlyoutPresenterBackground"            Color="#FF1E1E1E"/>
+    <SolidColorBrush x:Key="MenuFlyoutPresenterBackground"        Color="#FF1E1E1E"/>
+    <SolidColorBrush x:Key="SystemControlBackgroundChromeMediumLowBrush" Color="#FF1E1E1E"/>
+    <SolidColorBrush x:Key="SystemControlBackgroundAltMediumHighBrush"   Color="#FF1E1E1E"/>
+    <SolidColorBrush x:Key="SystemControlTransientBackgroundBrush"       Color="#FF1E1E1E"/>
     <SolidColorBrush x:Key="SystemControlTransientBorderBrush"           Color="{StaticResource ModernBorderColor}"/>
     <SolidColorBrush x:Key="FlyoutBorderThemeBrush"                      Color="{StaticResource ModernBorderColor}"/>
 
@@ -1589,7 +1590,7 @@
          for Updates / Documentation / About) both default to AllowsTransparency popups whose
          chrome can show the page behind them. Force a fully opaque dark surface + border + shadow. -->
     <Style TargetType="{x:Type ContextMenu}">
-        <Setter Property="Background" Value="#FA1E1E1E"/>
+        <Setter Property="Background" Value="#FF1E1E1E"/>
         <Setter Property="BorderBrush" Value="{DynamicResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground" Value="{DynamicResource ModernTextPrimaryBrush}"/>
@@ -1657,7 +1658,7 @@
                                AllowsTransparency="True"
                                Focusable="False"
                                PopupAnimation="Fade">
-                            <Border Background="#FA1E1E1E"
+                            <Border Background="#FF1E1E1E"
                                     BorderBrush="{DynamicResource ModernBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="8"
@@ -1671,8 +1672,11 @@
                         </Popup>
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <!-- Win11 menu hover/selection: a solid, opaque neutral highlight
+                             (the old #1A0067C0 was 10%-alpha blue and barely visible). -->
                         <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="HeaderBd" Property="Background" Value="#1A0067C0"/>
+                            <Setter TargetName="HeaderBd" Property="Background" Value="#333333"/>
+                            <Setter Property="Foreground" Value="#FFFFFF"/>
                         </Trigger>
                         <Trigger Property="Role" Value="SubmenuItem">
                             <Setter TargetName="HeaderBd" Property="CornerRadius" Value="4"/>

@@ -306,6 +306,21 @@ public class CloudBackupManager
             _logger.LogError(ex, "Failed to list FTP backups");
         }
 
+        // Get backups from the configured network location / NAS share. Without this, backups
+        // created against the NetworkLocation provider never showed up in the save-points list.
+        try
+        {
+            if (await _networkLocationService.IsAuthenticatedAsync())
+            {
+                var networkBackups = await _networkLocationService.ListBackupsAsync();
+                allBackups.AddRange(networkBackups);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list network location backups");
+        }
+
         return allBackups.OrderByDescending(b => b.ModifiedAt).ToList();
     }
 

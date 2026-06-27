@@ -15,8 +15,9 @@ namespace VaultGuard.Services.Services;
 /// <summary>
 /// OneDrive backup service using the Microsoft Graph API. Supports personal Microsoft accounts only.
 ///
-/// Stores backups in the app's special "approot" folder — a OneDrive folder that only this app
-/// (and its registered Azure AD app id) can see, the same idea as Google Drive's appDataFolder.
+/// Stores backups in a visible "VaultGuard" folder at the root of the user's OneDrive, so people
+/// can see and manage their encrypted backups directly in OneDrive. The folder is created
+/// automatically on first upload via Graph path-addressing.
 /// OAuth2 tokens are stored in the local app-data settings file, encrypted with DPAPI on Windows.
 ///
 /// OAuth flow: public-client loopback redirect with PKCE (RFC 8252) — no client secret needed,
@@ -31,8 +32,11 @@ public class OneDriveBackupService : IOneDriveBackupService
     private const string SettingsDir = "VaultGuard";
     private const string BackupMimeType = "application/octet-stream";
     private const string GraphBase = "https://graph.microsoft.com/v1.0";
-    private const string AppFolderUrl = GraphBase + "/me/drive/special/approot";
-    private const string Scope = "offline_access Files.ReadWrite.AppFolder User.Read";
+    // Visible "VaultGuard" folder in the root of the user's OneDrive (path-addressed; auto-created
+    // on first upload). Full Files.ReadWrite is required to write outside the hidden app folder.
+    private const string BackupFolderName = "VaultGuard";
+    private const string BackupFolderUrl = GraphBase + "/me/drive/root:/" + BackupFolderName;
+    private const string Scope = "offline_access Files.ReadWrite User.Read";
 
     // VaultGuard's own "Mobile and desktop applications" Azure AD app registration — a public
     // client with no secret, registered to support personal Microsoft accounts. Shipping this
@@ -280,7 +284,7 @@ public class OneDriveBackupService : IOneDriveBackupService
         if (_token == null) return Fail("Not authenticated with OneDrive.");
         if (backupData.Length > MaxBackupSizeBytes) return Fail("Backup exceeds 100 MB limit.");
 
-        var request = new HttpRequestMessage(HttpMethod.Put, $"{AppFolderUrl}:/{Uri.EscapeDataString(fileName)}:/content");
+        var request = new HttpRequestMessage(HttpMethod.Put, $"{BackupFolderUrl}/{Uri.EscapeDataString(fileName)}:/content");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token!.AccessToken);
         request.Content = new ByteArrayContent(backupData);
         request.Content.Headers.ContentType = new MediaTypeHeaderValue(BackupMimeType);
@@ -333,7 +337,7 @@ public class OneDriveBackupService : IOneDriveBackupService
         await EnsureAccessTokenAsync();
         if (_token == null) return [];
 
-        var request = new HttpRequestMessage(HttpMethod.Get, $"{AppFolderUrl}/children?$orderby=createdDateTime desc&$top=50");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{BackupFolderUrl}:/children?$orderby=createdDateTime desc&$top=50");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token!.AccessToken);
         var resp = await _http.SendAsync(request);
         if (!resp.IsSuccessStatusCode) return [];

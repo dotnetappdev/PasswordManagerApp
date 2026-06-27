@@ -1,30 +1,50 @@
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.CompilerServices;
 
 namespace VaultGuard.Models;
 
-public class PasswordItem
+public class PasswordItem : INotifyPropertyChanged
 {
     public int Id { get; set; }
-    
+
     [Required]
     [MaxLength(100)]
     public string Title { get; set; } = string.Empty;
-    
+
     [MaxLength(500)]
     public string? Description { get; set; }
-    
+
     public ItemType Type { get; set; }
-    
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
+
     public DateTime LastModified { get; set; } = DateTime.UtcNow;
-    
-    public bool IsFavorite { get; set; }
-    
-    public bool IsArchived { get; set; }
-    
-    public bool IsDeleted { get; set; }
+
+    // State flags shown live in list rows — raise change notification so WPF/MAUI
+    // DataTriggers (e.g. the favourite star) update the instant the flag flips,
+    // without needing a full list refresh. EF Core ignores INotifyPropertyChanged.
+    private bool _isFavorite;
+    public bool IsFavorite
+    {
+        get => _isFavorite;
+        set => SetField(ref _isFavorite, value);
+    }
+
+    private bool _isArchived;
+    public bool IsArchived
+    {
+        get => _isArchived;
+        set => SetField(ref _isArchived, value);
+    }
+
+    private bool _isDeleted;
+    public bool IsDeleted
+    {
+        get => _isDeleted;
+        set => SetField(ref _isDeleted, value);
+    }
     
     // User relationship
     public string? UserId { get; set; }
@@ -88,4 +108,13 @@ public class PasswordItem
     
     // Custom fields navigation property
     public List<CustomField> CustomFields { get; set; } = new();
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void SetField(ref bool field, bool value, [CallerMemberName] string? propertyName = null)
+    {
+        if (field == value) return;
+        field = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
 }

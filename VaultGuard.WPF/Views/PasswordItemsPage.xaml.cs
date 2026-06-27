@@ -322,83 +322,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         }
     }
 
-    // ── Global search bar (items list) ──────────────────────────────────────
-    private void GlobalSearch_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (sender is not TextBox tb) return;
-
-        // Toggle placeholder + clear button
-        var placeholder = GetElement<TextBlock>("SearchPlaceholder");
-        if (placeholder != null)
-            placeholder.Visibility = string.IsNullOrEmpty(tb.Text) ? Visibility.Visible : Visibility.Collapsed;
-
-        var clearBtn = GetElement<Button>("ClearSearchButton");
-        if (clearBtn != null)
-            clearBtn.Visibility = string.IsNullOrEmpty(tb.Text) ? Visibility.Collapsed : Visibility.Visible;
-
-        // Live filter as you type (still global within the current view).
-        if (_viewModel != null)
-            _viewModel.SearchText = tb.Text;
-    }
-
-    private void GlobalSearch_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-    {
-        if (e.Key == System.Windows.Input.Key.Enter)
-        {
-            RunGlobalSearch();
-            e.Handled = true;
-        }
-        else if (e.Key == System.Windows.Input.Key.Escape)
-        {
-            ClearGlobalSearch();
-            e.Handled = true;
-        }
-    }
-
-    private void RunSearchButton_Click(object sender, RoutedEventArgs e) => RunGlobalSearch();
-
-    private void ClearSearchButton_Click(object sender, RoutedEventArgs e) => ClearGlobalSearch();
-
-    /// <summary>
-    /// Runs a global search like VS Code: searches across ALL items regardless of the currently
-    /// selected category (the category filter is reset so nothing is hidden from the results).
-    /// </summary>
-    private void RunGlobalSearch()
-    {
-        if (_viewModel == null) return;
-
-        var box = GetElement<TextBox>("GlobalSearchTextBox");
-        var query = box?.Text ?? string.Empty;
-
-        // Make it global: drop any active category filter so all items are searched.
-        _viewModel.SelectedCategoryId = null;
-        var dropdown = GetElement<ComboBox>("CategoryDropdown");
-        if (dropdown != null && dropdown.Items.Count > 0)
-            dropdown.SelectedIndex = 0;
-
-        _viewModel.SearchText = query;
-    }
-
-    private void ClearGlobalSearch()
-    {
-        var box = GetElement<TextBox>("GlobalSearchTextBox");
-        if (box != null) box.Text = string.Empty;
-        if (_viewModel != null) _viewModel.SearchText = string.Empty;
-    }
-
     // ── Public entry points for application keyboard shortcuts (wired in MainWindow) ──
     public void TriggerAddNew() => ShowAddPasswordDialog();
-
-    public void FocusSearch()
-    {
-        var box = GetElement<TextBox>("GlobalSearchTextBox");
-        if (box != null)
-        {
-            box.Focus();
-            System.Windows.Input.Keyboard.Focus(box);
-            box.SelectAll();
-        }
-    }
 
     public void CopyPasswordShortcut()
     {
@@ -1355,8 +1280,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             {
                 var errorDialog = new ModernWpf.Controls.ContentDialog
                 {
-                    Title = "Error",
-                    Content = "Service provider not initialized. Please navigate to this page properly.",
+                    Title = "Something went wrong",
+                    Content = "The app isn't fully loaded yet. Please close this page, reopen it, and try again.",
                     CloseButtonText = "OK"
                 };
                 ConfigureDialogForCentering(errorDialog);
@@ -1406,22 +1331,36 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
     private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is System.Windows.Controls.MenuItem menuItem &&
-            menuItem.DataContext is PasswordItem item &&
-            _viewModel != null)
+        // Works from the row context-menu (MenuItem with a bound item) AND from the
+        // detail-pane "Delete" quick action (a Button), which targets the selected item.
+        PasswordItem? item = sender switch
         {
-            if (await Helpers.ConfirmDialog.ShowDeleteAsync(
-                    "Delete Password Item", $"Are you sure you want to delete “{item.Title}”? This cannot be undone."))
-            {
-                if (_serviceProvider != null &&
-                    !await Helpers.SecurityGateHelper.RequireCodeForActionAsync(
-                        _serviceProvider, Helpers.SecurityGateHelper.GateAction.ItemDelete))
-                {
-                    return;
-                }
+            System.Windows.Controls.MenuItem mi when mi.DataContext is PasswordItem di => di,
+            Button => _selectedItem,
+            _ => null
+        };
 
-                await _viewModel.DeleteItemAsync(item);
-                ToastService.Instance.Success($"'{item.Title}' deleted");
+        if (item == null || _viewModel == null) return;
+
+        if (await Helpers.ConfirmDialog.ShowDeleteAsync(
+                "Delete Password Item", $"Are you sure you want to delete “{item.Title}”? This cannot be undone."))
+        {
+            if (_serviceProvider != null &&
+                !await Helpers.SecurityGateHelper.RequireCodeForActionAsync(
+                    _serviceProvider, Helpers.SecurityGateHelper.GateAction.ItemDelete))
+            {
+                return;
+            }
+
+            await _viewModel.DeleteItemAsync(item);
+            ToastService.Instance.Success($"'{item.Title}' deleted");
+
+            // Collapse the detail pane if we just deleted the item it was showing.
+            if (_selectedItem?.Id == item.Id)
+            {
+                _selectedItem = null;
+                var detail = GetElement<StackPanel>("DetailPanel");
+                if (detail != null) detail.Visibility = Visibility.Collapsed;
             }
         }
     }
@@ -1453,8 +1392,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             {
                 var errorDialog = new ModernWpf.Controls.ContentDialog
                 {
-                    Title = "Error",
-                    Content = "Service provider not initialized. Please navigate to this page properly.",
+                    Title = "Something went wrong",
+                    Content = "The app isn't fully loaded yet. Please close this page, reopen it, and try again.",
                     CloseButtonText = "OK"};
                 await errorDialog.ShowAsync();
                 return;
@@ -1690,8 +1629,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             {
                 var errorDialog = new ModernWpf.Controls.ContentDialog
                 {
-                    Title = "Error",
-                    Content = "Service provider not initialized. Please navigate to this page properly.",
+                    Title = "Something went wrong",
+                    Content = "The app isn't fully loaded yet. Please close this page, reopen it, and try again.",
                     CloseButtonText = "OK"};
                 await errorDialog.ShowAsync();
                 return;
@@ -1729,8 +1668,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             {
                 var errorDialog = new ModernWpf.Controls.ContentDialog
                 {
-                    Title = "Error",
-                    Content = "Service provider not initialized. Please navigate to this page properly.",
+                    Title = "Something went wrong",
+                    Content = "The app isn't fully loaded yet. Please close this page, reopen it, and try again.",
                     CloseButtonText = "OK"};
                 await errorDialog.ShowAsync();
                 return;
@@ -1966,8 +1905,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             {
                 var errorDialog = new ModernWpf.Controls.ContentDialog
                 {
-                    Title = "Error",
-                    Content = "Service provider not initialized. Please navigate to this page properly.",
+                    Title = "Something went wrong",
+                    Content = "The app isn't fully loaded yet. Please close this page, reopen it, and try again.",
                     CloseButtonText = "OK"};
                 await errorDialog.ShowAsync();
                 return;

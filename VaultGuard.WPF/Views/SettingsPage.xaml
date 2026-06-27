@@ -967,13 +967,13 @@
                                                     </Button>
                                                     <!-- Restore All button -->
                                                     <Button Style="{StaticResource ModernPrimaryButtonStyle}"
-                                                           Padding="8,5" Margin="0,0,6,0"
+                                                           Padding="14,6" Margin="0,0,6,0" MinWidth="124"
                                                            Click="RestoreBackupButton_Click"
                                                            ToolTipService.ToolTip="Restore entire backup — replaces all current data"
                                                            Tag="{Binding}">
-                                                        <StackPanel Orientation="Horizontal">
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                                             <TextBlock Text="&#xE777;" FontFamily="Segoe MDL2 Assets"
-                                                                      FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                                                      FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                                             <TextBlock Text="Restore All" FontSize="12" VerticalAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>

@@ -14,9 +14,10 @@ namespace VaultGuard.Services.Services;
 /// <summary>
 /// Google Drive backup service using Drive v3 REST API.
 ///
-/// Stores backups in the hidden "appDataFolder" space — each user's app-specific
-/// area in Drive that only this app can read. OAuth2 tokens are stored in
-/// the local app-data settings file, encrypted with DPAPI on Windows.
+/// Stores backups in a visible "VaultGuard" folder in the user's My Drive, so people can see and
+/// manage their encrypted backups directly in Google Drive. Uses the drive.file scope, which grants
+/// access only to files this app creates. OAuth2 tokens are stored in the local app-data settings
+/// file, encrypted with DPAPI on Windows.
 ///
 /// OAuth flow: installed-app loopback redirect (RFC 8252 / PKCE).
 /// </summary>
@@ -32,7 +33,10 @@ public class GoogleDriveBackupService : IGoogleDriveBackupService
     private const string DriveUploadUrl = "https://www.googleapis.com/upload/drive/v3/files";
     private const string TokenEndpoint = "https://oauth2.googleapis.com/token";
     private const string AuthEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
-    private const string Scope = "https://www.googleapis.com/auth/drive.appdata";
+    private const string Scope = "https://www.googleapis.com/auth/drive.file";
+    private const string BackupFolderName = "VaultGuard";
+    private const string FolderMimeType = "application/vnd.google-apps.folder";
+    private string? _cachedFolderId;
 
     public string ServiceName => "Google Drive";
     public long MaxBackupSizeBytes => 150 * 1024 * 1024; // 150 MB
@@ -179,17 +183,62 @@ public class GoogleDriveBackupService : IGoogleDriveBackupService
 
     // ─── Backup operations ───────────────────────────────────────────────────
 
+    /// <summary>
+    /// Finds the app-created "VaultGuard" folder in My Drive, creating it if it doesn't exist.
+    /// Cached for the lifetime of the service. Returns null only if the Drive call fails.
+    /// </summary>
+    private async Task<string?> GetOrCreateBackupFolderIdAsync()
+    {
+        if (_cachedFolderId != null) return _cachedFolderId;
+
+        try
+        {
+            // Look for an existing folder this app created.
+            var query = Uri.EscapeDataString(
+                $"name = '{BackupFolderName}' and mimeType = '{FolderMimeType}' and trashed = false");
+            var findReq = new HttpRequestMessage(HttpMethod.Get,
+                $"{DriveFilesUrl}?q={query}&fields=files(id,name)&pageSize=1");
+            findReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token!.AccessToken);
+            var findResp = await _http.SendAsync(findReq);
+            if (findResp.IsSuccessStatusCode)
+            {
+                var found = JsonSerializer.Deserialize<DriveFileList>(await findResp.Content.ReadAsStringAsync());
+                var existing = found?.Files?.FirstOrDefault();
+                if (existing != null) return _cachedFolderId = existing.Id;
+            }
+
+            // Not there yet — create it.
+            var createMeta = JsonSerializer.Serialize(new { name = BackupFolderName, mimeType = FolderMimeType });
+            var createReq = new HttpRequestMessage(HttpMethod.Post, $"{DriveFilesUrl}?fields=id")
+            {
+                Content = new StringContent(createMeta, Encoding.UTF8, "application/json")
+            };
+            createReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token!.AccessToken);
+            var createResp = await _http.SendAsync(createReq);
+            if (!createResp.IsSuccessStatusCode) return null;
+
+            var created = JsonSerializer.Deserialize<DriveFile>(await createResp.Content.ReadAsStringAsync());
+            return _cachedFolderId = created?.Id;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to find or create the VaultGuard Drive folder");
+            return null;
+        }
+    }
+
     public async Task<CloudBackupResult> UploadBackupAsync(byte[] backupData, string fileName, string? description = null)
     {
         await EnsureAccessTokenAsync();
         if (_token == null) return Fail("Not authenticated with Google Drive.");
         if (backupData.Length > MaxBackupSizeBytes) return Fail("Backup exceeds 150 MB limit.");
 
-        // Multipart upload: metadata + binary
+        // Multipart upload: metadata + binary, placed inside the visible "VaultGuard" folder.
+        var folderId = await GetOrCreateBackupFolderIdAsync();
         var metadata = JsonSerializer.Serialize(new
         {
             name = fileName,
-            parents = new[] { "appDataFolder" },
+            parents = folderId != null ? new[] { folderId } : null,
             description = description ?? string.Empty,
         });
 
@@ -250,7 +299,12 @@ public class GoogleDriveBackupService : IGoogleDriveBackupService
         await EnsureAccessTokenAsync();
         if (_token == null) return [];
 
-        var url = $"{DriveFilesUrl}?spaces=appDataFolder" +
+        var folderId = await GetOrCreateBackupFolderIdAsync();
+        if (folderId == null) return [];
+
+        // Only files this app created inside the VaultGuard folder (drive.file scope).
+        var query = Uri.EscapeDataString($"'{folderId}' in parents and trashed = false");
+        var url = $"{DriveFilesUrl}?q={query}" +
                   $"&fields=files(id,name,description,createdTime,modifiedTime,size)" +
                   $"&orderBy=createdTime+desc&pageSize=50";
 
