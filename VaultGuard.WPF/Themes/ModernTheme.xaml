@@ -1562,4 +1562,131 @@
                 Value="36"/>
     </Style>
 
+    <!-- ═══════════════════════════════════════════
+         Opaque flyout / popup surfaces — Win11 dark mode.
+         Fixes: profile menu ("View Profile"/"Sign Out"), main hamburger/app
+         menu ("Check for Updates…"/"Documentation"/"About"), and the
+         AutoSuggestBox suggestion popup (global search) all rendering with
+         visible transparency / content bleed-through from whatever is
+         underneath. ModernWPF's default flyout presenter brushes are
+         semi-transparent by design (acrylic-style); these keys override
+         them with a solid, near-opaque dark surface plus a subtle border
+         and drop shadow so nothing shows through.
+    ═══════════════════════════════════════════ -->
+
+    <!-- ModernWPF flyout/menu presenter background — read via DynamicResource
+         by ui:AutoSuggestBox's suggestion popup, ui:Flyout, and ui:MenuFlyout. -->
+    <SolidColorBrush x:Key="FlyoutPresenterBackground"            Color="#FA1E1E1E"/>
+    <SolidColorBrush x:Key="MenuFlyoutPresenterBackground"        Color="#FA1E1E1E"/>
+    <SolidColorBrush x:Key="SystemControlBackgroundChromeMediumLowBrush" Color="#FA1E1E1E"/>
+    <SolidColorBrush x:Key="SystemControlBackgroundAltMediumHighBrush"   Color="#FA1E1E1E"/>
+    <SolidColorBrush x:Key="SystemControlTransientBackgroundBrush"       Color="#FA1E1E1E"/>
+    <SolidColorBrush x:Key="SystemControlTransientBorderBrush"           Color="{StaticResource ModernBorderColor}"/>
+    <SolidColorBrush x:Key="FlyoutBorderThemeBrush"                      Color="{StaticResource ModernBorderColor}"/>
+
+    <!-- WPF's native ContextMenu (used by ProfileButton's "View Profile"/"Sign Out" flyout)
+         and the native Menu/MenuItem dropdown (used by MainMenuBar's "File"/"Help" — Check
+         for Updates / Documentation / About) both default to AllowsTransparency popups whose
+         chrome can show the page behind them. Force a fully opaque dark surface + border + shadow. -->
+    <Style TargetType="{x:Type ContextMenu}">
+        <Setter Property="Background" Value="#FA1E1E1E"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ModernBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground" Value="{DynamicResource ModernTextPrimaryBrush}"/>
+        <Setter Property="Padding" Value="4"/>
+        <Setter Property="HasDropShadow" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ContextMenu}">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="8"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#000000" BlurRadius="24" ShadowDepth="6" Opacity="0.45" Direction="270"/>
+                        </Border.Effect>
+                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type MenuItem}">
+        <Setter Property="Foreground" Value="{DynamicResource ModernTextPrimaryBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Padding" Value="10,7"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type MenuItem}">
+                    <Grid>
+                        <!-- Top-level header (e.g. "_File"/"_Help" on MainMenuBar) -->
+                        <Border x:Name="HeaderBd"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4">
+                            <Grid Margin="{TemplateBinding Padding}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter x:Name="Icon" Grid.Column="0" ContentSource="Icon"
+                                                  Margin="0,0,8,0" VerticalAlignment="Center"
+                                                  Width="16" Height="16"/>
+                                <ContentPresenter Grid.Column="1" ContentSource="Header"
+                                                  RecognizesAccessKey="True"
+                                                  VerticalAlignment="Center"
+                                                  TextBlock.Foreground="{TemplateBinding Foreground}"/>
+                                <TextBlock Grid.Column="2" Text="{TemplateBinding InputGestureText}"
+                                           Margin="16,0,0,0" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                           FontSize="11"/>
+                                <Path x:Name="SubmenuChevron" Grid.Column="2"
+                                      Data="M0,0 L4,4 L0,8" Stroke="{DynamicResource ModernTextSecondaryBrush}"
+                                      StrokeThickness="1.4" Margin="16,0,0,0"
+                                      VerticalAlignment="Center" Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Submenu popup — opaque dark surface, border, shadow -->
+                        <Popup x:Name="Popup"
+                               Placement="{Binding Path=(MenuItem.SubmenuPlacement), RelativeSource={RelativeSource Self}}"
+                               IsOpen="{TemplateBinding IsSubmenuOpen}"
+                               AllowsTransparency="True"
+                               Focusable="False"
+                               PopupAnimation="Fade">
+                            <Border Background="#FA1E1E1E"
+                                    BorderBrush="{DynamicResource ModernBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="4"
+                                    SnapsToDevicePixels="True">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#000000" BlurRadius="24" ShadowDepth="6" Opacity="0.45" Direction="270"/>
+                                </Border.Effect>
+                                <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="HeaderBd" Property="Background" Value="#1A0067C0"/>
+                        </Trigger>
+                        <Trigger Property="Role" Value="SubmenuItem">
+                            <Setter TargetName="HeaderBd" Property="CornerRadius" Value="4"/>
+                        </Trigger>
+                        <Trigger Property="Role" Value="SubmenuHeader">
+                            <Setter TargetName="SubmenuChevron" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

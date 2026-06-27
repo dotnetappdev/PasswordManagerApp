@@ -20,12 +20,18 @@ public static class SecurityGateHelper
     public enum GateAction
     {
         VaultDelete,
-        ItemDelete
+        ItemDelete,
+        CategoryDelete,
+        CloudBackupDelete,
+        MasterPasswordChange
     }
 
     // Settings keys shared with SettingsViewModel's settings.json store.
     public const string RequireCodeOnVaultDeleteKey = "RequireCodeOnVaultDelete";
     public const string RequireCodeOnItemDeleteKey = "RequireCodeOnItemDelete";
+    public const string RequireCodeOnCategoryDeleteKey = "RequireCodeOnCategoryDelete";
+    public const string RequireCodeOnCloudBackupDeleteKey = "RequireCodeOnCloudBackupDelete";
+    public const string RequireCodeOnMasterPasswordChangeKey = "RequireCodeOnMasterPasswordChange";
 
     private static string SettingsFilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -50,6 +56,9 @@ public static class SecurityGateHelper
     {
         GateAction.VaultDelete => ReadBoolSetting(RequireCodeOnVaultDeleteKey),
         GateAction.ItemDelete => ReadBoolSetting(RequireCodeOnItemDeleteKey),
+        GateAction.CategoryDelete => ReadBoolSetting(RequireCodeOnCategoryDeleteKey),
+        GateAction.CloudBackupDelete => ReadBoolSetting(RequireCodeOnCloudBackupDeleteKey),
+        GateAction.MasterPasswordChange => ReadBoolSetting(RequireCodeOnMasterPasswordChangeKey),
         _ => false
     };
 
@@ -67,6 +76,27 @@ public static class SecurityGateHelper
         if (string.IsNullOrEmpty(userId))
             return true; // No identifiable signed-in user — don't block the action.
 
+        // Passkeys are an independent, stronger factor — try Windows Hello first regardless of
+        // whether 2FA is also enabled. Only a definitive "user cancelled" fails the gate outright;
+        // anything else (not configured/available/failed) falls through to the TOTP flow below.
+        var passkeyService = serviceProvider.GetService<IPasskeyService>();
+        if (passkeyService != null)
+        {
+            var passkeyStatus = await passkeyService.GetPasskeyStatusAsync(userId);
+            if (passkeyStatus.IsEnabled)
+            {
+                var helloService = serviceProvider.GetService<VaultGuard.WPF.Services.IWindowsHelloService>();
+                if (helloService != null)
+                {
+                    var helloResult = await helloService.VerifyAsync(HelloReasonFor(action));
+                    if (helloResult == VaultGuard.WPF.Services.HelloResult.Success)
+                        return true;
+                    if (helloResult == VaultGuard.WPF.Services.HelloResult.Cancelled)
+                        return false;
+                }
+            }
+        }
+
         var twoFactor = serviceProvider.GetService<ITwoFactorService>();
         if (twoFactor == null)
             return true;
@@ -79,11 +109,24 @@ public static class SecurityGateHelper
         {
             GateAction.VaultDelete => ("Confirm with authenticator", "Enter the 6-digit code from your authenticator app to delete this vault."),
             GateAction.ItemDelete => ("Confirm with authenticator", "Enter the 6-digit code from your authenticator app to delete this item."),
+            GateAction.CategoryDelete => ("Confirm with authenticator", "Enter the 6-digit code from your authenticator app to delete this category."),
+            GateAction.CloudBackupDelete => ("Confirm with authenticator", "Enter the 6-digit code from your authenticator app to delete this backup."),
+            GateAction.MasterPasswordChange => ("Confirm with authenticator", "Enter the 6-digit code from your authenticator app to change your master password."),
             _ => ("Confirm with authenticator", "Enter the 6-digit code from your authenticator app to continue.")
         };
 
         return await PromptAndVerifyAsync(serviceProvider, userId, title, message);
     }
+
+    private static string HelloReasonFor(GateAction action) => action switch
+    {
+        GateAction.VaultDelete => "Confirm to delete this vault",
+        GateAction.ItemDelete => "Confirm to delete this item",
+        GateAction.CategoryDelete => "Confirm to delete this category",
+        GateAction.CloudBackupDelete => "Confirm to delete this backup",
+        GateAction.MasterPasswordChange => "Confirm to change your master password",
+        _ => "Verify it's you"
+    };
 
     /// <summary>
     /// Shows a code-entry dialog and validates the entered TOTP/recovery code against the given user.

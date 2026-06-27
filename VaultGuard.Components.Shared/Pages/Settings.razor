@@ -16,6 +16,9 @@
 @inject IJSRuntime JSRuntime
 @inject IServiceProvider ServiceProvider
 @inject ISnackbar Snackbar
+@inject IAuthService AuthService
+@inject ITwoFactorService TwoFactorService
+@inject IDialogService DialogService
 
 <MudContainer MaxWidth="MaxWidth.Medium" Style="padding: 20px;">
     <MudStack Spacing="4">
@@ -1305,6 +1308,13 @@
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
             $"Delete backup from {backup.CreatedAtFormatted}? This cannot be undone.");
         if (!confirmed) return;
+
+        if (!await TwoFactorGate.RequireCodeForActionAsync(
+                DialogService, TwoFactorService, AuthService, JSRuntime,
+                TwoFactorGate.GateAction.CloudBackupDelete))
+        {
+            return;
+        }
 
         try
         {

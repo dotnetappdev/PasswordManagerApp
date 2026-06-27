@@ -10,11 +10,13 @@ public class CategoriesViewModel : BaseViewModel
     private readonly ICategoryInterface _categoryService;
     private readonly IPasswordItemService _passwordItemService;
     private readonly IAuthService _authService;
+    private readonly IServiceProvider _serviceProvider;
     private string _searchText = string.Empty;
     private Category? _selectedCategory;
 
     public CategoriesViewModel(IServiceProvider serviceProvider)
     {
+        _serviceProvider = serviceProvider;
         _categoryService = serviceProvider.GetRequiredService<ICategoryInterface>();
         _passwordItemService = serviceProvider.GetRequiredService<IPasswordItemService>();
         _authService = serviceProvider.GetRequiredService<IAuthService>();
@@ -156,8 +158,14 @@ public class CategoriesViewModel : BaseViewModel
     {
         try
         {
+            if (!await VaultGuard.WPF.Helpers.SecurityGateHelper.RequireCodeForActionAsync(
+                    _serviceProvider, VaultGuard.WPF.Helpers.SecurityGateHelper.GateAction.CategoryDelete))
+            {
+                return false;
+            }
+
             IsLoading = true;
-            
+
             await _categoryService.DeleteAsync(category.Id);
             Categories.Remove(category);
             OnPropertyChanged(nameof(HasNoCategories));

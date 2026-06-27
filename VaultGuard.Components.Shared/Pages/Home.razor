@@ -17,6 +17,8 @@
 @inject VaultGuard.Imports.Interfaces.IImportService ImportService
 @inject IVaultSessionService VaultSessionService
 @inject IPasswordRevealService PasswordRevealService
+@inject ITwoFactorService TwoFactorService
+@inject IDialogService DialogService
 
 <style>
     /* Screen reader only class for accessibility */
@@ -2547,10 +2549,16 @@
         StateHasChanged();
     }
 
-    private void DeleteCategory(Category category)
+    private async Task DeleteCategory(Category category)
     {
-        // Implementation for deleting categories
-        CategoryService.DeleteAsync(category.Id);
+        if (!await VaultGuard.Components.Shared.Services.TwoFactorGate.RequireCodeForActionAsync(
+                DialogService, TwoFactorService, AuthService, JSRuntime,
+                VaultGuard.Components.Shared.Services.TwoFactorGate.GateAction.CategoryDelete))
+        {
+            return;
+        }
+
+        await CategoryService.DeleteAsync(category.Id);
         categories.Remove(category);
         StateHasChanged();
     }

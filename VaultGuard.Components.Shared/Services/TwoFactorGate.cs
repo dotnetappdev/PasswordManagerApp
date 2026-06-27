@@ -15,16 +15,25 @@ public static class TwoFactorGate
     public enum GateAction
     {
         VaultDelete,
-        ItemDelete
+        ItemDelete,
+        CategoryDelete,
+        CloudBackupDelete,
+        MasterPasswordChange
     }
 
     public const string RequireCodeOnVaultDeleteKey = "vg.requireCodeOnVaultDelete";
     public const string RequireCodeOnItemDeleteKey = "vg.requireCodeOnItemDelete";
+    public const string RequireCodeOnCategoryDeleteKey = "vg.requireCodeOnCategoryDelete";
+    public const string RequireCodeOnCloudBackupDeleteKey = "vg.requireCodeOnCloudBackupDelete";
+    public const string RequireCodeOnMasterPasswordChangeKey = "vg.requireCodeOnMasterPasswordChange";
 
     public static string KeyFor(GateAction action) => action switch
     {
         GateAction.VaultDelete => RequireCodeOnVaultDeleteKey,
         GateAction.ItemDelete => RequireCodeOnItemDeleteKey,
+        GateAction.CategoryDelete => RequireCodeOnCategoryDeleteKey,
+        GateAction.CloudBackupDelete => RequireCodeOnCloudBackupDeleteKey,
+        GateAction.MasterPasswordChange => RequireCodeOnMasterPasswordChangeKey,
         _ => string.Empty
     };
 
@@ -66,9 +75,15 @@ public static class TwoFactorGate
         if (!status.IsEnabled)
             return true;
 
-        var message = action == GateAction.VaultDelete
-            ? "Enter the 6-digit code from your authenticator app to delete this vault."
-            : "Enter the 6-digit code from your authenticator app to delete this item.";
+        var message = action switch
+        {
+            GateAction.VaultDelete => "Enter the 6-digit code from your authenticator app to delete this vault.",
+            GateAction.ItemDelete => "Enter the 6-digit code from your authenticator app to delete this item.",
+            GateAction.CategoryDelete => "Enter the 6-digit code from your authenticator app to delete this category.",
+            GateAction.CloudBackupDelete => "Enter the 6-digit code from your authenticator app to delete this backup.",
+            GateAction.MasterPasswordChange => "Enter the 6-digit code from your authenticator app to change your master password.",
+            _ => "Enter the 6-digit code from your authenticator app to continue."
+        };
 
         return await PromptAndVerifyAsync(dialogService, userId, "Confirm with authenticator", message);
     }

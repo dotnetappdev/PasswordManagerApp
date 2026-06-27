@@ -1395,6 +1395,14 @@ public sealed partial class SettingsPage : Page
 
                 if (_authService == null) { Fail("Authentication service unavailable."); return; }
 
+                if (_serviceProvider != null &&
+                    !await Helpers.SecurityGateHelper.RequireCodeForActionAsync(
+                        _serviceProvider, Helpers.SecurityGateHelper.GateAction.MasterPasswordChange))
+                {
+                    args.Cancel = true;
+                    return;
+                }
+
                 var ok = await _authService.ChangeMasterPasswordAsync(
                     currentPasswordBox.Password, newPasswordBox.Password, passwordHintBox.Text);
 

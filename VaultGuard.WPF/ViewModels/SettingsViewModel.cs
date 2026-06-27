@@ -933,6 +933,12 @@ public class SettingsViewModel : BaseViewModel
     {
         try
         {
+            if (!await VaultGuard.WPF.Helpers.SecurityGateHelper.RequireCodeForActionAsync(
+                    _serviceProvider, VaultGuard.WPF.Helpers.SecurityGateHelper.GateAction.CloudBackupDelete))
+            {
+                return false;
+            }
+
             var manager = _serviceProvider.GetService<CloudBackupManager>();
             if (manager == null) return false;
             var ok = await manager.DeleteBackupAsync(backup.Provider, backup.Id);
