@@ -210,7 +210,10 @@ public class TwoFactorService : ITwoFactorService
             }
             else
             {
-                return ValidateTotpCode(user.TwoFactorSecretKey, code);
+                // Accept codes entered with the display mask (e.g. "123-456") or stray spaces —
+                // TOTP codes are always digits, so strip everything else before validating.
+                var digitsOnly = new string((code ?? string.Empty).Where(char.IsDigit).ToArray());
+                return ValidateTotpCode(user.TwoFactorSecretKey, digitsOnly);
             }
         }
         catch (Exception ex)

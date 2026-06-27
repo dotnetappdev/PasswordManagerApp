@@ -116,7 +116,7 @@
                         Grid.Row="1"
                         IsBackButtonVisible="Collapsed"
                         IsSettingsVisible="False"
-                        IsPaneToggleButtonVisible="True"
+                        IsPaneToggleButtonVisible="False"
                         IsPaneOpen="True"
                         PaneDisplayMode="Left"
                         OpenPaneLength="260"
@@ -132,29 +132,17 @@
             <ui:NavigationView.PaneHeader>
                 <StackPanel Margin="0,0,0,4">
 
-                    <!-- App branding -->
-                    <Border Padding="16,14,16,10">
-                        <StackPanel Orientation="Horizontal">
-                            <Border Width="28" Height="28" CornerRadius="6"
-                                    Background="{DynamicResource ModernSurfaceBrush}"
-                                    BorderBrush="{DynamicResource ModernBorderBrush}" BorderThickness="1"
-                                    Margin="0,0,10,0">
-                                <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
-                                           FontSize="14" Foreground="{DynamicResource ModernTextSecondaryBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <TextBlock Text="Vault Guard"
-                                       FontSize="14" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource ModernTextPrimaryBrush}"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- hairline divider -->
-                    <Border Height="1" Background="{DynamicResource ModernBorderBrush}" Margin="12,0"/>
+                    <!-- Profile row: user (left) + hamburger toggle (right, in line with the name).
+                         Sits flush at the top of the pane — no branding row above it. -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
                     <!-- Profile button -->
                     <Button x:Name="ProfileButton"
+                            Grid.Column="0"
                             Background="Transparent"
                             BorderThickness="0"
                             HorizontalAlignment="Stretch"
@@ -176,6 +164,29 @@
                                 </MenuItem>
                             </ContextMenu>
                         </Button.ContextMenu>
+                        <!-- Clean template: a rounded, inset hover surface instead of the default WPF
+                             button chrome, which rendered as an ugly grey selection box around the
+                             user (e.g. "Administrator") in dark mode. -->
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="ProfileBd"
+                                        Background="{TemplateBinding Background}"
+                                        CornerRadius="8"
+                                        Margin="8,2"
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                      VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="ProfileBd" Property="Background" Value="#22FFFFFF"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="ProfileBd" Property="Background" Value="#33FFFFFF"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -206,6 +217,38 @@
                                        VerticalAlignment="Center"/>
                         </Grid>
                     </Button>
+
+                    <!-- Hamburger toggle — in line with the profile name, on the right. Stays at the
+                         top of the pane and visible even when collapsed, so the menu can be expanded
+                         and collapsed at will. -->
+                    <Button x:Name="PaneToggleButton"
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Right"
+                            Background="Transparent" BorderThickness="0"
+                            Width="36" Height="36" Margin="0,0,8,0"
+                            Cursor="Hand"
+                            Click="PaneToggleButton_Click"
+                            ToolTipService.ToolTip="Expand / collapse menu">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="HbBd" Background="{TemplateBinding Background}" CornerRadius="6">
+                                    <TextBlock Text="&#xE700;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                                               Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="HbBd" Property="Background" Value="{DynamicResource ModernElevatedSurfaceBrush}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="HbBd" Property="Opacity" Value="0.8"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    </Grid>
 
                     <!-- Search moved to the global top bar (see TopBar above). -->
 

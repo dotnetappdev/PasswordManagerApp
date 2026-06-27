@@ -152,16 +152,29 @@ public static class SecurityGateHelper
 
             var codeBox = new TextBox
             {
-                MaxLength = 12,
                 Margin = new Thickness(0, 0, 0, 8)
             };
-            ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(codeBox, "Authenticator or recovery code");
+            ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(codeBox, "123-456");
+            TotpCodeMask.Attach(codeBox);
             panel.Children.Add(codeBox);
 
             var recoveryCheck = new CheckBox
             {
                 Content = "This is a recovery code",
                 Margin = new Thickness(0, 0, 0, 4)
+            };
+            // Recovery codes aren't 6-digit TOTP codes, so drop the 123-456 mask when switching to one.
+            recoveryCheck.Checked += (_, _) =>
+            {
+                TotpCodeMask.Detach(codeBox);
+                codeBox.Clear();
+                ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(codeBox, "Recovery code");
+            };
+            recoveryCheck.Unchecked += (_, _) =>
+            {
+                codeBox.Clear();
+                TotpCodeMask.Attach(codeBox);
+                ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(codeBox, "123-456");
             };
             panel.Children.Add(recoveryCheck);
 

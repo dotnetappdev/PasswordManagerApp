@@ -26,6 +26,10 @@ public sealed partial class TwoFactorSetupDialog : ModernWpf.Controls.ContentDia
         _userId = userId;
         _userEmail = userEmail;
 
+        // Authenticator code fields use the 123-456 display mask.
+        Helpers.TotpCodeMask.Attach(VerifyCodeBox);
+        Helpers.TotpCodeMask.Attach(StatusCodeBox);
+
         Loaded += async (_, _) => await LoadStatusAsync();
     }
 
@@ -119,7 +123,7 @@ public sealed partial class TwoFactorSetupDialog : ModernWpf.Controls.ContentDia
         try
         {
             var ok = await _twoFactorService.VerifyAndCompleteTwoFactorSetupAsync(_userId,
-                new TwoFactorVerifySetupDto { Code = VerifyCodeBox.Text.Trim(), SecretKey = _setup.SecretKey });
+                new TwoFactorVerifySetupDto { Code = Helpers.TotpCodeMask.Strip(VerifyCodeBox.Text), SecretKey = _setup.SecretKey });
 
             if (ok)
             {

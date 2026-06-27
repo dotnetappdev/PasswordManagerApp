@@ -764,9 +764,37 @@ public sealed partial class MainWindow : Window
         }
 
         SetAuthenticationState(true);
-        MainNavigationView.SelectedItem = AllItemsNavItem;
-        NavigateToPage("AllItems");
+
+        try
+        {
+            MainNavigationView.SelectedItem = AllItemsNavItem;
+            NavigateToPage("AllItems");
+        }
+        catch (Exception ex)
+        {
+            // Don't let a UI/template hiccup during the post-login transition crash the app —
+            // log it, report it, and inform the user gracefully with the shared exception dialog.
+            VaultGuard.Services.Logging.AppLogger.Error("NavigateToHome failed", ex);
+            try { Sentry.SentrySdk.CaptureException(ex); } catch { /* Sentry optional */ }
+            ShowNavigationError(ex);
+        }
+
         _ = RefreshVaultsNavAsync();
+    }
+
+    /// <summary>
+    /// Shows the shared exception dialog (with expandable details + copy) for a navigation failure.
+    /// Deferred to Background priority so the current (failed) layout pass fully unwinds first.
+    /// </summary>
+    private void ShowNavigationError(Exception ex)
+    {
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            _ = Dialogs.ExceptionDialog.ShowAsync(
+                message: "We hit a snag opening your vault after sign-in. Your data is safe — please try again, and if it keeps happening send us the details below.",
+                exception: ex,
+                title: "Something went wrong");
+        }), System.Windows.Threading.DispatcherPriority.Background);
     }
 
     // Public method to handle logout
@@ -786,6 +814,12 @@ public sealed partial class MainWindow : Window
     }
 
     // Missing event handlers for XAML bindings
+
+    private void PaneToggleButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Custom hamburger (right-aligned) replaces the built-in left toggle.
+        MainNavigationView.IsPaneOpen = !MainNavigationView.IsPaneOpen;
+    }
 
     private void ProfileButton_Click(object sender, RoutedEventArgs e)
     {

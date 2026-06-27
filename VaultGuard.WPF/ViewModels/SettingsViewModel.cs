@@ -512,6 +512,11 @@ public class SettingsViewModel : BaseViewModel
             }
             catch (Exception ex) { _serviceProvider.GetService<ILogger<SettingsViewModel>>()?.LogWarning(ex, "Failed to check OneDrive connection status"); }
 
+            // Load existing save points if any cloud provider is already connected, so backups
+            // made in a previous session show up immediately instead of only after a manual refresh.
+            if (OneDriveConnected || GoogleDriveConnected)
+                _ = LoadAvailableBackupsAsync();
+
             // Push the loaded FTP connection settings into the service so it's ready to use
             // immediately, without requiring the user to re-enter/re-test anything this session.
             try

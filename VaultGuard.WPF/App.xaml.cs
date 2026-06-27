@@ -55,7 +55,17 @@ public partial class App : Application
                 args.Handled = true;
                 return;
             }
+
             SentrySdk.CaptureException(args.Exception);
+            VaultGuard.Services.Logging.AppLogger.Error("Unhandled UI exception", args.Exception);
+
+            // Keep the app alive and inform the user gracefully with the shared exception dialog
+            // instead of a hard crash. The dialog marshals onto the UI thread itself.
+            args.Handled = true;
+            _ = VaultGuard.WPF.Dialogs.ExceptionDialog.ShowAsync(
+                message: "Something went wrong and the action couldn't be completed. Your data is safe. You can keep using the app — if this keeps happening, the details below will help us fix it.",
+                exception: args.Exception,
+                title: "Something went wrong");
         };
 
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>

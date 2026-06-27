@@ -36,6 +36,10 @@ public sealed partial class LoginPage : Page
     public LoginPage()
     {
         this.InitializeComponent();
+
+        // Authenticator code entry uses the 123-456 display mask (TOTP default).
+        if (TwoFactorCodeBox != null)
+            Helpers.TotpCodeMask.Attach(TwoFactorCodeBox);
     }
 
     private void Page_Loaded(object sender, RoutedEventArgs e)
@@ -521,6 +525,16 @@ public sealed partial class LoginPage : Page
     private void ToggleBackupCodeButton_Click(object sender, RoutedEventArgs e)
     {
         _viewModel?.ToggleBackupCodeMode();
+
+        // The 123-456 mask only applies to 6-digit TOTP codes; recovery codes are free-form.
+        if (TwoFactorCodeBox != null)
+        {
+            if (_viewModel?.UseBackupCode == true)
+                Helpers.TotpCodeMask.Detach(TwoFactorCodeBox);
+            else
+                Helpers.TotpCodeMask.Attach(TwoFactorCodeBox);
+        }
+
         TwoFactorCodeBox?.Focus();
     }
 

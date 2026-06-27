@@ -997,15 +997,20 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         try
         {
             var ok = await _passwordItemService.ToggleFavoriteAsync(item.Id);
-            if (!ok) return;
+            if (!ok)
+            {
+                ToastService.Instance.Error("Couldn't update favorite — please try again.");
+                return;
+            }
 
-            // Service flipped the flag in the DB; mirror it locally so the UI matches.
+            // Service flipped + saved the flag in the DB; mirror it locally so the UI matches.
+            // PasswordItem now raises INotifyPropertyChanged, so the list-row star updates itself —
+            // no ListView.Items.Refresh() needed (that was also dropping the selection).
             item.IsFavorite = !item.IsFavorite;
 
-            // Re-render the row star (its DataTrigger re-evaluates when the container refreshes)
-            GetElement<ListView>("ItemsList")?.Items.Refresh();
-
-            if (_selectedItem?.Id == item.Id) UpdateFavoriteVisuals();
+            // Update the detail header + quick-action icons whenever the toggled item is the one
+            // currently shown (covers the row star, the header star, and the quick action).
+            if (_selectedItem != null && _selectedItem.Id == item.Id) UpdateFavoriteVisuals();
 
             ToastService.Instance.Success(item.IsFavorite
                 ? $"'{item.Title}' added to favorites"
@@ -1032,7 +1037,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (icon != null) { icon.Text = fav ? filled : outline; icon.Foreground = fav ? gold : dim; }
 
         var qaIcon = GetElement<TextBlock>("FavoriteQuickActionIcon");
-        if (qaIcon != null) qaIcon.Text = fav ? filled : outline;
+        if (qaIcon != null) { qaIcon.Text = fav ? filled : outline; qaIcon.Foreground = fav ? gold : dim; }
 
         var qaLabel = GetElement<TextBlock>("FavoriteQuickActionLabel");
         if (qaLabel != null) qaLabel.Text = fav ? "Remove from Favorites" : "Add to Favorites";

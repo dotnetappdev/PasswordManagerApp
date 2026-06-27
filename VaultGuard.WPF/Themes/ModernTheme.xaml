@@ -1651,9 +1651,14 @@
                             </Grid>
                         </Border>
 
-                        <!-- Submenu popup — opaque dark surface, border, shadow -->
+                        <!-- Submenu popup — opaque dark surface, border, shadow.
+                             Placement is set statically (top-level menus drop down via Bottom;
+                             nested submenus fly out via the Role=SubmenuHeader trigger below).
+                             NOTE: do NOT bind to (MenuItem.SubmenuPlacement) — WPF's MenuItem has
+                             no such property, and the PropertyPath throws at template-load time,
+                             which surfaces as a XamlParseException during the Menu's first layout. -->
                         <Popup x:Name="Popup"
-                               Placement="{Binding Path=(MenuItem.SubmenuPlacement), RelativeSource={RelativeSource Self}}"
+                               Placement="Bottom"
                                IsOpen="{TemplateBinding IsSubmenuOpen}"
                                AllowsTransparency="True"
                                Focusable="False"
@@ -1681,8 +1686,10 @@
                         <Trigger Property="Role" Value="SubmenuItem">
                             <Setter TargetName="HeaderBd" Property="CornerRadius" Value="4"/>
                         </Trigger>
+                        <!-- Nested submenu items: show the chevron and fly the popup out to the right. -->
                         <Trigger Property="Role" Value="SubmenuHeader">
                             <Setter TargetName="SubmenuChevron" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="Popup" Property="Placement" Value="Right"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4"/>

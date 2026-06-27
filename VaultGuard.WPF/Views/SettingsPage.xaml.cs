@@ -2108,9 +2108,14 @@ public sealed partial class SettingsPage : Page
             var userId = _authService?.CurrentUser?.Id ?? await _authService?.GetCurrentUserIdAsync()!;
             if (twoFactorService == null || string.IsNullOrEmpty(userId)) return false;
 
-            // Treat a longer code as a backup code (TOTP codes are 6 digits).
-            var isBackupCode = code.Length > 6;
-            return await twoFactorService.VerifyTwoFactorCodeAsync(userId, code, isBackupCode);
+            // A 6-digit numeric code — including one entered with the "123-456" mask or stray
+            // spaces — is a TOTP code; anything else is treated as a backup/recovery code.
+            var trimmed = code.Trim();
+            var digits = new string(trimmed.Where(char.IsDigit).ToArray());
+            var looksLikeTotp = digits.Length == 6 && trimmed.All(c => char.IsDigit(c) || c == '-' || c == ' ');
+            return looksLikeTotp
+                ? await twoFactorService.VerifyTwoFactorCodeAsync(userId, digits, false)
+                : await twoFactorService.VerifyTwoFactorCodeAsync(userId, trimmed, true);
         }
         catch (Exception ex)
         {

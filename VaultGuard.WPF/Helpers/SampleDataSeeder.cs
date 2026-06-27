@@ -4,6 +4,7 @@ using VaultGuard.DAL.Seed;
 using VaultGuard.Crypto.Interfaces;
 using VaultGuard.Services.Interfaces;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace VaultGuard.WPF.Helpers
@@ -36,6 +37,10 @@ namespace VaultGuard.WPF.Helpers
                 // Ensure vault schema exists on this connection before any Collection INSERT
                 await EnsureVaultSchemaOnConnectionAsync(db);
 
+                // Clean up any duplicate category rows already in the database (e.g. left over from
+                // earlier per-user seeding) so the categories list shows each category once.
+                await RemoveDuplicateCategoriesAsync(db);
+
                 // If the user deliberately cleared their data (seed marker present), do NOT re-add any
                 // demo content. This is what made cleared data reappear when returning to the items page.
                 if (SeedMarkerExists(db))
@@ -62,6 +67,50 @@ namespace VaultGuard.WPF.Helpers
             catch (Exception ex)
             {
                 VaultGuard.Services.Logging.AppLogger.Debug($"[SampleDataSeeder] Failed: {ex.Message}\n{ex.StackTrace}");
+            }
+        }
+
+        /// <summary>
+        /// Collapses duplicate category rows (same name, any user) down to a single surviving row,
+        /// repointing any password items that referenced a duplicate onto the survivor. This fixes
+        /// the "3 sets of each category" problem at the data level — no query-side de-duplication.
+        /// Cheap no-op once the data is clean (returns early when there are no duplicates).
+        /// </summary>
+        private static async Task RemoveDuplicateCategoriesAsync(VaultGuard.DAL.VaultGuardDbContext db)
+        {
+            try
+            {
+                var all = await db.Categories.ToListAsync();
+
+                var duplicateGroups = all
+                    .GroupBy(c => (c.Name ?? string.Empty).Trim().ToLowerInvariant())
+                    .Where(g => g.Key.Length > 0 && g.Count() > 1)
+                    .ToList();
+
+                if (duplicateGroups.Count == 0) return;
+
+                foreach (var group in duplicateGroups)
+                {
+                    var keep = group.OrderBy(c => c.Id).First();
+                    var dupes = group.Where(c => c.Id != keep.Id).ToList();
+                    var dupeIds = dupes.Select(c => c.Id).ToList();
+
+                    var affectedItems = await db.PasswordItems
+                        .Where(p => p.CategoryId != null && dupeIds.Contains(p.CategoryId.Value))
+                        .ToListAsync();
+                    foreach (var item in affectedItems)
+                        item.CategoryId = keep.Id;
+
+                    db.Categories.RemoveRange(dupes);
+                }
+
+                await db.SaveChangesAsync();
+                VaultGuard.Services.Logging.AppLogger.Debug(
+                    $"[SampleDataSeeder] Removed duplicate categories for {duplicateGroups.Count} name(s).");
+            }
+            catch (Exception ex)
+            {
+                VaultGuard.Services.Logging.AppLogger.Error("[SampleDataSeeder] Failed to remove duplicate categories", ex);
             }
         }
 

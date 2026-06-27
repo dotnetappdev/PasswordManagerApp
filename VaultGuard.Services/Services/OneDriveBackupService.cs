@@ -32,10 +32,11 @@ public class OneDriveBackupService : IOneDriveBackupService
     private const string SettingsDir = "VaultGuard";
     private const string BackupMimeType = "application/octet-stream";
     private const string GraphBase = "https://graph.microsoft.com/v1.0";
-    // Visible "VaultGuard" folder in the root of the user's OneDrive (path-addressed; auto-created
-    // on first upload). Full Files.ReadWrite is required to write outside the hidden app folder.
-    private const string BackupFolderName = "VaultGuard";
-    private const string BackupFolderUrl = GraphBase + "/me/drive/root:/" + BackupFolderName;
+    // Visible "VaultGuard" folder under the user's Documents in OneDrive — i.e. Documents/VaultGuard,
+    // the folder people actually see in the OneDrive web/app. Path-addressed (auto-created on first
+    // upload). Full Files.ReadWrite is required to write outside the hidden app folder.
+    private const string BackupFolderPath = "Documents/VaultGuard";
+    private const string BackupFolderUrl = GraphBase + "/me/drive/root:/" + BackupFolderPath;
     private const string Scope = "offline_access Files.ReadWrite User.Read";
 
     // VaultGuard's own "Mobile and desktop applications" Azure AD app registration — a public
