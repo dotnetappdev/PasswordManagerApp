@@ -260,6 +260,23 @@ public class MockPasswordItemService : IPasswordItemService
         return Task.CompletedTask;
     }
 
+    public Task<bool> RestoreAsync(int id)
+    {
+        var item = _items.FirstOrDefault(i => i.Id == id && i.IsDeleted);
+        if (item == null) return Task.FromResult(false);
+        item.IsDeleted = false;
+        item.LastModified = DateTime.UtcNow;
+        return Task.FromResult(true);
+    }
+
+    public Task<bool> PermanentlyDeleteAsync(int id)
+    {
+        var item = _items.FirstOrDefault(i => i.Id == id && i.IsDeleted);
+        if (item == null) return Task.FromResult(false);
+        _items.Remove(item);
+        return Task.FromResult(true);
+    }
+
     public Task<IEnumerable<PasswordItem>> SearchAsync(string searchTerm)
     {
         var results = _items.Where(i => 

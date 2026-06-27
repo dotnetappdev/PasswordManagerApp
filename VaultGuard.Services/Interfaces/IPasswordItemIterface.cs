@@ -10,6 +10,10 @@ public interface IPasswordItemService
     Task<PasswordItem> CreateAsync(PasswordItem item);
     Task<PasswordItem> UpdateAsync(PasswordItem item);
     Task DeleteAsync(int id);
+    /// <summary>Restores a soft-deleted item from Recently Deleted back into the vault.</summary>
+    Task<bool> RestoreAsync(int id);
+    /// <summary>Permanently removes an item from the database. Only valid for soft-deleted items.</summary>
+    Task<bool> PermanentlyDeleteAsync(int id);
     Task<IEnumerable<PasswordItem>> SearchAsync(string searchTerm);
     Task<IEnumerable<PasswordItem>> GetFavoritesAsync();
     Task<IEnumerable<PasswordItem>> GetByTagAsync(string tagName);

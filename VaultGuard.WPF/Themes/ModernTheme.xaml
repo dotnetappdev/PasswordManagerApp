@@ -281,6 +281,38 @@
     <SolidColorBrush x:Key="ComboBoxItemForegroundSelectedPointerOver"  Color="#FFFFFF"/>
     <SolidColorBrush x:Key="ComboBoxItemForegroundDisabled"             Color="#6A6A6A"/>
 
+    <!-- ═══════════════════════════════════════════
+         ToggleSwitch — Windows 11 dark mode. ON = brand blue pill with a white knob;
+         OFF = dark surface pill with a subtle border and a light-grey knob. ModernWpf's
+         ToggleSwitch template reads these keys via DynamicResource.
+    ═══════════════════════════════════════════ -->
+    <!-- ON (checked) -->
+    <SolidColorBrush x:Key="ToggleSwitchFillOn"                 Color="#2563EB"/>
+    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver"      Color="#1D4ED8"/>
+    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed"          Color="#1D4ED8"/>
+    <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled"         Color="#1E3A5F"/>
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOn"               Color="#2563EB"/>
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver"    Color="#1D4ED8"/>
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed"        Color="#1D4ED8"/>
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOnDisabled"       Color="#1E3A5F"/>
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOn"            Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed"     Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled"    Color="#A8C0E8"/>
+    <!-- OFF (unchecked) -->
+    <SolidColorBrush x:Key="ToggleSwitchFillOff"               Color="#2D2D2D"/>
+    <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver"    Color="#3A3A3A"/>
+    <SolidColorBrush x:Key="ToggleSwitchFillOffPressed"        Color="#3A3A3A"/>
+    <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled"       Color="#242424"/>
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOff"             Color="#5A5A5A"/>
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver"  Color="#6A6A6A"/>
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed"      Color="#6A6A6A"/>
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled"     Color="#3A3A3A"/>
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOff"           Color="#C8C8C8"/>
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="#E0E0E0"/>
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed"    Color="#E0E0E0"/>
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled"   Color="#6A6A6A"/>
+
     <!-- ComboBox — colour-only overrides via DynamicResource keys above.
          NO default Style is defined here because a keyless Style replaces ModernWPF's template
          entirely, reverting the popup to WPF's built-in white one.

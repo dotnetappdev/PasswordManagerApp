@@ -211,6 +211,112 @@
                   </ScrollViewer>
                 </TabItem>
 
+                <TabItem Header="Accessibility">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,0,0">
+                    <WrapPanel Orientation="Horizontal" ItemWidth="560" MaxWidth="1132" HorizontalAlignment="Left">
+
+                        <!-- Display / Zoom -->
+                        <Border Style="{StaticResource SettingsSectionStyle}">
+                            <StackPanel Margin="20">
+                                <StackPanel Orientation="Horizontal" Margin="12">
+                                    <Border Background="#2563EB" Width="24" Height="24" CornerRadius="6" Margin="0,0,10,0">
+                                        <TextBlock Text="&#xE71E;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                                 Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Display &amp; Zoom" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Margin="16">
+                                    <TextBlock Text="Make everything in the app larger or smaller, like the zoom in 1Password. Affects the whole window."
+                                              Style="{StaticResource ModernCaptionStyle}" TextWrapping="Wrap" Margin="8,0,8,8"/>
+
+                                    <Grid Margin="8,4,8,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="UI zoom" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                        <TextBlock Grid.Column="1" x:Name="ZoomValueText" Text="100%"
+                                                   FontWeight="SemiBold" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
+                                    </Grid>
+                                    <Slider x:Name="ZoomSlider" Minimum="0.8" Maximum="1.6" SmallChange="0.05" LargeChange="0.1"
+                                            TickFrequency="0.1" IsSnapToTickEnabled="False"
+                                            Margin="8,2,8,0" ValueChanged="ZoomSlider_ValueChanged"/>
+                                    <Button x:Name="ResetZoomButton" Content="Reset to 100%"
+                                            Style="{StaticResource ModernSecondaryButtonStyle}"
+                                            HorizontalAlignment="Left" Margin="8,10,0,0" Padding="12,6"
+                                            Click="ResetZoomButton_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Text size -->
+                        <Border Style="{StaticResource SettingsSectionStyle}">
+                            <StackPanel Margin="20">
+                                <StackPanel Orientation="Horizontal" Margin="12">
+                                    <Border Background="#059669" Width="24" Height="24" CornerRadius="6" Margin="0,0,10,0">
+                                        <TextBlock Text="&#xE8D2;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                                 Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Text &amp; Menu Size" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Margin="16">
+                                    <TextBlock Text="Set the base font size used by menus and text throughout the app."
+                                              Style="{StaticResource ModernCaptionStyle}" TextWrapping="Wrap" Margin="8,0,8,8"/>
+
+                                    <Grid Margin="8,4,8,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Font size" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                        <TextBlock Grid.Column="1" x:Name="FontSizeValueText" Text="14 pt"
+                                                   FontWeight="SemiBold" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
+                                    </Grid>
+                                    <Slider x:Name="FontSizeSlider" Minimum="11" Maximum="22" SmallChange="1" LargeChange="2"
+                                            TickFrequency="1" IsSnapToTickEnabled="True"
+                                            Margin="8,2,8,0" ValueChanged="FontSizeSlider_ValueChanged"/>
+                                    <Button x:Name="ResetFontButton" Content="Reset to default"
+                                            Style="{StaticResource ModernSecondaryButtonStyle}"
+                                            HorizontalAlignment="Left" Margin="8,10,0,0" Padding="12,6"
+                                            Click="ResetFontButton_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Motion & contrast -->
+                        <Border Style="{StaticResource SettingsSectionStyle}">
+                            <StackPanel Margin="20">
+                                <StackPanel Orientation="Horizontal" Margin="12">
+                                    <Border Background="#8b5cf6" Width="24" Height="24" CornerRadius="6" Margin="0,0,10,0">
+                                        <TextBlock Text="&#xE7F4;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                                 Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Motion &amp; Contrast" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Margin="16">
+                                    <ui:ToggleSwitch x:Name="ReduceMotionToggle" Header="Reduce motion"
+                                                     OffContent="Off" OnContent="On"
+                                                     Margin="8,4,8,0" Toggled="ReduceMotionToggle_Toggled"/>
+                                    <TextBlock Text="Minimises animations and transitions for a calmer, steadier interface."
+                                              Style="{StaticResource ModernCaptionStyle}" Opacity="0.7" Margin="8,0,8,10" TextWrapping="Wrap"/>
+
+                                    <ui:ToggleSwitch x:Name="HighContrastToggle" Header="High contrast"
+                                                     OffContent="Off" OnContent="On"
+                                                     Margin="8,4,8,0" Toggled="HighContrastToggle_Toggled"/>
+                                    <TextBlock Text="Boosts contrast between text and backgrounds to improve readability."
+                                              Style="{StaticResource ModernCaptionStyle}" Opacity="0.7" Margin="8,0,8,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                    </WrapPanel>
+                  </ScrollViewer>
+                </TabItem>
+
                 <TabItem Header="Security">
                   <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,0,0">
                     <WrapPanel Orientation="Horizontal" ItemWidth="560" MaxWidth="1132" HorizontalAlignment="Left">

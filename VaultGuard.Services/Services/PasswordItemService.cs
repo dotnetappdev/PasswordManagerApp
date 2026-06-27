@@ -80,10 +80,35 @@ public class PasswordItemService : IPasswordItemService
         var item = await _context.PasswordItems.FindAsync(id);
         if (item != null)
         {
+            // Soft delete only — moves the item to Recently Deleted (the trash), recoverable until
+            // it's permanently deleted via PermanentlyDeleteAsync.
             item.IsDeleted = true;
             item.LastModified = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
+    }
+
+    public async Task<bool> RestoreAsync(int id)
+    {
+        var item = await _context.PasswordItems.FindAsync(id);
+        if (item == null || !item.IsDeleted) return false;
+
+        item.IsDeleted = false;
+        item.LastModified = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> PermanentlyDeleteAsync(int id)
+    {
+        var item = await _context.PasswordItems.FindAsync(id);
+        // Only items already in the trash can be permanently removed — prevents skipping the
+        // soft-delete safety net by hard-deleting a live item.
+        if (item == null || !item.IsDeleted) return false;
+
+        _context.PasswordItems.Remove(item);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     public async Task<IEnumerable<PasswordItem>> SearchAsync(string searchTerm)

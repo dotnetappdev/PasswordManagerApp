@@ -47,7 +47,76 @@ public sealed partial class SettingsPage : Page
         _logger = new FileLogger();
         BuildToastRows();
         PopulateAboutInfo();
+        InitAccessibilityControls();
         Unloaded += SettingsPage_Unloaded;
+    }
+
+    // ── Accessibility tab ────────────────────────────────────────────────────
+    private bool _initingAccessibility;
+
+    private void InitAccessibilityControls()
+    {
+        try
+        {
+            _initingAccessibility = true;
+            if (ZoomSlider != null) ZoomSlider.Value = Helpers.AccessibilityManager.UiZoom;
+            if (FontSizeSlider != null) FontSizeSlider.Value = Helpers.AccessibilityManager.BaseFontSize;
+            if (ReduceMotionToggle != null) ReduceMotionToggle.IsOn = Helpers.AccessibilityManager.ReduceMotion;
+            if (HighContrastToggle != null) HighContrastToggle.IsOn = Helpers.AccessibilityManager.HighContrast;
+            UpdateZoomText();
+            UpdateFontText();
+        }
+        finally { _initingAccessibility = false; }
+    }
+
+    private void UpdateZoomText()
+    {
+        if (ZoomValueText != null)
+            ZoomValueText.Text = $"{Math.Round((ZoomSlider?.Value ?? 1.0) * 100)}%";
+    }
+
+    private void UpdateFontText()
+    {
+        if (FontSizeValueText != null)
+            FontSizeValueText.Text = $"{Math.Round(FontSizeSlider?.Value ?? 14)} pt";
+    }
+
+    private void ZoomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        UpdateZoomText();
+        if (_initingAccessibility) return;
+        Helpers.AccessibilityManager.SetZoom(e.NewValue);
+    }
+
+    private void FontSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        UpdateFontText();
+        if (_initingAccessibility) return;
+        Helpers.AccessibilityManager.SetFontSize(e.NewValue);
+    }
+
+    private void ResetZoomButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (ZoomSlider != null) ZoomSlider.Value = Helpers.AccessibilityManager.DefaultZoom;
+    }
+
+    private void ResetFontButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (FontSizeSlider != null) FontSizeSlider.Value = Helpers.AccessibilityManager.DefaultFontSize;
+    }
+
+    private void ReduceMotionToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_initingAccessibility) return;
+        if (sender is ModernWpf.Controls.ToggleSwitch t)
+            Helpers.AccessibilityManager.SetReduceMotion(t.IsOn);
+    }
+
+    private void HighContrastToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_initingAccessibility) return;
+        if (sender is ModernWpf.Controls.ToggleSwitch t)
+            Helpers.AccessibilityManager.SetHighContrast(t.IsOn);
     }
 
     private void SettingsPage_Unloaded(object sender, RoutedEventArgs e)

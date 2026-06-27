@@ -1348,7 +1348,10 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (item == null || _viewModel == null) return;
 
         if (await Helpers.ConfirmDialog.ShowDeleteAsync(
-                "Delete Password Item", $"Are you sure you want to delete “{item.Title}”? This cannot be undone."))
+                "Move to Recently Deleted",
+                $"“{item.Title}” will be moved to Recently Deleted, like the Windows Recycle Bin. " +
+                "It stays there so you can restore it, and is removed permanently after the retention period " +
+                "(or when you empty Recently Deleted)."))
         {
             if (_serviceProvider != null &&
                 !await Helpers.SecurityGateHelper.RequireCodeForActionAsync(
