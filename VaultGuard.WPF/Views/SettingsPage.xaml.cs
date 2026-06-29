@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,6 +52,19 @@ public sealed partial class SettingsPage : Page
         Unloaded += SettingsPage_Unloaded;
     }
 
+    private T? GetElement<T>(string name) where T : class
+    {
+        try
+        {
+            return this.FindName(name) as T;
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error($"Failed to resolve named element '{name}'", ex);
+            return null;
+        }
+    }
+
     // ── Accessibility tab ────────────────────────────────────────────────────
     private bool _initingAccessibility;
 
@@ -65,7 +79,83 @@ public sealed partial class SettingsPage : Page
             if (HighContrastToggle != null) HighContrastToggle.IsOn = Helpers.AccessibilityManager.HighContrast;
             UpdateZoomText();
             UpdateFontText();
+            InitSectionFontCombos();
         }
+        finally { _initingAccessibility = false; }
+    }
+
+    // Per-section font presets: label → scale multiplier (stacks on top of the global font size).
+    private static readonly (string Label, double Scale)[] FontPresets =
+    {
+        ("Smaller", 0.85),
+        ("Default", 1.00),
+        ("Larger", 1.15),
+        ("Extra Large", 1.30),
+        ("Huge", 1.50),
+    };
+
+    // Icon regions (Sidebar icons / Card icons) use a much wider range than text — a 16-18px glyph
+    // needs real headroom to reach something like 64px, and there's no global multiplier to stack
+    // on top (icons are exempt from the "Text size" slider; see FontScaleManager.Apply).
+    private static readonly (string Label, double Scale)[] IconPresets =
+    {
+        ("Smaller", 0.75),
+        ("Default", 1.00),
+        ("Larger", 1.75),
+        ("Extra Large", 2.75),
+        ("Huge", 4.00),
+    };
+
+    private static bool IsIconRegion(string region) =>
+        region == Helpers.FontScaleManager.MenuIcons || region == Helpers.FontScaleManager.CardIcons;
+
+    private static (string Label, double Scale)[] PresetsFor(string region) =>
+        IsIconRegion(region) ? IconPresets : FontPresets;
+
+    private void InitSectionFontCombos()
+    {
+        InitOneSectionCombo(MenuFontCombo, Helpers.FontScaleManager.Menu);
+        InitOneSectionCombo(QuickActionsFontCombo, Helpers.FontScaleManager.QuickActions);
+        InitOneSectionCombo(DetailsFontCombo, Helpers.FontScaleManager.Details);
+        InitOneSectionCombo(DialogsFontCombo, Helpers.FontScaleManager.Dialogs);
+        InitOneSectionCombo(GlobalFontCombo, Helpers.FontScaleManager.Global);
+        InitOneSectionCombo(CardIconsFontCombo, Helpers.FontScaleManager.CardIcons);
+    }
+
+    private void InitOneSectionCombo(System.Windows.Controls.ComboBox? combo, string region)
+    {
+        if (combo == null) return;
+        var presets = PresetsFor(region);
+        if (combo.Items.Count == 0)
+            foreach (var p in presets) combo.Items.Add(p.Label);
+
+        // Select the preset closest to the saved scale for this region.
+        var scale = Helpers.FontScaleManager.GetRegionScale(region);
+        int best = 1; // Default
+        double bestDelta = double.MaxValue;
+        for (int i = 0; i < presets.Length; i++)
+        {
+            var d = Math.Abs(presets[i].Scale - scale);
+            if (d < bestDelta) { bestDelta = d; best = i; }
+        }
+        combo.SelectedIndex = best;
+    }
+
+    private void SectionFontCombo_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_initingAccessibility) return;
+        if (sender is not System.Windows.Controls.ComboBox combo) return;
+        if (combo.Tag is not string region) return;
+        var presets = PresetsFor(region);
+        var idx = combo.SelectedIndex;
+        if (idx < 0 || idx >= presets.Length) return;
+        Helpers.FontScaleManager.SetRegionScale(region, presets[idx].Scale);
+    }
+
+    private void ResetSectionFontsButton_Click(object sender, RoutedEventArgs e)
+    {
+        Helpers.FontScaleManager.ResetAll();
+        try { _initingAccessibility = true; InitSectionFontCombos(); }
         finally { _initingAccessibility = false; }
     }
 
@@ -171,6 +261,15 @@ public sealed partial class SettingsPage : Page
             _viewModel = new SettingsViewModel(serviceProvider);
             DataContext = _viewModel;
             StartOneDriveStatusTimer();
+
+            // Theme loads asynchronously in the view model's constructor, so reflect the tile
+            // selection both now (in case it's already loaded) and whenever it changes.
+            UpdateThemeTileSelection(_viewModel.SelectedTheme);
+            _viewModel.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(SettingsViewModel.SelectedTheme))
+                    Dispatcher.Invoke(() => UpdateThemeTileSelection(_viewModel?.SelectedTheme));
+            };
 
             // Load all users for multi-user selection
             await LoadUsersAsync();
@@ -521,11 +620,49 @@ public sealed partial class SettingsPage : Page
         }
     }
 
-    private async void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    // ── Theme tile picker ────────────────────────────────────────────────────
+    private static readonly (string Name, string ElementName)[] ThemeTiles =
     {
-        if (_viewModel != null && ThemeComboBox.SelectedItem != null)
+        ("Light", "ThemeTile_Light"),
+        ("Dark", "ThemeTile_Dark"),
+        ("System", "ThemeTile_System"),
+        ("High Contrast", "ThemeTile_HighContrast"),
+        ("Windows", "ThemeTile_Windows"),
+    };
+
+    private async void ThemeTile_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (_viewModel == null || sender is not Border tile || tile.Tag is not string themeName) return;
+
+        _viewModel.SelectedTheme = themeName;
+        UpdateThemeTileSelection(themeName);
+        await _viewModel.SaveSettingsAsync();
+    }
+
+    /// <summary>Highlights the tile matching the current theme and paints the "Windows" tile's
+    /// swatch with the user's actual Windows accent colour, so the picker itself reflects their
+    /// custom theme rather than a fixed blue.</summary>
+    private void UpdateThemeTileSelection(string? selectedTheme)
+    {
+        try
         {
-            await _viewModel.SaveSettingsAsync();
+            var accent = VaultGuard.WPF.Services.ThemeHelper.GetWindowsAccentColor();
+            if (accent.HasValue)
+            {
+                var swatch = GetElement<TextBlock>("WindowsTileSwatch");
+                if (swatch != null) swatch.Foreground = new SolidColorBrush(accent.Value);
+            }
+        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
+
+        foreach (var (name, elementName) in ThemeTiles)
+        {
+            var border = GetElement<Border>(elementName);
+            if (border == null) continue;
+            bool selected = string.Equals(name, selectedTheme, StringComparison.OrdinalIgnoreCase);
+            border.BorderBrush = selected
+                ? (Brush)FindResource("ModernPrimaryBrush")
+                : Brushes.Transparent;
         }
     }
 

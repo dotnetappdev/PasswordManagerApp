@@ -42,6 +42,16 @@
                 <Separator/>
                 <MenuItem Header="E_xit" Click="MenuExit_Click"/>
             </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem x:Name="ToggleSideMenuMenuItem" Header="_Side Menu"
+                          IsCheckable="True" IsChecked="True"
+                          Click="ToggleSideMenuMenuItem_Click"
+                          InputGestureText="Ctrl+B">
+                    <MenuItem.Icon>
+                        <TextBlock Text="&#xE700;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="Check for _Updates…" Click="MenuCheckUpdates_Click">
                     <MenuItem.Icon>
@@ -116,7 +126,7 @@
                         Grid.Row="1"
                         IsBackButtonVisible="Collapsed"
                         IsSettingsVisible="False"
-                        IsPaneToggleButtonVisible="True"
+                        IsPaneToggleButtonVisible="False"
                         IsPaneOpen="True"
                         PaneDisplayMode="Left"
                         OpenPaneLength="260"
@@ -126,14 +136,30 @@
                         SelectionChanged="MainNavigationView_SelectionChanged"
                         Visibility="Collapsed"
                         Margin="0"
-                        Padding="0">
+                        Padding="0"
+                        FontSize="{DynamicResource MenuFontSize}">
+
+            <!-- ModernWpf's built-in NavigationViewItem template doesn't inherit FontSize from the
+                 parent NavigationView, so the "Menu & navigation" text size had no visible effect on
+                 its own. Swapping in a from-scratch template (ModernNavigationViewItemStyle) to also
+                 fix icon sizing was tried and reverted — ModernWpf's NavigationView internals depend
+                 on specific named/typed parts from its own default item template for page navigation
+                 to work at all, and replacing it broke clicking items to navigate. So this only
+                 overrides FontSize on top of the untouched default style/template; sidebar icon size
+                 stays stuck at its built-in fixed size until a safer way to reach it is found. -->
+            <ui:NavigationView.Resources>
+                <Style TargetType="ui:NavigationViewItem" BasedOn="{StaticResource {x:Type ui:NavigationViewItem}}">
+                    <Setter Property="FontSize" Value="{DynamicResource MenuFontSize}"/>
+                </Style>
+            </ui:NavigationView.Resources>
 
             <!-- Pane Header: App name + profile + search + new item -->
             <ui:NavigationView.PaneHeader>
                 <StackPanel Margin="0,0,0,4">
 
                     <!-- Profile row: user (left) + hamburger toggle (right, in line with the name).
-                         Sits flush at the top of the pane — no branding row above it. -->
+                         Only rendered while the pane is open — the framework hides PaneHeader in the
+                         compact rail, where the items-list copy below takes over instead. -->
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -218,10 +244,9 @@
                         </Grid>
                     </Button>
 
-                    <!-- Hamburger toggle — in line with the profile name, on the right. Stays at the
-                         top of the pane and visible even when collapsed, so the menu can be expanded
-                         and collapsed at will. -->
-                    <Button x:Name="PaneToggleButton"
+                    <!-- Hamburger toggle — in line with the profile name, on the right. Only visible
+                         while the pane is open (the rail copy below takes over once it collapses). -->
+                    <Button x:Name="HeaderPaneToggleButton"
                             Grid.Column="1"
                             VerticalAlignment="Center"
                             HorizontalAlignment="Right"
@@ -233,7 +258,8 @@
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="HbBd" Background="{TemplateBinding Background}" CornerRadius="6">
-                                    <TextBlock Text="&#xE700;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                                    <TextBlock Text="&#xE700;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="{DynamicResource MenuIconSize}"
                                                Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
@@ -300,14 +326,14 @@
                                        Tag="AllItems"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE8A5;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE8A5;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
                 <ui:NavigationViewItem Content="Favourites" Tag="Favorites"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE734;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE734;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
@@ -315,38 +341,68 @@
                 <ui:NavigationViewItemSeparator Background="{DynamicResource ModernBorderBrush}"/>
                 <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="Categories"/>
 
+                <!-- Hamburger / pane toggle — lives inside the items list (not PaneHeader, which the
+                     framework hides while the pane is folded to its compact icon-only rail) so it
+                     stays reachable and can re-expand the menu in every state. -->
+                <Button x:Name="PaneToggleButton"
+                        HorizontalAlignment="Stretch"
+                        Height="36" Margin="8,2,8,8"
+                        Background="Transparent" BorderThickness="0"
+                        Cursor="Hand"
+                        Click="PaneToggleButton_Click"
+                        ToolTipService.ToolTip="Expand / collapse menu">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="HbBd" Background="{TemplateBinding Background}" CornerRadius="6">
+                                <TextBlock Text="&#xE700;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="{DynamicResource MenuIconSize}"
+                                           Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="HbBd" Property="Background" Value="{DynamicResource NavigationViewItemBackgroundPointerOver}"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="HbBd" Property="Opacity" Value="0.8"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
                 <ui:NavigationViewItem Content="Logins" Tag="LoginCategory"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE1A3;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE192;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
                 <ui:NavigationViewItem Content="Credit Cards" Tag="CreditCardCategory"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE8C7;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE8C7;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
                 <ui:NavigationViewItem Content="Secure Notes" Tag="SecureNotesCategory"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE70B;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE70B;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
                 <ui:NavigationViewItem Content="Wi-Fi Networks" Tag="WiFiCategory"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE701;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE701;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
                 <ui:NavigationViewItem Content="Identities" Tag="IdentityCategory"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE77B;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE77B;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
@@ -360,7 +416,7 @@
                 <ui:NavigationViewItem Content="Security Dashboard" Tag="Security"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE8E1;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE8E1;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
@@ -371,7 +427,7 @@
                 <ui:NavigationViewItem Content="Manage Categories" Tag="Categories"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE8FD;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE8FD;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
@@ -381,7 +437,7 @@
                      renders just below via VaultsNavPanel. -->
                 <ui:NavigationViewItem Focusable="False" SelectsOnInvoked="False" IsHitTestVisible="True">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE72E;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE72E;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                     <Grid IsHitTestVisible="True">
                         <Grid.ColumnDefinitions>
@@ -406,7 +462,7 @@
                 <ui:NavigationViewItem Content="Import / Export" Tag="Import"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE8B5;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE8B5;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
@@ -417,27 +473,27 @@
                 <ui:NavigationViewItem Content="Archive" Tag="Archive"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE7B8;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE7B8;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
                 <ui:NavigationViewItem Content="Recently Deleted" Tag="RecentlyDeleted"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE74D;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE74D;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
                 <ui:NavigationViewItem Content="Settings" Tag="Settings"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE713;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE713;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
                 <ui:NavigationViewItem Content="About" Tag="About">
                     <ui:NavigationViewItem.Icon>
-                        <ui:FontIcon Glyph="&#xE946;" FontSize="16"/>
+                        <ui:FontIcon Glyph="&#xE946;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 

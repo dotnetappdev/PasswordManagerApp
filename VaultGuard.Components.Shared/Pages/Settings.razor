@@ -65,6 +65,41 @@
             </MudGrid>
         </MudPaper>
 
+        <!-- Accessibility Section -->
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Style="margin-bottom: 16px;">
+                <MudIcon Icon="@Icons.Material.Filled.Accessibility" Style="vertical-align: middle; margin-right: 8px;" />
+                Accessibility
+            </MudText>
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.subtitle2">UI zoom: @($"{(int)Math.Round(A11yZoom * 100)}%")</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Make everything larger or smaller, like the zoom in 1Password.</MudText>
+                    <MudSlider T="double" Min="@AccessibilityState.MinZoom" Max="@AccessibilityState.MaxZoom" Step="0.05"
+                               Value="A11yZoom" ValueChanged="OnZoomChanged" Class="mt-2" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.subtitle2">Text &amp; menu size: @($"{(int)Math.Round(A11yFont)} px")</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Set the base font size used across menus and text.</MudText>
+                    <MudSlider T="double" Min="@AccessibilityState.MinFont" Max="@AccessibilityState.MaxFont" Step="1"
+                               Value="A11yFont" ValueChanged="OnFontChanged" Class="mt-2" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudSwitch T="bool" Value="A11yReduceMotion" ValueChanged="OnReduceMotionChanged"
+                               Color="Color.Primary" Label="Reduce motion" />
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Minimise animations and transitions.</MudText>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudSwitch T="bool" Value="A11yHighContrast" ValueChanged="OnHighContrastChanged"
+                               Color="Color.Primary" Label="High contrast" />
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Boost contrast for better readability.</MudText>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="ResetAccessibility">Reset to defaults</MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
         <!-- Profile Section -->
         <MudPaper Class="pa-4" >
             <MudText Typo="Typo.h6" Style="margin-bottom: 16px;">Profile</MudText>
@@ -667,6 +702,46 @@
     private bool isSaving = false;
 
     private AppThemeMode selectedTheme = AppThemeMode.Dark;
+
+    // Accessibility
+    private double A11yZoom = AccessibilityState.DefaultZoom;
+    private double A11yFont = AccessibilityState.DefaultFont;
+    private bool A11yReduceMotion = false;
+    private bool A11yHighContrast = false;
+
+    private async Task OnZoomChanged(double value) { A11yZoom = value; await SaveAndApplyAccessibilityAsync(); }
+    private async Task OnFontChanged(double value) { A11yFont = value; await SaveAndApplyAccessibilityAsync(); }
+    private async Task OnReduceMotionChanged(bool value) { A11yReduceMotion = value; await SaveAndApplyAccessibilityAsync(); }
+    private async Task OnHighContrastChanged(bool value) { A11yHighContrast = value; await SaveAndApplyAccessibilityAsync(); }
+
+    private async Task ResetAccessibility()
+    {
+        A11yZoom = AccessibilityState.DefaultZoom;
+        A11yFont = AccessibilityState.DefaultFont;
+        A11yReduceMotion = false;
+        A11yHighContrast = false;
+        await SaveAndApplyAccessibilityAsync();
+    }
+
+    private async Task SaveAndApplyAccessibilityAsync()
+    {
+        var prefs = new AccessibilityState.Prefs(A11yZoom, A11yFont, A11yReduceMotion, A11yHighContrast);
+        await AccessibilityState.SaveAsync(JSRuntime, prefs);
+        await AccessibilityState.ApplyAsync(JSRuntime, prefs);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        // Reflect the saved accessibility prefs in the controls (the values are already applied
+        // to the document app-wide by the main layout).
+        var prefs = await AccessibilityState.LoadAsync(JSRuntime);
+        A11yZoom = prefs.Zoom;
+        A11yFont = prefs.FontPx;
+        A11yReduceMotion = prefs.ReduceMotion;
+        A11yHighContrast = prefs.HighContrast;
+        StateHasChanged();
+    }
 
     // Cloud backup
     private bool enableCloudBackup = false;

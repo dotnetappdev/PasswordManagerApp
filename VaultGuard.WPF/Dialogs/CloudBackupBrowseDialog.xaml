@@ -20,13 +20,13 @@
         <Border Grid.Row="0" Background="#1A2744" CornerRadius="8" Padding="14,10" Margin="0,0,0,12">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <Border Width="36" Height="36" CornerRadius="10" Background="#2563EB" Margin="0,0,12,0">
-                    <TextBlock Text="&#xE753;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                    <TextBlock Text="&#xE753;" FontFamily="Segoe MDL2 Assets" FontSize="{DynamicResource DialogTitleFontSize}"
                                Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <StackPanel>
-                    <TextBlock x:Name="BackupDateText" FontSize="14" FontWeight="SemiBold"
+                    <TextBlock x:Name="BackupDateText" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold"
                                Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
-                    <TextBlock x:Name="BackupCountText" FontSize="12"
+                    <TextBlock x:Name="BackupCountText" FontSize="{DynamicResource DialogLabelFontSize}"
                                Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                 </StackPanel>
             </StackPanel>
@@ -42,7 +42,7 @@
                 <CheckBox x:Name="SelectAllCheck" Content="Select all" IsChecked="True"
                           Checked="SelectAllCheck_Changed" Unchecked="SelectAllCheck_Changed"
                           Margin="0,0,16,0"/>
-                <TextBlock x:Name="SelectedCountText" FontSize="12"
+                <TextBlock x:Name="SelectedCountText" FontSize="{DynamicResource DialogLabelFontSize}"
                            Foreground="{DynamicResource ModernTextSecondaryBrush}"
                            VerticalAlignment="Center"/>
             </StackPanel>

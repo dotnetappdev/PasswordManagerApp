@@ -260,6 +260,11 @@ public class MockPasswordItemService : IPasswordItemService
         return Task.CompletedTask;
     }
 
+    public Task<IEnumerable<PasswordItem>> GetDeletedAsync()
+    {
+        return Task.FromResult(_items.Where(i => i.IsDeleted).AsEnumerable());
+    }
+
     public Task<bool> RestoreAsync(int id)
     {
         var item = _items.FirstOrDefault(i => i.Id == id && i.IsDeleted);

@@ -58,6 +58,14 @@ public interface ITwoFactorService
     Task<TwoFactorStatusDto> GetTwoFactorStatusAsync(string userId);
 
     /// <summary>
+    /// Computes the user's current valid TOTP code, for "number matching" style confirmation UIs
+    /// where the app shows the right answer as one of several options instead of asking the user
+    /// to type it. Returns null if the user isn't found or doesn't have 2FA enabled.
+    /// </summary>
+    /// <param name="userId">The user ID</param>
+    Task<string?> GetCurrentTotpCodeAsync(string userId);
+
+    /// <summary>
     /// Validates a TOTP code against the user's secret key
     /// </summary>
     /// <param name="secretKey">Base32-encoded secret key</param>

@@ -190,6 +190,20 @@ public class PasswordItemService : IPasswordItemService
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<PasswordItem>> GetDeletedAsync()
+    {
+        return await _context.PasswordItems
+            .Include(p => p.LoginItem)
+            .Include(p => p.CreditCardItem)
+            .Include(p => p.SecureNoteItem)
+            .Include(p => p.WiFiItem)
+            .Include(p => p.CustomFields)
+            .Include(p => p.Tags)
+            .Where(p => p.IsDeleted)
+            .OrderByDescending(p => p.LastModified)
+            .ToListAsync();
+    }
+
     public async Task<bool> ExistsAsync(int id)
     {
         return await _context.PasswordItems.AnyAsync(p => p.Id == id && !p.IsDeleted);

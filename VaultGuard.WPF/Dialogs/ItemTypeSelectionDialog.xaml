@@ -30,7 +30,7 @@
                             Style="{StaticResource ModernAutoSuggestBoxStyle}"
                             CornerRadius="8"
                             Height="40"
-                            FontSize="16"/>
+                            FontSize="{DynamicResource DialogTitleFontSize}"/>
 
             <!-- Main Category Grid - 6 core item types in 3x2 layout -->
             <Grid x:Name="MainCategoryGrid">
@@ -65,7 +65,7 @@
                                       VerticalAlignment="Center"/>
                         </Border>
                         <TextBlock Text="Login"
-                                   FontSize="16"
+                                   FontSize="{DynamicResource DialogTitleFontSize}"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                    HorizontalAlignment="Center"/>
@@ -92,7 +92,7 @@
                                       VerticalAlignment="Center"/>
                         </Border>
                         <TextBlock Text="Secure Note"
-                                   FontSize="16"
+                                   FontSize="{DynamicResource DialogTitleFontSize}"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                    HorizontalAlignment="Center"/>
@@ -119,7 +119,7 @@
                                       VerticalAlignment="Center"/>
                         </Border>
                         <TextBlock Text="Credit Card"
-                                   FontSize="16"
+                                   FontSize="{DynamicResource DialogTitleFontSize}"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                    HorizontalAlignment="Center"/>
@@ -147,7 +147,7 @@
                                       VerticalAlignment="Center"/>
                         </Border>
                         <TextBlock Text="Identity"
-                                   FontSize="16"
+                                   FontSize="{DynamicResource DialogTitleFontSize}"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                    HorizontalAlignment="Center"/>
@@ -174,7 +174,7 @@
                                       VerticalAlignment="Center"/>
                         </Border>
                         <TextBlock Text="Password"
-                                   FontSize="16"
+                                   FontSize="{DynamicResource DialogTitleFontSize}"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                    HorizontalAlignment="Center"/>
@@ -201,7 +201,7 @@
                                       VerticalAlignment="Center"/>
                         </Border>
                         <TextBlock Text="Passkey"
-                                   FontSize="16"
+                                   FontSize="{DynamicResource DialogTitleFontSize}"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                    HorizontalAlignment="Center"/>
@@ -217,9 +217,9 @@
                     Margin="0,12,0,0" Cursor="Hand">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock x:Name="ShowMoreText" Text="Show more"
-                               FontSize="14" Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
+                               FontSize="{DynamicResource DialogFontSize}" Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                     <TextBlock x:Name="ShowMoreChevron" Text=" &#xE76C;"
-                               FontFamily="Segoe MDL2 Assets" FontSize="11"
+                               FontFamily="Segoe MDL2 Assets" FontSize="{DynamicResource DialogLabelFontSize}"
                                Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
@@ -234,7 +234,7 @@
                             <Border Background="#0F766E" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="SSH Key" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="SSH Key" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- API Credentials -->
@@ -243,7 +243,7 @@
                             <Border Background="#7C3AED" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE943;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="API Credentials" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="API Credentials" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Bank Account -->
@@ -252,7 +252,7 @@
                             <Border Background="#D97706" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE825;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Bank Account" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Bank Account" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Crypto Wallet -->
@@ -261,7 +261,7 @@
                             <Border Background="#B45309" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE8CA;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Crypto Wallet" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Crypto Wallet" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Database -->
@@ -270,7 +270,7 @@
                             <Border Background="#0369A1" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xF1C3;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Database" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Database" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Driver License -->
@@ -279,7 +279,7 @@
                             <Border Background="#1D4ED8" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Driver License" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Driver License" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Email Account -->
@@ -288,7 +288,7 @@
                             <Border Background="#0891B2" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE715;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Email Account" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Email Account" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Medical Record -->
@@ -297,7 +297,7 @@
                             <Border Background="#BE185D" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE95E;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Medical Record" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Medical Record" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Membership -->
@@ -306,7 +306,7 @@
                             <Border Background="#6D28D9" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE8AB;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Membership" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Membership" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Outdoor License -->
@@ -315,7 +315,7 @@
                             <Border Background="#15803D" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE910;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Outdoor License" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Outdoor License" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Passport -->
@@ -324,7 +324,7 @@
                             <Border Background="#1E40AF" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE8D4;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Passport" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Passport" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Rewards -->
@@ -333,7 +333,7 @@
                             <Border Background="#C2410C" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE734;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Rewards" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Rewards" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Server -->
@@ -342,7 +342,7 @@
                             <Border Background="#374151" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xECC6;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Server" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Server" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Social Security Number -->
@@ -351,7 +351,7 @@
                             <Border Background="#1D4ED8" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE8D4;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Social Security No." FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Social Security No." FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Software License -->
@@ -360,7 +360,7 @@
                             <Border Background="#4338CA" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE90F;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Software License" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Software License" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Wireless Router -->
@@ -369,7 +369,7 @@
                             <Border Background="#0891B2" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE701;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Wireless Router" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Wireless Router" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <!-- Document -->
@@ -378,7 +378,7 @@
                             <Border Background="#64748B" CornerRadius="8" Width="36" Height="36" Margin="0,0,10,0">
                                 <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Document" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Document" FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                 </UniformGrid>

@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using VaultGuard.Models;
 using VaultGuard.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +17,7 @@ public class PasswordItemsViewModel : BaseViewModel
     private string? _filterCategoryName = null;
     private int? _selectedCategoryId = null;
     private int? _filterVaultId = null;
+    private string _sortOption = "Title (A-Z)";
     private ObservableCollection<PasswordItem> _allItems = new();
 
     public PasswordItemsViewModel(IServiceProvider serviceProvider)
@@ -99,6 +102,24 @@ public class PasswordItemsViewModel : BaseViewModel
         }
     }
 
+    public string SortOption
+    {
+        get => _sortOption;
+        set
+        {
+            if (SetProperty(ref _sortOption, value))
+            {
+                _ = ApplyFiltersAsync();
+            }
+        }
+    }
+
+    // Cached single instance for the same reason as AvailableThemes (ComboBox TwoWay binding).
+    public List<string> AvailableSortOptions { get; } = new()
+    {
+        "Title (A-Z)", "Title (Z-A)", "Recently Modified", "Recently Created", "Type"
+    };
+
     public new bool IsLoading
     {
         get => base.IsLoading;
@@ -116,7 +137,15 @@ public class PasswordItemsViewModel : BaseViewModel
         try
         {
             IsLoading = true;
-            var items = await _passwordItemService.GetAllAsync();
+
+            // Recently Deleted / Archive show items the default GetAllAsync() deliberately hides
+            // (it filters out IsDeleted/IsArchived). Pull the right set for the active view.
+            var items = FilterType switch
+            {
+                "RecentlyDeleted" => await _passwordItemService.GetDeletedAsync(),
+                "Archive" => await _passwordItemService.GetArchivedAsync(),
+                _ => await _passwordItemService.GetAllAsync()
+            };
 
             _allItems.Clear();
             foreach (var item in items)
@@ -222,6 +251,17 @@ public class PasswordItemsViewModel : BaseViewModel
                 {
                     items = items.Where(item => item.Tags != null && item.Tags.Any(t => string.Equals(t.Name, FilterTagName, StringComparison.OrdinalIgnoreCase)));
                 }
+
+                // Apply sort last so it governs the order shown regardless of which filter ran
+                // (e.g. "Recent" still picks its top-20-by-last-used set, then this orders them).
+                items = SortOption switch
+                {
+                    "Title (Z-A)" => items.OrderByDescending(item => item.Title, StringComparer.OrdinalIgnoreCase),
+                    "Recently Modified" => items.OrderByDescending(item => item.LastModified),
+                    "Recently Created" => items.OrderByDescending(item => item.CreatedAt),
+                    "Type" => items.OrderBy(item => item.Type).ThenBy(item => item.Title, StringComparer.OrdinalIgnoreCase),
+                    _ => items.OrderBy(item => item.Title, StringComparer.OrdinalIgnoreCase)
+                };
 
                 return items.ToList();
             });

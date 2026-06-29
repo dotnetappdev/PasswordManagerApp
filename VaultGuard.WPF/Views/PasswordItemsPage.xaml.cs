@@ -15,6 +15,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Windows.Input;
+using System.Windows.Media;
 using System;
 
 namespace VaultGuard.WPF.Views;
@@ -49,6 +51,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         {
             VaultGuard.WPF.Services.AppEvents.VaultDataChanged -= OnVaultDataChanged;
             VaultGuard.WPF.Services.AppEvents.VaultDataChanged += OnVaultDataChanged;
+            InitializeAlphabetIndex();
         };
         Unloaded += (_, _) =>
             VaultGuard.WPF.Services.AppEvents.VaultDataChanged -= OnVaultDataChanged;
@@ -969,8 +972,91 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         // Reflect favorite state on the detail star + quick action
         UpdateFavoriteVisuals();
 
+        // Recently Deleted: swap the normal Delete action for Restore / Delete Permanently.
+        UpdateTrashActions(item);
+
         // Wire drag handles on all static field rows
         try { WireFieldDragHandles(); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to wire field drag handles", ex); }
+    }
+
+    /// <summary>Shows Restore / Delete-Permanently for soft-deleted items and hides them otherwise.</summary>
+    private void UpdateTrashActions(PasswordItem item)
+    {
+        bool deleted = item.IsDeleted;
+        var restore = GetElement<Button>("RestoreQuickActionButton");
+        var purge = GetElement<Button>("PermanentDeleteQuickActionButton");
+        var delete = GetElement<Button>("DeleteQuickActionButton");
+        if (restore != null) restore.Visibility = deleted ? Visibility.Visible : Visibility.Collapsed;
+        if (purge != null) purge.Visibility = deleted ? Visibility.Visible : Visibility.Collapsed;
+        if (delete != null) delete.Visibility = deleted ? Visibility.Collapsed : Visibility.Visible;
+
+        // One-click restore right in the detail header — no need to scroll to Quick Actions.
+        var restoreHeader = GetElement<Button>("RestoreDetailButton");
+        var editHeader = GetElement<Button>("EditDetailButton");
+        if (restoreHeader != null) restoreHeader.Visibility = deleted ? Visibility.Visible : Visibility.Collapsed;
+        if (editHeader != null) editHeader.Visibility = deleted ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private async void RestoreItemButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedItem == null || _passwordItemService == null) return;
+        try
+        {
+            if (await _passwordItemService.RestoreAsync(_selectedItem.Id))
+            {
+                ToastService.Instance.Success($"'{_selectedItem.Title}' restored");
+                // It's no longer deleted — drop it from the Recently Deleted list and clear the detail.
+                if (_viewModel != null) await _viewModel.RefreshAsync();
+                _selectedItem = null;
+                var detail = GetElement<StackPanel>("DetailPanel");
+                if (detail != null) detail.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                ToastService.Instance.Error("Couldn't restore this item.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.Instance.Error($"Restore failed: {ex.Message}");
+        }
+    }
+
+    private async void PermanentlyDeleteItemButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedItem == null || _passwordItemService == null) return;
+
+        if (!await Helpers.ConfirmDialog.ShowDeleteAsync(
+                "Delete Permanently",
+                $"“{_selectedItem.Title}” will be permanently deleted. This cannot be undone."))
+            return;
+
+        if (_serviceProvider != null &&
+            !await Helpers.SecurityGateHelper.RequireCodeForActionAsync(
+                _serviceProvider, Helpers.SecurityGateHelper.GateAction.ItemDelete))
+        {
+            return;
+        }
+
+        try
+        {
+            if (await _passwordItemService.PermanentlyDeleteAsync(_selectedItem.Id))
+            {
+                ToastService.Instance.Success($"'{_selectedItem.Title}' permanently deleted");
+                if (_viewModel != null) await _viewModel.RefreshAsync();
+                _selectedItem = null;
+                var detail = GetElement<StackPanel>("DetailPanel");
+                if (detail != null) detail.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                ToastService.Instance.Error("Couldn't permanently delete this item.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.Instance.Error($"Delete failed: {ex.Message}");
+        }
     }
 
     // ── Favorites ───────────────────────────────────────────────────────────────
@@ -996,6 +1082,14 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (_passwordItemService == null) return;
         try
         {
+            // Capture the desired end state up front. The WPF data service returns EF-tracked
+            // entities, so ToggleFavoriteAsync() flips this very instance under the hood — if we
+            // then blind-flipped it again here it would toggle twice and net back to the original
+            // (DB favorited, UI not), which is exactly why the star never stayed gold and the item
+            // never moved into the Favorites view. Assign the captured target instead of flipping,
+            // so the result is correct whether or not the entity happens to be tracked.
+            bool target = !item.IsFavorite;
+
             var ok = await _passwordItemService.ToggleFavoriteAsync(item.Id);
             if (!ok)
             {
@@ -1003,14 +1097,27 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 return;
             }
 
-            // Service flipped + saved the flag in the DB; mirror it locally so the UI matches.
-            // PasswordItem now raises INotifyPropertyChanged, so the list-row star updates itself —
+            // PasswordItem raises INotifyPropertyChanged, so the list-row star updates itself —
             // no ListView.Items.Refresh() needed (that was also dropping the selection).
-            item.IsFavorite = !item.IsFavorite;
+            item.IsFavorite = target;
 
             // Update the detail header + quick-action icons whenever the toggled item is the one
             // currently shown (covers the row star, the header star, and the quick action).
             if (_selectedItem != null && _selectedItem.Id == item.Id) UpdateFavoriteVisuals();
+
+            // Re-run the active filter so the item appears/disappears from the Favorites view
+            // immediately instead of only on the next manual filter change. ApplyFilters()
+            // clears/re-adds the bound collection, which drops the ListView selection, so
+            // restore it afterwards if the item is still in view.
+            if (_viewModel != null)
+            {
+                await _viewModel.ApplyFilters();
+                var list = GetElement<ListView>("ItemsList");
+                if (list != null && _selectedItem != null && _viewModel.PasswordItems.Contains(_selectedItem))
+                {
+                    list.SelectedItem = _selectedItem;
+                }
+            }
 
             ToastService.Instance.Success(item.IsFavorite
                 ? $"'{item.Title}' added to favorites"
@@ -1041,6 +1148,94 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
         var qaLabel = GetElement<TextBlock>("FavoriteQuickActionLabel");
         if (qaLabel != null) qaLabel.Text = fav ? "Remove from Favorites" : "Add to Favorites";
+    }
+
+    // ── A-Z jump index ───────────────────────────────────────────────────────────
+    // Phone-book style: click a letter, or press-drag down the column, to jump straight to the
+    // first item whose title starts with it. Letters are generated once; lookups happen against
+    // the view model's already-sorted/filtered list, so the result always matches what's on screen.
+    private static readonly string[] AlphabetLetters =
+    {
+        "#", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q",
+        "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
+    };
+
+    private static readonly Brush AlphabetIdleBrush =
+        (Brush?)Application.Current.Resources["ModernTextTertiaryBrush"] ?? Brushes.Gray;
+    private static readonly Brush AlphabetActiveBrush =
+        new SolidColorBrush(Color.FromRgb(0xF5, 0xB3, 0x01)); // gold, matches the favourite star
+
+    private void InitializeAlphabetIndex()
+    {
+        var panel = GetElement<Panel>("AlphabetIndexPanel");
+        if (panel == null || panel.Children.Count > 0) return;
+
+        foreach (var letter in AlphabetLetters)
+        {
+            // Each letter sits in its own equal-height UniformGrid cell so they spread down the
+            // full list height — bigger, easy-to-hit targets you can click or drag like a Filofax tab.
+            panel.Children.Add(new TextBlock
+            {
+                Text = letter,
+                Tag = letter,
+                FontSize = 11,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = AlphabetIdleBrush,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextAlignment = TextAlignment.Center
+            });
+        }
+    }
+
+    private void AlphabetIndex_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        JumpToLetterAtPosition(e.GetPosition(GetElement<Panel>("AlphabetIndexPanel")));
+    }
+
+    private void AlphabetIndex_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed) return;
+        JumpToLetterAtPosition(e.GetPosition(GetElement<Panel>("AlphabetIndexPanel")));
+    }
+
+    private void JumpToLetterAtPosition(Point position)
+    {
+        var panel = GetElement<Panel>("AlphabetIndexPanel");
+        if (panel == null || panel.Children.Count == 0) return;
+
+        double itemHeight = panel.ActualHeight / panel.Children.Count;
+        if (itemHeight <= 0) return;
+
+        int index = (int)(position.Y / itemHeight);
+        index = Math.Max(0, Math.Min(panel.Children.Count - 1, index));
+
+        // Highlight the letter currently under the cursor so the scrub position is obvious.
+        for (int i = 0; i < panel.Children.Count; i++)
+        {
+            if (panel.Children[i] is TextBlock t)
+                t.Foreground = i == index ? AlphabetActiveBrush : AlphabetIdleBrush;
+        }
+
+        if (panel.Children[index] is TextBlock tb && tb.Tag is string letter)
+        {
+            ScrollToLetter(letter);
+        }
+    }
+
+    private void ScrollToLetter(string letter)
+    {
+        if (_viewModel == null) return;
+
+        var match = letter == "#"
+            ? _viewModel.PasswordItems.FirstOrDefault(i => !string.IsNullOrEmpty(i.Title) && !char.IsLetter(i.Title[0]))
+            : _viewModel.PasswordItems.FirstOrDefault(i =>
+                !string.IsNullOrEmpty(i.Title) && char.ToUpperInvariant(i.Title[0]) == letter[0]);
+
+        if (match == null) return;
+
+        var list = GetElement<ListView>("ItemsList");
+        list?.ScrollIntoView(match);
     }
 
     // ── Static field drag-drop ─────────────────────────────────────────────────
@@ -1707,7 +1902,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         {
             _viewModel.FilterType = "All";
         }
-
+        
         // Close the filter flyout (safe)
         var filterFlyout = GetElement<Flyout>("FilterFlyout");
         filterFlyout?.Hide();

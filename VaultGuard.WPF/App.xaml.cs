@@ -206,6 +206,11 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Any dialog window (not the main window) gets scaled to the user's "Dialogs" font setting
+        // when it loads. Registered as a class handler so every current and future dialog is covered.
+        EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent,
+            new RoutedEventHandler((s, _) => FontScaleManager.ApplyDialogWindowScale(s as Window)));
+
         m_window = new MainWindow(_host.Services);
 
         ThemeHelper.Initialize(m_window, this);

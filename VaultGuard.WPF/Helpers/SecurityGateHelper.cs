@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using Microsoft.Extensions.DependencyInjection;
 using ModernWpf.Controls;
 using VaultGuard.Services.Interfaces;
@@ -105,11 +106,21 @@ public static class SecurityGateHelper
         if (!status.IsEnabled)
             return true; // 2FA off => the toggle has nothing to verify against.
 
+        // Item/category deletes use number matching instead of typing the code: VaultGuard already
+        // knows the user's real current TOTP code (same secret their authenticator app holds), so it
+        // can show it as one of three options and have the user pick it off their phone — same
+        // verification guarantee as typing it, less friction for a lower-stakes action.
+        if (action is GateAction.ItemDelete or GateAction.CategoryDelete)
+        {
+            var matchMessage = action == GateAction.ItemDelete
+                ? "Open your authenticator app and select the matching number to delete this item."
+                : "Open your authenticator app and select the matching number to delete this category.";
+            return await PromptNumberMatchTotpAsync(serviceProvider, userId, matchMessage);
+        }
+
         var (title, message) = action switch
         {
             GateAction.VaultDelete => ("Confirm with authenticator", "Enter the 6-digit code from your authenticator app to delete this vault."),
-            GateAction.ItemDelete => ("Confirm with authenticator", "Enter the 6-digit code from your authenticator app to delete this item."),
-            GateAction.CategoryDelete => ("Confirm with authenticator", "Enter the 6-digit code from your authenticator app to delete this category."),
             GateAction.CloudBackupDelete => ("Confirm with authenticator", "Enter the 6-digit code from your authenticator app to delete this backup."),
             GateAction.MasterPasswordChange => ("Confirm with authenticator", "Enter the 6-digit code from your authenticator app to change your master password."),
             _ => ("Confirm with authenticator", "Enter the 6-digit code from your authenticator app to continue.")
@@ -142,25 +153,45 @@ public static class SecurityGateHelper
 
         while (true)
         {
-            var panel = new StackPanel { MinWidth = 300 };
-            panel.Children.Add(new TextBlock
-            {
-                Text = message,
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 0, 0, 12)
-            });
+            var panel = new StackPanel { MinWidth = 340 };
+            panel.Children.Add(BuildShieldHeader(message));
 
+            var fieldLabel = new TextBlock
+            {
+                Text = "Authentication code",
+                FontSize = 13,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = TextPrimaryBrush(),
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+            panel.Children.Add(fieldLabel);
+
+            var codeBoxWrap = new Border
+            {
+                Background = SurfaceBrush(),
+                CornerRadius = new CornerRadius(8),
+                BorderBrush = BorderBrush(),
+                BorderThickness = new Thickness(1),
+                Margin = new Thickness(0, 0, 0, 10)
+            };
             var codeBox = new TextBox
             {
-                Margin = new Thickness(0, 0, 0, 8)
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(14, 10, 14, 10),
+                FontSize = 16,
+                FontFamily = new FontFamily("Consolas"),
+                HorizontalContentAlignment = HorizontalAlignment.Center
             };
             ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(codeBox, "123-456");
             TotpCodeMask.Attach(codeBox);
-            panel.Children.Add(codeBox);
+            codeBoxWrap.Child = codeBox;
+            panel.Children.Add(codeBoxWrap);
 
             var recoveryCheck = new CheckBox
             {
                 Content = "This is a recovery code",
+                Foreground = TextSecondaryBrush(),
                 Margin = new Thickness(0, 0, 0, 4)
             };
             // Recovery codes aren't 6-digit TOTP codes, so drop the 123-456 mask when switching to one.
@@ -180,13 +211,7 @@ public static class SecurityGateHelper
 
             if (!string.IsNullOrEmpty(error))
             {
-                panel.Children.Add(new TextBlock
-                {
-                    Text = error,
-                    Foreground = System.Windows.Media.Brushes.IndianRed,
-                    TextWrapping = TextWrapping.Wrap,
-                    Margin = new Thickness(0, 4, 0, 0)
-                });
+                panel.Children.Add(BuildErrorText(error));
             }
 
             var dialog = new ContentDialog
@@ -197,10 +222,11 @@ public static class SecurityGateHelper
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Primary
             };
+            ApplyDialogChrome(dialog);
 
             codeBox.Loaded += (_, _) => codeBox.Focus();
 
-            var result = await dialog.ShowAsync();
+            var result = await DialogManager.ShowAsync(dialog);
             if (result != ContentDialogResult.Primary)
                 return false;
 
@@ -220,6 +246,153 @@ public static class SecurityGateHelper
         }
     }
 
+    private static readonly Random _numberMatchRandom = new();
+
+    /// <summary>
+    /// Real 2FA via number matching instead of typing: fetches the user's actual current TOTP code
+    /// (same one their authenticator app is showing right now) and presents it as one of three
+    /// buttons alongside two random decoys. Picking the real code is exactly as strong a proof as
+    /// typing it — only someone with the authenticator app open can tell which one is correct — just
+    /// less friction. Falls back to the type-a-code dialog if the code can't be computed (e.g. 2FA
+    /// not actually enabled) or the user wants to use a recovery code instead.
+    /// </summary>
+    public static async Task<bool> PromptNumberMatchTotpAsync(IServiceProvider serviceProvider, string userId, string message)
+    {
+        var twoFactor = serviceProvider.GetService<ITwoFactorService>();
+        var realCode = twoFactor != null ? await twoFactor.GetCurrentTotpCodeAsync(userId) : null;
+        if (twoFactor == null || realCode == null)
+            return await PromptAndVerifyAsync(serviceProvider, userId, "Confirm with authenticator",
+                "Enter the 6-digit code from your authenticator app to continue.");
+
+        var decoys = new HashSet<string> { realCode };
+        while (decoys.Count < 3)
+            decoys.Add(_numberMatchRandom.Next(0, 1_000_000).ToString("D6"));
+        var options = decoys.ToList();
+        // Fisher-Yates so the real code doesn't end up in a predictable slot.
+        for (int i = options.Count - 1; i > 0; i--)
+        {
+            int j = _numberMatchRandom.Next(i + 1);
+            (options[i], options[j]) = (options[j], options[i]);
+        }
+
+        var panel = new StackPanel { MinWidth = 360 };
+        panel.Children.Add(BuildShieldHeader(message));
+
+        var buttonRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 10) };
+        var dialog = new ContentDialog
+        {
+            Content = panel,
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close
+        };
+        ApplyDialogChrome(dialog);
+
+        bool? matched = null;
+        foreach (var code in options)
+        {
+            var btn = new Button
+            {
+                Content = code,
+                FontSize = 16,
+                FontFamily = new FontFamily("Consolas"),
+                FontWeight = FontWeights.SemiBold,
+                Width = 104,
+                Height = 48,
+                Margin = new Thickness(4, 0, 4, 0),
+                Style = Application.Current?.TryFindResource("ModernSecondaryButtonStyle") as Style
+            };
+            btn.Click += (_, _) =>
+            {
+                matched = code == realCode;
+                dialog.Hide();
+            };
+            buttonRow.Children.Add(btn);
+        }
+        panel.Children.Add(buttonRow);
+
+        var useCodeLink = new Button
+        {
+            Content = "Type the code or a recovery code instead",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Foreground = (Application.Current?.Resources["ModernPrimaryBrush"] as Brush) ?? Brushes.DodgerBlue,
+            Cursor = System.Windows.Input.Cursors.Hand
+        };
+        bool useCodeInstead = false;
+        useCodeLink.Click += (_, _) => { useCodeInstead = true; dialog.Hide(); };
+        panel.Children.Add(useCodeLink);
+
+        await DialogManager.ShowAsync(dialog);
+
+        if (useCodeInstead)
+            return await PromptAndVerifyAsync(serviceProvider, userId, "Confirm with authenticator", message);
+
+        return matched == true;
+    }
+
+    // ── Shared dialog chrome ─────────────────────────────────────────────────
+    // Keeps every step-up prompt visually consistent with the rest of the app — same rounded
+    // dialog surface, same backdrop/centering, same button styling — instead of falling back to
+    // ModernWpf's bare default ContentDialog look.
+    private static void ApplyDialogChrome(ContentDialog dialog)
+    {
+        try { dialog.Style = dialog.TryFindResource("Modern1PasswordDialogStyle") as Style; }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error("Failed to apply step-up dialog style", ex); }
+    }
+
+    private static UIElement BuildShieldHeader(string message)
+    {
+        var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 16) };
+
+        var iconWrap = new Border
+        {
+            Width = 40,
+            Height = 40,
+            CornerRadius = new CornerRadius(20),
+            Background = new SolidColorBrush(Color.FromArgb(0x26, 0x25, 0x63, 0xEB)), // ~15% accent
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, 0, 14, 0),
+            Child = new TextBlock
+            {
+                Text = "", // Segoe MDL2 Assets "Shield"
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
+                FontSize = 18,
+                Foreground = (Application.Current?.Resources["ModernPrimaryBrush"] as Brush) ?? Brushes.DodgerBlue,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            }
+        };
+
+        var text = new TextBlock
+        {
+            Text = message,
+            TextWrapping = TextWrapping.Wrap,
+            MaxWidth = 280,
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = TextPrimaryBrush(),
+            FontSize = 14
+        };
+
+        panel.Children.Add(iconWrap);
+        panel.Children.Add(text);
+        return panel;
+    }
+
+    private static UIElement BuildErrorText(string error) => new TextBlock
+    {
+        Text = error,
+        Foreground = (Application.Current?.Resources["ModernErrorBrush"] as Brush) ?? Brushes.IndianRed,
+        FontSize = 12,
+        TextWrapping = TextWrapping.Wrap,
+        Margin = new Thickness(0, 8, 0, 0)
+    };
+
+    private static Brush TextPrimaryBrush() => (Application.Current?.Resources["ModernTextPrimaryBrush"] as Brush) ?? Brushes.White;
+    private static Brush TextSecondaryBrush() => (Application.Current?.Resources["ModernTextSecondaryBrush"] as Brush) ?? Brushes.LightGray;
+    private static Brush SurfaceBrush() => (Application.Current?.Resources["ModernSurfaceBrush"] as Brush) ?? Brushes.DimGray;
+    private static Brush BorderBrush() => (Application.Current?.Resources["ModernBorderBrush"] as Brush) ?? Brushes.Gray;
+
     /// <summary>
     /// Prompts for the user's master password and verifies it. Used for the non-2FA
     /// profile-switch / step-up workflow. Re-prompts on a wrong password; false on cancel.
@@ -234,27 +407,40 @@ public static class SecurityGateHelper
 
         while (true)
         {
-            var panel = new StackPanel { MinWidth = 300 };
-            panel.Children.Add(new TextBlock
-            {
-                Text = message,
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 0, 0, 12)
-            });
+            var panel = new StackPanel { MinWidth = 340 };
+            panel.Children.Add(BuildShieldHeader(message));
 
-            var passwordBox = new PasswordBox { Margin = new Thickness(0, 0, 0, 4) };
+            var fieldLabel = new TextBlock
+            {
+                Text = "Master password",
+                FontSize = 13,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = TextPrimaryBrush(),
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+            panel.Children.Add(fieldLabel);
+
+            var passwordBoxWrap = new Border
+            {
+                Background = SurfaceBrush(),
+                CornerRadius = new CornerRadius(8),
+                BorderBrush = BorderBrush(),
+                BorderThickness = new Thickness(1)
+            };
+            var passwordBox = new PasswordBox
+            {
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(14, 10, 14, 10),
+                FontSize = 14
+            };
             ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(passwordBox, "Master password");
-            panel.Children.Add(passwordBox);
+            passwordBoxWrap.Child = passwordBox;
+            panel.Children.Add(passwordBoxWrap);
 
             if (!string.IsNullOrEmpty(error))
             {
-                panel.Children.Add(new TextBlock
-                {
-                    Text = error,
-                    Foreground = System.Windows.Media.Brushes.IndianRed,
-                    TextWrapping = TextWrapping.Wrap,
-                    Margin = new Thickness(0, 4, 0, 0)
-                });
+                panel.Children.Add(BuildErrorText(error));
             }
 
             var dialog = new ContentDialog
@@ -265,10 +451,11 @@ public static class SecurityGateHelper
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Primary
             };
+            ApplyDialogChrome(dialog);
 
             passwordBox.Loaded += (_, _) => passwordBox.Focus();
 
-            var result = await dialog.ShowAsync();
+            var result = await DialogManager.ShowAsync(dialog);
             if (result != ContentDialogResult.Primary)
                 return false;
 

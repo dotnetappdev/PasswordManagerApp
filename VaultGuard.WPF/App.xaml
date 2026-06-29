@@ -2,7 +2,8 @@
     x:Class="VaultGuard.WPF.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:converters="clr-namespace:VaultGuard.WPF.Converters">
+    xmlns:converters="clr-namespace:VaultGuard.WPF.Converters"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
     <Application.Resources>
         <ResourceDictionary>
@@ -11,6 +12,32 @@
                 <!-- Base Modern Theme Resources -->
                 <ResourceDictionary Source="Themes/ModernTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- ── Adjustable font sizes ───────────────────────────────────────────────
+                 These are the live, user-scalable font sizes. FontScaleManager overwrites
+                 each value at runtime from the Accessibility settings (a global scale plus a
+                 per-region scale for Menu / Quick Actions / Details / Dialogs). XAML must
+                 reference them with {DynamicResource ...} so changes apply without a restart. -->
+            <!-- Global body size — follows only the global "Text size" control. Used for app-wide
+                 controls like dropdowns/combo boxes so they scale live with the global setting. -->
+            <sys:Double x:Key="AppFontSize">14</sys:Double>
+            <sys:Double x:Key="MenuFontSize">14</sys:Double>
+            <sys:Double x:Key="MenuIconSize">16</sys:Double>
+            <sys:Double x:Key="QuickActionFontSize">14</sys:Double>
+            <sys:Double x:Key="QuickActionIconSize">16</sys:Double>
+            <sys:Double x:Key="DetailTitleFontSize">15</sys:Double>
+            <sys:Double x:Key="DetailValueFontSize">14</sys:Double>
+            <sys:Double x:Key="DetailLabelFontSize">11</sys:Double>
+            <sys:Double x:Key="DialogLabelFontSize">12</sys:Double>
+            <sys:Double x:Key="DialogFontSize">14</sys:Double>
+            <sys:Double x:Key="DialogTitleFontSize">16</sys:Double>
+
+            <!-- Item cards (the password/item list rows) — controlled by the "Global" selector. -->
+            <sys:Double x:Key="CardTitleFontSize">15</sys:Double>
+            <sys:Double x:Key="CardSubtitleFontSize">13</sys:Double>
+            <sys:Double x:Key="CardTagFontSize">12</sys:Double>
+            <sys:Double x:Key="CardIconFontSize">18</sys:Double>
+            <sys:Double x:Key="CardRowHeight">60</sys:Double>
 
             <!-- Value Converters -->
             <converters:TypeToIconConverter x:Key="TypeToIconConverter"/>

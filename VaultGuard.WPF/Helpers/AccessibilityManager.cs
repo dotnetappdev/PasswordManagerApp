@@ -94,6 +94,9 @@ public static class AccessibilityManager
         BaseFontSize = Clamp(fontSize, MinFontSize, MaxFontSize);
         Save(FontSizeKey, BaseFontSize.ToString("0.#"));
         ApplyToMainWindow();
+        // The base size is the global text-size choice; cascade it to the adjustable per-section
+        // sizes so {DynamicResource} text (menus, quick actions, details, dialogs) scales too.
+        FontScaleManager.SetGlobalFromBaseFont(BaseFontSize);
     }
 
     public static void SetReduceMotion(bool value)

@@ -90,10 +90,10 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
                         <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets"
-                                   FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   FontSize="{DynamicResource DialogFontSize}" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBlock Text="Personal Information"
-                                   FontSize="13" FontWeight="SemiBold"
+                                   FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold"
                                    Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
@@ -101,12 +101,12 @@
                     <!-- First Name -->
                     <StackPanel Margin="0,0,0,10">
                         <TextBlock Text="First Name"
-                                   FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   FontSize="{DynamicResource DialogFontSize}" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    Margin="0,0,0,6"/>
                         <Border x:Name="FirstNameBorder" x:FieldModifier="private"
                                 Style="{StaticResource FieldBorderStyle}">
                             <TextBox x:Name="FirstNameTextBox" x:FieldModifier="private"
-                                     BorderThickness="0" FontSize="14"
+                                     BorderThickness="0" FontSize="{DynamicResource DialogFontSize}"
                                      Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                      ui:ControlHelper.PlaceholderText="Enter your first name"
                                      TextChanged="FirstNameTextBox_TextChanged">
@@ -118,12 +118,12 @@
                     <!-- Last Name -->
                     <StackPanel Margin="0,0,0,10">
                         <TextBlock Text="Last Name"
-                                   FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   FontSize="{DynamicResource DialogFontSize}" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    Margin="0,0,0,6"/>
                         <Border x:Name="LastNameBorder" x:FieldModifier="private"
                                 Style="{StaticResource FieldBorderStyle}">
                             <TextBox x:Name="LastNameTextBox" x:FieldModifier="private"
-                                     BorderThickness="0" FontSize="14"
+                                     BorderThickness="0" FontSize="{DynamicResource DialogFontSize}"
                                      Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                      ui:ControlHelper.PlaceholderText="Enter your last name"
                                      TextChanged="LastNameTextBox_TextChanged">
@@ -135,12 +135,12 @@
                     <!-- Email -->
                     <StackPanel>
                         <TextBlock Text="Email Address"
-                                   FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   FontSize="{DynamicResource DialogFontSize}" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    Margin="0,0,0,6"/>
                         <Border x:Name="EmailBorder" x:FieldModifier="private"
                                 Style="{StaticResource FieldBorderStyle}">
                             <TextBox x:Name="EmailTextBox" x:FieldModifier="private"
-                                     BorderThickness="0" FontSize="14"
+                                     BorderThickness="0" FontSize="{DynamicResource DialogFontSize}"
                                      Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                      ui:ControlHelper.PlaceholderText="you@example.com"
                                      TextChanged="EmailTextBox_TextChanged">
@@ -161,7 +161,7 @@
                                    FontSize="20" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBlock Text="Your Master Password"
-                                   FontSize="16" FontWeight="SemiBold"
+                                   FontSize="{DynamicResource DialogTitleFontSize}" FontWeight="SemiBold"
                                    Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
@@ -170,7 +170,7 @@
                     <Border Background="#1E2A1A" BorderBrush="#10B98130"
                             BorderThickness="1" CornerRadius="8"
                             Padding="12,10" Margin="0,0,0,16">
-                        <TextBlock FontSize="12" Foreground="#86EFAC" TextWrapping="Wrap">
+                        <TextBlock FontSize="{DynamicResource DialogLabelFontSize}" Foreground="#86EFAC" TextWrapping="Wrap">
                             This password encrypts all your data. We can never recover it — write it down and keep it safe.
                         </TextBlock>
                     </Border>
@@ -178,7 +178,7 @@
                     <!-- Password field -->
                     <StackPanel Margin="0,0,0,10">
                         <TextBlock Text="Master Password"
-                                   FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   FontSize="{DynamicResource DialogFontSize}" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    Margin="0,0,0,6"/>
                         <Border x:Name="MasterPasswordBorder" x:FieldModifier="private"
                                 Style="{StaticResource FieldBorderStyle}">
@@ -191,7 +191,7 @@
                                              Grid.Column="0"
                                              BorderThickness="0"
                                              Foreground="{DynamicResource ModernTextPrimaryBrush}"
-                                             FontSize="14" FontFamily="Consolas"
+                                             FontSize="{DynamicResource DialogFontSize}" FontFamily="Consolas"
                                              ui:ControlHelper.PlaceholderText="Create a strong master password"
                                              PasswordChanged="MasterPasswordBox_PasswordChanged">
                                     <PasswordBox.Background><SolidColorBrush Color="Transparent"/></PasswordBox.Background>
@@ -200,7 +200,7 @@
                                          Grid.Column="0"
                                          BorderThickness="0"
                                          Foreground="{DynamicResource ModernTextPrimaryBrush}"
-                                         FontSize="14" FontFamily="Consolas"
+                                         FontSize="{DynamicResource DialogFontSize}" FontFamily="Consolas"
                                          IsReadOnly="True" Visibility="Collapsed">
                                     <TextBox.Background><SolidColorBrush Color="Transparent"/></TextBox.Background>
                                 </TextBox>
@@ -211,7 +211,7 @@
                                         Click="DlgMasterRevealBtn_Click">
                                     <TextBlock x:Name="DlgMasterRevealIcon" x:FieldModifier="private"
                                                Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="14" Foreground="#5A5F78"
+                                               FontSize="{DynamicResource DialogFontSize}" Foreground="#5A5F78"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Button>
                             </Grid>
@@ -245,14 +245,14 @@
                             </Border>
                         </Grid>
                         <TextBlock x:Name="PasswordStrengthText" x:FieldModifier="private"
-                                   FontSize="11" Foreground="{DynamicResource ModernTextTertiaryBrush}"/>
+                                   FontSize="{DynamicResource DialogLabelFontSize}" Foreground="{DynamicResource ModernTextTertiaryBrush}"/>
                     </StackPanel>
 
                     <!-- Requirements checklist -->
                     <Border Background="#0F1117" CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
                         <StackPanel>
                             <TextBlock Text="PASSWORD REQUIREMENTS"
-                                       FontSize="10" FontWeight="SemiBold"
+                                       FontSize="{DynamicResource DialogLabelFontSize}" FontWeight="SemiBold"
                                        Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                        Margin="0,0,0,6"/>
                             <TextBlock x:Name="ReqLengthText"  x:FieldModifier="private"
@@ -271,7 +271,7 @@
                     <!-- Confirm password -->
                     <StackPanel Margin="0,0,0,10">
                         <TextBlock Text="Confirm Master Password"
-                                   FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   FontSize="{DynamicResource DialogFontSize}" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    Margin="0,0,0,6"/>
                         <Border x:Name="ConfirmPasswordBorder" x:FieldModifier="private"
                                 Style="{StaticResource FieldBorderStyle}">
@@ -284,7 +284,7 @@
                                              Grid.Column="0"
                                              BorderThickness="0"
                                              Foreground="{DynamicResource ModernTextPrimaryBrush}"
-                                             FontSize="14" FontFamily="Consolas"
+                                             FontSize="{DynamicResource DialogFontSize}" FontFamily="Consolas"
                                              ui:ControlHelper.PlaceholderText="Re-enter your master password"
                                              PasswordChanged="ConfirmPasswordBox_PasswordChanged">
                                     <PasswordBox.Background><SolidColorBrush Color="Transparent"/></PasswordBox.Background>
@@ -293,7 +293,7 @@
                                          Grid.Column="0"
                                          BorderThickness="0"
                                          Foreground="{DynamicResource ModernTextPrimaryBrush}"
-                                         FontSize="14" FontFamily="Consolas"
+                                         FontSize="{DynamicResource DialogFontSize}" FontFamily="Consolas"
                                          IsReadOnly="True" Visibility="Collapsed">
                                     <TextBox.Background><SolidColorBrush Color="Transparent"/></TextBox.Background>
                                 </TextBox>
@@ -304,7 +304,7 @@
                                         Click="DlgConfirmRevealBtn_Click">
                                     <TextBlock x:Name="DlgConfirmRevealIcon" x:FieldModifier="private"
                                                Text="&#xE7B3;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="14" Foreground="#5A5F78"
+                                               FontSize="{DynamicResource DialogFontSize}" Foreground="#5A5F78"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Button>
                             </Grid>
@@ -314,17 +314,17 @@
                     <!-- Hint -->
                     <StackPanel>
                         <TextBlock Text="Password Hint  (optional)"
-                                   FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   FontSize="{DynamicResource DialogFontSize}" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    Margin="0,0,0,6"/>
                         <Border Style="{StaticResource FieldBorderStyle}">
                             <TextBox x:Name="PasswordHintTextBox" x:FieldModifier="private"
-                                     BorderThickness="0" FontSize="14"
+                                     BorderThickness="0" FontSize="{DynamicResource DialogFontSize}"
                                      Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                      ui:ControlHelper.PlaceholderText="A clue to jog your memory">
                                 <TextBox.Background><SolidColorBrush Color="#1E2130"/></TextBox.Background>
                             </TextBox>
                         </Border>
-                        <TextBlock FontSize="11" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                        <TextBlock FontSize="{DynamicResource DialogLabelFontSize}" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    Margin="2,4,0,0"
                                    Text="Hint is stored unencrypted — don't include the password itself."/>
                     </StackPanel>
@@ -338,10 +338,10 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
                         <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets"
-                                   FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   FontSize="{DynamicResource DialogFontSize}" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBlock Text="Account Role"
-                                   FontSize="13" FontWeight="SemiBold"
+                                   FontSize="{DynamicResource DialogFontSize}" FontWeight="SemiBold"
                                    Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
@@ -356,10 +356,10 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                 <TextBlock Text="Administrator Account"
-                                           FontWeight="SemiBold" FontSize="14"
+                                           FontWeight="SemiBold" FontSize="{DynamicResource DialogFontSize}"
                                            Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                                 <TextBlock Text="Full access to features and user management"
-                                           FontSize="12" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                           FontSize="{DynamicResource DialogLabelFontSize}" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                            TextWrapping="Wrap"/>
                             </StackPanel>
                             <ui:ToggleSwitch x:Name="AdminToggleSwitch" x:FieldModifier="private"
@@ -374,7 +374,7 @@
                                 Visibility="{Binding ShowRoleSelection, Mode=OneWay,
                                              Converter={StaticResource BoolToVisibilityConverter}}">
                         <TextBlock Text="User Role"
-                                   FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"
+                                   FontSize="{DynamicResource DialogFontSize}" Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                    Margin="0,0,0,6"/>
                         <Border Style="{StaticResource FieldBorderStyle}">
                             <ComboBox x:Name="RoleComboBox" x:FieldModifier="private"
@@ -395,10 +395,10 @@
                             BorderThickness="1" Padding="12,10">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets"
-                                       FontSize="14" Foreground="#60A5FA"
+                                       FontSize="{DynamicResource DialogFontSize}" Foreground="#60A5FA"
                                        VerticalAlignment="Top" Margin="0,1,8,0"/>
                             <TextBlock x:Name="RoleDescriptionTextBlock" x:FieldModifier="private"
-                                       FontSize="12" Foreground="#93C5FD"
+                                       FontSize="{DynamicResource DialogLabelFontSize}" Foreground="#93C5FD"
                                        TextWrapping="Wrap"
                                        Text="Standard users can manage their own passwords."/>
                         </StackPanel>
@@ -414,10 +414,10 @@
                     Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE783;" FontFamily="Segoe MDL2 Assets"
-                               FontSize="16" Foreground="#F87171"
+                               FontSize="{DynamicResource DialogTitleFontSize}" Foreground="#F87171"
                                VerticalAlignment="Top" Margin="0,1,10,0"/>
                     <TextBlock x:Name="ErrorMessageTextBlock" x:FieldModifier="private"
-                               FontSize="13" Foreground="#FCA5A5"
+                               FontSize="{DynamicResource DialogFontSize}" Foreground="#FCA5A5"
                                TextWrapping="Wrap" VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>

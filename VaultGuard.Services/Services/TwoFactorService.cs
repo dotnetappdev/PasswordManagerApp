@@ -317,6 +317,25 @@ public class TwoFactorService : ITwoFactorService
         }
     }
 
+    public async Task<string?> GetCurrentTotpCodeAsync(string userId)
+    {
+        try
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null || !user.TwoFactorEnabled || string.IsNullOrEmpty(user.TwoFactorSecretKey))
+                return null;
+
+            var secretKeyBytes = Base32Encoding.ToBytes(user.TwoFactorSecretKey);
+            var totp = new Totp(secretKeyBytes);
+            return totp.ComputeTotp(DateTime.UtcNow);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error computing current TOTP code for user: {UserId}", userId);
+            return null;
+        }
+    }
+
     public bool ValidateTotpCode(string secretKey, string code, int window = 1)
     {
         try

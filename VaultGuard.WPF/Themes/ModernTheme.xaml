@@ -743,7 +743,7 @@
         <Setter Property="FontWeight"
                 Value="SemiBold"/>
         <Setter Property="FontSize"
-                Value="14"/>
+                Value="{DynamicResource MenuFontSize}"/>
         <Setter Property="Margin"
                 Value="8,4"/>
         <!-- <Setter Property="CornerRadius" Value="0"/>-->
@@ -1376,7 +1376,7 @@
         <Setter Property="BorderBrush"     Value="{DynamicResource ModernBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding"         Value="12,8"/>
-        <Setter Property="FontSize"        Value="14"/>
+        <Setter Property="FontSize"        Value="{DynamicResource AppFontSize}"/>
         <Setter Property="MinHeight"       Value="38"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>

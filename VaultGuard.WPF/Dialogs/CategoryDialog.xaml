@@ -13,8 +13,8 @@
 
     <Grid xmlns:ui="http://schemas.modernwpf.com/2019"
     Background="{DynamicResource ModernFormBackgroundBrush}"
-          MaxWidth="480"
-          MaxHeight="600">
+          MaxWidth="520"
+          MaxHeight="640">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="32">
 
@@ -23,22 +23,23 @@
                         Background="{StaticResource ModernErrorBrush}"
                         CornerRadius="12"
                         Padding="16"
+                        Margin="0,0,0,16"
                         Visibility="Collapsed">
                     <TextBlock x:Name="ErrorMessageText"
                                Text=""
                                Foreground="White"
-                               FontSize="14"
+                               FontSize="{DynamicResource DialogFontSize}"
                                FontWeight="Medium"
                                TextWrapping="Wrap"/>
                 </Border>
 
                 <!-- Category Name Field -->
-                <StackPanel Margin="8">
+                <StackPanel Margin="0,0,0,18">
                     <TextBlock Text="Name"
-                               FontSize="14"
+                               FontSize="{DynamicResource DialogFontSize}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource ModernTextPrimaryBrush}"
-                               Margin="0,0,0,4"/>
+                               Margin="0,0,0,6"/>
                     <Border Background="{DynamicResource ModernSurfaceBrush}"
                             CornerRadius="8"
                             BorderBrush="{DynamicResource ModernBorderBrush}"
@@ -49,7 +50,7 @@
                                      Background="Transparent"
                                      BorderThickness="0"
                                      Padding="16,12"
-                                     FontSize="14"
+                                     FontSize="{DynamicResource DialogFontSize}"
                                      MaxLength="100"/>
                             <controls:ReadOnlyField x:Name="CategoryNameTextDisplay"
                                                     Visibility="Collapsed"/>
@@ -58,12 +59,12 @@
                 </StackPanel>
 
                 <!-- Category Description Field -->
-                <StackPanel Margin="8">
+                <StackPanel Margin="0,0,0,18">
                     <TextBlock Text="Description"
-                               FontSize="14"
+                               FontSize="{DynamicResource DialogFontSize}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource ModernTextPrimaryBrush}"
-                               Margin="0,0,0,4"/>
+                               Margin="0,0,0,6"/>
                     <Border Background="{DynamicResource ModernSurfaceBrush}"
                             CornerRadius="8"
                             BorderBrush="{DynamicResource ModernBorderBrush}"
@@ -74,7 +75,7 @@
                                      Background="Transparent"
                                      BorderThickness="0"
                                      Padding="16,12"
-                                     FontSize="14"
+                                     FontSize="{DynamicResource DialogFontSize}"
                                      AcceptsReturn="True"
                                      TextWrapping="Wrap"
                                      MaxHeight="80"
@@ -85,200 +86,171 @@
                     </Border>
                 </StackPanel>
 
+                <!-- Name + Description share one row's worth of vertical rhythm; Color and Icon
+                     sit side by side below since they're shorter, glance-able controls. -->
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
                 <!-- Category Color Selection -->
-                <StackPanel Margin="8">
+                <StackPanel Grid.Column="0">
                     <TextBlock Text="Color"
-                               FontSize="14"
+                               FontSize="{DynamicResource DialogFontSize}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource ModernTextPrimaryBrush}"
-                               Margin="0,0,0,4"/>
+                               Margin="0,0,0,6"/>
                     <Border Background="{DynamicResource ModernSurfaceBrush}"
                             CornerRadius="8"
                             BorderBrush="{DynamicResource ModernBorderBrush}"
                             BorderThickness="1"
-                            Padding="16,12">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                            Padding="14,10">
+                        <StackPanel>
+                            <Grid>
+                                <ComboBox x:Name="CategoryColorComboBox"
+                                          ui:ControlHelper.PlaceholderText="Choose color"
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          FontSize="{DynamicResource DialogFontSize}"
+                                          HorizontalAlignment="Stretch"
+                                          SelectedIndex="0">
+                                    <ComboBoxItem>
+                                        <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                            <Ellipse Fill="#3b82f6" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Blue" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </ComboBoxItem>
+                                    <ComboBoxItem>
+                                        <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                            <Ellipse Fill="#10b981" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Green" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </ComboBoxItem>
+                                    <ComboBoxItem>
+                                        <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                            <Ellipse Fill="#f59e0b" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Orange" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </ComboBoxItem>
+                                    <ComboBoxItem>
+                                        <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                            <Ellipse Fill="#ef4444" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Red" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </ComboBoxItem>
+                                    <ComboBoxItem>
+                                        <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                            <Ellipse Fill="#8b5cf6" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Purple" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </ComboBoxItem>
+                                    <ComboBoxItem>
+                                        <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                            <Ellipse Fill="#ec4899" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Pink" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </ComboBoxItem>
+                                    <ComboBoxItem>
+                                        <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                            <Ellipse Fill="#6b7280" Width="14" Height="14" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Gray" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </ComboBoxItem>
+                                </ComboBox>
 
-                            <ComboBox x:Name="CategoryColorComboBox"
-                                      Grid.Column="0"
-                                      ui:ControlHelper.PlaceholderText="Choose color"
-                                      Background="Transparent"
-                                      BorderThickness="0"
-                                      FontSize="14"
-                                      SelectedIndex="0">
-                                <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal"
-                                                Margin="12">
-                                        <Ellipse Fill="#3b82f6"
-                                                 Width="20"
-                                                 Height="20"/>
-                                        <TextBlock Text="Blue"
-                                                   FontSize="14"
-                                                   FontWeight="Medium"/>
-                                    </StackPanel>
-                                </ComboBoxItem>
-                                <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal"
-                                                Margin="12">
-                                        <Ellipse Fill="#10b981"
-                                                 Width="20"
-                                                 Height="20"/>
-                                        <TextBlock Text="Green"
-                                                   FontSize="14"
-                                                   FontWeight="Medium"/>
-                                    </StackPanel>
-                                </ComboBoxItem>
-                                <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal"
-                                                Margin="12">
-                                        <Ellipse Fill="#f59e0b"
-                                                 Width="20"
-                                                 Height="20"/>
-                                        <TextBlock Text="Orange"
-                                                   FontSize="14"
-                                                   FontWeight="Medium"/>
-                                    </StackPanel>
-                                </ComboBoxItem>
-                                <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal"
-                                                Margin="12">
-                                        <Ellipse Fill="#ef4444"
-                                                 Width="20"
-                                                 Height="20"/>
-                                        <TextBlock Text="Red"
-                                                   FontSize="14"
-                                                   FontWeight="Medium"/>
-                                    </StackPanel>
-                                </ComboBoxItem>
-                                <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal"
-                                                Margin="12">
-                                        <Ellipse Fill="#8b5cf6"
-                                                 Width="20"
-                                                 Height="20"/>
-                                        <TextBlock Text="Purple"
-                                                   FontSize="14"
-                                                   FontWeight="Medium"/>
-                                    </StackPanel>
-                                </ComboBoxItem>
-                                <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal"
-                                                Margin="12">
-                                        <Ellipse Fill="#ec4899"
-                                                 Width="20"
-                                                 Height="20"/>
-                                        <TextBlock Text="Pink"
-                                                   FontSize="14"
-                                                   FontWeight="Medium"/>
-                                    </StackPanel>
-                                </ComboBoxItem>
-                                <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal"
-                                                Margin="12">
-                                        <Ellipse Fill="#6b7280"
-                                                 Width="20"
-                                                 Height="20"/>
-                                        <TextBlock Text="Gray"
-                                                   FontSize="14"
-                                                   FontWeight="Medium"/>
-                                    </StackPanel>
-                                </ComboBoxItem>
-                            </ComboBox>
+                                <controls:ReadOnlyField x:Name="CategoryColorTextDisplay"
+                                                        Visibility="Collapsed"/>
+                            </Grid>
 
-                            <controls:ReadOnlyField x:Name="CategoryColorTextDisplay"
-                                                    Grid.Column="0"
-                                                    Visibility="Collapsed"/>
-
-                            <Button x:Name="CustomColorButton"
-                                    Grid.Column="1"
-                                    Content="Custom…"
-                                    Style="{StaticResource ModernSecondaryButtonStyle}"
-                                    Padding="12,0"
-                                    MinWidth="0"
-                                    Margin="8,0,0,0"
-                                    Click="CustomColorButton_Click"/>
-
-                            <Ellipse x:Name="ColorPreview"
-                                     Grid.Column="2"
-                                     Fill="#3b82f6"
-                                     Width="24"
-                                     Height="24"
-                                     Margin="12,0,0,0"/>
-                        </Grid>
+                            <!-- Live swatch + custom-colour escape hatch, below the preset list
+                                 instead of squeezed alongside it so neither one gets clipped. -->
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Ellipse x:Name="ColorPreview"
+                                         Fill="#3b82f6"
+                                         Width="22"
+                                         Height="22"
+                                         VerticalAlignment="Center"/>
+                                <Button x:Name="CustomColorButton"
+                                        Content="Custom…"
+                                        Style="{StaticResource ModernSecondaryButtonStyle}"
+                                        Padding="12,4"
+                                        MinWidth="0"
+                                        Margin="10,0,0,0"
+                                        Click="CustomColorButton_Click"/>
+                            </StackPanel>
+                        </StackPanel>
                     </Border>
                 </StackPanel>
 
                 <!-- Category Icon Selection -->
-                <StackPanel Margin="8">
+                <StackPanel Grid.Column="2">
                     <TextBlock Text="Icon"
-                               FontSize="14"
+                               FontSize="{DynamicResource DialogFontSize}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource ModernTextPrimaryBrush}"
-                               Margin="0,0,0,4"/>
+                               Margin="0,0,0,6"/>
                     <Border Background="{DynamicResource ModernSurfaceBrush}"
                             CornerRadius="8"
                             BorderBrush="{DynamicResource ModernBorderBrush}"
                             BorderThickness="1"
-                            Padding="16,12">
+                            Padding="14,10">
                         <Grid>
                             <ComboBox x:Name="CategoryIconComboBox"
                                       ui:ControlHelper.PlaceholderText="Choose icon"
                                       Background="Transparent"
                                       BorderThickness="0"
-                                      FontSize="14"
+                                      FontSize="{DynamicResource DialogFontSize}"
+                                      HorizontalAlignment="Stretch"
                                       SelectedIndex="0">
                                 <!-- Segoe MDL2 Assets glyphs -->
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Margin="12">
-                                        <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="18"/>
-                                        <TextBlock Text="Folder" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="{DynamicResource DialogTitleFontSize}" Width="20" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Folder" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Margin="12">
-                                        <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="18"/>
-                                        <TextBlock Text="Key" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="{DynamicResource DialogTitleFontSize}" Width="20" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Key" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Margin="12">
-                                        <TextBlock Text="&#xE8C7;" FontFamily="Segoe MDL2 Assets" FontSize="18"/>
-                                        <TextBlock Text="Credit Card" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE8C7;" FontFamily="Segoe MDL2 Assets" FontSize="{DynamicResource DialogTitleFontSize}" Width="20" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Credit Card" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Margin="12">
-                                        <TextBlock Text="&#xE70B;" FontFamily="Segoe MDL2 Assets" FontSize="18"/>
-                                        <TextBlock Text="Note" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE70B;" FontFamily="Segoe MDL2 Assets" FontSize="{DynamicResource DialogTitleFontSize}" Width="20" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Note" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Margin="12">
-                                        <TextBlock Text="&#xE701;" FontFamily="Segoe MDL2 Assets" FontSize="18"/>
-                                        <TextBlock Text="WiFi" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE701;" FontFamily="Segoe MDL2 Assets" FontSize="{DynamicResource DialogTitleFontSize}" Width="20" Margin="0,0,8,0"/>
+                                        <TextBlock Text="WiFi" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Margin="12">
-                                        <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="18"/>
-                                        <TextBlock Text="Security" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="{DynamicResource DialogTitleFontSize}" Width="20" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Security" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Margin="12">
-                                        <TextBlock Text="&#xE734;" FontFamily="Segoe MDL2 Assets" FontSize="18"/>
-                                        <TextBlock Text="Star" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE734;" FontFamily="Segoe MDL2 Assets" FontSize="{DynamicResource DialogTitleFontSize}" Width="20" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Star" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem>
-                                    <StackPanel Orientation="Horizontal" Margin="12">
-                                        <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="18"/>
-                                        <TextBlock Text="List" FontSize="14" FontWeight="Medium"/>
+                                    <StackPanel Orientation="Horizontal" Margin="2,5" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="{DynamicResource DialogTitleFontSize}" Width="20" Margin="0,0,8,0"/>
+                                        <TextBlock Text="List" FontSize="{DynamicResource DialogFontSize}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                             </ComboBox>
@@ -288,6 +260,7 @@
                         </Grid>
                     </Border>
                 </StackPanel>
+                </Grid>
             </StackPanel>
         </ScrollViewer>
     </Grid>

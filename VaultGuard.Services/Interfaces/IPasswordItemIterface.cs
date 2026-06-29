@@ -19,6 +19,8 @@ public interface IPasswordItemService
     Task<IEnumerable<PasswordItem>> GetByTagAsync(string tagName);
     Task<IEnumerable<PasswordItem>> GetRecentlyUsedAsync(int count = 10);
     Task<IEnumerable<PasswordItem>> GetArchivedAsync();
+    /// <summary>Soft-deleted items currently sitting in Recently Deleted (the trash).</summary>
+    Task<IEnumerable<PasswordItem>> GetDeletedAsync();
     Task<bool> ExistsAsync(int id);
     Task<bool> ToggleFavoriteAsync(int id);
 }

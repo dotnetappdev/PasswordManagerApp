@@ -56,13 +56,110 @@
                     <StackPanel Margin="16">
                         <StackPanel Margin="8">
                             <TextBlock Text="Theme" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
-                            <ComboBox x:Name="ThemeComboBox"
-                                     ItemsSource="{Binding AvailableThemes}"
-                                     SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
-                                     SelectionChanged="ThemeComboBox_SelectionChanged"
-                                     Style="{StaticResource ModernComboBoxStyle}" MinWidth="200"/>
-                            <TextBlock Text="Changes take effect immediately across the application."
-                                      Style="{StaticResource ModernCaptionStyle}" Opacity="0.7"/>
+
+                            <!-- Tile picker, like Windows' own theme/contrast-theme picker — a small
+                                 preview swatch per option instead of one long dropdown list.
+                                 UniformGrid keeps all five tiles the same size in one tidy row
+                                 instead of letting a WrapPanel wrap two of them unevenly. -->
+                            <UniformGrid x:Name="ThemeTilesPanel" Columns="5" Margin="0,8,0,0">
+
+                                <Border x:Name="ThemeTile_Light" Tag="Light"
+                                        Height="98" Margin="0,0,8,0" CornerRadius="8"
+                                        BorderThickness="2" BorderBrush="Transparent"
+                                        Background="{DynamicResource ModernElevatedSurfaceBrush}"
+                                        Cursor="Hand" MouseLeftButtonDown="ThemeTile_Click">
+                                    <StackPanel Margin="8" VerticalAlignment="Center">
+                                        <Border Height="48" CornerRadius="5" Background="#F8FAFC" BorderThickness="1" BorderBrush="#E2E8F0">
+                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                <TextBlock Text="Aa" FontSize="16" FontWeight="Bold" Foreground="#1E293B" HorizontalAlignment="Center"/>
+                                                <Border Width="28" Height="3" CornerRadius="2" Background="#2563EB" Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <TextBlock Text="Light" FontSize="12" HorizontalAlignment="Center" Margin="0,6,0,0"
+                                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border x:Name="ThemeTile_Dark" Tag="Dark"
+                                        Height="98" Margin="0,0,8,0" CornerRadius="8"
+                                        BorderThickness="2" BorderBrush="Transparent"
+                                        Background="{DynamicResource ModernElevatedSurfaceBrush}"
+                                        Cursor="Hand" MouseLeftButtonDown="ThemeTile_Click">
+                                    <StackPanel Margin="8" VerticalAlignment="Center">
+                                        <Border Height="48" CornerRadius="5" Background="#1A1A1A" BorderThickness="1" BorderBrush="#3A3A3A">
+                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                <TextBlock Text="Aa" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
+                                                <Border Width="28" Height="3" CornerRadius="2" Background="#2563EB" Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <TextBlock Text="Dark" FontSize="12" HorizontalAlignment="Center" Margin="0,6,0,0"
+                                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border x:Name="ThemeTile_System" Tag="System"
+                                        Height="98" Margin="0,0,8,0" CornerRadius="8"
+                                        BorderThickness="2" BorderBrush="Transparent"
+                                        Background="{DynamicResource ModernElevatedSurfaceBrush}"
+                                        Cursor="Hand" MouseLeftButtonDown="ThemeTile_Click">
+                                    <StackPanel Margin="8" VerticalAlignment="Center">
+                                        <Border Height="48" CornerRadius="5" BorderThickness="1" BorderBrush="#888888" ClipToBounds="True">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Background="#F8FAFC"/>
+                                                <Border Grid.Column="1" Background="#1A1A1A"/>
+                                                <TextBlock Text="Aa" FontSize="16" FontWeight="Bold" Foreground="#888888"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                           Grid.ColumnSpan="2"/>
+                                            </Grid>
+                                        </Border>
+                                        <TextBlock Text="System" FontSize="12" HorizontalAlignment="Center" Margin="0,6,0,0"
+                                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border x:Name="ThemeTile_HighContrast" Tag="High Contrast"
+                                        Height="98" Margin="0,0,8,0" CornerRadius="8"
+                                        BorderThickness="2" BorderBrush="Transparent"
+                                        Background="{DynamicResource ModernElevatedSurfaceBrush}"
+                                        Cursor="Hand" MouseLeftButtonDown="ThemeTile_Click">
+                                    <StackPanel Margin="8" VerticalAlignment="Center">
+                                        <Border Height="48" CornerRadius="5" Background="#000000" BorderThickness="1" BorderBrush="#FFFFFF">
+                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                <TextBlock Text="Aa" FontSize="16" FontWeight="Bold" Foreground="#FFFF00" HorizontalAlignment="Center"/>
+                                                <Border Width="28" Height="3" CornerRadius="2" Background="#00FFFF" Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <TextBlock Text="High Contrast" FontSize="11" HorizontalAlignment="Center" Margin="0,6,0,0"
+                                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border x:Name="ThemeTile_Windows" Tag="Windows"
+                                        Height="98" Margin="0,0,0,0" CornerRadius="8"
+                                        BorderThickness="2" BorderBrush="Transparent"
+                                        Background="{DynamicResource ModernElevatedSurfaceBrush}"
+                                        Cursor="Hand" MouseLeftButtonDown="ThemeTile_Click">
+                                    <StackPanel Margin="8" VerticalAlignment="Center">
+                                        <Border Height="48" CornerRadius="5" Background="#1A1A1A" BorderThickness="1" BorderBrush="#3A3A3A">
+                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                <TextBlock x:Name="WindowsTileSwatch" Text="&#xE770;" FontFamily="Segoe MDL2 Assets"
+                                                           FontSize="16" Foreground="#0067C0" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="Aa" FontSize="12" FontWeight="Bold" Foreground="#FFFFFF"
+                                                           HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <TextBlock Text="Windows" FontSize="12" HorizontalAlignment="Center" Margin="0,6,0,0"
+                                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <TextBlock Text="Changes take effect immediately. &quot;Windows&quot; follows your Windows accent colour and light/dark setting; &quot;High Contrast&quot; mirrors any Windows contrast theme you have turned on."
+                                      Style="{StaticResource ModernCaptionStyle}" Opacity="0.7" TextWrapping="Wrap" MaxWidth="520"/>
                         </StackPanel>
                         <StackPanel Margin="8">
                             <TextBlock Text="Default View" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
@@ -283,6 +380,106 @@
                                             Style="{StaticResource ModernSecondaryButtonStyle}"
                                             HorizontalAlignment="Left" Margin="8,10,0,0" Padding="12,6"
                                             Click="ResetFontButton_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Per-section text size -->
+                        <Border Style="{StaticResource SettingsSectionStyle}">
+                            <StackPanel Margin="20">
+                                <StackPanel Orientation="Horizontal" Margin="12">
+                                    <Border Background="#0EA5E9" Width="24" Height="24" CornerRadius="6" Margin="0,0,10,0">
+                                        <TextBlock Text="&#xE8D2;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                                 Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Per-Section Text Size" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Margin="16">
+                                    <TextBlock Text="Fine-tune the text size for individual areas. These stack on top of the global font size above."
+                                              Style="{StaticResource ModernCaptionStyle}" TextWrapping="Wrap" Margin="8,0,8,8"/>
+
+                                    <!-- Menu -->
+                                    <Grid Margin="8,6,8,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="180"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Menu &amp; navigation" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                        <ComboBox Grid.Column="1" x:Name="MenuFontCombo" Tag="Menu"
+                                                  Style="{StaticResource ModernComboBoxStyle}"
+                                                  SelectionChanged="SectionFontCombo_SelectionChanged"/>
+                                    </Grid>
+
+                                    <!-- Quick Actions -->
+                                    <Grid Margin="8,10,8,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="180"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Quick actions" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                        <ComboBox Grid.Column="1" x:Name="QuickActionsFontCombo" Tag="QuickActions"
+                                                  Style="{StaticResource ModernComboBoxStyle}"
+                                                  SelectionChanged="SectionFontCombo_SelectionChanged"/>
+                                    </Grid>
+
+                                    <!-- Details -->
+                                    <Grid Margin="8,10,8,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="180"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Item details" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                        <ComboBox Grid.Column="1" x:Name="DetailsFontCombo" Tag="Details"
+                                                  Style="{StaticResource ModernComboBoxStyle}"
+                                                  SelectionChanged="SectionFontCombo_SelectionChanged"/>
+                                    </Grid>
+
+                                    <!-- Dialogs -->
+                                    <Grid Margin="8,10,8,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="180"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Dialogs &amp; popups" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                        <ComboBox Grid.Column="1" x:Name="DialogsFontCombo" Tag="Dialogs"
+                                                  Style="{StaticResource ModernComboBoxStyle}"
+                                                  SelectionChanged="SectionFontCombo_SelectionChanged"/>
+                                    </Grid>
+
+                                    <!-- Global (item cards / list rows) -->
+                                    <Grid Margin="8,10,8,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="180"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Global (item cards)" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                        <ComboBox Grid.Column="1" x:Name="GlobalFontCombo" Tag="Global"
+                                                  Style="{StaticResource ModernComboBoxStyle}"
+                                                  SelectionChanged="SectionFontCombo_SelectionChanged"/>
+                                    </Grid>
+
+                                    <!-- Card icons -->
+                                    <Grid Margin="8,10,8,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="180"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Card icons" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                        <ComboBox Grid.Column="1" x:Name="CardIconsFontCombo" Tag="CardIcons"
+                                                  Style="{StaticResource ModernComboBoxStyle}"
+                                                  SelectionChanged="SectionFontCombo_SelectionChanged"/>
+                                    </Grid>
+
+                                    <Button x:Name="ResetSectionFontsButton" Content="Reset all sections"
+                                            Style="{StaticResource ModernSecondaryButtonStyle}"
+                                            HorizontalAlignment="Left" Margin="8,14,0,0" Padding="12,6"
+                                            Click="ResetSectionFontsButton_Click"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>

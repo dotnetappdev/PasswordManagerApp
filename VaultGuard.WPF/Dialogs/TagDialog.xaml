@@ -27,7 +27,7 @@
                     <TextBlock x:Name="ErrorMessageText"
                                Text=""
                                Foreground="White"
-                               FontSize="14"
+                               FontSize="{DynamicResource DialogFontSize}"
                                FontWeight="Medium"
                                TextWrapping="Wrap"/>
                 </Border>
@@ -35,7 +35,7 @@
                 <!-- Tag Name Field -->
                 <StackPanel Margin="8">
                     <TextBlock Text="Name"
-                               FontSize="14"
+                               FontSize="{DynamicResource DialogFontSize}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                Margin="0,0,0,4"/>
@@ -49,7 +49,7 @@
                                      Background="Transparent"
                                      BorderThickness="0"
                                      Padding="16,12"
-                                     FontSize="14"
+                                     FontSize="{DynamicResource DialogFontSize}"
                                      MaxLength="50"/>
                             <controls:ReadOnlyField x:Name="TagNameTextDisplay"
                                                     Visibility="Collapsed"/>
@@ -60,7 +60,7 @@
                 <!-- Tag Description Field -->
                 <StackPanel Margin="8">
                     <TextBlock Text="Description"
-                               FontSize="14"
+                               FontSize="{DynamicResource DialogFontSize}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                Margin="0,0,0,4"/>
@@ -74,7 +74,7 @@
                                      Background="Transparent"
                                      BorderThickness="0"
                                      Padding="16,12"
-                                     FontSize="14"
+                                     FontSize="{DynamicResource DialogFontSize}"
                                      AcceptsReturn="True"
                                      TextWrapping="Wrap"
                                      MaxHeight="80"
@@ -88,7 +88,7 @@
                 <!-- Tag Color Selection -->
                 <StackPanel Margin="8">
                     <TextBlock Text="Color"
-                               FontSize="14"
+                               FontSize="{DynamicResource DialogFontSize}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                Margin="0,0,0,4"/>
@@ -108,7 +108,7 @@
                                       ui:ControlHelper.PlaceholderText="Choose color"
                                       Background="Transparent"
                                       BorderThickness="0"
-                                      FontSize="14"
+                                      FontSize="{DynamicResource DialogFontSize}"
                                       SelectedIndex="0">
                                 <ComboBoxItem>
                                     <StackPanel Orientation="Horizontal"
@@ -117,7 +117,7 @@
                                                  Width="18"
                                                  Height="18"/>
                                         <TextBlock Text="Blue"
-                                                   FontSize="14"
+                                                   FontSize="{DynamicResource DialogFontSize}"
                                                    FontWeight="Medium"/>
                                     </StackPanel>
                                 </ComboBoxItem>
@@ -128,7 +128,7 @@
                                                  Width="18"
                                                  Height="18"/>
                                         <TextBlock Text="Green"
-                                                   FontSize="14"
+                                                   FontSize="{DynamicResource DialogFontSize}"
                                                    FontWeight="Medium"/>
                                     </StackPanel>
                                 </ComboBoxItem>
@@ -139,7 +139,7 @@
                                                  Width="18"
                                                  Height="18"/>
                                         <TextBlock Text="Orange"
-                                                   FontSize="14"
+                                                   FontSize="{DynamicResource DialogFontSize}"
                                                    FontWeight="Medium"/>
                                     </StackPanel>
                                 </ComboBoxItem>
@@ -150,7 +150,7 @@
                                                  Width="18"
                                                  Height="18"/>
                                         <TextBlock Text="Red"
-                                                   FontSize="14"
+                                                   FontSize="{DynamicResource DialogFontSize}"
                                                    FontWeight="Medium"/>
                                     </StackPanel>
                                 </ComboBoxItem>
@@ -161,7 +161,7 @@
                                                  Width="18"
                                                  Height="18"/>
                                         <TextBlock Text="Purple"
-                                                   FontSize="14"
+                                                   FontSize="{DynamicResource DialogFontSize}"
                                                    FontWeight="Medium"/>
                                     </StackPanel>
                                 </ComboBoxItem>
@@ -172,7 +172,7 @@
                                                  Width="18"
                                                  Height="18"/>
                                         <TextBlock Text="Pink"
-                                                   FontSize="14"
+                                                   FontSize="{DynamicResource DialogFontSize}"
                                                    FontWeight="Medium"/>
                                     </StackPanel>
                                 </ComboBoxItem>
@@ -183,7 +183,7 @@
                                                  Width="18"
                                                  Height="18"/>
                                         <TextBlock Text="Gray"
-                                                   FontSize="14"
+                                                   FontSize="{DynamicResource DialogFontSize}"
                                                    FontWeight="Medium"/>
                                     </StackPanel>
                                 </ComboBoxItem>

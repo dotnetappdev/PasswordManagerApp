@@ -21,13 +21,13 @@
                             VerticalAlignment="Top">
                         <TextBlock x:Name="IconGlyph"
                                    FontFamily="Segoe MDL2 Assets"
-                                   FontSize="16"
+                                   FontSize="{DynamicResource DialogTitleFontSize}"
                                    Foreground="White"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
                     </Border>
                     <TextBlock x:Name="MessageText"
-                               FontSize="14"
+                               FontSize="{DynamicResource DialogFontSize}"
                                TextWrapping="Wrap"
                                VerticalAlignment="Center"
                                Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
@@ -36,7 +36,7 @@
                 <!-- Single-line detail (no exception object, just an error string) -->
                 <TextBlock x:Name="SimpleDetailText"
                            Text=""
-                           FontSize="12"
+                           FontSize="{DynamicResource DialogLabelFontSize}"
                            TextWrapping="Wrap"
                            Margin="0,0,0,8"
                            Foreground="{DynamicResource ModernTextSecondaryBrush}"
@@ -56,12 +56,12 @@
                         <TextBlock x:Name="ErrorDetailsChevron"
                                    Text="&#xE76C;"
                                    FontFamily="Segoe MDL2 Assets"
-                                   FontSize="11"
+                                   FontSize="{DynamicResource DialogLabelFontSize}"
                                    Margin="0,0,6,0"
                                    VerticalAlignment="Center"
                                    Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                         <TextBlock Text="Error Details"
-                                   FontSize="13"
+                                   FontSize="{DynamicResource DialogFontSize}"
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Center"
                                    Foreground="{DynamicResource ModernAccentBrush}"/>

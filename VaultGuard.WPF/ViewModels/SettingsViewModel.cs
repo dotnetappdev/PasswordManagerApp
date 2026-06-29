@@ -438,7 +438,7 @@ public class SettingsViewModel : BaseViewModel
     // TwoWay SelectedItem binding compares the selected value against the *current* ItemsSource;
     // if the getter hands back a fresh collection each time, the selector loses sync and the
     // saved value (e.g. "Dark") is not selected on startup.
-    public List<string> AvailableThemes { get; } = new() { "Light", "Dark", "System" };
+    public List<string> AvailableThemes { get; } = new() { "Light", "Dark", "System", "High Contrast", "Windows" };
 
     public List<string> AuthenticationModes { get; } = new() { "Local Database", "API Server" };
 
@@ -628,6 +628,8 @@ public class SettingsViewModel : BaseViewModel
             "Light" => AppTheme.Light,
             "Dark" => AppTheme.Dark,
             "System" => AppTheme.System,
+            "High Contrast" => AppTheme.HighContrast,
+            "Windows" => AppTheme.WindowsCustom,
             _ => AppTheme.System
         };
 

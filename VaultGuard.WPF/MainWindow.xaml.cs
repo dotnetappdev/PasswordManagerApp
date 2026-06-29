@@ -63,6 +63,12 @@ public sealed partial class MainWindow : Window
         this.FontFamily = new System.Windows.Media.FontFamily("Segoe UI Variable Text, Segoe UI");
         Helpers.Win11Chrome.Apply(this, dark: true);
 
+        // Apply the user's saved accessibility preferences (UI zoom + base font size) to the window.
+        Helpers.AccessibilityManager.Load();
+        Helpers.AccessibilityManager.ApplyTo(this);
+        // Seed the adjustable per-section font sizes (global text-size + Menu/Quick Actions/Details/Dialogs).
+        Helpers.FontScaleManager.Initialize();
+
         // Cache style early (after resources loaded by InitializeComponent)
         _navItemStyle = TryGetNavItemStyle();
 
@@ -98,6 +104,7 @@ public sealed partial class MainWindow : Window
             LoginFrame.Visibility = Visibility.Collapsed;
             MainNavigationView.Visibility = Visibility.Visible;
             TopBar.Visibility = Visibility.Visible;
+            UpdatePaneToggleLayout(MainNavigationView.IsPaneOpen);
         }
         else
         {
@@ -266,6 +273,13 @@ public sealed partial class MainWindow : Window
         // ── Global ──
         if (ctrl && e.Key == System.Windows.Input.Key.OemComma) { NavigateToPage("Settings"); e.Handled = true; return; }
         if (ctrl && e.Key == System.Windows.Input.Key.L)        { HandleLogout();              e.Handled = true; return; }
+        if (ctrl && e.Key == System.Windows.Input.Key.B)
+        {
+            MainNavigationView.IsPaneOpen = !MainNavigationView.IsPaneOpen;
+            UpdatePaneToggleLayout(MainNavigationView.IsPaneOpen);
+            e.Handled = true;
+            return;
+        }
 
         // ── App zoom (Ctrl +, Ctrl -, Ctrl 0 to reset) ──
         if (ctrl && (e.Key == System.Windows.Input.Key.OemPlus || e.Key == System.Windows.Input.Key.Add))
@@ -819,6 +833,27 @@ public sealed partial class MainWindow : Window
     {
         // Custom hamburger (right-aligned) replaces the built-in left toggle.
         MainNavigationView.IsPaneOpen = !MainNavigationView.IsPaneOpen;
+        UpdatePaneToggleLayout(MainNavigationView.IsPaneOpen);
+    }
+
+    // View menu > Side Menu — same toggle as the hamburger, so the two stay in sync regardless
+    // of which one the user clicks.
+    private void ToggleSideMenuMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        MainNavigationView.IsPaneOpen = !MainNavigationView.IsPaneOpen;
+        UpdatePaneToggleLayout(MainNavigationView.IsPaneOpen);
+    }
+
+    // Two copies of the same toggle, shown one at a time: HeaderPaneToggleButton sits in PaneHeader
+    // next to the profile name while the pane is open; PaneToggleButton lives in the items list and
+    // takes over once collapsed, because the framework hides PaneHeader entirely in the compact rail.
+    private void UpdatePaneToggleLayout(bool paneOpen)
+    {
+        if (ToggleSideMenuMenuItem != null) ToggleSideMenuMenuItem.IsChecked = paneOpen;
+        if (ProfileButton != null)
+            ProfileButton.Visibility = paneOpen ? Visibility.Visible : Visibility.Collapsed;
+        if (PaneToggleButton != null)
+            PaneToggleButton.Visibility = paneOpen ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void ProfileButton_Click(object sender, RoutedEventArgs e)
@@ -1026,7 +1061,8 @@ public sealed partial class MainWindow : Window
                     // (hand-tuned Grid margins kept drifting out of alignment). Clicking it navigates
                     // to the filtered All Items / Passwords screen.
                     var (vaultGlyph, vaultGlyphFont) = Helpers.VaultIconHelper.Resolve(vault.Icon);
-                    var iconGlyph = new FontIcon { FontSize = 16, Glyph = vaultGlyph, FontFamily = vaultGlyphFont };
+                    var iconGlyph = new FontIcon { Glyph = vaultGlyph, FontFamily = vaultGlyphFont };
+                    iconGlyph.SetResourceReference(FontIcon.FontSizeProperty, "MenuIconSize");
                     // IsHitTestVisible=False: this NavigationViewItem is never added to a real
                     // NavigationView's MenuItems, just dropped in for its icon/content template so
                     // it lines up with the items above — letting it handle its own mouse/selection
@@ -1048,13 +1084,13 @@ public sealed partial class MainWindow : Window
                         Content = new TextBlock
                         {
                             Text = vault.Name,
-                            FontSize = 14,
                             FontWeight = FontWeights.SemiBold,
                             Foreground = secondaryBrush,
                             TextTrimming = TextTrimming.CharacterEllipsis,
                             VerticalAlignment = VerticalAlignment.Center
                         }
                     };
+                    ((TextBlock)navItem.Content).SetResourceReference(TextBlock.FontSizeProperty, "MenuFontSize");
                     Grid.SetColumn(navItem, 0);
                     rowGrid.Children.Add(navItem);
 
@@ -1320,11 +1356,13 @@ public sealed partial class MainWindow : Window
                 
                 foreach (var category in favoriteCategories)
                 {
+                    // No explicit Style: letting the implicit NavigationViewItem type style (set in
+                    // MainWindow.xaml on MainNavigationView.Resources) apply is what makes this follow
+                    // the "Menu & navigation" accessibility font size, same as the built-in categories.
                     var navItem = new ModernWpf.Controls.NavigationViewItem
                     {
                         Content = category.Name,
-                        Tag = $"{category.Name}Category",
-                        Style = _navItemStyle
+                        Tag = $"{category.Name}Category"
                     };
                     
                     // Set icon if available (using ModernWpf.Controls icon)
