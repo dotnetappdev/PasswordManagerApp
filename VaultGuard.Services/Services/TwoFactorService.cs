@@ -348,7 +348,10 @@ public class TwoFactorService : ITwoFactorService
             {
                 var timeStepWithWindow = DateTime.UtcNow.AddSeconds(i * 30);
                 var expectedCode = totp.ComputeTotp(timeStepWithWindow);
-                if (expectedCode == code)
+                // Constant-time comparison to avoid a timing side-channel on the one-time code.
+                if (System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+                        System.Text.Encoding.UTF8.GetBytes(expectedCode),
+                        System.Text.Encoding.UTF8.GetBytes(code ?? string.Empty)))
                 {
                     return true;
                 }
@@ -414,7 +417,8 @@ public class TwoFactorService : ITwoFactorService
             var hash = HashBackupCode(code, salt);
             var storedHash = Convert.FromBase64String(backupCode.CodeHash);
 
-            if (hash.SequenceEqual(storedHash))
+            // Constant-time comparison so response timing can't reveal how many leading hash bytes matched.
+            if (System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(hash, storedHash))
             {
                 // Mark backup code as used
                 backupCode.IsUsed = true;

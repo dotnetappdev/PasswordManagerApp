@@ -20,7 +20,7 @@ public class IdentityDataSeeder
     private readonly ILogger<IdentityDataSeeder> _logger;
     
     // Common master key for all seeded users to enable master-key-only login
-    private const string CommonMasterKey = "CommonMaster123!";
+    private const string CommonMasterKey = "7hm3Z!Csu:Y64nm";
 
     public IdentityDataSeeder(
         UserManager<ApplicationUser> userManager,
@@ -41,10 +41,14 @@ public class IdentityDataSeeder
     /// <summary>
     /// Seeds roles and default users
     /// </summary>
-    public async Task SeedAsync()
+    public async Task SeedAsync(bool includeDefaultUsers = true)
     {
+        // Roles are always needed. Default demo accounts are optional so a fresh install can show the
+        // first-run "Create Master Key" setup instead of pre-created users (the web app seeds roles only
+        // at startup and creates default accounts on demand via the login button).
         await SeedRolesAsync();
-        await SeedDefaultUsersAsync();
+        if (includeDefaultUsers)
+            await SeedDefaultUsersAsync();
         // await SeedParentChildRelationshipsAsync(); // TODO: Re-enable after fixing circular dependency
     }
 
@@ -139,7 +143,24 @@ public class IdentityDataSeeder
         var existingUser = await _userManager.FindByEmailAsync(email);
         if (existingUser != null)
         {
-            _logger.LogInformation("User {Email} already exists", email);
+            // Account already exists — refresh its master-key hash/identifier so it matches the current
+            // CommonMasterKey (keeps the existing salt so nothing else needs re-deriving).
+            try
+            {
+                byte[] existingSalt = !string.IsNullOrWhiteSpace(existingUser.UserSalt)
+                    ? Convert.FromBase64String(existingUser.UserSalt)
+                    : _passwordCryptoService.GenerateUserSalt();
+                existingUser.UserSalt = Convert.ToBase64String(existingSalt);
+                existingUser.MasterPasswordHash = _passwordCryptoService.CreateMasterPasswordHash(masterPassword, existingSalt);
+                existingUser.MasterKeyIdentifier = _passwordCryptoService.CreateMasterKeyIdentifier(masterPassword, existingSalt);
+                existingUser.LastModified = DateTime.UtcNow;
+                await _userManager.UpdateAsync(existingUser);
+                _logger.LogInformation("Refreshed master key for existing user {Email}", email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not refresh master key for existing user {Email}", email);
+            }
             return;
         }
 

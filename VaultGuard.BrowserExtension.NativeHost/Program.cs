@@ -961,9 +961,12 @@ public class Program
         
         try 
         {
-            // Create auth hash using same method as stored hash
+            // Create auth hash using same method as stored hash.
+            // Constant-time comparison to avoid a timing side-channel on the auth hash.
             var authHash = CreateAuthHash(masterKey, password);
-            return authHash == storedHash;
+            return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+                System.Text.Encoding.UTF8.GetBytes(authHash),
+                System.Text.Encoding.UTF8.GetBytes(storedHash));
         }
         finally
         {

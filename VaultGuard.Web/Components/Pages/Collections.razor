@@ -5,7 +5,7 @@
 @inject IAuthService AuthService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@rendermode InteractiveServer
+@inject VaultGuard.Web.Services.AppNotificationService Notify
 
 <PageTitle>Collections - VaultGuard</PageTitle>
 
@@ -247,7 +247,7 @@ else
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error saving collection: {ex.Message}", Severity.Error);
+            await Notify.ShowErrorAsync("The collection couldn't be saved.", ex);
         }
         finally
         {
@@ -286,7 +286,7 @@ else
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Error deleting collection: {ex.Message}", Severity.Error);
+                await Notify.ShowErrorAsync("The collection couldn't be deleted.", ex);
             }
         }
     }

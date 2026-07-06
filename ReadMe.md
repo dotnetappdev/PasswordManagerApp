@@ -146,12 +146,91 @@ VaultGuard.BrowserExtension/   Cross-browser extension + native messaging host
 
 ## Security
 
-- Your master password never leaves the device and is never stored — it derives the encryption key.
-- Keys use PBKDF2 (600,000 iterations); data is sealed with AES-256-GCM authenticated encryption.
-- Recovery codes are hashed (never stored in plaintext) and single-use.
-- Backups are encrypted locally before upload, so cloud and NAS targets only ever see ciphertext.
+Vault Guard is **zero-knowledge**: your master password never leaves the device, is never written to disk,
+and is never sent to the server or API. It exists only long enough to derive your keys in memory. A stolen
+database, backup file or sync payload is useless without it. Every front-end (WPF, Blazor, MAUI, API and the
+browser extension) shares the same [`VaultGuard.Crypto`](VaultGuard.Crypto/README.md) core, so the guarantees
+below hold identically wherever you sign in.
 
-Details: [`ENCRYPTION_IMPLEMENTATION.md`](ENCRYPTION_IMPLEMENTATION.md) and [`MASTER_PASSWORD_SECURITY.md`](MASTER_PASSWORD_SECURITY.md).
+### How passwords are protected
+
+**Key derivation (PBKDF2, with Argon2id).** When you sign in, your master password and a per-user 32-byte
+random salt are run through **PBKDF2-HMAC-SHA256 at 600,000 iterations** (the OWASP 2024 recommendation) to
+derive a 256-bit **master key**. The salt is generated with a cryptographic RNG and is unique per user; the
+iteration count is deliberately high to make brute-forcing a stolen hash expensive. The core also supports
+**Argon2id** — a memory-hard KDF that resists GPU/ASIC cracking — via a **self-describing hash format**
+(`$argon2id$…`), so authentication hashes can upgrade to Argon2id while existing PBKDF2 vaults keep verifying
+unchanged. Because verification auto-detects the format in the shared core, this works identically on every
+client with no migration required.
+
+**Key separation (HKDF).** Independent, purpose-specific sub-keys (encryption, authentication, backup, …) are
+derived from the master key with **HKDF-SHA256** domain separation, so a leak of one sub-key never exposes the
+others.
+
+**Encryption (AES-256-GCM).** Every secret — passwords, notes, card numbers, TOTP seeds, custom fields — is
+sealed with **AES-256-GCM authenticated encryption**. Each encryption uses a fresh **96-bit random nonce** and
+produces a **128-bit authentication tag**, so any tampering with the ciphertext is detected and rejected on
+decrypt. Nothing is ever stored with a static IV or an unauthenticated cipher mode.
+
+**Authentication is separate from encryption (Bitwarden-style).** The value stored for login is an
+**authentication hash** derived *from the master key*, not the master password and not the encryption key.
+Because the auth hash is a one-way derivative, the server/database can verify you without ever holding anything
+that can decrypt your vault. The expensive 600,000-iteration work backs the master key; the final auth hash
+step is a single PBKDF2 pass over that already-hardened key.
+
+**In-memory hygiene.** The derived master key is cached for the session (so the app doesn't re-derive it on
+every operation) and is explicitly zeroed with `Array.Clear` as soon as it is no longer needed. Intermediate
+buffers holding key material are wiped the same way.
+
+**Constant-time comparisons.** All verification of security-sensitive values — master-password auth hashes,
+passcode hashes, lookup hashes, **2FA/TOTP codes and hashed recovery codes** — uses
+`CryptographicOperations.FixedTimeEquals`, so an attacker cannot learn bytes from response timing. (Hardened
+across `VaultGuard.Crypto`, `PasscodeService`, `TwoFactorService` and the extension's native host.)
+
+**Same protocols on every platform — including the standalone WPF desktop app.** All clients (WPF, Blazor,
+MAUI, API, browser extension) authenticate and encrypt through the one shared `VaultGuard.Crypto` /
+`VaultGuard.Services` core — the desktop app has no separate crypto path. So the **local SQLite vault** used by
+the standalone WPF app is protected with the exact same KDF, AES-256-GCM item encryption, constant-time
+verification and re-encryption-on-password-change as the server-backed builds.
+
+### What's stored vs. what's never stored
+
+| Stored (safe) | Never stored |
+|---|---|
+| Per-user random salt (32 bytes) | ❌ Master password (plaintext or reversible) |
+| Authentication hash (one-way, from the master key) | ❌ The AES encryption key / master key at rest |
+| AES-256-GCM ciphertext + nonce + auth tag | ❌ Any secret in plaintext |
+| **Hashed**, single-use recovery codes | ❌ Recovery codes in plaintext |
+| Salted, hashed device passcode | ❌ Passcodes in plaintext |
+
+### Other protections
+
+- **Two-factor & recovery codes.** TOTP authenticator support; recovery codes are hashed (never plaintext) and
+  single-use. Optional step-up verification can require an authenticator code before deleting a vault or item.
+- **Passkeys.** WebAuthn/FIDO2 sign-in, including a software authenticator for the browser extension.
+- **"Remember this device."** The cached credential is protected by the platform's secure store, never as
+  plaintext — Windows **DPAPI** (WPF), **Keychain/Keystore** (MAUI), and **ProtectedLocalStorage** encrypted
+  with the server's data-protection keys (Blazor web).
+- **Encrypted backups.** Local, NAS/SMB, FTP/FTPS, OneDrive and Google Drive backups are encrypted on the
+  device *before* upload, so those targets only ever see ciphertext.
+- **Brute-force protection.** The API rate-limits requests (a global per-IP limit plus a stricter limit on
+  authentication endpoints) and enforces Identity account lockout after repeated failed sign-ins. The desktop
+  and mobile apps additionally throttle local passcode attempts.
+- **Transport.** The API and web app run over HTTPS with an explicit CORS allow-list; the API additionally
+  gates requests with bearer-token authentication and an API-key middleware.
+- **Secrets management.** The API can source its secrets — database credentials, JWT signing key, Sentry DSN,
+  SMS/Supabase keys — from [**Google Cloud Secret Manager**](https://cloud.google.com/secret-manager) (the
+  `vaultguard-dev` / `vaultguard-prod` projects) instead of config files, so nothing sensitive is committed.
+  Disabled by default; see [`CONFIGURATION_GUIDE.md`](CONFIGURATION_GUIDE.md#secrets-management-google-secret-manager).
+
+### Reporting a vulnerability
+
+Please report suspected security issues privately via a GitHub security advisory rather than a public issue.
+
+More detail: [`ENCRYPTION_IMPLEMENTATION.md`](ENCRYPTION_IMPLEMENTATION.md),
+[`MASTER_PASSWORD_SECURITY.md`](MASTER_PASSWORD_SECURITY.md),
+[`OWASP_PBKDF2_UPGRADE_SUMMARY.md`](OWASP_PBKDF2_UPGRADE_SUMMARY.md) and
+[`SECURITY_SUMMARY.md`](SECURITY_SUMMARY.md).
 
 ---
 

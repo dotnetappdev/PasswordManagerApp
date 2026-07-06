@@ -5,7 +5,7 @@
 @inject IAuthService AuthService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@rendermode InteractiveServer
+@inject VaultGuard.Web.Services.AppNotificationService Notify
 
 <PageTitle>Tags - VaultGuard</PageTitle>
 
@@ -269,7 +269,7 @@ else
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error saving tag: {ex.Message}", Severity.Error);
+            await Notify.ShowErrorAsync("The tag couldn't be saved.", ex);
         }
         finally
         {
@@ -300,7 +300,7 @@ else
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Error deleting tag: {ex.Message}", Severity.Error);
+                await Notify.ShowErrorAsync("The tag couldn't be deleted.", ex);
             }
         }
     }

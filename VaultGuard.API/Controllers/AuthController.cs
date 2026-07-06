@@ -9,11 +9,13 @@ using VaultGuard.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using VaultGuard.Models.Configuration;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace VaultGuard.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("auth")] // stricter per-IP limit on all authentication endpoints (item 5)
 public class AuthController : ControllerBase
 {
     private readonly IPasswordCryptoService _passwordCryptoService;

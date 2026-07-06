@@ -258,19 +258,26 @@ Full CRUD operations for all password item types:
 
 ## Security
 
+All cryptography runs through the shared `VaultGuard.Crypto` / `VaultGuard.Services` core, so the web app,
+the standalone WPF desktop app, the API and MAUI enforce **identical** protocols. See the
+[root README security section](../ReadMe.md#security) for the full description.
+
 ### Encryption
 
-- **AES-256-GCM**: Authenticated encryption for all sensitive data
-- **PBKDF2**: 600,000 iterations for key derivation (OWASP 2024 recommendation)
-- **Zero-Knowledge Architecture**: Server cannot decrypt data without master password
-- **Session-Based Keys**: Encryption keys cached securely during session
+- **AES-256-GCM**: authenticated encryption for all sensitive data (random 96-bit nonce + 128-bit tag)
+- **PBKDF2-HMAC-SHA256**: 600,000 iterations for key derivation (OWASP 2024), with **Argon2id** supported via
+  a self-describing hash format (existing PBKDF2 vaults keep working)
+- **HKDF-SHA256 key separation**: independent encryption / authentication / backup sub-keys
+- **Zero-Knowledge Architecture**: server cannot decrypt data without the master password
+- **Session-Based Keys**: encryption keys cached in memory and wiped after use
 
 ### Authentication
 
-- **ASP.NET Core Identity**: Industry-standard authentication
-- **JWT Tokens**: Secure API access
-- **Session Management**: Automatic session timeout
-- **CSRF Protection**: Built-in protection against cross-site request forgery
+- **ASP.NET Core Identity** with **account lockout** (5 failed attempts / 15 min)
+- **Rate limiting**: a global per-IP limit plus a stricter limit on authentication endpoints
+- **Constant-time comparisons** for auth hashes, passcodes and 2FA/recovery codes
+- **JWT Tokens** for secure API access; automatic session timeout
+- **CSRF Protection**: built-in protection against cross-site request forgery
 
 ### Data Protection
 

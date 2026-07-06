@@ -213,6 +213,15 @@ public sealed partial class SettingsPage : Page
     {
         _oneDriveStatusTimer?.Stop();
         _oneDriveStatusTimer = null;
+
+        // Persist any in-memory edits (database path, connection string, export path, DSNs, etc.)
+        // when leaving the page. Each navigation to Settings recreates the view model and reloads
+        // from disk, so without this, text-field edits are lost simply by switching away and back.
+        if (_viewModel != null)
+        {
+            try { _ = _viewModel.SaveSettingsAsync(); }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Failed to persist settings on unload", ex); }
+        }
     }
 
     private void StartOneDriveStatusTimer()

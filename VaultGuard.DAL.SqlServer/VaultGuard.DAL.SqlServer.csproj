@@ -4,8 +4,18 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
+    <!-- Enables `dotnet ef` to use this project as its own startup for SQL Server migrations. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />
+    <!-- Design-time only: lets `dotnet ef` compose the connection string from Google Secret Manager.
+         PrivateAssets="all" keeps the Secret Manager SDK out of the desktop/web clients that reference
+         this project purely for the SQL Server EF provider. -->
+    <PackageReference Include="Google.Cloud.SecretManager.V1" Version="2.5.0" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />

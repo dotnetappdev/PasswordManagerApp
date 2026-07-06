@@ -3,6 +3,7 @@ using VaultGuard.DAL;
 using VaultGuard.Crypto.Extensions;
 using VaultGuard.Services.Interfaces;
 using VaultGuard.Services.Services;
+using VaultGuard.API.Configuration;
 using VaultGuard.API.Extensions;
 using VaultGuard.API.Middleware;
 using VaultGuard.DAL.Interfaces;
@@ -14,6 +15,13 @@ using VaultGuard.Models.Configuration;
 using VaultGuard.ExceptionReporting.Sentry;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Secrets management: when the "GoogleSecretManager" section is enabled, pull secrets (connection strings,
+// JWT key, Sentry DSN, SMS/Supabase credentials, …) from Google Cloud Secret Manager (project
+// vaultguard-dev / vaultguard-prod) and layer them over appsettings.json so the rest of the app keeps
+// reading Configuration[...] unchanged. The dbserver/dbusername/dbpassword secrets are composed into a
+// SQL Server connection string. No-op when disabled.
+builder.Configuration.AddGoogleSecretManager();
 
 // Durable serial file logging for the whole app: logs/{yyyy}/{MMMM}/{dd}.txt.
 builder.Logging.AddProvider(new VaultGuard.Services.Logging.FileLoggerProvider(
@@ -47,11 +55,60 @@ builder.Host.UseSerilog();
 // Add services to the container
 builder.Services.AddControllers();
 
+// Rate limiting (item 5) — blunt online password guessing / brute force while keeping the
+// zero-knowledge design intact. A global per-IP safety net, plus a stricter "auth" policy applied to
+// the login / Identity endpoints.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.GlobalLimiter = System.Threading.RateLimiting.PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+
+    options.AddPolicy("auth", context =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+});
+
 // Configure Entity Framework
 var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
 string? connectionString = null;
 string? supabaseUrl = null;
 string? supabaseApiKey = null;
+
+// Optional single-machine sharing: honour the machine-local settings.json that the WPF desktop and
+// Blazor web apps write (%LocalAppData%\VaultGuard\settings.json) so all VaultGuard apps on one box
+// can point at the same vault. Off by default — server deployments keep their appsettings.json values.
+string? sharedSqlitePath = null;
+if (builder.Configuration.GetValue<bool>("UseSharedMachineDatabase", false))
+{
+    try
+    {
+        var shared = new VaultGuard.Services.Services.AppSettingsService();
+        var sharedProvider = shared.Get("DatabaseProvider").Trim().ToLowerInvariant();
+        // Only adopt providers the API actually supports (MySQL is not wired up here).
+        if (sharedProvider is "sqlite" or "postgres" or "postgresql" or "sqlserver" or "supabase")
+            databaseProvider = sharedProvider;
+        sharedSqlitePath = shared.Get("SqliteDatabasePath");
+        Log.Information("UseSharedMachineDatabase enabled — using provider '{Provider}' from {File}",
+            databaseProvider, shared.SettingsFilePath);
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "Failed to read shared machine database settings; falling back to appsettings.json");
+    }
+}
 if (databaseProvider.ToLower() == "supabase")
 {
     supabaseUrl = builder.Configuration["Supabase:Url"];
@@ -70,6 +127,13 @@ else
     };
     if (string.IsNullOrEmpty(connectionString))
         throw new InvalidOperationException($"Connection string for {databaseProvider} not found.");
+}
+
+// When sharing the machine-local SQLite vault, point the connection string at the shared path.
+if (databaseProvider.ToLower() == "sqlite" && !string.IsNullOrWhiteSpace(sharedSqlitePath))
+{
+    connectionString = $"Data Source={sharedSqlitePath}";
+    Log.Information("Using shared SQLite database at {Path}", sharedSqlitePath);
 }
 
 // Configure DbContext based on provider
@@ -96,10 +160,12 @@ switch (databaseProvider.ToLower())
         builder.Services.AddSupabaseDbContext(builder.Configuration);
         break;
     default:
+        // SQL Server migrations live in VaultGuard.DAL.SqlServer (separate from the SQLite migrations in
+        // VaultGuard.DAL), so point EF at that assembly when applying them at runtime.
         builder.Services.AddDbContext<VaultGuardDbContext>(options =>
-            options.UseSqlServer(connectionString));
+            options.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("VaultGuard.DAL.SqlServer")));
         builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
-            options.UseSqlServer(connectionString));
+            options.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("VaultGuard.DAL.SqlServer")));
         break;
 }
 
@@ -112,6 +178,11 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireUppercase = true;
     options.Password.RequireLowercase = true;
+
+    // Account lockout (item 5) — lock an account after repeated failed sign-ins to slow brute force.
+    options.Lockout.AllowedForNewUsers = true;
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
 })
 .AddEntityFrameworkStores<VaultGuardDbContextApp>()
 .AddDefaultTokenProviders()
@@ -145,6 +216,9 @@ builder.Services.AddScoped<IDeviceService, VaultGuard.Services.Services.DeviceSe
 builder.Services.AddScoped<IAuditLogService, VaultGuard.Services.Services.AuditLogService>();
 builder.Services.AddHostedService<VaultGuard.Services.Services.AutoSyncService>();
 
+// Identity data seeder — creates the default accounts + "Personal" vault (same across all providers)
+builder.Services.AddScoped<VaultGuard.DAL.Seed.IdentityDataSeeder>();
+
 // Register import/export services
 builder.Services.AddSingleton<VaultGuard.Imports.Services.PluginDiscoveryService>();
 builder.Services.AddScoped<VaultGuard.Imports.Interfaces.IImportService, VaultGuard.Imports.Services.ImportService>();
@@ -152,6 +226,9 @@ builder.Services.AddScoped<VaultGuard.Imports.Interfaces.IImportService, VaultGu
 // Register cryptography services
 builder.Services.AddCryptographyServices();
 
+
+// Shared, machine-local app settings (same settings.json the WPF/Web apps use).
+builder.Services.AddSingleton<IAppSettingsService, VaultGuard.Services.Services.AppSettingsService>();
 
 // Register platform and database configuration services
 builder.Services.AddScoped<IPlatformService, VaultGuard.Services.Services.DefaultPlatformService>();
@@ -242,6 +319,9 @@ app.UseHttpsRedirection();
 
 app.UseCors("Default");
 
+// Enforce the rate limits configured above (must run before endpoint execution).
+app.UseRateLimiter();
+
 // Run the framework authentication step (Identity bearer/cookie schemes registered by
 // AddIdentity().AddApiEndpoints()) before our API-key gate, so a request carrying a valid bearer
 // token arrives already authenticated and the API-key middleware lets it through.
@@ -254,8 +334,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Map .NET 9 Identity API endpoints
-app.MapIdentityApi<ApplicationUser>();
+// Map .NET 9 Identity API endpoints (login/register/refresh) behind the stricter "auth" rate limit.
+app.MapIdentityApi<ApplicationUser>().RequireRateLimiting("auth");
 
 app.MapHealthChecks("/health");
 
@@ -333,6 +413,40 @@ using (var scope = app.Services.CreateScope())
         {
             Log.Warning(exEnsure, "Failed to ensure PasswordItemTags table via migration service");
         }
+
+        // Seed the same default accounts + "Personal" vault as every other client, so a fresh SQL Server
+        // (or any provider) behaves identically to the local SQLite build. Idempotent.
+        try
+        {
+            var identitySeeder = scope.ServiceProvider.GetService<VaultGuard.DAL.Seed.IdentityDataSeeder>();
+            if (identitySeeder != null)
+            {
+                await identitySeeder.SeedAsync();
+                Log.Information("Identity data seeded (default accounts + Personal vault)");
+            }
+        }
+        catch (Exception seedEx)
+        {
+            Log.Warning(seedEx, "Identity seeding warning");
+        }
+
+        // Seed demo vault data once, matching the web app's first-run behaviour.
+        try
+        {
+            if (!await context.PasswordItems.AnyAsync())
+            {
+                var seedUserId =
+                    await context.Users.Where(u => u.Email == "user@passwordmanager.local").Select(u => u.Id).FirstOrDefaultAsync()
+                    ?? await context.Users.Select(u => u.Id).FirstOrDefaultAsync()
+                    ?? VaultGuard.DAL.Seed.TestDataSeeder.TestUserId;
+                VaultGuard.DAL.Seed.TestDataSeeder.SeedTestData(context, seedUserId);
+                Log.Information("Demo vault data seeded");
+            }
+        }
+        catch (Exception seedEx)
+        {
+            Log.Warning(seedEx, "Demo data seeding warning");
+        }
     }
     catch (Exception ex)
     {
@@ -342,6 +456,16 @@ using (var scope = app.Services.CreateScope())
         Log.Warning("2. Reset the database, or");
         Log.Warning("3. Manually apply the migrations using 'dotnet ef database update'");
     }
+}
+
+// Migrations run against the SAME configuration the app uses — including secrets sourced from Secret Manager.
+// `dotnet run --project VaultGuard.API -- --migrate` applies migrations to the Secret Manager-configured
+// database and exits, without needing the EF CLI or a design-time factory (which can't see Secret Manager).
+if (args.Contains("--migrate"))
+{
+    Log.Information("--migrate specified: database migrations applied for provider '{Provider}'. Exiting.", databaseProvider);
+    Log.CloseAndFlush();
+    return;
 }
 
 // Preload import provider assemblies - disabled by default for API builds

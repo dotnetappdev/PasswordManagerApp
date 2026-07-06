@@ -12,12 +12,13 @@
 @inject IVaultSessionService VaultSessionService
 @inject IMasterKeyCacheService MasterKeyCache
 @inject ISnackbar Snackbar
+@inject IServiceProvider Services
 
 <div class="auth-container">
     <div class="auth-card">
         <div class="auth-header">
             <div class="auth-logo">
-                <span class="logo-icon">�</span>
+                <span class="logo-icon">🔐</span>
                 <h1>Vault Guard</h1>
             </div>
             <p class="auth-subtitle">@GetSubtitle()</p>
@@ -93,77 +94,124 @@
                             disabled="@(!CanSetupMasterKey())">
                         Create Master Key
                     </button>
-                    <button type="button" class="auth-button" style="margin-top:12px;background:#fff;color:#0066cc;border:1px solid #0066cc;" @onclick="RegisterPasskey">
-                        <span style="font-size:20px;vertical-align:middle;">🔑</span> Register Passkey (Biometric)
+                    <button type="button" class="auth-button auth-button-outline" @onclick="RegisterPasskey">
+                        <span class="btn-emoji">🔑</span> Register Passkey (Biometric)
                     </button>
                 </div>
             }
             else
             {
-                <!-- Login with Master Key -->
+                <!-- Login with Master Key (or 2FA code once the master password is accepted) -->
                 <div class="form-section">
-                    <h2>Sign in to 1Password</h2>
-                    <p class="form-description">Enter your account password to continue.</p>
-                    
-                    <div class="form-group">
-                        <label for="loginKey">Account password</label>
-                        <div class="password-input-group">
-                            <input type="@(showPassword ? "text" : "password")" 
-                                   id="loginKey" 
-                                   @bind="loginKey"
-                                   @oninput="OnLoginKeyInput" 
-                                   @onkeypress="HandleKeyPress"
-                                   placeholder="Enter your account password"
-                                   class="form-input @(loginKeyError ? "input-error" : "")" />
-                            <button type="button" class="password-toggle" @onclick="TogglePasswordVisibility">
-                                @(showPassword ? "👁️" : "👁️")
+                    @if (show2fa)
+                    {
+                        <h2>Two-factor authentication</h2>
+                        <p class="form-description">Enter the 6-digit code from your authenticator app.</p>
+
+                        <div class="form-group">
+                            <label for="twoFactorCode">Authentication code</label>
+                            <input type="text"
+                                   id="twoFactorCode"
+                                   @bind="twoFactorCode"
+                                   @bind:event="oninput"
+                                   @onkeypress="HandleTwoFactorKeyPress"
+                                   inputmode="numeric"
+                                   autocomplete="one-time-code"
+                                   maxlength="8"
+                                   placeholder="123456"
+                                   class="form-input @(twoFactorError ? "input-error" : "")" />
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="error-message">@errorMessage</div>
+                        }
+
+                        <button type="button" class="auth-button" @onclick="VerifyTwoFactor"
+                                disabled="@(string.IsNullOrWhiteSpace(twoFactorCode) || _verifying2fa)">
+                            @if (_verifying2fa)
+                            {
+                                <span class="loading-spinner">⟳</span>
+                                <span>Verifying...</span>
+                            }
+                            else
+                            {
+                                <span>Verify</span>
+                            }
+                        </button>
+
+                        <div class="auth-footer">
+                            <button type="button" class="link-button" @onclick="CancelTwoFactor">Back to sign in</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <h2>Sign in to Vault Guard</h2>
+                        <p class="form-description">Enter your master password to unlock your vault.</p>
+
+                        <div class="form-group">
+                            <label for="loginKey">Account password</label>
+                            <div class="password-input-group">
+                                <input type="@(showPassword ? "text" : "password")"
+                                       id="loginKey"
+                                       @bind="loginKey"
+                                       @oninput="OnLoginKeyInput"
+                                       @onkeypress="HandleKeyPress"
+                                       placeholder="Enter your account password"
+                                       class="form-input @(loginKeyError ? "input-error" : "")" />
+                                <button type="button" class="password-toggle" @onclick="TogglePasswordVisibility">
+                                    @(showPassword ? "👁️" : "👁️")
+                                </button>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(storedHint))
+                        {
+                            <div class="hint-section">
+                                <details>
+                                    <summary>Show hint</summary>
+                                    <p class="hint-text">@storedHint</p>
+                                </details>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="error-message">
+                                @errorMessage
+                            </div>
+                        }
+
+                        <button type="button"
+                                class="auth-button"
+                                @onclick="AuthenticateUser"
+                                disabled="@(string.IsNullOrEmpty(loginKey) || isLoading)">
+                            @if (isLoading)
+                            {
+                                <span class="loading-spinner">⟳</span>
+                                <span>Unlocking...</span>
+                            }
+                            else
+                            {
+                                <span>Continue</span>
+                            }
+                        </button>
+                        <button type="button" class="auth-button auth-button-outline" @onclick="LoginWithPasskey">
+                            <span class="btn-emoji">🔑</span> Sign in with Passkey
+                        </button>
+                        <button type="button" class="auth-button auth-button-success" @onclick="ShowQrLogin">
+                            <span class="btn-emoji">📱</span> Sign in with QR Code
+                        </button>
+
+                        <div class="auth-footer">
+                            <button type="button" class="link-button" @onclick="ResetVault">
+                                Forgot your password?
+                            </button>
+                            <button type="button" class="link-button" @onclick="GenerateDefaultAccounts" disabled="@isSeeding">
+                                @(isSeeding ? "Creating default accounts…" : "Create default accounts")
                             </button>
                         </div>
-                    </div>
-
-                    @if (!string.IsNullOrEmpty(storedHint))
-                    {
-                        <div class="hint-section">
-                            <details>
-                                <summary>Show hint</summary>
-                                <p class="hint-text">@storedHint</p>
-                            </details>
-                        </div>
                     }
-
-                    @if (!string.IsNullOrEmpty(errorMessage))
-                    {
-                        <div class="error-message">
-                            @errorMessage
-                        </div>
-                    }
-
-                    <button type="button" 
-                            class="auth-button" 
-                            @onclick="AuthenticateUser"
-                            disabled="@(string.IsNullOrEmpty(loginKey) || isLoading)">
-                        @if (isLoading)
-                        {
-                            <span class="loading-spinner">⟳</span>
-                            <span>Unlocking...</span>
-                        }
-                        else
-                        {
-                            <span>Continue</span>
-                        }
-                    </button>
-                    <button type="button" class="auth-button" style="margin-top:12px;background:#fff;color:#0066cc;border:1px solid #0066cc;" @onclick="LoginWithPasskey">
-                        <span style="font-size:20px;vertical-align:middle;">🔑</span> Sign in with Passkey
-                    </button>
-                    <button type="button" class="auth-button" style="margin-top:12px;background:#fff;color:#28a745;border:1px solid #28a745;" @onclick="ShowQrLogin">
-                        <span style="font-size:20px;vertical-align:middle;">📱</span> Sign in with QR Code
-                    </button>
-
-                    <div class="auth-footer">
-                        <button type="button" class="link-button" @onclick="ResetVault">
-                            Forgot your password?
-                        </button>
-                    </div>
                 </div>
             }
         </div>
@@ -188,6 +236,7 @@
 
 @code {
     private bool isFirstTime = false;
+    private bool isSeeding = false;
     private bool showPassword = false;
     private bool showConfirmPassword = false;
     private bool isLoading = false;
@@ -197,6 +246,25 @@
     private string masterKeyHint = string.Empty;
     private string storedHint = string.Empty;
     private string errorMessage = string.Empty;
+
+    // Creates the standard default accounts (admin/parent/user/child) + "Personal" vault on demand,
+    // the same across every database provider. Resolved optionally so hosts that don't register a
+    // seeder (e.g. mobile) simply show a friendly message instead of failing.
+    private async Task GenerateDefaultAccounts()
+    {
+        if (Services.GetService(typeof(IDefaultAccountSeeder)) is not IDefaultAccountSeeder seeder)
+        {
+            Snackbar.Add("Creating default accounts isn't available in this app.", Severity.Info);
+            return;
+        }
+        isSeeding = true;
+        try
+        {
+            var result = await seeder.SeedAsync();
+            Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Error);
+        }
+        finally { isSeeding = false; }
+    }
     private string passwordStrength = "Weak";
     private string passkeyId = string.Empty;
     private bool showQrLogin = false;
@@ -431,9 +499,19 @@
             
             if (success)
             {
-                Snackbar.Add("Login successful!", Severity.Success);
-                // Navigate to home page
-                Navigation.NavigateTo("/home");
+                // If this account has 2FA enabled, collect the authenticator code before completing login.
+                if (AuthService.CurrentUser?.IsTwoFactorEnabled == true)
+                {
+                    show2fa = true;
+                    twoFactorCode = string.Empty;
+                    twoFactorError = false;
+                    errorMessage = string.Empty;
+                }
+                else
+                {
+                    Snackbar.Add("Login successful!", Severity.Success);
+                    Navigation.NavigateTo("/");
+                }
             }
             else
             {
@@ -461,6 +539,76 @@
         {
             await AuthenticateUser();
         }
+    }
+
+    // ── Two-factor prompt (shown after the master password is accepted for a 2FA-enabled account) ──
+    private bool show2fa;
+    private string twoFactorCode = string.Empty;
+    private bool twoFactorError;
+    private bool _verifying2fa;
+
+    private async Task HandleTwoFactorKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await VerifyTwoFactor();
+    }
+
+    private async Task VerifyTwoFactor()
+    {
+        twoFactorError = false;
+        var code = twoFactorCode?.Trim() ?? string.Empty;
+        if (string.IsNullOrEmpty(code))
+        {
+            twoFactorError = true;
+            errorMessage = "Enter your authentication code.";
+            return;
+        }
+
+        _verifying2fa = true;
+        errorMessage = string.Empty;
+        try
+        {
+            var userId = AuthService.CurrentUser?.Id;
+            if (Services.GetService(typeof(ITwoFactorService)) is not ITwoFactorService twoFactor || userId is null)
+            {
+                errorMessage = "Two-factor verification is unavailable.";
+                return;
+            }
+
+            // Accept a 6-digit authenticator code or an 8+ char backup code.
+            var isBackup = code.Length > 6;
+            var ok = await twoFactor.VerifyTwoFactorCodeAsync(userId, code, isBackup);
+            if (ok)
+            {
+                Snackbar.Add("Login successful!", Severity.Success);
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                twoFactorError = true;
+                twoFactorCode = string.Empty;
+                errorMessage = "Invalid code. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error("2FA verification failed", ex);
+            errorMessage = "Couldn't verify the code. Please try again.";
+        }
+        finally
+        {
+            _verifying2fa = false;
+        }
+    }
+
+    private async Task CancelTwoFactor()
+    {
+        // Abandon the half-finished sign-in and return to the password prompt.
+        show2fa = false;
+        twoFactorCode = string.Empty;
+        errorMessage = string.Empty;
+        loginKey = string.Empty;
+        try { await AuthService.LogoutAsync(); } catch { /* best-effort */ }
     }
 
     private async Task ResetVault()
@@ -641,9 +789,17 @@
     {
         if (firstRender)
         {
-            // Focus the password field and animate the logo
-            await JSRuntime.InvokeVoidAsync("focusPasswordField");
-            await JSRuntime.InvokeVoidAsync("animateLogo");
+            // Focus the password field and animate the logo. These JS helpers may not exist on every host
+            // (e.g. the web app), so failures must not tear down the circuit — swallow and continue.
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("focusPasswordField");
+                await JSRuntime.InvokeVoidAsync("animateLogo");
+            }
+            catch (Exception ex)
+            {
+                VaultGuard.Services.Logging.AppLogger.Warning("Login focus/animate JS unavailable", ex);
+            }
         }
     }
 

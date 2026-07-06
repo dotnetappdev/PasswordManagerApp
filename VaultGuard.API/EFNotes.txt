@@ -1,4 +1,5 @@
-cd PasswordManager.API && dotnet ef database update
 
-Navigate to the API project and run Entity Framework database update to create the SQL Server database
+  App / Identity context:
+    wH
+    dotnet ef database update --context VaultGuardDbContextApp --project VaultGuard.DAL.SqlServer   --startup-project VaultGuard.API
 

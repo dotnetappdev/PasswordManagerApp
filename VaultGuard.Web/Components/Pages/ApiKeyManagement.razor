@@ -5,7 +5,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
 @inject ISnackbar Snackbar
-@rendermode InteractiveServer
+@inject VaultGuard.Web.Services.AppNotificationService Notify
 
 <PageTitle>API Key Management</PageTitle>
 
@@ -228,7 +228,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error creating API key: {ex.Message}", Severity.Error);
+            await Notify.ShowErrorAsync("The API key couldn't be created.", ex);
         }
     }
 
@@ -250,7 +250,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error deleting API key: {ex.Message}", Severity.Error);
+            await Notify.ShowErrorAsync("The API key couldn't be deleted.", ex);
         }
     }
 

@@ -16,6 +16,28 @@ public interface ICryptographyService
     byte[] DeriveKey(string password, byte[] salt, int iterations, int keyLength);
 
     /// <summary>
+    /// Derives a key from a password using Argon2id — a memory-hard KDF that resists GPU/ASIC cracking
+    /// far better than PBKDF2. Recommended for new vaults.
+    /// </summary>
+    /// <param name="password">The password to derive the key from.</param>
+    /// <param name="salt">Random per-user salt (16+ bytes).</param>
+    /// <param name="memorySizeKib">Memory cost in KiB (e.g. 65536 = 64 MB; OWASP min 19 MB).</param>
+    /// <param name="iterations">Time cost / passes over memory (OWASP min 2).</param>
+    /// <param name="degreeOfParallelism">Number of lanes/threads.</param>
+    /// <param name="keyLength">Length of the derived key in bytes.</param>
+    byte[] DeriveKeyArgon2id(string password, byte[] salt, int memorySizeKib, int iterations, int degreeOfParallelism, int keyLength);
+
+    /// <summary>
+    /// Derives a purpose-specific sub-key from a high-entropy master key using HKDF-SHA256, so a single
+    /// master key yields cryptographically independent keys (encryption, authentication, backup, …).
+    /// A leak of one sub-key does not expose the others (cryptographic key separation).
+    /// </summary>
+    /// <param name="masterKey">High-entropy input key material (e.g. the derived master key).</param>
+    /// <param name="purpose">Domain-separation label, e.g. "encryption" or "backup".</param>
+    /// <param name="keyLength">Length of the derived sub-key in bytes.</param>
+    byte[] DeriveSubKey(byte[] masterKey, string purpose, int keyLength = 32);
+
+    /// <summary>
     /// Generates a cryptographically secure random salt
     /// </summary>
     /// <param name="length">Length of salt in bytes</param>

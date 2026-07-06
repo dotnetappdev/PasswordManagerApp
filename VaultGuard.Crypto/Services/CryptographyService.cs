@@ -14,6 +14,12 @@ public class CryptographyService : ICryptographyService
     private const int NonceLength = 12; // 96 bits for GCM
     private const int AuthTagLength = 16; // 128 bits for GCM
 
+    // Recommended Argon2id parameters for new vaults (OWASP: >=19 MiB, >=2 iters). 64 MiB is a strong
+    // desktop/server default; tune down for constrained mobile targets if needed.
+    public const int Argon2DefaultMemoryKib = 65536;      // 64 MiB
+    public const int Argon2DefaultIterations = 3;
+    public const int Argon2DefaultParallelism = 4;
+
     /// <summary>
     /// Derives a key from a password using PBKDF2 with specified salt and iterations
     /// </summary>
@@ -33,6 +39,65 @@ public class CryptographyService : ICryptographyService
 
         using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, iterations, HashAlgorithmName.SHA256);
         return pbkdf2.GetBytes(keyLength);
+    }
+
+    /// <summary>
+    /// Derives a key using Argon2id (memory-hard). See <see cref="ICryptographyService.DeriveKeyArgon2id"/>.
+    /// </summary>
+    public byte[] DeriveKeyArgon2id(string password, byte[] salt, int memorySizeKib, int iterations, int degreeOfParallelism, int keyLength)
+    {
+        if (string.IsNullOrEmpty(password))
+            throw new ArgumentException("Password cannot be null or empty", nameof(password));
+        if (salt == null || salt.Length == 0)
+            throw new ArgumentException("Salt cannot be null or empty", nameof(salt));
+        if (memorySizeKib < 8192)
+            throw new ArgumentException("Argon2id memory must be at least 8192 KiB", nameof(memorySizeKib));
+        if (iterations < 1)
+            throw new ArgumentException("Iterations must be greater than 0", nameof(iterations));
+        if (degreeOfParallelism < 1)
+            throw new ArgumentException("Degree of parallelism must be greater than 0", nameof(degreeOfParallelism));
+        if (keyLength < 1)
+            throw new ArgumentException("Key length must be greater than 0", nameof(keyLength));
+
+        var passwordBytes = Encoding.UTF8.GetBytes(password);
+        try
+        {
+            using var argon2 = new Konscious.Security.Cryptography.Argon2id(passwordBytes)
+            {
+                Salt = salt,
+                MemorySize = memorySizeKib,
+                Iterations = iterations,
+                DegreeOfParallelism = degreeOfParallelism,
+            };
+            return argon2.GetBytes(keyLength);
+        }
+        finally
+        {
+            Array.Clear(passwordBytes, 0, passwordBytes.Length);
+        }
+    }
+
+    /// <summary>
+    /// Derives an independent purpose-specific sub-key via HKDF-SHA256. See
+    /// <see cref="ICryptographyService.DeriveSubKey"/>.
+    /// </summary>
+    public byte[] DeriveSubKey(byte[] masterKey, string purpose, int keyLength = 32)
+    {
+        if (masterKey == null || masterKey.Length == 0)
+            throw new ArgumentException("Master key cannot be null or empty", nameof(masterKey));
+        if (string.IsNullOrEmpty(purpose))
+            throw new ArgumentException("Purpose cannot be null or empty", nameof(purpose));
+        if (keyLength < 1)
+            throw new ArgumentException("Key length must be greater than 0", nameof(keyLength));
+
+        // HKDF-Expand with a domain-separation label as the 'info' parameter yields keys that are
+        // cryptographically independent per purpose.
+        return HKDF.DeriveKey(
+            HashAlgorithmName.SHA256,
+            ikm: masterKey,
+            outputLength: keyLength,
+            salt: null,
+            info: Encoding.UTF8.GetBytes($"VaultGuard|{purpose}"));
     }
 
     /// <summary>
@@ -133,7 +198,9 @@ public class CryptographyService : ICryptographyService
         try
         {
             var computedHash = HashPassword(password, salt, iterations);
-            return computedHash.Equals(hash, StringComparison.Ordinal);
+            // Constant-time comparison to avoid leaking hash bytes via timing.
+            return CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(computedHash), Encoding.UTF8.GetBytes(hash));
         }
         catch
         {

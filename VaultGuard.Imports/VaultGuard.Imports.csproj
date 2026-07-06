@@ -4,6 +4,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Suppress NU1608: Pomelo.EntityFrameworkCore.MySql (transitive) has no EF Core 10 build yet and
+         constrains Relational to 9.x. Matches Services/Web/API/DAL.MySql. -->
+    <NoWarn>$(NoWarn);NU1608</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

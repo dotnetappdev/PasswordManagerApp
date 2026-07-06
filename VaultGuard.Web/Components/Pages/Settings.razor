@@ -10,7 +10,14 @@
 @inject ITwoFactorService TwoFactorService
 @inject IQrCodeService QrCodeService
 @inject IJSRuntime JS
-@rendermode InteractiveServer
+@inject IAppSettingsService AppSettings
+@inject IPlatformService PlatformService
+@inject IHttpClientFactory HttpClientFactory
+@inject VaultGuard.Components.Shared.Services.ThemeService ThemeService
+@inject VaultGuard.Web.Services.AppNotificationService Notify
+@inject IServiceProvider Services
+@using Microsoft.Extensions.DependencyInjection
+@using System.Linq
 
 <PageTitle>Settings - VaultGuard</PageTitle>
 
@@ -129,24 +136,35 @@
             <MudItem xs="12" md="6">
                 <MudPaper Class="pa-4 rounded-lg" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Theme</MudText>
-                    <MudRadioGroup T="string" @bind-Value="_themeMode">
+                    <MudRadioGroup T="string" Value="@ThemeModeString" ValueChanged="@OnThemeModeChanged">
                         <MudRadio T="string" Value="@("dark")" Color="Color.Primary">Dark Mode</MudRadio>
                         <MudRadio T="string" Value="@("light")" Color="Color.Primary">Light Mode</MudRadio>
+                        <MudRadio T="string" Value="@("highcontrast")" Color="Color.Primary">High Contrast</MudRadio>
                         <MudRadio T="string" Value="@("system")" Color="Color.Primary">System Default</MudRadio>
                     </MudRadioGroup>
+                    <MudDivider Class="my-3" />
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">UI Zoom — @ThemeService.UiScalePercent%</MudText>
+                    <MudSlider T="int" Value="@ThemeService.UiScalePercent" ValueChanged="@OnUiScaleChanged"
+                               Min="80" Max="160" Step="10" Color="Color.Primary" />
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Scales the whole interface (80–160%), like the WPF text-size setting.
+                    </MudText>
                     <MudDivider Class="my-3" />
                     <MudText Typo="Typo.subtitle2" Class="mb-2">Accent Color</MudText>
                     <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
                         @foreach (var color in accentColors)
                         {
                             <MudTooltip Text="@color.Name">
-                                <div @onclick="@(() => _accentColor = color.Hex)"
-                                     style="@($"width:32px; height:32px; border-radius:50%; background:{color.Hex}; cursor:pointer; border: 3px solid {(_accentColor == color.Hex ? "white" : "transparent")}; box-shadow: 0 0 0 1px {color.Hex};")"
+                                <div @onclick="@(() => SetAccent(color.Hex))"
+                                     style="@($"width:32px; height:32px; border-radius:50%; background:{color.Hex}; cursor:pointer; border: 3px solid {(string.Equals(ThemeService.AccentColor, color.Hex, StringComparison.OrdinalIgnoreCase) ? "white" : "transparent")}; box-shadow: 0 0 0 1px {color.Hex};")"
                                      title="@color.Name">
                                 </div>
                             </MudTooltip>
                         }
                     </MudStack>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+                        Theme and accent apply instantly and are shared with the VaultGuard desktop app on this machine.
+                    </MudText>
                 </MudPaper>
             </MudItem>
             <MudItem xs="12" md="6">
@@ -163,6 +181,9 @@
                         <MudSelectItem T="int" Value="50">50</MudSelectItem>
                         <MudSelectItem T="int" Value="100">100</MudSelectItem>
                     </MudSelect>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3"
+                               OnClick="@SaveDisplaySettings"
+                               StartIcon="@Icons.Material.Filled.Save">Save Display Settings</MudButton>
                 </MudPaper>
             </MudItem>
         </MudGrid>
@@ -172,20 +193,96 @@
         <MudGrid>
             <MudItem xs="12" md="6">
                 <MudPaper Class="pa-4 rounded-lg" Elevation="1">
-                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Database Provider</MudText>
-                    <MudSelect T="string" @bind-Value="_dbProvider" Label="Database" Variant="Variant.Outlined"
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Data Source</MudText>
+                    <MudSelect T="string" @bind-Value="_authMode" Label="Data source" Variant="Variant.Outlined"
                                Class="mb-3">
-                        <MudSelectItem T="string" Value="@("SqlServer")">SQL Server</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("PostgreSQL")">PostgreSQL</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("MySQL")">MySQL / MariaDB</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("SQLite")">SQLite</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("Supabase")">Supabase (PostgreSQL)</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Local Database")">Local Database (SQLite)</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("API Server")">API Server</MudSelectItem>
                     </MudSelect>
-                    <MudTextField @bind-Value="_connectionString" Label="Connection String"
-                                  Variant="Variant.Outlined" Lines="3"
-                                  Placeholder="Server=...;Database=...;..." Class="mb-3" />
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary"
-                               StartIcon="@Icons.Material.Filled.Link">Test Connection</MudButton>
+
+                    @if (_authMode == "API Server")
+                    {
+                        <MudTextField @bind-Value="_apiBaseUrl" Label="API URL" Variant="Variant.Outlined"
+                                      Class="mb-3" Placeholder="https://localhost:7001"
+                                      HelperText="Root URL of the VaultGuard API (a restart applies the change)." />
+                        <MudTextField @bind-Value="_apiKey" Label="API Key" Variant="Variant.Outlined"
+                                      Class="mb-3" InputType="InputType.Password"
+                                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AutoFixHigh"
+                                      OnAdornmentClick="@GenerateApiKey" AdornmentAriaLabel="Generate API key"
+                                      HelperText="Sent as the X-Api-Key header. Click the wand to generate." />
+                        <MudTextField @bind-Value="_clientId" Label="Client ID" Variant="Variant.Outlined"
+                                      Class="mb-3"
+                                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AutoFixHigh"
+                                      OnAdornmentClick="@GenerateClientId" AdornmentAriaLabel="Generate client ID" />
+                        <MudTextField @bind-Value="_clientSecret" Label="Client Secret" Variant="Variant.Outlined"
+                                      Class="mb-3" InputType="InputType.Password"
+                                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AutoFixHigh"
+                                      OnAdornmentClick="@GenerateClientSecret" AdornmentAriaLabel="Generate client secret" />
+
+                        <MudDivider Class="my-3" />
+                        <MudText Typo="Typo.subtitle2" Class="mb-1" Style="font-weight:600;">SQL Server (API database)</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mb-2">
+                            The database the API server uses. Test the connection and seed accounts / demo vault data — same as the desktop app.
+                        </MudText>
+                        <MudTextField @bind-Value="_dbServer" Label="Server" Variant="Variant.Outlined" Class="mb-3"
+                                      Placeholder="sql.example.com" />
+                        <MudTextField @bind-Value="_dbName" Label="Database" Variant="Variant.Outlined" Class="mb-3" />
+                        <MudTextField @bind-Value="_dbUser" Label="User" Variant="Variant.Outlined" Class="mb-3" />
+                        <MudTextField @bind-Value="_dbPassword" Label="Password" Variant="Variant.Outlined" Class="mb-3"
+                                      InputType="InputType.Password" />
+                        <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap" Class="mb-2">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.Link" OnClick="@TestSqlServer"
+                                       Disabled="@_dbBusy">Test SQL Server</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="@SeedUsers"
+                                       Disabled="@_dbBusy">Seed Users</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.Dataset" OnClick="@SeedTestData"
+                                       Disabled="@_dbBusy">Seed Test Data</MudButton>
+                        </MudStack>
+                    }
+                    else
+                    {
+                        <MudTextField @bind-Value="_sqliteDbPath" Label="SQLite database file"
+                                      Variant="Variant.Outlined" Class="mb-2"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                                      OnAdornmentClick="@CopyDbPath"
+                                      HelperText="Full path to the .db file used by this app." />
+                        <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap" Class="mb-3">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.DesktopWindows"
+                                       OnClick="@UseDesktopDbLocation">
+                                Use VaultGuard desktop location
+                            </MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.Refresh"
+                                       OnClick="@UseDefaultDbLocation">
+                                Reset to default
+                            </MudButton>
+                        </MudStack>
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+                            The desktop app stores its vault at
+                            <strong style="word-break:break-all;">@DesktopDbPath</strong>.
+                            Point both apps at the same file to share one vault on this machine.
+                        </MudAlert>
+                    }
+
+                    <MudStack Row="true" Spacing="2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Save"
+                                   OnClick="@SaveApiSettings">Save</MudButton>
+                        @if (_authMode == "API Server")
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Wifi"
+                                       OnClick="@TestApiConnection">Test API</MudButton>
+                        }
+                    </MudStack>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+                        Changes take effect the next time the app restarts.
+                    </MudText>
                 </MudPaper>
             </MudItem>
             <MudItem xs="12" md="6">
@@ -212,6 +309,39 @@
 
     <MudTabPanel Text="Sync" Icon="@Icons.Material.Filled.Sync">
         <MudGrid>
+            <MudItem xs="12">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">API Connection</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                        This app connects to a VaultGuard API server. Configure the URL and access credentials below.
+                    </MudText>
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="_apiBaseUrl" Label="API URL"
+                                          Variant="Variant.Outlined" Placeholder="https://localhost:7001"
+                                          HelperText="Root URL of the VaultGuard API (a restart applies the change)." />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="_apiKey" Label="API Key" Variant="Variant.Outlined"
+                                          InputType="InputType.Password"
+                                          HelperText="Sent as the X-Api-Key header." />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="_clientId" Label="Client ID" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="_clientSecret" Label="Client Secret" Variant="Variant.Outlined"
+                                          InputType="InputType.Password" />
+                        </MudItem>
+                    </MudGrid>
+                    <MudStack Row="true" Spacing="2" Class="mt-3">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Save" OnClick="@SaveApiSettings">Save</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Wifi" OnClick="@TestApiConnection">Test API</MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
             <MudItem xs="12" md="6">
                 <MudPaper Class="pa-4 rounded-lg" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Sync Settings</MudText>
@@ -796,9 +926,7 @@
     bool _lockOnBrowserClose = true;
     bool isSavingPassword = false;
 
-    // Appearance
-    string _themeMode = "dark";
-    string _accentColor = "#2563EB";
+    // Appearance (theme + accent live in ThemeService; these are the display-only prefs)
     bool _compactMode = false;
     bool _showFavicons = true;
     bool _animationsEnabled = true;
@@ -807,13 +935,256 @@
     // Database
     string _dbProvider = "SqlServer";
     string _connectionString = string.Empty;
+    string _sqliteDbPath = string.Empty;
     bool _autoBackup = false;
     int _backupInterval = 7;
+
+    // The path the WPF desktop app uses for its SQLite vault, so we can offer to share it.
+    string DesktopDbPath => System.IO.Path.Combine(PlatformService.GetAppDataDirectory(), "passwordmanager.db");
+
+    // ── Theme (backed by ThemeService) ───────────────────────────────────────────
+    string ThemeModeString => ThemeService.CurrentThemeMode switch
+    {
+        VaultGuard.Components.Shared.Services.AppThemeMode.Light => "light",
+        VaultGuard.Components.Shared.Services.AppThemeMode.System => "system",
+        VaultGuard.Components.Shared.Services.AppThemeMode.HighContrast => "highcontrast",
+        _ => "dark"
+    };
+
+    async Task OnThemeModeChanged(string value)
+    {
+        var mode = value switch
+        {
+            "light" => VaultGuard.Components.Shared.Services.AppThemeMode.Light,
+            "system" => VaultGuard.Components.Shared.Services.AppThemeMode.System,
+            "highcontrast" => VaultGuard.Components.Shared.Services.AppThemeMode.HighContrast,
+            _ => VaultGuard.Components.Shared.Services.AppThemeMode.Dark
+        };
+        ThemeService.SetTheme(mode);
+        if (mode == VaultGuard.Components.Shared.Services.AppThemeMode.System)
+            await ThemeService.DetectAndApplySystemThemeAsync(JS);
+        Snackbar.Add("Theme updated.", Severity.Success);
+    }
+
+    void OnUiScaleChanged(int percent)
+    {
+        ThemeService.UiScalePercent = percent;
+    }
+
+    void SetAccent(string hex)
+    {
+        ThemeService.SetAccent(hex);
+        Snackbar.Add("Accent colour updated.", Severity.Success);
+    }
+
+    void SaveDisplaySettings()
+    {
+        AppSettings.Set("Web.CompactMode", _compactMode);
+        AppSettings.Set("Web.ShowFavicons", _showFavicons);
+        AppSettings.Set("Web.Animations", _animationsEnabled);
+        AppSettings.Set("Web.ItemsPerPage", _itemsPerPage);
+        AppSettings.Save();
+        Snackbar.Add("Display settings saved.", Severity.Success);
+    }
+
+    // ── Database ─────────────────────────────────────────────────────────────────
+    void UseDesktopDbLocation()
+    {
+        _sqliteDbPath = DesktopDbPath;
+        Snackbar.Add("Pointed at the desktop app's vault location.", Severity.Info);
+    }
+
+    void UseDefaultDbLocation()
+    {
+        _sqliteDbPath = System.IO.Path.Combine(PlatformService.GetAppDataDirectory(), "data", "passwordmanager.db");
+    }
+
+    async Task CopyDbPath()
+    {
+        try { await JS.InvokeVoidAsync("navigator.clipboard.writeText", _sqliteDbPath); Snackbar.Add("Path copied.", Severity.Success); }
+        catch { Snackbar.Add("Couldn't copy — select and copy manually.", Severity.Info); }
+    }
+
+    void SaveDatabaseSettings()
+    {
+        AppSettings.Set("DatabaseProvider", _dbProvider);
+        AppSettings.Set("DatabaseConnectionString", _connectionString);
+        AppSettings.Set("SqliteDatabasePath", _sqliteDbPath);
+        AppSettings.Save();
+        Snackbar.Add("Database settings saved — restart the app to apply.", Severity.Success);
+    }
+
+    void TestDatabaseConnection()
+    {
+        if (_dbProvider == "SQLite")
+        {
+            var dir = System.IO.Path.GetDirectoryName(_sqliteDbPath);
+            var ok = !string.IsNullOrWhiteSpace(_sqliteDbPath) &&
+                     (System.IO.File.Exists(_sqliteDbPath) || (dir != null && System.IO.Directory.Exists(dir)));
+            Snackbar.Add(ok ? "SQLite path looks valid." : "That folder doesn't exist yet — it will be created on save.",
+                ok ? Severity.Success : Severity.Warning);
+        }
+        else
+        {
+            Snackbar.Add(string.IsNullOrWhiteSpace(_connectionString)
+                ? "Enter a connection string first." : "Connection string captured.",
+                string.IsNullOrWhiteSpace(_connectionString) ? Severity.Warning : Severity.Info);
+        }
+    }
 
     // Sync
     bool _autoSync = true;
     int _syncInterval = 30;
     string _conflictResolution = "newest";
+
+    // Connection mode / API server (shared with WPF via "AuthMode" / "ApiBaseUrl")
+    string _authMode = "API Server";   // Blazor is API-only (no local DB provider selection)
+    string _apiBaseUrl = "https://localhost:7001";
+    string _apiKey = string.Empty;      // sent as X-Api-Key header
+    string _clientId = string.Empty;
+    string _clientSecret = string.Empty;
+    // SQL Server (the API's database) — same fields the Secret Manager composes (dbserver/dbusername/dbpassword)
+    string _dbServer = string.Empty, _dbName = string.Empty, _dbUser = string.Empty, _dbPassword = string.Empty;
+    bool _dbBusy;
+
+    void SaveApiSettings()
+    {
+        AppSettings.Set("AuthMode", _authMode);
+        if (_authMode == "API Server")
+        {
+            AppSettings.Set("ApiBaseUrl", _apiBaseUrl);
+            AppSettings.Set("ApiKey", _apiKey);
+            AppSettings.Set("ApiClientId", _clientId);
+            AppSettings.Set("ApiClientSecret", _clientSecret);
+            AppSettings.Set("dbserver", _dbServer);
+            AppSettings.Set("dbname", _dbName);
+            AppSettings.Set("dbusername", _dbUser);
+            AppSettings.Set("dbpassword", _dbPassword);
+        }
+        else
+        {
+            // Local Database = SQLite for the Blazor web app.
+            AppSettings.Set("DatabaseProvider", "SQLite");
+            if (!string.IsNullOrWhiteSpace(_sqliteDbPath))
+                AppSettings.Set("SqliteDatabasePath", _sqliteDbPath);
+        }
+        AppSettings.Save();
+        Snackbar.Add("Connection settings saved — restart to apply.", Severity.Success);
+    }
+
+    // ── API credential generators ────────────────────────────────────────────────
+    static string RandomToken(int bytes)
+    {
+        var buf = new byte[bytes];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(buf);
+        // URL-safe base64 without padding.
+        return Convert.ToBase64String(buf).Replace("+", "-").Replace("/", "_").TrimEnd('=');
+    }
+
+    void GenerateApiKey()
+    {
+        _apiKey = "vg_" + RandomToken(32);
+        Snackbar.Add("API key generated — Save to apply.", Severity.Info);
+    }
+
+    void GenerateClientId()
+    {
+        _clientId = Guid.NewGuid().ToString("N");
+        Snackbar.Add("Client ID generated — Save to apply.", Severity.Info);
+    }
+
+    void GenerateClientSecret()
+    {
+        _clientSecret = RandomToken(32);
+        Snackbar.Add("Client secret generated — Save to apply.", Severity.Info);
+    }
+
+    // ── SQL Server test + seeding (WPF parity) ───────────────────────────────────
+    private string BuildSqlConnectionString() =>
+        $"Server={_dbServer};Database={_dbName};User Id={_dbUser};Password={_dbPassword};" +
+        "TrustServerCertificate=true;MultipleActiveResultSets=true;Encrypt=True";
+
+    async Task TestSqlServer()
+    {
+        if (string.IsNullOrWhiteSpace(_dbServer) || string.IsNullOrWhiteSpace(_dbName))
+        {
+            Snackbar.Add("Enter the server and database first.", Severity.Warning);
+            return;
+        }
+        _dbBusy = true;
+        try
+        {
+            using var conn = new Microsoft.Data.SqlClient.SqlConnection(BuildSqlConnectionString());
+            await conn.OpenAsync();
+            Snackbar.Add("SQL Server connection succeeded.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            await Notify.ShowErrorAsync("Couldn't connect to SQL Server. Check the server, database and credentials.", ex);
+        }
+        finally { _dbBusy = false; }
+    }
+
+    async Task SeedUsers()
+    {
+        _dbBusy = true;
+        try
+        {
+            if (Services.GetService(typeof(VaultGuard.Services.Interfaces.IDefaultAccountSeeder))
+                is not VaultGuard.Services.Interfaces.IDefaultAccountSeeder seeder)
+            {
+                Snackbar.Add("Account seeder is not available.", Severity.Warning);
+                return;
+            }
+            await seeder.SeedAsync();
+            Snackbar.Add("Default users seeded into the configured database.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            await Notify.ShowErrorAsync("Couldn't seed the default users.", ex);
+        }
+        finally { _dbBusy = false; }
+    }
+
+    async Task SeedTestData()
+    {
+        _dbBusy = true;
+        try
+        {
+            using var scope = Services.CreateScope();
+            var ctx = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
+            var userId = ctx.Users.Select(u => u.Id).FirstOrDefault()
+                         ?? VaultGuard.DAL.Seed.TestDataSeeder.TestUserId;
+            VaultGuard.DAL.Seed.TestDataSeeder.SeedTestData(ctx, userId);
+            Snackbar.Add("Demo vault data seeded into the configured database.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            await Notify.ShowErrorAsync("Couldn't seed the demo vault data.", ex);
+        }
+        finally { _dbBusy = false; }
+        await Task.CompletedTask;
+    }
+
+    async Task TestApiConnection()
+    {
+        if (string.IsNullOrWhiteSpace(_apiBaseUrl)) { Snackbar.Add("Enter the API base URL first.", Severity.Warning); return; }
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            client.Timeout = TimeSpan.FromSeconds(8);
+            var baseUri = _apiBaseUrl.TrimEnd('/');
+            var resp = await client.GetAsync($"{baseUri}/health");
+            Snackbar.Add(resp.IsSuccessStatusCode
+                ? "API reachable — health check passed."
+                : $"API responded with {(int)resp.StatusCode} {resp.ReasonPhrase}.",
+                resp.IsSuccessStatusCode ? Severity.Success : Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Could not reach the API: {ex.Message}", Severity.Error);
+        }
+    }
 
     // Notifications
     bool _notifyPasswordExpiry = true;
@@ -828,18 +1199,10 @@
     int _pbkdf2Iterations = 600000;
 
     record AccentColor(string Name, string Hex);
-    readonly List<AccentColor> accentColors = new()
-    {
-        new("Purple", "#2563EB"),
-        new("Violet", "#8B5CF6"),
-        new("Indigo", "#6366F1"),
-        new("Blue", "#3B82F6"),
-        new("Cyan", "#06B6D4"),
-        new("Green", "#10B981"),
-        new("Pink", "#EC4899"),
-        new("Rose", "#F43F5E"),
-        new("Orange", "#F59E0B"),
-    };
+    // Mirrors the WPF desktop accent palette (ThemeService.AccentPresets).
+    readonly List<AccentColor> accentColors =
+        VaultGuard.Components.Shared.Services.ThemeService.AccentPresets
+            .Select(p => new AccentColor(p.Name, p.Hex)).ToList();
 
     async Task ChangePassword()
     {
@@ -886,14 +1249,92 @@
         }
     }
 
-    void SaveSecuritySettings() =>
+    void SaveSecuritySettings()
+    {
+        AppSettings.Set("SessionTimeout", _autoLockMinutes);
+        AppSettings.Set("Web.LockOnBrowserClose", _lockOnBrowserClose);
+        AppSettings.Save();
         Snackbar.Add("Security settings saved.", Severity.Success);
+    }
 
-    void SaveSyncSettings() =>
+    void SaveSyncSettings()
+    {
+        AppSettings.Set("Web.AutoSync", _autoSync);
+        AppSettings.Set("Web.SyncInterval", _syncInterval);
+        AppSettings.Set("Web.ConflictResolution", _conflictResolution);
+        AppSettings.Save();
         Snackbar.Add("Sync settings saved.", Severity.Success);
+    }
 
-    void SaveNotificationSettings() =>
+    void SaveNotificationSettings()
+    {
+        AppSettings.Set("Web.NotifyPasswordExpiry", _notifyPasswordExpiry);
+        AppSettings.Set("Web.NotifyNewLogin", _notifyNewLogin);
+        AppSettings.Set("Web.NotifyWeakPasswords", _notifyWeakPasswords);
+        AppSettings.Set("Web.NotifyDataBreach", _notifyDataBreach);
+        AppSettings.Set("Web.PasswordExpiryDays", _passwordExpiryDays);
+        AppSettings.Set("Web.MinPasswordLength", _minPasswordLength);
+        AppSettings.Save();
         Snackbar.Add("Notification preferences saved.", Severity.Success);
+    }
+
+    // Loads every persisted preference from the shared settings.json into the page's fields.
+    void LoadPersistedSettings()
+    {
+        // Security
+        _autoLockMinutes = AppSettings.GetInt("SessionTimeout", 30);
+        _lockOnBrowserClose = AppSettings.GetBool("Web.LockOnBrowserClose", true);
+
+        // Display
+        _compactMode = AppSettings.GetBool("Web.CompactMode", false);
+        _showFavicons = AppSettings.GetBool("Web.ShowFavicons", true);
+        _animationsEnabled = AppSettings.GetBool("Web.Animations", true);
+        _itemsPerPage = AppSettings.GetInt("Web.ItemsPerPage", 20);
+
+        // Database
+        _dbProvider = AppSettings.Get("DatabaseProvider", "SqlServer");
+        _connectionString = AppSettings.Get("DatabaseConnectionString", string.Empty);
+        _sqliteDbPath = AppSettings.Get("SqliteDatabasePath",
+            System.IO.Path.Combine(PlatformService.GetAppDataDirectory(), "data", "passwordmanager.db"));
+        _autoBackup = AppSettings.GetBool("Web.AutoBackup", false);
+        _backupInterval = AppSettings.GetInt("Web.BackupInterval", 7);
+
+        // Sync
+        _autoSync = AppSettings.GetBool("Web.AutoSync", true);
+        _syncInterval = AppSettings.GetInt("Web.SyncInterval", 30);
+        _conflictResolution = AppSettings.Get("Web.ConflictResolution", "newest");
+
+        // Connection (shared keys with WPF). Blazor supports Local Database (SQLite) or API Server.
+        _authMode = AppSettings.Get("AuthMode", "Local Database");
+        _apiBaseUrl = AppSettings.Get("ApiBaseUrl", "https://localhost:7001");
+        _apiKey = AppSettings.Get("ApiKey", "");
+        _clientId = AppSettings.Get("ApiClientId", "");
+        _clientSecret = AppSettings.Get("ApiClientSecret", "");
+        _dbServer = AppSettings.Get("dbserver", "");
+        _dbName = AppSettings.Get("dbname", "");
+        _dbUser = AppSettings.Get("dbusername", "");
+        _dbPassword = AppSettings.Get("dbpassword", "");
+
+        // Notifications
+        _notifyPasswordExpiry = AppSettings.GetBool("Web.NotifyPasswordExpiry", true);
+        _notifyNewLogin = AppSettings.GetBool("Web.NotifyNewLogin", true);
+        _notifyWeakPasswords = AppSettings.GetBool("Web.NotifyWeakPasswords", true);
+        _notifyDataBreach = AppSettings.GetBool("Web.NotifyDataBreach", true);
+        _passwordExpiryDays = AppSettings.GetInt("Web.PasswordExpiryDays", 90);
+        _minPasswordLength = AppSettings.GetInt("Web.MinPasswordLength", 12);
+
+        // Encryption
+        _encryptionAlgorithm = AppSettings.Get("Web.EncryptionAlgorithm", "AES-256-GCM");
+        _pbkdf2Iterations = AppSettings.GetInt("Web.Pbkdf2Iterations", 600000);
+
+        // Generator
+        _genLength = AppSettings.GetInt("Web.GenLength", 20);
+        _genUppercase = AppSettings.GetBool("Web.GenUppercase", true);
+        _genLowercase = AppSettings.GetBool("Web.GenLowercase", true);
+        _genNumbers = AppSettings.GetBool("Web.GenNumbers", true);
+        _genSymbols = AppSettings.GetBool("Web.GenSymbols", true);
+        _genAvoidAmbig = AppSettings.GetBool("Web.GenAvoidAmbig", false);
+    }
 
     // ── Vaults ──────────────────────────────────────────────────────────────────
 
@@ -902,6 +1343,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        try { LoadPersistedSettings(); }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
+
         try
         {
             _vaults = await VaultService.GetAllAsync();
@@ -935,7 +1379,20 @@
         var bytes = new byte[_genLength];
         System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
         _generatedPassword = new string(bytes.Select(b => charset[b % charset.Length]).ToArray());
+        PersistGeneratorSettings();
         StateHasChanged();
+    }
+
+    // Remembers the generator configuration so it's the same next time the page opens.
+    void PersistGeneratorSettings()
+    {
+        AppSettings.Set("Web.GenLength", _genLength);
+        AppSettings.Set("Web.GenUppercase", _genUppercase);
+        AppSettings.Set("Web.GenLowercase", _genLowercase);
+        AppSettings.Set("Web.GenNumbers", _genNumbers);
+        AppSettings.Set("Web.GenSymbols", _genSymbols);
+        AppSettings.Set("Web.GenAvoidAmbig", _genAvoidAmbig);
+        AppSettings.Save();
     }
 
     void CopyGeneratedPassword()

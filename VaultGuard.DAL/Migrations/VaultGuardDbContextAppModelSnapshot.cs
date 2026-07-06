@@ -459,16 +459,11 @@ namespace VaultGuard.DAL.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("VaultId")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CollectionId");
 
                     b.HasIndex("UserId");
-
-                    b.HasIndex("VaultId");
 
                     b.ToTable("Categories");
                 });
@@ -601,11 +596,16 @@ namespace VaultGuard.DAL.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("VaultId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ParentCollectionId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("VaultId");
 
                     b.ToTable("Collections");
                 });
@@ -1286,9 +1286,6 @@ namespace VaultGuard.DAL.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("VaultId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Website")
                         .HasColumnType("TEXT");
 
@@ -1299,8 +1296,6 @@ namespace VaultGuard.DAL.Migrations
                     b.HasIndex("CollectionId");
 
                     b.HasIndex("UserId");
-
-                    b.HasIndex("VaultId");
 
                     b.ToTable("PasswordItems");
                 });
@@ -1768,6 +1763,9 @@ namespace VaultGuard.DAL.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsUsed")
                         .HasColumnType("INTEGER");
 
@@ -2125,15 +2123,9 @@ namespace VaultGuard.DAL.Migrations
                         .WithMany("Categories")
                         .HasForeignKey("UserId");
 
-                    b.HasOne("VaultGuard.Models.Vault", "Vault")
-                        .WithMany("Categories")
-                        .HasForeignKey("VaultId");
-
                     b.Navigation("Collection");
 
                     b.Navigation("User");
-
-                    b.Navigation("Vault");
                 });
 
             modelBuilder.Entity("VaultGuard.Models.ChildPermissionConfig", b =>
@@ -2167,9 +2159,15 @@ namespace VaultGuard.DAL.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("VaultGuard.Models.Vault", "Vault")
+                        .WithMany()
+                        .HasForeignKey("VaultId");
+
                     b.Navigation("ParentCollection");
 
                     b.Navigation("User");
+
+                    b.Navigation("Vault");
                 });
 
             modelBuilder.Entity("VaultGuard.Models.CreditCardItem", b =>
@@ -2270,17 +2268,11 @@ namespace VaultGuard.DAL.Migrations
                         .WithMany("PasswordItems")
                         .HasForeignKey("UserId");
 
-                    b.HasOne("VaultGuard.Models.Vault", "Vault")
-                        .WithMany("PasswordItems")
-                        .HasForeignKey("VaultId");
-
                     b.Navigation("Category");
 
                     b.Navigation("Collection");
 
                     b.Navigation("User");
-
-                    b.Navigation("Vault");
                 });
 
             modelBuilder.Entity("VaultGuard.Models.SecureNoteItem", b =>
@@ -2468,13 +2460,6 @@ namespace VaultGuard.DAL.Migrations
                     b.Navigation("SecureNoteItem");
 
                     b.Navigation("WiFiItem");
-                });
-
-            modelBuilder.Entity("VaultGuard.Models.Vault", b =>
-                {
-                    b.Navigation("Categories");
-
-                    b.Navigation("PasswordItems");
                 });
 #pragma warning restore 612, 618
         }

@@ -458,6 +458,7 @@ public class SettingsViewModel : BaseViewModel
             ApiBaseUrl = localSettings.TryGetValue("ApiBaseUrl", out var apiUrl) ? apiUrl : "https://localhost:7001/api";
             DatabaseProvider = localSettings.TryGetValue("DatabaseProvider", out var dbProvider) ? dbProvider : "SQLite";
             SqliteDatabasePath = localSettings.TryGetValue("SqliteDatabasePath", out var dbPath) ? dbPath : "passwordmanager.db";
+            DatabaseConnectionString = localSettings.TryGetValue("DatabaseConnectionString", out var dbConn) ? dbConn : string.Empty;
             ExportPath = localSettings.TryGetValue("ExportPath", out var exportPath) ? exportPath
                 : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "VaultGuardExport");
             SentryDsn = localSettings.TryGetValue("SentryDsn", out var sentryDsn) ? sentryDsn : string.Empty;
@@ -587,6 +588,8 @@ public class SettingsViewModel : BaseViewModel
             localSettings["AuthMode"] = AuthenticationMode;
             localSettings["ApiBaseUrl"] = ApiBaseUrl;
             localSettings["DatabaseProvider"] = DatabaseProvider;
+            localSettings["SqliteDatabasePath"] = SqliteDatabasePath;
+            localSettings["DatabaseConnectionString"] = DatabaseConnectionString;
             localSettings["ExportPath"] = ExportPath;
             localSettings["SentryDsn"] = SentryDsn;
             localSettings["UpdateManifestUrl"] = UpdateManifestUrl;

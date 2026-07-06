@@ -106,3 +106,22 @@
         padding: 20px;
     }
 }
+
+/* Secondary auth-button variants (shared by web + MAUI, replacing the old inline styles). */
+.auth-button.auth-button-outline {
+    background: transparent;
+    color: #2563EB;
+    border: 1px solid #2563EB;
+}
+
+.auth-button.auth-button-success {
+    background: transparent;
+    color: #10B981;
+    border: 1px solid #10B981;
+}
+
+.btn-emoji {
+    font-size: 1.15rem;
+    vertical-align: middle;
+    line-height: 1;
+}

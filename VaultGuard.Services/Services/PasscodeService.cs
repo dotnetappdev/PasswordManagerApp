@@ -84,7 +84,10 @@ public class PasscodeService : IPasscodeService
             var salt = Convert.FromBase64String(storedSaltBase64);
             var computedHash = HashPasscode(passcode, salt);
 
-            var isValid = storedHash == computedHash;
+            // Constant-time comparison to avoid a timing side-channel on the passcode hash.
+            var isValid = System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+                System.Text.Encoding.UTF8.GetBytes(storedHash),
+                System.Text.Encoding.UTF8.GetBytes(computedHash));
             
             if (isValid)
             {

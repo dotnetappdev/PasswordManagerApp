@@ -1,0 +1,78 @@
+@using MudBlazor
+@using VaultGuard.Web.Services
+@inject IJSRuntime JS
+
+@* WPF ExceptionDialog parity: coloured icon badge + message, an expandable "Error Details" panel with a
+   Copy button, and an OK close. Shown via AppNotificationService.ShowError/Info/Warning/SuccessAsync. *@
+<MudDialog>
+    <DialogContent>
+        <div class="d-flex" style="gap:14px; max-width:520px;">
+            <div style="@BadgeStyle">
+                <MudIcon Icon="@IconFor" Style="color:#fff; font-size:1.4rem;" />
+            </div>
+            <div style="flex:1; min-width:0;">
+                <MudText Typo="Typo.body1" Style="white-space:pre-wrap;">@Message</MudText>
+
+                @if (!string.IsNullOrWhiteSpace(Details))
+                {
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mt-2 px-0"
+                               Style="min-width:0; text-transform:none;"
+                               StartIcon="@(_showDetails ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                               OnClick="@(() => _showDetails = !_showDetails)">
+                        Error Details
+                    </MudButton>
+                    @if (_showDetails)
+                    {
+                        <MudPaper Outlined="true" Class="pa-2 mt-1"
+                                  Style="max-height:320px; overflow:auto; background:var(--mud-palette-surface);">
+                            <pre style="white-space:pre-wrap; word-break:break-word; font-family:Consolas,monospace; font-size:.78rem; margin:0;">@Details</pre>
+                        </MudPaper>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="mt-2"
+                                   StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="@CopyDetails">
+                            Copy Details
+                        </MudButton>
+                    }
+                }
+            </div>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => MudDialog.Close())">OK</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string Message { get; set; } = "";
+    [Parameter] public string? Details { get; set; }
+    [Parameter] public AppNotificationType Type { get; set; } = AppNotificationType.Error;
+
+    private bool _showDetails;
+
+    private string IconFor => Type switch
+    {
+        AppNotificationType.Success => Icons.Material.Filled.CheckCircle,
+        AppNotificationType.Warning => Icons.Material.Filled.Warning,
+        AppNotificationType.Info    => Icons.Material.Filled.Info,
+        _                           => Icons.Material.Filled.ErrorOutline
+    };
+
+    private string BadgeColor => Type switch
+    {
+        AppNotificationType.Success => "#10B981",
+        AppNotificationType.Warning => "#F59E0B",
+        AppNotificationType.Info    => "#2563EB",
+        _                           => "#EF4444"
+    };
+
+    private string BadgeStyle =>
+        $"width:36px; height:36px; min-width:36px; border-radius:18px; background:{BadgeColor}; " +
+        "display:flex; align-items:center; justify-content:center;";
+
+    private async Task CopyDetails()
+    {
+        try { await JS.InvokeVoidAsync("navigator.clipboard.writeText", Details ?? ""); }
+        catch { /* clipboard may be unavailable */ }
+    }
+}

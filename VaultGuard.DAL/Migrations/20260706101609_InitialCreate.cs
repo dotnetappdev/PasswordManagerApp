@@ -3,30 +3,35 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace VaultGuard.DAL.Migrations.VaultGuardDb
+namespace VaultGuard.DAL.Migrations
 {
     /// <inheritdoc />
-    public partial class AddDeviceAndAuditLog : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // QrLoginTokens is already created by VaultGuardDbContextApp's firstmigration
-            // when both contexts share the same SQLite file. Use IF NOT EXISTS to be idempotent.
-            migrationBuilder.Sql(@"CREATE TABLE IF NOT EXISTS ""QrLoginTokens"" (
-    ""Token"" TEXT NOT NULL CONSTRAINT ""PK_QrLoginTokens"" PRIMARY KEY,
-    ""UserId"" TEXT NOT NULL,
-    ""ExpiresAt"" TEXT NOT NULL,
-    ""CreatedAt"" TEXT NOT NULL,
-    ""IsUsed"" INTEGER NOT NULL,
-    ""UsedAt"" TEXT NULL,
-    ""UserAgent"" TEXT NULL,
-    ""IpAddress"" TEXT NULL,
-    ""Status"" INTEGER NOT NULL
-);");
+            migrationBuilder.CreateTable(
+                name: "AspNetRoles",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    Description = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    LastModified = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
+                    DisplayOrder = table.Column<int>(type: "INTEGER", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    NormalizedName = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetRoles", x => x.Id);
+                });
 
             migrationBuilder.CreateTable(
-                name: "Users",
+                name: "AspNetUsers",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
@@ -57,9 +62,9 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     PasskeysEnabledAt = table.Column<DateTime>(type: "TEXT", nullable: true),
                     StorePasskeysInVault = table.Column<bool>(type: "INTEGER", nullable: false),
                     UserName = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    NormalizedUserName = table.Column<string>(type: "TEXT", nullable: true),
+                    NormalizedUserName = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    NormalizedEmail = table.Column<string>(type: "TEXT", nullable: true),
+                    NormalizedEmail = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
                     EmailConfirmed = table.Column<bool>(type: "INTEGER", nullable: false),
                     PasswordHash = table.Column<string>(type: "TEXT", nullable: true),
                     SecurityStamp = table.Column<string>(type: "TEXT", nullable: true),
@@ -70,7 +75,47 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Users", x => x.Id);
+                    table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "QrLoginTokens",
+                columns: table => new
+                {
+                    Token = table.Column<string>(type: "TEXT", maxLength: 32, nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    IsUsed = table.Column<bool>(type: "INTEGER", nullable: false),
+                    UsedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    UserAgent = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    IpAddress = table.Column<string>(type: "TEXT", maxLength: 45, nullable: true),
+                    Status = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_QrLoginTokens", x => x.Token);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetRoleClaims",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    RoleId = table.Column<string>(type: "TEXT", nullable: false),
+                    ClaimType = table.Column<string>(type: "TEXT", nullable: true),
+                    ClaimValue = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetRoleClaims", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AspNetRoleClaims_AspNetRoles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -91,15 +136,100 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     table.PrimaryKey("PK_ApiKeys", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ApiKeys_Users_UserId",
+                        name: "FK_ApiKeys_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalTable: "Users",
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "AuditLogs",
+                name: "AspNetUserClaims",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    UserId = table.Column<string>(type: "TEXT", nullable: false),
+                    ClaimType = table.Column<string>(type: "TEXT", nullable: true),
+                    ClaimValue = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserClaims", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AspNetUserClaims_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserLogins",
+                columns: table => new
+                {
+                    LoginProvider = table.Column<string>(type: "TEXT", nullable: false),
+                    ProviderKey = table.Column<string>(type: "TEXT", nullable: false),
+                    ProviderDisplayName = table.Column<string>(type: "TEXT", nullable: true),
+                    UserId = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserLogins", x => new { x.LoginProvider, x.ProviderKey });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserLogins_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserRoles",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "TEXT", nullable: false),
+                    RoleId = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserRoles", x => new { x.UserId, x.RoleId });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserRoles_AspNetRoles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AspNetUserRoles_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserTokens",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "TEXT", nullable: false),
+                    LoginProvider = table.Column<string>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Value = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserTokens", x => new { x.UserId, x.LoginProvider, x.Name });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserTokens_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AuditLog",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
@@ -119,17 +249,17 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AuditLogs", x => x.Id);
+                    table.PrimaryKey("PK_AuditLog", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AuditLogs_Users_UserId",
+                        name: "FK_AuditLog_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalTable: "Users",
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "ChildPermissionConfig",
+                name: "ChildPermissionConfigs",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
@@ -156,57 +286,23 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ChildPermissionConfig", x => x.Id);
+                    table.PrimaryKey("PK_ChildPermissionConfigs", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ChildPermissionConfig_Users_ChildUserId",
+                        name: "FK_ChildPermissionConfigs_AspNetUsers_ChildUserId",
                         column: x => x.ChildUserId,
-                        principalTable: "Users",
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_ChildPermissionConfig_Users_ParentUserId",
+                        name: "FK_ChildPermissionConfigs_AspNetUsers_ParentUserId",
                         column: x => x.ParentUserId,
-                        principalTable: "Users",
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Collections",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Description = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
-                    Icon = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Color = table.Column<string>(type: "TEXT", maxLength: 7, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    IsDefault = table.Column<bool>(type: "INTEGER", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    LastModified = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", nullable: false),
-                    ParentCollectionId = table.Column<int>(type: "INTEGER", nullable: true),
-                    ParentId = table.Column<int>(type: "INTEGER", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Collections", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Collections_Collections_ParentCollectionId",
-                        column: x => x.ParentCollectionId,
-                        principalTable: "Collections",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Collections_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Devices",
+                name: "Device",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
@@ -225,11 +321,11 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Devices", x => x.Id);
+                    table.PrimaryKey("PK_Device", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Devices_Users_UserId",
+                        name: "FK_Device_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalTable: "Users",
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -255,9 +351,9 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     table.PrimaryKey("PK_OtpCodes", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_OtpCodes_Users_UserId",
+                        name: "FK_OtpCodes_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalTable: "Users",
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -294,9 +390,9 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     table.PrimaryKey("PK_SmsSettings", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_SmsSettings_Users_UserId",
+                        name: "FK_SmsSettings_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalTable: "Users",
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -308,23 +404,22 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
-                    Color = table.Column<string>(type: "TEXT", maxLength: 7, nullable: false),
+                    Color = table.Column<string>(type: "TEXT", maxLength: 7, nullable: true),
                     Description = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LastModified = table.Column<DateTime>(type: "TEXT", nullable: false),
                     IsSystemTag = table.Column<bool>(type: "INTEGER", nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", nullable: false)
+                    UserId = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Tags", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Tags_Users_UserId",
+                        name: "FK_Tags_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -333,7 +428,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    UserId = table.Column<string>(type: "TEXT", maxLength: 450, nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", nullable: false),
                     EnableCloudBackup = table.Column<bool>(type: "INTEGER", nullable: false),
                     SelectedCloudProvider = table.Column<int>(type: "INTEGER", nullable: false),
                     AutoBackupEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
@@ -353,9 +448,9 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     table.PrimaryKey("PK_UserBackupSettings", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserBackupSettings_Users_UserId",
+                        name: "FK_UserBackupSettings_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalTable: "Users",
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -384,15 +479,15 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     table.PrimaryKey("PK_UserPasskeys", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserPasskeys_Users_UserId",
+                        name: "FK_UserPasskeys_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalTable: "Users",
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserRelationship",
+                name: "UserRelationships",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
@@ -408,19 +503,19 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserRelationship", x => x.Id);
+                    table.PrimaryKey("PK_UserRelationships", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserRelationship_Users_ChildUserId",
+                        name: "FK_UserRelationships_AspNetUsers_ChildUserId",
                         column: x => x.ChildUserId,
-                        principalTable: "Users",
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_UserRelationship_Users_ParentUserId",
+                        name: "FK_UserRelationships_AspNetUsers_ParentUserId",
                         column: x => x.ParentUserId,
-                        principalTable: "Users",
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -435,17 +530,84 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     IsUsed = table.Column<bool>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UsedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    ExpiresAt = table.Column<DateTime>(type: "TEXT", nullable: true),
                     UsedFromIp = table.Column<string>(type: "TEXT", maxLength: 45, nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserTwoFactorBackupCodes", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserTwoFactorBackupCodes_Users_UserId",
+                        name: "FK_UserTwoFactorBackupCodes_AspNetUsers_UserId",
                         column: x => x.UserId,
-                        principalTable: "Users",
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Vault",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    IsDefault = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Icon = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    Color = table.Column<string>(type: "TEXT", maxLength: 7, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Vault", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Vault_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Collections",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    Icon = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Color = table.Column<string>(type: "TEXT", maxLength: 7, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    IsDefault = table.Column<bool>(type: "INTEGER", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    LastModified = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", nullable: false),
+                    ParentCollectionId = table.Column<int>(type: "INTEGER", nullable: true),
+                    VaultId = table.Column<int>(type: "INTEGER", nullable: true),
+                    ParentId = table.Column<int>(type: "INTEGER", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Collections", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Collections_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Collections_Collections_ParentCollectionId",
+                        column: x => x.ParentCollectionId,
+                        principalTable: "Collections",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Collections_Vault_VaultId",
+                        column: x => x.VaultId,
+                        principalTable: "Vault",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -454,30 +616,30 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
                     Description = table.Column<string>(type: "TEXT", nullable: true),
-                    Icon = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
-                    Color = table.Column<string>(type: "TEXT", maxLength: 7, nullable: true),
+                    Icon = table.Column<string>(type: "TEXT", nullable: true),
+                    Color = table.Column<string>(type: "TEXT", nullable: true),
+                    IsFavorite = table.Column<bool>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LastModified = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    UserId = table.Column<string>(type: "TEXT", nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", nullable: true),
                     CollectionId = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Categories", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_Categories_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_Categories_Collections_CollectionId",
                         column: x => x.CollectionId,
                         principalTable: "Collections",
                         principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Categories_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -494,9 +656,9 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     IsFavorite = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsArchived = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", nullable: false),
-                    CategoryId = table.Column<int>(type: "INTEGER", nullable: false),
-                    CollectionId = table.Column<int>(type: "INTEGER", nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", nullable: true),
+                    CategoryId = table.Column<int>(type: "INTEGER", nullable: true),
+                    CollectionId = table.Column<int>(type: "INTEGER", nullable: true),
                     Website = table.Column<string>(type: "TEXT", nullable: true),
                     LastAccessedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
@@ -504,23 +666,20 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     table.PrimaryKey("PK_PasswordItems", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_PasswordItems_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_PasswordItems_Categories_CategoryId",
                         column: x => x.CategoryId,
                         principalTable: "Categories",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_PasswordItems_Collections_CollectionId",
                         column: x => x.CollectionId,
                         principalTable: "Collections",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_PasswordItems_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -533,16 +692,16 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LastModified = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", nullable: false),
-                    CardholderName = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    CardNumber = table.Column<string>(type: "TEXT", maxLength: 500, nullable: false),
-                    ExpiryDate = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    CVV = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", nullable: true),
+                    CardholderName = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    CardNumber = table.Column<string>(type: "TEXT", maxLength: 19, nullable: true),
+                    ExpiryDate = table.Column<string>(type: "TEXT", maxLength: 7, nullable: true),
+                    CVV = table.Column<string>(type: "TEXT", maxLength: 4, nullable: true),
                     PIN = table.Column<string>(type: "TEXT", maxLength: 6, nullable: true),
                     CardType = table.Column<int>(type: "INTEGER", nullable: false),
                     IssuingBank = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
                     ValidFrom = table.Column<string>(type: "TEXT", maxLength: 7, nullable: true),
-                    BankWebsite = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    BankWebsite = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     BankPhoneNumber = table.Column<string>(type: "TEXT", maxLength: 20, nullable: true),
                     CustomerServicePhone = table.Column<string>(type: "TEXT", maxLength: 20, nullable: true),
                     OnlineBankingUsername = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
@@ -567,7 +726,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     FraudAlertEmail = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     LastUsed = table.Column<DateTime>(type: "TEXT", nullable: true),
                     UsageCount = table.Column<int>(type: "INTEGER", nullable: false),
-                    Notes = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    Notes = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
                     ExpirationMonth = table.Column<string>(type: "TEXT", nullable: true),
                     ExpirationYear = table.Column<string>(type: "TEXT", nullable: true),
                     SecurityCode = table.Column<string>(type: "TEXT", nullable: true),
@@ -584,27 +743,26 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     table.PrimaryKey("PK_CreditCardItems", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_CreditCardItems_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_CreditCardItems_PasswordItems_PasswordItemId",
                         column: x => x.PasswordItemId,
                         principalTable: "PasswordItems",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_CreditCardItems_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "CustomFields",
+                name: "CustomField",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Value = table.Column<string>(type: "TEXT", maxLength: 5000, nullable: false),
+                    Value = table.Column<string>(type: "TEXT", nullable: false),
                     Type = table.Column<int>(type: "INTEGER", nullable: false),
                     IsRequired = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsProtected = table.Column<bool>(type: "INTEGER", nullable: false),
@@ -615,9 +773,9 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CustomFields", x => x.Id);
+                    table.PrimaryKey("PK_CustomField", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_CustomFields_PasswordItems_PasswordItemId",
+                        name: "FK_CustomField_PasswordItems_PasswordItemId",
                         column: x => x.PasswordItemId,
                         principalTable: "PasswordItems",
                         principalColumn: "Id",
@@ -633,10 +791,10 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     PasswordItemId = table.Column<int>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", nullable: false),
-                    WebsiteUrl = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    UserId = table.Column<string>(type: "TEXT", nullable: true),
+                    WebsiteUrl = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     Website = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
-                    Username = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Username = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
                     EncryptedPassword = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
                     PasswordNonce = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     PasswordAuthTag = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
@@ -673,8 +831,6 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     EncryptedNotes = table.Column<string>(type: "TEXT", maxLength: 4000, nullable: true),
                     NotesNonce = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     NotesAuthTag = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
-                    Password = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false),
-                    Notes = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
                     LastAutoFill = table.Column<DateTime>(type: "TEXT", nullable: true),
                     RequiresMasterPassword = table.Column<bool>(type: "INTEGER", nullable: false),
                     PasswordId = table.Column<int>(type: "INTEGER", nullable: true)
@@ -683,15 +839,14 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     table.PrimaryKey("PK_LoginItems", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_LoginItems_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_LoginItems_PasswordItems_PasswordItemId",
                         column: x => x.PasswordItemId,
                         principalTable: "PasswordItems",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_LoginItems_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -727,20 +882,20 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     table.PrimaryKey("PK_PasskeyItem", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_PasskeyItem_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_PasskeyItem_PasswordItems_PasswordItemId",
                         column: x => x.PasswordItemId,
                         principalTable: "PasswordItems",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_PasskeyItem_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
-                name: "PasswordItemTags",
+                name: "PasswordItemTag",
                 columns: table => new
                 {
                     PasswordItemsId = table.Column<int>(type: "INTEGER", nullable: false),
@@ -748,15 +903,15 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PasswordItemTags", x => new { x.PasswordItemsId, x.TagsId });
+                    table.PrimaryKey("PK_PasswordItemTag", x => new { x.PasswordItemsId, x.TagsId });
                     table.ForeignKey(
-                        name: "FK_PasswordItemTags_PasswordItems_PasswordItemsId",
+                        name: "FK_PasswordItemTag_PasswordItems_PasswordItemsId",
                         column: x => x.PasswordItemsId,
                         principalTable: "PasswordItems",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_PasswordItemTags_Tags_TagsId",
+                        name: "FK_PasswordItemTag_Tags_TagsId",
                         column: x => x.TagsId,
                         principalTable: "Tags",
                         principalColumn: "Id",
@@ -773,9 +928,9 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LastModified = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", nullable: false),
-                    Title = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Content = table.Column<string>(type: "TEXT", maxLength: 5000, nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", nullable: true),
+                    Title = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    Content = table.Column<string>(type: "TEXT", maxLength: 10000, nullable: true),
                     EncryptedContent = table.Column<string>(type: "TEXT", maxLength: 10000, nullable: true),
                     ContentNonce = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     ContentAuthTag = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
@@ -799,15 +954,14 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     table.PrimaryKey("PK_SecureNoteItems", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_SecureNoteItems_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_SecureNoteItems_PasswordItems_PasswordItemId",
                         column: x => x.PasswordItemId,
                         principalTable: "PasswordItems",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_SecureNoteItems_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -821,10 +975,10 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     PasswordItemId = table.Column<int>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LastModified = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", nullable: false),
-                    NetworkName = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Password = table.Column<string>(type: "TEXT", maxLength: 500, nullable: false),
-                    SecurityType = table.Column<int>(type: "INTEGER", maxLength: 50, nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", nullable: true),
+                    NetworkName = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    Password = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    SecurityType = table.Column<int>(type: "INTEGER", nullable: false),
                     IsHidden = table.Column<bool>(type: "INTEGER", nullable: false),
                     IPAddress = table.Column<string>(type: "TEXT", maxLength: 15, nullable: true),
                     SubnetMask = table.Column<string>(type: "TEXT", maxLength: 15, nullable: true),
@@ -863,7 +1017,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     QRCodeData = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
                     LastUsed = table.Column<DateTime>(type: "TEXT", nullable: true),
                     UsageCount = table.Column<int>(type: "INTEGER", nullable: false),
-                    Notes = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    Notes = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
                     RequiresMasterPassword = table.Column<bool>(type: "INTEGER", nullable: false),
                     PasswordId = table.Column<int>(type: "INTEGER", nullable: true)
                 },
@@ -871,15 +1025,14 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     table.PrimaryKey("PK_WiFiItems", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_WiFiItems_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_WiFiItems_PasswordItems_PasswordItemId",
                         column: x => x.PasswordItemId,
                         principalTable: "PasswordItems",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_WiFiItems_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -890,8 +1043,45 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AuditLogs_UserId",
-                table: "AuditLogs",
+                name: "IX_AspNetRoleClaims_RoleId",
+                table: "AspNetRoleClaims",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "RoleNameIndex",
+                table: "AspNetRoles",
+                column: "NormalizedName",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUserClaims_UserId",
+                table: "AspNetUserClaims",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUserLogins_UserId",
+                table: "AspNetUserLogins",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUserRoles_RoleId",
+                table: "AspNetUserRoles",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "EmailIndex",
+                table: "AspNetUsers",
+                column: "NormalizedEmail");
+
+            migrationBuilder.CreateIndex(
+                name: "UserNameIndex",
+                table: "AspNetUsers",
+                column: "NormalizedUserName",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLog_UserId",
+                table: "AuditLog",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
@@ -905,13 +1095,14 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ChildPermissionConfig_ChildUserId",
-                table: "ChildPermissionConfig",
-                column: "ChildUserId");
+                name: "IX_ChildPermissionConfig_Unique",
+                table: "ChildPermissionConfigs",
+                columns: new[] { "ChildUserId", "ParentUserId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_ChildPermissionConfig_ParentUserId",
-                table: "ChildPermissionConfig",
+                name: "IX_ChildPermissionConfigs_ParentUserId",
+                table: "ChildPermissionConfigs",
                 column: "ParentUserId");
 
             migrationBuilder.CreateIndex(
@@ -925,6 +1116,11 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Collections_VaultId",
+                table: "Collections",
+                column: "VaultId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CreditCardItems_PasswordItemId",
                 table: "CreditCardItems",
                 column: "PasswordItemId",
@@ -936,13 +1132,13 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CustomFields_PasswordItemId",
-                table: "CustomFields",
+                name: "IX_CustomField_PasswordItemId",
+                table: "CustomField",
                 column: "PasswordItemId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Devices_UserId",
-                table: "Devices",
+                name: "IX_Device_UserId",
+                table: "Device",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
@@ -957,19 +1153,9 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OtpCodes_CreatedAt",
-                table: "OtpCodes",
-                column: "CreatedAt");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_OtpCodes_UserId",
                 table: "OtpCodes",
                 column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_OtpCodes_UserId_ExpiresAt",
-                table: "OtpCodes",
-                columns: new[] { "UserId", "ExpiresAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_PasskeyItem_PasswordItemId",
@@ -998,8 +1184,8 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PasswordItemTags_TagsId",
-                table: "PasswordItemTags",
+                name: "IX_PasswordItemTag_TagsId",
+                table: "PasswordItemTag",
                 column: "TagsId");
 
             migrationBuilder.CreateIndex(
@@ -1014,19 +1200,9 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SmsSettings_IsActive",
-                table: "SmsSettings",
-                column: "IsActive");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_SmsSettings_UserId",
                 table: "SmsSettings",
                 column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SmsSettings_UserId_IsActive",
-                table: "SmsSettings",
-                columns: new[] { "UserId", "IsActive" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Tags_UserId",
@@ -1034,15 +1210,9 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserBackupSettings_NextBackupAt",
-                table: "UserBackupSettings",
-                column: "NextBackupAt");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_UserBackupSettings_UserId",
                 table: "UserBackupSettings",
-                column: "UserId",
-                unique: true);
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserPasskeys_UserId",
@@ -1050,18 +1220,24 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserRelationship_ChildUserId",
-                table: "UserRelationship",
-                column: "ChildUserId");
+                name: "IX_UserRelationship_Unique",
+                table: "UserRelationships",
+                columns: new[] { "ParentUserId", "ChildUserId", "RelationshipType" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserRelationship_ParentUserId",
-                table: "UserRelationship",
-                column: "ParentUserId");
+                name: "IX_UserRelationships_ChildUserId",
+                table: "UserRelationships",
+                column: "ChildUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserTwoFactorBackupCodes_UserId",
                 table: "UserTwoFactorBackupCodes",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Vault_UserId",
+                table: "Vault",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
@@ -1083,19 +1259,34 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 name: "ApiKeys");
 
             migrationBuilder.DropTable(
-                name: "AuditLogs");
+                name: "AspNetRoleClaims");
 
             migrationBuilder.DropTable(
-                name: "ChildPermissionConfig");
+                name: "AspNetUserClaims");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserLogins");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserRoles");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "AuditLog");
+
+            migrationBuilder.DropTable(
+                name: "ChildPermissionConfigs");
 
             migrationBuilder.DropTable(
                 name: "CreditCardItems");
 
             migrationBuilder.DropTable(
-                name: "CustomFields");
+                name: "CustomField");
 
             migrationBuilder.DropTable(
-                name: "Devices");
+                name: "Device");
 
             migrationBuilder.DropTable(
                 name: "LoginItems");
@@ -1107,7 +1298,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 name: "PasskeyItem");
 
             migrationBuilder.DropTable(
-                name: "PasswordItemTags");
+                name: "PasswordItemTag");
 
             migrationBuilder.DropTable(
                 name: "QrLoginTokens");
@@ -1125,13 +1316,16 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 name: "UserPasskeys");
 
             migrationBuilder.DropTable(
-                name: "UserRelationship");
+                name: "UserRelationships");
 
             migrationBuilder.DropTable(
                 name: "UserTwoFactorBackupCodes");
 
             migrationBuilder.DropTable(
                 name: "WiFiItems");
+
+            migrationBuilder.DropTable(
+                name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "Tags");
@@ -1146,7 +1340,10 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 name: "Collections");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "Vault");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUsers");
         }
     }
 }

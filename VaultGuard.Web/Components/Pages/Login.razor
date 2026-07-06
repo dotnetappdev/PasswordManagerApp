@@ -1,0 +1,8 @@
+@page "/login"
+@layout VaultGuard.Web.Components.Layout.EmptyLayout
+@* Web-routed login. Renders the shared login UI as a component (the Shared assembly is intentionally
+   not in the Web router — see Routes.razor — so we host its Login here to avoid ambiguous routes). *@
+
+<PageTitle>Sign In - VaultGuard</PageTitle>
+
+<VaultGuard.Components.Shared.Pages.Login />

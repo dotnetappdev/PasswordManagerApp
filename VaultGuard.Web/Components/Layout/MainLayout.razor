@@ -1,7 +1,11 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject VaultGuard.Components.Shared.Services.ThemeService ThemeService
+@inject IJSRuntime JS
+@inject VaultGuard.Services.Interfaces.IAuthService AuthService
+@inject NavigationManager Navigation
 
-<MudThemeProvider Theme="_theme" IsDarkMode="@_isDarkMode" />
+<MudThemeProvider Theme="_theme" IsDarkMode="@ThemeService.IsDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -9,35 +13,45 @@
 <MudLayout>
     <MudAppBar Elevation="0" Color="Color.Transparent" Style="background: var(--mud-palette-drawer-background); border-bottom: 1px solid rgba(255,255,255,0.08);">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Style="font-weight:700; background: linear-gradient(135deg, #2563EB, #60A5FA); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">🔐 Vault Guard</MudText>
+        <MudText Typo="Typo.h6" Style="@($"font-weight:700; background: linear-gradient(135deg, {ThemeService.AccentColor}, #60A5FA); -webkit-background-clip:text; -webkit-text-fill-color:transparent;")">🔐 Vault Guard</MudText>
         <MudSpacer />
-        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" Color="Color.Inherit" OnClick="@ToggleDarkMode" />
-        <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" Direction="Direction.Bottom" OffsetY="true">
+        <MudTooltip Text="@(ThemeService.IsDarkMode ? "Switch to light mode" : "Switch to dark mode")">
+            <MudIconButton data-testid="theme-toggle" Icon="@(ThemeService.IsDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" Color="Color.Inherit" OnClick="@ToggleDarkMode" />
+        </MudTooltip>
+        <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
             <MudMenuItem Href="/profile">Profile</MudMenuItem>
             <MudMenuItem Href="/settings">Settings</MudMenuItem>
             <MudDivider />
-            <MudMenuItem>Sign Out</MudMenuItem>
+            <MudMenuItem OnClick="@SignOut">Sign Out</MudMenuItem>
         </MudMenu>
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" Elevation="0" Variant="DrawerVariant.Responsive" Color="Color.Transparent">
         <MudNavMenu>
-            <!-- Quick Access -->
+            <!-- Quick Access (mirrors the WPF desktop navigation) -->
             <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
-            <MudNavLink Href="/passwords" Icon="@Icons.Material.Filled.Lock">All Items</MudNavLink>
+            <MudNavLink Href="/passwords" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Lock">All Items</MudNavLink>
+            <MudNavLink Href="/passwords?fav=true" Icon="@Icons.Material.Filled.Star">Favourites</MudNavLink>
+
+            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">CATEGORIES</MudText>
+            <MudNavLink Href="/passwords?type=Login" Icon="@Icons.Material.Filled.Login">Logins</MudNavLink>
+            <MudNavLink Href="/passwords?type=CreditCard" Icon="@Icons.Material.Filled.CreditCard">Credit Cards</MudNavLink>
+            <MudNavLink Href="/passwords?type=SecureNote" Icon="@Icons.Material.Filled.StickyNote2">Secure Notes</MudNavLink>
+            <MudNavLink Href="/passwords?type=WiFi" Icon="@Icons.Material.Filled.Wifi">Wi-Fi Networks</MudNavLink>
+            <MudNavLink Href="/passwords?type=Identity" Icon="@Icons.Material.Filled.Badge">Identities</MudNavLink>
 
             <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">SECURITY</MudText>
             <MudNavLink Href="/security" Icon="@Icons.Material.Filled.HealthAndSafety">Security Dashboard</MudNavLink>
             <MudNavLink Href="/passkeys" Icon="@Icons.Material.Filled.Fingerprint">Passkeys</MudNavLink>
-            <MudNavLink Href="/vaults" Icon="@Icons.Material.Filled.Shield">Vaults</MudNavLink>
-            <MudNavLink Href="/api-keys" Icon="@Icons.Material.Filled.Key">API Keys</MudNavLink>
 
-            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">ORGANISE</MudText>
+            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">MANAGE</MudText>
             <MudNavLink Href="/categories" Icon="@Icons.Material.Filled.Category">Categories</MudNavLink>
             <MudNavLink Href="/collections" Icon="@Icons.Material.Filled.FolderSpecial">Collections</MudNavLink>
             <MudNavLink Href="/tags" Icon="@Icons.Material.Filled.Tag">Tags</MudNavLink>
+            <MudNavLink Href="/vaults" Icon="@Icons.Material.Filled.Shield">Vaults</MudNavLink>
+            <MudNavLink Href="/api-keys" Icon="@Icons.Material.Filled.Key">API Keys</MudNavLink>
+            <MudNavLink Href="/import" Icon="@Icons.Material.Filled.ImportExport">Import / Export</MudNavLink>
 
             <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">MORE</MudText>
-            <MudNavLink Href="/import" Icon="@Icons.Material.Filled.ImportExport">Import / Export</MudNavLink>
             <MudNavLink Href="/audit-logs" Icon="@Icons.Material.Filled.History">Audit Logs</MudNavLink>
             <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
             <MudNavLink Icon="@Icons.Material.Filled.Info" OnClick="@(() => _aboutOpen = true)">About</MudNavLink>
@@ -62,7 +76,7 @@
             <MudAvatar Color="Color.Primary" Style="width:64px; height:64px;" Class="mb-3">
                 <MudIcon Icon="@Icons.Material.Filled.Shield" Style="font-size:2rem;" />
             </MudAvatar>
-            <MudText Typo="Typo.h6" Style="font-weight:700;">VaultGuard Vault Guard</MudText>
+            <MudText Typo="Typo.h6" Style="font-weight:700;">Vault Guard</MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary">Version 1.0.0 · Web (Blazor · .NET 10)</MudText>
             <MudText Typo="Typo.body2" Class="mt-3">
                 The best open-source password manager for Windows and Web.
@@ -80,38 +94,167 @@
 
 @code {
     bool _drawerOpen = true;
-    bool _isDarkMode = true;
     bool _aboutOpen = false;
 
-    MudTheme _theme = new MudTheme()
+    MudTheme _theme = new();
+
+    protected override void OnInitialized()
     {
-        PaletteLight = new PaletteLight()
+        _theme = BuildTheme(ThemeService.AccentColor, ThemeService.IsHighContrast);
+        ThemeService.ThemeSettingsChanged += OnThemeSettingsChanged;
+        ThemeService.ThemeChanged += OnThemeChanged;
+    }
+
+    // CSS zoom string for the app root (invariant culture so "1.2" not "1,2").
+    private string ScaleStyle =>
+        $"zoom: {ThemeService.UiScale.ToString(System.Globalization.CultureInfo.InvariantCulture)};";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
         {
-            Primary = "#2563EB",
-            PrimaryLighten = "#60A5FA",
-            PrimaryDarken = "#1D4ED8",
-            Secondary = "#6366F1",
-            AppbarBackground = "#2563EB",
-            AppbarText = "#FFFFFF",
-        },
-        PaletteDark = new PaletteDark()
-        {
-            Primary = "#2563EB",
-            PrimaryLighten = "#60A5FA",
-            PrimaryDarken = "#1D4ED8",
-            Secondary = "#6366F1",
-            AppbarBackground = "#141414",
-            AppbarText = "#E5E5E5",
-            Background = "#1A1A1A",
-            BackgroundGray = "#141414",
-            Surface = "#2D2D2D",
-            DrawerBackground = "#141414",
-            DrawerText = "#E5E5E5",
-            TextPrimary = "#E5E5E5",
-            TextSecondary = "#9D9D9D",
+            // Resolve "System" to the browser's actual preference on first paint.
+            await ThemeService.DetectAndApplySystemThemeAsync(JS);
+            await InvokeAsync(StateHasChanged);
+
+            // WPF-style unlock gate: the main app requires an authenticated session. Login/Setup use the
+            // chrome-free EmptyLayout so they're never gated here. Fail-open on error so a JS hiccup can't
+            // lock the user out entirely.
+            try
+            {
+                if (!await AuthService.IsAuthenticatedAsync())
+                    Navigation.NavigateTo("/login");
+            }
+            catch (Exception ex)
+            {
+                VaultGuard.Services.Logging.AppLogger.Warning("Auth gate check failed; allowing access", ex);
+            }
         }
-    };
+    }
+
+    private void OnThemeSettingsChanged()
+    {
+        _theme = BuildTheme(ThemeService.AccentColor, ThemeService.IsHighContrast);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnThemeChanged(object? sender, bool isDark) => InvokeAsync(StateHasChanged);
 
     void ToggleDrawer() => _drawerOpen = !_drawerOpen;
-    void ToggleDarkMode() => _isDarkMode = !_isDarkMode;
+    void ToggleDarkMode() => ThemeService.ToggleDarkMode();
+
+    async Task SignOut()
+    {
+        try { await AuthService.LogoutAsync(); }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Sign out failed", ex); }
+        Navigation.NavigateTo("/login");
+    }
+
+    // Builds a MudTheme that mirrors the WPF desktop palette (ModernTheme.xaml). Primary is the fixed
+    // VaultGuard blue used for buttons in WPF (NOT the accent — that keeps buttons blue, never purple);
+    // the user's accent drives the Secondary highlight. High-contrast swaps in a stronger black/white dark palette.
+    static MudTheme BuildTheme(string accent, bool highContrast)
+    {
+        // WPF ModernPrimary family (buttons)
+        const string primary = "#2563EB";
+        const string primaryLighten = "#60A5FA";
+        const string primaryDarken = "#1D4ED8";
+        var secondary = string.IsNullOrWhiteSpace(accent) ? "#6366F1" : accent;
+
+        var darkPalette = highContrast
+            ? new PaletteDark
+            {
+                Primary = "#4D8BFF",           // brighter blue for contrast
+                PrimaryLighten = "#7FB0FF",
+                PrimaryDarken = "#1D4ED8",
+                Secondary = "#FFD400",
+                Tertiary = "#00E5FF",
+                AppbarBackground = "#000000",
+                AppbarText = "#FFFFFF",
+                Background = "#000000",
+                BackgroundGray = "#000000",
+                Surface = "#0A0A0A",
+                DrawerBackground = "#000000",
+                DrawerText = "#FFFFFF",
+                DrawerIcon = "#FFFFFF",
+                TextPrimary = "#FFFFFF",
+                TextSecondary = "#EDEDED",
+                ActionDefault = "#FFFFFF",
+                Divider = "#FFFFFF",
+                LinesDefault = "#FFFFFF",
+                LinesInputs = "#FFFFFF",
+                TableLines = "#FFFFFF",
+                OverlayDark = "rgba(0,0,0,0.9)",
+            }
+            : new PaletteDark
+            {
+                Primary = primary,
+                PrimaryLighten = primaryLighten,
+                PrimaryDarken = primaryDarken,
+                Secondary = secondary,
+                AppbarBackground = "#141414",  // WPF ModernFormBackground
+                AppbarText = "#E5E5E5",
+                Background = "#1A1A1A",         // WPF ModernBackground
+                BackgroundGray = "#242424",    // WPF ModernCard
+                Surface = "#2D2D2D",           // WPF ModernSurface
+                DrawerBackground = "#141414",
+                DrawerText = "#E5E5E5",
+                DrawerIcon = "#9D9D9D",
+                TextPrimary = "#E5E5E5",        // WPF ModernTextPrimary
+                TextSecondary = "#9D9D9D",      // WPF ModernTextSecondary
+                Divider = "#3A3A3A",            // WPF ModernBorder
+                LinesDefault = "#3A3A3A",
+            };
+
+        return new MudTheme
+        {
+            PaletteLight = new PaletteLight
+            {
+                Primary = primary,
+                PrimaryLighten = primaryLighten,
+                PrimaryDarken = primaryDarken,
+                Secondary = secondary,
+                AppbarBackground = primary,
+                AppbarText = "#FFFFFF",
+                Background = "#F5F6F8",
+                Surface = "#FFFFFF",
+                DrawerBackground = "#FFFFFF",
+                TextPrimary = "#1A1A1A",
+                TextSecondary = "#5A5A5A",
+            },
+            PaletteDark = darkPalette
+        };
+    }
+
+    // Lightens (positive amount) or darkens (negative) a #RRGGBB hex colour.
+    static string Shift(string hex, double amount)
+    {
+        try
+        {
+            hex = hex.TrimStart('#');
+            if (hex.Length != 6) return "#" + hex;
+            int r = Convert.ToInt32(hex.Substring(0, 2), 16);
+            int g = Convert.ToInt32(hex.Substring(2, 2), 16);
+            int b = Convert.ToInt32(hex.Substring(4, 2), 16);
+            r = Adjust(r, amount);
+            g = Adjust(g, amount);
+            b = Adjust(b, amount);
+            return $"#{r:X2}{g:X2}{b:X2}";
+        }
+        catch { return hex.StartsWith("#") ? hex : "#" + hex; }
+    }
+
+    static int Adjust(int channel, double amount)
+    {
+        var v = amount >= 0
+            ? channel + (255 - channel) * amount
+            : channel + channel * amount;
+        return Math.Clamp((int)Math.Round(v), 0, 255);
+    }
+
+    public void Dispose()
+    {
+        ThemeService.ThemeSettingsChanged -= OnThemeSettingsChanged;
+        ThemeService.ThemeChanged -= OnThemeChanged;
+    }
 }

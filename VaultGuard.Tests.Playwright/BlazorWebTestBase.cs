@@ -11,6 +11,12 @@ public abstract class BlazorWebTestBase : PageTest
     private static Process? _appProcess;
     private static string? _baseUrl;
     private static string? _tempDbPath;
+
+    /// <summary>Base URL of the app under test (set once the app has started).</summary>
+    protected static string BaseUrl => _baseUrl ?? throw new InvalidOperationException("App not started yet.");
+
+    /// <summary>Ensures the web app is running; usable from tests that navigate before capture.</summary>
+    protected static Task EnsureStartedAsync() => EnsureAppStartedAsync();
     private static readonly SemaphoreSlim AppStartLock = new(1, 1);
     private static readonly string WebProjectPath = Path.GetFullPath(Path.Combine(
         AppContext.BaseDirectory,
@@ -20,8 +26,10 @@ public abstract class BlazorWebTestBase : PageTest
 
     private static async Task EnsureAppStartedAsync()
     {
-        // Show browser window when running tests locally
-        Environment.SetEnvironmentVariable("HEADED", "1");
+        // Show a browser window when running locally, but let callers force headless (e.g. CI /
+        // screenshot capture) by setting HEADED=0 beforehand.
+        if (Environment.GetEnvironmentVariable("HEADED") is null)
+            Environment.SetEnvironmentVariable("HEADED", "1");
 
         if (!string.IsNullOrWhiteSpace(_baseUrl))
             return;

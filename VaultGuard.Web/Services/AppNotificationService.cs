@@ -19,8 +19,13 @@ public sealed record AppNotification(
 public sealed class AppNotificationService
 {
     private readonly ISnackbar _snackbar;
+    private readonly IDialogService _dialogService;
 
-    public AppNotificationService(ISnackbar snackbar) => _snackbar = snackbar;
+    public AppNotificationService(ISnackbar snackbar, IDialogService dialogService)
+    {
+        _snackbar = snackbar;
+        _dialogService = dialogService;
+    }
 
     public void Success(string message, string? title = null) => Show(message, title, AppNotificationType.Success);
     public void Error  (string message, string? title = null) => Show(message, title, AppNotificationType.Error);
@@ -47,5 +52,39 @@ public sealed class AppNotificationService
             config.ShowCloseIcon = true;
             config.SnackbarVariant = Variant.Filled;
         });
+    }
+
+    // ── Modal message / exception dialogs (WPF ExceptionDialog parity) ────────────
+    /// <summary>Shows a modal error dialog with an optional expandable exception detail + copy button.</summary>
+    public Task ShowErrorAsync(string message, Exception? exception = null, string? title = null)
+        => ShowDialogAsync(message, exception?.ToString(), AppNotificationType.Error, title ?? "Something went wrong");
+
+    public Task ShowWarningAsync(string message, string? details = null, string? title = null)
+        => ShowDialogAsync(message, details, AppNotificationType.Warning, title ?? "Warning");
+
+    public Task ShowInfoAsync(string message, string? details = null, string? title = null)
+        => ShowDialogAsync(message, details, AppNotificationType.Info, title ?? "Information");
+
+    public Task ShowSuccessAsync(string message, string? details = null, string? title = null)
+        => ShowDialogAsync(message, details, AppNotificationType.Success, title ?? "Success");
+
+    private async Task ShowDialogAsync(string message, string? details, AppNotificationType type, string title)
+    {
+        var parameters = new DialogParameters
+        {
+            { "Message", message },
+            { "Details", details },
+            { "Type", type },
+        };
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackdropClick = false,
+        };
+        var dialog = await _dialogService.ShowAsync<VaultGuard.Web.Components.Shared.AppMessageDialog>(
+            title, parameters, options);
+        await dialog.Result;
     }
 }

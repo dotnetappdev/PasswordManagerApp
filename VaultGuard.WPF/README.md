@@ -24,6 +24,25 @@ and theme files are in place and working.
 - **Passkeys / Windows Hello**, cloud backup (Google Drive + OneDrive), import/export.
 - **Keyboard shortcuts** (see Settings → Shortcuts).
 
+## Security
+
+The desktop app has **no separate cryptography** — it authenticates and encrypts through the same shared
+[`VaultGuard.Crypto`](../VaultGuard.Crypto/README.md) / `VaultGuard.Services` core as the Blazor web app, the
+API and the MAUI app (`WpfAuthService` calls `IPasswordCryptoService` for salt generation, master-password
+hashing/verification, key derivation and re-encryption on password change). As a result the **local SQLite
+vault** follows exactly the same protocols documented in the [root README](../ReadMe.md#security):
+
+- **Zero-knowledge** master password (never stored; derives keys in memory, wiped after use).
+- **PBKDF2-HMAC-SHA256 @ 600,000 iterations**, with **Argon2id** supported via the self-describing hash
+  format (existing PBKDF2 vaults keep working unchanged).
+- **AES-256-GCM** authenticated encryption of every item (random nonce + 128-bit tag).
+- **Constant-time** verification of auth hashes, passcodes and 2FA/recovery codes.
+- **HKDF-SHA256** key separation for independent purpose keys.
+- Local passcode attempts are throttled; "remember this device" is protected by **Windows DPAPI**.
+
+There is nothing WPF-specific to keep in sync: security improvements made in the shared core apply to the
+desktop app automatically.
+
 ## Theming
 
 All visual tokens live in `Themes/ModernTheme.xaml` (merged at app level so implicit

@@ -7,7 +7,7 @@
 @inject IAuthService AuthService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@rendermode InteractiveServer
+@inject VaultGuard.Web.Services.AppNotificationService Notify
 
 <PageTitle>Import - VaultGuard</PageTitle>
 
@@ -161,7 +161,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Failed to clear vault data: {ex.Message}", Severity.Error);
+            await Notify.ShowErrorAsync("Failed to clear vault data.", ex);
         }
         finally { isClearing = false; }
     }
@@ -182,7 +182,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Failed to clear users: {ex.Message}", Severity.Error);
+            await Notify.ShowErrorAsync("Failed to clear users.", ex);
         }
         finally { isClearing = false; }
     }
@@ -262,12 +262,56 @@
         importResult = null;
     }
 
+    // Provider names (IPasswordImportProvider.ProviderName) that are now registered and usable.
+    HashSet<string> _registeredProviders = new(StringComparer.OrdinalIgnoreCase);
+
     protected override void OnInitialized()
     {
-        // Register the built-in providers explicitly. Referencing the provider types forces their
-        // assemblies to load so ImportService can resolve them by name.
-        ImportService.RegisterProvider(new VaultGuardImports.OnePassword.Providers.OnePasswordImportProvider());
-        ImportService.RegisterProvider(new VaultGuardImports.Bitwarden.BitwardenImportPlugin());
+        RegisterAllProviders();
+    }
+
+    // Discovers every VaultGuardImports.*.dll shipped alongside the app and registers each
+    // IPasswordImportProvider it contains — the same strategy the WPF desktop app uses — so every
+    // password manager on the card grid actually works, not just 1Password and Bitwarden.
+    void RegisterAllProviders()
+    {
+        try
+        {
+            var baseDir = AppContext.BaseDirectory;
+            var dlls = System.IO.Directory.GetFiles(baseDir, "VaultGuardImports.*.dll", System.IO.SearchOption.TopDirectoryOnly);
+            foreach (var dll in dlls)
+            {
+                try
+                {
+                    var asm = System.Reflection.Assembly.LoadFrom(dll);
+                    foreach (var type in asm.GetTypes().Where(t =>
+                                 typeof(VaultGuard.Imports.Interfaces.IPasswordImportProvider).IsAssignableFrom(t)
+                                 && !t.IsInterface && !t.IsAbstract))
+                    {
+                        if (Activator.CreateInstance(type) is VaultGuard.Imports.Interfaces.IPasswordImportProvider p)
+                        {
+                            ImportService.RegisterProvider(p);
+                            _registeredProviders.Add(p.ProviderName);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    VaultGuard.Services.Logging.AppLogger.Warning($"Failed to load import provider {System.IO.Path.GetFileName(dll)}", ex);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error("Failed to discover import providers", ex);
+        }
+
+        // Belt-and-braces: ensure the two directly-referenced providers are always present even if
+        // the directory scan came up empty (e.g. single-file publish).
+        try { ImportService.RegisterProvider(new VaultGuardImports.OnePassword.Providers.OnePasswordImportProvider()); _registeredProviders.Add("1Password"); }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("1Password provider registration failed", ex); }
+        try { ImportService.RegisterProvider(new VaultGuardImports.Bitwarden.BitwardenImportPlugin()); _registeredProviders.Add("bitwarden"); }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Bitwarden provider registration failed", ex); }
     }
 
     // Returns a short, upper-case format label from a file name so 1PUX and CSV are easy to tell apart.
@@ -282,13 +326,19 @@
         };
     }
 
-    // Maps a password-manager card key to a registered import provider name (null = not yet supported).
-    static string? MapProvider(string key) => key switch
+    // Maps a password-manager card key to a registered import provider name (null = not available).
+    // Card keys line up with each plugin's ProviderName except where noted.
+    string? MapProvider(string key)
     {
-        "1password" => "1Password",
-        "bitwarden" => "bitwarden",
-        _ => null
-    };
+        var providerName = key switch
+        {
+            "1password" => "1Password",
+            "apple" => "apple-passwords",
+            "sticky" => null,            // no dedicated provider yet
+            _ => key                      // bitwarden, lastpass, dashlane, keepass, chrome, firefox, edge, safari, nordpass, keeper, enpass, roboform
+        };
+        return providerName is not null && _registeredProviders.Contains(providerName) ? providerName : null;
+    }
 
     const long MaxImportBytes = 10 * 1024 * 1024;
 
@@ -311,7 +361,7 @@
             {
                 importResult = (false,
                     $"{passwordManagers[selectedManager].Name} import isn't available in the web app yet. " +
-                    "1Password (1PUX/CSV) and Bitwarden (CSV) are supported.");
+                    "Try exporting to CSV, or use a supported manager from the grid above.");
                 return;
             }
 

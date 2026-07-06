@@ -35,6 +35,18 @@
     <ProjectReference Include="..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
     <ProjectReference Include="..\VaultGuardImports.1Password\VaultGuardImports.1Password.csproj" />
     <ProjectReference Include="..\VaultGuardImports.Bitwarden\VaultGuardImports.Bitwarden.csproj" />
+    <ProjectReference Include="..\VaultGuardImports.Apple\VaultGuardImports.Apple.csproj" />
+    <ProjectReference Include="..\VaultGuardImports.Chrome\VaultGuardImports.Chrome.csproj" />
+    <ProjectReference Include="..\VaultGuardImports.Dashlane\VaultGuardImports.Dashlane.csproj" />
+    <ProjectReference Include="..\VaultGuardImports.Edge\VaultGuardImports.Edge.csproj" />
+    <ProjectReference Include="..\VaultGuardImports.Enpass\VaultGuardImports.Enpass.csproj" />
+    <ProjectReference Include="..\VaultGuardImports.Firefox\VaultGuardImports.Firefox.csproj" />
+    <ProjectReference Include="..\VaultGuardImports.KeePass\VaultGuardImports.KeePass.csproj" />
+    <ProjectReference Include="..\VaultGuardImports.Keeper\VaultGuardImports.Keeper.csproj" />
+    <ProjectReference Include="..\VaultGuardImports.LastPass\VaultGuardImports.LastPass.csproj" />
+    <ProjectReference Include="..\VaultGuardImports.NordPass\VaultGuardImports.NordPass.csproj" />
+    <ProjectReference Include="..\VaultGuardImports.RoboForm\VaultGuardImports.RoboForm.csproj" />
+    <ProjectReference Include="..\VaultGuardImports.Safari\VaultGuardImports.Safari.csproj" />
     <ProjectReference Include="..\VaultGuard.ExceptionReporting\VaultGuard.ExceptionReporting.csproj" />
     <ProjectReference Include="..\VaultGuard.ExceptionReporting.Sentry\VaultGuard.ExceptionReporting.Sentry.csproj" />
   </ItemGroup>

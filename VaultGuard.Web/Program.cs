@@ -52,7 +52,7 @@ builder.Services.AddRazorComponents()
 // Add MudBlazor services
 builder.Services.AddMudServices(config =>
 {
-    config.SnackbarConfiguration.PositionClass    = MudBlazor.Defaults.Classes.Position.BottomRight;
+    config.SnackbarConfiguration.PositionClass    = MudBlazor.Defaults.Classes.Position.TopRight;  // match WPF toasts
     config.SnackbarConfiguration.MaxDisplayedSnackbars = 4;
     config.SnackbarConfiguration.PreventDuplicates  = false;
     config.SnackbarConfiguration.NewestOnTop        = true;
@@ -143,10 +143,12 @@ else
     }
     else
     {
+        // SQL Server migrations live in VaultGuard.DAL.SqlServer (separate from the SQLite migrations in
+        // VaultGuard.DAL); point EF at that assembly so runtime migration matches the API.
         builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
-            options.UseSqlServer(connectionString));
+            options.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("VaultGuard.DAL.SqlServer")));
         builder.Services.AddDbContext<VaultGuardDbContext>(options =>
-            options.UseSqlServer(connectionString));
+            options.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("VaultGuard.DAL.SqlServer")));
     }
 }
 
@@ -171,6 +173,10 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 builder.Services.AddScoped<IPasswordItemService, VaultGuard.Services.PasswordItemService>();
 builder.Services.AddScoped<ITagService, VaultGuard.Services.TagService>();
 builder.Services.AddScoped<ICategoryInterface, VaultGuard.Services.Services.CategoryService>();
+
+// Shared, machine-local app settings — persists to the same %LocalAppData%\VaultGuard\settings.json
+// the WPF desktop app uses, so theme/accent/database-path preferences are shared on one machine.
+builder.Services.AddSingleton<IAppSettingsService, VaultGuard.Services.Services.AppSettingsService>();
 
 // Shared, stateless feature services (strength meter + TOTP authenticator codes + QR)
 builder.Services.AddSingleton<IPasswordStrengthService, VaultGuard.Services.Services.PasswordStrengthService>();
@@ -234,18 +240,33 @@ builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
     return new Fido2NetLib.Fido2(config);
 });
 
-// Register Identity data seeder
+// Register Identity data seeder + the on-demand default-account seeder (used by the login screen button)
 builder.Services.AddScoped<VaultGuard.DAL.Seed.IdentityDataSeeder>();
+builder.Services.AddScoped<IDefaultAccountSeeder, VaultGuard.Web.Services.WebDefaultAccountSeeder>();
 
 // Add HttpClient for API calls
 builder.Services.AddHttpClient();
 
-// Add HttpClient for API communication with Bearer token support
+// Add HttpClient for API communication with Bearer token support.
+// The base URL is configurable at runtime: a value saved in the shared settings.json (Settings →
+// Sync/API, key "ApiBaseUrl", also used by the WPF app) takes precedence over appsettings.json.
+var sharedApiSettings = new VaultGuard.Services.Services.AppSettingsService();
+var sharedApiBaseUrl = sharedApiSettings.Get("ApiBaseUrl");
+var sharedApiKey = sharedApiSettings.Get("ApiKey");
+var sharedClientId = sharedApiSettings.Get("ApiClientId");
 builder.Services.AddHttpClient("VaultGuardAPI", client =>
 {
-    var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7001";
+    var apiBaseUrl = !string.IsNullOrWhiteSpace(sharedApiBaseUrl)
+        ? sharedApiBaseUrl
+        : (builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7001");
     client.BaseAddress = new Uri(apiBaseUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
+    // API key / client credential access (configured in Settings → API Connection). The API validates
+    // the key via its ApiKeyAuthenticationMiddleware. Client-credentials token exchange is a follow-up.
+    if (!string.IsNullOrWhiteSpace(sharedApiKey))
+        client.DefaultRequestHeaders.Add("X-Api-Key", sharedApiKey);
+    if (!string.IsNullOrWhiteSpace(sharedClientId))
+        client.DefaultRequestHeaders.Add("X-Client-Id", sharedClientId);
 });
 
 // Add API service for external API communication if needed
@@ -301,6 +322,13 @@ using (var scope = app.Services.CreateScope())
             var dbContextMain = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
             await dbContextMain.Database.EnsureCreatedAsync();
             VaultGuard.Services.Logging.AppLogger.Info("VaultGuardDbContext schema ensured");
+
+            // Reconcile an existing SQLite vault with the current model (adds Collections.VaultId, the
+            // Vault table, join/audit/device tables, etc.) — the SAME fixes the WPF app applies, so the
+            // Blazor SQLite database mirrors the desktop one. No-op on SQL Server / other providers.
+            await VaultGuard.Services.Services.SqliteSchemaGuard.EnsureVaultSchemaAsync(
+                dbContextMain,
+                app.Services.GetService<Microsoft.Extensions.Logging.ILoggerFactory>()?.CreateLogger("SqliteSchemaGuard"));
         }
         catch (Exception ensureEx)
         {
@@ -322,12 +350,14 @@ using (var scope = app.Services.CreateScope())
             }
         }
 
-        // Seed Identity data (roles and default users)
+        // Seed Identity ROLES only at startup. Default demo accounts are NOT auto-created so a fresh
+        // install shows the first-run "Create Master Key" setup on the login page; users can still create
+        // the default accounts on demand via the "Create default accounts" button.
         try
         {
             var identitySeeder = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.Seed.IdentityDataSeeder>();
-            await identitySeeder.SeedAsync();
-            VaultGuard.Services.Logging.AppLogger.Info("Identity data seeded successfully");
+            await identitySeeder.SeedAsync(includeDefaultUsers: false);
+            VaultGuard.Services.Logging.AppLogger.Info("Identity roles seeded (default accounts on demand)");
         }
         catch (Exception seedEx)
         {

@@ -451,6 +451,12 @@ public class MockPasswordCryptoService : IPasswordCryptoService
         return BCrypt.Net.BCrypt.HashPassword(masterPassword);
     }
 
+    public string CreateArgon2idMasterPasswordHash(string masterPassword, byte[] userSalt,
+        int memoryKib = 65536, int iterations = 3, int parallelism = 4)
+    {
+        return BCrypt.Net.BCrypt.HashPassword(masterPassword);
+    }
+
     public string CreateAuthHash(byte[] masterKey, string masterPassword)
     {
         return BCrypt.Net.BCrypt.HashPassword(masterPassword);

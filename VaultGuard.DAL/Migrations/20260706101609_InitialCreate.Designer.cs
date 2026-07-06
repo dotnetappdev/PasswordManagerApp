@@ -2,20 +2,125 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using VaultGuard.DAL;
 
 #nullable disable
 
-namespace VaultGuard.DAL.Migrations.VaultGuardDb
+namespace VaultGuard.DAL.Migrations
 {
-    [DbContext(typeof(VaultGuardDbContext))]
-    partial class VaultGuardDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(VaultGuardDbContextApp))]
+    [Migration("20260706101609_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.8");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetRoleClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserLogins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RoleId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetUserRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("AspNetUserTokens", (string)null);
+                });
 
             modelBuilder.Entity("PasswordItemTag", b =>
                 {
@@ -29,7 +134,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.HasIndex("TagsId");
 
-                    b.ToTable("PasswordItemTags", (string)null);
+                    b.ToTable("PasswordItemTag");
                 });
 
             modelBuilder.Entity("VaultGuard.Models.ApiKey", b =>
@@ -75,6 +180,48 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     b.ToTable("ApiKeys");
                 });
 
+            modelBuilder.Entity("VaultGuard.Models.ApplicationRole", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex");
+
+                    b.ToTable("AspNetRoles", (string)null);
+                });
+
             modelBuilder.Entity("VaultGuard.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -91,6 +238,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
@@ -142,9 +290,11 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("PasskeysEnabled")
@@ -202,7 +352,14 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex");
+
+                    b.ToTable("AspNetUsers", (string)null);
                 });
 
             modelBuilder.Entity("VaultGuard.Models.AuditLog", b =>
@@ -265,7 +422,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AuditLogs");
+                    b.ToTable("AuditLog");
                 });
 
             modelBuilder.Entity("VaultGuard.Models.Category", b =>
@@ -278,7 +435,6 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Color")
-                        .HasMaxLength(7)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
@@ -288,22 +444,22 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Icon")
-                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("LastModified")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -387,11 +543,13 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChildUserId");
-
                     b.HasIndex("ParentUserId");
 
-                    b.ToTable("ChildPermissionConfig");
+                    b.HasIndex("ChildUserId", "ParentUserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ChildPermissionConfig_Unique");
+
+                    b.ToTable("ChildPermissionConfigs");
                 });
 
             modelBuilder.Entity("VaultGuard.Models.Collection", b =>
@@ -441,11 +599,16 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("VaultId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ParentCollectionId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("VaultId");
 
                     b.ToTable("Collections");
                 });
@@ -469,7 +632,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("TEXT");
 
                     b.Property<string>("BankWebsite")
-                        .HasMaxLength(500)
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("BenefitsDescription")
@@ -501,13 +664,11 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CVV")
-                        .IsRequired()
-                        .HasMaxLength(100)
+                        .HasMaxLength(4)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CardNumber")
-                        .IsRequired()
-                        .HasMaxLength(500)
+                        .HasMaxLength(19)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CardNumberAuthTag")
@@ -522,7 +683,6 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("CardholderName")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
@@ -564,8 +724,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ExpiryDate")
-                        .IsRequired()
-                        .HasMaxLength(100)
+                        .HasMaxLength(7)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FraudAlertEmail")
@@ -591,7 +750,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Notes")
-                        .HasMaxLength(1000)
+                        .HasMaxLength(2000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("OnlineBankingPassword")
@@ -641,7 +800,6 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ValidFrom")
@@ -692,14 +850,13 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.Property<string>("Value")
                         .IsRequired()
-                        .HasMaxLength(5000)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
                     b.HasIndex("PasswordItemId");
 
-                    b.ToTable("CustomFields");
+                    b.ToTable("CustomField");
                 });
 
             modelBuilder.Entity("VaultGuard.Models.Device", b =>
@@ -756,7 +913,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Devices");
+                    b.ToTable("Device");
                 });
 
             modelBuilder.Entity("VaultGuard.Models.LoginItem", b =>
@@ -822,21 +979,12 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("NotesAuthTag")
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("NotesNonce")
                         .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Password")
-                        .IsRequired()
-                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PasswordAuthTag")
@@ -933,11 +1081,9 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Username")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
@@ -946,7 +1092,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WebsiteUrl")
-                        .HasMaxLength(500)
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -1005,11 +1151,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedAt");
-
                     b.HasIndex("UserId");
-
-                    b.HasIndex("UserId", "ExpiresAt");
 
                     b.ToTable("OtpCodes");
                 });
@@ -1108,10 +1250,10 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CategoryId")
+                    b.Property<int?>("CategoryId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CollectionId")
+                    b.Property<int?>("CollectionId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
@@ -1145,7 +1287,6 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Website")
@@ -1215,8 +1356,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(5000)
+                        .HasMaxLength(10000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ContentAuthTag")
@@ -1277,7 +1417,6 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
@@ -1288,7 +1427,6 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Version")
@@ -1392,11 +1530,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IsActive");
-
                     b.HasIndex("UserId");
-
-                    b.HasIndex("UserId", "IsActive");
 
                     b.ToTable("SmsSettings");
                 });
@@ -1408,7 +1542,6 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Color")
-                        .IsRequired()
                         .HasMaxLength(7)
                         .HasColumnType("TEXT");
 
@@ -1434,7 +1567,6 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("TEXT");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -1496,15 +1628,11 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NextBackupAt");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("UserBackupSettings");
                 });
@@ -1612,9 +1740,11 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.HasIndex("ChildUserId");
 
-                    b.HasIndex("ParentUserId");
+                    b.HasIndex("ParentUserId", "ChildUserId", "RelationshipType")
+                        .IsUnique()
+                        .HasDatabaseName("IX_UserRelationship_Unique");
 
-                    b.ToTable("UserRelationship");
+                    b.ToTable("UserRelationships");
                 });
 
             modelBuilder.Entity("VaultGuard.Models.UserTwoFactorBackupCode", b =>
@@ -1636,6 +1766,9 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsUsed")
                         .HasColumnType("INTEGER");
 
@@ -1655,6 +1788,49 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     b.HasIndex("UserId");
 
                     b.ToTable("UserTwoFactorBackupCodes");
+                });
+
+            modelBuilder.Entity("VaultGuard.Models.Vault", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(7)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Vault");
                 });
 
             modelBuilder.Entity("VaultGuard.Models.WiFiItem", b =>
@@ -1750,16 +1926,14 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("TEXT");
 
                     b.Property<string>("NetworkName")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Notes")
-                        .HasMaxLength(1000)
+                        .HasMaxLength(2000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Password")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
@@ -1817,7 +1991,6 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("TEXT");
 
                     b.Property<int>("SecurityType")
-                        .HasMaxLength(50)
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("SignalStrength")
@@ -1839,7 +2012,6 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WirelessStandard")
@@ -1854,6 +2026,57 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     b.HasIndex("UserId");
 
                     b.ToTable("WiFiItems");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.HasOne("VaultGuard.Models.ApplicationRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.HasOne("VaultGuard.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.HasOne("VaultGuard.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.HasOne("VaultGuard.Models.ApplicationRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VaultGuard.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.HasOne("VaultGuard.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("PasswordItemTag", b =>
@@ -1901,9 +2124,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("Categories")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("UserId");
 
                     b.Navigation("Collection");
 
@@ -1921,7 +2142,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     b.HasOne("VaultGuard.Models.ApplicationUser", "ParentUser")
                         .WithMany("ManagedChildPermissions")
                         .HasForeignKey("ParentUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("ChildUser");
@@ -1941,9 +2162,15 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("VaultGuard.Models.Vault", "Vault")
+                        .WithMany()
+                        .HasForeignKey("VaultId");
+
                     b.Navigation("ParentCollection");
 
                     b.Navigation("User");
+
+                    b.Navigation("Vault");
                 });
 
             modelBuilder.Entity("VaultGuard.Models.CreditCardItem", b =>
@@ -1956,9 +2183,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("CreditCardItems")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("UserId");
 
                     b.Navigation("PasswordItem");
 
@@ -1997,9 +2222,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("LoginItems")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("UserId");
 
                     b.Navigation("PasswordItem");
 
@@ -2038,21 +2261,15 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     b.HasOne("VaultGuard.Models.Category", "Category")
                         .WithMany("PasswordItems")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("CategoryId");
 
                     b.HasOne("VaultGuard.Models.Collection", "Collection")
                         .WithMany("PasswordItems")
-                        .HasForeignKey("CollectionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("CollectionId");
 
                     b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("PasswordItems")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("UserId");
 
                     b.Navigation("Category");
 
@@ -2071,9 +2288,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("SecureNoteItems")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("UserId");
 
                     b.Navigation("PasswordItem");
 
@@ -2095,9 +2310,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                 {
                     b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("Tags")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("UserId");
 
                     b.Navigation("User");
                 });
@@ -2135,7 +2348,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     b.HasOne("VaultGuard.Models.ApplicationUser", "ParentUser")
                         .WithMany("ChildRelationships")
                         .HasForeignKey("ParentUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("ChildUser");
@@ -2154,6 +2367,17 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("VaultGuard.Models.Vault", b =>
+                {
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
+                        .WithMany("Vaults")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("VaultGuard.Models.WiFiItem", b =>
                 {
                     b.HasOne("VaultGuard.Models.PasswordItem", "PasswordItem")
@@ -2164,9 +2388,7 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
 
                     b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("WiFiItems")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("UserId");
 
                     b.Navigation("PasswordItem");
 
@@ -2208,6 +2430,8 @@ namespace VaultGuard.DAL.Migrations.VaultGuardDb
                     b.Navigation("TwoFactorBackupCodes");
 
                     b.Navigation("UserPasskeys");
+
+                    b.Navigation("Vaults");
 
                     b.Navigation("WiFiItems");
                 });

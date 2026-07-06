@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using VaultGuard.Crypto.Interfaces;
 
@@ -178,26 +179,88 @@ public class PasswordCryptoService : IPasswordCryptoService
         }
     }
 
+    // Argon2id auth-hash defaults (OWASP: >=19 MiB, >=2 iters). Shared by every client via this service.
+    private const int Argon2MemoryKib = 65536;   // 64 MiB
+    private const int Argon2Iterations = 3;
+    private const int Argon2Parallelism = 4;
+    private const string Argon2Prefix = "$argon2id$";
+
     /// <summary>
-    /// Verifies a master password against stored hash
+    /// Creates a self-describing Argon2id authentication hash (PHC string). See the interface docs.
+    /// </summary>
+    public string CreateArgon2idMasterPasswordHash(string masterPassword, byte[] userSalt,
+        int memoryKib = Argon2MemoryKib, int iterations = Argon2Iterations, int parallelism = Argon2Parallelism)
+    {
+        if (string.IsNullOrEmpty(masterPassword))
+            throw new ArgumentException("Master password cannot be null or empty", nameof(masterPassword));
+        if (userSalt == null || userSalt.Length == 0)
+            throw new ArgumentException("User salt cannot be null or empty", nameof(userSalt));
+
+        var key = _cryptographyService.DeriveKeyArgon2id(masterPassword, userSalt, memoryKib, iterations, parallelism, 32);
+        try
+        {
+            return $"{Argon2Prefix}v=19$m={memoryKib},t={iterations},p={parallelism}$" +
+                   $"{Convert.ToBase64String(userSalt)}${Convert.ToBase64String(key)}";
+        }
+        finally
+        {
+            Array.Clear(key, 0, key.Length);
+        }
+    }
+
+    /// <summary>
+    /// Verifies a master password against a stored hash. Auto-detects the format: a self-describing
+    /// Argon2id PHC string is verified with Argon2id (salt + params read from the string); otherwise the
+    /// legacy PBKDF2 auth hash is recomputed. Keeps existing vaults working while supporting the stronger KDF.
     /// </summary>
     public bool VerifyMasterPassword(string masterPassword, string storedHash, byte[] userSalt, int iterations = AuthHashIterations)
     {
         if (string.IsNullOrEmpty(masterPassword) || string.IsNullOrEmpty(storedHash))
             return false;
 
-        if (userSalt == null || userSalt.Length == 0)
-            return false;
-
         try
         {
+            // New self-describing Argon2id hashes carry their own salt + parameters.
+            if (storedHash.StartsWith(Argon2Prefix, StringComparison.Ordinal))
+                return VerifyArgon2idHash(masterPassword, storedHash);
+
+            if (userSalt == null || userSalt.Length == 0)
+                return false;
+
             var computedHash = CreateMasterPasswordHash(masterPassword, userSalt, iterations);
-            return computedHash.Equals(storedHash, StringComparison.Ordinal);
+            // Constant-time comparison to avoid a timing side-channel on the auth hash.
+            return CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(computedHash), Encoding.UTF8.GetBytes(storedHash));
         }
         catch
         {
             return false;
         }
+    }
+
+    // Parses "$argon2id$v=19$m=..,t=..,p=..$saltB64$hashB64" and verifies in constant time.
+    private bool VerifyArgon2idHash(string masterPassword, string phc)
+    {
+        var parts = phc.Split('$');
+        // ["", "argon2id", "v=19", "m=..,t=..,p=..", saltB64, hashB64]
+        if (parts.Length != 6) return false;
+
+        var kv = parts[3].Split(',');
+        int memoryKib = ParsePhcInt(kv, "m=");
+        int iterations = ParsePhcInt(kv, "t=");
+        int parallelism = ParsePhcInt(kv, "p=");
+        if (memoryKib <= 0 || iterations <= 0 || parallelism <= 0) return false;
+
+        var salt = Convert.FromBase64String(parts[4]);
+        var expected = Convert.FromBase64String(parts[5]);
+        var actual = _cryptographyService.DeriveKeyArgon2id(masterPassword, salt, memoryKib, iterations, parallelism, expected.Length);
+        return CryptographicOperations.FixedTimeEquals(actual, expected);
+    }
+
+    private static int ParsePhcInt(string[] pairs, string key)
+    {
+        var pair = pairs.FirstOrDefault(p => p.StartsWith(key, StringComparison.Ordinal));
+        return pair != null && int.TryParse(pair.AsSpan(key.Length), out var v) ? v : 0;
     }
 
     /// <summary>
@@ -321,7 +384,9 @@ public class PasswordCryptoService : IPasswordCryptoService
         try
         {
             var computedIdentifier = CreateMasterKeyIdentifier(masterPassword, userSalt);
-            return computedIdentifier.Equals(storedIdentifier, StringComparison.Ordinal);
+            // Constant-time comparison to avoid a timing side-channel on the lookup hash.
+            return CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(computedIdentifier), Encoding.UTF8.GetBytes(storedIdentifier));
         }
         catch
         {

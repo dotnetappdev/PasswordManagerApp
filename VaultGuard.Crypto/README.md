@@ -5,11 +5,14 @@ A comprehensive cryptographic library for secure password management, implementi
 ## Features
 
 - **PBKDF2 Key Derivation**: Uses 600,000+ iterations with SHA-256 (OWASP 2024 recommendation, exceeds Bitwarden's 100,000)
+- **Argon2id (memory-hard KDF)**: `DeriveKeyArgon2id` plus a self-describing `$argon2id$…` auth-hash format; `VerifyMasterPassword` auto-detects it and stays backward-compatible with existing PBKDF2 hashes
+- **Key separation (HKDF-SHA256)**: `DeriveSubKey` produces independent purpose-specific keys (encryption / authentication / backup) from one master key
 - **AES-256-GCM Encryption**: Authenticated encryption for maximum security
 - **Zero-Knowledge Architecture**: Master passwords are never stored, only hashed for authentication
 - **Bitwarden-Compatible Flow**: Exact same user experience and security model as Bitwarden
 - **Session-Based Caching**: Master key derived once per session for optimal performance
 - **Memory Safety**: Sensitive keys are cleared from memory after use
+- **Shared by every client**: WPF, Blazor, MAUI, the API and the browser extension all use this one library, so the guarantees are identical everywhere (including the WPF app's local SQLite vault)
 
 ## Architecture
 
@@ -173,9 +176,11 @@ Add to `appsettings.json`:
 
 1. **Iteration Count**: Using 600,000 PBKDF2 iterations for strong protection against brute-force attacks (OWASP 2024 recommendation)
 2. **Salt Storage**: User salts are stored in the database but are useless without the master password
-3. **Memory Safety**: Master keys are cleared from memory immediately after use
+3. **Memory Safety**: Master keys (and intermediate key buffers) are cleared from memory with `Array.Clear` immediately after use
 4. **Authentication Separation**: Authentication hash cannot be used to decrypt data
 5. **Forward Secrecy**: Changing master password requires re-encryption of all data
+6. **Authenticated Encryption**: AES-256-GCM uses a fresh 96-bit random nonce per operation and a 128-bit auth tag, so any tampering with ciphertext is detected and rejected on decrypt
+7. **Constant-Time Comparison**: Auth-hash, passcode and lookup-hash verification use `CryptographicOperations.FixedTimeEquals` to avoid leaking hash bytes through a timing side-channel
 
 ## Testing
 

@@ -4,9 +4,14 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Pomelo.EntityFrameworkCore.MySql (pulled transitively via VaultGuard.Services) has no EF Core 10
+         build yet, so it pins Relational <= 9.x while the solution runs EF Core 10. Suppress the resulting
+         NU1608 until Pomelo ships an EF Core 10 release. Matches the suppression in Services/Web/DAL.MySql. -->
+    <NoWarn>$(NoWarn);NU1608</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Cloud.SecretManager.V1" Version="2.5.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
       <PrivateAssets>all</PrivateAssets>
@@ -14,6 +19,8 @@
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+    <!-- Patched native SQLite bundle (transitive 2.1.11 has advisory GHSA-2m69-gcr7-jv3q). -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
@@ -31,6 +38,8 @@
   <ItemGroup>
     <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
     <ProjectReference Include="..\VaultGuard.DAL\VaultGuard.DAL.csproj" />
+    <!-- SQL Server migrations assembly (applied at runtime by MigrateAsync). -->
+    <ProjectReference Include="..\VaultGuard.DAL.SqlServer\VaultGuard.DAL.SqlServer.csproj" />
     <ProjectReference Include="..\VaultGuard.DAL.SupaBase\VaultGuard.DAL.SupaBase.csproj" />
     <ProjectReference Include="..\VaultGuard.Crypto\VaultGuard.Crypto.csproj" />
     <ProjectReference Include="..\VaultGuard.Services\VaultGuard.Services.csproj" />

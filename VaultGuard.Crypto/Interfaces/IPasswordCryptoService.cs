@@ -33,6 +33,15 @@ public interface IPasswordCryptoService
     string CreateMasterPasswordHash(string masterPassword, byte[] userSalt, int iterations = 600000);
 
     /// <summary>
+    /// Creates an authentication hash using the memory-hard Argon2id KDF, encoded in a self-describing
+    /// PHC string (<c>$argon2id$v=19$m=..,t=..,p=..$salt$hash</c>). <see cref="VerifyMasterPassword"/>
+    /// auto-detects this format, so it interoperates with existing PBKDF2 hashes and works across every
+    /// client that shares this service (WPF, Web, API, MAUI) with no per-client changes.
+    /// </summary>
+    string CreateArgon2idMasterPasswordHash(string masterPassword, byte[] userSalt,
+        int memoryKib = 65536, int iterations = 3, int parallelism = 4);
+
+    /// <summary>
     /// Creates an authentication hash using pre-derived master key and master password
     /// </summary>
     /// <param name="masterKey">Pre-derived master key</param>

@@ -1,7 +1,13 @@
 @page "/setup"
+@layout VaultGuard.Web.Components.Layout.EmptyLayout
 @using VaultGuard.Models.Configuration
 @using VaultGuard.Services.Interfaces
+@using VaultGuard.DAL
+@using VaultGuard.DAL.Seed
+@using Microsoft.Extensions.DependencyInjection
 @inject IDatabaseConfigurationService DatabaseConfigService
+@inject IServiceProvider Services
+@inject IAppSettingsService AppSettings
 @inject NavigationManager NavigationManager
 
 <PageTitle>Database Setup — Vault Guard</PageTitle>
@@ -525,6 +531,90 @@
             </section>
         </div>
 
+        <!-- Seeding -->
+        <div class="setup-body seed-body">
+            <section class="config-panel">
+                <div class="config-panel-header">
+                    <span class="config-kicker">Step 2 — First-run data</span>
+                    <h2>Seed users &amp; sample data</h2>
+                    <p>Create the default roles and administrator sign-in, then optionally add demo vault items so you can explore straight away.</p>
+                </div>
+
+                <div class="seed-grid">
+                    <div class="seed-card">
+                        <div class="seed-card-icon"><i class="fas fa-user-shield"></i></div>
+                        <h3>Roles &amp; admin user</h3>
+                        <p>Seeds the Admin/User roles and the default administrator account if they don't exist yet.</p>
+                        <button class="btn-primary" @onclick="SeedUsers" disabled="@_busy">
+                            @if (_busy && _busyAction == "seed-users") { <i class="fas fa-spinner fa-spin"></i> }
+                            else { <i class="fas fa-user-plus"></i> }
+                            Seed roles &amp; admin
+                        </button>
+                    </div>
+
+                    <div class="seed-card">
+                        <div class="seed-card-icon"><i class="fas fa-database"></i></div>
+                        <h3>Demo vault data</h3>
+                        <p>Adds sample categories, collections, tags and password items for a ready-to-explore vault.</p>
+                        <button class="btn-secondary" @onclick="SeedDemo" disabled="@_busy">
+                            @if (_busy && _busyAction == "seed-demo") { <i class="fas fa-spinner fa-spin"></i> }
+                            else { <i class="fas fa-seedling"></i> }
+                            Seed demo data
+                        </button>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_seedMessage))
+                {
+                    <div class="status-bar @(_seedOk ? "ok" : "err")">
+                        <i class="fas @(_seedOk ? "fa-check-circle" : "fa-exclamation-circle")"></i>
+                        @_seedMessage
+                    </div>
+                }
+
+                <div class="config-panel-header" style="margin-top:24px;">
+                    <span class="config-kicker">Step 3 — API server (optional)</span>
+                    <h2>Connect to a Vault Guard API</h2>
+                    <p>Leave this alone to use the local database. To work against a Vault Guard API server instead,
+                       choose "API Server" and enter its URL — this is saved to your shared settings and used on the next start.</p>
+                </div>
+                <div class="config-section">
+                    <div class="fg">
+                        <label>Data source</label>
+                        <select class="fc" @bind="_authMode">
+                            <option value="Local Database">Local Database</option>
+                            <option value="API Server">API Server</option>
+                        </select>
+                    </div>
+                    @if (_authMode == "API Server")
+                    {
+                        <div class="fg">
+                            <label>API base URL</label>
+                            <input class="fc" type="text" @bind="_apiBaseUrl" placeholder="https://localhost:7001" />
+                            <small>Root URL of the Vault Guard API server.</small>
+                        </div>
+                    }
+                    <button class="btn-secondary" @onclick="SaveApiSettings">
+                        <i class="fas fa-save"></i> Save connection settings
+                    </button>
+                    @if (!string.IsNullOrEmpty(_apiSavedMessage))
+                    {
+                        <div class="status-bar ok" style="margin-top:12px;">
+                            <i class="fas fa-check-circle"></i> @_apiSavedMessage
+                        </div>
+                    }
+                </div>
+
+                <div class="setup-actions">
+                    <div class="right-actions">
+                        <button class="btn-primary" @onclick='() => NavigationManager.NavigateTo("/", forceLoad: true)'>
+                            <i class="fas fa-check"></i> Finish &amp; open Vault Guard
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
     </div>
 </div>
 
@@ -667,8 +757,21 @@
     .btn-ghost { background: none; color: #718096; padding-left: 0; }
     .btn-ghost:hover { color: #2d3748; }
 
+    /* Seeding */
+    .seed-body { padding: 0 32px 32px; }
+    .seed-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 8px; }
+    .seed-card {
+        border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; background: #f8fafc;
+        display: flex; flex-direction: column; gap: 8px;
+    }
+    .seed-card-icon { font-size: 24px; color: #007acc; }
+    .seed-card h3 { margin: 0; font-size: 15px; color: #1a202c; }
+    .seed-card p { margin: 0 0 8px; font-size: 13px; color: #718096; flex: 1; }
+    .seed-card .btn-primary, .seed-card .btn-secondary { align-self: flex-start; }
+
     @@media (max-width: 600px) {
         .setup-layout { grid-template-columns: 1fr; }
+        .seed-grid { grid-template-columns: 1fr; }
         .form-row { flex-direction: column; gap: 0; }
         .port-field { width: 100%; }
         .right-actions { flex-direction: column; }
@@ -703,6 +806,69 @@
     private string _supaUrl = string.Empty;
     private string _supaKey = string.Empty;
 
+    // Seeding
+    private bool _seedOk;
+    private string _seedMessage = string.Empty;
+
+    // API server connection (shared with the WPF app via AuthMode / ApiBaseUrl)
+    private string _authMode = "Local Database";
+    private string _apiBaseUrl = "https://localhost:7001";
+    private string _apiSavedMessage = string.Empty;
+
+    private void SaveApiSettings()
+    {
+        AppSettings.Set("AuthMode", _authMode);
+        AppSettings.Set("ApiBaseUrl", _apiBaseUrl);
+        AppSettings.Save();
+        _apiSavedMessage = _authMode == "API Server"
+            ? $"Saved — the app will use {_apiBaseUrl} after restart."
+            : "Saved — using the local database.";
+    }
+
+    private async Task SeedUsers()
+    {
+        _busy = true; _busyAction = "seed-users"; _seedMessage = string.Empty; StateHasChanged();
+        try
+        {
+            using var scope = Services.CreateScope();
+            var seeder = scope.ServiceProvider.GetRequiredService<IdentityDataSeeder>();
+            await seeder.SeedAsync();
+            _seedOk = true;
+            _seedMessage = "Roles and the default administrator account are ready.";
+        }
+        catch (Exception ex)
+        {
+            _seedOk = false;
+            _seedMessage = $"Seeding failed: {ex.Message}";
+            VaultGuard.Services.Logging.AppLogger.Error("Setup: seed users failed", ex);
+        }
+        finally { _busy = false; _busyAction = string.Empty; StateHasChanged(); }
+    }
+
+    private async Task SeedDemo()
+    {
+        _busy = true; _busyAction = "seed-demo"; _seedMessage = string.Empty; StateHasChanged();
+        try
+        {
+            using var scope = Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
+            var seedUserId =
+                db.Users.Where(u => u.Email == "user@passwordmanager.local").Select(u => u.Id).FirstOrDefault()
+                ?? db.Users.Select(u => u.Id).FirstOrDefault()
+                ?? TestDataSeeder.TestUserId;
+            TestDataSeeder.SeedTestData(db, seedUserId);
+            _seedOk = true;
+            _seedMessage = "Demo vault data added. Open Vault Guard to explore.";
+        }
+        catch (Exception ex)
+        {
+            _seedOk = false;
+            _seedMessage = $"Demo seeding failed: {ex.Message}";
+            VaultGuard.Services.Logging.AppLogger.Error("Setup: seed demo data failed", ex);
+        }
+        finally { _busy = false; _busyAction = string.Empty; StateHasChanged(); }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -717,6 +883,13 @@
                 if (existing.PostgreSql != null) _pg = existing.PostgreSql;
                 if (existing.Supabase != null) { _supaUrl = existing.Supabase.Url; _supaKey = existing.Supabase.ServiceKey; }
             }
+        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
+
+        try
+        {
+            _authMode = AppSettings.Get("AuthMode", "Local Database");
+            _apiBaseUrl = AppSettings.Get("ApiBaseUrl", "https://localhost:7001");
         }
         catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }

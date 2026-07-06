@@ -10,6 +10,124 @@ The Vault Guard now supports flexible configuration for both the browser extensi
 2. **Web UI**: Setup wizard for first-run database configuration
 3. **WinUI App**: Works with custom database paths configured through extension
 
+## Secrets management (Google Secret Manager)
+
+The **API** (`VaultGuard.API`) integrates with [**Google Cloud Secret Manager**](https://cloud.google.com/secret-manager)
+(the `Google.Cloud.SecretManager.V1` NuGet package) so its secrets — database credentials, JWT signing key,
+Sentry DSN, SMS and Supabase keys — can live in the secrets manager instead of `appsettings.json`. It's
+implemented as an ASP.NET Core configuration provider, so when it's enabled the fetched secrets
+transparently override the local configuration and the rest of the app keeps reading `Configuration[...]`
+unchanged. It is **disabled by default** and is a no-op until you turn it on.
+
+Secrets live in a GCP project. Environments are separated by an **`env` label** on each secret (`env=dev`
+/ `env=prod`); the provider only loads secrets matching the running environment's label, so dev and prod
+credentials stay isolated. Point `ProjectId` at your GCP project id (the `project=…` value in the Secret
+Manager console URL, e.g. `project-e96017a0-d8f6-420f-955`).
+
+### Enable it
+
+1. Enable the **Secret Manager API** in the project(s) above and add your secrets. Grant the API's identity
+   the **Secret Manager Secret Accessor** role (`roles/secretmanager.secretAccessor`), plus list access.
+2. Authentication uses [Application Default Credentials (ADC)](https://cloud.google.com/docs/authentication/application-default-credentials),
+   so **no credentials are committed**:
+   - **On GCP** — run the API under a service account (attached to Cloud Run / GKE / GCE) that has the role above.
+   - **Locally** — sign in with the gcloud CLI, or point ADC at a service-account key file:
+
+     ```bash
+     gcloud auth application-default login
+     # or:
+     setx GOOGLE_APPLICATION_CREDENTIALS "C:\path\to\service-account.json"
+     ```
+
+3. Label each secret with `env=dev` or `env=prod` so the right environment picks it up.
+4. Point the API at the project. Production lives in `appsettings.json`; dev overrides in
+   `appsettings.Development.json`:
+
+   ```jsonc
+   // appsettings.json (production)
+   "GoogleSecretManager": {
+     "Enabled": true,
+     "ProjectId": "project-e96017a0-d8f6-420f-955",
+     "EnvironmentLabel": "prod",   // only loads secrets labelled env=prod
+     "Optional": false             // fail-closed: startup aborts if the vault can't be read
+   }
+
+   // appsettings.Development.json (dev) — overrides the keys above
+   "GoogleSecretManager": {
+     "Enabled": true,
+     "ProjectId": "project-e96017a0-d8f6-420f-955",
+     "EnvironmentLabel": "dev",    // only loads secrets labelled env=dev
+     "Optional": true              // fail-open: fall back to local config on failure
+   }
+   ```
+
+   > Omit `EnvironmentLabel` to load **all** secrets in the project (no label filter). If dev and prod live
+   > in **separate** GCP projects, set each `ProjectId` accordingly — the `env` label still scopes the load.
+
+### How secrets map to configuration
+
+Secret Manager secret ids may contain letters, digits, underscores and dashes, so nesting is expressed with
+a **double underscore** (`__`); the provider converts it to the standard `:` config path. Store a full
+connection string or individual settings:
+
+| Secret Manager secret id | Becomes config key |
+|---|---|
+| `ConnectionStrings__DefaultConnection` | `ConnectionStrings:DefaultConnection` |
+| `JwtSettings__SecretKey` | `JwtSettings:SecretKey` |
+| `Sentry__Dsn` | `Sentry:Dsn` |
+| `SmsSettings__Twilio__AuthToken` | `SmsSettings:Twilio:AuthToken` |
+| `Supabase__ApiKey` | `Supabase:ApiKey` |
+
+The provider reads each secret's **`latest`** enabled version.
+
+### Building a SQL Server connection from parts
+
+You don't have to store a full connection string. If you keep the pieces as separate secrets, the API
+assembles the SQL Server `DefaultConnection` for you and selects the SQL Server provider automatically:
+
+| Secret | Purpose |
+|---|---|
+| `dbserver` | Server address (e.g. a SmarterASP.NET SQL host) |
+| `dbusername` | SQL login — also used as the database name (the SmarterASP.NET convention) |
+| `dbpassword` | Password |
+| `dbname` | *Optional.* Database name — defaults to `dbusername` when omitted |
+
+> The composer matches these exact secret names (case-insensitive). Name your Secret Manager secrets accordingly.
+
+The composed string uses `TrustServerCertificate=true;MultipleActiveResultSets=true;Encrypt=True`. A full
+`ConnectionStrings__DefaultConnection` secret, if present, always takes precedence over the parts.
+
+### Applying migrations against the Secret Manager database
+
+The recommended path is the API's `--migrate` switch — it uses the exact same configuration pipeline
+(including Secret Manager secrets), applies migrations for both contexts, and exits:
+
+```bash
+dotnet run --project VaultGuard.API -- --migrate
+```
+
+(The API also applies migrations automatically on normal startup.)
+
+You can also use the EF CLI. The `VaultGuard.DAL.SqlServer` design-time factory (`SqlServerContextFactory`)
+now composes its connection string from Secret Manager as well — the same `dbserver`/`dbusername`/`dbpassword`
+secrets, scoped by the `env` label — so `dotnet ef` can target the cloud database directly:
+
+```bash
+dotnet ef database update --context VaultGuardDbContextApp \
+    --project VaultGuard.DAL.SqlServer --startup-project VaultGuard.API
+```
+
+The Secret Manager SDK is referenced there with `PrivateAssets="all"`, so it stays available to `dotnet ef`
+without being shipped into the desktop/web clients. The default factory (no explicit provider project) still
+targets local SQLite. See `VaultGuard.API/EFNotes.txt` for the full command set, including the initial create.
+
+### Behaviour
+
+- **Disabled by default** — nothing changes until `Enabled` is `true`.
+- **`Optional: true`** (fail-open): if Secret Manager is unreachable or misconfigured, the API logs a warning
+  and continues with local config. Set it to `false` to fail-closed (startup stops).
+- Only the **API** is wired for Secret Manager; the desktop, web and mobile apps read their configuration locally.
+
 ## Browser Extension Configuration
 
 ### Accessing Settings
