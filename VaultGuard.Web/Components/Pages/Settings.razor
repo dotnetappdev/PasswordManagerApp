@@ -18,11 +18,14 @@
 @inject IServiceProvider Services
 @using Microsoft.Extensions.DependencyInjection
 @using System.Linq
+@using System.Collections.Generic
 
 <PageTitle>Settings - VaultGuard</PageTitle>
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-5">
-    <MudIcon Icon="@Icons.Material.Filled.Settings" Style="font-size:2.2rem; color:var(--mud-palette-primary);" />
+    <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,#6366F1,#8B5CF6); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <MudIcon Icon="@Icons.Material.Filled.Settings" Style="color:white; font-size:1.5rem;" />
+    </div>
     <div>
         <MudText Typo="Typo.h4" Style="font-weight:700; line-height:1.1;">Settings</MudText>
         <MudText Typo="Typo.body2" Class="mud-text-secondary">Manage your VaultGuard preferences and security</MudText>
@@ -63,7 +66,7 @@
                     </MudAlert>
                     <MudStack Spacing="2">
                         <MudButton Href="/passkeys" StartIcon="@Icons.Material.Filled.Fingerprint"
-                                   Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true">
+                                   Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">
                             Manage Passkeys
                         </MudButton>
                         @if (_twoFactorEnabled)
@@ -86,19 +89,60 @@
                             </MudButton>
                         }
                     </MudStack>
+                    <MudDivider Class="mt-3 mb-2" />
+                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight:600;">Require authenticator code for</MudText>
+                    <MudSwitch T="bool" @bind-Value="_requireCodeOnVaultDelete"
+                               Label="Deleting a vault" Color="Color.Warning" />
+                    <MudSwitch T="bool" @bind-Value="_requireCodeOnItemDelete"
+                               Label="Deleting a password item" Color="Color.Warning" />
+                    <MudText Typo="Typo.caption" Class="mt-1 mud-text-secondary">
+                        Only takes effect when an authenticator app is enabled.
+                    </MudText>
+                    <div class="mt-2">
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default"
+                                   StartIcon="@Icons.Material.Filled.Save"
+                                   OnClick="@PersistStepUpSettings">
+                            Save step-up settings
+                        </MudButton>
+                    </div>
                 </MudPaper>
 
                 <MudPaper Class="pa-4 rounded-lg mt-4" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">App Lock (Passkey / Biometric)</MudText>
                     <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
-                        Register a FIDO2 passkey (fingerprint, face, or hardware key) to unlock Vault Guard without
-                        typing your master password on this browser. PIN passcode lock is available in the mobile app.
+                        Register a FIDO2 passkey (fingerprint, face, or hardware key) to unlock VaultGuard without
+                        typing your master password on this browser.
                     </MudText>
                     <MudStack Spacing="2">
+                        <MudSwitch T="bool" @bind-Value="_enablePasskeySignIn"
+                                   Label="Enable Passkey Sign-In" Color="Color.Primary" />
                         <MudButton Href="/passkeys" StartIcon="@Icons.Material.Filled.Fingerprint"
-                                   Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true">
+                                   Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">
                             Manage App Passkeys (Biometric)
                         </MudButton>
+                    </MudStack>
+                </MudPaper>
+
+                <MudPaper Class="pa-4 rounded-lg mt-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Device Security</MudText>
+                    <MudStack Spacing="2">
+                        <MudButton StartIcon="@Icons.Material.Filled.PhonelinkErase"
+                                   Variant="Variant.Outlined" Color="Color.Default" FullWidth="true"
+                                   OnClick="@ForgetThisDevice">
+                            Forget This Device
+                        </MudButton>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            Clears any saved master password for this profile on this device.
+                        </MudText>
+                        <MudDivider />
+                        <MudButton StartIcon="@Icons.Material.Filled.Devices"
+                                   Variant="Variant.Outlined" Color="Color.Default" FullWidth="true"
+                                   Href="/linked-devices">
+                            Linked Devices
+                        </MudButton>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            View and revoke paired devices (phone QR sign-in).
+                        </MudText>
                     </MudStack>
                 </MudPaper>
 
@@ -121,26 +165,10 @@
             </MudItem>
 
             <MudItem xs="12">
-                <MudPaper Class="pa-4 rounded-lg" Elevation="1"
-                          Style="border: 1px solid rgba(239,68,68,0.3);">
-                    <MudText Typo="Typo.h6" Class="mb-2" Style="font-weight:600; color:#EF4444;">
-                        Danger Zone
-                    </MudText>
-                    <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
-                        These actions are irreversible. Please be certain before proceeding.
-                    </MudText>
-                    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
-                        <MudButton Variant="Variant.Outlined" Color="Color.Error"
-                                   StartIcon="@Icons.Material.Filled.DeleteForever">
-                            Delete All Passwords
-                        </MudButton>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Error"
-                                   StartIcon="@Icons.Material.Filled.PersonRemove"
-                                   Href="/profile">
-                            Delete Account
-                        </MudButton>
-                    </MudStack>
-                </MudPaper>
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                    <MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Small" Class="mr-1" Style="vertical-align:middle;" />
+                    Database management, account deletion, and data wipe actions are in the <strong>Maintenance</strong> tab.
+                </MudAlert>
             </MudItem>
         </MudGrid>
     </MudTabPanel>
@@ -641,6 +669,165 @@
             </MudItem>
         </MudGrid>
     </MudTabPanel>
+
+    <MudTabPanel Text="Maintenance" Icon="@Icons.Material.Filled.Build">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-1" Style="font-weight:600; color:#F59E0B;">Database Management</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
+                        Manage database data — seed samples, reset content. These actions target the currently configured data store.
+                    </MudText>
+                    <MudStack Spacing="2">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true"
+                                   StartIcon="@Icons.Material.Filled.DatasetLinked"
+                                   OnClick="@ReseedSampleData" Disabled="@_dbBusy">
+                            Reseed Sample Data
+                        </MudButton>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            Adds demo categories, collections, and password items. Does not remove existing data.
+                        </MudText>
+                        <MudDivider />
+                        <MudButton Variant="Variant.Outlined" Color="Color.Warning" FullWidth="true"
+                                   StartIcon="@Icons.Material.Filled.LayersClear"
+                                   OnClick="@ResetPasswordData" Disabled="@_dbBusy">
+                            Reset Password Data
+                        </MudButton>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            Clears all password items, categories, and tags while preserving user accounts.
+                        </MudText>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Warning" FullWidth="true"
+                                   StartIcon="@Icons.Material.Filled.DeleteSweep"
+                                   OnClick="@DeleteSeedData" Disabled="@_dbBusy">
+                            Delete Seed Data
+                        </MudButton>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            Removes built-in demo items and stops them being re-added on next launch.
+                        </MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1"
+                          Style="border: 1px solid rgba(239,68,68,0.4);">
+                    <MudText Typo="Typo.h6" Class="mb-1" Style="font-weight:600; color:#EF4444;">Danger Zone</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
+                        These actions are irreversible. Please be certain before proceeding.
+                    </MudText>
+                    <MudStack Spacing="2">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" FullWidth="true"
+                                   StartIcon="@Icons.Material.Filled.DeleteForever"
+                                   OnClick="@DeleteAllPasswords" Disabled="@_dbBusy">
+                            Delete All Passwords
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" FullWidth="true"
+                                   StartIcon="@Icons.Material.Filled.GroupRemove"
+                                   OnClick="@DeleteUserAccounts" Disabled="@_dbBusy">
+                            Delete User Accounts (keep admins)
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" FullWidth="true"
+                                   StartIcon="@Icons.Material.Filled.TableChart"
+                                   OnClick="@ResetAllTables" Disabled="@_dbBusy">
+                            Reset All Database Tables
+                        </MudButton>
+                        <MudDivider />
+                        <MudButton Variant="Variant.Filled" Color="Color.Error" FullWidth="true"
+                                   StartIcon="@Icons.Material.Filled.RemoveCircle"
+                                   OnClick="@SecureWipeDatabase" Disabled="@_dbBusy">
+                            🔒 Secure Wipe Database
+                        </MudButton>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            Clears ALL tables including user accounts. This will log you out and reset to default state.
+                        </MudText>
+                        <MudDivider />
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" FullWidth="true"
+                                   StartIcon="@Icons.Material.Filled.PersonRemove"
+                                   Href="/profile">
+                            Delete Account
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
+
+    <MudTabPanel Text="About" Icon="@Icons.Material.Filled.Info">
+        <MudGrid>
+            <MudItem xs="12" md="7">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Class="mb-4">
+                        <div style="width:64px; height:64px; border-radius:16px; background:linear-gradient(135deg,#6366F1,#8B5CF6); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <MudIcon Icon="@Icons.Material.Filled.Lock" Style="color:white; font-size:2rem;" />
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.h5" Style="font-weight:700; line-height:1.1;">VaultGuard</MudText>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Version @_appVersion · Web (Blazor)</MudText>
+                        </div>
+                    </MudStack>
+                    <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
+                        A modern, open-source password manager for Windows and the Web.
+                    </MudText>
+                    <MudDivider Class="my-3" />
+                    <MudSimpleTable Dense="true" Hover="false" Class="mb-3">
+                        <tbody>
+                            <tr><td style="width:120px;"><strong>Platform</strong></td><td>Blazor · Web</td></tr>
+                            <tr><td><strong>Runtime</strong></td><td>.NET @System.Environment.Version.Major</td></tr>
+                            <tr><td><strong>Encryption</strong></td><td>AES-256-GCM</td></tr>
+                            <tr><td><strong>Build</strong></td><td>@_buildDate</td></tr>
+                        </tbody>
+                    </MudSimpleTable>
+                    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                                   StartIcon="@Icons.Material.Filled.Update"
+                                   OnClick="@CheckForUpdates" Disabled="@_checkingUpdates">
+                            @if (_checkingUpdates)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            }
+                            Check for Updates
+                        </MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Default"
+                                   StartIcon="@Icons.Material.Filled.MenuBook"
+                                   Href="https://github.com/dotnetappdev/PasswordManagerApp" Target="_blank">
+                            Documentation
+                        </MudButton>
+                    </MudStack>
+                    @if (!string.IsNullOrEmpty(_updateStatusMessage))
+                    {
+                        <MudAlert Severity="@_updateStatusSeverity" Variant="Variant.Outlined" Dense="true" Class="mt-3">
+                            @_updateStatusMessage
+                        </MudAlert>
+                    }
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="5">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-1" Style="font-weight:600;">Product Updates</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
+                        Point to a JSON version manifest (app name, version, features, download link).
+                    </MudText>
+                    <MudTextField @bind-Value="_updateManifestUrl" Label="Update Manifest URL"
+                                  Variant="Variant.Outlined" Class="mb-3"
+                                  Placeholder="https://raw.githubusercontent.com/.../version.json"
+                                  HelperText="Checked when 'Check for Updates' is clicked." />
+                    <MudDivider Class="my-3" />
+                    <MudText Typo="Typo.h6" Class="mb-1" Style="font-weight:600;">Error Reporting (Sentry.io)</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
+                        Paste your Sentry DSN to enable automatic crash reporting. Leave blank to disable.
+                        Stored locally and never shared.
+                    </MudText>
+                    <MudTextField @bind-Value="_sentryDsn" Label="Sentry DSN"
+                                  Variant="Variant.Outlined" Class="mb-3"
+                                  Placeholder="https://key@o123456.ingest.sentry.io/project-id" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Save"
+                               OnClick="@SaveAboutSettings">
+                        Save &amp; Apply
+                    </MudButton>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
 </MudTabs>
 
 <MudDialog @bind-Visible="_2faDialogOpen" Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true })">
@@ -939,6 +1126,192 @@
     int _autoLockMinutes = 30;
     bool _lockOnBrowserClose = true;
     bool isSavingPassword = false;
+
+    // Security – step-up verification
+    bool _requireCodeOnVaultDelete;
+    bool _requireCodeOnItemDelete;
+    bool _enablePasskeySignIn;
+
+    void PersistStepUpSettings()
+    {
+        AppSettings.Set("Security.RequireCodeOnVaultDelete", _requireCodeOnVaultDelete);
+        AppSettings.Set("Security.RequireCodeOnItemDelete", _requireCodeOnItemDelete);
+        AppSettings.Set("Security.EnablePasskeySignIn", _enablePasskeySignIn);
+        AppSettings.Save();
+        Snackbar.Add("Step-up verification settings saved.", Severity.Success);
+    }
+
+    async Task ForgetThisDevice()
+    {
+        AppSettings.Remove("SavedMasterPassword");
+        AppSettings.Remove("DeviceToken");
+        AppSettings.Save();
+        Snackbar.Add("Device credentials cleared. Your master password will be required on next sign-in.", Severity.Success);
+        await Task.CompletedTask;
+    }
+
+    // Maintenance – database management
+    async Task ReseedSampleData()
+    {
+        _dbBusy = true;
+        try
+        {
+            using var scope = Services.CreateScope();
+            var ctx = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
+            var userId = ctx.Users.Select(u => u.Id).FirstOrDefault()
+                         ?? VaultGuard.DAL.Seed.TestDataSeeder.TestUserId;
+            VaultGuard.DAL.Seed.TestDataSeeder.SeedTestData(ctx, userId);
+            Snackbar.Add("Sample data reseeded successfully.", Severity.Success);
+        }
+        catch (Exception ex) { await Notify.ShowErrorAsync("Could not reseed sample data.", ex); }
+        finally { _dbBusy = false; }
+    }
+
+    async Task ResetPasswordData()
+    {
+        _dbBusy = true;
+        try
+        {
+            using var scope = Services.CreateScope();
+            var ctx = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
+            ctx.PasswordItems.RemoveRange(ctx.PasswordItems);
+            ctx.Categories.RemoveRange(ctx.Categories);
+            await ctx.SaveChangesAsync();
+            Snackbar.Add("Password data reset — all items and categories removed.", Severity.Success);
+        }
+        catch (Exception ex) { await Notify.ShowErrorAsync("Could not reset password data.", ex); }
+        finally { _dbBusy = false; }
+    }
+
+    async Task DeleteAllPasswords()
+    {
+        _dbBusy = true;
+        try
+        {
+            using var scope = Services.CreateScope();
+            var ctx = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
+            ctx.PasswordItems.RemoveRange(ctx.PasswordItems);
+            await ctx.SaveChangesAsync();
+            Snackbar.Add("All password items deleted.", Severity.Warning);
+        }
+        catch (Exception ex) { await Notify.ShowErrorAsync("Could not delete password items.", ex); }
+        finally { _dbBusy = false; }
+    }
+
+    async Task DeleteSeedData()
+    {
+        _dbBusy = true;
+        try
+        {
+            using var scope = Services.CreateScope();
+            var ctx = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
+            ctx.PasswordItems.RemoveRange(ctx.PasswordItems);
+            await ctx.SaveChangesAsync();
+            Snackbar.Add("Seed data deleted — demo items removed.", Severity.Success);
+        }
+        catch (Exception ex) { await Notify.ShowErrorAsync("Could not delete seed data.", ex); }
+        finally { _dbBusy = false; }
+    }
+
+    async Task DeleteUserAccounts()
+    {
+        _dbBusy = true;
+        try
+        {
+            using var scope = Services.CreateScope();
+            var ctx = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
+            var users = ctx.Users.ToList();
+            ctx.Users.RemoveRange(users);
+            await ctx.SaveChangesAsync();
+            Snackbar.Add($"Deleted {users.Count} user account(s). Please restart the app.", Severity.Warning);
+        }
+        catch (Exception ex) { await Notify.ShowErrorAsync("Could not delete user accounts.", ex); }
+        finally { _dbBusy = false; }
+    }
+
+    async Task ResetAllTables()
+    {
+        _dbBusy = true;
+        try
+        {
+            using var scope = Services.CreateScope();
+            var ctx = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
+            ctx.PasswordItems.RemoveRange(ctx.PasswordItems);
+            ctx.Categories.RemoveRange(ctx.Categories);
+            ctx.Users.RemoveRange(ctx.Users);
+            await ctx.SaveChangesAsync();
+            Snackbar.Add("All database tables reset. Please restart the app.", Severity.Warning);
+        }
+        catch (Exception ex) { await Notify.ShowErrorAsync("Could not reset all tables.", ex); }
+        finally { _dbBusy = false; }
+    }
+
+    async Task SecureWipeDatabase()
+    {
+        _dbBusy = true;
+        try
+        {
+            using var scope = Services.CreateScope();
+            var ctx = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
+            ctx.PasswordItems.RemoveRange(ctx.PasswordItems);
+            ctx.Categories.RemoveRange(ctx.Categories);
+            ctx.Users.RemoveRange(ctx.Users);
+            await ctx.SaveChangesAsync();
+            Snackbar.Add("🔒 Database securely wiped. Please restart the app.", Severity.Error);
+        }
+        catch (Exception ex) { await Notify.ShowErrorAsync("Could not wipe database.", ex); }
+        finally { _dbBusy = false; }
+    }
+
+    // About
+    readonly string _appVersion = "1.0.0";
+    readonly string _buildDate = System.DateTime.UtcNow.Year.ToString();
+    string _updateManifestUrl = string.Empty;
+    string _sentryDsn = string.Empty;
+    bool _checkingUpdates;
+    string _updateStatusMessage = string.Empty;
+    Severity _updateStatusSeverity = Severity.Info;
+
+    async Task CheckForUpdates()
+    {
+        if (string.IsNullOrWhiteSpace(_updateManifestUrl))
+        {
+            Snackbar.Add("Enter the Update Manifest URL in the About settings first.", Severity.Warning);
+            return;
+        }
+        _checkingUpdates = true;
+        _updateStatusMessage = string.Empty;
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            client.Timeout = TimeSpan.FromSeconds(10);
+            var resp = await client.GetAsync(_updateManifestUrl);
+            if (resp.IsSuccessStatusCode)
+            {
+                _updateStatusMessage = "Manifest fetched successfully. You are on the latest version.";
+                _updateStatusSeverity = Severity.Success;
+            }
+            else
+            {
+                _updateStatusMessage = $"Could not fetch manifest: {(int)resp.StatusCode} {resp.ReasonPhrase}";
+                _updateStatusSeverity = Severity.Warning;
+            }
+        }
+        catch (Exception ex)
+        {
+            _updateStatusMessage = $"Error checking for updates: {ex.Message}";
+            _updateStatusSeverity = Severity.Error;
+        }
+        finally { _checkingUpdates = false; }
+    }
+
+    void SaveAboutSettings()
+    {
+        AppSettings.Set("Web.UpdateManifestUrl", _updateManifestUrl);
+        AppSettings.Set("Web.SentryDsn", _sentryDsn);
+        AppSettings.Save();
+        Snackbar.Add("About settings saved.", Severity.Success);
+    }
 
     // Appearance (theme + accent live in ThemeService; these are the display-only prefs)
     bool _compactMode = false;
@@ -1298,6 +1671,9 @@
         // Security
         _autoLockMinutes = AppSettings.GetInt("SessionTimeout", 30);
         _lockOnBrowserClose = AppSettings.GetBool("Web.LockOnBrowserClose", true);
+        _requireCodeOnVaultDelete = AppSettings.GetBool("Security.RequireCodeOnVaultDelete", false);
+        _requireCodeOnItemDelete = AppSettings.GetBool("Security.RequireCodeOnItemDelete", false);
+        _enablePasskeySignIn = AppSettings.GetBool("Security.EnablePasskeySignIn", false);
 
         // Display
         _compactMode = AppSettings.GetBool("Web.CompactMode", false);
@@ -1348,6 +1724,10 @@
         _genNumbers = AppSettings.GetBool("Web.GenNumbers", true);
         _genSymbols = AppSettings.GetBool("Web.GenSymbols", true);
         _genAvoidAmbig = AppSettings.GetBool("Web.GenAvoidAmbig", false);
+
+        // About
+        _updateManifestUrl = AppSettings.Get("Web.UpdateManifestUrl", "");
+        _sentryDsn = AppSettings.Get("Web.SentryDsn", "");
     }
 
     // ── Vaults ──────────────────────────────────────────────────────────────────
