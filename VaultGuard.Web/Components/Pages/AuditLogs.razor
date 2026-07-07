@@ -9,7 +9,7 @@
 <PageTitle>Audit Logs - VaultGuard</PageTitle>
 
 <MudText Typo="Typo.h4" Style="font-weight:700" Class="mb-1">Audit Logs</MudText>
-<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+<MudText Typo="Typo.body2" Class="mb-4 mud-text-secondary">
     Track all activity on your account
 </MudText>
 
@@ -109,7 +109,7 @@ else
                             <MudText Typo="Typo.body2">
                                 @context.Item.Timestamp.ToLocalTime().ToString("MMM d, yyyy")
                             </MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
                                 @context.Item.Timestamp.ToLocalTime().ToString("HH:mm:ss")
                             </MudText>
                         </MudStack>
@@ -123,7 +123,7 @@ else
                         }
                         else if (!string.IsNullOrEmpty(context.Item.IpAddress))
                         {
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Item.IpAddress</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@context.Item.IpAddress</MudText>
                         }
                     </CellTemplate>
                 </TemplateColumn>
@@ -145,8 +145,8 @@ else
             <NoRecordsContent>
                 <MudStack AlignItems="AlignItems.Center" Class="pa-8">
                     <MudIcon Icon="@Icons.Material.Filled.History"
-                             Style="font-size:4rem; color:#2563EB; opacity:0.4;" />
-                    <MudText Typo="Typo.h6" Color="Color.Secondary">No audit logs found</MudText>
+                             Style="font-size:4rem; color:#71717A; opacity:0.4;" />
+                    <MudText Typo="Typo.h6" Class="mud-text-secondary">No audit logs found</MudText>
                     @if (!string.IsNullOrEmpty(searchText) || !string.IsNullOrEmpty(actionFilter) ||
                          !string.IsNullOrEmpty(entityFilter) || startDate.HasValue || endDate.HasValue)
                     {
@@ -161,7 +161,7 @@ else
 
     @if (totalCount > 0)
     {
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 pa-2">
+        <MudText Typo="Typo.caption" Class="mt-2 pa-2 mud-text-secondary">
             Showing @(filteredLogs?.Count ?? 0) of @totalCount total entries
         </MudText>
     }
@@ -177,30 +177,30 @@ else
         {
             <MudStack Spacing="2">
                 <MudStack Row="true" Justify="Justify.SpaceBetween">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Action</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Action</MudText>
                     <MudChip T="string" Size="Size.Small"
                              Color="@GetActionChipColor(_selectedLog.Action, _selectedLog.Success)"
                              Text="@_selectedLog.Action" />
                 </MudStack>
                 <MudStack Row="true" Justify="Justify.SpaceBetween">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Entity</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Entity</MudText>
                     <MudText Typo="Typo.body2">@_selectedLog.EntityType — @_selectedLog.EntityName</MudText>
                 </MudStack>
                 <MudStack Row="true" Justify="Justify.SpaceBetween">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Timestamp</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Timestamp</MudText>
                     <MudText Typo="Typo.body2">@_selectedLog.Timestamp.ToLocalTime().ToString("MMM d, yyyy HH:mm:ss")</MudText>
                 </MudStack>
                 @if (!string.IsNullOrEmpty(_selectedLog.IpAddress))
                 {
                     <MudStack Row="true" Justify="Justify.SpaceBetween">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">IP Address</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">IP Address</MudText>
                         <MudText Typo="Typo.body2">@_selectedLog.IpAddress</MudText>
                     </MudStack>
                 }
                 @if (!string.IsNullOrEmpty(_selectedLog.DeviceName))
                 {
                     <MudStack Row="true" Justify="Justify.SpaceBetween">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Device</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">Device</MudText>
                         <MudText Typo="Typo.body2">@_selectedLog.DeviceName</MudText>
                     </MudStack>
                 }
@@ -334,9 +334,9 @@ else
             "create" => "#10B981",
             "update" => "#F59E0B",
             "delete" => "#EF4444",
-            "login" => "#3B82F6",
+            "login" => "#71717A",
             "logout" => "#6B7280",
-            _ => "#2563EB"
+            _ => "#71717A"
         };
     }
 

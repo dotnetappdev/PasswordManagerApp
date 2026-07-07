@@ -11,7 +11,7 @@
     <MudIcon Icon="@Icons.Material.Filled.HealthAndSafety" Style="font-size:2.2rem; color:var(--mud-palette-primary);" />
     <div>
         <MudText Typo="Typo.h4" Style="font-weight:700; line-height:1.1;">Watchtower</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">A health check of every credential in your vault</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">A health check of every credential in your vault</MudText>
     </div>
     <MudSpacer />
     <MudButton StartIcon="@Icons.Material.Filled.Refresh" Variant="Variant.Outlined" Color="Color.Primary"
@@ -37,7 +37,7 @@ else if (_report is not null)
             </div>
             <div style="flex:1; min-width:220px;">
                 <MudText Typo="Typo.h6" Style="font-weight:700;">Vault health score</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">
+                <MudText Typo="Typo.body2" Class="mb-2 mud-text-secondary">
                     @_report.TotalCredentials credentials analysed
                 </MudText>
                 @if (_report.TotalIssues == 0)
@@ -59,7 +59,7 @@ else if (_report is not null)
         <div style="flex:1 1 140px;">@SummaryTile("Weak", _report.WeakCount, Icons.Material.Filled.Warning, "#EA580C")</div>
         <div style="flex:1 1 140px;">@SummaryTile("Reused", _report.ReusedCount, Icons.Material.Filled.ContentCopy, "#D97706")</div>
         <div style="flex:1 1 140px;">@SummaryTile("Unsecured", _report.UnsecuredCount, Icons.Material.Filled.LockOpen, "#DC2626")</div>
-        <div style="flex:1 1 140px;">@SummaryTile("No 2FA", _report.MissingTwoFactorCount, Icons.Material.Filled.Smartphone, "#7C3AED")</div>
+        <div style="flex:1 1 140px;">@SummaryTile("No 2FA", _report.MissingTwoFactorCount, Icons.Material.Filled.Smartphone, "#71717A")</div>
         <div style="flex:1 1 140px;">@SummaryTile("Old", _report.OldCount, Icons.Material.Filled.HistoryToggleOff, "#0891B2")</div>
     </div>
 
@@ -83,12 +83,12 @@ else if (_report is not null)
                 <MudExpansionPanel>
                     <TitleContent>@PanelTitle("Reused passwords", _report.ReusedCount, "#D97706", Icons.Material.Filled.ContentCopy)</TitleContent>
                     <ChildContent>
-                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">
+                        <MudText Typo="Typo.body2" Class="mb-2 mud-text-secondary">
                             The same password is used on multiple items — a breach on one exposes them all.
                         </MudText>
                         @foreach (var group in _report.ReusedPasswords)
                         {
-                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">Shared by @group.Count items:</MudText>
+                            <MudText Typo="Typo.caption" Class="mt-2 mud-text-secondary">Shared by @group.Count items:</MudText>
                             <MudList T="string" Dense="true">
                                 @foreach (var entry in group.Items)
                                 {
@@ -107,7 +107,7 @@ else if (_report is not null)
             @if (_report.MissingTwoFactorCount > 0)
             {
                 @ConcernPanel("Logins without 2FA", "These sites have a login but no authenticator code stored — add one for stronger protection.",
-                    "#7C3AED", Icons.Material.Filled.Smartphone, _report.MissingTwoFactor)
+                    "#71717A", Icons.Material.Filled.Smartphone, _report.MissingTwoFactor)
             }
             @if (_report.OldCount > 0)
             {
@@ -149,7 +149,7 @@ else if (_report is not null)
             <MudIcon Icon="@(active ? icon : Icons.Material.Filled.CheckCircle)"
                      Style="@($"color:{(active ? color : "var(--mud-palette-success)")};")" />
             <MudText Typo="Typo.h5" Style="@($"font-weight:800; color:{(active ? color : "inherit")};")">@count</MudText>
-            <MudText Typo="Typo.caption" Color="Color.Secondary" Align="Align.Center">@label</MudText>
+            <MudText Typo="Typo.caption" Align="Align.Center" Class="mud-text-secondary">@label</MudText>
         </MudPaper>
     };
 
@@ -169,7 +169,7 @@ else if (_report is not null)
         <MudExpansionPanel>
             <TitleContent>@PanelTitle(title, entries.Count, color, icon)</TitleContent>
             <ChildContent>
-                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@subtitle</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2 mud-text-secondary">@subtitle</MudText>
                 <MudList T="string" Dense="true">
                     @foreach (var entry in entries)
                     {
@@ -177,7 +177,7 @@ else if (_report is not null)
                             @entry.Title
                             @if (!string.IsNullOrEmpty(entry.Detail))
                             {
-                                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2" Style="display:inline;">— @entry.Detail</MudText>
+                                <MudText Typo="Typo.caption" Class="ml-2 mud-text-secondary" Style="display:inline;">— @entry.Detail</MudText>
                             }
                         </MudListItem>
                     }

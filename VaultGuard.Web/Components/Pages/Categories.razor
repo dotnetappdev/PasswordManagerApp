@@ -12,7 +12,7 @@
 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
     <div>
         <MudText Typo="Typo.h4" Style="font-weight:700">Categories</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">
             @(categories?.Count ?? 0) categories
         </MudText>
     </div>
@@ -41,7 +41,7 @@ else
             <TemplateColumn Title="" CellStyle="width:48px; padding-left:16px;">
                 <CellTemplate>
                     <MudIcon Icon="@Icons.Material.Filled.Category"
-                             Style="@($"color:{context.Item.Color ?? "#2563EB"}")" />
+                             Style="@($"color:{context.Item.Color ?? "#71717A"}")" />
                 </CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.Name" Title="Name" Sortable="true" />
@@ -76,8 +76,8 @@ else
         <NoRecordsContent>
             <MudStack AlignItems="AlignItems.Center" Class="pa-8" Spacing="3">
                 <MudIcon Icon="@Icons.Material.Filled.Category"
-                         Style="font-size:4rem; color:#2563EB; opacity:0.4;" />
-                <MudText Typo="Typo.h6" Color="Color.Secondary">No categories found</MudText>
+                         Style="font-size:4rem; color:#71717A; opacity:0.4;" />
+                <MudText Typo="Typo.h6" Class="mud-text-secondary">No categories found</MudText>
                 <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
                            Color="Color.Primary" OnClick="@OpenAddDialog">Add Category</MudButton>
             </MudStack>
@@ -102,7 +102,7 @@ else
                               Variant="Variant.Outlined" Lines="2"
                               Placeholder="Optional description" />
                 <MudTextField @bind-Value="_editingCategory.Color" Label="Color (hex)"
-                              Variant="Variant.Outlined" Placeholder="#2563EB"
+                              Variant="Variant.Outlined" Placeholder="#71717A"
                               Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Palette" />
                 <MudTextField @bind-Value="_editingCategory.Icon" Label="Icon (emoji or name)"
@@ -167,7 +167,7 @@ else
         _editingCategory = new Category
         {
             UserId = AuthService.CurrentUser?.Id,
-            Color = "#2563EB",
+            Color = "#71717A",
             CreatedAt = DateTime.UtcNow
         };
         _dialogVisible = true;

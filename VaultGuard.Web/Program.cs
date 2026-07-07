@@ -65,23 +65,23 @@ builder.Services.AddMudServices(config =>
 // Register AppNotificationService (thin toast wrapper)
 builder.Services.AddScoped<VaultGuard.Web.Services.AppNotificationService>();
 
-// Configure MudBlazor theme — steel blue, matches WPF brand
+// Configure MudBlazor theme — neutral dark grey, no blue accent by default
 builder.Services.AddScoped(sp => new MudBlazor.MudTheme()
 {
     PaletteLight = new MudBlazor.PaletteLight()
     {
-        Primary = "#2563EB",
-        PrimaryLighten = "#60A5FA",
-        PrimaryDarken = "#1D4ED8",
-        Secondary = "#6366F1",
-        AppbarBackground = "#2563EB",
+        Primary = "#5B5B63",
+        PrimaryLighten = "#84848C",
+        PrimaryDarken = "#3F3F46",
+        Secondary = "#71717A",
+        AppbarBackground = "#5B5B63",
     },
     PaletteDark = new MudBlazor.PaletteDark()
     {
-        Primary = "#2563EB",
-        PrimaryLighten = "#60A5FA",
-        PrimaryDarken = "#1D4ED8",
-        Secondary = "#6366F1",
+        Primary = "#5B5B63",
+        PrimaryLighten = "#84848C",
+        PrimaryDarken = "#3F3F46",
+        Secondary = "#71717A",
         AppbarBackground = "#141414",
         AppbarText = "#E5E5E5",
         Background = "#1A1A1A",

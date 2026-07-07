@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @implements IDisposable
 @using MudBlazor
 @using VaultGuard.Components.Shared.Services
@@ -12,10 +12,9 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Color="@(_isDarkMode ? Color.Dark : Color.Default)" Fixed="true" Dense="true"
-               Style="@(_isDarkMode ? "background: linear-gradient(135deg,#0F1117 0%,#1A1D27 100%); border-bottom: 1px solid rgba(255,255,255,0.07);" : "background: linear-gradient(135deg,#ffffff 0%,#f5f7ff 100%); border-bottom: 1px solid rgba(0,0,0,0.06);")">
+    <MudAppBar Elevation="0" Style="background: var(--mud-palette-appbar-background); border-bottom: 1px solid var(--mud-palette-divider);">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Style="@(_isDarkMode ? "font-weight:700; background: linear-gradient(90deg,#60A5FA,#A78BFA); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:-0.02em;" : "font-weight:700; color:#1a1a2e; letter-spacing:-0.02em;")">🔐 Vault Guard</MudText>
+        <MudText Typo="Typo.h6" Style="font-weight:700; color: var(--mud-palette-text-primary);">🔐 Vault Guard</MudText>
         <MudSpacer />
         <MudMenu>
             <ActivatorContent>
@@ -43,58 +42,35 @@
         </MudMenu>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Color="@(_isDarkMode ? Color.Dark : Color.Default)">
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h6" Style="@(_isDarkMode ? "color: white;" : "color: inherit;")">
-                <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Small" Style="margin-right: 8px;" />
-                Vault Guard
-            </MudText>
-        </MudDrawerHeader>
+    <MudDrawer @bind-Open="@_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="0"
+               Style="background: var(--mud-palette-drawer-background);">
         <MudNavMenu>
-            <MudNavLink Href="/vault" Icon="@Icons.Material.Filled.Security" IconColor="Color.Primary">
-                Vault
-            </MudNavLink>
-            <MudNavLink Href="/passwords" Icon="@Icons.Material.Filled.Password" IconColor="Color.Primary">
-                Passwords
-            </MudNavLink>
-            <MudNavLink Href="/credit-cards" Icon="@Icons.Material.Filled.CreditCard" IconColor="Color.Primary">
-                Credit Cards
-            </MudNavLink>
-            <MudNavLink Href="/secure-notes" Icon="@Icons.Material.Filled.Note" IconColor="Color.Primary">
-                Secure Notes
-            </MudNavLink>
-            <MudNavLink Href="/wifi" Icon="@Icons.Material.Filled.Wifi" IconColor="Color.Primary">
-                Wi-Fi
-            </MudNavLink>
-            <MudDivider />
-            <MudNavLink Href="/categories" Icon="@Icons.Material.Filled.Category" IconColor="Color.Secondary">
-                Categories
-            </MudNavLink>
-            <MudNavLink Href="/collections" Icon="@Icons.Material.Filled.Folder" IconColor="Color.Secondary">
-                Collections
-            </MudNavLink>
-            <MudNavLink Href="/tags" Icon="@Icons.Material.Filled.Tag" IconColor="Color.Secondary">
-                Tags
-            </MudNavLink>
-            <MudDivider />
-            <MudNavLink Href="/import" Icon="@Icons.Material.Filled.Upload" IconColor="Color.Info">
-                Import
-            </MudNavLink>
-            <MudNavLink Href="/export" Icon="@Icons.Material.Filled.Download" IconColor="Color.Info">
-                Export
-            </MudNavLink>
-            <MudSpacer />
-            <MudNavLink Href="/setup" Icon="@Icons.Material.Filled.Storage" IconColor="Color.Info">
-                Configure Database
-            </MudNavLink>
-            <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings" IconColor="Color.Warning">
-                Settings
-            </MudNavLink>
+            <!-- Quick Access (mirrors the Blazor Web navigation) -->
+            <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+            <MudNavLink Href="/passwords" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Lock">All Items</MudNavLink>
+            <MudNavLink Href="/passwords?fav=true" Icon="@Icons.Material.Filled.Star">Favourites</MudNavLink>
+
+            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:var(--mud-palette-text-secondary); font-weight:600; letter-spacing:0.5px;">CATEGORIES</MudText>
+            <MudNavLink Href="/passwords?type=Login" Icon="@Icons.Material.Filled.Login">Logins</MudNavLink>
+            <MudNavLink Href="/passwords?type=CreditCard" Icon="@Icons.Material.Filled.CreditCard">Credit Cards</MudNavLink>
+            <MudNavLink Href="/passwords?type=SecureNote" Icon="@Icons.Material.Filled.StickyNote2">Secure Notes</MudNavLink>
+            <MudNavLink Href="/passwords?type=WiFi" Icon="@Icons.Material.Filled.Wifi">Wi-Fi Networks</MudNavLink>
+            <MudNavLink Href="/passwords?type=Identity" Icon="@Icons.Material.Filled.Badge">Identities</MudNavLink>
+
+            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:var(--mud-palette-text-secondary); font-weight:600; letter-spacing:0.5px;">MANAGE</MudText>
+            <MudNavLink Href="/categories" Icon="@Icons.Material.Filled.Category">Categories</MudNavLink>
+            <MudNavLink Href="/collections" Icon="@Icons.Material.Filled.FolderSpecial">Collections</MudNavLink>
+            <MudNavLink Href="/tags" Icon="@Icons.Material.Filled.Tag">Tags</MudNavLink>
+            <MudNavLink Href="/import" Icon="@Icons.Material.Filled.ImportExport">Import / Export</MudNavLink>
+
+            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:var(--mud-palette-text-secondary); font-weight:600; letter-spacing:0.5px;">MORE</MudText>
+            <MudNavLink Href="/setup" Icon="@Icons.Material.Filled.Storage">Configure Database</MudNavLink>
+            <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
 
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.False" Style="@($"background-color: {(_isDarkMode ? "#121212" : "#f5f5f5")}; min-height: 100vh; padding-top: 64px;")">
+        <MudContainer MaxWidth="MaxWidth.False" Style="background-color: var(--mud-palette-background); min-height: 100vh; padding-top: 64px;">
             @Body
         </MudContainer>
     </MudMainContent>
@@ -103,85 +79,19 @@
 @code {
     private bool _drawerOpen = true;
     private bool _isDarkMode = true;
-    private MudTheme _theme = new()
-    {
-        PaletteDark = new PaletteDark()
-        {
-            Black = "#0F1117",
-            Background = "#0F1117",
-            Surface = "#1A1D27",
-            DrawerBackground = "#0B0D14",
-            DrawerText = "rgba(240,242,255,0.87)",
-            DrawerIcon = "rgba(139,144,167,1)",
-            AppbarBackground = "#1A1D27",
-            AppbarText = "rgba(240,242,255,0.87)",
-            TextPrimary = "#F0F2FF",
-            TextSecondary = "#8B90A7",
-            ActionDefault = "#8B90A7",
-            ActionDisabled = "rgba(255,255,255,0.24)",
-            ActionDisabledBackground = "rgba(255,255,255,0.10)",
-            Divider = "rgba(255,255,255,0.08)",
-            DividerLight = "rgba(255,255,255,0.04)",
-            TableLines = "rgba(255,255,255,0.08)",
-            LinesDefault = "rgba(255,255,255,0.08)",
-            LinesInputs = "rgba(255,255,255,0.24)",
-            TextDisabled = "rgba(255,255,255,0.18)",
-            Primary = "#005BFF",
-            Secondary = "#7C3AED",
-            Tertiary = "#10B981",
-            Info = "#3B82F6",
-            Success = "#10B981",
-            Warning = "#F59E0B",
-            Error = "#EF4444",
-            OverlayDark = "rgba(0,0,0,0.7)"
-        },
-        PaletteLight = new PaletteLight()
-        {
-            Black = "#0F1117",
-            Background = "#F0F2FF",
-            Surface = "#FFFFFF",
-            DrawerBackground = "#FFFFFF",
-            DrawerText = "rgba(15,17,23,0.87)",
-            DrawerIcon = "rgba(90,95,120,1)",
-            AppbarBackground = "#FFFFFF",
-            AppbarText = "rgba(15,17,23,0.87)",
-            TextPrimary = "#0F1117",
-            TextSecondary = "#5A5F78",
-            ActionDefault = "#5A5F78",
-            ActionDisabled = "rgba(0,0,0,0.24)",
-            ActionDisabledBackground = "rgba(0,0,0,0.10)",
-            Divider = "rgba(0,0,0,0.08)",
-            DividerLight = "rgba(0,0,0,0.04)",
-            TableLines = "rgba(0,0,0,0.08)",
-            LinesDefault = "rgba(0,0,0,0.08)",
-            LinesInputs = "rgba(0,0,0,0.38)",
-            TextDisabled = "rgba(0,0,0,0.26)",
-            Primary = "#005BFF",
-            Secondary = "#7C3AED",
-            Tertiary = "#10B981",
-            Info = "#3B82F6",
-            Success = "#10B981",
-            Warning = "#F59E0B",
-            Error = "#EF4444",
-            OverlayDark = "rgba(0,0,0,0.5)"
-        }
-    };
+
+    // Uses the same ThemeService.BuildTheme as Blazor Web (VaultGuard.Web/Components/Layout/MainLayout.razor)
+    // so a theme fix or accent/high-contrast change made once applies to both hosts instead of drifting
+    // between two copies.
+    private MudTheme _theme = ThemeService.BuildTheme(ThemeService.DefaultAccent, false);
 
     protected override async Task OnInitializedAsync()
     {
         _isDarkMode = ThemeService.IsDarkMode;
+        _theme = ThemeService.BuildTheme(ThemeService.AccentColor, ThemeService.IsHighContrast);
         ThemeService.ThemeChanged += OnThemeChanged;
+        ThemeService.ThemeSettingsChanged += OnThemeSettingsChanged;
         await ThemeService.DetectAndApplySystemThemeAsync(JSRuntime);
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender) return;
-        // Apply the user's saved accessibility preferences (zoom, font size, reduce motion,
-        // high contrast) across the whole app, not just the Settings page.
-        await AccessibilityState.EnsureStylesAsync(JSRuntime);
-        var prefs = await AccessibilityState.LoadAsync(JSRuntime);
-        await AccessibilityState.ApplyAsync(JSRuntime, prefs);
     }
 
     private void OnThemeChanged(object? sender, bool isDarkMode)
@@ -190,9 +100,16 @@
         InvokeAsync(StateHasChanged);
     }
 
+    private void OnThemeSettingsChanged()
+    {
+        _theme = ThemeService.BuildTheme(ThemeService.AccentColor, ThemeService.IsHighContrast);
+        InvokeAsync(StateHasChanged);
+    }
+
     public void Dispose()
     {
         ThemeService.ThemeChanged -= OnThemeChanged;
+        ThemeService.ThemeSettingsChanged -= OnThemeSettingsChanged;
     }
 
     private void ToggleDrawer()
@@ -217,7 +134,6 @@
 
     private async Task Logout()
     {
-        // Implement logout logic
         Navigation.NavigateTo("/masterpassword");
     }
 }

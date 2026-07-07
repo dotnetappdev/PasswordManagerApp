@@ -6,7 +6,7 @@
     align-items: center;
     justify-content: center;
     padding: 24px;
-    background: radial-gradient(1200px 600px at 50% -10%, #1e2a44 0%, #141414 55%, #0f0f0f 100%);
+    background: radial-gradient(1200px 600px at 50% -10%, #242424 0%, #1A1A1A 55%, #141414 100%);
     font-family: 'Inter', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
     color: #E5E5E5;
 }
@@ -19,6 +19,84 @@
     border-radius: 16px;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
     padding: 36px 34px;
+    transition: max-width .2s ease;
+}
+
+/* Wider card for the account-picker step (mirrors the WPF "Who's unlocking?" screen) */
+.auth-card--wide {
+    max-width: 620px;
+}
+
+/* Account picker grid */
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+    margin: 8px 0 4px;
+}
+
+.profile-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    padding: 16px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background .15s ease, transform .1s ease;
+}
+.profile-tile:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+.profile-tile:active {
+    transform: scale(0.97);
+}
+
+.profile-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+.profile-avatar--small {
+    width: 28px;
+    height: 28px;
+    font-size: .8rem;
+}
+
+.profile-name {
+    font-size: .88rem;
+    font-weight: 600;
+    color: #F3F4F6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+.profile-email {
+    font-size: .74rem;
+    color: #9D9D9D;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.selected-profile-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    color: #C7C7C7;
+    font-size: .88rem;
+    font-weight: 600;
 }
 
 /* Header / logo */
@@ -29,10 +107,7 @@
     margin: 0;
     font-size: 1.7rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #2563EB, #60A5FA);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #E5E5E5;
 }
 .auth-subtitle { margin: 0; color: #9D9D9D; font-size: .92rem; }
 
@@ -57,7 +132,7 @@
     transition: border-color .15s, box-shadow .15s;
 }
 .form-input::placeholder { color: #6B7280; }
-.form-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); }
+.form-input:focus { border-color: #71717A; box-shadow: 0 0 0 3px rgba(113, 113, 122, 0.25); }
 .form-input.input-error { border-color: #EF4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.22); }
 
 .password-input-group { position: relative; }
@@ -85,7 +160,7 @@
     margin-top: 6px;
     border: none;
     border-radius: 10px;
-    background: #2563EB;
+    background: #52525B;
     color: #fff;
     font-size: .95rem;
     font-weight: 600;
@@ -96,16 +171,16 @@
     gap: 8px;
     transition: background .15s, transform .05s, opacity .15s;
 }
-.auth-button:hover:not(:disabled) { background: #1D4ED8; }
+.auth-button:hover:not(:disabled) { background: #3F3F46; }
 .auth-button:active:not(:disabled) { transform: translateY(1px); }
 .auth-button:disabled { opacity: .5; cursor: not-allowed; }
 
 .auth-button.auth-button-outline {
     background: transparent;
-    color: #60A5FA;
-    border: 1px solid #2563EB;
+    color: #C7C7C7;
+    border: 1px solid #52525B;
 }
-.auth-button.auth-button-outline:hover:not(:disabled) { background: rgba(37, 99, 235, 0.12); }
+.auth-button.auth-button-outline:hover:not(:disabled) { background: rgba(113, 113, 122, 0.12); }
 
 .auth-button.auth-button-success {
     background: transparent;
@@ -121,7 +196,7 @@
 .link-button {
     background: none;
     border: none;
-    color: #60A5FA;
+    color: #B5B5BD;
     cursor: pointer;
     font-size: .85rem;
     padding: 4px;
@@ -136,7 +211,7 @@
 .strength-fill { height: 100%; border-radius: 3px; transition: width .25s, background .25s; }
 .strength-fill.strength-weak { background: #EF4444; }
 .strength-fill.strength-fair { background: #F59E0B; }
-.strength-fill.strength-good { background: #3B82F6; }
+.strength-fill.strength-good { background: #84CC16; }
 .strength-fill.strength-strong { background: #10B981; }
 .strength-text { display: block; margin-top: 5px; font-size: .76rem; color: #9D9D9D; }
 

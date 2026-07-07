@@ -15,10 +15,42 @@ public static class BrandIconHelper
             return customBrandIcon;
         }
 
-        var brandSlug = GetBrandSlug(GetWebsite(item), item?.Title);
-        return string.IsNullOrWhiteSpace(brandSlug)
+        // Simple Icons' raw SVGs ship as plain black path data (no embedded colour) — they only
+        // render in colour when inlined with fill:currentColor, not via <img src>. Use Google's
+        // favicon service instead, matching VaultGuard.WPF's ItemToBrandImageConverter.
+        var domain = GetFaviconDomain(GetWebsite(item));
+        return string.IsNullOrWhiteSpace(domain)
             ? null
-            : $"https://unpkg.com/simple-icons@v15/icons/{brandSlug}.svg";
+            : $"https://www.google.com/s2/favicons?domain={domain}&sz=64";
+    }
+
+    private static string? GetFaviconDomain(string? website)
+    {
+        if (string.IsNullOrWhiteSpace(website))
+        {
+            return null;
+        }
+
+        var host = website.Trim();
+        if (!host.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+            !host.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            host = "https://" + host;
+        }
+
+        try
+        {
+            var uri = new Uri(host);
+            var domain = uri.Host;
+            return domain.StartsWith("www.", StringComparison.OrdinalIgnoreCase)
+                ? domain[4..]
+                : domain;
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error("Failed to build favicon domain", ex);
+            return null;
+        }
     }
 
     public static string? GetCustomBrandIconDataUrl(PasswordItem? item)

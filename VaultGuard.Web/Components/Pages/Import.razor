@@ -12,7 +12,7 @@
 <PageTitle>Import - VaultGuard</PageTitle>
 
 <MudText Typo="Typo.h4" Style="font-weight:700" Class="mb-1">Import Passwords</MudText>
-<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+<MudText Typo="Typo.body2" Class="mb-6 mud-text-secondary">
     Import from your existing password manager. Your data is processed locally.
 </MudText>
 
@@ -23,13 +23,13 @@
         <MudItem xs="12" sm="6" md="4" lg="3">
             <MudCard @onclick="@(() => SelectManager(pm.Key))" Class="cursor-pointer"
                      Style="@(selectedManager == pm.Key
-                               ? "border: 2px solid #2563EB; transition: all 0.2s;"
+                               ? "border: 2px solid #71717A; transition: all 0.2s;"
                                : "border: 2px solid transparent; transition: all 0.2s;")"
                      Elevation="@(selectedManager == pm.Key ? 4 : 1)">
                 <MudCardContent Class="text-center pa-3">
                     <MudText Style="font-size:2.2rem; line-height:1.2;">@pm.Value.Icon</MudText>
                     <MudText Typo="Typo.subtitle2" Style="font-weight:600; margin-top:6px;">@pm.Value.Name</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">@pm.Value.Format</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@pm.Value.Format</MudText>
                 </MudCardContent>
             </MudCard>
         </MudItem>
@@ -44,7 +44,7 @@
             <MudText Style="font-size:1.8rem;">@pm.Icon</MudText>
             <div>
                 <MudText Typo="Typo.h6" Style="font-weight:600;">Import from @pm.Name</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Format: @pm.Format</MudText>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">Format: @pm.Format</MudText>
             </div>
         </MudStack>
 
@@ -54,14 +54,14 @@
                        Accept="@pm.FileTypes" MaximumFileCount="1">
             <ActivatorContent>
                 <MudPaper Class="pa-8 rounded-xl text-center"
-                          Style="border: 2px dashed rgba(124,58,237,0.5); cursor:pointer; transition: background 0.2s;"
+                          Style="border: 2px dashed rgba(37,99,235,0.5); cursor:pointer; transition: background 0.2s;"
                           Elevation="0">
                     <MudIcon Icon="@Icons.Material.Filled.CloudUpload"
-                             Style="font-size:3rem; color:#2563EB; opacity:0.8;" />
+                             Style="font-size:3rem; color:#71717A; opacity:0.8;" />
                     <MudText Typo="Typo.body1" Class="mt-2" Style="font-weight:500;">
                         Drop your export file here or click to browse
                     </MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
                         Supported formats: @pm.FileTypes
                     </MudText>
                 </MudPaper>
@@ -127,7 +127,7 @@
 
 <MudPaper Class="pa-6 rounded-xl mt-6" Elevation="2" Style="border: 1px solid rgba(239,68,68,0.3);">
     <MudText Typo="Typo.h6" Style="font-weight:600; color:#EF4444;" Class="mb-1">Maintenance</MudText>
-    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    <MudText Typo="Typo.body2" Class="mb-4 mud-text-secondary">
         Reset the vault before importing a fresh export. These actions cannot be undone.
     </MudText>
     <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">

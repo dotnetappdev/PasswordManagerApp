@@ -310,19 +310,26 @@ public class IdentityAuthService : IAuthService
             {
                 var userSalt = Convert.FromBase64String(user.UserSalt);
                 var isValidPassword = _passwordCryptoService.VerifyMasterPassword(password, user.MasterPasswordHash, userSalt, user.MasterPasswordIterations);
-                
+
                 if (isValidPassword)
                 {
+                    // Derive the master key and open a vault session — without this, CheckAuthenticationStatusAsync
+                    // (which requires a valid sessionId) always fails and bounces back to the login page even
+                    // though the credentials were correct (mirrors the same fix applied to the web AuthService).
+                    var masterKey = _passwordCryptoService.DeriveMasterKey(password, userSalt);
+                    var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
+                    await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "sessionId", sessionId);
+
                     _isAuthenticated = true;
                     _currentUser = user;
-                    
+
                     // Update last login
                     user.LastLoginAt = DateTime.UtcNow;
                     await _dbContext.SaveChangesAsync();
-                    
+
                     await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "isAuthenticated", "true");
                     await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "currentUserId", user.Id);
-                    
+
                     return true;
                 }
             }

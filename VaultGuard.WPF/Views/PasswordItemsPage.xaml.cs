@@ -222,6 +222,48 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             .GroupBy(c => (c.Name ?? string.Empty).Trim().ToLowerInvariant())
             .Select(g => g.First());
 
+    // The built-in item types, shown as a distinct set of filter entries in the category dropdown
+    // (separate from user-defined categories) — the same set surfaced in the nav sidebar.
+    private static readonly (ItemType Type, string Label)[] DropdownItemTypes =
+    {
+        (ItemType.Login, "Logins"),
+        (ItemType.CreditCard, "Credit Cards"),
+        (ItemType.SecureNote, "Secure Notes"),
+        (ItemType.WiFi, "Wi-Fi Networks"),
+        (ItemType.Identity, "Identities"),
+    };
+
+    private static void AddItemTypeEntries(ComboBox categoryDropdown)
+    {
+        var header = new ComboBoxItem
+        {
+            Content = new TextBlock
+            {
+                Text = "ITEM TYPES",
+                FontSize = 11,
+                FontWeight = FontWeights.SemiBold,
+                Opacity = 0.6
+            },
+            IsEnabled = false
+        };
+        categoryDropdown.Items.Add(header);
+
+        foreach (var (type, label) in DropdownItemTypes)
+        {
+            var item = new ComboBoxItem();
+            var stackPanel = new StackPanel { Orientation = Orientation.Horizontal };
+            stackPanel.Children.Add(new TextBlock
+            {
+                Text = label,
+                FontWeight = FontWeights.Medium,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            item.Content = stackPanel;
+            item.Tag = type;
+            categoryDropdown.Items.Add(item);
+        }
+    }
+
     private async Task PopulateCategoryDropdownAsync()
     {
 
@@ -249,6 +291,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         allCategoriesItem.Content = allStackPanel;
         allCategoriesItem.Tag = "all";
         categoryDropdown.Items.Add(allCategoriesItem);
+
+        AddItemTypeEntries(categoryDropdown);
 
         // Add categories from database (de-duplicated by name to avoid repeats)
         foreach (var category in DistinctCategories(_categories))
@@ -317,11 +361,13 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         categoryDropdown.SelectedIndex = 0;
     }
 
-    public void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    // Sets the live-filter search text from the global top-bar search box (MainWindow). The page
+    // no longer has its own search box, so this is the only entry point that drives SearchText.
+    public void SetSearchQuery(string query)
     {
-        if (_viewModel != null && sender is TextBox textBox)
+        if (_viewModel != null)
         {
-            _viewModel.SearchText = textBox.Text;
+            _viewModel.SearchText = query;
         }
     }
 
@@ -368,55 +414,6 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         }
     }
 
-    private void FilterButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button button && button.Tag is string filterType)
-        {
-            // Update UI to show selected filter
-            UpdateFilterButtonStyles(button);
-
-            // Apply filter to view model
-            if (_viewModel != null)
-            {
-                _viewModel.FilterType = filterType;
-            }
-
-            // Update content titles
-            UpdateContentTitles(filterType);
-        }
-    }
-
-    private void UpdateFilterButtonStyles(Button selectedButton)
-    {
-        // Safely reset filter buttons if they exist (some layouts removed buttons)
-        try
-        {
-            var allItemsBtn = this.FindName("AllItemsButton") as Button;
-            if (allItemsBtn != null)
-            {
-                allItemsBtn.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent);
-            }
-
-            // Example: if there are more named filter buttons, try to reset them too
-            var namedButtons = new[] { "AllItemsButton", "FavoritesButton", "RecentButton", "LoginButton" };
-            foreach (var name in namedButtons)
-            {
-                var btn = this.FindName(name) as Button;
-                if (btn != null)
-                {
-                    btn.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent);
-                }
-            }
-
-            // Set selected button style if provided (defensive resource lookup)
-            if (selectedButton != null)
-            {
-                selectedButton.Background = Helpers.ResourceHelper.GetBrush("ModernPrimaryBrush", new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent));
-            }
-        }
-        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
-    }
-
     private void UpdateContentTitles(string filterType)
     {
         var contentTitle = GetElement<TextBlock>("ContentTitle");
@@ -456,18 +453,24 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     {
         if (sender is ComboBox comboBox && comboBox.SelectedItem is ComboBoxItem selectedItem)
         {
-            if (_viewModel != null)
+            if (_viewModel == null) return;
+
+            // Item type and category are mutually exclusive in this single dropdown — selecting
+            // one always resets the other so a stale filter can't silently narrow the results.
+            if (selectedItem.Tag is string tag && tag == "all")
             {
-                if (selectedItem.Tag is string tag && tag == "all")
-                {
-                    // Show all items
-                    _viewModel.SelectedCategoryId = null;
-                }
-                else if (selectedItem.Tag is Category category)
-                {
-                    // Filter by specific category using CategoryId only
-                    _viewModel.SelectedCategoryId = category.Id;
-                }
+                _viewModel.FilterType = "All";
+                _viewModel.SelectedCategoryId = null;
+            }
+            else if (selectedItem.Tag is ItemType itemType)
+            {
+                _viewModel.FilterType = itemType.ToString();
+                _viewModel.SelectedCategoryId = null;
+            }
+            else if (selectedItem.Tag is Category category)
+            {
+                _viewModel.FilterType = "All";
+                _viewModel.SelectedCategoryId = category.Id;
             }
         }
     }
@@ -2005,6 +2008,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         allCategoriesItem.Content = allStackPanel;
         allCategoriesItem.Tag = "all";
         categoryDropdown.Items.Add(allCategoriesItem);
+
+        AddItemTypeEntries(categoryDropdown);
 
         // Filter categories based on search text
         var filteredCategories = string.IsNullOrEmpty(searchText)

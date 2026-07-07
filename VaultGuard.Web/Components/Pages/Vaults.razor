@@ -14,7 +14,7 @@
 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
     <div>
         <MudText Typo="Typo.h4" Style="font-weight:700">Vaults</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">Organize your passwords into secure vaults</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">Organize your passwords into secure vaults</MudText>
     </div>
     <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary"
                OnClick="OpenAddDialog">New Vault</MudButton>
@@ -37,7 +37,7 @@ else if (vaults?.Any() == true)
         @foreach (var vault in vaults)
         {
             <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="2" Style="@($"border-top: 4px solid {(vault.Color ?? "#2563EB")}; height:100%;")">
+                <MudCard Elevation="2" Style="@($"border-top: 4px solid {(vault.Color ?? "#71717A")}; height:100%;")">
                     <MudCardContent>
                         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
                             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2"
@@ -49,7 +49,7 @@ else if (vaults?.Any() == true)
                                 else
                                 {
                                     <MudIcon Icon="@Icons.Material.Filled.Shield"
-                                             Style="@($"color:{(vault.Color ?? "#2563EB")}; font-size:1.8rem;")" />
+                                             Style="@($"color:{(vault.Color ?? "#71717A")}; font-size:1.8rem;")" />
                                 }
                                 <div>
                                     <MudText Typo="Typo.h6" Style="font-weight:600;">@vault.Name</MudText>
@@ -87,20 +87,20 @@ else if (vaults?.Any() == true)
 
                         @if (!string.IsNullOrEmpty(vault.Description))
                         {
-                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">@vault.Description</MudText>
+                            <MudText Typo="Typo.body2" Class="mt-2 mud-text-secondary">@vault.Description</MudText>
                         }
 
                         <MudDivider Class="my-3" />
 
                         <MudStack Row="true" Justify="Justify.SpaceBetween">
                             <MudStack Spacing="0">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Items</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">Items</MudText>
                                 <MudText Typo="Typo.body1" Style="font-weight:600;">
                                     @vault.ItemCount
                                 </MudText>
                             </MudStack>
                             <MudStack Spacing="0">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Created</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">Created</MudText>
                                 <MudText Typo="Typo.body2">@vault.CreatedAt.ToString("MMM d, yyyy")</MudText>
                             </MudStack>
                         </MudStack>
@@ -114,9 +114,9 @@ else
 {
     <MudPaper Class="pa-12 text-center" Elevation="0">
         <MudIcon Icon="@Icons.Material.Filled.Shield"
-                 Style="font-size:4rem; color:#2563EB; opacity:0.3;" />
-        <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No vaults yet</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                 Style="font-size:4rem; color:#71717A; opacity:0.3;" />
+        <MudText Typo="Typo.h6" Class="mt-2 mud-text-secondary">No vaults yet</MudText>
+        <MudText Typo="Typo.body2" Class="mb-4 mud-text-secondary">
             Create a vault to start organizing your passwords.
         </MudText>
         <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
@@ -143,7 +143,7 @@ else
                               Variant="Variant.Outlined" Lines="2"
                               Placeholder="Optional description for this vault" />
                 <MudTextField @bind-Value="_editingVault.Color" Label="Color (hex)"
-                              Variant="Variant.Outlined" Placeholder="#2563EB"
+                              Variant="Variant.Outlined" Placeholder="#71717A"
                               Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Palette" />
 
@@ -154,7 +154,7 @@ else
                         {
                             var isSelected = _editingVault.Icon == emoji;
                             <div @onclick="@(() => _editingVault.Icon = emoji)"
-                                 style="@($"width:38px; height:38px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; cursor:pointer; border-radius:8px; background:var(--mud-palette-surface); border:2px solid {(isSelected ? (_editingVault.Color ?? "#2563EB") : "transparent")};")">
+                                 style="@($"width:38px; height:38px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; cursor:pointer; border-radius:8px; background:var(--mud-palette-surface); border:2px solid {(isSelected ? (_editingVault.Color ?? "#71717A") : "transparent")};")">
                                 @emoji
                             </div>
                         }
@@ -217,7 +217,7 @@ else
         _editingVault = new Vault
         {
             UserId = AuthService.CurrentUser?.Id ?? string.Empty,
-            Color = "#2563EB",
+            Color = "#71717A",
             Icon = "🔐"
         };
         _dialogVisible = true;

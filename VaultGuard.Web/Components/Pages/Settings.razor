@@ -25,11 +25,11 @@
     <MudIcon Icon="@Icons.Material.Filled.Settings" Style="font-size:2.2rem; color:var(--mud-palette-primary);" />
     <div>
         <MudText Typo="Typo.h4" Style="font-weight:700; line-height:1.1;">Settings</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">Manage your VaultGuard preferences and security</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">Manage your VaultGuard preferences and security</MudText>
     </div>
 </MudStack>
 
-<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4" Color="Color.Primary">
+<MudTabs Elevation="2" Rounded="true" PanelClass="pa-4">
     <MudTabPanel Text="Security" Icon="@Icons.Material.Filled.Security">
         <MudGrid>
             <MudItem xs="12" md="6">
@@ -58,7 +58,7 @@
             <MudItem xs="12" md="6">
                 <MudPaper Class="pa-4 rounded-lg" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Two-Factor Authentication</MudText>
-                    <MudAlert Severity="Severity.Info" Class="mb-3" Dense="true">
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-3" Dense="true">
                         2FA adds an extra layer of security to your account.
                     </MudAlert>
                     <MudStack Spacing="2">
@@ -68,7 +68,7 @@
                         </MudButton>
                         @if (_twoFactorEnabled)
                         {
-                            <MudAlert Severity="Severity.Success" Dense="true" Icon="@Icons.Material.Filled.VerifiedUser">
+                            <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Dense="true" Icon="@Icons.Material.Filled.VerifiedUser">
                                 Authenticator app is enabled (@_backupCodesRemaining backup codes left).
                             </MudAlert>
                             <MudButton StartIcon="@Icons.Material.Filled.NoEncryption"
@@ -112,7 +112,7 @@
                     <MudText Typo="Typo.h6" Class="mb-2" Style="font-weight:600; color:#EF4444;">
                         Danger Zone
                     </MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                    <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
                         These actions are irreversible. Please be certain before proceeding.
                     </MudText>
                     <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
@@ -146,7 +146,7 @@
                     <MudText Typo="Typo.subtitle2" Class="mb-1">UI Zoom — @ThemeService.UiScalePercent%</MudText>
                     <MudSlider T="int" Value="@ThemeService.UiScalePercent" ValueChanged="@OnUiScaleChanged"
                                Min="80" Max="160" Step="10" Color="Color.Primary" />
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
                         Scales the whole interface (80–160%), like the WPF text-size setting.
                     </MudText>
                     <MudDivider Class="my-3" />
@@ -162,7 +162,7 @@
                             </MudTooltip>
                         }
                     </MudStack>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+                    <MudText Typo="Typo.caption" Class="mt-2 mud-text-secondary">
                         Theme and accent apply instantly and are shared with the VaultGuard desktop app on this machine.
                     </MudText>
                 </MudPaper>
@@ -221,7 +221,7 @@
 
                         <MudDivider Class="my-3" />
                         <MudText Typo="Typo.subtitle2" Class="mb-1" Style="font-weight:600;">SQL Server (API database)</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mb-2">
+                        <MudText Typo="Typo.caption" Class="d-block mb-2 mud-text-secondary">
                             The database the API server uses. Test the connection and seed accounts / demo vault data — same as the desktop app.
                         </MudText>
                         <MudTextField @bind-Value="_dbServer" Label="Server" Variant="Variant.Outlined" Class="mb-3"
@@ -262,7 +262,7 @@
                                 Reset to default
                             </MudButton>
                         </MudStack>
-                        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+                        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-3">
                             The desktop app stores its vault at
                             <strong style="word-break:break-all;">@DesktopDbPath</strong>.
                             Point both apps at the same file to share one vault on this machine.
@@ -280,7 +280,7 @@
                                        OnClick="@TestApiConnection">Test API</MudButton>
                         }
                     </MudStack>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+                    <MudText Typo="Typo.caption" Class="mt-2 mud-text-secondary">
                         Changes take effect the next time the app restarts.
                     </MudText>
                 </MudPaper>
@@ -312,7 +312,7 @@
             <MudItem xs="12">
                 <MudPaper Class="pa-4 rounded-lg" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">API Connection</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                    <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
                         This app connects to a VaultGuard API server. Configure the URL and access credentials below.
                     </MudText>
                     <MudGrid>
@@ -403,7 +403,7 @@
             <MudItem xs="12" md="6">
                 <MudPaper Class="pa-4 rounded-lg" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Password Health</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                    <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
                         Configure thresholds for password health checks.
                     </MudText>
                     <MudSelect T="int" @bind-Value="_passwordExpiryDays" Label="Password expires after"
@@ -450,14 +450,14 @@
                                 <MudListItem T="VaultGuard.Models.Vault">
                                     <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Style="width:100%">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                            <div style="@($"width:12px; height:12px; border-radius:50%; background:{vault.Color ?? "#2563EB"};")"></div>
+                                            <div style="@($"width:12px; height:12px; border-radius:50%; background:{vault.Color ?? "#71717A"};")"></div>
                                             <MudText>@vault.Icon @vault.Name</MudText>
                                             @if (vault.IsDefault)
                                             {
                                                 <MudChip T="string" Size="Size.Small" Color="Color.Success">Default</MudChip>
                                             }
                                         </MudStack>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@vault.ItemCount items</MudText>
+                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@vault.ItemCount items</MudText>
                                     </MudStack>
                                 </MudListItem>
                             }
@@ -465,7 +465,7 @@
                     }
                     else
                     {
-                        <MudAlert Severity="Severity.Info" Dense="true">
+                        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
                             No vaults yet.
                             <MudLink Href="/vaults">Create your first vault</MudLink> to organise your passwords.
                         </MudAlert>
@@ -475,16 +475,16 @@
             <MudItem xs="12" md="4">
                 <MudPaper Class="pa-4 rounded-lg" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">About Vaults</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                    <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
                         Vaults let you separate your passwords into distinct, named buckets — for example
                         <strong>Personal</strong>, <strong>Work</strong>, and <strong>Finance</strong>.
                         Each vault has its own colour and icon, and items can be freely moved between vaults.
                     </MudText>
                     <MudStack Spacing="2">
-                        <MudAlert Severity="Severity.Success" Dense="true">
+                        <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Dense="true">
                             <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" /> All vaults use the same encryption key
                         </MudAlert>
-                        <MudAlert Severity="Severity.Info" Dense="true">
+                        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
                             <MudIcon Icon="@Icons.Material.Filled.Share" Size="Size.Small" /> Vaults can be shared with others (coming soon)
                         </MudAlert>
                     </MudStack>
@@ -498,7 +498,7 @@
             <MudItem xs="12" md="6">
                 <MudPaper Class="pa-4 rounded-lg" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Password Generator</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                    <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
                         Configure defaults for the built-in password generator.
                     </MudText>
 
@@ -538,7 +538,7 @@
                         <MudDivider Class="my-3" />
                         <MudText Typo="Typo.subtitle2" Class="mb-1">Strength</MudText>
                         <MudProgressLinear Value="@strength.Score" Color="@strength.BarColor" Rounded="true" Size="Size.Medium" Class="mb-1" />
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">@strength.Label</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@strength.Label</MudText>
                     }
                 </MudPaper>
             </MudItem>
@@ -550,7 +550,7 @@
             <MudItem xs="12" md="6">
                 <MudPaper Class="pa-4 rounded-lg" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Encryption Settings</MudText>
-                    <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true">
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-3" Dense="true">
                         Changing encryption settings requires re-encrypting all your data.
                     </MudAlert>
                     <MudSelect T="string" @bind-Value="_encryptionAlgorithm" Label="Encryption Algorithm"
@@ -571,13 +571,13 @@
             <MudItem xs="12" md="6">
                 <MudPaper Class="pa-4 rounded-lg" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Key Derivation</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                    <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
                         Current settings: PBKDF2-SHA256 with @_pbkdf2Iterations.ToString("N0") iterations
                     </MudText>
                     <MudChip T="string" Color="Color.Success" Icon="@Icons.Material.Filled.VerifiedUser"
                              Text="End-to-End Encrypted" />
                     <MudDivider Class="my-3" />
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
                         Your master password never leaves your device. All encryption and decryption
                         happens locally.
                     </MudText>
@@ -618,7 +618,7 @@
                             </MudListItem>
                         }
                     </MudList>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-3">
+                    <MudText Typo="Typo.caption" Class="mt-3 mud-text-secondary">
                         These shortcuts are fully active in the VaultGuard desktop app. In the browser,
                         keys reserved by your browser (e.g. Ctrl+N, Ctrl+F) are handled by the browser itself.
                         Custom rebinding is coming soon.
@@ -639,7 +639,7 @@
     <DialogContent>
         @if (_twoFactorEnabled && _setup is null)
         {
-            <MudAlert Severity="Severity.Success" Dense="true" Class="mb-3">
+            <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Dense="true" Class="mb-3">
                 Two-factor authentication is currently <b>enabled</b>.
             </MudAlert>
             <MudText Typo="Typo.body2" Class="mb-2">Confirm your master password and a current code to manage 2FA.</MudText>
@@ -648,7 +648,7 @@
 
             <MudDivider Class="my-3" />
             <MudText Typo="Typo.subtitle2" Style="font-weight:600;">Recovery (backup) codes</MudText>
-            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
+            <MudText Typo="Typo.caption" Class="mb-2 mud-text-secondary">
                 @_backupCodesRemaining codes remaining. Regenerating replaces all existing codes.
             </MudText>
             <MudSelect T="int" @bind-Value="_regenExpiryDays" Label="New codes expire" Variant="Variant.Outlined" Dense="true" Class="mb-2">
@@ -665,7 +665,7 @@
 
             @if (_regeneratedCodes?.Any() == true)
             {
-                <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3 mb-2" Icon="@Icons.Material.Filled.Key">
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mt-3 mb-2" Icon="@Icons.Material.Filled.Key">
                     <b>New backup codes — save these now.</b> Your previous codes no longer work@(_regenExpiryDays > 0 ? $"; these expire in {_regenExpiryDays} days." : ".")
                 </MudAlert>
                 <MudPaper Outlined="true" Class="pa-3 mb-1">
@@ -694,13 +694,13 @@
                 <img src="@_qrDataUrl" alt="Authenticator QR code"
                      style="width:208px; height:208px; border-radius:8px; background:#fff; padding:8px;" />
             </div>
-            <MudText Typo="Typo.caption" Color="Color.Secondary">Or enter this key manually:</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">Or enter this key manually:</MudText>
             <MudText Typo="Typo.body2" Style="font-family:monospace; word-break:break-all;" Class="mb-3">@_setup.SecretKey</MudText>
             <MudText Typo="Typo.body2" Class="mb-1">2. Enter the 6-digit code to confirm:</MudText>
             <MudTextField @bind-Value="_2faCode" Label="6-digit code" Variant="Variant.Outlined" Class="mb-2" />
             @if (_setup.BackupCodes?.Any() == true)
             {
-                <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3 mb-2" Icon="@Icons.Material.Filled.Key">
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mt-3 mb-2" Icon="@Icons.Material.Filled.Key">
                     <b>Save these backup codes now.</b> Each can be used once to sign in if you lose access
                     to your authenticator app — they're your way back in.
                 </MudAlert>

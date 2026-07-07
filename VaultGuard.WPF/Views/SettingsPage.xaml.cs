@@ -52,6 +52,15 @@ public sealed partial class SettingsPage : Page
         Unloaded += SettingsPage_Unloaded;
     }
 
+    // Called by MainWindow's Closing handler so edits aren't lost if the app is closed directly
+    // from the Settings page, before SettingsPage_Unloaded would normally have a chance to fire.
+    public void FlushPendingSettings()
+    {
+        if (_viewModel == null) return;
+        try { _viewModel.SaveSettingsAsync().GetAwaiter().GetResult(); }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Failed to persist settings on app exit", ex); }
+    }
+
     private T? GetElement<T>(string name) where T : class
     {
         try

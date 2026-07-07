@@ -10,7 +10,7 @@
 <PageTitle>Dashboard - VaultGuard</PageTitle>
 
 <MudText Typo="Typo.h4" Class="mb-1" Style="font-weight:700">Dashboard</MudText>
-<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">Welcome back! Here's your security overview.</MudText>
+<MudText Typo="Typo.body2" Class="mb-6 mud-text-secondary">Welcome back! Here's your security overview.</MudText>
 
 @if (isLoading)
 {
@@ -27,13 +27,13 @@ else
 {
     <MudGrid Class="mb-6">
         <MudItem xs="12" sm="6" md="3">
-            <MudPaper Class="pa-4 rounded-lg" Elevation="2" Style="border-left: 4px solid #2563EB; cursor:pointer;"
+            <MudPaper Class="pa-4 rounded-lg" Elevation="2" Style="border-left: 4px solid #71717A; cursor:pointer;"
                       @onclick="@(() => Nav.NavigateTo("/passwords"))">
                 <MudStack Row="true" AlignItems="AlignItems.Center">
-                    <MudIcon Icon="@Icons.Material.Filled.Lock" Style="color:#2563EB; font-size:2rem;" />
+                    <MudIcon Icon="@Icons.Material.Filled.Lock" Style="color:#71717A; font-size:2rem;" />
                     <MudStack Spacing="0">
                         <MudText Typo="Typo.h4" Style="font-weight:700">@totalPasswords</MudText>
-                        <MudText Typo="Typo.body2" Color="Color.Secondary">Total Items</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">Total Items</MudText>
                     </MudStack>
                 </MudStack>
             </MudPaper>
@@ -45,7 +45,7 @@ else
                     <MudIcon Icon="@Icons.Material.Filled.Star" Style="color:#10B981; font-size:2rem;" />
                     <MudStack Spacing="0">
                         <MudText Typo="Typo.h4" Style="font-weight:700">@favoriteCount</MudText>
-                        <MudText Typo="Typo.body2" Color="Color.Secondary">Favorites</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">Favorites</MudText>
                     </MudStack>
                 </MudStack>
             </MudPaper>
@@ -57,7 +57,7 @@ else
                     <MudIcon Icon="@Icons.Material.Filled.Shield" Style="color:#F59E0B; font-size:2rem;" />
                     <MudStack Spacing="0">
                         <MudText Typo="Typo.h4" Style="font-weight:700">@vaultCount</MudText>
-                        <MudText Typo="Typo.body2" Color="Color.Secondary">Vaults</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">Vaults</MudText>
                     </MudStack>
                 </MudStack>
             </MudPaper>
@@ -69,7 +69,7 @@ else
                     <MudIcon Icon="@Icons.Material.Filled.Category" Style="color:#EC4899; font-size:2rem;" />
                     <MudStack Spacing="0">
                         <MudText Typo="Typo.h4" Style="font-weight:700">@categoryCount</MudText>
-                        <MudText Typo="Typo.body2" Color="Color.Secondary">Categories</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">Categories</MudText>
                     </MudStack>
                 </MudStack>
             </MudPaper>
@@ -89,7 +89,7 @@ else
                                 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                                     <MudStack Spacing="0">
                                         <MudText Typo="Typo.body1" Style="font-weight:500">@item.Title</MudText>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@item.Type.ToString() &bull; @item.LastModified.ToString("MMM d, yyyy")</MudText>
+                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@item.Type.ToString() &bull; @item.LastModified.ToString("MMM d, yyyy")</MudText>
                                     </MudStack>
                                     @if (item.IsFavorite)
                                     {
@@ -103,7 +103,7 @@ else
                 }
                 else
                 {
-                    <MudText Color="Color.Secondary">No items yet. <MudLink Href="/passwords">Add your first password</MudLink></MudText>
+                    <MudText Class="mud-text-secondary">No items yet. <MudLink Href="/passwords">Add your first password</MudLink></MudText>
                 }
             </MudPaper>
         </MudItem>
@@ -184,10 +184,10 @@ else
 
     string GetItemColor(ItemType type) => type switch
     {
-        ItemType.Login => "#2563EB",
+        ItemType.Login => "#71717A",
         ItemType.CreditCard => "#EC4899",
         ItemType.SecureNote => "#10B981",
-        ItemType.WiFi => "#3B82F6",
+        ItemType.WiFi => "#71717A",
         ItemType.Passkey => "#F59E0B",
         ItemType.Identity => "#8B5CF6",
         _ => "#6B7280"

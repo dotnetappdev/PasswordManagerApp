@@ -10,7 +10,7 @@
 <PageTitle>Profile - VaultGuard</PageTitle>
 
 <MudText Typo="Typo.h4" Style="font-weight:700" Class="mb-1">Profile</MudText>
-<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">Manage your account information</MudText>
+<MudText Typo="Typo.body2" Class="mb-6 mud-text-secondary">Manage your account information</MudText>
 
 @if (isLoading)
 {
@@ -23,27 +23,27 @@ else
     <MudGrid>
         <MudItem xs="12" md="4">
             <MudPaper Class="pa-6 rounded-lg text-center" Elevation="2">
-                <MudAvatar Style="width:80px; height:80px; font-size:2rem; background: linear-gradient(135deg, #2563EB, #60A5FA); margin:0 auto 16px auto;">
+                <MudAvatar Style="width:80px; height:80px; font-size:2rem; background: linear-gradient(135deg, #71717A, #A3A3AB); margin:0 auto 16px auto;">
                     @GetInitials()
                 </MudAvatar>
                 <MudText Typo="Typo.h6" Style="font-weight:600;">@GetFullName()</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Secondary">@(user?.Email ?? AuthService.CurrentUser?.Email)</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">@(user?.Email ?? AuthService.CurrentUser?.Email)</MudText>
                 <MudDivider Class="my-3" />
                 <MudStack Spacing="1">
                     <MudStack Row="true" Justify="Justify.SpaceBetween">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Member since</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">Member since</MudText>
                         <MudText Typo="Typo.caption">
                             @(user?.CreatedAt.ToString("MMM yyyy") ?? AuthService.CurrentUser?.CreatedAt.ToString("MMM yyyy"))
                         </MudText>
                     </MudStack>
                     <MudStack Row="true" Justify="Justify.SpaceBetween">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Last login</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">Last login</MudText>
                         <MudText Typo="Typo.caption">
                             @(user?.LastLoginAt?.ToString("MMM d, yyyy") ?? "Unknown")
                         </MudText>
                     </MudStack>
                     <MudStack Row="true" Justify="Justify.SpaceBetween">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Status</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">Status</MudText>
                         <MudChip T="string" Size="Size.Small"
                                  Color="@(user?.IsActive == true ? Color.Success : Color.Error)"
                                  Text="@(user?.IsActive == true ? "Active" : "Inactive")" />
@@ -118,7 +118,7 @@ else
                 <MudText Typo="Typo.h6" Class="mb-2" Style="font-weight:600; color:#EF4444;">
                     Delete Account
                 </MudText>
-                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
                     Permanently delete your account and all associated data. This action cannot be undone.
                 </MudText>
                 <MudTextField @bind-Value="_deleteConfirmPassword" Label="Confirm with your password"

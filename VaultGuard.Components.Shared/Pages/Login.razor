@@ -4,18 +4,20 @@
 @using Microsoft.JSInterop
 @using VaultGuard.Crypto.Interfaces
 @using VaultGuard.Services.Interfaces
+@using VaultGuard.Models.DTOs.Auth
 @using VaultGuard.Components.Shared.Services
 @using MudBlazor
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject IAuthService AuthService
+@inject IUserProfileService UserProfileService
 @inject IVaultSessionService VaultSessionService
 @inject IMasterKeyCacheService MasterKeyCache
 @inject ISnackbar Snackbar
 @inject IServiceProvider Services
 
 <div class="auth-container">
-    <div class="auth-card">
+    <div class="auth-card @(!isFirstTime && !show2fa && _selectedProfile == null && _profiles.Count > 0 ? "auth-card--wide" : "")">
         <div class="auth-header">
             <div class="auth-logo">
                 <span class="logo-icon">🔐</span>
@@ -144,9 +146,40 @@
                             <button type="button" class="link-button" @onclick="CancelTwoFactor">Back to sign in</button>
                         </div>
                     }
+                    else if (_selectedProfile == null && _profiles.Count > 0)
+                    {
+                        <!-- Account picker (mirrors the WPF desktop "Who's unlocking?" screen) -->
+                        <h2>Who's unlocking?</h2>
+                        <p class="form-description">Choose a profile to continue.</p>
+
+                        <div class="profile-grid">
+                            @foreach (var profile in _profiles)
+                            {
+                                var capturedProfile = profile;
+                                <div class="profile-tile" @onclick="() => SelectProfile(capturedProfile)">
+                                    <div class="profile-avatar" style="background:@GetAvatarColor(profile)">@GetInitials(profile)</div>
+                                    <div class="profile-name">@GetDisplayName(profile)</div>
+                                    <div class="profile-email">@profile.Email</div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="auth-footer">
+                            <button type="button" class="link-button" @onclick="GenerateDefaultAccounts" disabled="@isSeeding">
+                                @(isSeeding ? "Creating default accounts…" : "Create default accounts")
+                            </button>
+                        </div>
+                    }
                     else
                     {
                         <h2>Sign in to Vault Guard</h2>
+                        @if (_selectedProfile != null)
+                        {
+                            <div class="selected-profile-chip">
+                                <div class="profile-avatar profile-avatar--small" style="background:@GetAvatarColor(_selectedProfile)">@GetInitials(_selectedProfile)</div>
+                                <span>@GetDisplayName(_selectedProfile)</span>
+                            </div>
+                        }
                         <p class="form-description">Enter your master password to unlock your vault.</p>
 
                         <div class="form-group">
@@ -204,6 +237,12 @@
                         </button>
 
                         <div class="auth-footer">
+                            @if (_profiles.Count > 0)
+                            {
+                                <button type="button" class="link-button" @onclick="SwitchAccount">
+                                    ← Switch account
+                                </button>
+                            }
                             <button type="button" class="link-button" @onclick="ResetVault">
                                 Forgot your password?
                             </button>
@@ -247,6 +286,74 @@
     private string storedHint = string.Empty;
     private string errorMessage = string.Empty;
 
+    // ── Account picker (mirrors the WPF desktop "Who's unlocking?" screen) ──
+    private List<UserDto> _profiles = new();
+    private UserDto? _selectedProfile;
+
+    // Fixed hash-based palette — same values WPF uses, so the same profile gets the same colour
+    // in both apps.
+    private static readonly string[] AvatarPalette =
+    {
+        "#7C3AED", "#EC4899", "#0284C7", "#059669",
+        "#D97706", "#DC2626", "#0891B2", "#2563EB",
+    };
+
+    private async Task LoadProfilesAsync()
+    {
+        try
+        {
+            var users = await UserProfileService.GetAllUsersAsync();
+            _profiles = users.Where(u => u.IsActive).ToList();
+        }
+        catch (System.Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Warning("Failed to load account profiles", ex);
+            _profiles = new();
+        }
+    }
+
+    private void SelectProfile(UserDto profile)
+    {
+        _selectedProfile = profile;
+        loginKey = string.Empty;
+        loginKeyError = false;
+        errorMessage = string.Empty;
+    }
+
+    private void SwitchAccount()
+    {
+        _selectedProfile = null;
+        loginKey = string.Empty;
+        loginKeyError = false;
+        errorMessage = string.Empty;
+    }
+
+    private static string GetDisplayName(UserDto profile)
+    {
+        var name = $"{profile.FirstName} {profile.LastName}".Trim();
+        return string.IsNullOrWhiteSpace(name) ? profile.Email : name;
+    }
+
+    private static string GetInitials(UserDto profile)
+    {
+        var first = profile.FirstName;
+        var last = profile.LastName;
+        var a = !string.IsNullOrEmpty(first) ? first[0].ToString().ToUpperInvariant() : "";
+        var b = !string.IsNullOrEmpty(last) ? last[0].ToString().ToUpperInvariant() : "";
+        var initials = a + b;
+        if (!string.IsNullOrEmpty(initials)) return initials;
+        return !string.IsNullOrEmpty(profile.Email) ? profile.Email[0].ToString().ToUpperInvariant() : "?";
+    }
+
+    private static string GetAvatarColor(UserDto profile)
+    {
+        var key = !string.IsNullOrEmpty(profile.FirstName) ? profile.FirstName : profile.Email;
+        var idx = !string.IsNullOrEmpty(key)
+            ? Math.Abs(key.GetHashCode(StringComparison.Ordinal)) % AvatarPalette.Length
+            : 0;
+        return AvatarPalette[idx];
+    }
+
     // Creates the standard default accounts (admin/parent/user/child) + "Personal" vault on demand,
     // the same across every database provider. Resolved optionally so hosts that don't register a
     // seeder (e.g. mobile) simply show a friendly message instead of failing.
@@ -262,6 +369,10 @@
         {
             var result = await seeder.SeedAsync();
             Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Error);
+            if (result.Success)
+            {
+                await LoadProfilesAsync();
+            }
         }
         finally { isSeeding = false; }
     }
@@ -278,10 +389,11 @@
     {
         // Check if this is first time setup
         isFirstTime = await AuthService.IsFirstTimeSetupAsync();
-        
+
         if (!isFirstTime)
         {
             storedHint = await AuthService.GetMasterPasswordHintAsync();
+            await LoadProfilesAsync();
         }
     }
 
@@ -494,13 +606,18 @@
             isLoading = true;
             errorMessage = string.Empty;
 
-            // Authenticate using enhanced crypto service
-            var success = await AuthService.AuthenticateAsync(loginKey);
-            
+            // When a profile was picked, authenticate as that specific account; otherwise fall back
+            // to the original single-account flow (e.g. no profiles were found to pick from).
+            var success = _selectedProfile != null
+                ? await AuthService.LoginAsync(_selectedProfile.Email, loginKey)
+                : await AuthService.AuthenticateAsync(loginKey);
+
             if (success)
             {
                 // If this account has 2FA enabled, collect the authenticator code before completing login.
-                if (AuthService.CurrentUser?.IsTwoFactorEnabled == true)
+                // (TwoFactorEnabled is the flag TwoFactorService actually sets on setup — IsTwoFactorEnabled
+                // is a separate, unrelated flag used only by the API's SMS-based 2FA controller.)
+                if (AuthService.CurrentUser?.TwoFactorEnabled == true)
                 {
                     show2fa = true;
                     twoFactorCode = string.Empty;

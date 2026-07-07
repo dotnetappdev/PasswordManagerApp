@@ -128,6 +128,11 @@ public static class MauiProgram
 		builder.Services.AddScoped<ITwoFactorService, TwoFactorService>();
 		builder.Services.AddScoped<IDeviceService, DeviceService>();
 
+		// Identity data seeder + the on-demand default-account seeder (used by the shared login screen's
+		// "Create default accounts" button — mirrors VaultGuard.Web's registration exactly).
+		builder.Services.AddScoped<VaultGuard.DAL.Seed.IdentityDataSeeder>();
+		builder.Services.AddScoped<VaultGuard.Services.Interfaces.IDefaultAccountSeeder, VaultGuard.App.Services.MauiDefaultAccountSeeder>();
+
 		// "Remember this device" master-key cache (platform SecureStorage) so a 2FA-enabled
 		// account can sign in code-only on a trusted device.
 		builder.Services.AddScoped<VaultGuard.Components.Shared.Services.IMasterKeyCacheService, VaultGuard.App.Services.MauiMasterKeyCacheService>();
@@ -167,7 +172,57 @@ public static class MauiProgram
 		VaultGuard.Services.Logging.AppLogger.Initialize(
 			app.Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
 
+		// Ensure the local SQLite schema exists and seed demo data (default accounts + Personal vault +
+		// sample passwords) on first run, mirroring VaultGuard.Web's startup so the account switcher and
+		// dashboard aren't empty on a fresh install. Unlike the web host (which seeds roles only and lets
+		// the user click "Create default accounts"), mobile seeds the default accounts immediately since
+		// there's no shared desktop database to fall back to.
+		SeedDatabaseAsync(app.Services).GetAwaiter().GetResult();
+
 		return app;
+	}
+
+	private static async Task SeedDatabaseAsync(IServiceProvider services)
+	{
+		using var scope = services.CreateScope();
+		var sp = scope.ServiceProvider;
+
+		try
+		{
+			var dbContextApp = sp.GetRequiredService<VaultGuardDbContextApp>();
+			await dbContextApp.Database.EnsureCreatedAsync();
+
+			var dbContext = sp.GetRequiredService<VaultGuardDbContext>();
+			await dbContext.Database.EnsureCreatedAsync();
+
+			var migrationService = sp.GetService<IDatabaseMigrationService>();
+			if (migrationService != null)
+			{
+				await migrationService.EnsurePasswordItemTagsTableExistsAsync();
+			}
+
+			var identitySeeder = sp.GetRequiredService<VaultGuard.DAL.Seed.IdentityDataSeeder>();
+			await identitySeeder.SeedAsync(includeDefaultUsers: true);
+
+			if (!await dbContext.PasswordItems.AnyAsync())
+			{
+				var seedUserId =
+					await dbContext.Users
+						.Where(u => u.Email == "user@passwordmanager.local")
+						.Select(u => u.Id)
+						.FirstOrDefaultAsync()
+					?? await dbContext.Users.Select(u => u.Id).FirstOrDefaultAsync()
+					?? VaultGuard.DAL.Seed.TestDataSeeder.TestUserId;
+
+				VaultGuard.DAL.Seed.TestDataSeeder.SeedTestData(dbContext, seedUserId);
+			}
+
+			VaultGuard.Services.Logging.AppLogger.Info("MAUI database schema ensured and demo data seeded");
+		}
+		catch (Exception ex)
+		{
+			VaultGuard.Services.Logging.AppLogger.Error("MAUI startup seeding failed", ex);
+		}
 	}
 
 }

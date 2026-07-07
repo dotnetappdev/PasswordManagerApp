@@ -578,7 +578,7 @@
                                      Style="border-radius:14px; border:1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04);">
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Class="pa-3" Spacing="3">
                                     <!-- Cloud icon -->
-                                    <MudAvatar Style="background:#2563EB; width:44px; height:44px; border-radius:12px;">
+                                    <MudAvatar Style="background:#52525B; width:44px; height:44px; border-radius:12px;">
                                         <MudIcon Icon="@Icons.Material.Filled.CloudDone" Size="Size.Medium" Style="color:white;"/>
                                     </MudAvatar>
                                     <!-- Date / meta -->
@@ -633,7 +633,7 @@
                     <!-- Item groups -->
                     @if (BrowseVisible(browseContents.LoginItems) is { Count: > 0 } logins)
                     {
-                        <MudText Typo="Typo.overline" Style="color:#60A5FA; letter-spacing:1px;">LOGINS (@logins.Count)</MudText>
+                        <MudText Typo="Typo.overline" Style="color:#9D9D9D; letter-spacing:1px;">LOGINS (@logins.Count)</MudText>
                         @foreach (var item in logins) { <BrowseItemRow Item="item" OnChanged="BrowseCountChanged" /> }
                     }
                     @if (BrowseVisible(browseContents.SecureNotes) is { Count: > 0 } notes)

@@ -15,17 +15,16 @@
 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-5">
     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
         <div style="width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center;
-                    background: linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%);">
+                    background: linear-gradient(135deg, #71717A 0%, #A3A3AB 100%);">
             <MudIcon Icon="@Icons.Material.Filled.Fingerprint" Style="color:white; font-size:1.7rem;" />
         </div>
         <div>
             <MudText Typo="Typo.h4" Style="font-weight:700; line-height:1.1;">Passkeys</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">Passwordless authentication credentials</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">Passwordless authentication credentials</MudText>
         </div>
     </MudStack>
 
-    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
-               Style="background: linear-gradient(135deg, #EC4899, #8B5CF6); color:white;"
+    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary"
                OnClick="@OpenRegisterDialog">
         Register Passkey
     </MudButton>
@@ -34,15 +33,15 @@
 <!-- ── Stats ──────────────────────────────────────────────────────────────── -->
 <MudGrid Class="mb-5">
     <MudItem xs="12" sm="6" md="3">
-        <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px; border-left:4px solid #8B5CF6;">
+        <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px; border-left:4px solid #71717A;">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-                <div style="width:44px; height:44px; border-radius:10px; background:#2D1B44;
+                <div style="width:44px; height:44px; border-radius:10px; background:#1E3A5F;
                             display:flex; align-items:center; justify-content:center;">
-                    <MudIcon Icon="@Icons.Material.Filled.Fingerprint" Style="color:#C084FC;" />
+                    <MudIcon Icon="@Icons.Material.Filled.Fingerprint" Style="color:#A3A3AB;" />
                 </div>
                 <div>
                     <MudText Typo="Typo.h5" Style="font-weight:700;">@(passkeys?.Count ?? 0)</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Registered Passkeys</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Registered Passkeys</MudText>
                 </div>
             </MudStack>
         </MudPaper>
@@ -59,22 +58,22 @@
                     <MudText Typo="Typo.h6" Style="font-weight:600;">
                         @(passkeyStatus?.IsEnabled == true ? "Enabled" : "Disabled")
                     </MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Passkey Status</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Passkey Status</MudText>
                 </div>
             </MudStack>
         </MudPaper>
     </MudItem>
 
     <MudItem xs="12" sm="6" md="3">
-        <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px; border-left:4px solid #60A5FA;">
+        <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px; border-left:4px solid #A3A3AB;">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
                 <div style="width:44px; height:44px; border-radius:10px; background:#1E3A5F;
                             display:flex; align-items:center; justify-content:center;">
-                    <MudIcon Icon="@Icons.Material.Filled.Shield" Style="color:#60A5FA;" />
+                    <MudIcon Icon="@Icons.Material.Filled.Shield" Style="color:#A3A3AB;" />
                 </div>
                 <div>
                     <MudText Typo="Typo.h6" Style="font-weight:600;">FIDO2</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">WebAuthn Standard</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">WebAuthn Standard</MudText>
                 </div>
             </MudStack>
         </MudPaper>
@@ -89,7 +88,7 @@
                 </div>
                 <div>
                     <MudText Typo="Typo.h6" Style="font-weight:600;">Zero</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Phishing Risk</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Phishing Risk</MudText>
                 </div>
             </MudStack>
         </MudPaper>
@@ -97,13 +96,12 @@
 </MudGrid>
 
 <!-- ── Info Banner ────────────────────────────────────────────────────────── -->
-<MudAlert Severity="Severity.Normal" Class="mb-5" Dense="false"
-          Style="border-radius:12px; border:1px solid rgba(139,92,246,0.3); background:rgba(45,27,68,0.4);">
+<MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-5" Dense="false" Style="border-radius:12px;">
     <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
-        <MudIcon Icon="@Icons.Material.Filled.Info" Style="color:#C084FC; margin-top:1px;" Size="Size.Small"/>
+        <MudIcon Icon="@Icons.Material.Filled.Info" Style="margin-top:1px;" Size="Size.Small"/>
         <div>
-            <MudText Typo="Typo.subtitle2" Style="color:#DDD6FE; font-weight:600;">What are Passkeys?</MudText>
-            <MudText Typo="Typo.body2" Style="color:#7C6FA0;">
+            <MudText Typo="Typo.subtitle2" Style="font-weight:600;">What are Passkeys?</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
                 Passkeys replace passwords with device-bound cryptographic keys protected by your
                 biometrics (fingerprint, face) or device PIN. They are phishing-resistant by design
                 and cannot be stolen via data breaches because the private key never leaves your device.
@@ -127,7 +125,7 @@
 else if (passkeys?.Any() == true)
 {
     <!-- ── Passkey Cards ─────────────────────────────────────────────────── -->
-    <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mb-3">
+    <MudText Typo="Typo.subtitle2" Class="mb-3 mud-text-secondary">
         @passkeys.Count passkey@(passkeys.Count == 1 ? "" : "s") registered
     </MudText>
     @foreach (var pk in passkeys)
@@ -136,25 +134,25 @@ else if (passkeys?.Any() == true)
                   Style="border-radius:12px; border:1px solid rgba(255,255,255,0.06); overflow:hidden;">
             <div style="display:grid; grid-template-columns:auto 1fr auto; align-items:center; padding:18px 20px; gap:16px;">
                 <!-- Device Icon -->
-                <div style="width:52px; height:52px; border-radius:12px; background:#2D1B44;
+                <div style="width:52px; height:52px; border-radius:12px; background:#1E3A5F;
                             display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                     <MudIcon Icon="@GetDeviceIcon(pk.DeviceType)"
-                             Style="color:#C084FC; font-size:1.6rem;" />
+                             Style="color:#A3A3AB; font-size:1.6rem;" />
                 </div>
 
                 <!-- Info -->
                 <div>
                     <MudText Typo="Typo.subtitle1" Style="font-weight:600; line-height:1.2;">@pk.Name</MudText>
                     <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
                             @(pk.DeviceType ?? "Unknown device")
                         </MudText>
                         <MudText Typo="Typo.caption" Color="Color.Tertiary">·</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
                             Last used: @(pk.LastUsedAt?.ToString("MMM d, yyyy") ?? "Never")
                         </MudText>
                         <MudText Typo="Typo.caption" Color="Color.Tertiary">·</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
                             Registered @pk.CreatedAt.ToString("MMM d, yyyy")
                         </MudText>
                     </MudStack>
@@ -200,18 +198,17 @@ else
 {
     <!-- ── Empty State ───────────────────────────────────────────────────── -->
     <MudPaper Class="pa-12 text-center" Elevation="1"
-              Style="border-radius:16px; border:1px dashed rgba(139,92,246,0.3);">
+              Style="border-radius:16px; border:1px dashed rgba(37,99,235,0.3);">
         <div style="width:80px; height:80px; border-radius:20px; margin:0 auto 20px;
-                    background:linear-gradient(135deg,#EC4899,#8B5CF6);
+                    background:linear-gradient(135deg,#71717A,#A3A3AB);
                     display:flex; align-items:center; justify-content:center;">
             <MudIcon Icon="@Icons.Material.Filled.Fingerprint" Style="color:white; font-size:2.5rem;" />
         </div>
         <MudText Typo="Typo.h5" Style="font-weight:600;" Class="mb-2">No passkeys registered</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary" Style="max-width:400px; margin:0 auto;" Class="mb-5">
+        <MudText Typo="Typo.body2" Style="max-width:400px; margin:0 auto;" Class="mb-5 mud-text-secondary">
             Register a passkey to enable fast, secure passwordless sign-in across all your devices.
         </MudText>
-        <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
-                   Style="background:linear-gradient(135deg,#EC4899,#8B5CF6); color:white;"
+        <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary"
                    OnClick="@OpenRegisterDialog" Size="Size.Large">
             Register Your First Passkey
         </MudButton>
@@ -221,7 +218,7 @@ else
 <!-- ── Supported Sites ────────────────────────────────────────────────────── -->
 <MudPaper Class="pa-4 mt-5" Elevation="1"
           Style="border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
-    <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mb-3">
+    <MudText Typo="Typo.subtitle2" Class="mb-3 mud-text-secondary">
         Popular passkey-supported sites
     </MudText>
     <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
@@ -237,7 +234,7 @@ else
 <MudDialog @bind-Visible="_registerDialogVisible" Options="_dialogOptions">
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudIcon Icon="@Icons.Material.Filled.Fingerprint" Style="color:#C084FC;" />
+            <MudIcon Icon="@Icons.Material.Filled.Fingerprint" Style="color:#A3A3AB;" />
             <MudText Typo="Typo.h6">Register New Passkey</MudText>
         </MudStack>
     </TitleContent>

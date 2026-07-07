@@ -129,19 +129,24 @@ public class AuthService : IAuthService
                 return false;
             }
 
-            // Retrieve user salt from secure storage
-            var userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
-            if (userSalt == null)
+            if (string.IsNullOrEmpty(user.MasterPasswordHash) || string.IsNullOrEmpty(user.UserSalt))
             {
-                _logger.LogError("Failed to retrieve user salt from secure storage");
+                _logger.LogError("User {UserId} is missing a master password hash or salt", user.Id);
                 return false;
             }
 
+            // The salt lives on the user record itself — the same value LoginViaLocalDatabaseAsync
+            // uses. It previously also had to round-trip through browser localStorage (keyed by user
+            // id) before it would authenticate, which meant a fresh browser profile, a cleared
+            // localStorage, or a freshly seeded account (no browser context at seed time) could never
+            // log in even with the correct password.
+            var userSalt = Convert.FromBase64String(user.UserSalt);
+
             // Verify master password
             var isValid = _passwordCryptoService.VerifyMasterPassword(
-                masterPassword, 
-                user.MasterPasswordHash!, 
-                Convert.FromBase64String(user.UserSalt!)
+                masterPassword,
+                user.MasterPasswordHash,
+                userSalt
             );
 
             if (isValid)
@@ -396,20 +401,29 @@ public class AuthService : IAuthService
                 
                 if (isValidPassword)
                 {
+                    // Derive the master key and initialize a vault session, exactly like
+                    // AuthenticateViaLocalDatabaseAsync — without a sessionId in sessionStorage,
+                    // CheckAuthenticationStatusAsync() (the post-login gate MainLayout runs) always
+                    // finds no unlocked vault session and immediately bounces back to /login, even
+                    // though the password was correct.
+                    var masterKey = _passwordCryptoService.DeriveMasterKey(password, userSalt);
+                    var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
+                    await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "sessionId", sessionId);
+
                     _isAuthenticated = true;
                     _currentUser = user;
-                    
+
                     // Update last login
                     user.LastLoginAt = DateTime.UtcNow;
                     await _dbContext.SaveChangesAsync();
-                    
+
                     await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "isAuthenticated", "true");
                     await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "authMode", "local");
-                    
+
                     return true;
                 }
             }
-            
+
             _logger.LogWarning("Login attempt with invalid password for email: {Email}", email);
             return false;
         }

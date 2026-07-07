@@ -12,7 +12,7 @@
 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
     <div>
         <MudText Typo="Typo.h4" Style="font-weight:700">Collections</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">
             @(collections?.Count ?? 0) collections
         </MudText>
     </div>
@@ -40,13 +40,13 @@ else
             @foreach (var col in filteredCollections)
             {
                 <MudItem xs="12" sm="6" md="4" lg="3">
-                    <MudCard Elevation="2" Style="@($"border-left: 4px solid {(col.Color ?? "#2563EB")}; height:100%;")">
+                    <MudCard Elevation="2" Style="@($"border-left: 4px solid {(col.Color ?? "#71717A")}; height:100%;")">
                         <MudCardContent>
                             <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween">
                                 <MudStack Spacing="1">
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                                         <MudIcon Icon="@Icons.Material.Filled.FolderSpecial"
-                                                 Style="@($"color:{(col.Color ?? "#2563EB")}; font-size:1.5rem;")" />
+                                                 Style="@($"color:{(col.Color ?? "#71717A")}; font-size:1.5rem;")" />
                                         <MudText Typo="Typo.h6" Style="font-weight:600; font-size:1rem;">@col.Name</MudText>
                                         @if (col.IsDefault)
                                         {
@@ -55,7 +55,7 @@ else
                                     </MudStack>
                                     @if (!string.IsNullOrEmpty(col.Description))
                                     {
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary">@col.Description</MudText>
+                                        <MudText Typo="Typo.body2" Class="mud-text-secondary">@col.Description</MudText>
                                     }
                                 </MudStack>
                             </MudStack>
@@ -64,19 +64,19 @@ else
 
                             <MudStack Row="true" Justify="Justify.SpaceBetween">
                                 <MudStack Spacing="0">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Items</MudText>
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Items</MudText>
                                     <MudText Typo="Typo.body2" Style="font-weight:600;">
                                         @(col.PasswordItems?.Count ?? 0)
                                     </MudText>
                                 </MudStack>
                                 <MudStack Spacing="0">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Categories</MudText>
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Categories</MudText>
                                     <MudText Typo="Typo.body2" Style="font-weight:600;">
                                         @(col.Categories?.Count ?? 0)
                                     </MudText>
                                 </MudStack>
                                 <MudStack Spacing="0">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Created</MudText>
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Created</MudText>
                                     <MudText Typo="Typo.body2">@col.CreatedAt.ToString("MMM d")</MudText>
                                 </MudStack>
                             </MudStack>
@@ -103,9 +103,9 @@ else
             <MudItem xs="12">
                 <MudPaper Class="pa-12 text-center" Elevation="1">
                     <MudIcon Icon="@Icons.Material.Filled.FolderSpecial"
-                             Style="font-size:4rem; color:#2563EB; opacity:0.4;" />
-                    <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No collections found</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                             Style="font-size:4rem; color:#71717A; opacity:0.4;" />
+                    <MudText Typo="Typo.h6" Class="mt-2 mud-text-secondary">No collections found</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4 mud-text-secondary">
                         Create a collection to group your password categories.
                     </MudText>
                     <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled"
@@ -132,7 +132,7 @@ else
                               Variant="Variant.Outlined" Lines="2"
                               Placeholder="Optional description" />
                 <MudTextField @bind-Value="_editingCollection.Color" Label="Color (hex)"
-                              Variant="Variant.Outlined" Placeholder="#2563EB"
+                              Variant="Variant.Outlined" Placeholder="#71717A"
                               Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Palette" />
                 <MudTextField @bind-Value="_editingCollection.Icon" Label="Icon (emoji or name)"
@@ -200,7 +200,7 @@ else
         _editingCollection = new Collection
         {
             UserId = AuthService.CurrentUser?.Id,
-            Color = "#2563EB",
+            Color = "#71717A",
             CreatedAt = DateTime.UtcNow
         };
         _dialogVisible = true;

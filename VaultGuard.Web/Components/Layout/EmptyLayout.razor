@@ -13,26 +13,26 @@
 </div>
 
 @code {
-    // Minimal theme mirroring the WPF palette (buttons stay VaultGuard blue, never purple).
+    // Minimal theme mirroring the WPF desktop palette (neutral grey surfaces; buttons stay blue, never purple).
     readonly MudTheme _theme = new()
     {
         PaletteLight = new PaletteLight
         {
-            Primary = "#2563EB",
+            Primary = "#71717A",
             Background = "#F5F6F8",
             Surface = "#FFFFFF",
         },
         PaletteDark = new PaletteDark
         {
-            Primary = "#2563EB",
-            PrimaryLighten = "#60A5FA",
-            PrimaryDarken = "#1D4ED8",
-            Background = "#1A1A1A",
-            BackgroundGray = "#242424",
-            Surface = "#2D2D2D",
-            TextPrimary = "#E5E5E5",
-            TextSecondary = "#9D9D9D",
-            Divider = "#3A3A3A",
+            Primary = "#71717A",
+            PrimaryLighten = "#A3A3AB",
+            PrimaryDarken = "#52525B",
+            Background = "#1A1A1A",         // WPF ModernBackgroundColor
+            BackgroundGray = "#242424",    // WPF ModernCardColor
+            Surface = "#2D2D2D",           // WPF ModernSurfaceColor
+            TextPrimary = "#E5E5E5",        // WPF ModernTextPrimaryColor
+            TextSecondary = "#9D9D9D",      // WPF ModernTextSecondaryColor
+            Divider = "#3A3A3A",            // WPF ModernBorderColor
         }
     };
 }

@@ -80,6 +80,20 @@ public sealed partial class MainWindow : Window
         _ = RefreshVaultsNavAsync();
         // Load sidebar tags as chips
         _ = RefreshTagsAsync();
+
+        // Settings edits normally persist when the user navigates away from the Settings page
+        // (SettingsPage_Unloaded). If they instead close the app straight from Settings — the X
+        // button, Alt+F4, tray Exit — that Unloaded handler never runs, so those edits were
+        // silently lost. Flush explicitly on window close as a safety net.
+        this.Closing += MainWindow_Closing;
+    }
+
+    private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        if (ContentFrame?.Content is Views.SettingsPage settingsPage)
+        {
+            settingsPage.FlushPendingSettings();
+        }
     }
 
     private void InitializeNavigation()
@@ -694,16 +708,11 @@ public sealed partial class MainWindow : Window
 
     private void PassSearchQueryToPage(string searchQuery)
     {
-        // Pass search query to the passwords page if it's currently loaded
+        // Pass search query to the passwords page if it's currently loaded. The page has no
+        // search box of its own — this is the only path that drives its live filter.
         if (ContentFrame.Content is Views.PasswordItemsPage passwordsPage)
         {
-            // Try to find the search textbox and set the search text
-            var searchTextBox = FindChildControl<TextBox>(passwordsPage, "SearchTextBox");
-            if (searchTextBox != null)
-            {
-                // Setting Text triggers TextChanged automatically; no need to manually raise the event
-                searchTextBox.Text = searchQuery;
-            }
+            passwordsPage.SetSearchQuery(searchQuery);
         }
     }
 
