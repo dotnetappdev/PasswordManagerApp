@@ -35,8 +35,8 @@
     }
 
     .validation-error {
-        border: 2px solid #007bff !important;
-        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5) !important;
+        border: 2px solid var(--mud-palette-error) !important;
+        box-shadow: 0 0 5px rgba(220, 53, 69, 0.5) !important;
     }
 
     .validation-message {
@@ -83,13 +83,13 @@
     }
 
     .provider-option:hover {
-        border-color: #3b82f6;
-        background-color: #f8fafc;
+        border-color: var(--mud-palette-primary);
+        background-color: var(--mud-palette-action-default-hover);
     }
 
     .provider-option.selected {
-        border-color: #3b82f6;
-        background-color: #eff6ff;
+        border-color: var(--mud-palette-secondary);
+        background-color: var(--mud-palette-action-default-hover);
     }
 
     .plugin-header {
@@ -144,7 +144,7 @@
     }
 
     .plugin-website {
-        color: #3b82f6;
+        color: var(--mud-palette-secondary);
         font-size: 12px;
         text-decoration: none;
     }
@@ -308,8 +308,8 @@
     .spinner {
         width: 32px;
         height: 32px;
-        border: 3px solid #e5e7eb;
-        border-top: 3px solid #3b82f6;
+        border: 3px solid var(--mud-palette-lines-default);
+        border-top: 3px solid var(--mud-palette-primary);
         border-radius: 50%;
         animation: spin 1s linear infinite;
     }
@@ -517,14 +517,14 @@
 
     .icon-option:hover,
     .color-option:hover {
-        border-color: #3b82f6;
+        border-color: var(--mud-palette-primary);
         transform: scale(1.05);
     }
 
     .icon-option.selected,
     .color-option.selected {
-        border-color: #3b82f6;
-        background-color: #eff6ff;
+        border-color: var(--mud-palette-secondary);
+        background-color: var(--mud-palette-action-default-hover);
     }
 
     .category-preview {
@@ -2706,7 +2706,7 @@
             @if (collection.IsDefault)
             {
                 <span class="default-badge" title="Default Collection"
-                    style="font-size:10px;background:#007bff;color:white;padding:2px 4px;border-radius:3px;margin-left:3px;">Default</span>
+                    style="font-size:10px;background:var(--mud-palette-secondary);color:var(--mud-palette-secondary-text);padding:2px 4px;border-radius:3px;margin-left:3px;">Default</span>
             }
             <div class="collection-actions" style="margin-left:auto;display:flex;gap:2px;">
                 @if (!collection.IsDefault)
@@ -2758,7 +2758,7 @@
                     <div class="empty-message" style="padding: 5px; font-style: italic; color: #888;">No categories</div>
                 }
                 <button class="add-category-btn"
-                    style="background:none;border:none;font-size:12px;padding:5px 0;cursor:pointer;color:#007bff;width:100%;text-align:left;"
+                    style="background:none;border:none;font-size:12px;padding:5px 0;cursor:pointer;color:var(--mud-palette-secondary);width:100%;text-align:left;"
                     @onclick:stopPropagation="true" @onclick="() => ShowAddCategoryForCollection(collection.Id)"
                     title="Add new category">+ Add Category</button>
             </div>

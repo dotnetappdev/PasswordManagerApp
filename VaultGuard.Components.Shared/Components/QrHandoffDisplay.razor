@@ -1,0 +1,172 @@
+@using System.Text.Json
+@using System.Net.Http.Json
+@using Microsoft.Extensions.Configuration
+@using VaultGuard.Models.DTOs.Auth
+@using VaultGuard.Services.Security
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject IConfiguration Configuration
+@implements IDisposable
+
+@* Desktop/web "show a QR, phone signs me in" side of the end-to-end hand-off. We create an ephemeral
+   key pair, put its public key in the QR, and poll the relay. When a phone submits the encrypted master
+   password we decrypt it locally and raise OnUnlock so the host can run its normal local sign-in. *@
+
+<div class="qr-handoff">
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <p class="qr-handoff-error">@_error</p>
+        <button type="button" class="qr-handoff-retry" @onclick="StartAsync">Try again</button>
+    }
+    else if (_expired)
+    {
+        <p class="qr-handoff-hint">This code expired.</p>
+        <button type="button" class="qr-handoff-retry" @onclick="StartAsync">Generate a new code</button>
+    }
+    else
+    {
+        <div class="qr-handoff-code" id="@_elementId"></div>
+        <p class="qr-handoff-hint">On your phone: open Vault Guard, tap <strong>Scan to sign in</strong>, and point it here.</p>
+    }
+</div>
+
+<style>
+    .qr-handoff { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .qr-handoff-code {
+        background: #fff; padding: 14px; border-radius: 12px; min-width: 232px; min-height: 232px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .qr-handoff-hint { font-size: 0.9rem; color: var(--mud-palette-text-secondary, #9D9D9D); text-align: center; margin: 0; }
+    .qr-handoff-error { font-size: 0.9rem; color: var(--mud-palette-error, #FCA5A5); text-align: center; margin: 0; }
+    .qr-handoff-retry {
+        background: var(--mud-palette-primary, #5B5B63); color: var(--mud-palette-primary-text, #fff);
+        border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;
+    }
+</style>
+
+@code {
+    /// <summary>Raised with (email, password) once a phone has signed this device in, so the host can
+    /// run its normal local unlock.</summary>
+    [Parameter] public EventCallback<(string Email, string Password)> OnUnlock { get; set; }
+
+    private readonly string _elementId = "qrho-" + Guid.NewGuid().ToString("N")[..8];
+    private QrHandoffKeyPair? _keyPair;
+    private string _token = string.Empty;
+    private string _baseUrl = string.Empty;
+    private string? _error;
+    private bool _expired;
+    private System.Threading.Timer? _pollTimer;
+    private bool _completed;
+
+    protected override async Task OnInitializedAsync() => await StartAsync();
+
+    private async Task StartAsync()
+    {
+        _error = null;
+        _expired = false;
+        _completed = false;
+        StopPolling();
+        _keyPair?.Dispose();
+        _keyPair = QrHandoffKeyPair.Create();
+
+        try
+        {
+            var apiBaseUrl = Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7001";
+            Http.BaseAddress ??= new Uri(apiBaseUrl);
+
+            var genResponse = await Http.PostAsync("/api/auth/qr/generate-anonymous", null);
+            if (!genResponse.IsSuccessStatusCode)
+            {
+                _error = "Couldn't start QR sign-in. Is the service running?";
+                return;
+            }
+
+            var gen = await genResponse.Content.ReadFromJsonAsync<QrLoginGenerateResponseDto>();
+            if (gen is null || string.IsNullOrEmpty(gen.Token))
+            {
+                _error = "Couldn't start QR sign-in.";
+                return;
+            }
+
+            _token = gen.Token;
+            _baseUrl = ExtractBaseUrl(gen.QrCodeData, apiBaseUrl);
+
+            // The QR carries our ephemeral public key plus where the phone should post the encrypted blob.
+            var qrPayload = JsonSerializer.Serialize(new
+            {
+                mode = "handoff",
+                token = _token,
+                submit = $"{_baseUrl.TrimEnd('/')}/api/auth/qr/submit-handoff",
+                pub = _keyPair.PublicKeyBase64
+            });
+
+            await JSRuntime.InvokeVoidAsync("renderQrCode", _elementId, qrPayload);
+
+            _pollTimer = new System.Threading.Timer(async _ => await PollAsync(), null,
+                TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error("QR hand-off display failed to start", ex);
+            _error = "Couldn't start QR sign-in.";
+        }
+        StateHasChanged();
+    }
+
+    private static string ExtractBaseUrl(string qrCodeData, string fallback)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(qrCodeData);
+            if (doc.RootElement.TryGetProperty("endpoint", out var ep))
+            {
+                var uri = new Uri(ep.GetString()!);
+                return $"{uri.Scheme}://{uri.Authority}";
+            }
+        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't parse QR base URL", logEx); }
+        return fallback;
+    }
+
+    private async Task PollAsync()
+    {
+        if (_completed || _keyPair is null) return;
+        try
+        {
+            var status = await Http.GetFromJsonAsync<QrHandoffStatusResponseDto>(
+                $"{_baseUrl.TrimEnd('/')}/api/auth/qr/handoff/{_token}");
+            if (status is null) return;
+
+            if (status.Status == QrLoginStatus.Authenticated &&
+                !string.IsNullOrEmpty(status.Ciphertext) &&
+                !string.IsNullOrEmpty(status.EphemeralPublicKey) &&
+                !string.IsNullOrEmpty(status.Nonce))
+            {
+                _completed = true;
+                StopPolling();
+
+                var password = _keyPair.Decrypt(status.EphemeralPublicKey!, status.Nonce!, status.Ciphertext!);
+                await InvokeAsync(async () => await OnUnlock.InvokeAsync((status.Email ?? string.Empty, password)));
+            }
+            else if (status.IsExpired || status.Status == QrLoginStatus.Expired)
+            {
+                StopPolling();
+                _expired = true;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("QR hand-off poll failed", logEx); }
+    }
+
+    private void StopPolling()
+    {
+        _pollTimer?.Dispose();
+        _pollTimer = null;
+    }
+
+    public void Dispose()
+    {
+        StopPolling();
+        _keyPair?.Dispose();
+    }
+}

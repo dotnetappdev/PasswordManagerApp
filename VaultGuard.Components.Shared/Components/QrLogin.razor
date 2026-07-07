@@ -194,6 +194,10 @@
     [Parameter] public string? SessionToken { get; set; }
     [Parameter] public EventCallback<bool> OnAuthenticationComplete { get; set; }
 
+    /// <summary>Raised (when a delegate is supplied) with the session an approving device created, so the
+    /// host can complete sign-in on this device and navigate itself.</summary>
+    [Parameter] public EventCallback<AuthResponseDto> OnAuthenticated { get; set; }
+
     private QrLoginGenerateResponseDto? QrData { get; set; }
     private QrLoginStatus Status { get; set; } = QrLoginStatus.Pending;
     private bool IsLoading { get; set; } = false;
@@ -229,8 +233,15 @@
                 Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", SessionToken);
             }
 
+            // A logged-in client links another device via the authenticated endpoint; a client still on
+            // its sign-in screen (no session) uses the anonymous endpoint so it can show a scannable code
+            // that a phone approves to sign this device in.
+            var generateEndpoint = string.IsNullOrEmpty(SessionToken)
+                ? "/api/auth/qr/generate-anonymous"
+                : "/api/auth/qr/generate";
+
             // Call the API to generate QR code
-            var response = await Http.PostAsync("/api/auth/qr/generate", null);
+            var response = await Http.PostAsync(generateEndpoint, null);
             
             if (response.IsSuccessStatusCode)
             {
@@ -343,10 +354,19 @@
                     {
                         StopTimers();
                         await OnAuthenticationComplete.InvokeAsync(true);
-                        
-                        // Redirect to vault or home page
-                        await Task.Delay(1500); // Show success message briefly
-                        Navigation.NavigateTo("/vault");
+
+                        // When the host wants to complete sign-in itself (e.g. the login screen), hand it
+                        // the session an approving device created and let it navigate. Otherwise fall back
+                        // to the default redirect.
+                        if (OnAuthenticated.HasDelegate && statusResponse.AuthData != null)
+                        {
+                            await OnAuthenticated.InvokeAsync(statusResponse.AuthData);
+                        }
+                        else
+                        {
+                            await Task.Delay(1500); // Show success message briefly
+                            Navigation.NavigateTo("/vault");
+                        }
                     }
                     else if (Status == QrLoginStatus.Expired || statusResponse.IsExpired)
                     {

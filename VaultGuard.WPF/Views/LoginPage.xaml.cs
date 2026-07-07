@@ -564,6 +564,29 @@ public sealed partial class LoginPage : Page
         await DoPrimaryActionAsync();
     }
 
+    // "Sign in from your phone": show a QR the phone scans; it returns the master password end-to-end
+    // encrypted, we decrypt it and unlock locally (works in SQLite mode).
+    private async void QrPhoneSignInButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null || _serviceProvider == null) return;
+
+        try
+        {
+            var creds = await Helpers.QrPhoneSignInDialog.ShowAsync(_serviceProvider);
+            if (creds == null) return;
+
+            var success = await _viewModel.CompleteQrPhoneSignInAsync(creds.Value.Email, creds.Value.Password);
+            if (success && GetMainWindow() is MainWindow mainWindow)
+            {
+                mainWindow.NavigateToHome();
+            }
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error("WPF QR phone sign-in failed", ex);
+        }
+    }
+
 
 
     private void ProfileButton_Click(object sender, RoutedEventArgs e)

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using VaultGuard.Services.Interfaces;
 using VaultGuard.Models.Configuration;
+using VaultGuard.Models.DTOs.Auth;
 
 namespace VaultGuard.Services.Services;
 
@@ -623,6 +624,42 @@ public class AuthService : IAuthService
         _logger.LogWarning("ChangeMasterPasswordAsync not implemented for web-based AuthService");
         await Task.CompletedTask;
         return false;
+    }
+
+    /// <summary>
+    /// Completes a QR-code sign-in using the session an approving mobile device created. The token acts
+    /// as the API session bearer, so subsequent vault reads are served (decrypted) by the API. This does
+    /// not derive a local master key, so it only yields readable data when this host talks to the API.
+    /// </summary>
+    public async Task<bool> CompleteQrSignInAsync(AuthResponseDto authData)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(authData?.Token) || authData.User is null)
+            {
+                _logger.LogWarning("CompleteQrSignInAsync called with no session token");
+                return false;
+            }
+
+            // Persist the session so CheckAuthenticationStatusAsync / API calls pick it up as the bearer.
+            await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "sessionId", authData.Token);
+            await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "apiToken", authData.Token);
+            await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "isAuthenticated", "true");
+            await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "authMode", "api");
+            await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "currentUserId", authData.User.Id);
+
+            _isAuthenticated = true;
+            _currentUser = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == authData.User.Id)
+                ?? await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == authData.User.Email);
+
+            _logger.LogInformation("QR sign-in completed for user {UserId}", authData.User.Id);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "CompleteQrSignInAsync failed");
+            return false;
+        }
     }
 
     /// <summary>

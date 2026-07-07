@@ -1,6 +1,5 @@
 ﻿@import url('modern-theme.css');
 @import url('password-manager.css');
-@import url('auth.css');
 /*#if (SampleContent)*/
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;

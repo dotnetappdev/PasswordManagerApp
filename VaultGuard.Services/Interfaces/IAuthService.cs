@@ -1,4 +1,5 @@
 using VaultGuard.Models;
+using VaultGuard.Models.DTOs.Auth;
 
 namespace VaultGuard.Services.Interfaces;
 
@@ -98,4 +99,15 @@ public interface IAuthService
     /// <param name="password">The user's master password for confirmation</param>
     /// <returns>Result with success status and error message if any</returns>
     Task<(bool Success, string? ErrorMessage)> DeleteAccountAsync(string password);
+
+    /// <summary>
+    /// Completes a QR-code sign-in on this (desktop/web) device using the session an approving mobile
+    /// device created (the "desktop shows, phone scans, desktop signs in" flow). This works where vault
+    /// data is served through the API session — the returned token acts as the bearer. Hosts that must
+    /// derive the master key locally from the password (pure local/SQLite vault) can't unlock from a
+    /// token alone and return false. Default implementation is a no-op so existing hosts are unaffected.
+    /// </summary>
+    /// <param name="authData">The session/user returned by the QR authenticate + status flow.</param>
+    /// <returns>True if this device is now signed in.</returns>
+    Task<bool> CompleteQrSignInAsync(AuthResponseDto authData) => Task.FromResult(false);
 }

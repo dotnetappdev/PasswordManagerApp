@@ -27,6 +27,16 @@ public class QrLoginService : IQrLoginService
     // QR token expiration time (60 seconds)
     private static readonly TimeSpan TokenExpiration = TimeSpan.FromSeconds(60);
 
+    // In-memory hand-off of the session created when a mobile device approves a QR login, keyed by token.
+    // The desktop/web client that is polling qr/status reads this to complete its own sign-in. Kept in
+    // memory (not the DB) so no schema change is needed; valid within the single API process that both
+    // the desktop and the scanning device talk to (the norm in local/SQLite mode).
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, AuthResponseDto> _authResults = new();
+
+    // In-memory relay of the end-to-end encrypted master-key hand-off, keyed by token. The server stores
+    // only ciphertext (it holds neither device's private key), so it cannot read the password.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, QrHandoffSubmitRequestDto> _handoffs = new();
+
     public QrLoginService(
         IDatabaseContextFactory contextFactory,
         UserManager<ApplicationUser> userManager,
@@ -96,6 +106,133 @@ public class QrLoginService : IQrLoginService
                 ExpiresAt = expiresAt,
                 ExpiresInSeconds = (int)TokenExpiration.TotalSeconds
             };
+        }
+        finally
+        {
+            context.Dispose();
+        }
+    }
+
+    public async Task<QrLoginGenerateResponseDto> GenerateAnonymousQrLoginTokenAsync(string baseUrl)
+    {
+        var context = await _contextFactory.CreateSqliteContextAsync();
+
+        try
+        {
+            var newToken = Guid.NewGuid().ToString("N");
+            var expiresAt = DateTime.UtcNow.Add(TokenExpiration);
+
+            var qrToken = new QrLoginToken
+            {
+                Token = newToken,
+                UserId = string.Empty,   // resolved when a device approves with its email
+                ExpiresAt = expiresAt,
+                Status = Models.DTOs.Auth.QrLoginStatus.Pending
+            };
+
+            context.QrLoginTokens.Add(qrToken);
+            await context.SaveChangesAsync();
+
+            var qrData = new
+            {
+                token = newToken,
+                endpoint = $"{baseUrl.TrimEnd('/')}/api/auth/qr/authenticate",
+                expires = expiresAt.ToString("O")
+            };
+
+            _logger.LogInformation("Generated anonymous QR login token, expires at {ExpiresAt}", expiresAt);
+
+            return new QrLoginGenerateResponseDto
+            {
+                Token = newToken,
+                QrCodeData = JsonSerializer.Serialize(qrData),
+                ExpiresAt = expiresAt,
+                ExpiresInSeconds = (int)TokenExpiration.TotalSeconds
+            };
+        }
+        finally
+        {
+            context.Dispose();
+        }
+    }
+
+    public async Task<QrLoginAuthenticateResponseDto> SubmitHandoffAsync(QrHandoffSubmitRequestDto request)
+    {
+        if (request == null) throw new ArgumentNullException(nameof(request));
+
+        var context = await _contextFactory.CreateSqliteContextAsync();
+        try
+        {
+            var qrToken = await ((DbContext)context).Set<QrLoginToken>()
+                .FirstOrDefaultAsync(t => t.Token == request.Token);
+
+            if (qrToken == null)
+                return new QrLoginAuthenticateResponseDto { Success = false, Message = "Invalid or expired QR token" };
+
+            if (qrToken.ExpiresAt <= DateTime.UtcNow)
+            {
+                qrToken.Status = Models.DTOs.Auth.QrLoginStatus.Expired;
+                await context.SaveChangesAsync();
+                return new QrLoginAuthenticateResponseDto { Success = false, Message = "QR token has expired" };
+            }
+
+            if (qrToken.IsUsed || qrToken.Status == Models.DTOs.Auth.QrLoginStatus.Authenticated)
+                return new QrLoginAuthenticateResponseDto { Success = false, Message = "QR token has already been used" };
+
+            // Store the ciphertext for the displaying device to collect; never decrypted here.
+            _handoffs[request.Token] = request;
+            qrToken.Status = Models.DTOs.Auth.QrLoginStatus.Authenticated;
+            qrToken.UsedAt = DateTime.UtcNow;
+            await context.SaveChangesAsync();
+
+            _logger.LogInformation("Stored encrypted QR hand-off for token {Token}", request.Token);
+            return new QrLoginAuthenticateResponseDto { Success = true, Message = "Approved" };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error storing QR hand-off for token {Token}", request.Token);
+            return new QrLoginAuthenticateResponseDto { Success = false, Message = "An error occurred" };
+        }
+        finally
+        {
+            context.Dispose();
+        }
+    }
+
+    public async Task<QrHandoffStatusResponseDto> GetHandoffStatusAsync(string token)
+    {
+        if (string.IsNullOrEmpty(token))
+            throw new ArgumentException("Token cannot be null or empty", nameof(token));
+
+        var context = await _contextFactory.CreateSqliteContextAsync();
+        try
+        {
+            var qrToken = await ((DbContext)context).Set<QrLoginToken>()
+                .FirstOrDefaultAsync(t => t.Token == token);
+
+            if (qrToken == null)
+                return new QrHandoffStatusResponseDto { Token = token, Status = Models.DTOs.Auth.QrLoginStatus.Expired, IsExpired = true, Message = "Token not found" };
+
+            var isExpired = qrToken.ExpiresAt <= DateTime.UtcNow;
+
+            var response = new QrHandoffStatusResponseDto
+            {
+                Token = token,
+                Status = qrToken.Status,
+                IsExpired = isExpired,
+                Message = GetStatusMessage(qrToken.Status, isExpired)
+            };
+
+            if (qrToken.Status == Models.DTOs.Auth.QrLoginStatus.Authenticated &&
+                _handoffs.TryGetValue(token, out var blob))
+            {
+                response.EphemeralPublicKey = blob.EphemeralPublicKey;
+                response.Nonce = blob.Nonce;
+                response.Ciphertext = blob.Ciphertext;
+                response.Email = blob.Email;
+            }
+
+            return response;
         }
         finally
         {
@@ -240,7 +377,11 @@ public class QrLoginService : IQrLoginService
                 }
             };
 
-            _logger.LogInformation("QR authentication successful for user {UserId} with token {Token}", 
+            // Hand the freshly-created session to the desktop/web client that is polling qr/status so it
+            // can complete its own sign-in ("desktop shows, phone scans, desktop signs in").
+            _authResults[request.Token] = authResponse;
+
+            _logger.LogInformation("QR authentication successful for user {UserId} with token {Token}",
                 user.Id, request.Token);
 
             return new QrLoginAuthenticateResponseDto
@@ -298,11 +439,19 @@ public class QrLoginService : IQrLoginService
                 await context.SaveChangesAsync();
             }
 
+            // Once a device has approved, surface the created session so the polling desktop can sign in.
+            AuthResponseDto? authData = null;
+            if (qrToken.Status == Models.DTOs.Auth.QrLoginStatus.Authenticated)
+            {
+                _authResults.TryGetValue(token, out authData);
+            }
+
             return new QrLoginStatusResponseDto
             {
                 Token = token,
                 Status = qrToken.Status,
                 IsExpired = isExpired,
+                AuthData = authData,
                 Message = GetStatusMessage(qrToken.Status, isExpired)
             };
         }
@@ -325,9 +474,11 @@ public class QrLoginService : IQrLoginService
             
             foreach (var expiredToken in expiredTokens)
             {
+                _authResults.TryRemove(expiredToken.Token, out _);
+                _handoffs.TryRemove(expiredToken.Token, out _);
                 ((DbContext)context).Set<QrLoginToken>().Remove(expiredToken);
             }
-            
+
             await context.SaveChangesAsync();
 
             if (count > 0)

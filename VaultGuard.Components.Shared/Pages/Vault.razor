@@ -831,13 +831,15 @@
 
     private static string GetItemColorHex(PasswordItem item) => item.Type switch
     {
-        ItemType.Login      => "#1976D2",
+        // Neutral graphite for the common Login/Password types so the vault reads as a themed
+        // (non-blue) tool; the remaining types keep distinct non-blue accent hues.
+        ItemType.Login      => "#5B5B63",
         ItemType.CreditCard => "#F57C00",
         ItemType.SecureNote => "#388E3C",
-        ItemType.WiFi       => "#0288D1",
+        ItemType.WiFi       => "#00897B",
         ItemType.Passkey    => "#7B1FA2",
         ItemType.Identity   => "#C62828",
-        _                   => "#455A64"
+        _                   => "#5B5B63"
     };
 
     private static string GetItemSubtitle(PasswordItem item) => item.Type switch

@@ -107,6 +107,7 @@ public static class MauiProgram
 			options.Password.RequireUppercase = true;
 			options.Password.RequireLowercase = true;
 		})
+		.AddRoles<ApplicationRole>()
 		.AddEntityFrameworkStores<VaultGuardDbContextApp>();
 
 		// Fix for CS0246: Correct the interface name from 'IPasswordItemIterface' to 'IPasswordItemService'  

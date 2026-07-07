@@ -1,11 +1,14 @@
 @page "/login"
 @using System.Linq
+@using System.Text.Json
+@using System.Net.Http.Json
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
 @using VaultGuard.Crypto.Interfaces
 @using VaultGuard.Services.Interfaces
 @using VaultGuard.Models.DTOs.Auth
 @using VaultGuard.Components.Shared.Services
+@using VaultGuard.Services.Security
 @using MudBlazor
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -15,6 +18,7 @@
 @inject IMasterKeyCacheService MasterKeyCache
 @inject ISnackbar Snackbar
 @inject IServiceProvider Services
+@inject HttpClient Http
 
 <div class="auth-container">
     <div class="auth-card @(!isFirstTime && !show2fa && _selectedProfile == null && _profiles.Count > 0 ? "auth-card--wide" : "")">
@@ -235,6 +239,9 @@
                         <button type="button" class="auth-button auth-button-success" @onclick="ShowQrLogin">
                             <span class="btn-emoji">📱</span> Sign in with QR Code
                         </button>
+                        <button type="button" class="auth-button auth-button-outline" @onclick="ShowQrScanner">
+                            <span class="btn-emoji">📷</span> Scan to sign in
+                        </button>
 
                         <div class="auth-footer">
                             @if (_profiles.Count > 0)
@@ -263,11 +270,27 @@
     <div class="modal-overlay" @onclick="CloseQrLogin">
         <div class="modal-content" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3>QR Code Login</h3>
+                <h3>Sign in from your phone</h3>
                 <button type="button" class="modal-close" @onclick="CloseQrLogin">×</button>
             </div>
             <div class="modal-body">
-                <QrLogin OnAuthenticationComplete="OnQrAuthenticationComplete" />
+                <QrHandoffDisplay OnUnlock="OnQrHandoffUnlock" />
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Scan-to-sign-in Modal (camera; mirrors the WPF "Scan to sign in" flow) -->
+@if (showQrScanner)
+{
+    <div class="modal-overlay" @onclick="CloseQrScanner">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>Scan to sign in</h3>
+                <button type="button" class="modal-close" @onclick="CloseQrScanner">×</button>
+            </div>
+            <div class="modal-body">
+                <QrScanner OnScanned="OnQrScanned" OnError="OnQrScanError" />
             </div>
         </div>
     </div>
@@ -937,5 +960,328 @@
             showQrLogin = false;
             // The QrLogin component will handle navigation
         }
+    }
+
+    // A phone scanned the QR this device showed and sent back the master password over the end-to-end
+    // encrypted hand-off. Run our normal local sign-in with it (derives the master key locally and
+    // unlocks this device's own vault) — this is what makes phone→desktop sign-in work in SQLite mode.
+    private async Task OnQrHandoffUnlock((string Email, string Password) creds)
+    {
+        showQrLogin = false;
+
+        if (string.IsNullOrWhiteSpace(creds.Email) || string.IsNullOrEmpty(creds.Password))
+        {
+            Snackbar.Add("Sign-in from phone failed (missing details).", Severity.Error);
+            StateHasChanged();
+            return;
+        }
+
+        var match = _profiles.FirstOrDefault(p => string.Equals(p.Email, creds.Email, StringComparison.OrdinalIgnoreCase));
+        if (match != null) SelectProfile(match);
+        loginKey = creds.Password;
+
+        try
+        {
+            var success = await AuthService.LoginAsync(creds.Email, creds.Password);
+            if (success)
+            {
+                if (AuthService.CurrentUser?.TwoFactorEnabled == true)
+                {
+                    show2fa = true;
+                    twoFactorCode = string.Empty;
+                    twoFactorError = false;
+                    errorMessage = string.Empty;
+                    Snackbar.Add("Enter your authenticator code to finish.", Severity.Info);
+                }
+                else
+                {
+                    Snackbar.Add("Signed in from your phone.", Severity.Success);
+                    Navigation.NavigateTo("/");
+                }
+            }
+            else
+            {
+                Snackbar.Add("Sign-in from phone failed. Please try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error("QR hand-off unlock failed", ex);
+            Snackbar.Add("Sign-in from phone failed.", Severity.Error);
+        }
+
+        StateHasChanged();
+    }
+
+    // Kept for the API-session variant (desktop runs against a reachable API). Unused by the default
+    // hand-off flow above but harmless.
+    private async Task OnQrDesktopAuthenticated(AuthResponseDto authData)
+    {
+        showQrLogin = false;
+        var ok = await AuthService.CompleteQrSignInAsync(authData);
+        if (ok)
+        {
+            Snackbar.Add("Signed in from your phone.", Severity.Success);
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            Snackbar.Add("Your phone approved the sign-in, but this device needs your master password to unlock its local vault.", Severity.Warning);
+        }
+        StateHasChanged();
+    }
+
+    private bool showQrScanner = false;
+
+    private void ShowQrScanner()
+    {
+        showQrScanner = true;
+    }
+
+    private void CloseQrScanner()
+    {
+        showQrScanner = false;
+    }
+
+    // Called when the camera scanner decodes a QR. Two payloads are supported:
+    //  1. The API cross-device payload ({ token, endpoint, expires }) shown by the WPF/Blazor desktop —
+    //     this phone approves it by POSTing the account credentials to the embedded endpoint, which logs
+    //     the desktop in (WhatsApp-Web style). The endpoint travels in the QR, so it works in SQLite mode
+    //     (the desktop's own local API address is carried in the code).
+    //  2. The WPF "VaultGuardQR" pairing payload ({ v, app, email, token }) — pre-select the matching
+    //     local profile so the user only needs their master password.
+    private async Task OnQrScanned(string text)
+    {
+        showQrScanner = false;
+
+        // Preferred: end-to-end encrypted hand-off (works in local/SQLite mode; the desktop unlocks its
+        // own vault, the server only relays ciphertext).
+        if (TryParseHandoffQr(text, out var hToken, out var submitUrl, out var recipientPubKey))
+        {
+            await SubmitHandoffApprovalAsync(hToken, submitUrl, recipientPubKey);
+            return;
+        }
+
+        if (TryParseApiQr(text, out var token, out var endpoint))
+        {
+            await ApproveDesktopLoginAsync(token, endpoint);
+            return;
+        }
+
+        var email = TryParseVaultGuardQrEmail(text);
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            var match = _profiles.FirstOrDefault(p =>
+                string.Equals(p.Email, email, StringComparison.OrdinalIgnoreCase));
+            if (match != null)
+            {
+                SelectProfile(match);
+                Snackbar.Add($"Signing in as {GetDisplayName(match)} — enter your master password.", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add($"No local profile matches {email}. Add the account first, then scan again.", Severity.Warning);
+            }
+        }
+        else
+        {
+            Snackbar.Add("That QR code isn't a VaultGuard sign-in code.", Severity.Warning);
+        }
+
+        StateHasChanged();
+    }
+
+    private static bool TryParseApiQr(string text, out string token, out string endpoint)
+    {
+        token = string.Empty;
+        endpoint = string.Empty;
+        if (string.IsNullOrWhiteSpace(text) || !text.TrimStart().StartsWith("{")) return false;
+        try
+        {
+            using var doc = JsonDocument.Parse(text);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("token", out var t) && root.TryGetProperty("endpoint", out var e))
+            {
+                token = t.GetString() ?? string.Empty;
+                endpoint = e.GetString() ?? string.Empty;
+                return !string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(endpoint);
+            }
+        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Scanned QR was not an API login payload", logEx); }
+        return false;
+    }
+
+    private static bool TryParseHandoffQr(string text, out string token, out string submitUrl, out string recipientPublicKey)
+    {
+        token = string.Empty;
+        submitUrl = string.Empty;
+        recipientPublicKey = string.Empty;
+        if (string.IsNullOrWhiteSpace(text) || !text.TrimStart().StartsWith("{")) return false;
+        try
+        {
+            using var doc = JsonDocument.Parse(text);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("mode", out var mode) ||
+                !string.Equals(mode.GetString(), "handoff", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (root.TryGetProperty("token", out var t) &&
+                root.TryGetProperty("submit", out var s) &&
+                root.TryGetProperty("pub", out var p))
+            {
+                token = t.GetString() ?? string.Empty;
+                submitUrl = s.GetString() ?? string.Empty;
+                recipientPublicKey = p.GetString() ?? string.Empty;
+                return !string.IsNullOrWhiteSpace(token)
+                    && !string.IsNullOrWhiteSpace(submitUrl)
+                    && !string.IsNullOrWhiteSpace(recipientPublicKey);
+            }
+        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Scanned QR was not a hand-off payload", logEx); }
+        return false;
+    }
+
+    // Encrypt the account's master password to the desktop's public key (from the QR) and post the
+    // ciphertext to the relay. The server never sees the plaintext; the desktop decrypts and unlocks.
+    private async Task SubmitHandoffApprovalAsync(string token, string submitUrl, string recipientPublicKey)
+    {
+        var email = _selectedProfile?.Email ?? (_profiles.Count == 1 ? _profiles[0].Email : null);
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            Snackbar.Add("Choose your profile first, then scan to sign in the other device.", Severity.Warning);
+            StateHasChanged();
+            return;
+        }
+
+        if (_selectedProfile == null)
+        {
+            var m = _profiles.FirstOrDefault(p => string.Equals(p.Email, email, StringComparison.OrdinalIgnoreCase));
+            if (m != null) SelectProfile(m);
+        }
+
+        if (string.IsNullOrEmpty(loginKey))
+        {
+            Snackbar.Add("Enter your account password, then scan again to sign in the other device.", Severity.Info);
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            var payload = QrHandoffCrypto.Encrypt(recipientPublicKey, loginKey);
+            var request = new QrHandoffSubmitRequestDto
+            {
+                Token = token,
+                EphemeralPublicKey = payload.EphemeralPublicKey,
+                Nonce = payload.Nonce,
+                Ciphertext = payload.Ciphertext,
+                Email = email
+            };
+
+            var response = await Http.PostAsJsonAsync(submitUrl, request);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Approved — the other device is unlocking.", Severity.Success);
+            }
+            else
+            {
+                VaultGuard.Services.Logging.AppLogger.Warning($"QR hand-off submit failed ({(int)response.StatusCode})");
+                Snackbar.Add("Couldn't sign in the other device. The code may have expired — try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error("QR hand-off submit failed", ex);
+            Snackbar.Add("Couldn't reach the other device's sign-in service.", Severity.Error);
+        }
+
+        StateHasChanged();
+    }
+
+    private static string? TryParseVaultGuardQrEmail(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text) || !text.TrimStart().StartsWith("{")) return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(text);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("app", out var app) &&
+                string.Equals(app.GetString(), "VaultGuardQR", StringComparison.OrdinalIgnoreCase) &&
+                root.TryGetProperty("email", out var em))
+            {
+                return em.GetString();
+            }
+        }
+        catch (Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Scanned QR was not a VaultGuard payload", logEx); }
+        return null;
+    }
+
+    // Approve a desktop's pending QR login: POST our account credentials to the endpoint carried in the
+    // QR. The desktop is polling qr/status and signs in once the server marks the token authenticated.
+    private async Task ApproveDesktopLoginAsync(string token, string endpoint)
+    {
+        var email = _selectedProfile?.Email
+            ?? (_profiles.Count == 1 ? _profiles[0].Email : null);
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            Snackbar.Add("Choose your profile first, then scan to approve the other device.", Severity.Warning);
+            StateHasChanged();
+            return;
+        }
+
+        // Make sure the password field is visible for this profile, then require it.
+        if (_selectedProfile == null)
+        {
+            var m = _profiles.FirstOrDefault(p => string.Equals(p.Email, email, StringComparison.OrdinalIgnoreCase));
+            if (m != null) SelectProfile(m);
+        }
+
+        if (string.IsNullOrEmpty(loginKey))
+        {
+            Snackbar.Add("Enter your account password, then scan again to approve the sign-in.", Severity.Info);
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            var request = new QrLoginAuthenticateRequestDto
+            {
+                Token = token,
+                Email = email,
+                Password = loginKey,
+                DeviceName = "VaultGuard Mobile",
+                DeviceType = "Mobile",
+                Platform = OperatingSystem.IsAndroid() ? "Android"
+                    : OperatingSystem.IsIOS() ? "iOS"
+                    : OperatingSystem.IsMacCatalyst() ? "macOS"
+                    : "Mobile"
+            };
+
+            var response = await Http.PostAsJsonAsync(endpoint, request);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Approved — the other device is signing in.", Severity.Success);
+            }
+            else
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                VaultGuard.Services.Logging.AppLogger.Warning($"QR approval failed ({(int)response.StatusCode}): {body}");
+                Snackbar.Add("Couldn't approve the sign-in. Check your password and that the code hasn't expired.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error("QR approval request failed", ex);
+            Snackbar.Add("Couldn't reach the other device's sign-in service.", Severity.Error);
+        }
+
+        StateHasChanged();
+    }
+
+    private void OnQrScanError(string message)
+    {
+        Snackbar.Add(message, Severity.Error);
     }
 }

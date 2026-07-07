@@ -323,6 +323,28 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Generate an anonymous QR code for login. Shown by a desktop/web client on its sign-in screen
+    /// before anyone is logged in there; a mobile device scans it and approves with its own credentials,
+    /// which signs the desktop in ("desktop shows, phone scans, desktop signs in").
+    /// </summary>
+    [HttpPost("qr/generate-anonymous")]
+    [AllowAnonymous]
+    public async Task<ActionResult<QrLoginGenerateResponseDto>> GenerateAnonymousQrLogin()
+    {
+        try
+        {
+            var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}";
+            var response = await _qrLoginService.GenerateAnonymousQrLoginTokenAsync(baseUrl);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating anonymous QR login token");
+            return StatusCode(500, "An error occurred while generating QR code");
+        }
+    }
+
+    /// <summary>
     /// Authenticate using QR code token
     /// </summary>
     [HttpPost("qr/authenticate")]
@@ -353,6 +375,55 @@ public class AuthController : ControllerBase
         {
             _logger.LogError(ex, "Error during QR authentication for token {Token}", request.Token);
             return StatusCode(500, "An error occurred during authentication");
+        }
+    }
+
+    /// <summary>
+    /// Relay an end-to-end encrypted master-key hand-off from a scanning device. The body is ciphertext
+    /// the server cannot read; it is stored for the displaying device to collect via qr/handoff.
+    /// </summary>
+    [HttpPost("qr/submit-handoff")]
+    [AllowAnonymous]
+    public async Task<ActionResult<QrLoginAuthenticateResponseDto>> SubmitQrHandoff([FromBody] QrHandoffSubmitRequestDto request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var response = await _qrLoginService.SubmitHandoffAsync(request);
+            return response.Success ? Ok(response) : BadRequest(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error submitting QR hand-off for token {Token}", request.Token);
+            return StatusCode(500, "An error occurred");
+        }
+    }
+
+    /// <summary>
+    /// Polled by the displaying device to collect the encrypted hand-off blob once a phone submits it.
+    /// </summary>
+    [HttpGet("qr/handoff/{token}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<QrHandoffStatusResponseDto>> GetQrHandoff(string token)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return BadRequest("Token is required");
+            }
+
+            var response = await _qrLoginService.GetHandoffStatusAsync(token);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking QR hand-off status for token {Token}", token);
+            return StatusCode(500, "An error occurred while checking status");
         }
     }
 

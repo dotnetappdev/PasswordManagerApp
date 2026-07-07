@@ -561,6 +561,52 @@ public class LoginViewModel : BaseViewModel
         }
     }
 
+    /// <summary>
+    /// Completes a "sign in from your phone" flow: a phone scanned the QR this device showed and sent
+    /// back the master password (end-to-end encrypted, already decrypted by the caller). Run the normal
+    /// local sign-in with it so this device unlocks its own vault — works in local/SQLite mode.
+    /// </summary>
+    public async Task<bool> CompleteQrPhoneSignInAsync(string email, string password)
+    {
+        try
+        {
+            IsLoading = true;
+            ErrorMessage = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrEmpty(password))
+            {
+                ErrorMessage = "Sign-in from phone failed (missing details).";
+                return false;
+            }
+
+            var success = await _authService.LoginAsync(email, password);
+            if (success)
+            {
+                if (_masterPasswordCacheService != null)
+                {
+                    var uid = _authService.CurrentUser?.Id ?? await _authService.GetCurrentUserIdAsync();
+                    if (!string.IsNullOrEmpty(uid))
+                        await _masterPasswordCacheService.CacheMasterPasswordAsync(uid, password);
+                }
+                IsAuthenticated = true;
+                return true;
+            }
+
+            ErrorMessage = "Sign-in from phone failed. Please try again.";
+            return false;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Sign-in failed: {ex.Message}";
+            return false;
+        }
+        finally
+        {
+            IsLoading = false;
+            OnPropertyChanged(nameof(HasError));
+        }
+    }
+
     // Legacy methods for backward compatibility
     public async Task<bool> LoginAsync()
     {

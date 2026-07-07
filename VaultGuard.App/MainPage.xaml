@@ -4,9 +4,10 @@
              xmlns:local="clr-namespace:VaultGuard.App.Components"
              x:Class="VaultGuard.App.MainPage">
 
-    <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html">
+    <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html"
+                   BlazorWebViewInitialized="OnBlazorWebViewInitialized">
         <BlazorWebView.RootComponents>
-            <RootComponent Selector="#app" ComponentType="{x:Type local:App}" />
+            <RootComponent Selector="#app" ComponentType="{x:Type local:Routes}" />
         </BlazorWebView.RootComponents>
     </BlazorWebView>
 
