@@ -40,6 +40,13 @@
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
+                <MenuItem Header="Sign in from _Phone (QR)…" Click="MenuQrSignIn_Click"
+                          ToolTip="Show a QR code — scan it with the Vault Guard mobile app to sign in on this PC">
+                    <MenuItem.Icon>
+                        <TextBlock Text="&#xE722;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
                 <MenuItem Header="E_xit" Click="MenuExit_Click"/>
             </MenuItem>
             <MenuItem Header="_View">

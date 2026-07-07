@@ -8,8 +8,10 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using VaultGuard.Models;
 using VaultGuard.Services.Interfaces;
+using VaultGuard.WPF.Helpers;
 using VaultGuard.WPF.Models;
 using VaultGuard.WPF.Services;
+using VaultGuard.WPF.ViewModels;
 
 namespace VaultGuard.WPF;
 
@@ -134,6 +136,47 @@ public sealed partial class MainWindow : Window
     private void MenuSettings_Click(object sender, RoutedEventArgs e) => NavigateToPage("Settings");
     private void MenuAbout_Click(object sender, RoutedEventArgs e) => NavigateToPage("Settings");
     private void MenuExit_Click(object sender, RoutedEventArgs e) => Close();
+
+    /// <summary>
+    /// File > Sign in from Phone — shows a QR code that the MAUI mobile app can scan to sign in on
+    /// this PC (end-to-end encrypted hand-off; the server only relays ciphertext).
+    /// </summary>
+    private async void MenuQrSignIn_Click(object sender, RoutedEventArgs e)
+    {
+        if (_serviceProvider == null) return;
+        try
+        {
+            if (_isAuthenticated)
+            {
+                // Already authenticated: show the "share this account's QR" dialog so another device
+                // can scan it and pre-fill the login email (WhatsApp-Web-style pairing).
+                var authSvc = _serviceProvider.GetService<IAuthService>();
+                var userId = _currentUserId;
+                var email = authSvc?.CurrentUser?.Email;
+                await Helpers.QrSignInDialog.ShowAsync(_serviceProvider, email, userId);
+            }
+            else
+            {
+                // Not authenticated: run the phone-signs-in-desktop hand-off flow.
+                var creds = await Helpers.QrPhoneSignInDialog.ShowAsync(_serviceProvider);
+                if (creds == null) return;
+                // Re-use the login frame to complete sign-in.
+                if (LoginFrame.Content is Views.LoginPage lp)
+                {
+                    var vm = lp.DataContext as ViewModels.LoginViewModel;
+                    if (vm != null)
+                    {
+                        var ok = await vm.CompleteQrPhoneSignInAsync(creds.Value.Email, creds.Value.Password);
+                        if (ok) NavigateToHome();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error("WPF menu QR sign-in failed", ex);
+        }
+    }
 
     private void MenuDocumentation_Click(object sender, RoutedEventArgs e)
     {

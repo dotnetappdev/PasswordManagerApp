@@ -89,6 +89,20 @@
                 </MudPaper>
 
                 <MudPaper Class="pa-4 rounded-lg mt-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">App Lock (Passkey / Biometric)</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
+                        Register a FIDO2 passkey (fingerprint, face, or hardware key) to unlock Vault Guard without
+                        typing your master password on this browser. PIN passcode lock is available in the mobile app.
+                    </MudText>
+                    <MudStack Spacing="2">
+                        <MudButton Href="/passkeys" StartIcon="@Icons.Material.Filled.Fingerprint"
+                                   Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true">
+                            Manage App Passkeys (Biometric)
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+
+                <MudPaper Class="pa-4 rounded-lg mt-4" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Session &amp; Lock</MudText>
                     <MudSelect T="int" @bind-Value="_autoLockMinutes" Label="Auto-lock after"
                                Variant="Variant.Outlined" Class="mb-3">
