@@ -703,6 +703,86 @@
                                               Style="{StaticResource ModernCaptionStyle}"
                                               TextWrapping="Wrap"/>
                                 </StackPanel>
+                                <StackPanel Margin="8">
+                                    <TextBlock Text="API Key"
+                                              Style="{StaticResource ModernCaptionStyle}"
+                                              FontWeight="SemiBold"/>
+                                    <TextBox Text="{Binding ApiKey, Mode=TwoWay}"
+                                            ui:ControlHelper.PlaceholderText="vg_..."
+                                            Style="{StaticResource ModernTextBoxStyle}"
+                                            MinWidth="360"/>
+                                </StackPanel>
+                                <StackPanel Margin="8">
+                                    <TextBlock Text="Client ID"
+                                              Style="{StaticResource ModernCaptionStyle}"
+                                              FontWeight="SemiBold"/>
+                                    <TextBox Text="{Binding ApiClientId, Mode=TwoWay}"
+                                            ui:ControlHelper.PlaceholderText="Optional client id"
+                                            Style="{StaticResource ModernTextBoxStyle}"
+                                            MinWidth="360"/>
+                                </StackPanel>
+                                <StackPanel Margin="8">
+                                    <TextBlock Text="Client Secret"
+                                              Style="{StaticResource ModernCaptionStyle}"
+                                              FontWeight="SemiBold"/>
+                                    <TextBox Text="{Binding ApiClientSecret, Mode=TwoWay}"
+                                            ui:ControlHelper.PlaceholderText="Optional client secret"
+                                            Style="{StaticResource ModernTextBoxStyle}"
+                                            MinWidth="360"/>
+                                </StackPanel>
+                                <TextBlock Text="SQL Server details for the API database"
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          FontWeight="SemiBold"
+                                          Margin="8,12,8,0"/>
+                                <TextBlock Text="These values are shared with the API and Blazor settings so one SQL Server setup can be reused everywhere."
+                                          Style="{StaticResource ModernCaptionStyle}"
+                                          Margin="8,0,8,4"
+                                          TextWrapping="Wrap"/>
+                                <UniformGrid Columns="2" Margin="8,0,8,0">
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="Server"
+                                                  Style="{StaticResource ModernCaptionStyle}"
+                                                  FontWeight="SemiBold"/>
+                                        <TextBox Text="{Binding ApiDbServer, Mode=TwoWay}"
+                                                ui:ControlHelper.PlaceholderText="sql.example.com"
+                                                Style="{StaticResource ModernTextBoxStyle}"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,0,0">
+                                        <TextBlock Text="Database"
+                                                  Style="{StaticResource ModernCaptionStyle}"
+                                                  FontWeight="SemiBold"/>
+                                        <TextBox Text="{Binding ApiDbName, Mode=TwoWay}"
+                                                ui:ControlHelper.PlaceholderText="VaultGuard"
+                                                Style="{StaticResource ModernTextBoxStyle}"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                                <UniformGrid Columns="2" Margin="8,0,8,0">
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="User"
+                                                  Style="{StaticResource ModernCaptionStyle}"
+                                                  FontWeight="SemiBold"/>
+                                        <TextBox Text="{Binding ApiDbUser, Mode=TwoWay}"
+                                                ui:ControlHelper.PlaceholderText="sa"
+                                                Style="{StaticResource ModernTextBoxStyle}"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,0,0">
+                                        <TextBlock Text="Password"
+                                                  Style="{StaticResource ModernCaptionStyle}"
+                                                  FontWeight="SemiBold"/>
+                                        <TextBox Text="{Binding ApiDbPassword, Mode=TwoWay}"
+                                                ui:ControlHelper.PlaceholderText="Database password"
+                                                Style="{StaticResource ModernTextBoxStyle}"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                                <StackPanel Orientation="Horizontal" Margin="8,8,8,0">
+                                    <Button Style="{StaticResource ModernSecondaryButtonStyle}"
+                                           Click="TestApiConnectionButton_Click">
+                                        <StackPanel Orientation="Horizontal" Margin="8">
+                                            <TextBlock Text="&#xE701;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Test API Connection"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 

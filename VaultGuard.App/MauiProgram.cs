@@ -76,6 +76,7 @@ public static class MauiProgram
 
 		// Register database configuration service
 		builder.Services.AddScoped<IDatabaseConfigurationService, DatabaseConfigurationService>();
+		builder.Services.AddSingleton<IAppSettingsService, AppSettingsService>();
 		builder.Services.AddScoped<DynamicDatabaseContextFactory>();
 
 		// Configure database context with default SQLite (will be reconfigured after setup)

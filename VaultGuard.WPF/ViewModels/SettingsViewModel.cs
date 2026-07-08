@@ -23,6 +23,13 @@ public class SettingsViewModel : BaseViewModel
     private int _sessionTimeoutMinutes = 30;
     private string _authenticationMode = "Local Database";
     private string _apiBaseUrl = "https://localhost:7001/api";
+    private string _apiKey = string.Empty;
+    private string _apiClientId = string.Empty;
+    private string _apiClientSecret = string.Empty;
+    private string _apiDbServer = string.Empty;
+    private string _apiDbName = string.Empty;
+    private string _apiDbUser = string.Empty;
+    private string _apiDbPassword = string.Empty;
     private string _databaseProvider = "SQLite";
     private string _databaseConnectionString = "";
     private string _sqliteDatabasePath = "passwordmanager.db";
@@ -191,6 +198,48 @@ public class SettingsViewModel : BaseViewModel
     {
         get => _apiBaseUrl;
         set => SetProperty(ref _apiBaseUrl, value);
+    }
+
+    public string ApiKey
+    {
+        get => _apiKey;
+        set => SetProperty(ref _apiKey, value);
+    }
+
+    public string ApiClientId
+    {
+        get => _apiClientId;
+        set => SetProperty(ref _apiClientId, value);
+    }
+
+    public string ApiClientSecret
+    {
+        get => _apiClientSecret;
+        set => SetProperty(ref _apiClientSecret, value);
+    }
+
+    public string ApiDbServer
+    {
+        get => _apiDbServer;
+        set => SetProperty(ref _apiDbServer, value);
+    }
+
+    public string ApiDbName
+    {
+        get => _apiDbName;
+        set => SetProperty(ref _apiDbName, value);
+    }
+
+    public string ApiDbUser
+    {
+        get => _apiDbUser;
+        set => SetProperty(ref _apiDbUser, value);
+    }
+
+    public string ApiDbPassword
+    {
+        get => _apiDbPassword;
+        set => SetProperty(ref _apiDbPassword, value);
     }
 
     public string DatabaseProvider
@@ -456,6 +505,13 @@ public class SettingsViewModel : BaseViewModel
             SessionTimeoutMinutes = localSettings.TryGetValue("SessionTimeout", out var timeout) ? Convert.ToInt32(timeout) : 30;
             AuthenticationMode = localSettings.TryGetValue("AuthMode", out var authMode) ? authMode : "Local Database";
             ApiBaseUrl = localSettings.TryGetValue("ApiBaseUrl", out var apiUrl) ? apiUrl : "https://localhost:7001/api";
+            ApiKey = localSettings.TryGetValue("ApiKey", out var apiKey) ? apiKey : string.Empty;
+            ApiClientId = localSettings.TryGetValue("ApiClientId", out var apiClientId) ? apiClientId : string.Empty;
+            ApiClientSecret = localSettings.TryGetValue("ApiClientSecret", out var apiClientSecret) ? apiClientSecret : string.Empty;
+            ApiDbServer = localSettings.TryGetValue("dbserver", out var dbServer) ? dbServer : string.Empty;
+            ApiDbName = localSettings.TryGetValue("dbname", out var dbName) ? dbName : string.Empty;
+            ApiDbUser = localSettings.TryGetValue("dbusername", out var dbUser) ? dbUser : string.Empty;
+            ApiDbPassword = localSettings.TryGetValue("dbpassword", out var dbPassword) ? dbPassword : string.Empty;
             DatabaseProvider = localSettings.TryGetValue("DatabaseProvider", out var dbProvider) ? dbProvider : "SQLite";
             SqliteDatabasePath = localSettings.TryGetValue("SqliteDatabasePath", out var dbPath) ? dbPath : "passwordmanager.db";
             DatabaseConnectionString = localSettings.TryGetValue("DatabaseConnectionString", out var dbConn) ? dbConn : string.Empty;
@@ -565,6 +621,13 @@ public class SettingsViewModel : BaseViewModel
             SessionTimeoutMinutes = 30;
             AuthenticationMode = "Local Database";
             ApiBaseUrl = "https://localhost:7001/api";
+            ApiKey = string.Empty;
+            ApiClientId = string.Empty;
+            ApiClientSecret = string.Empty;
+            ApiDbServer = string.Empty;
+            ApiDbName = string.Empty;
+            ApiDbUser = string.Empty;
+            ApiDbPassword = string.Empty;
             DatabaseProvider = "SQLite";
             ExportPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "VaultGuardExport");
             ApplyTheme();
@@ -587,6 +650,13 @@ public class SettingsViewModel : BaseViewModel
             localSettings["SessionTimeout"] = SessionTimeoutMinutes.ToString();
             localSettings["AuthMode"] = AuthenticationMode;
             localSettings["ApiBaseUrl"] = ApiBaseUrl;
+            localSettings["ApiKey"] = ApiKey;
+            localSettings["ApiClientId"] = ApiClientId;
+            localSettings["ApiClientSecret"] = ApiClientSecret;
+            localSettings["dbserver"] = ApiDbServer;
+            localSettings["dbname"] = ApiDbName;
+            localSettings["dbusername"] = ApiDbUser;
+            localSettings["dbpassword"] = ApiDbPassword;
             localSettings["DatabaseProvider"] = DatabaseProvider;
             localSettings["SqliteDatabasePath"] = SqliteDatabasePath;
             localSettings["DatabaseConnectionString"] = DatabaseConnectionString;
@@ -1016,4 +1086,3 @@ public class BackupScheduleItem
     public string Interval { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
 }
-
