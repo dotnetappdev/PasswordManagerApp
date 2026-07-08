@@ -86,6 +86,7 @@ var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
 string? connectionString = null;
 string? supabaseUrl = null;
 string? supabaseApiKey = null;
+string? sharedSqlServerConnectionString = null;
 
 // Optional single-machine sharing: honour the machine-local settings.json that the WPF desktop and
 // Blazor web apps write (%LocalAppData%\VaultGuard\settings.json) so all VaultGuard apps on one box
@@ -96,11 +97,16 @@ if (builder.Configuration.GetValue<bool>("UseSharedMachineDatabase", false))
     try
     {
         var shared = new VaultGuard.Services.Services.AppSettingsService();
-        var sharedProvider = shared.Get("DatabaseProvider").Trim().ToLowerInvariant();
+        var sharedProvider = SharedMachineDatabaseSettings.NormalizeProvider(shared.Get("DatabaseProvider"));
         // Only adopt providers the API actually supports (MySQL is not wired up here).
         if (sharedProvider is "sqlite" or "postgres" or "postgresql" or "sqlserver" or "supabase")
             databaseProvider = sharedProvider;
         sharedSqlitePath = shared.Get("SqliteDatabasePath");
+        if (databaseProvider == "sqlserver" &&
+            SharedMachineDatabaseSettings.TryBuildSqlServerConnectionString(shared, out var sharedConnectionString))
+        {
+            sharedSqlServerConnectionString = sharedConnectionString;
+        }
         Log.Information("UseSharedMachineDatabase enabled — using provider '{Provider}' from {File}",
             databaseProvider, shared.SettingsFilePath);
     }
@@ -134,6 +140,11 @@ if (databaseProvider.ToLower() == "sqlite" && !string.IsNullOrWhiteSpace(sharedS
 {
     connectionString = $"Data Source={sharedSqlitePath}";
     Log.Information("Using shared SQLite database at {Path}", sharedSqlitePath);
+}
+else if (databaseProvider.ToLower() == "sqlserver" && !string.IsNullOrWhiteSpace(sharedSqlServerConnectionString))
+{
+    connectionString = sharedSqlServerConnectionString;
+    Log.Information("Using shared SQL Server connection details from machine settings");
 }
 
 // Configure DbContext based on provider
