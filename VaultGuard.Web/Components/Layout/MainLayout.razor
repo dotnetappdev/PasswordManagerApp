@@ -54,6 +54,8 @@
             <MudNavLink Href="/import" Icon="@Icons.Material.Filled.ImportExport">Import / Export</MudNavLink>
 
             <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">MORE</MudText>
+            <MudNavLink Href="/passwords?status=archived" Icon="@Icons.Material.Filled.Archive">Archive</MudNavLink>
+            <MudNavLink Href="/passwords?status=deleted" Icon="@Icons.Material.Filled.DeleteSweep">Recently Deleted</MudNavLink>
             <MudNavLink Href="/audit-logs" Icon="@Icons.Material.Filled.History">Audit Logs</MudNavLink>
             <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
             <MudNavLink Icon="@Icons.Material.Filled.Info" OnClick="@(() => _aboutOpen = true)">About</MudNavLink>

@@ -35,7 +35,7 @@
     <MudItem xs="12" sm="6" md="3">
         <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px; border-left:4px solid #71717A;">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-                <div style="width:44px; height:44px; border-radius:10px; background:#1E3A5F;
+                <div style="width:44px; height:44px; border-radius:10px; background:#3F3F46;
                             display:flex; align-items:center; justify-content:center;">
                     <MudIcon Icon="@Icons.Material.Filled.Fingerprint" Style="color:#A3A3AB;" />
                 </div>
@@ -50,7 +50,7 @@
     <MudItem xs="12" sm="6" md="3">
         <MudPaper Class="pa-4" Elevation="2" Style="@($"border-radius:12px; border-left:4px solid {(passkeyStatus?.IsEnabled == true ? "#10B981" : "#6B7280")};")">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-                <div style="@($"width:44px; height:44px; border-radius:10px; background:{(passkeyStatus?.IsEnabled == true ? "#14532D" : "#1F2937")}; display:flex; align-items:center; justify-content:center;")">
+                <div style="@($"width:44px; height:44px; border-radius:10px; background:{(passkeyStatus?.IsEnabled == true ? "#166534" : "#3F3F46")}; display:flex; align-items:center; justify-content:center;")">
                     <MudIcon Icon="@(passkeyStatus?.IsEnabled == true ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)"
                              Style="@($"color:{(passkeyStatus?.IsEnabled == true ? "#4ADE80" : "#9D9D9D")};")"/>
                 </div>
@@ -67,7 +67,7 @@
     <MudItem xs="12" sm="6" md="3">
         <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px; border-left:4px solid #A3A3AB;">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-                <div style="width:44px; height:44px; border-radius:10px; background:#1E3A5F;
+                <div style="width:44px; height:44px; border-radius:10px; background:#3F3F46;
                             display:flex; align-items:center; justify-content:center;">
                     <MudIcon Icon="@Icons.Material.Filled.Shield" Style="color:#A3A3AB;" />
                 </div>
@@ -82,7 +82,7 @@
     <MudItem xs="12" sm="6" md="3">
         <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px; border-left:4px solid #4ADE80;">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-                <div style="width:44px; height:44px; border-radius:10px; background:#14532D;
+                <div style="width:44px; height:44px; border-radius:10px; background:#166534;
                             display:flex; align-items:center; justify-content:center;">
                     <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Style="color:#4ADE80;" />
                 </div>
@@ -134,7 +134,7 @@ else if (passkeys?.Any() == true)
                   Style="border-radius:12px; border:1px solid rgba(255,255,255,0.06); overflow:hidden;">
             <div style="display:grid; grid-template-columns:auto 1fr auto; align-items:center; padding:18px 20px; gap:16px;">
                 <!-- Device Icon -->
-                <div style="width:52px; height:52px; border-radius:12px; background:#1E3A5F;
+                <div style="width:52px; height:52px; border-radius:12px; background:#3F3F46;
                             display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                     <MudIcon Icon="@GetDeviceIcon(pk.DeviceType)"
                              Style="color:#A3A3AB; font-size:1.6rem;" />

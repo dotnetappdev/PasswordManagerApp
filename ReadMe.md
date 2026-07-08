@@ -58,19 +58,77 @@ built in.
 
 <div align="center">
 
-### Web (dark)
+### 🌐 Web — Blazor (dark theme)
 
-| Dashboard | All items |
-|:---:|:---:|
-| ![Dashboard](screenshots/blazor/dark/dashboard.png) | ![All items](screenshots/blazor/dark/all-items.png) |
-| **Vaults** | **Settings** |
-| ![Vaults](screenshots/blazor/dark/vaults.png) | ![Settings](screenshots/blazor/dark/settings.png) |
+| Dashboard | Passwords | Vaults |
+|:---:|:---:|:---:|
+| ![Dashboard](screenshots/blazor/dark/dashboard.png) | ![Passwords](screenshots/blazor/dark/passwords.png) | ![Vaults](screenshots/blazor/dark/vaults.png) |
+| **Collections** | **Categories** | **Tags** |
+| ![Collections](screenshots/blazor/dark/collections.png) | ![Categories](screenshots/blazor/dark/categories.png) | ![Tags](screenshots/blazor/dark/tags.png) |
+| **Archive** | **Recently Deleted** | **Audit Logs** |
+| ![Archive](screenshots/blazor/dark/archive.png) | ![Recently Deleted](screenshots/blazor/dark/recently-deleted.png) | ![Audit logs](screenshots/blazor/dark/audit-logs.png) |
 
-### Web (light)
+#### Settings
 
-| Dashboard | Collections |
-|:---:|:---:|
-| ![Dashboard light](screenshots/blazor/light/dashboard.png) | ![Collections light](screenshots/blazor/light/collections.png) |
+| General / Themes | Security | Maintenance |
+|:---:|:---:|:---:|
+| ![Settings Themes](screenshots/blazor/dark/settings-themes.png) | ![Settings Security](screenshots/blazor/dark/settings-security.png) | ![Settings Maintenance](screenshots/blazor/dark/settings-maintenance.png) |
+| **About** | **Database Settings** | **UI Zoom / Accessibility** |
+| ![Settings About](screenshots/blazor/dark/settings-about.png) | ![Database Settings](screenshots/blazor/dark/database-settings.png) | ![UI Zoom](screenshots/blazor/dark/ui-zoom.png) |
+
+#### Themes
+
+| Dark (default) | Light | High Contrast |
+|:---:|:---:|:---:|
+| ![Dark theme](screenshots/blazor/dark/dashboard.png) | ![Light theme](screenshots/blazor/light/dashboard.png) | ![High contrast](screenshots/blazor/dark/high-contrast.png) |
+
+---
+
+### 🌐 Web — Blazor (light theme)
+
+| Dashboard | All items | Settings |
+|:---:|:---:|:---:|
+| ![Dashboard light](screenshots/blazor/light/dashboard.png) | ![All items light](screenshots/blazor/light/all-items.png) | ![Settings light](screenshots/blazor/light/settings.png) |
+| **Vaults** | **Collections** | **High Contrast** |
+| ![Vaults light](screenshots/blazor/light/vaults.png) | ![Collections light](screenshots/blazor/light/collections.png) | ![High contrast light](screenshots/blazor/light/high-contrast.png) |
+
+---
+
+### 🖥️ Desktop — WPF (dark theme)
+
+| Login | Dashboard | All Items |
+|:---:|:---:|:---:|
+| ![WPF Login dark](screenshots/wpf/dark/login.png) | ![WPF Dashboard dark](screenshots/wpf/dark/dashboard.png) | ![WPF All Items dark](screenshots/wpf/dark/all-items.png) |
+| **Vaults** | **Settings** | **Settings › Security** |
+| ![WPF Vaults dark](screenshots/wpf/dark/vaults.png) | ![WPF Settings dark](screenshots/wpf/dark/settings.png) | ![WPF Settings Security](screenshots/wpf/dark/settings-security.png) |
+| **Settings › Maintenance** | | |
+| ![WPF Maintenance](screenshots/wpf/dark/settings-maintenance.png) | | |
+
+### 🖥️ Desktop — WPF (light theme)
+
+| Login | Dashboard | All Items |
+|:---:|:---:|:---:|
+| ![WPF Login light](screenshots/wpf/light/login.png) | ![WPF Dashboard light](screenshots/wpf/light/dashboard.png) | ![WPF All Items light](screenshots/wpf/light/all-items.png) |
+| **Vaults** | **Settings** | |
+| ![WPF Vaults light](screenshots/wpf/light/vaults.png) | ![WPF Settings light](screenshots/wpf/light/settings.png) | |
+
+---
+
+### 📱 Mobile — MAUI Android
+
+| Dashboard (dark) | All Items (dark) | Vaults (dark) | Settings (dark) |
+|:---:|:---:|:---:|:---:|
+| ![Android Dashboard dark](screenshots/mobile/android/dark/dashboard.png) | ![Android Items dark](screenshots/mobile/android/dark/all-items.png) | ![Android Vaults dark](screenshots/mobile/android/dark/vaults.png) | ![Android Settings dark](screenshots/mobile/android/dark/settings.png) |
+| **Dashboard (light)** | **All Items (light)** | **Vaults (light)** | **Settings (light)** |
+| ![Android Dashboard light](screenshots/mobile/android/light/dashboard.png) | ![Android Items light](screenshots/mobile/android/light/all-items.png) | ![Android Vaults light](screenshots/mobile/android/light/vaults.png) | ![Android Settings light](screenshots/mobile/android/light/settings.png) |
+
+### 📱 Mobile — MAUI iOS
+
+| Dashboard (dark) | All Items (dark) | Vaults (dark) | Settings (dark) |
+|:---:|:---:|:---:|:---:|
+| ![iOS Dashboard dark](screenshots/mobile/ios/dark/dashboard.png) | ![iOS Items dark](screenshots/mobile/ios/dark/all-items.png) | ![iOS Vaults dark](screenshots/mobile/ios/dark/vaults.png) | ![iOS Settings dark](screenshots/mobile/ios/dark/settings.png) |
+| **Dashboard (light)** | **All Items (light)** | **Vaults (light)** | **Settings (light)** |
+| ![iOS Dashboard light](screenshots/mobile/ios/light/dashboard.png) | ![iOS Items light](screenshots/mobile/ios/light/all-items.png) | ![iOS Vaults light](screenshots/mobile/ios/light/vaults.png) | ![iOS Settings light](screenshots/mobile/ios/light/settings.png) |
 
 </div>
 

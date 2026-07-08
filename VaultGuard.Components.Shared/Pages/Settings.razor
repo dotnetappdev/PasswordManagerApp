@@ -456,6 +456,26 @@
             </MudStack>
         </MudPaper>
 
+        <!-- App Lock (Passcode / Passkey) -->
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Style="margin-bottom: 16px;">
+                <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Medium" Style="vertical-align: middle; margin-right: 8px;" />
+                App Lock
+            </MudText>
+            <MudText Typo="Typo.caption" Style="color: #cccccc; margin-bottom: 16px; display: block;">
+                Protect access to Vault Guard with a PIN passcode.
+                The app lock is checked on every launch, before your vault is unlocked.
+            </MudText>
+            <MudStack Row="false" Spacing="2">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Pin"
+                           Style="align-self:flex-start;"
+                           Href="/passcode-settings">
+                    Manage App Passcode (PIN)
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+
         <!-- Cloud Backup -->
         <MudPaper Class="pa-4">
             <MudText Typo="Typo.h6" Style="margin-bottom: 16px;">
