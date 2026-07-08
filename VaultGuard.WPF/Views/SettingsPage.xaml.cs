@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.IO;
+using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using VaultGuard.Services.Interfaces;
 using VaultGuard.Models.DTOs;
@@ -697,6 +698,48 @@ public sealed partial class SettingsPage : Page
         if (_viewModel != null && AuthModeComboBox.SelectedItem != null)
         {
             await _viewModel.SaveSettingsAsync();
+        }
+    }
+
+    private async void TestApiConnectionButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(_viewModel.ApiBaseUrl))
+        {
+            await ShowErrorDialog("API Connection", "Enter the API base URL first.");
+            return;
+        }
+
+        try
+        {
+            await _viewModel.SaveSettingsAsync();
+
+            using var client = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(8)
+            };
+
+            if (!string.IsNullOrWhiteSpace(_viewModel.ApiKey))
+                client.DefaultRequestHeaders.Add("X-Api-Key", _viewModel.ApiKey);
+            if (!string.IsNullOrWhiteSpace(_viewModel.ApiClientId))
+                client.DefaultRequestHeaders.Add("X-Client-Id", _viewModel.ApiClientId);
+
+            var baseUri = _viewModel.ApiBaseUrl.TrimEnd('/');
+            var response = await client.GetAsync($"{baseUri}/health");
+            if (response.IsSuccessStatusCode)
+            {
+                VaultGuard.WPF.Services.ToastService.Instance.Show("API connection succeeded.", VaultGuard.WPF.Services.ToastType.Success);
+            }
+            else
+            {
+                await ShowErrorDialog("API Connection", $"API responded with {(int)response.StatusCode} {response.ReasonPhrase}.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog("API Connection", $"Could not reach the API: {ex.Message}");
         }
     }
 

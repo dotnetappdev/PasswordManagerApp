@@ -14,6 +14,8 @@
 @inject ThemeService ThemeService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject IAppSettingsService AppSettings
+@inject IHttpClientFactory HttpClientFactory
 @inject IServiceProvider ServiceProvider
 @inject ISnackbar Snackbar
 @inject IAuthService AuthService
@@ -258,10 +260,74 @@
                                  Label="API Key" 
                                  Variant="Variant.Outlined"
                                  InputType="InputType.Password"
-                                
+                                 
                                  HelperText="API key for authentication with the sync API" />
                 </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField T="string" @bind-value="clientId"
+                                 Label="Client ID"
+                                 Variant="Variant.Outlined"
+                                 HelperText="Optional client identifier stored with the shared app settings" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField T="string" @bind-value="clientSecret"
+                                 Label="Client Secret"
+                                 Variant="Variant.Outlined"
+                                 InputType="InputType.Password"
+                                 HelperText="Optional client secret stored with the shared app settings" />
+                </MudItem>
             </MudGrid>
+            <MudStack Row="true" Spacing="2" Class="mt-3">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Wifi"
+                           OnClick="TestApiConnectionAsync"
+                           Disabled="isConnectionBusy">
+                    Test API Connection
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.ContentCopy"
+                           OnClick="CopyConfiguredApiKey">
+                    Copy API Key
+                </MudButton>
+            </MudStack>
+            @if (authenticationMode == "ApiEndpoint")
+            {
+                <MudDivider Class="my-3" />
+                <MudText Typo="Typo.subtitle2" Class="mb-2">SQL Server (API database)</MudText>
+                <MudText Typo="Typo.caption" Class="d-block mb-2 mud-text-secondary">
+                    Reused by the API host when shared-machine database settings are enabled.
+                </MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField T="string" @bind-value="dbServer"
+                                    Label="Server"
+                                    Variant="Variant.Outlined"
+                                    Placeholder="sql.example.com" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField T="string" @bind-value="dbName"
+                                    Label="Database"
+                                    Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField T="string" @bind-value="dbUser"
+                                    Label="User"
+                                    Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField T="string" @bind-value="dbPassword"
+                                    Label="Password"
+                                    Variant="Variant.Outlined"
+                                    InputType="InputType.Password" />
+                    </MudItem>
+                </MudGrid>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-3"
+                           StartIcon="@Icons.Material.Filled.Link"
+                           OnClick="TestSqlServerConnectionAsync"
+                           Disabled="isConnectionBusy">
+                    Test SQL Server
+                </MudButton>
+            }
         </MudPaper>
 
         <!-- Authentication Mode Selection -->
@@ -325,6 +391,13 @@
                                      />
                     </MudItem>
                 </MudGrid>
+            }
+
+            @if (databaseProvider == "SqlServer" && authenticationMode != "ApiEndpoint")
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-3">
+                    SQL Server fields are configured in the API Configuration card when API Endpoint mode is selected.
+                </MudAlert>
             }
         </MudPaper>
 
@@ -718,8 +791,15 @@
     private string supabaseApiKey = "";
     private string apiUrl = "";
     private string apiKey = "";
+    private string clientId = "";
+    private string clientSecret = "";
+    private string dbServer = "";
+    private string dbName = "";
+    private string dbUser = "";
+    private string dbPassword = "";
     private bool isGenerating = false;
     private bool isSaving = false;
+    private bool isConnectionBusy = false;
 
     private AppThemeMode selectedTheme = AppThemeMode.Dark;
 
@@ -889,12 +969,26 @@
             authenticationMode = dbConfig.AuthenticationMode.ToString();
             apiUrl = dbConfig.ApiUrl ?? "";
             apiKey = dbConfig.ApiKey ?? "";
+            clientId = AppSettings.Get("ApiClientId", "");
+            clientSecret = AppSettings.Get("ApiClientSecret", "");
+            dbServer = AppSettings.Get("dbserver", "");
+            dbName = AppSettings.Get("dbname", "");
+            dbUser = AppSettings.Get("dbusername", "");
+            dbPassword = AppSettings.Get("dbpassword", "");
             
             // Load provider-specific settings
             switch (dbConfig.Provider)
             {
                 case DatabaseProvider.Sqlite when dbConfig.Sqlite != null:
                     sqliteDatabasePath = dbConfig.Sqlite.DatabasePath;
+                    break;
+                case DatabaseProvider.SqlServer when dbConfig.SqlServer != null:
+                    dbServer = string.IsNullOrWhiteSpace(dbServer) ? dbConfig.SqlServer.Host : dbServer;
+                    dbName = string.IsNullOrWhiteSpace(dbName) ? dbConfig.SqlServer.Database : dbName;
+                    dbUser = string.IsNullOrWhiteSpace(dbUser) ? dbConfig.SqlServer.Username ?? "" : dbUser;
+                    dbPassword = string.IsNullOrWhiteSpace(dbPassword)
+                        ? await DatabaseConfigurationService.DecryptPasswordAsync(dbConfig.SqlServer.EncryptedPassword ?? "")
+                        : dbPassword;
                     break;
                 case DatabaseProvider.Supabase when dbConfig.Supabase != null:
                     supabaseUrl = dbConfig.Supabase.Url;
@@ -971,6 +1065,20 @@
         }
     }
 
+    private async Task CopyConfiguredApiKey()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", apiKey);
+            Snackbar.Add("API key copied.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error($"Error copying configured API key", ex);
+            Snackbar.Add("Couldn't copy the API key.", Severity.Error);
+        }
+    }
+
     private async Task DeleteApiKey(Guid keyId)
     {
         try
@@ -1023,7 +1131,12 @@
                     "PostgreSql" => DatabaseProvider.PostgreSql,
                     "Supabase" => DatabaseProvider.Supabase,
                     _ => DatabaseProvider.Sqlite
-                }
+                },
+                AuthenticationMode = authenticationMode == "ApiEndpoint"
+                    ? VaultGuard.Models.Configuration.AuthenticationMode.ApiEndpoint
+                    : VaultGuard.Models.Configuration.AuthenticationMode.LocalDatabase,
+                ApiUrl = string.IsNullOrWhiteSpace(apiUrl) ? null : apiUrl,
+                ApiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey
             };
 
             // Set SQLite configuration if selected
@@ -1031,9 +1144,29 @@
             {
                 config.Sqlite = new SqliteConfig
                 {
-                    DatabasePath = string.IsNullOrWhiteSpace(sqliteDatabasePath) 
-                        ? "passwordmanager.db" 
-                        : sqliteDatabasePath
+                    DatabasePath = string.IsNullOrWhiteSpace(sqliteDatabasePath)
+                        ? "passwordmanager.db"
+                        : sqliteDatabasePath,
+                    ApiUrl = config.ApiUrl,
+                    ApiKey = config.ApiKey
+                };
+            }
+
+            if (databaseProvider == "SqlServer")
+            {
+                config.SqlServer = new SqlServerConfig
+                {
+                    Host = dbServer,
+                    Database = string.IsNullOrWhiteSpace(dbName) ? "VaultGuard" : dbName,
+                    Username = string.IsNullOrWhiteSpace(dbUser) ? null : dbUser,
+                    EncryptedPassword = string.IsNullOrWhiteSpace(dbPassword)
+                        ? null
+                        : await DatabaseConfigurationService.EncryptPasswordAsync(dbPassword),
+                    AuthMode = string.IsNullOrWhiteSpace(dbUser)
+                        ? SqlServerAuthMode.WindowsAuthentication
+                        : SqlServerAuthMode.SqlServerAuthentication,
+                    ApiUrl = config.ApiUrl,
+                    ApiKey = config.ApiKey
                 };
             }
 
@@ -1043,19 +1176,109 @@
                 config.Supabase = new SupabaseConfig
                 {
                     Url = supabaseUrl,
-                    ServiceKey = supabaseApiKey
+                    ServiceKey = supabaseApiKey,
+                    ApiUrl = config.ApiUrl,
+                    ApiKey = config.ApiKey
                 };
             }
             
             await DatabaseConfigurationService.SaveConfigurationAsync(config);
+
+            AppSettings.Set("AuthMode", authenticationMode == "ApiEndpoint" ? "API Server" : "Local Database");
+            AppSettings.Set("ApiBaseUrl", apiUrl);
+            AppSettings.Set("ApiKey", apiKey);
+            AppSettings.Set("ApiClientId", clientId);
+            AppSettings.Set("ApiClientSecret", clientSecret);
+            AppSettings.Set("dbserver", dbServer);
+            AppSettings.Set("dbname", dbName);
+            AppSettings.Set("dbusername", dbUser);
+            AppSettings.Set("dbpassword", dbPassword);
+            AppSettings.Set("DatabaseProvider", databaseProvider);
+            if (databaseProvider == "Sqlite")
+                AppSettings.Set("SqliteDatabasePath", string.IsNullOrWhiteSpace(sqliteDatabasePath) ? "passwordmanager.db" : sqliteDatabasePath);
+            AppSettings.Save();
+
+            Snackbar.Add("Settings saved.", Severity.Success);
         }
         catch (Exception ex)
         {
             VaultGuard.Services.Logging.AppLogger.Error($"Error saving settings", ex);
+            Snackbar.Add($"Couldn't save settings: {ex.Message}", Severity.Error);
         }
         finally
         {
             isSaving = false;
+        }
+    }
+
+    private async Task TestApiConnectionAsync()
+    {
+        if (string.IsNullOrWhiteSpace(apiUrl))
+        {
+            Snackbar.Add("Enter the API URL first.", Severity.Warning);
+            return;
+        }
+
+        isConnectionBusy = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            client.Timeout = TimeSpan.FromSeconds(8);
+            if (!string.IsNullOrWhiteSpace(apiKey))
+                client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+            if (!string.IsNullOrWhiteSpace(clientId))
+                client.DefaultRequestHeaders.Add("X-Client-Id", clientId);
+
+            var response = await client.GetAsync($"{apiUrl.TrimEnd('/')}/health");
+            Snackbar.Add(
+                response.IsSuccessStatusCode
+                    ? "API reachable — health check passed."
+                    : $"API responded with {(int)response.StatusCode} {response.ReasonPhrase}.",
+                response.IsSuccessStatusCode ? Severity.Success : Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Could not reach the API: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isConnectionBusy = false;
+        }
+    }
+
+    private async Task TestSqlServerConnectionAsync()
+    {
+        isConnectionBusy = true;
+        try
+        {
+            var config = new DatabaseConfiguration
+            {
+                Provider = DatabaseProvider.SqlServer,
+                SqlServer = new SqlServerConfig
+                {
+                    Host = dbServer,
+                    Database = string.IsNullOrWhiteSpace(dbName) ? "VaultGuard" : dbName,
+                    Username = string.IsNullOrWhiteSpace(dbUser) ? null : dbUser,
+                    EncryptedPassword = string.IsNullOrWhiteSpace(dbPassword)
+                        ? null
+                        : await DatabaseConfigurationService.EncryptPasswordAsync(dbPassword),
+                    AuthMode = string.IsNullOrWhiteSpace(dbUser)
+                        ? SqlServerAuthMode.WindowsAuthentication
+                        : SqlServerAuthMode.SqlServerAuthentication
+                }
+            };
+
+            var result = await DatabaseConfigurationService.TestConnectionAsync(config);
+            Snackbar.Add(result.Success ? "SQL Server connection succeeded." : result.ErrorMessage,
+                result.Success ? Severity.Success : Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Couldn't connect to SQL Server: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isConnectionBusy = false;
         }
     }
 
