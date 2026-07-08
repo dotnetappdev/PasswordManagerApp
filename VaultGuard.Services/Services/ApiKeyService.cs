@@ -4,6 +4,7 @@ using VaultGuard.Models;
 using VaultGuard.Models.DTOs;
 using VaultGuard.Models.Configuration;
 using VaultGuard.Services.Interfaces;
+using VaultGuard.Services.Logging;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -14,11 +15,30 @@ namespace VaultGuard.Services.Services
     {
         private readonly VaultGuardDbContext _context;
         private readonly IDatabaseConfigurationService _databaseConfigService;
-        
-        public ApiKeyService(VaultGuardDbContext context, IDatabaseConfigurationService databaseConfigService)
+        private readonly IApiKeySqliteMirror _sqliteMirror;
+
+        public ApiKeyService(
+            VaultGuardDbContext context,
+            IDatabaseConfigurationService databaseConfigService,
+            IApiKeySqliteMirror sqliteMirror)
         {
             _context = context;
             _databaseConfigService = databaseConfigService;
+            _sqliteMirror = sqliteMirror;
+        }
+
+        // Mirror a key into the per-user local SQLite database in addition to the primary SQL store.
+        // A mirror failure must never break the primary flow, so it is best-effort and logged.
+        private async Task MirrorUpsertAsync(ApiKey apiKey)
+        {
+            try
+            {
+                await _sqliteMirror.UpsertAsync(apiKey);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"Failed to mirror API key {apiKey.Id} to local SQLite store", ex);
+            }
         }
 
         public async Task<List<ApiKey>> GetUserApiKeysAsync(string userId)
@@ -55,6 +75,10 @@ namespace VaultGuard.Services.Services
 
             _context.ApiKeys.Add(apiKey);
             await _context.SaveChangesAsync();
+
+            // Dual-store: also write the key (hash only) into the user's local SQLite database so the same
+            // key works whether a client talks to the API/SQL backend or a local SQLite vault.
+            await MirrorUpsertAsync(apiKey);
 
             // Return the API key with the unhashed value for display
             apiKey.KeyHash = keyValue; // Temporarily store for return
@@ -97,6 +121,9 @@ namespace VaultGuard.Services.Services
             _context.ApiKeys.Add(apiKey);
             await _context.SaveChangesAsync();
 
+            // Dual-store to the user's local SQLite database (see CreateApiKeyAsync).
+            await MirrorUpsertAsync(apiKey);
+
             return new ApiKeyResponseDto
             {
                 Id = apiKey.Id,
@@ -119,6 +146,17 @@ namespace VaultGuard.Services.Services
 
             apiKey.IsActive = false;
             await _context.SaveChangesAsync();
+
+            // Mirror the revoke into the user's local SQLite database.
+            try
+            {
+                await _sqliteMirror.DeactivateAsync(keyId, userId);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"Failed to mirror API key revoke {keyId} to local SQLite store", ex);
+            }
+
             return true;
         }
 

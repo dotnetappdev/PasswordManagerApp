@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose supplies the real color scheme; this base theme only needs to be actionbar-less
+         and let the app draw edge-to-edge. DayNight so the platform splash follows the system. -->
+    <style name="Theme.VaultGuard" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

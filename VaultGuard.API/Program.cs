@@ -207,6 +207,7 @@ builder.Services.AddScoped<IJwtService, VaultGuard.Services.Services.JwtService>
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IVaultSessionService, VaultGuard.Services.Services.VaultSessionService>();
 builder.Services.AddScoped<IQrLoginService, VaultGuard.Services.Services.QrLoginService>();
+builder.Services.AddScoped<IApiKeySqliteMirror, VaultGuard.Services.Services.ApiKeySqliteMirrorService>();
 builder.Services.AddScoped<IApiKeyService, VaultGuard.Services.Services.ApiKeyService>();
 builder.Services.AddScoped<IDatabaseMigrationService, VaultGuard.Services.Services.DatabaseMigrationService>();
 builder.Services.AddScoped<ITwoFactorService, VaultGuard.Services.Services.TwoFactorService>();

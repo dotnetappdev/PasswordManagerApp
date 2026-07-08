@@ -1,0 +1,53 @@
+package com.vaultguard.app.data.repo
+
+import com.vaultguard.app.config.SecureStore
+import com.vaultguard.app.data.model.UserDto
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * Holds the unlocked-session state. The master password is kept in memory only (never persisted) and is
+ * required for reveal/create operations. The API session token is persisted (encrypted) so the app can
+ * resume without re-login until it expires.
+ */
+@Singleton
+class SessionManager @Inject constructor(
+    private val secureStore: SecureStore,
+) {
+    private val _user = MutableStateFlow<UserDto?>(null)
+    val user: StateFlow<UserDto?> = _user.asStateFlow()
+
+    private val _unlocked = MutableStateFlow(false)
+    val unlocked: StateFlow<Boolean> = _unlocked.asStateFlow()
+
+    /** In-memory only. Cleared on lock. */
+    @Volatile
+    var masterPassword: String? = null
+        private set
+
+    var sessionToken: String?
+        get() = secureStore.sessionToken
+        private set(value) { secureStore.sessionToken = value }
+
+    fun onLoggedIn(token: String, user: UserDto?, masterPassword: String) {
+        this.sessionToken = token
+        this.masterPassword = masterPassword
+        _user.value = user
+        _unlocked.value = true
+    }
+
+    /** LOCAL mode unlock: no server token, just the in-memory master password. */
+    fun onLocalUnlocked(masterPassword: String) {
+        this.masterPassword = masterPassword
+        _unlocked.value = true
+    }
+
+    fun lock() {
+        masterPassword = null
+        _unlocked.value = false
+        secureStore.clearSession()
+    }
+}

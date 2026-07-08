@@ -187,6 +187,8 @@ builder.Services.AddSingleton<IPassphraseGenerator, VaultGuard.Services.Services
 builder.Services.AddScoped<ICollectionService, VaultGuard.Services.Services.CollectionService>();
 builder.Services.AddScoped<IAuthService, VaultGuard.Services.Services.AuthService>();
 builder.Services.AddScoped<IUserProfileService, VaultGuard.Services.Services.UserProfileService>();
+// Per-user local SQLite mirror of the API-key store (dual-store; see ApiKeySqliteMirrorService).
+builder.Services.AddScoped<IApiKeySqliteMirror, VaultGuard.Services.Services.ApiKeySqliteMirrorService>();
 builder.Services.AddScoped<IApiKeyService, VaultGuard.Services.Services.ApiKeyService>();
 builder.Services.AddScoped<IVaultSessionService, VaultGuard.Services.Services.VaultSessionService>();
 builder.Services.AddScoped<IQrLoginService, VaultGuard.Services.Services.QrLoginService>();

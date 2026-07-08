@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App-wide accent #007ACC, matching WPF/iOS -->
+    <color name="vg_accent">#FF007ACC</color>
+    <color name="ic_launcher_background">#FF0F1620</color>
+</resources>

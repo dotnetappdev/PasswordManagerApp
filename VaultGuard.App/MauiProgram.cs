@@ -97,6 +97,14 @@ public static class MauiProgram
 		builder.Services.AddDbContext<VaultGuardDbContext>(options =>
 			options.UseSqlite($"Data Source={defaultDbPath}"));
 
+		// Map the DbContext interfaces to the concrete contexts (mirrors VaultGuard.Web/Program.cs) so
+		// services that depend on them resolve — notably TwoFactorService, which injects
+		// IVaultGuardDbContext and otherwise fails to activate when the 2FA code step renders.
+		builder.Services.AddScoped<VaultGuard.DAL.Interfaces.IVaultGuardDbContext>(sp =>
+			sp.GetRequiredService<VaultGuardDbContext>());
+		builder.Services.AddScoped<VaultGuard.DAL.Interfaces.IVaultGuardDbContextApp>(sp =>
+			sp.GetRequiredService<VaultGuardDbContextApp>());
+
 		// Add Identity services
 		builder.Services.AddIdentityCore<ApplicationUser>(options =>
 		{

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simple shield glyph on the adaptive-icon foreground layer. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FF007ACC"
+        android:pathData="M54,26 L74,34 L74,52 C74,66 65,76 54,82 C43,76 34,66 34,52 L34,34 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M49,54 l4,4 l9,-11 l3,3 l-12,15 l-7,-8 Z" />
+</vector>
