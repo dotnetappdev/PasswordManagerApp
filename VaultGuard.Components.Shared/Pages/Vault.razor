@@ -418,6 +418,33 @@
                     }
                 </div>
 
+                @{
+                    var pwHistory = PasswordHistoryHelper.GetHistory(selectedItem);
+                }
+                @if (pwHistory.Count > 0)
+                {
+                    <MudExpansionPanels Elevation="0" Class="mt-2">
+                        <MudExpansionPanel Text="@($"Password history ({pwHistory.Count})")" Icon="@Icons.Material.Filled.History">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2" Style="display:block;">
+                                Previous passwords for this item. Restoring rolls back to an earlier one — the current
+                                password is kept in history too, so you can always change your mind.
+                            </MudText>
+                            @foreach (var entry in pwHistory)
+                            {
+                                var capturedEntry = entry;
+                                <div style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--mud-palette-divider);">
+                                    <MudIcon Icon="@Icons.Material.Filled.Key" Size="Size.Small" Color="Color.Secondary" />
+                                    <MudText Typo="Typo.body2" Style="flex:1;">
+                                        Changed @capturedEntry.At.ToLocalTime().ToString("dd MMM yyyy, HH:mm")
+                                    </MudText>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                                               OnClick="@(async () => await RestorePasswordVersion(capturedEntry))">Restore</MudButton>
+                                </div>
+                            }
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+                }
+
                 @* ── Save button (sticky at the foot of the detail pane) ── *@
                 <div style="position: sticky; bottom: 0; z-index: 4; margin: 16px -32px 0; padding: 12px 32px calc(12px + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--mud-palette-background) 92%, transparent); backdrop-filter: blur(8px); border-top: 1px solid var(--mud-palette-divider);">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary"
@@ -663,6 +690,27 @@
             Snackbar.Add("Changes saved.", Severity.Success);
         }
         catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
+    }
+
+    // Roll the login's password back to a stored history entry. Only the encrypted blob is copied back;
+    // UpdateAsync then snapshots the (now previous) current password, so the change is itself reversible.
+    private async Task RestorePasswordVersion(PasswordHistoryHelper.Entry entry)
+    {
+        if (selectedItem?.LoginItem == null) return;
+        try
+        {
+            selectedItem.LoginItem.EncryptedPassword = entry.Enc;
+            selectedItem.LoginItem.PasswordNonce = entry.Nonce;
+            selectedItem.LoginItem.PasswordAuthTag = entry.Tag;
+            await PasswordItemService.UpdateAsync(selectedItem);
+            await LoadItemsAsync();
+            Snackbar.Add("Password restored from history.", Severity.Success);
+        }
+        catch (System.Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Warning("Restore password version failed", ex);
+            Snackbar.Add("Couldn't restore that password.", Severity.Error);
+        }
     }
 
     private async Task AddCustomField(CustomFieldType type)
