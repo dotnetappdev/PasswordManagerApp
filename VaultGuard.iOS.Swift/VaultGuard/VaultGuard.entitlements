@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Lets the app act as an AutoFill credential provider (paired with the extension target). -->
+    <key>com.apple.developer.authentication-services.autofill-credential-provider</key>
+    <true/>
+    <!-- Shared keychain group so the extension can read the published credential set. -->
+    <key>keychain-access-groups</key>
+    <array>
+        <string>$(AppIdentifierPrefix)com.vaultguard.shared</string>
+    </array>
+    <!-- Shared container for the app↔extension bridge. -->
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>group.com.vaultguard.app</string>
+    </array>
+</dict>
+</plist>

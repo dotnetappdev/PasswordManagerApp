@@ -40,5 +40,8 @@ final class Keychain {
         static let session = "session_token"
         static let localSalt = "local_vault_salt"
         static let localVerifier = "local_verifier"
+        static let passcode = "app_passcode"
+        static let onePasswordHost = "onepassword_connect_host"
+        static let onePasswordToken = "onepassword_connect_token"
     }
 }

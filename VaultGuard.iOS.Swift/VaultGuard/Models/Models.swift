@@ -149,6 +149,14 @@ struct DecryptedLoginItemDto: Decodable {
 
 // MARK: - Presentation
 
+/// A user-defined custom field (1Password-style). `secret` fields are masked in the UI.
+/// In LOCAL mode these are persisted as a JSON array on the item row.
+struct CustomFieldData: Codable, Equatable {
+    var name: String
+    var value: String
+    var secret: Bool = false
+}
+
 struct VaultItem: Identifiable {
     let id: Int
     var title: String
@@ -164,6 +172,7 @@ struct VaultItem: Identifiable {
     var notes: String?
     var categoryName: String?
     var tags: [String] = []
+    var customFields: [CustomFieldData] = []
 
     static func from(_ dto: PasswordItemDto) -> VaultItem {
         VaultItem(
@@ -193,4 +202,5 @@ struct LoginItemInput {
     var totpSecret: String?
     var notes: String?
     var categoryName: String?
+    var customFields: [CustomFieldData] = []
 }

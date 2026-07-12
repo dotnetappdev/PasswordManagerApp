@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -16,20 +17,26 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,6 +46,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,15 +68,20 @@ import com.vaultguard.app.ui.navigation.Routes
 @Composable
 fun ItemEditScreen(
     itemId: Int,
+    autoScan: Boolean = false,
     navController: NavController,
     onDone: () -> Unit,
     onScanTotp: () -> Unit,
     viewModel: ItemEditViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var autoScanTriggered by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(itemId) { viewModel.load(itemId) }
     LaunchedEffect(state.saved) { if (state.saved) onDone() }
+    LaunchedEffect(autoScan) {
+        if (autoScan && !autoScanTriggered) { autoScanTriggered = true; onScanTotp() }
+    }
 
     val entry = navController.currentBackStackEntry
     LaunchedEffect(entry) {
@@ -89,6 +102,24 @@ fun ItemEditScreen(
                 },
                 actions = { TextButton(onClick = viewModel::save, enabled = !state.saving) { Text("Save") } },
             )
+        },
+        // Persistent bottom save bar — reachable without scrolling to the end of a long form.
+        bottomBar = {
+            Surface(tonalElevation = 3.dp, shadowElevation = 8.dp) {
+                Button(
+                    onClick = viewModel::save,
+                    enabled = !state.saving,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                        .height(52.dp),
+                ) {
+                    if (state.saving) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                    else Text(if (state.isNew) "Create item" else "Save changes")
+                }
+            }
         },
     ) { padding ->
         Column(
@@ -163,6 +194,23 @@ fun ItemEditScreen(
                 )
             }
 
+            FormSection("Category") {
+                CategoryDropdown(
+                    categories = state.categories.map { it.name },
+                    selected = state.selectedCategory,
+                    onSelect = viewModel::setCategory,
+                )
+            }
+
+            CustomFieldsSection(
+                fields = state.customFields,
+                onAdd = viewModel::addCustomField,
+                onName = viewModel::setCustomFieldName,
+                onValue = viewModel::setCustomFieldValue,
+                onToggleSecret = viewModel::toggleCustomFieldSecret,
+                onRemove = viewModel::removeCustomField,
+            )
+
             FormSection("More") {
                 RoundedField("Description", state.description, viewModel::setDescription)
                 OutlinedTextField(
@@ -181,16 +229,66 @@ fun ItemEditScreen(
 
             state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
-            Button(
-                onClick = viewModel::save,
-                enabled = !state.saving,
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-            ) {
-                if (state.saving) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                else Text("Save item")
+            // Trailing space so the last field clears the persistent bottom save bar.
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun CustomFieldsSection(
+    fields: List<com.vaultguard.app.data.model.CustomFieldData>,
+    onAdd: () -> Unit,
+    onName: (Int, String) -> Unit,
+    onValue: (Int, String) -> Unit,
+    onToggleSecret: (Int) -> Unit,
+    onRemove: (Int) -> Unit,
+) {
+    FormSection("Custom fields") {
+        if (fields.isEmpty()) {
+            Text(
+                "Add your own fields — a PIN, a recovery code, a membership number…",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        fields.forEachIndexed { index, field ->
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = field.name,
+                        onValueChange = { onName(index, it) },
+                        label = { Text("Label") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = { onRemove(index) }) {
+                        Icon(Icons.Filled.DeleteOutline, "Remove field", tint = MaterialTheme.colorScheme.error)
+                    }
+                }
+                OutlinedTextField(
+                    value = field.value,
+                    onValueChange = { onValue(index, it) },
+                    label = { Text(if (field.secret) "Value (hidden)" else "Value") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    visualTransformation = if (field.secret) PasswordVisualTransformation() else VisualTransformation.None,
+                    trailingIcon = {
+                        IconButton(onClick = { onToggleSecret(index) }) {
+                            Icon(
+                                if (field.secret) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                if (field.secret) "Make visible" else "Hide value",
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
-            Spacer(Modifier.height(24.dp))
+        }
+        TextButton(onClick = onAdd) {
+            Icon(Icons.Filled.Add, null)
+            Text("  Add custom field")
         }
     }
 }
@@ -207,6 +305,32 @@ private fun FormSection(title: String, content: @Composable () -> Unit) {
         )
         Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { content() }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CategoryDropdown(categories: List<String>, selected: String?, onSelect: (String?) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val options = listOf("None") + categories
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            value = selected ?: "None",
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Category") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier.fillMaxWidth().menuAnchor(),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { name ->
+                DropdownMenuItem(
+                    text = { Text(name) },
+                    onClick = { onSelect(if (name == "None") null else name); expanded = false },
+                )
+            }
         }
     }
 }

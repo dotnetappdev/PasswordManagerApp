@@ -10,12 +10,15 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "vault_items")
 data class VaultItemEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    /** Which local profile (account) this item belongs to — isolates each profile's vault. */
+    val profileId: String = "default",
     val title: String,
     val description: String?,
     val type: Int,
     val isFavorite: Boolean,
     val isArchived: Boolean = false,
     val isDeleted: Boolean = false,
+    val vaultId: Int = 1,
     val username: String?,
     val email: String?,
     val website: String?,
@@ -25,6 +28,8 @@ data class VaultItemEntity(
     val encTotp: String?,
     val categoryName: String?,
     val tagsCsv: String?,
+    /** User-defined custom fields, stored as a JSON array (see CustomFieldData). Null when none. */
+    val customFieldsJson: String? = null,
     val createdAt: Long,
     val lastModified: Long,
 )

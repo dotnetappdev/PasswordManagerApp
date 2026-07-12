@@ -28,6 +28,7 @@ struct AppSettings: Codable {
     var autoLockMinutes: Int = 5
     var clipboardClearSeconds: Int = 30
     var confirmOnDelete = true
+    var numberMatchApprovals = true
     // Password generator
     var pwLength: Int = 20
     var pwUpper = true

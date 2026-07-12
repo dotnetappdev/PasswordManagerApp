@@ -34,6 +34,9 @@ data class ItemEditState(
     val notes: String = "",
     val isFavorite: Boolean = false,
     val passwordStrength: Int = 0,
+    val categories: List<com.vaultguard.app.data.model.CategoryDto> = emptyList(),
+    val selectedCategory: String? = null,
+    val customFields: List<com.vaultguard.app.data.model.CustomFieldData> = emptyList(),
 )
 
 @HiltViewModel
@@ -50,12 +53,13 @@ class ItemEditViewModel @Inject constructor(
 
     fun load(id: Int) {
         editingId = id
-        if (id == -1) {
-            _state.update { ItemEditState(isNew = true) }
-            return
-        }
         viewModelScope.launch {
-            _state.update { it.copy(isNew = false, loading = true) }
+            val cats = runCatching { repository.categories() }.getOrDefault(emptyList())
+            if (id == -1) {
+                _state.update { ItemEditState(isNew = true, categories = cats) }
+                return@launch
+            }
+            _state.update { it.copy(isNew = false, loading = true, categories = cats) }
             try {
                 val item = repository.get(id)
                 _state.update {
@@ -69,6 +73,8 @@ class ItemEditViewModel @Inject constructor(
                         loginUrl = item?.loginUrl ?: "",
                         notes = item?.notes ?: "",
                         isFavorite = item?.isFavorite ?: false,
+                        selectedCategory = item?.categoryName,
+                        customFields = item?.customFields ?: emptyList(),
                     )
                 }
             } catch (e: Exception) {
@@ -77,6 +83,7 @@ class ItemEditViewModel @Inject constructor(
         }
     }
 
+    fun setCategory(name: String?) = _state.update { it.copy(selectedCategory = name) }
     fun setTitle(v: String) = _state.update { it.copy(title = v) }
     fun setDescription(v: String) = _state.update { it.copy(description = v) }
     fun setUsername(v: String) = _state.update { it.copy(username = v) }
@@ -105,6 +112,28 @@ class ItemEditViewModel @Inject constructor(
     fun setNotes(v: String) = _state.update { it.copy(notes = v) }
     fun setFavorite(v: Boolean) = _state.update { it.copy(isFavorite = v) }
 
+    // ---- Custom fields -----------------------------------------------------
+
+    fun addCustomField() = _state.update {
+        it.copy(customFields = it.customFields + com.vaultguard.app.data.model.CustomFieldData(name = "", value = ""))
+    }
+
+    fun setCustomFieldName(index: Int, name: String) = _state.update { s ->
+        s.copy(customFields = s.customFields.mapIndexed { i, f -> if (i == index) f.copy(name = name) else f })
+    }
+
+    fun setCustomFieldValue(index: Int, value: String) = _state.update { s ->
+        s.copy(customFields = s.customFields.mapIndexed { i, f -> if (i == index) f.copy(value = value) else f })
+    }
+
+    fun toggleCustomFieldSecret(index: Int) = _state.update { s ->
+        s.copy(customFields = s.customFields.mapIndexed { i, f -> if (i == index) f.copy(secret = !f.secret) else f })
+    }
+
+    fun removeCustomField(index: Int) = _state.update { s ->
+        s.copy(customFields = s.customFields.filterIndexed { i, _ -> i != index })
+    }
+
     /** Called when the QR scanner returns; accepts a raw secret or an otpauth:// URI. */
     fun applyScannedTotp(scanned: String) =
         _state.update { it.copy(totpSecret = Totp.secretFromUri(scanned)) }
@@ -129,6 +158,11 @@ class ItemEditViewModel @Inject constructor(
                 password = s.password.ifBlank { null },
                 totpSecret = s.totpSecret.ifBlank { null },
                 notes = s.notes.ifBlank { null },
+                categoryId = s.categories.firstOrNull { it.name == s.selectedCategory }?.id,
+                categoryName = s.selectedCategory,
+                customFields = s.customFields
+                    .map { it.copy(name = it.name.trim(), value = it.value.trim()) }
+                    .filter { it.name.isNotEmpty() || it.value.isNotEmpty() },
             )
             try {
                 if (s.isNew) repository.create(input) else repository.update(editingId, input)

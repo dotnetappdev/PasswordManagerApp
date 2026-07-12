@@ -1,11 +1,14 @@
 // SettingsView.swift — the eight-tab Settings surface mirroring the WPF SettingsPage.
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
     @EnvironmentObject var env: AppEnvironment
     @EnvironmentObject var settingsStore: SettingsStore
     @EnvironmentObject var configStore: ConfigStore
     @EnvironmentObject var session: Session
+    @EnvironmentObject var passcodeStore: PasscodeStore
+    @State private var showSetPasscode = false
 
     private let tabs = ["Appearance", "Accessibility", "Security", "Storage",
                         "Backup, Import & Export", "Maintenance", "Shortcuts", "About"]
@@ -45,6 +48,14 @@ struct SettingsView: View {
             mode = configStore.config.mode
             apiUrl = configStore.config.apiBaseUrl
             apiKey = configStore.apiKey() ?? ""
+        }
+        .sheet(isPresented: $showSetPasscode) {
+            PasscodeView(
+                store: passcodeStore,
+                purpose: .create,
+                onSuccess: { showSetPasscode = false },
+                onCancel: { showSetPasscode = false }
+            )
         }
     }
 
@@ -116,12 +127,37 @@ struct SettingsView: View {
             Stepper(settingsStore.settings.autoLockMinutes == 0 ? "Auto-lock: Never" : "Auto-lock: \(settingsStore.settings.autoLockMinutes) min",
                     value: s.autoLockMinutes, in: 0...60)
         }
+        Section("Passcode") {
+            Button {
+                showSetPasscode = true
+            } label: {
+                Label(passcodeStore.isSet ? "Change passcode" : "Set a passcode", systemImage: "lock.rectangle")
+            }
+            if passcodeStore.isSet {
+                Button(role: .destructive) { passcodeStore.clear() } label: {
+                    Label("Remove passcode", systemImage: "lock.slash")
+                }
+            }
+        }
+        Section("Sign-in Approvals") {
+            Toggle("Number-matching approvals", isOn: s.numberMatchApprovals)
+            Text("Approve sign-ins from this phone by tapping the matching number. Codes are valid for 60 seconds.")
+                .font(.footnote).foregroundStyle(.secondary)
+        }
+        Section("Autofill") {
+            Text("To fill passwords in other apps, enable VaultGuard under Settings › General › AutoFill Passwords.")
+                .font(.footnote).foregroundStyle(.secondary)
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                Link(destination: url) { Label("Open iOS Settings", systemImage: "key.horizontal") }
+            }
+        }
         Section("Clipboard & Deletion") {
             Stepper(settingsStore.settings.clipboardClearSeconds == 0 ? "Clear clipboard: Never" : "Clear clipboard: \(settingsStore.settings.clipboardClearSeconds)s",
                     value: s.clipboardClearSeconds, in: 0...120, step: 5)
             Toggle("Confirm before deleting", isOn: s.confirmOnDelete)
         }
         Section {
+            Button { session.lock() } label: { Label("Switch account", systemImage: "person.2.circle") }
             Button(role: .destructive) { session.lock() } label: { Label("Lock vault now", systemImage: "lock") }
         }
     }
@@ -162,6 +198,9 @@ struct SettingsView: View {
     @ViewBuilder private var backup: some View {
         Section("Import") {
             NavigationLink { ImportView() } label: { Label("Open import", systemImage: "square.and.arrow.down") }
+            NavigationLink { OnePasswordImportView() } label: {
+                Label("1Password (Connect API)", systemImage: "icloud.and.arrow.down")
+            }
         }
         Section("Export") {
             Text("Export is available on the desktop and web apps (Settings → Backup, Import & Export).")

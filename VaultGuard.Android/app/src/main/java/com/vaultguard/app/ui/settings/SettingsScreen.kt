@@ -34,8 +34,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -44,6 +49,7 @@ import com.vaultguard.app.config.AppTheme
 import com.vaultguard.app.config.ConnectionConfig
 import com.vaultguard.app.config.ConnectionMode
 import com.vaultguard.app.config.DefaultView
+import com.vaultguard.app.ui.setup.QrImage
 import kotlin.math.roundToInt
 
 private val TABS = listOf(
@@ -58,6 +64,8 @@ fun SettingsScreen(
     onEditConnection: () -> Unit,
     onLocked: () -> Unit,
     onOpenImport: () -> Unit = {},
+    onOpen1Password: () -> Unit = {},
+    onOpenDeviceSetup: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val s by viewModel.settings.collectAsStateWithLifecycle()
@@ -90,8 +98,8 @@ fun SettingsScreen(
                     0 -> AppearanceTab(s, viewModel, preview)
                     1 -> AccessibilityTab(s, viewModel)
                     2 -> SecurityTab(s, viewModel, onLocked)
-                    3 -> StorageTab(viewModel, config, onEditConnection)
-                    4 -> BackupTab(onOpenImport)
+                    3 -> StorageTab(viewModel, config, onEditConnection, onOpenDeviceSetup)
+                    4 -> BackupTab(onOpenImport, onOpen1Password)
                     5 -> MaintenanceTab(viewModel)
                     6 -> ShortcutsTab()
                     7 -> AboutTab()
@@ -181,17 +189,37 @@ private fun AccessibilityTab(s: com.vaultguard.app.config.AppSettings, vm: Setti
 
 @Composable
 private fun SecurityTab(s: com.vaultguard.app.config.AppSettings, vm: SettingsViewModel, onLocked: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    SectionCard("Autofill") {
+        Text("Set VaultGuard as your device password manager so it can fill logins in apps and browsers.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        OutlinedButton(onClick = {
+            runCatching {
+                val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE)
+                    .setData(android.net.Uri.parse("package:${context.packageName}"))
+                context.startActivity(intent)
+            }.onFailure {
+                runCatching { context.startActivity(android.content.Intent(android.provider.Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE)) }
+            }
+        }) { Text("Set as autofill provider") }
+    }
     SectionCard("Two-Factor Authentication") {
-        Text("Managed on your account. Enter your 2FA code at sign-in when enabled.",
+        Text("Enter your account 2FA code at sign-in when enabled, and use biometrics below as a second factor.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+    AppTotpSection(vm)
     SectionCard("App Lock") {
         SwitchRow("Require unlock on launch", s.requirePasscodeOnLaunch) { vm.update { c -> c.copy(requirePasscodeOnLaunch = it) } }
-        SwitchRow("Biometric unlock", s.biometricUnlock) { vm.update { c -> c.copy(biometricUnlock = it) } }
+        SwitchRow("Biometric unlock (2FA)", s.biometricUnlock) { vm.update { c -> c.copy(biometricUnlock = it) } }
         SliderRow("Auto-lock after", s.autoLockMinutes.toFloat(), 0f, 60f,
             if (s.autoLockMinutes == 0) "Never" else "${s.autoLockMinutes} min") {
             vm.update { c -> c.copy(autoLockMinutes = it.roundToInt()) }
         }
+    }
+    SectionCard("Sign-in Approvals") {
+        Text("Get a GitHub-style prompt on this phone to approve sign-ins by tapping the matching number. Codes are valid for 60 seconds.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        SwitchRow("Number-matching approvals", s.numberMatchApprovals) { vm.update { c -> c.copy(numberMatchApprovals = it) } }
     }
     SectionCard("Clipboard & Deletion") {
         SliderRow("Clear clipboard after", s.clipboardClearSeconds.toFloat(), 0f, 120f,
@@ -207,7 +235,7 @@ private fun SecurityTab(s: com.vaultguard.app.config.AppSettings, vm: SettingsVi
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun StorageTab(vm: SettingsViewModel, config: ConnectionConfig, onEditConnection: () -> Unit) {
+private fun StorageTab(vm: SettingsViewModel, config: ConnectionConfig, onEditConnection: () -> Unit, onOpenDeviceSetup: () -> Unit) {
     val apiMessage by vm.apiMessage.collectAsStateWithLifecycle()
     var mode by remember(config.mode) { mutableStateOf(config.mode) }
     var url by remember(config.apiBaseUrl) { mutableStateOf(config.apiBaseUrl) }
@@ -262,17 +290,30 @@ private fun StorageTab(vm: SettingsViewModel, config: ConnectionConfig, onEditCo
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 
+    if (mode == ConnectionMode.API) {
+        SectionCard("Set Up Another Device") {
+            Text("Show a QR code that another VaultGuard device (phone or desktop) can scan to configure itself and sign in — no typing the URL or key.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(onClick = onOpenDeviceSetup) { Text("Show setup QR code") }
+        }
+    }
+
     OutlinedButton(onClick = onEditConnection, modifier = Modifier.fillMaxWidth()) { Text("Open full connection screen") }
 }
 
 // ---- Backup / Import / Export --------------------------------------------
 
 @Composable
-private fun BackupTab(onOpenImport: () -> Unit) {
+private fun BackupTab(onOpenImport: () -> Unit, onOpen1Password: () -> Unit = {}) {
     SectionCard("Import") {
         Text("Import from 1Password, Bitwarden, LastPass, Chrome, Edge, Firefox, Safari, KeePass, Dashlane, NordPass, Keeper, Enpass, RoboForm and Apple Passwords.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         OutlinedButton(onClick = onOpenImport) { Text("Open import") }
+    }
+    SectionCard("1Password (Connect API)") {
+        Text("Connect a 1Password Connect server or Service Account to import your items directly, and save the connection for next time.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        OutlinedButton(onClick = onOpen1Password) { Text("Connect & import") }
     }
     SectionCard("Export") {
         Text("Export is available on the desktop and web apps (Settings → Backup, Import & Export).",
@@ -343,6 +384,85 @@ private fun AboutTab() {
         Text("Version 1.0.0", style = MaterialTheme.typography.bodyMedium)
         Text("A native companion to the VaultGuard desktop and web apps. Feature parity with the WPF app.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+// ---- App authenticator (TOTP) 2FA ----------------------------------------
+
+@Composable
+private fun AppTotpSection(vm: SettingsViewModel) {
+    val enabled by vm.appTotpEnabled.collectAsStateWithLifecycle()
+    val setup by vm.totpSetup.collectAsStateWithLifecycle()
+    val clipboard = LocalClipboardManager.current
+    var code by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf<String?>(null) }
+
+    SectionCard("Authenticator App (App 2FA)") {
+        when {
+            enabled -> {
+                Text("Enabled — you'll enter a 6-digit code from your authenticator each time you unlock.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedButton(onClick = { vm.disableAppTotp() }) { Text("Disable app 2FA") }
+            }
+            setup == null -> {
+                Text("Require a code from Google Authenticator, Microsoft Authenticator, Authy or any TOTP app when you unlock this app.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedButton(onClick = { vm.startTotpSetup() }) { Text("Set up app 2FA") }
+            }
+            else -> {
+                val s = setup!!
+                Text("Scan this QR code with your authenticator app (Google Authenticator, Microsoft Authenticator, Authy, etc.) to set up 2FA.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    QrImage(s.otpauthUri, sizeDp = 200.dp)
+                }
+
+                Text("Or add the key manually:",
+                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                CopyKeyRow("Setup key", s.secret) { clipboard.setText(AnnotatedString(s.secret)) }
+                CopyKeyRow("otpauth:// link", s.otpauthUri) { clipboard.setText(AnnotatedString(s.otpauthUri)) }
+                OutlinedTextField(
+                    value = code, onValueChange = { code = it },
+                    label = { Text("Enter code to confirm") }, singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 8.dp)) {
+                    OutlinedButton(
+                        onClick = { vm.cancelTotpSetup(); code = ""; message = null },
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Cancel") }
+                    androidx.compose.material3.Button(
+                        onClick = {
+                            message = if (vm.confirmTotpSetup(code)) "App 2FA enabled." else "That code didn't match — try again."
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Verify & enable") }
+                }
+                message?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CopyKeyRow(label: String, value: String, onCopy: () -> Unit) {
+    Column(Modifier.fillMaxWidth()) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
+            Text(
+                value,
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.weight(1f).padding(end = 8.dp),
+                maxLines = 2,
+            )
+            IconButton(onClick = onCopy) { Icon(Icons.Filled.ContentCopy, contentDescription = "Copy $label") }
+        }
     }
 }
 

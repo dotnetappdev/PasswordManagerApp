@@ -20,6 +20,7 @@ struct ItemEditView: View {
     @State private var totpSecret = ""
     @State private var notes = ""
     @State private var isFavorite = false
+    @State private var customFields: [CustomFieldData] = []
     @State private var showPassword = false
     @State private var showScanner = false
     @State private var saving = false
@@ -65,6 +66,41 @@ struct ItemEditView: View {
                 }
             }
 
+            Section("Custom fields") {
+                if customFields.isEmpty {
+                    Text("Add your own fields — a PIN, a recovery code, a membership number…")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                ForEach(customFields.indices, id: \.self) { i in
+                    VStack(spacing: 6) {
+                        TextField("Label", text: $customFields[i].name)
+                            .font(.subheadline.weight(.medium))
+                        HStack {
+                            Group {
+                                if customFields[i].secret {
+                                    SecureField("Value", text: $customFields[i].value)
+                                } else {
+                                    TextField("Value", text: $customFields[i].value)
+                                }
+                            }
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            Button { customFields[i].secret.toggle() } label: {
+                                Image(systemName: customFields[i].secret ? "eye.slash" : "eye")
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+                .onDelete { customFields.remove(atOffsets: $0) }
+                Button {
+                    customFields.append(CustomFieldData(name: "", value: ""))
+                } label: {
+                    Label("Add custom field", systemImage: "plus.circle")
+                }
+            }
+
             Section("More") {
                 labeled("Description", $descriptionText)
                 VStack(alignment: .leading) { Text("Notes").font(.caption).foregroundStyle(.secondary); TextEditor(text: $notes).frame(minHeight: 80) }
@@ -100,6 +136,7 @@ struct ItemEditView: View {
             username = item.username ?? ""; email = item.email ?? ""
             website = item.website ?? ""; loginUrl = item.loginUrl ?? ""
             notes = item.notes ?? ""; isFavorite = item.isFavorite
+            customFields = item.customFields
         }
     }
 
@@ -124,7 +161,12 @@ struct ItemEditView: View {
             loginUrl: loginUrl.isEmpty ? nil : loginUrl,
             password: password.isEmpty ? nil : password,
             totpSecret: totpSecret.isEmpty ? nil : totpSecret,
-            notes: notes.isEmpty ? nil : notes)
+            notes: notes.isEmpty ? nil : notes,
+            customFields: customFields
+                .map { CustomFieldData(name: $0.name.trimmingCharacters(in: .whitespaces),
+                                       value: $0.value.trimmingCharacters(in: .whitespaces),
+                                       secret: $0.secret) }
+                .filter { !$0.name.isEmpty || !$0.value.isEmpty })
         do {
             if let itemId { try await env.repository.update(id: itemId, input) }
             else { try await env.repository.create(input) }

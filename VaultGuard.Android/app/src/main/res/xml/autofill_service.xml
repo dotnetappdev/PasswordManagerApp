@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Autofill service config. The compatibility-package entries enable "compatibility mode" so VaultGuard
+  can also fill in browsers that render web forms via WebView / accessibility (Chrome, Edge, Firefox,
+  Samsung Internet, Brave…) instead of native autofill views. Without these, autofill only works in
+  native app fields.
+-->
+<autofill-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:settingsActivity="com.vaultguard.app.MainActivity">
+    <compatibility-package android:name="com.android.chrome" android:maxLongVersionCode="1000000000" />
+    <compatibility-package android:name="com.chrome.beta" android:maxLongVersionCode="1000000000" />
+    <compatibility-package android:name="com.android.browser" android:maxLongVersionCode="1000000000" />
+    <compatibility-package android:name="com.microsoft.emmx" android:maxLongVersionCode="1000000000" />
+    <compatibility-package android:name="org.mozilla.firefox" android:maxLongVersionCode="1000000000" />
+    <compatibility-package android:name="com.brave.browser" android:maxLongVersionCode="1000000000" />
+    <compatibility-package android:name="com.sec.android.app.sbrowser" android:maxLongVersionCode="1000000000" />
+    <compatibility-package android:name="com.opera.browser" android:maxLongVersionCode="1000000000" />
+    <compatibility-package android:name="com.duckduckgo.mobile.android" android:maxLongVersionCode="1000000000" />
+</autofill-service>

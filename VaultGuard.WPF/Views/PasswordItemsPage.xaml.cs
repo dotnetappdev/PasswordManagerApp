@@ -199,6 +199,9 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         {
             _viewModel.FilterVaultId = filterData.FilterVaultId;
         }
+
+        // Keep the middle list-column header in step with whatever the toolbar title ended up as.
+        if (contentTitle != null) SetListColumnTitle(contentTitle.Text);
     }
 
     private async Task LoadCategoriesAsync()
@@ -447,6 +450,9 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 contentSubtitle.Text = "Private notes and documents";
                 break;
         }
+
+        // Mirror the final toolbar title into the middle list-column header so both stay in sync.
+        SetListColumnTitle(contentTitle.Text);
     }
 
     private void CategoryDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -461,19 +467,38 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             {
                 _viewModel.FilterType = "All";
                 _viewModel.SelectedCategoryId = null;
+                SetListColumnTitle("All Items");
             }
             else if (selectedItem.Tag is ItemType itemType)
             {
                 _viewModel.FilterType = itemType.ToString();
                 _viewModel.SelectedCategoryId = null;
+                SetListColumnTitle(TypeDisplayName(itemType));
             }
             else if (selectedItem.Tag is Category category)
             {
                 _viewModel.FilterType = "All";
                 _viewModel.SelectedCategoryId = category.Id;
+                SetListColumnTitle(category.Name);
             }
         }
     }
+
+    // Keeps the middle-column header in step with the active filter (1Password-style), so the list
+    // always names what it's showing instead of a static "All Items".
+    private void SetListColumnTitle(string title) => SetText("ListColumnTitle", title);
+
+    private static string TypeDisplayName(ItemType type) => type switch
+    {
+        ItemType.Login => "Logins",
+        ItemType.CreditCard => "Credit Cards",
+        ItemType.SecureNote => "Secure Notes",
+        ItemType.WiFi => "Wi-Fi Networks",
+        ItemType.Passkey => "Passkeys",
+        ItemType.Identity => "Identities",
+        ItemType.Password => "Passwords",
+        _ => type.ToString(),
+    };
 
     private void ItemsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {

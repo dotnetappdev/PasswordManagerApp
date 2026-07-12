@@ -1,6 +1,6 @@
 package com.vaultguard.app.ui.browse
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -29,7 +31,7 @@ private val PROVIDERS = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImportScreen(onBack: () -> Unit) {
+fun ImportScreen(onBack: () -> Unit, onOpenOnePassword: () -> Unit = {}) {
     Scaffold(topBar = {
         TopAppBar(
             title = { Text("Import") },
@@ -37,12 +39,33 @@ fun ImportScreen(onBack: () -> Unit) {
         )
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
+            // Direct import (API) — runs right here on the phone.
             Text(
-                "VaultGuard can import from all major password managers. Export a CSV/1PUX from the app " +
-                    "below, then import it on the VaultGuard desktop or web app to sync here.",
+                "Connect directly",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 2.dp),
+            )
+            ListItem(
+                modifier = Modifier.clickable(onClick = onOpenOnePassword),
+                leadingContent = { Icon(Icons.Filled.CloudDownload, null, tint = MaterialTheme.colorScheme.primary) },
+                headlineContent = { Text("1Password (Connect API)") },
+                supportingContent = { Text("Import over the air from a Connect server / Service Account") },
+                trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+            )
+            HorizontalDivider()
+
+            Text(
+                "From an export file",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 2.dp),
+            )
+            Text(
+                "Export a CSV/1PUX from the app below, then import it on the VaultGuard desktop or web app to sync here.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
             )
             LazyColumn(Modifier.fillMaxSize()) {
                 items(PROVIDERS) { name ->

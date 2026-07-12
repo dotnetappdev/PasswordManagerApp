@@ -17,6 +17,7 @@ import androidx.navigation.navArgument
 import com.vaultguard.app.ui.browse.AboutScreen
 import com.vaultguard.app.ui.browse.CategoriesScreen
 import com.vaultguard.app.ui.browse.ImportScreen
+import com.vaultguard.app.ui.browse.OnePasswordImportScreen
 import com.vaultguard.app.ui.browse.ProfileScreen
 import com.vaultguard.app.ui.browse.SecurityDashboardScreen
 import com.vaultguard.app.ui.browse.VaultsScreen
@@ -60,11 +61,14 @@ fun VaultGuardNavGraph(rootViewModel: RootViewModel = hiltViewModel()) {
                     HomeScreen(
                         onOpenItem = { id -> navController.navigate(Routes.detail(id)) },
                         onAddItem = { navController.navigate(Routes.edit()) },
+                        onScanAdd = { navController.navigate(Routes.QR_LOGIN) },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                         onOpenProfile = { navController.navigate(Routes.PROFILE) },
+                        onSwitchAccount = { navController.navigate(Routes.UNLOCK) { popUpTo(0) { inclusive = true } } },
                         onOpenVaults = { navController.navigate(Routes.VAULTS) },
                         onOpenCategories = { navController.navigate(Routes.CATEGORIES) },
                         onOpenSecurity = { navController.navigate(Routes.SECURITY) },
+                        onOpenPasskeys = { navController.navigate(Routes.PASSKEYS) },
                         onOpenImport = { navController.navigate(Routes.IMPORT) },
                         onOpenAbout = { navController.navigate(Routes.ABOUT) },
                     )
@@ -84,15 +88,24 @@ fun VaultGuardNavGraph(rootViewModel: RootViewModel = hiltViewModel()) {
 
                 composable(
                     route = Routes.EDIT,
-                    arguments = listOf(navArgument("id") { type = NavType.IntType; defaultValue = -1 }),
+                    arguments = listOf(
+                        navArgument("id") { type = NavType.IntType; defaultValue = -1 },
+                        navArgument("scan") { type = NavType.BoolType; defaultValue = false },
+                    ),
                 ) { entry ->
                     val id = entry.arguments?.getInt("id") ?: -1
+                    val autoScan = entry.arguments?.getBoolean("scan") ?: false
                     ItemEditScreen(
                         itemId = id,
+                        autoScan = autoScan,
                         navController = navController,
                         onDone = { navController.popBackStack() },
                         onScanTotp = { navController.navigate(Routes.SCAN) },
                     )
+                }
+
+                composable(Routes.QR_LOGIN) {
+                    com.vaultguard.app.ui.qr.QrLoginScreen(onDone = { navController.popBackStack() })
                 }
 
                 composable(Routes.SCAN) {
@@ -111,13 +124,28 @@ fun VaultGuardNavGraph(rootViewModel: RootViewModel = hiltViewModel()) {
                         onEditConnection = { navController.navigate(Routes.SETUP) },
                         onLocked = { navController.navigate(Routes.UNLOCK) { popUpTo(0) { inclusive = true } } },
                         onOpenImport = { navController.navigate(Routes.IMPORT) },
+                        onOpen1Password = { navController.navigate(Routes.IMPORT_1PASSWORD) },
+                        onOpenDeviceSetup = { navController.navigate(Routes.DEVICE_SETUP) },
                     )
+                }
+
+                composable(Routes.DEVICE_SETUP) {
+                    com.vaultguard.app.ui.setup.DeviceSetupScreen(onBack = { navController.popBackStack() })
                 }
 
                 composable(Routes.VAULTS) { VaultsScreen(onBack = { navController.popBackStack() }) }
                 composable(Routes.CATEGORIES) { CategoriesScreen(onBack = { navController.popBackStack() }) }
                 composable(Routes.SECURITY) { SecurityDashboardScreen(onBack = { navController.popBackStack() }) }
-                composable(Routes.IMPORT) { ImportScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.PASSKEYS) { com.vaultguard.app.ui.passkeys.PasskeysScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.IMPORT) {
+                    ImportScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenOnePassword = { navController.navigate(Routes.IMPORT_1PASSWORD) },
+                    )
+                }
+                composable(Routes.IMPORT_1PASSWORD) {
+                    OnePasswordImportScreen(onBack = { navController.popBackStack() })
+                }
                 composable(Routes.ABOUT) { AboutScreen(onBack = { navController.popBackStack() }) }
                 composable(Routes.PROFILE) {
                     ProfileScreen(

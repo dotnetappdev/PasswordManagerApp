@@ -243,6 +243,32 @@
             }
         </MudPaper>
 
+        <!-- 1Password Connect (API import) -->
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Style="margin-bottom: 8px;">Import from 1Password (API)</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
+                Save your 1Password Connect server URL and access token (or a Service Account token) so the
+                mobile apps can import directly over the air. On desktop and web you can still import a
+                1PUX/CSV export file from the Import page.
+            </MudText>
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudTextField T="string" @bind-value="onePasswordHost"
+                                  Label="Connect server URL"
+                                  Placeholder="https://connect.example.com"
+                                  Variant="Variant.Outlined"
+                                  HelperText="Your 1Password Connect server (or Service Account) base URL" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField T="string" @bind-value="onePasswordToken"
+                                  Label="Access token"
+                                  Variant="Variant.Outlined"
+                                  InputType="InputType.Password"
+                                  HelperText="Connect access token / Service Account token" />
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
         <!-- API Configuration -->
         <MudPaper Class="pa-4" >
             <MudText Typo="Typo.h6" Style="margin-bottom: 16px;">API Configuration</MudText>
@@ -793,6 +819,8 @@
     private string apiKey = "";
     private string clientId = "";
     private string clientSecret = "";
+    private string onePasswordHost = "";
+    private string onePasswordToken = "";
     private string dbServer = "";
     private string dbName = "";
     private string dbUser = "";
@@ -971,6 +999,8 @@
             apiKey = dbConfig.ApiKey ?? "";
             clientId = AppSettings.Get("ApiClientId", "");
             clientSecret = AppSettings.Get("ApiClientSecret", "");
+            onePasswordHost = AppSettings.Get("OnePasswordConnectHost", "");
+            onePasswordToken = AppSettings.Get("OnePasswordConnectToken", "");
             dbServer = AppSettings.Get("dbserver", "");
             dbName = AppSettings.Get("dbname", "");
             dbUser = AppSettings.Get("dbusername", "");
@@ -1189,6 +1219,8 @@
             AppSettings.Set("ApiKey", apiKey);
             AppSettings.Set("ApiClientId", clientId);
             AppSettings.Set("ApiClientSecret", clientSecret);
+            AppSettings.Set("OnePasswordConnectHost", onePasswordHost);
+            AppSettings.Set("OnePasswordConnectToken", onePasswordToken);
             AppSettings.Set("dbserver", dbServer);
             AppSettings.Set("dbname", dbName);
             AppSettings.Set("dbusername", dbUser);

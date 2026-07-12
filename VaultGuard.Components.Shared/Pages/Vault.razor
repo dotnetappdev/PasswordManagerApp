@@ -417,9 +417,9 @@
                     }
                 </div>
 
-                @* ── Save button ── *@
-                <div style="margin-top: 16px;">
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                @* ── Save button (sticky at the foot of the detail pane) ── *@
+                <div style="position: sticky; bottom: 0; z-index: 4; margin: 16px -32px 0; padding: 12px 32px calc(12px + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--mud-palette-background) 92%, transparent); backdrop-filter: blur(8px); border-top: 1px solid var(--mud-palette-divider);">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
                                StartIcon="@Icons.Material.Filled.Save"
                                OnClick="@SaveDetailChangesAsync">Save changes</MudButton>
                 </div>

@@ -19,6 +19,9 @@ targets:
     sources:
       - path: VaultGuard
       - path: Setup
+      - path: Shared
+    dependencies:
+      - target: VaultGuardAutoFill
     info:
       path: VaultGuard/Info.plist
       properties:
@@ -35,3 +38,25 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.vaultguard.app
         TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_ENTITLEMENTS: VaultGuard/VaultGuard.entitlements
+
+  # AutoFill Credential Provider extension — lets VaultGuard fill logins system-wide.
+  VaultGuardAutoFill:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: AutoFillExtension
+      - path: Shared
+    info:
+      path: AutoFillExtension/Info.plist
+      properties:
+        CFBundleDisplayName: VaultGuard AutoFill
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.authentication-services-credential-provider-ui
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CredentialProviderViewController
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vaultguard.app.autofill
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_ENTITLEMENTS: AutoFillExtension/AutoFill.entitlements

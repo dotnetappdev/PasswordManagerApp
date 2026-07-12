@@ -591,6 +591,10 @@
                                      Header="Deleting a password item"
                                      IsOn="{Binding RequireCodeOnItemDelete, Mode=TwoWay}"
                                      Margin="0,0,0,8"/>
+                        <ui:ToggleSwitch x:Name="NumberMatchApprovalsToggle"
+                                     Header="Number-matching sign-in approvals (approve on your phone, 60s)"
+                                     IsOn="{Binding NumberMatchApprovals, Mode=TwoWay}"
+                                     Margin="0,0,0,8"/>
 
                         <Button x:Name="ChangePasswordButton"
                                Style="{StaticResource ModernSecondaryButtonStyle}"
@@ -682,12 +686,43 @@
                                      MinWidth="240"/>
                         </StackPanel>
                         
+                        <!-- 1Password Connect (API import) — always available; used by the mobile apps. -->
+                        <Border Style="{StaticResource SettingsSectionStyle}"
+                                BorderBrush="{DynamicResource ModernBorderBrush}">
+                            <StackPanel Margin="16">
+                                <TextBlock Text="Import from 1Password (API)"
+                                           Style="{StaticResource ModernBodyStyle}"
+                                           FontWeight="SemiBold"/>
+                                <TextBlock Text="Save your 1Password Connect server URL and access token (or a Service Account token). The mobile apps use this to import directly; on desktop you can still import a 1PUX/CSV file from the Import page."
+                                           Style="{StaticResource ModernCaptionStyle}"
+                                           TextWrapping="Wrap" Margin="0,4,0,8"/>
+                                <StackPanel Margin="8">
+                                    <TextBlock Text="Connect server URL"
+                                               Style="{StaticResource ModernCaptionStyle}"
+                                               FontWeight="SemiBold"/>
+                                    <TextBox Text="{Binding OnePasswordHost, Mode=TwoWay}"
+                                             ui:ControlHelper.PlaceholderText="https://connect.example.com"
+                                             Style="{StaticResource ModernTextBoxStyle}"
+                                             MinWidth="360"/>
+                                </StackPanel>
+                                <StackPanel Margin="8">
+                                    <TextBlock Text="Access token"
+                                               Style="{StaticResource ModernCaptionStyle}"
+                                               FontWeight="SemiBold"/>
+                                    <TextBox Text="{Binding OnePasswordToken, Mode=TwoWay}"
+                                             ui:ControlHelper.PlaceholderText="Connect / Service Account token"
+                                             Style="{StaticResource ModernTextBoxStyle}"
+                                             MinWidth="360"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
                         <Border x:Name="ApiSettingsPanel"
                                Style="{StaticResource SettingsSectionStyle}"
                                BorderBrush="{DynamicResource ModernBorderBrush}"
                                Visibility="{Binding AuthenticationMode, Converter={StaticResource ApiModeToVisibilityConverter}}">
                             <StackPanel Margin="16">
-                                <TextBlock Text="API Configuration" 
+                                <TextBlock Text="API Configuration"
                                           Style="{StaticResource ModernBodyStyle}"
                                           FontWeight="SemiBold"/>
                                 <StackPanel Margin="8">

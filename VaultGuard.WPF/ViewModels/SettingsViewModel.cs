@@ -17,6 +17,7 @@ public class SettingsViewModel : BaseViewModel
     private bool _requirePasscode = false;
     private bool _enablePasskeys = false;
     private bool _requireCodeOnVaultDelete = false;
+    private bool _numberMatchApprovals = true;
     private bool _requireCodeOnItemDelete = false;
     private string _exportPath = string.Empty;
     private string _selectedTheme = "System";
@@ -26,6 +27,8 @@ public class SettingsViewModel : BaseViewModel
     private string _apiKey = string.Empty;
     private string _apiClientId = string.Empty;
     private string _apiClientSecret = string.Empty;
+    private string _onePasswordHost = string.Empty;
+    private string _onePasswordToken = string.Empty;
     private string _apiDbServer = string.Empty;
     private string _apiDbName = string.Empty;
     private string _apiDbUser = string.Empty;
@@ -170,6 +173,13 @@ public class SettingsViewModel : BaseViewModel
         set { if (SetProperty(ref _requireCodeOnItemDelete, value)) _ = SaveSettingsAsync(); }
     }
 
+    /// <summary>GitHub-style number-matching push approval on sign-in (approved on the phone within 60s).</summary>
+    public bool NumberMatchApprovals
+    {
+        get => _numberMatchApprovals;
+        set { if (SetProperty(ref _numberMatchApprovals, value)) _ = SaveSettingsAsync(); }
+    }
+
     public string ExportPath
     {
         get => _exportPath;
@@ -216,6 +226,20 @@ public class SettingsViewModel : BaseViewModel
     {
         get => _apiClientSecret;
         set => SetProperty(ref _apiClientSecret, value);
+    }
+
+    /// <summary>1Password Connect server URL used by the mobile API importer. Stored in shared settings.</summary>
+    public string OnePasswordHost
+    {
+        get => _onePasswordHost;
+        set => SetProperty(ref _onePasswordHost, value);
+    }
+
+    /// <summary>1Password Connect access token / Service Account token for the mobile API importer.</summary>
+    public string OnePasswordToken
+    {
+        get => _onePasswordToken;
+        set => SetProperty(ref _onePasswordToken, value);
     }
 
     public string ApiDbServer
@@ -508,6 +532,8 @@ public class SettingsViewModel : BaseViewModel
             ApiKey = localSettings.TryGetValue("ApiKey", out var apiKey) ? apiKey : string.Empty;
             ApiClientId = localSettings.TryGetValue("ApiClientId", out var apiClientId) ? apiClientId : string.Empty;
             ApiClientSecret = localSettings.TryGetValue("ApiClientSecret", out var apiClientSecret) ? apiClientSecret : string.Empty;
+            OnePasswordHost = localSettings.TryGetValue("OnePasswordConnectHost", out var opHost) ? opHost : string.Empty;
+            OnePasswordToken = localSettings.TryGetValue("OnePasswordConnectToken", out var opTok) ? opTok : string.Empty;
             ApiDbServer = localSettings.TryGetValue("dbserver", out var dbServer) ? dbServer : string.Empty;
             ApiDbName = localSettings.TryGetValue("dbname", out var dbName) ? dbName : string.Empty;
             ApiDbUser = localSettings.TryGetValue("dbusername", out var dbUser) ? dbUser : string.Empty;
@@ -538,6 +564,7 @@ public class SettingsViewModel : BaseViewModel
             BackupScheduleInterval = localSettings.TryGetValue("BackupScheduleInterval", out var bsi) ? bsi : "Daily";
             EnablePasskeys = localSettings.TryGetValue("EnablePasskeys", out var ep) && bool.TryParse(ep, out var epVal) && epVal;
             RequireCodeOnVaultDelete = localSettings.TryGetValue("RequireCodeOnVaultDelete", out var rcv) && bool.TryParse(rcv, out var rcvVal) && rcvVal;
+            NumberMatchApprovals = !localSettings.TryGetValue("NumberMatchApprovals", out var nma) || !bool.TryParse(nma, out var nmaVal) || nmaVal;
             RequireCodeOnItemDelete = localSettings.TryGetValue("RequireCodeOnItemDelete", out var rci) && bool.TryParse(rci, out var rciVal) && rciVal;
 
             // Check if Google Drive is already connected
@@ -653,6 +680,8 @@ public class SettingsViewModel : BaseViewModel
             localSettings["ApiKey"] = ApiKey;
             localSettings["ApiClientId"] = ApiClientId;
             localSettings["ApiClientSecret"] = ApiClientSecret;
+            localSettings["OnePasswordConnectHost"] = OnePasswordHost;
+            localSettings["OnePasswordConnectToken"] = OnePasswordToken;
             localSettings["dbserver"] = ApiDbServer;
             localSettings["dbname"] = ApiDbName;
             localSettings["dbusername"] = ApiDbUser;
@@ -679,6 +708,7 @@ public class SettingsViewModel : BaseViewModel
             localSettings["BackupScheduleInterval"] = BackupScheduleInterval;
             localSettings["EnablePasskeys"] = EnablePasskeys.ToString();
             localSettings["RequireCodeOnVaultDelete"] = RequireCodeOnVaultDelete.ToString();
+            localSettings["NumberMatchApprovals"] = NumberMatchApprovals.ToString();
             localSettings["RequireCodeOnItemDelete"] = RequireCodeOnItemDelete.ToString();
             SaveLocalSettings(localSettings);
 

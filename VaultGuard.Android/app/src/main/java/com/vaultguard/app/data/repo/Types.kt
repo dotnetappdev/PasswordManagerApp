@@ -1,5 +1,6 @@
 package com.vaultguard.app.data.repo
 
+import com.vaultguard.app.data.model.CustomFieldData
 import com.vaultguard.app.data.model.ItemType
 
 /** Editable fields for creating/updating a login item across both connection modes. */
@@ -15,6 +16,9 @@ data class LoginItemInput(
     val password: String? = null,
     val totpSecret: String? = null,
     val notes: String? = null,
+    val categoryId: Int? = null,
+    val categoryName: String? = null,
+    val customFields: List<CustomFieldData> = emptyList(),
 )
 
 /** Sensitive fields decrypted on demand. */

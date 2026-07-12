@@ -21,6 +21,22 @@ struct ItemDetailView: View {
     var body: some View {
         Form {
             if let item {
+                // 1Password-style item header: icon tile + title + category.
+                Section {
+                    HStack(spacing: 14) {
+                        ItemIconTile(type: item.type, size: 52)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.title).font(.title3.bold()).lineLimit(2)
+                            if let cat = item.categoryName, !cat.isEmpty {
+                                Label(cat, systemImage: "folder")
+                                    .font(.caption).foregroundStyle(.secondary).labelStyle(.titleAndIcon)
+                            }
+                        }
+                        Spacer()
+                    }
+                    .padding(.vertical, 4)
+                }
+
                 if let d = item.description, !d.isEmpty { field("Description", d) }
                 if let v = item.username { copyRow("Username", v) }
                 if let v = item.email { copyRow("Email", v) }
@@ -50,6 +66,14 @@ struct ItemDetailView: View {
                             Button { copy(totpCode) } label: { Image(systemName: "doc.on.doc") }
                         }
                         ProgressView(value: Double(totpRemaining), total: 30)
+                    }
+                }
+
+                if !item.customFields.isEmpty {
+                    Section("Custom fields") {
+                        ForEach(item.customFields.indices, id: \.self) { i in
+                            CustomFieldRow(field: item.customFields[i]) { copy($0) }
+                        }
                     }
                 }
 
@@ -114,5 +138,33 @@ struct ItemDetailView: View {
             let end = code.index(start, offsetBy: min(3, code.count - $0))
             return String(code[start..<end])
         }.joined(separator: " ")
+    }
+}
+
+/// A single custom-field row in the detail view. Secret fields stay masked until revealed.
+private struct CustomFieldRow: View {
+    let field: CustomFieldData
+    let onCopy: (String) -> Void
+    @State private var revealed = false
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(field.name.isEmpty ? "Field" : field.name)
+                    .font(.caption).foregroundStyle(.secondary)
+                if field.secret && !revealed {
+                    Text(String(repeating: "•", count: max(6, min(field.value.count, 12))))
+                        .font(.system(.body, design: .monospaced))
+                } else {
+                    Text(field.value).textSelection(.enabled)
+                }
+            }
+            Spacer()
+            if field.secret && !revealed {
+                Button { revealed = true } label: { Image(systemName: "eye") }.buttonStyle(.borderless)
+            } else {
+                Button { onCopy(field.value) } label: { Image(systemName: "doc.on.doc") }.buttonStyle(.borderless)
+            }
+        }
     }
 }

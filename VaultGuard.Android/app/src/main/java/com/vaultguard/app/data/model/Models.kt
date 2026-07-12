@@ -109,6 +109,17 @@ data class TagDto(
     val color: String? = null,
 )
 
+/**
+ * A user-defined custom field on an item (1Password-style). `secret` fields are masked in the UI.
+ * In LOCAL mode these are persisted as a JSON array on the item row.
+ */
+@Serializable
+data class CustomFieldData(
+    val name: String,
+    val value: String,
+    val secret: Boolean = false,
+)
+
 @Serializable
 data class VaultDto(
     val id: Int = 0,
@@ -117,7 +128,28 @@ data class VaultDto(
     val color: String? = null,
     val icon: String? = null,
     val itemCount: Int = 0,
+    @SerialName("passwordItemsCount") val passwordItemsCount: Int = 0,
     val isDefault: Boolean = false,
+) {
+    val displayCount: Int get() = if (itemCount > 0) itemCount else passwordItemsCount
+}
+
+@Serializable
+data class CreateVaultDto(
+    val name: String,
+    val description: String? = null,
+    val isDefault: Boolean = false,
+    val icon: String? = null,
+    val color: String? = null,
+)
+
+@Serializable
+data class UpdateVaultDto(
+    val name: String,
+    val description: String? = null,
+    val isDefault: Boolean = false,
+    val icon: String? = null,
+    val color: String? = null,
 )
 
 // Create (server-side encryption) — POST /api/passworditems/encrypted
@@ -193,6 +225,42 @@ data class DecryptedLoginItemDto(
 @Serializable
 data class RevealPasswordRequest(val masterPassword: String)
 
+// QR login handoff — phone scans the desktop's QR and signs the desktop in.
+@Serializable
+data class QrAuthenticateRequest(
+    val token: String,
+    val email: String,
+    val password: String,
+    val deviceName: String? = null,
+    val deviceType: String? = null,
+    val platform: String? = null,
+)
+
+@Serializable
+data class QrAuthenticateResponse(
+    val success: Boolean = false,
+    val message: String = "",
+    val deviceName: String? = null,
+)
+
+@Serializable
+data class RegisterDeviceRequest(val token: String, val platform: String = "Android")
+
+// GitHub-style number-matching approvals
+@Serializable
+data class PendingApprovalDto(
+    val id: String = "",
+    val action: String = "",
+    val choices: List<Int> = emptyList(),
+    val expiresAt: String? = null,
+)
+
+@Serializable
+data class RespondApprovalRequest(val selectedNumber: Int, val approve: Boolean)
+
+@Serializable
+data class ApprovalStateResponse(val state: String = "")
+
 @Serializable
 data class RevealPasswordResponse(
     val password: String = "",
@@ -221,6 +289,9 @@ data class VaultItem(
     val notes: String?,
     val categoryName: String?,
     val tags: List<String> = emptyList(),
+    val customFields: List<CustomFieldData> = emptyList(),
+    /** Which vault this item lives in (LOCAL mode). Null in API mode (vault↔collection bridge). */
+    val vaultId: Int? = null,
 ) {
     companion object {
         fun from(dto: PasswordItemDto) = VaultItem(

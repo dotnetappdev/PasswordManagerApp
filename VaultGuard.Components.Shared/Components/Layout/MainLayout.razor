@@ -70,11 +70,74 @@
     </MudDrawer>
 
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.False" Style="background-color: var(--mud-palette-background); min-height: 100vh; padding-top: 64px;">
+        <MudContainer MaxWidth="MaxWidth.False" Class="vg-main-content"
+                      Style="background-color: var(--mud-palette-background); min-height: 100vh; padding-top: calc(64px + env(safe-area-inset-top, 0px)); padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));">
             @Body
         </MudContainer>
     </MudMainContent>
 </MudLayout>
+
+@* ── Mobile bottom navigation (1Password-style tab bar) — only shown on narrow screens ── *@
+<nav class="vg-bottom-nav">
+    <NavLink class="vg-bottom-nav__item" href="/dashboard" Match="NavLinkMatch.All">
+        <MudIcon Icon="@Icons.Material.Filled.Home" Size="Size.Small" />
+        <span>Home</span>
+    </NavLink>
+    <NavLink class="vg-bottom-nav__item" href="/passwords" Match="NavLinkMatch.All">
+        <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" />
+        <span>Items</span>
+    </NavLink>
+    <NavLink class="vg-bottom-nav__item" href="/passwords?fav=true">
+        <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" />
+        <span>Favourites</span>
+    </NavLink>
+    <NavLink class="vg-bottom-nav__item" href="/settings">
+        <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Small" />
+        <span>Settings</span>
+    </NavLink>
+</nav>
+
+<style>
+    /* Bottom tab bar: hidden on desktop, shown on phones. Desktop keeps the side drawer. */
+    .vg-bottom-nav { display: none; }
+
+    @@media (max-width: 767px) {
+        .vg-bottom-nav {
+            display: flex;
+            position: fixed;
+            left: 0; right: 0; bottom: 0;
+            z-index: 1300;
+            justify-content: space-around;
+            align-items: stretch;
+            background: color-mix(in srgb, var(--mud-palette-surface) 94%, transparent);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--mud-palette-divider);
+            padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+        }
+
+        .vg-bottom-nav__item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            flex: 1;
+            padding: 4px 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--mud-palette-text-secondary);
+        }
+
+        .vg-bottom-nav__item.active {
+            color: var(--mud-palette-primary);
+        }
+
+        /* Extra room so page content scrolls clear of the tab bar on mobile. */
+        .vg-main-content {
+            padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+        }
+    }
+</style>
 
 @code {
     private bool _drawerOpen = true;

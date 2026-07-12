@@ -12,13 +12,33 @@ final class VaultRepository {
     private let session: Session
     private let keychain: Keychain
     private let configStore: ConfigStore
+    private let accountsStore: AccountsStore
 
     private let verifierPlaintext = "vaultguard-local-verifier-v1"
 
     init(api: ApiClient, local: LocalStore, crypto: VaultCrypto, session: Session,
-         keychain: Keychain, configStore: ConfigStore) {
+         keychain: Keychain, configStore: ConfigStore, accountsStore: AccountsStore) {
         self.api = api; self.local = local; self.crypto = crypto
         self.session = session; self.keychain = keychain; self.configStore = configStore
+        self.accountsStore = accountsStore
+    }
+
+    /// Save the just-used connection as a switchable account.
+    private func rememberAccount(email: String) {
+        let cfg = configStore.config
+        switch cfg.mode {
+        case .api:
+            accountsStore.upsert(
+                Account(id: "api:\(cfg.apiBaseUrl):\(email)", label: email.isEmpty ? "Account" : email,
+                        email: email, mode: .api, apiBaseUrl: cfg.apiBaseUrl),
+                apiKey: configStore.apiKey()
+            )
+        case .local:
+            accountsStore.upsert(
+                Account(id: "local", label: "Local vault", email: nil, mode: .local),
+                apiKey: nil
+            )
+        }
     }
 
     private var mode: ConnectionMode { configStore.config.mode }
@@ -46,6 +66,7 @@ final class VaultRepository {
             if resp.requiresTwoFactor && (twoFactorCode?.isEmpty ?? true) { return .needsTwoFactor }
             if let token = resp.authResponse?.token, !token.isEmpty {
                 session.onLoggedIn(token: token, user: resp.authResponse?.user, masterPassword: password)
+                rememberAccount(email: email)
                 return .success
             }
             return .error("Login failed. Check your credentials.")
@@ -64,12 +85,14 @@ final class VaultRepository {
                 keychain.set(salt.base64EncodedString(), for: Keychain.Keys.localSalt)
                 keychain.set(try crypto.encrypt(verifierPlaintext, key: key), for: Keychain.Keys.localVerifier)
                 session.onLocalUnlocked(masterPassword: masterPassword)
+                rememberAccount(email: "")
                 return .success
             }
             let salt = Data(base64Encoded: saltB64!)!
             let key = crypto.deriveKey(masterPassword: masterPassword, salt: salt)
             if (try? crypto.decrypt(verifier!, key: key)) == verifierPlaintext {
                 session.onLocalUnlocked(masterPassword: masterPassword)
+                rememberAccount(email: "")
                 return .success
             }
             return .error("Incorrect master password.")
@@ -107,6 +130,21 @@ final class VaultRepository {
                 totpSecret: try row.encTotp.map { try crypto.decrypt($0, key: key) }
             )
         }
+    }
+
+    /// Publish decrypted logins to the AutoFill extension's shared store (LOCAL mode only, to avoid
+    /// hammering the API with per-item reveal calls). Safe to call fire-and-forget after unlock.
+    func syncAutoFill() async {
+        guard mode == .local else { return }
+        let items = (try? await list()) ?? []
+        var creds: [AutoFillCred] = []
+        for item in items where !item.isDeleted && !item.isArchived {
+            guard let site = (item.website ?? item.loginUrl).flatMap({ $0.isEmpty ? nil : $0 }),
+                  let user = (item.username ?? item.email).flatMap({ $0.isEmpty ? nil : $0 }) else { continue }
+            guard let sec = try? await secret(id: item.id), let pw = sec.password, !pw.isEmpty else { continue }
+            creds.append(AutoFillCred(identifier: site, username: user, password: pw))
+        }
+        AutoFillCredentialStore.save(creds)
     }
 
     func categories() async -> [CategoryDto] {
@@ -155,7 +193,9 @@ final class VaultRepository {
                 website: input.website, loginUrl: input.loginUrl, notes: input.notes,
                 encPassword: try input.password.flatMap { $0.isEmpty ? nil : try crypto.encrypt($0, key: key) },
                 encTotp: try input.totpSecret.flatMap { $0.isEmpty ? nil : try crypto.encrypt($0, key: key) },
-                categoryName: input.categoryName, createdAt: now, lastModified: now))
+                categoryName: input.categoryName,
+                customFieldsJson: Self.encodeCustomFields(input.customFields),
+                createdAt: now, lastModified: now))
         }
     }
 
@@ -176,6 +216,7 @@ final class VaultRepository {
             row.loginUrl = input.loginUrl; row.notes = input.notes
             if let p = input.password, !p.isEmpty { row.encPassword = try crypto.encrypt(p, key: key) }
             if let t = input.totpSecret, !t.isEmpty { row.encTotp = try crypto.encrypt(t, key: key) }
+            row.customFieldsJson = Self.encodeCustomFields(input.customFields)
             row.lastModified = Date().timeIntervalSince1970
             local.update(row)
         }
@@ -227,7 +268,21 @@ final class VaultRepository {
         VaultItem(id: r.id, title: r.title, description: r.descriptionText, type: ItemType.from(r.type),
                   isFavorite: r.isFavorite, isArchived: r.isArchived, isDeleted: r.isDeleted,
                   username: r.username, email: r.email, website: r.website, loginUrl: r.loginUrl,
-                  notes: r.notes, categoryName: r.categoryName, tags: [])
+                  notes: r.notes, categoryName: r.categoryName, tags: [],
+                  customFields: Self.decodeCustomFields(r.customFieldsJson))
+    }
+
+    /// Serialize custom fields for the local JSON column (nil when none).
+    static func encodeCustomFields(_ fields: [CustomFieldData]) -> String? {
+        let cleaned = fields.filter { !$0.name.isEmpty || !$0.value.isEmpty }
+        guard !cleaned.isEmpty, let data = try? JSONEncoder().encode(cleaned) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    static func decodeCustomFields(_ raw: String?) -> [CustomFieldData] {
+        guard let raw, let data = raw.data(using: .utf8),
+              let fields = try? JSONDecoder().decode([CustomFieldData].self, from: data) else { return [] }
+        return fields
     }
 
     private struct Demo {

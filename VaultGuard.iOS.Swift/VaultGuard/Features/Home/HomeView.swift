@@ -12,11 +12,15 @@ struct HomeView: View {
 
     @State private var section: VaultSection = .allItems
     @State private var items: [VaultItem] = []
+    @State private var vaults: [VaultDto] = []
     @State private var query = ""
     @State private var loading = true
     @State private var error: String?
     @State private var showSidebar = false
     @State private var path: [HomeRoute] = []
+
+    /// The vault the user is viewing (default/personal), shown as context under the title.
+    private var vaultLabel: String { (vaults.first { $0.isDefault } ?? vaults.first)?.name ?? "Personal" }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -35,11 +39,17 @@ struct HomeView: View {
             .listStyle(.insetGrouped)
             .overlay { if visible.isEmpty && !loading { ContentUnavailableCompat(title: "Nothing here yet", systemImage: "tray") } }
             .searchable(text: $query, prompt: "Search")
-            .navigationTitle(section.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button { showSidebar = true } label: { Image(systemName: "line.3.horizontal") }
+                }
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 1) {
+                        Text(section.title).font(.headline)
+                        Label(vaultLabel, systemImage: "folder")
+                            .font(.caption2).foregroundStyle(.secondary).labelStyle(.titleAndIcon)
+                    }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button { path.append(.edit(nil)) } label: { Image(systemName: "plus") }
@@ -95,7 +105,10 @@ struct HomeView: View {
         env.repository.seedLocalDemoIfEmpty()
         do { items = try await env.repository.list() }
         catch { self.error = error.localizedDescription }
+        vaults = await env.repository.vaults()
         loading = false
+        // Keep the AutoFill QuickType credentials in sync with the vault.
+        Task { await env.repository.syncAutoFill() }
     }
 
     private func toggleFavorite(_ id: Int) {

@@ -91,11 +91,26 @@ struct ImportView: View {
                              "Chrome", "Edge", "Firefox", "Safari", "KeePass", "Enpass", "RoboForm", "Apple Passwords"]
     var body: some View {
         List {
+            Section("Connect directly") {
+                NavigationLink {
+                    OnePasswordImportView()
+                } label: {
+                    Label {
+                        VStack(alignment: .leading) {
+                            Text("1Password (Connect API)")
+                            Text("Import over the air from a Connect server / Service Account")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "icloud.and.arrow.down").foregroundStyle(Theme.accent)
+                    }
+                }
+            }
             Section {
-                Text("VaultGuard imports from all major password managers. Export a CSV/1PUX from the app below, then import it on the VaultGuard desktop or web app to sync here.")
+                Text("Or export a CSV/1PUX from the app below, then import it on the VaultGuard desktop or web app to sync here.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
-            Section("Import from") {
+            Section("From an export file") {
                 ForEach(providers, id: \.self) { name in
                     Label(name, systemImage: "square.and.arrow.down")
                 }

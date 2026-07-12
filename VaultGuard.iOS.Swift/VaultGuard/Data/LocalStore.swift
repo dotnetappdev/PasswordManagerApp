@@ -18,6 +18,7 @@ struct VaultRow {
     var encPassword: String?
     var encTotp: String?
     var categoryName: String?
+    var customFieldsJson: String? = nil
     var createdAt: Double
     var lastModified: Double
 }
@@ -43,6 +44,8 @@ final class LocalStore {
                 createdAt REAL NOT NULL, lastModified REAL NOT NULL
             );
         """)
+        // Migration: add the custom-fields column to pre-existing tables (errors harmlessly if present).
+        exec("ALTER TABLE vault_items ADD COLUMN customFieldsJson TEXT;")
     }
 
     deinit { sqlite3_close(db) }
@@ -71,12 +74,13 @@ final class LocalStore {
             username: text(stmt, 7), email: text(stmt, 8), website: text(stmt, 9),
             loginUrl: text(stmt, 10), notes: text(stmt, 11),
             encPassword: text(stmt, 12), encTotp: text(stmt, 13), categoryName: text(stmt, 14),
-            createdAt: sqlite3_column_double(stmt, 15),
-            lastModified: sqlite3_column_double(stmt, 16)
+            customFieldsJson: text(stmt, 15),
+            createdAt: sqlite3_column_double(stmt, 16),
+            lastModified: sqlite3_column_double(stmt, 17)
         )
     }
 
-    private let columns = "id,title,description,type,isFavorite,isArchived,isDeleted,username,email,website,loginUrl,notes,encPassword,encTotp,categoryName,createdAt,lastModified"
+    private let columns = "id,title,description,type,isFavorite,isArchived,isDeleted,username,email,website,loginUrl,notes,encPassword,encTotp,categoryName,customFieldsJson,createdAt,lastModified"
 
     func all() -> [VaultRow] {
         var stmt: OpaquePointer?
@@ -102,7 +106,7 @@ final class LocalStore {
     @discardableResult
     func insert(_ r: VaultRow) -> Int {
         var stmt: OpaquePointer?
-        let sql = "INSERT INTO vault_items (title,description,type,isFavorite,isArchived,isDeleted,username,email,website,loginUrl,notes,encPassword,encTotp,categoryName,createdAt,lastModified) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+        let sql = "INSERT INTO vault_items (title,description,type,isFavorite,isArchived,isDeleted,username,email,website,loginUrl,notes,encPassword,encTotp,categoryName,customFieldsJson,createdAt,lastModified) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return 0 }
         bind(stmt, 1, r.title); bind(stmt, 2, r.descriptionText)
         sqlite3_bind_int(stmt, 3, Int32(r.type))
@@ -112,8 +116,9 @@ final class LocalStore {
         bind(stmt, 7, r.username); bind(stmt, 8, r.email); bind(stmt, 9, r.website)
         bind(stmt, 10, r.loginUrl); bind(stmt, 11, r.notes)
         bind(stmt, 12, r.encPassword); bind(stmt, 13, r.encTotp); bind(stmt, 14, r.categoryName)
-        sqlite3_bind_double(stmt, 15, r.createdAt)
-        sqlite3_bind_double(stmt, 16, r.lastModified)
+        bind(stmt, 15, r.customFieldsJson)
+        sqlite3_bind_double(stmt, 16, r.createdAt)
+        sqlite3_bind_double(stmt, 17, r.lastModified)
         sqlite3_step(stmt)
         sqlite3_finalize(stmt)
         return Int(sqlite3_last_insert_rowid(db))
@@ -121,7 +126,7 @@ final class LocalStore {
 
     func update(_ r: VaultRow) {
         var stmt: OpaquePointer?
-        let sql = "UPDATE vault_items SET title=?,description=?,isFavorite=?,isArchived=?,isDeleted=?,username=?,email=?,website=?,loginUrl=?,notes=?,encPassword=?,encTotp=?,categoryName=?,lastModified=? WHERE id=?"
+        let sql = "UPDATE vault_items SET title=?,description=?,isFavorite=?,isArchived=?,isDeleted=?,username=?,email=?,website=?,loginUrl=?,notes=?,encPassword=?,encTotp=?,categoryName=?,customFieldsJson=?,lastModified=? WHERE id=?"
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return }
         bind(stmt, 1, r.title); bind(stmt, 2, r.descriptionText)
         sqlite3_bind_int(stmt, 3, r.isFavorite ? 1 : 0)
@@ -130,8 +135,9 @@ final class LocalStore {
         bind(stmt, 6, r.username); bind(stmt, 7, r.email); bind(stmt, 8, r.website)
         bind(stmt, 9, r.loginUrl); bind(stmt, 10, r.notes)
         bind(stmt, 11, r.encPassword); bind(stmt, 12, r.encTotp); bind(stmt, 13, r.categoryName)
-        sqlite3_bind_double(stmt, 14, r.lastModified)
-        sqlite3_bind_int64(stmt, 15, Int64(r.id))
+        bind(stmt, 14, r.customFieldsJson)
+        sqlite3_bind_double(stmt, 15, r.lastModified)
+        sqlite3_bind_int64(stmt, 16, Int64(r.id))
         sqlite3_step(stmt)
         sqlite3_finalize(stmt)
     }
