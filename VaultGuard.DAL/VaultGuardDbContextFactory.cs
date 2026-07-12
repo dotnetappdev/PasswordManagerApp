@@ -8,11 +8,11 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace VaultGuard.DAL
 {
-    public class VaultGuardDbContextFactory : IDesignTimeDbContextFactory<VaultGuardDbContextApp>
+    public class VaultGuardDbContextFactory : IDesignTimeDbContextFactory<VaultGuardDbContext>
     {
-        public VaultGuardDbContextApp CreateDbContext(string[] args)
+        public VaultGuardDbContext CreateDbContext(string[] args)
         {
-            var optionsBuilder = new DbContextOptionsBuilder<VaultGuardDbContextApp>();
+            var optionsBuilder = new DbContextOptionsBuilder<VaultGuardDbContext>();
 
             // This design-time factory only builds a SQLite context (the DAL project references the SQLite
             // provider only). To apply migrations against a SQL Server / Postgres database — including one
@@ -34,7 +34,7 @@ namespace VaultGuard.DAL
             }
 
             optionsBuilder.UseSqlite(conn);
-            return new VaultGuardDbContextApp(optionsBuilder.Options);
+            return new VaultGuardDbContext(optionsBuilder.Options);
         }
     }
 }

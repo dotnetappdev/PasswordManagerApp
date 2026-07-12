@@ -26,10 +26,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.vaultguard.app.data.model.ItemType
 import com.vaultguard.app.data.model.VaultItem
 
@@ -51,6 +54,33 @@ fun ItemIconTile(type: ItemType, modifier: Modifier = Modifier) {
     }
 }
 
+// A palette of deep, saturated tile colours reminiscent of 1Password's letter tiles.
+private val monogramColors = listOf(
+    Color(0xFF2D6CDF), Color(0xFF7A5CFF), Color(0xFFEF5DA8), Color(0xFF00A3A3),
+    Color(0xFFE8833A), Color(0xFF4CAF50), Color(0xFFD64545), Color(0xFF5C6BC0),
+)
+
+fun monogramColor(seed: String): Color {
+    if (seed.isEmpty()) return monogramColors[0]
+    val idx = (seed.sumOf { it.code } % monogramColors.size)
+    return monogramColors[idx]
+}
+
+/** A coloured monogram tile (letter/logo style) used for login items, like 1Password's list icons. */
+@Composable
+fun MonogramTile(item: VaultItem, size: Dp = 42.dp) {
+    val useMonogram = item.type == ItemType.Login || item.type == ItemType.Password
+    if (!useMonogram) { ItemIconTile(item.type, Modifier.size(size)); return }
+    val color = monogramColor(item.website ?: item.title)
+    val letter = (item.website ?: item.title).firstOrNull { it.isLetterOrDigit() }?.uppercaseChar()?.toString() ?: "?"
+    Box(
+        modifier = Modifier.size(size).background(color, RoundedCornerShape(size * 0.28f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(letter, color = Color.White, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.42f).sp)
+    }
+}
+
 /** A clean, roomy list row: tinted icon tile, bold title, muted subtitle, favourite toggle. */
 @Composable
 fun VaultItemRow(
@@ -66,7 +96,7 @@ fun VaultItemRow(
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ItemIconTile(item.type)
+        MonogramTile(item)
         Column(
             Modifier
                 .weight(1f)

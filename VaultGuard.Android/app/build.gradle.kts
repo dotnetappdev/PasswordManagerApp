@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "com.vaultguard.app"
-        minSdk = 26
+        minSdk = 33
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
@@ -88,4 +88,13 @@ dependencies {
     implementation(libs.camerax.view)
     implementation(libs.mlkit.barcode)
     implementation(libs.accompanist.permissions)
+    // QR code generation (device setup)
+    implementation(libs.zxing.core)
+
+    // Biometric second factor
+    implementation(libs.androidx.biometric)
+
+    // Passkeys (WebAuthn via Credential Manager)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services)
 }

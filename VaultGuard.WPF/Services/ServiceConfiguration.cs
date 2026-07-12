@@ -73,9 +73,6 @@ public static class ServiceConfiguration
         var platformService = new WpfPlatformService();
         var dbPath = GetConfiguredDatabasePath(platformService);
 
-        services.AddDbContext<VaultGuardDbContextApp>(options =>
-            options.UseSqlite($"Data Source={dbPath}"));
-
         services.AddDbContext<VaultGuardDbContext>(options =>
             options.UseSqlite($"Data Source={dbPath}"));
 
@@ -92,7 +89,7 @@ public static class ServiceConfiguration
             options.Password.RequireLowercase = true;
         })
         .AddRoles<ApplicationRole>()
-        .AddEntityFrameworkStores<VaultGuardDbContextApp>();
+        .AddEntityFrameworkStores<VaultGuardDbContext>();
 
         services.AddScoped<DAL.Interfaces.IVaultGuardDbContext>(provider =>
             provider.GetRequiredService<VaultGuardDbContext>());

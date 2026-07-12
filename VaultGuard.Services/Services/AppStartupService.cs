@@ -67,7 +67,7 @@ public class AppStartupService : IAppStartupService
                 try
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
-                    var dbContextApp = scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>();
+                    var dbContextApp = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
 
                     // Attempt to apply any pending migrations via migration service first
                     try
@@ -609,7 +609,7 @@ public class AppStartupService : IAppStartupService
                 _logger.LogWarning("No user accounts found after identity seeding - ensuring Identity schema and retrying once");
                 try
                 {
-                    await scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>().Database.MigrateAsync();
+                    await scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>().Database.MigrateAsync();
                 }
                 catch (Exception migEx)
                 {
@@ -632,7 +632,7 @@ public class AppStartupService : IAppStartupService
     /// Checks if ASP.NET Core Identity tables exist in the database
     /// This is crucial for ensuring the reported issue is resolved
     /// </summary>
-    private async Task<bool> CheckIdentityTablesExistAsync(VaultGuardDbContextApp dbContext)
+    private async Task<bool> CheckIdentityTablesExistAsync(VaultGuardDbContext dbContext)
     {
         try
         {

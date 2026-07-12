@@ -173,7 +173,7 @@ public sealed partial class LoginPage : Page
     {
         try
         {
-            var appCtx = scopedProvider.GetService<VaultGuard.DAL.VaultGuardDbContextApp>();
+            var appCtx = scopedProvider.GetService<VaultGuard.DAL.VaultGuardDbContext>();
             if (appCtx == null) return;
 
             if (await TableExistsAsync(appCtx, "AspNetRoles")) return;
@@ -766,7 +766,7 @@ public sealed partial class LoginPage : Page
             // and also fixes existing databases that are missing columns.
             using (var migScope = _serviceProvider.CreateScope())
             {
-                var dbCtxApp = migScope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContextApp>();
+                var dbCtxApp = migScope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
                 await dbCtxApp.Database.MigrateAsync();
             }
 

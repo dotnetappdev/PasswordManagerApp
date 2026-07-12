@@ -336,7 +336,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
                 {
                     // Get the DbContext services and create the database schema
                     var dbContext = scope.ServiceProvider.GetService<VaultGuard.DAL.VaultGuardDbContext>();
-                    var dbContextApp = scope.ServiceProvider.GetService<VaultGuard.DAL.VaultGuardDbContextApp>();
+                    var dbContextApp = scope.ServiceProvider.GetService<VaultGuard.DAL.VaultGuardDbContext>();
                     
                     if (dbContext != null)
                     {
@@ -347,7 +347,7 @@ public class DatabaseConfigurationService : IDatabaseConfigurationService
                     if (dbContextApp != null)
                     {
                         await dbContextApp.Database.EnsureCreatedAsync();
-                        _logger.LogInformation("Created VaultGuardDbContextApp database schema");
+                        _logger.LogInformation("Created VaultGuardDbContext database schema");
                     }
                     
                     // Verify the database file was created

@@ -1,12 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
-    <!-- Set target frameworks per host OS to avoid cross-target builds on other platforms
-      On Windows: only build the Windows target to avoid forcing Android workloads during solution build
-      On macOS: build iOS and MacCatalyst targets
-      Elsewhere (CI/Linux): default to Android target for mobile builds -->
-    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">net10.0-windows10.0.19041.0</TargetFrameworks>
-    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('osx'))">net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+    <!-- Set target frameworks per host OS.
+      On Windows: build BOTH Android and Windows so Visual Studio (on Windows) can deploy to the Android
+        emulator/device AND run the Windows app. (The Android workload must be installed — it is.)
+      On macOS: build Android, iOS and MacCatalyst targets.
+      Elsewhere (CI/Linux): Android only. -->
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">net10.0-android;net10.0-windows10.0.19041.0</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('osx'))">net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
     <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('windows')) And !$([MSBuild]::IsOSPlatform('osx'))">net10.0-android</TargetFrameworks>
     <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
         <!-- <TargetFrameworks>$(TargetFrameworks);net8.0-tizen</TargetFrameworks> -->
@@ -97,17 +98,17 @@
   </Target>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="10.0.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+        <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="10.0.9" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
           <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
-        <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
-        <PackageReference Include="Sentry.Maui" Version="5.13.0" />
-        <PackageReference Include="Syncfusion.Blazor.Grid" Version="30.1.37" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.9" />
+        <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.80" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.80" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.9" />
+        <PackageReference Include="Sentry.Maui" Version="6.6.0" />
+        <PackageReference Include="Syncfusion.Blazor.Grid" Version="34.1.30" />
     </ItemGroup>
 
     <ItemGroup>

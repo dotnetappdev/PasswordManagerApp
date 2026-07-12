@@ -878,7 +878,7 @@ public class LoginViewModel : BaseViewModel
         {
             // Direct database check to verify seeded users
             using var scope = ((App)System.Windows.Application.Current).Services.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContextApp>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
             
             var dbUsers = await dbContext.Users.ToListAsync();
             

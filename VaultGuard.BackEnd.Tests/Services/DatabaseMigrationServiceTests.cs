@@ -11,34 +11,27 @@ namespace VaultGuard.BackEnd.Tests.Services
     public class DatabaseMigrationServiceTests
     {
         private DatabaseMigrationService _migrationService;
-        private VaultGuardDbContextApp _contextApp;
         private VaultGuardDbContext _context;
         private ILogger<DatabaseMigrationService> _logger;
 
         [SetUp]
         public void SetUp()
         {
-            // Create in-memory database contexts for testing
-            var optionsApp = new DbContextOptionsBuilder<VaultGuardDbContextApp>()
-                .UseInMemoryDatabase(databaseName: System.Guid.NewGuid().ToString())
-                .Options;
-            
+            // Create an in-memory database context for testing (single application context).
             var optionsApi = new DbContextOptionsBuilder<VaultGuardDbContext>()
                 .UseInMemoryDatabase(databaseName: System.Guid.NewGuid().ToString())
                 .Options;
 
-            _contextApp = new VaultGuardDbContextApp(optionsApp);
             _context = new VaultGuardDbContext(optionsApi);
-            
+
             _logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<DatabaseMigrationService>.Instance;
-            
-            _migrationService = new DatabaseMigrationService(_contextApp, _context, _logger);
+
+            _migrationService = new DatabaseMigrationService(_context, _logger);
         }
 
         [TearDown]
         public void TearDown()
         {
-            _contextApp?.Dispose();
             _context?.Dispose();
         }
 

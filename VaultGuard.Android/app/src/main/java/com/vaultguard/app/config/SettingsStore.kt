@@ -46,6 +46,7 @@ data class AppSettings(
     val autoLockMinutes: Int = 5,
     val clipboardClearSeconds: Int = 30,
     val confirmOnDelete: Boolean = true,
+    val numberMatchApprovals: Boolean = true,
     // Password generator defaults
     val pwLength: Int = 20,
     val pwUpper: Boolean = true,
@@ -80,6 +81,7 @@ class SettingsStore @Inject constructor(
         val autoLockMinutes = intPreferencesKey("auto_lock_minutes")
         val clipboardClearSeconds = intPreferencesKey("clipboard_clear_seconds")
         val confirmOnDelete = booleanPreferencesKey("confirm_on_delete")
+        val numberMatchApprovals = booleanPreferencesKey("number_match_approvals")
         val pwLength = intPreferencesKey("pw_length")
         val pwUpper = booleanPreferencesKey("pw_upper")
         val pwLower = booleanPreferencesKey("pw_lower")
@@ -111,6 +113,7 @@ class SettingsStore @Inject constructor(
             autoLockMinutes = p[K.autoLockMinutes] ?: d.autoLockMinutes,
             clipboardClearSeconds = p[K.clipboardClearSeconds] ?: d.clipboardClearSeconds,
             confirmOnDelete = p[K.confirmOnDelete] ?: d.confirmOnDelete,
+            numberMatchApprovals = p[K.numberMatchApprovals] ?: d.numberMatchApprovals,
             pwLength = p[K.pwLength] ?: d.pwLength,
             pwUpper = p[K.pwUpper] ?: d.pwUpper,
             pwLower = p[K.pwLower] ?: d.pwLower,
@@ -145,6 +148,7 @@ class SettingsStore @Inject constructor(
             p[K.autoLockMinutes] = next.autoLockMinutes
             p[K.clipboardClearSeconds] = next.clipboardClearSeconds
             p[K.confirmOnDelete] = next.confirmOnDelete
+            p[K.numberMatchApprovals] = next.numberMatchApprovals
             p[K.pwLength] = next.pwLength
             p[K.pwUpper] = next.pwUpper
             p[K.pwLower] = next.pwLower
@@ -177,6 +181,7 @@ class SettingsStore @Inject constructor(
             autoLockMinutes = p[K.autoLockMinutes] ?: d.autoLockMinutes,
             clipboardClearSeconds = p[K.clipboardClearSeconds] ?: d.clipboardClearSeconds,
             confirmOnDelete = p[K.confirmOnDelete] ?: d.confirmOnDelete,
+            numberMatchApprovals = p[K.numberMatchApprovals] ?: d.numberMatchApprovals,
             pwLength = p[K.pwLength] ?: d.pwLength,
             pwUpper = p[K.pwUpper] ?: d.pwUpper,
             pwLower = p[K.pwLower] ?: d.pwLower,

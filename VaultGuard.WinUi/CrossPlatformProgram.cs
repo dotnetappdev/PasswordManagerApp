@@ -80,9 +80,6 @@ public class Program
                     Directory.CreateDirectory(appDataDir);
                 }
 
-                services.AddDbContext<VaultGuardDbContextApp>(options =>
-                    options.UseSqlite($"Data Source={defaultDbPath}"));
-
                 services.AddDbContext<VaultGuardDbContext>(options =>
                     options.UseSqlite($"Data Source={defaultDbPath}"));
 
@@ -96,7 +93,7 @@ public class Program
                     options.Password.RequireLowercase = true;
                 })
                 .AddRoles<ApplicationRole>()
-                .AddEntityFrameworkStores<VaultGuardDbContextApp>();
+                .AddEntityFrameworkStores<VaultGuardDbContext>();
 
                 services.AddScoped<IAuthService, SimpleAuthService>();
                 services.AddScoped<IPasswordItemService, PasswordItemService>();

@@ -91,20 +91,16 @@ public static class MauiProgram
 			Directory.CreateDirectory(appDataDir);
 		}
 
-		builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
-			options.UseSqlite($"Data Source={defaultDbPath}"));
-		
-		// Add the regular context for compatibility
 		builder.Services.AddDbContext<VaultGuardDbContext>(options =>
 			options.UseSqlite($"Data Source={defaultDbPath}"));
 
-		// Map the DbContext interfaces to the concrete contexts (mirrors VaultGuard.Web/Program.cs) so
+		// Map the DbContext interfaces to the single concrete context (mirrors VaultGuard.Web/Program.cs) so
 		// services that depend on them resolve — notably TwoFactorService, which injects
 		// IVaultGuardDbContext and otherwise fails to activate when the 2FA code step renders.
 		builder.Services.AddScoped<VaultGuard.DAL.Interfaces.IVaultGuardDbContext>(sp =>
 			sp.GetRequiredService<VaultGuardDbContext>());
 		builder.Services.AddScoped<VaultGuard.DAL.Interfaces.IVaultGuardDbContextApp>(sp =>
-			sp.GetRequiredService<VaultGuardDbContextApp>());
+			sp.GetRequiredService<VaultGuardDbContext>());
 
 		// Add Identity services
 		builder.Services.AddIdentityCore<ApplicationUser>(options =>
@@ -117,7 +113,7 @@ public static class MauiProgram
 			options.Password.RequireLowercase = true;
 		})
 		.AddRoles<ApplicationRole>()
-		.AddEntityFrameworkStores<VaultGuardDbContextApp>();
+		.AddEntityFrameworkStores<VaultGuardDbContext>();
 
 		// Fix for CS0246: Correct the interface name from 'IPasswordItemIterface' to 'IPasswordItemService'  
 		builder.Services.AddScoped<IPasswordItemService, PasswordItemService>();
@@ -199,9 +195,6 @@ public static class MauiProgram
 
 		try
 		{
-			var dbContextApp = sp.GetRequiredService<VaultGuardDbContextApp>();
-			await dbContextApp.Database.EnsureCreatedAsync();
-
 			var dbContext = sp.GetRequiredService<VaultGuardDbContext>();
 			await dbContext.Database.EnsureCreatedAsync();
 

@@ -14,7 +14,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class VaultsViewModel @Inject constructor(private val repository: VaultRepository) : ViewModel() {
+class VaultsViewModel @Inject constructor(
+    private val repository: VaultRepository,
+    private val toaster: com.vaultguard.app.ui.common.Toaster,
+) : ViewModel() {
     private val _vaults = MutableStateFlow<List<VaultDto>>(emptyList())
     val vaults = _vaults.asStateFlow()
     private val _loading = MutableStateFlow(true)
@@ -25,6 +28,16 @@ class VaultsViewModel @Inject constructor(private val repository: VaultRepositor
         _loading.value = true
         _vaults.value = runCatching { repository.vaults() }.getOrDefault(emptyList())
         _loading.value = false
+    }
+
+    fun create(name: String, description: String?) = mutate { repository.createVault(name, description) }
+    fun update(id: Int, name: String, description: String?) = mutate { repository.updateVault(id, name, description) }
+    fun delete(id: Int) = mutate { repository.deleteVault(id) }
+
+    private fun mutate(block: suspend () -> Result<Unit>) = viewModelScope.launch {
+        block()
+            .onSuccess { toaster.show("Vault saved."); load() }
+            .onFailure { toaster.show(it.message ?: "Could not update vault.") }
     }
 }
 

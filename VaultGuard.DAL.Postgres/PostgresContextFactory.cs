@@ -6,18 +6,18 @@ using System.IO;
 
 namespace VaultGuard.DAL.Postgres
 {
-public class PostgresContextFactory : IDesignTimeDbContextFactory<VaultGuardDbContextApp>
+public class PostgresContextFactory : IDesignTimeDbContextFactory<VaultGuardDbContext>
     {
-    public VaultGuardDbContextApp CreateDbContext(string[] args)
+    public VaultGuardDbContext CreateDbContext(string[] args)
         {
             var config = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true)
                 .Build();
             var connectionString = config.GetConnectionString("PostgresConnection");
-        var optionsBuilder = new DbContextOptionsBuilder<VaultGuardDbContextApp>();
+        var optionsBuilder = new DbContextOptionsBuilder<VaultGuardDbContext>();
             optionsBuilder.UseNpgsql(connectionString);
-        return new VaultGuardDbContextApp(optionsBuilder.Options);
+        return new VaultGuardDbContext(optionsBuilder.Options);
         }
     }
 }

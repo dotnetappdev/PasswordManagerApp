@@ -1,5 +1,7 @@
 package com.vaultguard.app.data.repo
 
+import com.vaultguard.app.config.Account
+import com.vaultguard.app.config.AccountsStore
 import com.vaultguard.app.config.ConfigStore
 import com.vaultguard.app.config.ConnectionMode
 import com.vaultguard.app.config.SecureStore
@@ -16,6 +18,7 @@ class AuthRepository @Inject constructor(
     private val apiProvider: ApiProvider,
     private val configStore: ConfigStore,
     private val secureStore: SecureStore,
+    private val accountsStore: AccountsStore,
     private val session: SessionManager,
     private val crypto: VaultCrypto,
 ) {
@@ -39,11 +42,24 @@ class AuthRepository @Inject constructor(
 
                 resp.authResponse?.token?.isNotBlank() == true -> {
                     session.onLoggedIn(resp.authResponse.token, resp.authResponse.user, password)
+                    rememberAccount(email.trim())
                     LoginResult.Success
                 }
 
                 else -> LoginResult.Error("Login failed. Check your credentials and try again.")
             }
+        } catch (e: retrofit2.HttpException) {
+            // Surface the server's actual reason (e.g. "Invalid email or password") instead of a bare
+            // "HTTP 401", so a wrong master key vs. an unreachable/misconfigured server are distinguishable.
+            val serverMsg = runCatching { e.response()?.errorBody()?.string() }.getOrNull()
+                ?.trim()?.removeSurrounding("\"")?.takeIf { it.isNotBlank() }
+            LoginResult.Error(
+                when (e.code()) {
+                    401 -> serverMsg ?: "Invalid email or master password."
+                    429 -> "Too many attempts. Wait a minute and try again."
+                    else -> serverMsg ?: "Login failed (HTTP ${e.code()})."
+                }
+            )
         } catch (e: Exception) {
             LoginResult.Error(e.message ?: "Unable to reach the server.")
         }
@@ -53,24 +69,24 @@ class AuthRepository @Inject constructor(
      * LOCAL mode unlock. On first use it establishes the master password by writing an encrypted verifier;
      * afterwards it validates the entered password against that verifier.
      */
-    suspend fun unlockLocal(masterPassword: String): LoginResult {
+    suspend fun unlockLocal(masterPassword: String, profileId: String = "default"): LoginResult {
         return try {
-            val saltB64 = secureStore.localVaultSalt
-            if (saltB64 == null || secureStore.localVerifier == null) {
-                // First run: set the master password.
+            val saltB64 = secureStore.localSalt(profileId)
+            val verifier = secureStore.localVerifier(profileId)
+            if (saltB64 == null || verifier == null) {
+                // First unlock for this profile: establish its master password + verifier.
                 val salt = crypto.newSalt()
                 val key = crypto.deriveKey(masterPassword, salt)
-                secureStore.localVaultSalt = crypto.toBase64(salt)
-                secureStore.localVerifier = crypto.encrypt(VERIFIER_PLAINTEXT, key)
-                session.onLocalUnlocked(masterPassword)
+                secureStore.setLocalSalt(profileId, crypto.toBase64(salt))
+                secureStore.setLocalVerifier(profileId, crypto.encrypt(VERIFIER_PLAINTEXT, key))
+                session.onLocalUnlocked(masterPassword, profileId)
                 LoginResult.Success
             } else {
                 val salt = crypto.fromBase64(saltB64)
                 val key = crypto.deriveKey(masterPassword, salt)
-                val ok = runCatching { crypto.decrypt(secureStore.localVerifier!!, key) }
-                    .getOrNull() == VERIFIER_PLAINTEXT
+                val ok = runCatching { crypto.decrypt(verifier, key) }.getOrNull() == VERIFIER_PLAINTEXT
                 if (ok) {
-                    session.onLocalUnlocked(masterPassword)
+                    session.onLocalUnlocked(masterPassword, profileId)
                     LoginResult.Success
                 } else {
                     LoginResult.Error("Incorrect master password.")
@@ -82,4 +98,25 @@ class AuthRepository @Inject constructor(
     }
 
     suspend fun currentMode(): ConnectionMode = configStore.config.first().mode
+
+    /** Save the just-used connection as a switchable account. */
+    private suspend fun rememberAccount(email: String) {
+        val cfg = configStore.config.first()
+        when (cfg.mode) {
+            ConnectionMode.API -> accountsStore.upsert(
+                Account(
+                    id = "api:${cfg.apiBaseUrl}:$email",
+                    label = email.ifBlank { "Account" },
+                    email = email,
+                    mode = ConnectionMode.API.name,
+                    apiBaseUrl = cfg.apiBaseUrl,
+                ),
+                apiKey = secureStore.apiKey,
+            )
+            ConnectionMode.LOCAL -> accountsStore.upsert(
+                Account(id = "local", label = "Local vault", email = null, mode = ConnectionMode.LOCAL.name),
+                apiKey = null,
+            )
+        }
+    }
 }

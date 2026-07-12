@@ -24,7 +24,7 @@ public class IdentityAuthService : IAuthService
     private readonly IPasswordCryptoService _passwordCryptoService;
     private readonly ICryptographyService _cryptographyService;
     private readonly IVaultSessionService _vaultSessionService;
-    private readonly VaultGuardDbContextApp _dbContext;
+    private readonly VaultGuardDbContext _dbContext;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<IdentityAuthService> _logger;
     private bool _isAuthenticated = false;
@@ -35,7 +35,7 @@ public class IdentityAuthService : IAuthService
         IPasswordCryptoService passwordCryptoService,
         ICryptographyService cryptographyService,
         IVaultSessionService vaultSessionService,
-        VaultGuardDbContextApp dbContext,
+        VaultGuardDbContext dbContext,
         UserManager<ApplicationUser> userManager,
         ILogger<IdentityAuthService> logger)
     {

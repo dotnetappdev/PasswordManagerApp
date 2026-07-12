@@ -1,5 +1,9 @@
-// VaultCrypto.swift — on-device encryption for LOCAL mode.
-// PBKDF2-HMAC-SHA256 (600k) via CommonCrypto + AES-256-GCM via CryptoKit.
+// VaultCrypto.swift — on-device encryption for LOCAL mode, byte-for-byte compatible with the desktop
+// VaultGuard.Crypto scheme:
+//  - Key derivation: PBKDF2-HMAC-SHA256, 600,000 iterations, 32-byte key (CommonCrypto).
+//  - Cipher: AES-256-GCM, 12-byte nonce, 16-byte tag, no associated data (CryptoKit).
+//  - Container: the three WPF EncryptedPasswordData components joined as
+//    base64(nonce):base64(ciphertext):base64(tag) — matching Nonce / EncryptedPassword / AuthenticationTag.
 import Foundation
 import CryptoKit
 import CommonCrypto
@@ -32,16 +36,20 @@ struct VaultCrypto {
         return SymmetricKey(data: Data(derived))
     }
 
-    /// Returns base64(nonce(12) + ciphertext + tag(16)).
+    /// Returns base64(nonce):base64(ciphertext):base64(tag), matching WPF's EncryptedPasswordData fields.
     func encrypt(_ plaintext: String, key: SymmetricKey) throws -> String {
         let sealed = try AES.GCM.seal(Data(plaintext.utf8), using: key)
-        guard let combined = sealed.combined else { throw CryptoError.encryptFailed }
-        return combined.base64EncodedString()
+        let nonce = Data(sealed.nonce)
+        return "\(nonce.base64EncodedString()):\(sealed.ciphertext.base64EncodedString()):\(sealed.tag.base64EncodedString())"
     }
 
     func decrypt(_ encoded: String, key: SymmetricKey) throws -> String {
-        guard let data = Data(base64Encoded: encoded) else { throw CryptoError.badData }
-        let box = try AES.GCM.SealedBox(combined: data)
+        let parts = encoded.split(separator: ":", omittingEmptySubsequences: false).map(String.init)
+        guard parts.count == 3,
+              let nonceData = Data(base64Encoded: parts[0]),
+              let ct = Data(base64Encoded: parts[1]),
+              let tag = Data(base64Encoded: parts[2]) else { throw CryptoError.badData }
+        let box = try AES.GCM.SealedBox(nonce: try AES.GCM.Nonce(data: nonceData), ciphertext: ct, tag: tag)
         let opened = try AES.GCM.open(box, using: key)
         guard let s = String(data: opened, encoding: .utf8) else { throw CryptoError.badData }
         return s

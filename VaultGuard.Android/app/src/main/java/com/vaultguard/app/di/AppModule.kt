@@ -24,4 +24,7 @@ object AppModule {
 
     @Provides
     fun provideVaultDao(db: VaultDatabase): VaultDao = db.vaultDao()
+
+    @Provides
+    fun provideVaultsDao(db: VaultDatabase): com.vaultguard.app.data.local.VaultsDao = db.vaultsDao()
 }

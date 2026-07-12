@@ -110,8 +110,6 @@ if (databaseProvider.ToLower() == "supabase")
     if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseApiKey))
         throw new InvalidOperationException("Supabase configuration missing in appsettings.json");
 
-    builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
-        options.UseNpgsql(supabaseUrl));
     builder.Services.AddDbContext<VaultGuardDbContext>(options =>
         options.UseNpgsql(supabaseUrl));
 }
@@ -129,15 +127,11 @@ else
 
     if (databaseProvider.ToLower() == "mysql")
     {
-        builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
-            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
         builder.Services.AddDbContext<VaultGuardDbContext>(options =>
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
     }
     else if (databaseProvider.ToLower() == "sqlite")
     {
-        builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
-            options.UseSqlite(connectionString));
         builder.Services.AddDbContext<VaultGuardDbContext>(options =>
             options.UseSqlite(connectionString));
     }
@@ -145,8 +139,6 @@ else
     {
         // SQL Server migrations live in VaultGuard.DAL.SqlServer (separate from the SQLite migrations in
         // VaultGuard.DAL); point EF at that assembly so runtime migration matches the API.
-        builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
-            options.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("VaultGuard.DAL.SqlServer")));
         builder.Services.AddDbContext<VaultGuardDbContext>(options =>
             options.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("VaultGuard.DAL.SqlServer")));
     }
@@ -154,7 +146,7 @@ else
 
 // Register DbContext interfaces for DI
 builder.Services.AddScoped<IVaultGuardDbContext>(sp => sp.GetRequiredService<VaultGuardDbContext>());
-builder.Services.AddScoped<IVaultGuardDbContextApp>(sp => sp.GetRequiredService<VaultGuardDbContextApp>());
+builder.Services.AddScoped<IVaultGuardDbContextApp>(sp => sp.GetRequiredService<VaultGuardDbContext>());
 
 // Add Identity services with roles
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -166,7 +158,7 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     options.Password.RequireUppercase = true;
     options.Password.RequireLowercase = true;
 })
-.AddEntityFrameworkStores<VaultGuardDbContextApp>()
+.AddEntityFrameworkStores<VaultGuardDbContext>()
 .AddDefaultTokenProviders();
 
 // Register application services
@@ -310,9 +302,9 @@ using (var scope = app.Services.CreateScope())
         // Use EnsureCreated to set up schema from current model (works without pending migrations)
         try
         {
-            var dbContextApp = scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>();
+            var dbContextApp = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
             await dbContextApp.Database.EnsureCreatedAsync();
-            VaultGuard.Services.Logging.AppLogger.Info("VaultGuardDbContextApp schema ensured");
+            VaultGuard.Services.Logging.AppLogger.Info("VaultGuardDbContext schema ensured");
         }
         catch (Exception ensureEx)
         {

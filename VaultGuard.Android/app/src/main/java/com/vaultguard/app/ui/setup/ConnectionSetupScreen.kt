@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +30,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,8 +50,23 @@ fun ConnectionSetupScreen(
     viewModel: ConnectionSetupViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var showScanner by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(state.saved) { if (state.saved) onDone() }
+
+    if (showScanner) {
+        com.vaultguard.app.ui.qr.QrScannerScreen(
+            onResult = { value ->
+                showScanner = false
+                if (!viewModel.applyScannedSetup(value)) {
+                    android.widget.Toast.makeText(context, "That isn't a VaultGuard setup code.", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            },
+            onCancel = { showScanner = false },
+        )
+        return
+    }
 
     Scaffold(topBar = { TopAppBar(title = { Text("Connect VaultGuard") }) }) { padding ->
         Column(
@@ -63,6 +82,11 @@ fun ConnectionSetupScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            OutlinedButton(onClick = { showScanner = true }, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Filled.QrCodeScanner, null)
+                Text("  Scan to set up from another device")
+            }
 
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 SegmentedButton(

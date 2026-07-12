@@ -9,18 +9,21 @@ import androidx.room.Update
 
 @Dao
 interface VaultDao {
-    @Query("SELECT * FROM vault_items ORDER BY isFavorite DESC, title COLLATE NOCASE ASC")
-    suspend fun getAll(): List<VaultItemEntity>
+    @Query("SELECT * FROM vault_items WHERE profileId = :profileId ORDER BY isFavorite DESC, title COLLATE NOCASE ASC")
+    suspend fun getAll(profileId: String): List<VaultItemEntity>
 
     @Query("SELECT * FROM vault_items WHERE id = :id")
     suspend fun getById(id: Int): VaultItemEntity?
 
     @Query(
-        "SELECT * FROM vault_items WHERE title LIKE '%' || :term || '%' " +
-            "OR username LIKE '%' || :term || '%' OR website LIKE '%' || :term || '%' " +
+        "SELECT * FROM vault_items WHERE profileId = :profileId AND (title LIKE '%' || :term || '%' " +
+            "OR username LIKE '%' || :term || '%' OR website LIKE '%' || :term || '%') " +
             "ORDER BY title COLLATE NOCASE ASC"
     )
-    suspend fun search(term: String): List<VaultItemEntity>
+    suspend fun search(profileId: String, term: String): List<VaultItemEntity>
+
+    @Query("DELETE FROM vault_items WHERE profileId = :profileId")
+    suspend fun deleteAllForProfile(profileId: String)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: VaultItemEntity): Long
@@ -33,4 +36,7 @@ interface VaultDao {
 
     @Query("DELETE FROM vault_items WHERE id = :id")
     suspend fun deleteById(id: Int)
+
+    @Query("UPDATE vault_items SET vaultId = :toVaultId WHERE vaultId = :fromVaultId")
+    suspend fun reassignVault(fromVaultId: Int, toVaultId: Int)
 }

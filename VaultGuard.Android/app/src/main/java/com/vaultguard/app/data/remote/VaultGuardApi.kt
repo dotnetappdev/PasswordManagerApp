@@ -1,11 +1,19 @@
 package com.vaultguard.app.data.remote
 
+import com.vaultguard.app.data.model.ApprovalStateResponse
 import com.vaultguard.app.data.model.CategoryDto
 import com.vaultguard.app.data.model.CreateEncryptedPasswordItem
+import com.vaultguard.app.data.model.PendingApprovalDto
+import com.vaultguard.app.data.model.RespondApprovalRequest
+import com.vaultguard.app.data.model.CreateVaultDto
+import com.vaultguard.app.data.model.UpdateVaultDto
 import com.vaultguard.app.data.model.DecryptedPasswordItemDto
 import com.vaultguard.app.data.model.EnhancedLoginRequest
 import com.vaultguard.app.data.model.LoginResponse
 import com.vaultguard.app.data.model.PasswordItemDto
+import com.vaultguard.app.data.model.QrAuthenticateRequest
+import com.vaultguard.app.data.model.QrAuthenticateResponse
+import com.vaultguard.app.data.model.RegisterDeviceRequest
 import com.vaultguard.app.data.model.RevealPasswordRequest
 import com.vaultguard.app.data.model.RevealPasswordResponse
 import com.vaultguard.app.data.model.TagDto
@@ -14,6 +22,7 @@ import com.vaultguard.app.data.model.VaultDto
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -25,6 +34,36 @@ interface VaultGuardApi {
 
     @POST("api/auth/login/enhanced")
     suspend fun login(@Body body: EnhancedLoginRequest): LoginResponse
+
+    /** Approve a desktop/web QR login: signs the displaying device in using this phone's credentials. */
+    @POST("api/auth/qr/authenticate")
+    suspend fun qrAuthenticate(@Body body: QrAuthenticateRequest): QrAuthenticateResponse
+
+    /** Register this device's FCM push token so the server can send notifications. */
+    @POST("api/push/register")
+    suspend fun registerPush(@Body body: RegisterDeviceRequest)
+
+    // Passkeys
+    @GET("api/passkey")
+    suspend fun getPasskeys(): com.vaultguard.app.data.model.PasskeyListResponse
+
+    @GET("api/passkey/status")
+    suspend fun passkeyStatus(): com.vaultguard.app.data.model.PasskeyStatus
+
+    @POST("api/passkey/register/start")
+    suspend fun passkeyRegisterStart(@Body body: com.vaultguard.app.data.model.PasskeyRegistrationStartRequest): com.vaultguard.app.data.model.PasskeyRegistrationStartResponse
+
+    @POST("api/passkey/register/complete")
+    suspend fun passkeyRegisterComplete(@Body body: com.vaultguard.app.data.model.PasskeyRegistrationComplete)
+
+    @HTTP(method = "DELETE", path = "api/passkey/{id}", hasBody = true)
+    suspend fun deletePasskey(@Path("id") id: Int, @Body body: com.vaultguard.app.data.model.PasskeyDeleteRequest)
+
+    @GET("api/approvals/pending")
+    suspend fun pendingApprovals(): List<PendingApprovalDto>
+
+    @POST("api/approvals/{id}/respond")
+    suspend fun respondApproval(@Path("id") id: String, @Body body: RespondApprovalRequest): ApprovalStateResponse
 
     @GET("api/passworditems")
     suspend fun getItems(): List<PasswordItemDto>
@@ -63,4 +102,13 @@ interface VaultGuardApi {
 
     @GET("api/vaults")
     suspend fun getVaults(): List<VaultDto>
+
+    @POST("api/vaults")
+    suspend fun createVault(@Body body: CreateVaultDto): VaultDto
+
+    @PUT("api/vaults/{id}")
+    suspend fun updateVault(@Path("id") id: Int, @Body body: UpdateVaultDto): VaultDto
+
+    @DELETE("api/vaults/{id}")
+    suspend fun deleteVault(@Path("id") id: Int)
 }

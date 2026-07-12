@@ -7,22 +7,20 @@ using VaultGuard.Services.Interfaces;
 namespace VaultGuard.Services.Services
 {
     /// <summary>
-    /// Service for managing database migrations safely
+    /// Service for managing database migrations safely. There is now a single application
+    /// <see cref="VaultGuardDbContext"/> (Identity + vault), so this operates on one context.
     /// </summary>
     public class DatabaseMigrationService : IDatabaseMigrationService
     {
-        private readonly VaultGuardDbContextApp _contextApp;
         private readonly VaultGuardDbContext _context;
         private readonly ILogger<DatabaseMigrationService> _logger;
 
         private const string InMemoryProviderName = "Microsoft.EntityFrameworkCore.InMemory";
 
         public DatabaseMigrationService(
-            VaultGuardDbContextApp contextApp,
             VaultGuardDbContext context,
             ILogger<DatabaseMigrationService> logger)
         {
-            _contextApp = contextApp;
             _context = context;
             _logger = logger;
         }
@@ -31,20 +29,15 @@ namespace VaultGuard.Services.Services
         {
             try
             {
-                var pendingMigrationsApp = await _contextApp.Database.GetPendingMigrationsAsync();
-                var appliedMigrationsApp = await _contextApp.Database.GetAppliedMigrationsAsync();
-                var pendingMigrationsApi = await _context.Database.GetPendingMigrationsAsync();
-                var appliedMigrationsApi = await _context.Database.GetAppliedMigrationsAsync();
-
-                var allPending = pendingMigrationsApp.Concat(pendingMigrationsApi).Distinct();
-                var allApplied = appliedMigrationsApp.Concat(appliedMigrationsApi).Distinct();
+                var pending = await _context.Database.GetPendingMigrationsAsync();
+                var applied = await _context.Database.GetAppliedMigrationsAsync();
 
                 return new MigrationStatusDto
                 {
-                    HasPendingMigrations = allPending.Any(),
-                    PendingMigrations = allPending,
-                    AppliedMigrations = allApplied,
-                    IsDatabaseCreated = await _contextApp.Database.CanConnectAsync() && await _context.Database.CanConnectAsync()
+                    HasPendingMigrations = pending.Any(),
+                    PendingMigrations = pending,
+                    AppliedMigrations = applied,
+                    IsDatabaseCreated = await _context.Database.CanConnectAsync()
                 };
             }
             catch (Exception ex)
@@ -66,11 +59,8 @@ namespace VaultGuard.Services.Services
 
             try
             {
-                // Check if using InMemory database provider (which doesn't support migrations)
-                var isInMemoryApp = _contextApp.Database.ProviderName == InMemoryProviderName;
-                var isInMemoryApi = _context.Database.ProviderName == InMemoryProviderName;
-
-                if (isInMemoryApp && isInMemoryApi)
+                // InMemory provider doesn't support migrations.
+                if (_context.Database.ProviderName == InMemoryProviderName)
                 {
                     _logger.LogInformation("Using InMemory database provider - migrations not supported");
                     return new MigrationResultDto
@@ -81,30 +71,13 @@ namespace VaultGuard.Services.Services
                     };
                 }
 
-                // Apply migrations for VaultGuardDbContextApp
-                if (!isInMemoryApp)
+                var pending = await _context.Database.GetPendingMigrationsAsync();
+                if (pending.Any())
                 {
-                    var pendingMigrationsApp = await _contextApp.Database.GetPendingMigrationsAsync();
-                    if (pendingMigrationsApp.Any())
-                    {
-                        _logger.LogInformation("Applying {Count} pending migrations for VaultGuardDbContextApp", pendingMigrationsApp.Count());
-                        await _contextApp.Database.MigrateAsync();
-                        appliedMigrations.AddRange(pendingMigrationsApp);
-                        _logger.LogInformation("Successfully applied migrations for VaultGuardDbContextApp: {Migrations}", string.Join(", ", pendingMigrationsApp));
-                    }
-                }
-
-                // Apply migrations for VaultGuardDbContext
-                if (!isInMemoryApi)
-                {
-                    var pendingMigrationsApi = await _context.Database.GetPendingMigrationsAsync();
-                    if (pendingMigrationsApi.Any())
-                    {
-                        _logger.LogInformation("Applying {Count} pending migrations for VaultGuardDbContext", pendingMigrationsApi.Count());
-                        await _context.Database.MigrateAsync();
-                        appliedMigrations.AddRange(pendingMigrationsApi);
-                        _logger.LogInformation("Successfully applied migrations for VaultGuardDbContext: {Migrations}", string.Join(", ", pendingMigrationsApi));
-                    }
+                    _logger.LogInformation("Applying {Count} pending migrations for VaultGuardDbContext", pending.Count());
+                    await _context.Database.MigrateAsync();
+                    appliedMigrations.AddRange(pending);
+                    _logger.LogInformation("Successfully applied migrations: {Migrations}", string.Join(", ", pending));
                 }
 
                 if (!appliedMigrations.Any())
@@ -175,15 +148,8 @@ namespace VaultGuard.Services.Services
             {
                 _logger.LogInformation("Creating database schema");
 
-                // Create database schema for both contexts
-                var appDbCreated = await _contextApp.Database.EnsureCreatedAsync();
-                var apiDbCreated = await _context.Database.EnsureCreatedAsync();
-
-                var message = "Database schema created successfully";
-                if (!appDbCreated && !apiDbCreated)
-                {
-                    message = "Database already exists";
-                }
+                var created = await _context.Database.EnsureCreatedAsync();
+                var message = created ? "Database schema created successfully" : "Database already exists";
 
                 _logger.LogInformation("Database creation completed: {Message}", message);
 
@@ -211,9 +177,7 @@ namespace VaultGuard.Services.Services
         {
             try
             {
-                var appliedMigrationsApp = await _contextApp.Database.GetAppliedMigrationsAsync();
-                var appliedMigrationsApi = await _context.Database.GetAppliedMigrationsAsync();
-                return appliedMigrationsApp.Concat(appliedMigrationsApi).Distinct();
+                return await _context.Database.GetAppliedMigrationsAsync();
             }
             catch (Exception ex)
             {
@@ -226,9 +190,7 @@ namespace VaultGuard.Services.Services
         {
             try
             {
-                var pendingMigrationsApp = await _contextApp.Database.GetPendingMigrationsAsync();
-                var pendingMigrationsApi = await _context.Database.GetPendingMigrationsAsync();
-                return pendingMigrationsApp.Concat(pendingMigrationsApi).Distinct();
+                return await _context.Database.GetPendingMigrationsAsync();
             }
             catch (Exception ex)
             {

@@ -181,6 +181,86 @@ The first run creates a local SQLite database and walks you through setting a ma
 
 ---
 
+## API keys (for mobile & the browser extension)
+
+The mobile apps and browser extension authenticate to the API with an **API key** that you generate in the
+**web app**. You only ever need two things: the **API URL** and the **key**.
+
+1. **Start the API and web app** (see [Run in development](#run-in-development)), or point at your deployed server.
+2. Open the **web app** in a browser and **sign in** with your account.
+3. Go to **Settings → API Keys**, or browse directly to **`/api-keys`**.
+4. Under **Create New API Key**, enter a descriptive name (e.g. *"My Pixel 8"*) and click **Create API Key**.
+5. **Copy the generated key** — it is shown **only once**, so store it somewhere safe.
+   - The key is stored **hashed** in the primary database and mirrored into a per-user local SQLite database,
+     so the same key works whether the client talks to the API or a local vault.
+6. Your **API URL** is the base address of the API server, e.g. `https://localhost:7001`.
+
+Then, in the client, send the key on every request as the header:
+
+```
+X-API-Key: <your-key>
+```
+
+In the mobile app you paste the **API URL** and **API Key** on the **Connect** screen (or later in
+**Settings → Storage → API Configuration**) and tap **Test connection**. To revoke access, delete the key
+from the same **`/api-keys`** page.
+
+### Getting a key straight from the API (Postman / curl)
+
+If you don't want to use the web UI, you can generate a key by calling the API directly. This is handy when
+setting up a mobile device or testing with **Postman**, **Insomnia** or **curl**. You prove who you are with
+your account **email + master password**, and the API returns a key bound to your user.
+
+**Request** — this endpoint does **not** need an API key (it's how you get your first one):
+
+```
+POST  {API_URL}/api/authentication/generate-api-key
+Content-Type: application/json
+
+{
+  "name": "My Pixel 8",
+  "email": "you@example.com",
+  "masterPassword": "your-master-password"
+}
+```
+
+In Postman: choose **POST**, paste the URL, open the **Body** tab → **raw** → **JSON**, and paste the JSON
+above. (No auth tab needed for this call.)
+
+**Response** — copy the `apiKey`; it is shown **only this once**:
+
+```json
+{
+  "apiKey": "414C1BUrIaVHwulgSPZAW1-ELcL--MhSS9Cmx8Z8GZc",
+  "userId": "0d6fe338-9517-42cf-aeb7-16410b285da7",
+  "keyName": "My Pixel 8",
+  "instructions": "Store this API key securely..."
+}
+```
+
+**Use the key** — send it as the `X-API-Key` header on every other request. For example, signing in:
+
+```
+POST  {API_URL}/api/auth/login/enhanced
+X-API-Key: 414C1BUrIaVHwulgSPZAW1-ELcL--MhSS9Cmx8Z8GZc
+Content-Type: application/json
+
+{ "email": "you@example.com", "password": "your-master-password" }
+```
+
+In Postman, add the header under the **Headers** tab: key `X-API-Key`, value = your key. The login returns a
+session **token**; send it as `Authorization: Bearer <token>` for endpoints that reveal/decrypt secrets.
+
+> The seeded demo accounts (`admin@passwordmanager.local`, etc.) all use the master key `7hm3Z!Csu:Y64nm`,
+> so you can try the flow above immediately against a fresh dev server.
+
+Notes:
+- Only `/health`, `/scalar`, `/openapi` and `/api/authentication/*` are exempt from the `X-API-Key` gate —
+  everything else (including login) requires the header.
+- The key is stored **hashed**; the plaintext is returned only in that first response.
+
+---
+
 ## Project layout
 
 ```

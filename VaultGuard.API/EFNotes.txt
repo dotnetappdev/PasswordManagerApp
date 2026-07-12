@@ -1,5 +1,27 @@
+Run from the solution root (E:\sassproducts\passwordmanagermergec\PasswordManagerApp).
 
-  App / Identity context:
-    wH
-    dotnet ef database update --context VaultGuardDbContextApp --project VaultGuard.DAL.SqlServer   --startup-project VaultGuard.API
+There is now ONE application context: VaultGuardDbContext (Identity + vault).
+SQL Server migrations live in VaultGuard.DAL.SqlServer; SQLite keeps its own (VaultGuard.DAL).
 
+# 1) CREATE a migration (SQL Server). No database or GCP credentials needed.
+#    Use VaultGuard.DAL.SqlServer as BOTH project and startup-project so EF uses the
+#    self-contained design-time factory (SqlServerMainContextFactory), not the API host.
+dotnet ef migrations add <Name> --context VaultGuardDbContext --project VaultGuard.DAL.SqlServer --startup-project VaultGuard.DAL.SqlServer
+
+# 2) UPDATE the database (apply migrations). Two ways:
+
+# 2a) RECOMMENDED - via the API, which pulls the real connection string from Google Secret
+#     Manager. Set the environment first: Development or Production.
+$env:ASPNETCORE_ENVIRONMENT = "Development"    # dev project  project-e96017a0-d8f6-420f-955
+# $env:ASPNETCORE_ENVIRONMENT = "Production"   # prod project smart-firmament-502009-a3 (needs GCP ADC)
+dotnet run --project VaultGuard.API -- --migrate
+
+# 2b) With `dotnet ef database update` directly. This OPENS a connection, so give it one via
+#     the ConnectionStrings__DefaultConnection env var (used when GCP secrets aren't in play).
+$env:ConnectionStrings__DefaultConnection = "Server=<host>;Database=<db>;User Id=<user>;Password=<pwd>;TrustServerCertificate=true;Encrypt=True"
+o
+# Notes:
+# - One context now => one migration per change, one `database update` (no more App/Api split).
+# - `--migrate` applies ALL pending migrations, then exits.
+# - Production requires GCP Application Default Credentials:  gcloud auth application-default login
+# - Install the EF tool once if needed:  dotnet tool install --global dotnet-ef

@@ -104,4 +104,38 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun lock() = session.lock()
+
+    // ---- App authenticator (TOTP) 2FA setup --------------------------------
+
+    data class TotpSetup(val secret: String, val otpauthUri: String)
+
+    private val _appTotpEnabled = MutableStateFlow(secureStore.appTotpSecret != null)
+    val appTotpEnabled = _appTotpEnabled.asStateFlow()
+
+    private val _totpSetup = MutableStateFlow<TotpSetup?>(null)
+    val totpSetup = _totpSetup.asStateFlow()
+
+    fun startTotpSetup() {
+        val secret = com.vaultguard.app.domain.Totp.randomSecret()
+        val account = session.user.value?.email ?: "vault"
+        _totpSetup.value = TotpSetup(secret, com.vaultguard.app.domain.Totp.otpauthUri(secret, account))
+    }
+
+    fun cancelTotpSetup() { _totpSetup.value = null }
+
+    /** Verify the setup code; on success app 2FA is enabled. Returns success for the UI. */
+    fun confirmTotpSetup(code: String): Boolean {
+        val secret = _totpSetup.value?.secret ?: return false
+        return if (com.vaultguard.app.domain.Totp.verify(secret, code)) {
+            secureStore.appTotpSecret = secret
+            _appTotpEnabled.value = true
+            _totpSetup.value = null
+            true
+        } else false
+    }
+
+    fun disableAppTotp() {
+        secureStore.appTotpSecret = null
+        _appTotpEnabled.value = false
+    }
 }

@@ -28,6 +28,11 @@ class SessionManager @Inject constructor(
     var masterPassword: String? = null
         private set
 
+    /** The active LOCAL profile (account) whose vault is unlocked. "default" for legacy/single-vault use. */
+    @Volatile
+    var activeProfileId: String = "default"
+        private set
+
     var sessionToken: String?
         get() = secureStore.sessionToken
         private set(value) { secureStore.sessionToken = value }
@@ -39,9 +44,10 @@ class SessionManager @Inject constructor(
         _unlocked.value = true
     }
 
-    /** LOCAL mode unlock: no server token, just the in-memory master password. */
-    fun onLocalUnlocked(masterPassword: String) {
+    /** LOCAL mode unlock: no server token, just the in-memory master password + active profile. */
+    fun onLocalUnlocked(masterPassword: String, profileId: String = "default") {
         this.masterPassword = masterPassword
+        this.activeProfileId = profileId
         _unlocked.value = true
     }
 

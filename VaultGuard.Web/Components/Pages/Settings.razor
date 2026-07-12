@@ -116,6 +116,8 @@
                     <MudStack Spacing="2">
                         <MudSwitch T="bool" @bind-Value="_enablePasskeySignIn"
                                    Label="Enable Passkey Sign-In" Color="Color.Primary" />
+                        <MudSwitch T="bool" @bind-Value="_numberMatchApprovals"
+                                   Label="Number-matching sign-in approvals (GitHub-style, 60s)" Color="Color.Primary" />
                         <MudButton Href="/passkeys" StartIcon="@Icons.Material.Filled.Fingerprint"
                                    Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">
                             Manage App Passkeys (Biometric)
@@ -1131,12 +1133,14 @@
     bool _requireCodeOnVaultDelete;
     bool _requireCodeOnItemDelete;
     bool _enablePasskeySignIn;
+    bool _numberMatchApprovals = true;
 
     void PersistStepUpSettings()
     {
         AppSettings.Set("Security.RequireCodeOnVaultDelete", _requireCodeOnVaultDelete);
         AppSettings.Set("Security.RequireCodeOnItemDelete", _requireCodeOnItemDelete);
         AppSettings.Set("Security.EnablePasskeySignIn", _enablePasskeySignIn);
+        AppSettings.Set("Security.NumberMatchApprovals", _numberMatchApprovals);
         AppSettings.Save();
         Snackbar.Add("Step-up verification settings saved.", Severity.Success);
     }
@@ -1674,6 +1678,7 @@
         _requireCodeOnVaultDelete = AppSettings.GetBool("Security.RequireCodeOnVaultDelete", false);
         _requireCodeOnItemDelete = AppSettings.GetBool("Security.RequireCodeOnItemDelete", false);
         _enablePasskeySignIn = AppSettings.GetBool("Security.EnablePasskeySignIn", false);
+        _numberMatchApprovals = AppSettings.GetBool("Security.NumberMatchApprovals", true);
 
         // Display
         _compactMode = AppSettings.GetBool("Web.CompactMode", false);

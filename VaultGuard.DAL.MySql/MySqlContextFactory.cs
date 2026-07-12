@@ -8,19 +8,19 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace VaultGuard.DAL.MySql
 {
-    public class MySqlContextFactory : IDesignTimeDbContextFactory<VaultGuardDbContextApp>
+    public class MySqlContextFactory : IDesignTimeDbContextFactory<VaultGuardDbContext>
     {
-        public VaultGuardDbContextApp CreateDbContext(string[] args)
+        public VaultGuardDbContext CreateDbContext(string[] args)
         {
             var config = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true)
                 .Build();
             var connectionString = config.GetConnectionString("MySqlConnection");
-            var optionsBuilder = new DbContextOptionsBuilder<VaultGuardDbContextApp>();
+            var optionsBuilder = new DbContextOptionsBuilder<VaultGuardDbContext>();
             // Use Pomelo.EntityFrameworkCore.MySql (ensure correct version)
             optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
-            return new VaultGuardDbContextApp(optionsBuilder.Options);
+            return new VaultGuardDbContext(optionsBuilder.Options);
         }
     }
 }

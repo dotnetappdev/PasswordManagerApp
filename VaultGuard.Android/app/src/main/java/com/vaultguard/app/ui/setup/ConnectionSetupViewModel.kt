@@ -47,6 +47,14 @@ class ConnectionSetupViewModel @Inject constructor(
         }
     }
 
+    /** Apply a scanned "Set Up Another Device" QR: fills API URL + key and saves. Returns true if valid. */
+    fun applyScannedSetup(scanned: String): Boolean {
+        val p = DeviceSetup.parse(scanned) ?: return false
+        _state.update { it.copy(mode = ConnectionMode.API, apiUrl = p.url, apiKey = p.key) }
+        save()
+        return true
+    }
+
     fun setMode(mode: ConnectionMode) = _state.update { it.copy(mode = mode, testMessage = null, testSuccess = null) }
     fun setUrl(url: String) = _state.update { it.copy(apiUrl = url, testMessage = null, testSuccess = null) }
     fun setKey(key: String) = _state.update { it.copy(apiKey = key, testMessage = null, testSuccess = null) }

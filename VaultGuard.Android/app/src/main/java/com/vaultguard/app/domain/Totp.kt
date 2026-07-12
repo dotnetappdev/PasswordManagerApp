@@ -33,6 +33,34 @@ object Totp {
         return Code(code, remaining)
     }
 
+    /** Verify a code against a secret, allowing the previous/next 30s window for clock drift. */
+    fun verify(base32Secret: String, code: String, timeMillis: Long = System.currentTimeMillis()): Boolean {
+        val trimmed = code.trim()
+        return (-1..1).any { step ->
+            generate(base32Secret, timeMillis + step * 30_000L)?.value == trimmed
+        }
+    }
+
+    /** Generate a new random base32 TOTP secret (160-bit). */
+    fun randomSecret(): String {
+        val bytes = ByteArray(20).also { java.security.SecureRandom().nextBytes(it) }
+        val alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+        val sb = StringBuilder()
+        var bits = 0
+        var value = 0
+        for (b in bytes) {
+            value = (value shl 8) or (b.toInt() and 0xff)
+            bits += 8
+            while (bits >= 5) { bits -= 5; sb.append(alphabet[(value shr bits) and 0x1f]) }
+        }
+        if (bits > 0) sb.append(alphabet[(value shl (5 - bits)) and 0x1f])
+        return sb.toString()
+    }
+
+    /** Build an otpauth:// URI to add the secret to an authenticator app. */
+    fun otpauthUri(secret: String, account: String, issuer: String = "VaultGuard"): String =
+        "otpauth://totp/${issuer}:${account}?secret=$secret&issuer=$issuer&period=30&digits=6"
+
     /** Extract the secret from an `otpauth://totp/...?secret=XXXX` URI, or return the raw string. */
     fun secretFromUri(scanned: String): String {
         if (!scanned.startsWith("otpauth://", ignoreCase = true)) return scanned

@@ -34,7 +34,7 @@ public class SeedDatabaseAndUserRegistrationTests : IDisposable
         services.AddLogging(builder => builder.AddConsole());
         
         // Add database context
-        services.AddDbContext<VaultGuardDbContextApp>(options =>
+        services.AddDbContext<VaultGuardDbContext>(options =>
             options.UseSqlite($"Data Source={_testDbPath}"));
         
         // Add crypto services
@@ -44,7 +44,7 @@ public class SeedDatabaseAndUserRegistrationTests : IDisposable
         
         // Initialize database
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
         dbContext.Database.EnsureCreated();
     }
 
@@ -56,7 +56,7 @@ public class SeedDatabaseAndUserRegistrationTests : IDisposable
         
         // Arrange
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
         var cryptoService = scope.ServiceProvider.GetRequiredService<IPasswordCryptoService>();
 
         // Act - Simulate the fixed SampleDataSeeder behavior
@@ -111,7 +111,7 @@ public class SeedDatabaseAndUserRegistrationTests : IDisposable
     {
         // Arrange
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
         var cryptoService = scope.ServiceProvider.GetRequiredService<IPasswordCryptoService>();
 
         const string testPassword = "TestPassword123!";

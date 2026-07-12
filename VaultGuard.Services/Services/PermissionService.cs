@@ -13,12 +13,12 @@ namespace VaultGuard.Services.Services;
 public class PermissionService : IPermissionService
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly VaultGuardDbContextApp _context;
+    private readonly VaultGuardDbContext _context;
     private readonly ILogger<PermissionService> _logger;
 
     public PermissionService(
         UserManager<ApplicationUser> userManager,
-        VaultGuardDbContextApp context,
+        VaultGuardDbContext context,
         ILogger<PermissionService> logger)
     {
         _userManager = userManager;

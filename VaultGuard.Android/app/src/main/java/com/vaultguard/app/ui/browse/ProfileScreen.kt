@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -28,6 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import com.vaultguard.app.data.model.UserDto
 import com.vaultguard.app.data.repo.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,9 +40,21 @@ import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
 @HiltViewModel
-class ProfileViewModel @Inject constructor(private val session: SessionManager) : ViewModel() {
+class ProfileViewModel @Inject constructor(
+    private val session: SessionManager,
+    private val accountsStore: com.vaultguard.app.config.AccountsStore,
+) : ViewModel() {
     val user: StateFlow<UserDto?> = session.user
     fun lock() = session.lock()
+
+    /** Full sign-out: lock the vault and forget the active account + its stored key. */
+    fun signOut() {
+        viewModelScope.launch {
+            val id = accountsStore.currentId.first()
+            session.lock()
+            if (id != null) accountsStore.remove(id)
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,6 +92,17 @@ fun ProfileScreen(onBack: () -> Unit, onLocked: () -> Unit, viewModel: ProfileVi
             OutlinedButton(onClick = { viewModel.lock(); onLocked() }, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.Lock, null)
                 Text("  Lock vault")
+            }
+            Button(
+                onClick = { viewModel.signOut(); onLocked() },
+                modifier = Modifier.fillMaxWidth(),
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                ),
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Logout, null)
+                Text("  Sign out")
             }
         }
     }

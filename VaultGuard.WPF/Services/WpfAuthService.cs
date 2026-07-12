@@ -21,7 +21,7 @@ public class WpfAuthService : IAuthService
 {
     private readonly IPasswordCryptoService _passwordCryptoService;
     private readonly IVaultSessionService _vaultSessionService;
-    private readonly VaultGuardDbContextApp _dbContext;
+    private readonly VaultGuardDbContext _dbContext;
     private readonly ISecureStorageService _secureStorageService;
     private readonly ILogger<WpfAuthService> _logger;
     private bool _isAuthenticated = false;
@@ -30,7 +30,7 @@ public class WpfAuthService : IAuthService
     public WpfAuthService(
         IPasswordCryptoService passwordCryptoService,
         IVaultSessionService vaultSessionService,
-        VaultGuardDbContextApp dbContext,
+        VaultGuardDbContext dbContext,
         ISecureStorageService secureStorageService,
         ILogger<WpfAuthService> logger)
     {

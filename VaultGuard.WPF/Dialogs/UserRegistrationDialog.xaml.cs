@@ -243,7 +243,7 @@ public sealed partial class UserRegistrationDialog : ModernWpf.Controls.ContentD
             // Guards against the startup race condition and missing-column issues.
             using (var migScope = _serviceProvider.CreateScope())
             {
-                var dbCtxApp = migScope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContextApp>();
+                var dbCtxApp = migScope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
                 await dbCtxApp.Database.MigrateAsync();
             }
 

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace VaultGuard.DAL.SqlServer.Migrations.PasswordManagerDb
+namespace VaultGuard.DAL.SqlServer.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -11,6 +11,25 @@ namespace VaultGuard.DAL.SqlServer.Migrations.PasswordManagerDb
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "AspNetRoles",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LastModified = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    NormalizedName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetRoles", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "AspNetUsers",
                 columns: table => new
@@ -43,9 +62,9 @@ namespace VaultGuard.DAL.SqlServer.Migrations.PasswordManagerDb
                     PasskeysEnabledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     StorePasskeysInVault = table.Column<bool>(type: "bit", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NormalizedUserName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NormalizedEmail = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
                     PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     SecurityStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -79,6 +98,27 @@ namespace VaultGuard.DAL.SqlServer.Migrations.PasswordManagerDb
                 });
 
             migrationBuilder.CreateTable(
+                name: "AspNetRoleClaims",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RoleId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetRoleClaims", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AspNetRoleClaims_AspNetRoles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ApiKeys",
                 columns: table => new
                 {
@@ -97,6 +137,91 @@ namespace VaultGuard.DAL.SqlServer.Migrations.PasswordManagerDb
                     table.PrimaryKey("PK_ApiKeys", x => x.Id);
                     table.ForeignKey(
                         name: "FK_ApiKeys_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserClaims",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserClaims", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AspNetUserClaims_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserLogins",
+                columns: table => new
+                {
+                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserLogins", x => new { x.LoginProvider, x.ProviderKey });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserLogins_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserRoles",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    RoleId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserRoles", x => new { x.UserId, x.RoleId });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserRoles_AspNetRoles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AspNetUserRoles_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserTokens",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserTokens", x => new { x.UserId, x.LoginProvider, x.Name });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserTokens_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
@@ -134,7 +259,7 @@ namespace VaultGuard.DAL.SqlServer.Migrations.PasswordManagerDb
                 });
 
             migrationBuilder.CreateTable(
-                name: "ChildPermissionConfig",
+                name: "ChildPermissionConfigs",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -161,19 +286,19 @@ namespace VaultGuard.DAL.SqlServer.Migrations.PasswordManagerDb
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ChildPermissionConfig", x => x.Id);
+                    table.PrimaryKey("PK_ChildPermissionConfigs", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ChildPermissionConfig_AspNetUsers_ChildUserId",
+                        name: "FK_ChildPermissionConfigs_AspNetUsers_ChildUserId",
                         column: x => x.ChildUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_ChildPermissionConfig_AspNetUsers_ParentUserId",
+                        name: "FK_ChildPermissionConfigs_AspNetUsers_ParentUserId",
                         column: x => x.ParentUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -363,7 +488,7 @@ namespace VaultGuard.DAL.SqlServer.Migrations.PasswordManagerDb
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserRelationship",
+                name: "UserRelationships",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -379,19 +504,19 @@ namespace VaultGuard.DAL.SqlServer.Migrations.PasswordManagerDb
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserRelationship", x => x.Id);
+                    table.PrimaryKey("PK_UserRelationships", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserRelationship_AspNetUsers_ChildUserId",
+                        name: "FK_UserRelationships_AspNetUsers_ChildUserId",
                         column: x => x.ChildUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_UserRelationship_AspNetUsers_ParentUserId",
+                        name: "FK_UserRelationships_AspNetUsers_ParentUserId",
                         column: x => x.ParentUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -928,6 +1053,45 @@ namespace VaultGuard.DAL.SqlServer.Migrations.PasswordManagerDb
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AspNetRoleClaims_RoleId",
+                table: "AspNetRoleClaims",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "RoleNameIndex",
+                table: "AspNetRoles",
+                column: "NormalizedName",
+                unique: true,
+                filter: "[NormalizedName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUserClaims_UserId",
+                table: "AspNetUserClaims",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUserLogins_UserId",
+                table: "AspNetUserLogins",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUserRoles_RoleId",
+                table: "AspNetUserRoles",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "EmailIndex",
+                table: "AspNetUsers",
+                column: "NormalizedEmail");
+
+            migrationBuilder.CreateIndex(
+                name: "UserNameIndex",
+                table: "AspNetUsers",
+                column: "NormalizedUserName",
+                unique: true,
+                filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AuditLog_UserId",
                 table: "AuditLog",
                 column: "UserId");
@@ -943,13 +1107,14 @@ namespace VaultGuard.DAL.SqlServer.Migrations.PasswordManagerDb
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ChildPermissionConfig_ChildUserId",
-                table: "ChildPermissionConfig",
-                column: "ChildUserId");
+                name: "IX_ChildPermissionConfig_Unique",
+                table: "ChildPermissionConfigs",
+                columns: new[] { "ChildUserId", "ParentUserId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_ChildPermissionConfig_ParentUserId",
-                table: "ChildPermissionConfig",
+                name: "IX_ChildPermissionConfigs_ParentUserId",
+                table: "ChildPermissionConfigs",
                 column: "ParentUserId");
 
             migrationBuilder.CreateIndex(
@@ -1093,14 +1258,15 @@ namespace VaultGuard.DAL.SqlServer.Migrations.PasswordManagerDb
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserRelationship_ChildUserId",
-                table: "UserRelationship",
-                column: "ChildUserId");
+                name: "IX_UserRelationship_Unique",
+                table: "UserRelationships",
+                columns: new[] { "ParentUserId", "ChildUserId", "RelationshipType" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserRelationship_ParentUserId",
-                table: "UserRelationship",
-                column: "ParentUserId");
+                name: "IX_UserRelationships_ChildUserId",
+                table: "UserRelationships",
+                column: "ChildUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserTwoFactorBackupCodes_UserId",
@@ -1131,10 +1297,25 @@ namespace VaultGuard.DAL.SqlServer.Migrations.PasswordManagerDb
                 name: "ApiKeys");
 
             migrationBuilder.DropTable(
+                name: "AspNetRoleClaims");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserClaims");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserLogins");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserRoles");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
                 name: "AuditLog");
 
             migrationBuilder.DropTable(
-                name: "ChildPermissionConfig");
+                name: "ChildPermissionConfigs");
 
             migrationBuilder.DropTable(
                 name: "CreditCardItems");
@@ -1173,13 +1354,16 @@ namespace VaultGuard.DAL.SqlServer.Migrations.PasswordManagerDb
                 name: "UserPasskeys");
 
             migrationBuilder.DropTable(
-                name: "UserRelationship");
+                name: "UserRelationships");
 
             migrationBuilder.DropTable(
                 name: "UserTwoFactorBackupCodes");
 
             migrationBuilder.DropTable(
                 name: "WiFiItems");
+
+            migrationBuilder.DropTable(
+                name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "Tags");

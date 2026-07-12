@@ -150,17 +150,14 @@ else if (databaseProvider.ToLower() == "sqlserver" && !string.IsNullOrWhiteSpace
 // Configure DbContext based on provider
 switch (databaseProvider.ToLower())
 {
+    // Single application context (Identity + vault). Each provider keeps its own migrations assembly.
     case "sqlite":
         builder.Services.AddDbContext<VaultGuardDbContext>(options =>
-            options.UseSqlite(connectionString));
-        builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
             options.UseSqlite(connectionString));
         break;
     case "postgres":
     case "postgresql":
         builder.Services.AddDbContext<VaultGuardDbContext>(options =>
-            options.UseNpgsql(connectionString));
-        builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
             options.UseNpgsql(connectionString));
         break;
     case "mysql":
@@ -174,8 +171,6 @@ switch (databaseProvider.ToLower())
         // SQL Server migrations live in VaultGuard.DAL.SqlServer (separate from the SQLite migrations in
         // VaultGuard.DAL), so point EF at that assembly when applying them at runtime.
         builder.Services.AddDbContext<VaultGuardDbContext>(options =>
-            options.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("VaultGuard.DAL.SqlServer")));
-        builder.Services.AddDbContext<VaultGuardDbContextApp>(options =>
             options.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("VaultGuard.DAL.SqlServer")));
         break;
 }
@@ -195,7 +190,7 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
 })
-.AddEntityFrameworkStores<VaultGuardDbContextApp>()
+.AddEntityFrameworkStores<VaultGuardDbContext>()
 .AddDefaultTokenProviders()
 .AddApiEndpoints(); // Enable .NET 9 Identity API endpoints
 
@@ -210,7 +205,16 @@ builder.Services.AddScoped<ICategoryApiService, VaultGuard.Services.Services.Cat
 builder.Services.AddScoped<ICollectionApiService, VaultGuard.Services.Services.CollectionApiService>();
 builder.Services.AddScoped<ITagApiService, VaultGuard.Services.Services.TagApiService>();
 builder.Services.AddScoped<IVaultApiService, VaultGuard.Services.Services.VaultApiService>();
+// Headless auth service so services that take IAuthService in their ctor (VaultService, CategoryService)
+// can be constructed in the API, which authenticates per-request instead of via a stateful IAuthService.
+builder.Services.AddScoped<IAuthService, VaultGuard.API.Services.ApiAuthService>();
 builder.Services.AddScoped<IVaultService, VaultGuard.Services.Services.VaultService>();
+// Domain services pulled in transitively (e.g. by the import service). Registered so the DI graph
+// validates on build (Development) and resolves at runtime.
+builder.Services.AddScoped<IPasswordItemService, VaultGuard.Services.PasswordItemService>();
+builder.Services.AddScoped<ICollectionService, VaultGuard.Services.Services.CollectionService>();
+builder.Services.AddScoped<ICategoryInterface, VaultGuard.Services.Services.CategoryService>();
+builder.Services.AddScoped<ITagService, VaultGuard.Services.TagService>();
 builder.Services.AddScoped<ISyncService, VaultGuard.Services.Services.SyncService>();
 builder.Services.AddScoped<IDatabaseContextFactory, VaultGuard.Services.Services.DatabaseContextFactory>();
 builder.Services.AddScoped<IPasswordEncryptionService, VaultGuard.Services.Services.PasswordEncryptionService>();
@@ -220,6 +224,15 @@ builder.Services.AddScoped<IVaultSessionService, VaultGuard.Services.Services.Va
 builder.Services.AddScoped<IQrLoginService, VaultGuard.Services.Services.QrLoginService>();
 builder.Services.AddScoped<IApiKeySqliteMirror, VaultGuard.Services.Services.ApiKeySqliteMirrorService>();
 builder.Services.AddScoped<IApiKeyService, VaultGuard.Services.Services.ApiKeyService>();
+
+// Push notifications to the native mobile apps (FCM HTTP v1; safe no-op until configured).
+builder.Services.AddSingleton<IPushDeviceRegistry, VaultGuard.Services.Services.PushDeviceSqliteRegistry>();
+builder.Services.AddSingleton<IFcmAccessTokenProvider, VaultGuard.Services.Services.NullFcmAccessTokenProvider>();
+builder.Services.AddSingleton<IPushNotificationService, VaultGuard.Services.Services.FcmPushNotificationService>();
+
+// GitHub-style number-matching push approvals (60s validity).
+builder.Services.AddSingleton<IApprovalService, VaultGuard.Services.Services.ApprovalService>();
+
 builder.Services.AddScoped<IDatabaseMigrationService, VaultGuard.Services.Services.DatabaseMigrationService>();
 builder.Services.AddScoped<ITwoFactorService, VaultGuard.Services.Services.TwoFactorService>();
 builder.Services.AddScoped<IPasskeyService, VaultGuard.Services.Services.PasskeyService>();
@@ -355,38 +368,14 @@ app.MapHealthChecks("/health");
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
-    var contextApp = scope.ServiceProvider.GetRequiredService<VaultGuardDbContextApp>();
     try
     {
-        // Check for pending migrations before applying
-        var pendingMigrations = await contextApp.Database.GetPendingMigrationsAsync();
-        var pendingMigrationsApi = await context.Database.GetPendingMigrationsAsync();
+        // Check for pending migrations before applying (single application context).
+        var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
 
         if (pendingMigrations.Any())
         {
-            Log.Warning("Pending migrations found for VaultGuardDbContextApp: {Migrations}", string.Join(", ", pendingMigrations));
-            Log.Information("Applying pending migrations for VaultGuardDbContextApp...");
-            await contextApp.Database.MigrateAsync();
-            Log.Information("Migrations applied successfully for VaultGuardDbContextApp");
-        }
-        else
-        {
-            // Only use EnsureCreated if no migrations exist
-            var appliedMigrations = await contextApp.Database.GetAppliedMigrationsAsync();
-            if (!appliedMigrations.Any())
-            {
-                await contextApp.Database.EnsureCreatedAsync();
-                Log.Information("Database created for VaultGuardDbContextApp using EnsureCreated");
-            }
-            else
-            {
-                Log.Information("Database already exists for VaultGuardDbContextApp");
-            }
-        }
-
-        if (pendingMigrationsApi.Any())
-        {
-            Log.Warning("Pending migrations found for VaultGuardDbContext: {Migrations}", string.Join(", ", pendingMigrationsApi));
+            Log.Warning("Pending migrations found for VaultGuardDbContext: {Migrations}", string.Join(", ", pendingMigrations));
             Log.Information("Applying pending migrations for VaultGuardDbContext...");
             await context.Database.MigrateAsync();
             Log.Information("Migrations applied successfully for VaultGuardDbContext");
@@ -394,8 +383,8 @@ using (var scope = app.Services.CreateScope())
         else
         {
             // Only use EnsureCreated if no migrations exist
-            var appliedMigrationsApi = await context.Database.GetAppliedMigrationsAsync();
-            if (!appliedMigrationsApi.Any())
+            var appliedMigrations = await context.Database.GetAppliedMigrationsAsync();
+            if (!appliedMigrations.Any())
             {
                 await context.Database.EnsureCreatedAsync();
                 Log.Information("Database created for VaultGuardDbContext using EnsureCreated");
