@@ -1667,6 +1667,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             _customFields = _editingItem.CustomFields
                 .Where(field => !string.Equals(field.Name, BrandIconHelper.BrandIconCustomFieldName, StringComparison.OrdinalIgnoreCase)
                              && !string.Equals(field.Name, TotpHelper.TotpCustomFieldName, StringComparison.OrdinalIgnoreCase)
+                             && !string.Equals(field.Name, VaultGuard.Services.Utilities.PasswordHistoryHelper.HistoryFieldName, StringComparison.OrdinalIgnoreCase)
                              && !string.Equals(field.Name, ProtectedItemHelper.ProtectedCustomFieldName, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }

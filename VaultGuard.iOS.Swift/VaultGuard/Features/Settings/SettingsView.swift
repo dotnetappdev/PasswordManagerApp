@@ -20,6 +20,11 @@ struct SettingsView: View {
     @State private var apiKey = ""
     @State private var apiMessage: String?
     @State private var maintMessage: String?
+    // Independent, combinable delete options — tick any mix (e.g. seed data + accounts, or just seed data).
+    @State private var delSeed = false
+    @State private var delItems = false
+    @State private var delAccounts = false
+    @State private var showDeleteConfirm = false
     @State private var preview = ""
 
     private var s: Binding<AppSettings> { $settingsStore.settings }
@@ -139,9 +144,9 @@ struct SettingsView: View {
                 }
             }
         }
-        Section("Sign-in Approvals") {
+        Section("Approvals") {
             Toggle("Number-matching approvals", isOn: s.numberMatchApprovals)
-            Text("Approve sign-ins from this phone by tapping the matching number. Codes are valid for 60 seconds.")
+            Text("2FA-style number matching on important actions — editing, deleting or saving password items and categories, and changing your master password. Approve by tapping the matching number on this phone. Codes are valid for 60 seconds.")
                 .font(.footnote).foregroundStyle(.secondary)
         }
         Section("Autofill") {
@@ -218,12 +223,25 @@ struct SettingsView: View {
             Text("Populate the default \"Personal\" vault with sample logins, a card, Wi-Fi and a secure note — in the same categories as the desktop app. Local mode only.")
                 .font(.footnote).foregroundStyle(.secondary)
             Button("Seed demo data") { env.repository.seedLocalDemo(); maintMessage = "Demo data seeded into the Personal vault." }
-            Button(role: .destructive) { env.repository.resetLocal(); maintMessage = "Local vault cleared." } label: { Text("Clear local vault") }
-            if let maintMessage { Text(maintMessage).font(.footnote).foregroundStyle(Theme.accent) }
         }
-        Section("Users") {
-            Text("In API mode, accounts and default users are created on the server via the VaultGuard web app (Setup wizard → Seed users). In local mode this device uses a single master-password vault.")
+        Section("Delete Data") {
+            Text("Choose one or more things to remove on this device, then confirm.")
                 .font(.footnote).foregroundStyle(.secondary)
+            Toggle("Seed / demo data", isOn: $delSeed)
+            Toggle("All my items", isOn: $delItems)
+            Toggle("User accounts", isOn: $delAccounts)
+            Button(role: .destructive) { showDeleteConfirm = true } label: {
+                Label("Delete selected", systemImage: "trash")
+            }
+            .disabled(!(delSeed || delItems || delAccounts))
+            .confirmationDialog("Delete the selected data?",
+                                isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+                Button("Delete", role: .destructive) { performMaintenanceDelete() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("\(deleteSelectionSummary)\n\nThis can’t be undone.")
+            }
+            if let maintMessage { Text(maintMessage).font(.footnote).foregroundStyle(Theme.accent) }
         }
         Section("Database Management") {
             Text("Schema is kept up to date automatically. In local mode the encrypted SQLite database lives in the app's private storage.")
@@ -262,5 +280,30 @@ struct SettingsView: View {
     private func pct(_ v: Double) -> String { "\(Int(v * 100))%" }
     private func shortcut(_ label: String, _ key: String) -> some View {
         HStack { Text(label); Spacer(); Text(key).font(.system(.body, design: .monospaced)).foregroundStyle(Theme.accent) }
+    }
+
+    /// Human-readable list of the ticked delete options for the confirmation dialog.
+    private var deleteSelectionSummary: String {
+        var lines: [String] = []
+        if delSeed { lines.append("• Seed / demo data") }
+        if delItems { lines.append("• All your items") }
+        if delAccounts { lines.append("• All user accounts and saved keys") }
+        return lines.isEmpty ? "Nothing selected." : "This will remove:\n" + lines.joined(separator: "\n")
+    }
+
+    /// Apply the ticked options. Where they overlap the most destructive one wins (accounts ⊃ all items ⊃ seed).
+    private func performMaintenanceDelete() {
+        if delAccounts {
+            env.repository.wipeAllLocal(clearAppSecrets: true)
+            maintMessage = "All local accounts, their vault items and saved keys were removed."
+        } else if delItems {
+            env.repository.resetLocal()
+            maintMessage = "All items on this device were removed. Your accounts were kept."
+        } else if delSeed {
+            let n = env.repository.deleteSeedData()
+            maintMessage = n > 0
+                ? "Removed \(n) demo item(s). Your own items and accounts were kept."
+                : "No demo items to remove."
+        }
     }
 }

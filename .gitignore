@@ -371,3 +371,38 @@ PasswordManager.BrowserExtension/dist/
 *.pem
 # Claude Code local worktrees/config
 .claude/
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Android / Gradle (native app build output — should never be committed)
+# ──────────────────────────────────────────────────────────────────────────────
+VaultGuard.Android/.gradle/
+VaultGuard.Android/**/build/
+VaultGuard.Android/build/
+VaultGuard.Android/.idea/
+VaultGuard.Android/local.properties
+VaultGuard.Android/.cxx/
+VaultGuard.Android/captures/
+**/*.iml
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Xcode / iOS
+# ──────────────────────────────────────────────────────────────────────────────
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+.swiftpm/
+Pods/
+# XcodeGen generates the project from project.yml — run `xcodegen generate`.
+VaultGuard.iOS.Swift/VaultGuard.xcodeproj/
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Local/dev SQLite databases (runtime artifacts)
+# ──────────────────────────────────────────────────────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+
+# Kotlin compiler daemon session artifacts
+VaultGuard.Android/.kotlin/
+.kotlin/

@@ -55,34 +55,75 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
     }
 }
 
+/// 1Password-style quick-access picker: category filter + search, results grouped by the month
+/// the item was added (newest first) — mirrors QuickAccessView in the main app.
 private struct CredentialListView: View {
     let filter: String?
     let onPick: (AutoFillCred) -> Void
     let onCancel: () -> Void
 
     @State private var query = ""
+    @State private var categoryFilter: String?
 
     private var all: [AutoFillCred] { AutoFillCredentialStore.all() }
+
+    private var categories: [String] {
+        Set(all.compactMap { $0.categoryName }).sorted()
+    }
 
     private var results: [AutoFillCred] {
         let base = filter.map { f in
             all.filter { $0.identifier.localizedCaseInsensitiveContains(hostPart(f)) }
         } ?? all
-        let list = base.isEmpty ? all : base
-        guard !query.isEmpty else { return list.sorted { $0.identifier < $1.identifier } }
-        return list.filter {
-            $0.identifier.localizedCaseInsensitiveContains(query) ||
-            $0.username.localizedCaseInsensitiveContains(query)
+        let scoped = base.isEmpty ? all : base
+        return scoped
+            .filter { categoryFilter == nil || $0.categoryName == categoryFilter }
+            .filter {
+                query.isEmpty ||
+                $0.identifier.localizedCaseInsensitiveContains(query) ||
+                $0.username.localizedCaseInsensitiveContains(query) ||
+                $0.title.localizedCaseInsensitiveContains(query)
+            }
+    }
+
+    private static let monthFormat: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM yyyy"
+        return f
+    }()
+
+    private func monthKey(_ cred: AutoFillCred) -> String {
+        cred.createdAt > 0
+            ? Self.monthFormat.string(from: Date(timeIntervalSince1970: cred.createdAt)).uppercased()
+            : "UNDATED"
+    }
+
+    private var groupedKeys: [String] {
+        var seen: [String] = []
+        for cred in results.sorted(by: { $0.createdAt > $1.createdAt }) {
+            let key = monthKey(cred)
+            if !seen.contains(key) { seen.append(key) }
         }
+        return seen
+    }
+
+    private var grouped: [String: [AutoFillCred]] {
+        Dictionary(grouping: results.sorted { $0.createdAt > $1.createdAt }, by: monthKey)
     }
 
     var body: some View {
         NavigationView {
-            List(results, id: \.username) { cred in
-                Button { onPick(cred) } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(cred.identifier).font(.headline)
-                        Text(cred.username).font(.subheadline).foregroundStyle(.secondary)
+            List {
+                ForEach(groupedKeys, id: \.self) { month in
+                    Section(header: Text(month)) {
+                        ForEach(grouped[month] ?? [], id: \.username) { cred in
+                            Button { onPick(cred) } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(cred.title.isEmpty ? cred.identifier : cred.title).font(.headline)
+                                    Text(cred.username).font(.subheadline).foregroundStyle(.secondary)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -90,6 +131,28 @@ private struct CredentialListView: View {
             .navigationTitle("VaultGuard")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel", action: onCancel) }
+                if !categories.isEmpty {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Menu {
+                            Button {
+                                categoryFilter = nil
+                            } label: {
+                                if categoryFilter == nil { Label("All Categories", systemImage: "checkmark") }
+                                else { Text("All Categories") }
+                            }
+                            ForEach(categories, id: \.self) { cat in
+                                Button {
+                                    categoryFilter = cat
+                                } label: {
+                                    if categoryFilter == cat { Label(cat, systemImage: "checkmark") }
+                                    else { Text(cat) }
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "line.3.horizontal.decrease.circle")
+                        }
+                    }
+                }
             }
             .overlay {
                 if results.isEmpty {

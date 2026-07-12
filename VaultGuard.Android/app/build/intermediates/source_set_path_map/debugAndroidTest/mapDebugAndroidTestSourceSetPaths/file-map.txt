@@ -1,4 +1,0 @@
-com.vaultguard.app.test.app-androidTest-0 E:\sassproducts\passwordmanagermergec\PasswordManagerApp\VaultGuard.Android\app\build\generated\res\resValues\androidTest\debug
-com.vaultguard.app.test.app-mergeDebugAndroidTestResources-1 E:\sassproducts\passwordmanagermergec\PasswordManagerApp\VaultGuard.Android\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
-com.vaultguard.app.test.app-mergeDebugAndroidTestResources-2 E:\sassproducts\passwordmanagermergec\PasswordManagerApp\VaultGuard.Android\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
-com.vaultguard.app.test.app-debugAndroidTest-3 E:\sassproducts\passwordmanagermergec\PasswordManagerApp\VaultGuard.Android\app\build\intermediates\merged_res\debugAndroidTest\mergeDebugAndroidTestResources

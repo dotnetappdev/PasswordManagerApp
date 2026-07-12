@@ -10,8 +10,12 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import com.vaultguard.app.config.AppTheme
+import com.vaultguard.app.config.FontChoice
 
 /** Brand accent, tuned to feel like the clean blue of the 1Password mobile apps. */
 val VgAccent = Color(0xFF0A84FF)
@@ -51,26 +55,73 @@ private val DarkColors = darkColorScheme(
     outlineVariant = Color(0xFF232830),
 )
 
-// High-contrast mirrors the WPF "High Contrast" theme option.
+// High-contrast — Windows "High Contrast Black": pure black surfaces, white body text and bright
+// yellow (#FFFF00) for every interactive/accent element and border.
+private val HcYellow = Color(0xFFFFFF00)
 private val HighContrastColors = darkColorScheme(
-    primary = Color(0xFF66B2FF),
+    primary = HcYellow,
     onPrimary = Color.Black,
-    primaryContainer = Color(0xFF003366),
-    onPrimaryContainer = Color.White,
-    secondary = Color(0xFFFFFFFF),
-    background = Color(0xFF000000),
-    surface = Color(0xFF000000),
-    surfaceVariant = Color(0xFF0A0A0A),
-    onSurface = Color(0xFFFFFFFF),
-    onSurfaceVariant = Color(0xFFECECEC),
-    onBackground = Color(0xFFFFFFFF),
-    outline = Color(0xFF7A7A7A),
+    primaryContainer = Color.Black,
+    onPrimaryContainer = HcYellow,
+    secondary = HcYellow,
+    onSecondary = Color.Black,
+    secondaryContainer = Color.Black,
+    onSecondaryContainer = HcYellow,
+    tertiary = HcYellow,
+    onTertiary = Color.Black,
+    background = Color.Black,
+    onBackground = Color.White,
+    surface = Color.Black,
+    onSurface = Color.White,
+    surfaceVariant = Color.Black,
+    onSurfaceVariant = HcYellow,
+    outline = HcYellow,
+    outlineVariant = HcYellow,
+    error = Color(0xFFFF8A80),
+    onError = Color.Black,
+    inverseSurface = Color.White,
+    inverseOnSurface = Color.Black,
 )
+
+/** Pick readable on-accent text (black or white) for an arbitrary custom accent. */
+private fun onColorFor(accent: Color): Color =
+    if (accent.luminance() > 0.5f) Color.Black else Color.White
+
+/** Rebuild the default Material 3 type scale with a chosen font family (accessibility/personalisation). */
+private fun typographyFor(choice: FontChoice): Typography {
+    val family = when (choice) {
+        FontChoice.SYSTEM -> FontFamily.Default
+        FontChoice.SANS_SERIF -> FontFamily.SansSerif
+        FontChoice.SERIF -> FontFamily.Serif
+        FontChoice.MONOSPACE -> FontFamily.Monospace
+    }
+    if (choice == FontChoice.SYSTEM) return Typography()
+    val b = Typography()
+    return b.copy(
+        displayLarge = b.displayLarge.copy(fontFamily = family),
+        displayMedium = b.displayMedium.copy(fontFamily = family),
+        displaySmall = b.displaySmall.copy(fontFamily = family),
+        headlineLarge = b.headlineLarge.copy(fontFamily = family),
+        headlineMedium = b.headlineMedium.copy(fontFamily = family),
+        headlineSmall = b.headlineSmall.copy(fontFamily = family),
+        titleLarge = b.titleLarge.copy(fontFamily = family),
+        titleMedium = b.titleMedium.copy(fontFamily = family),
+        titleSmall = b.titleSmall.copy(fontFamily = family),
+        bodyLarge = b.bodyLarge.copy(fontFamily = family),
+        bodyMedium = b.bodyMedium.copy(fontFamily = family),
+        bodySmall = b.bodySmall.copy(fontFamily = family),
+        labelLarge = b.labelLarge.copy(fontFamily = family),
+        labelMedium = b.labelMedium.copy(fontFamily = family),
+        labelSmall = b.labelSmall.copy(fontFamily = family),
+    )
+}
 
 @Composable
 fun VaultGuardTheme(
     appTheme: AppTheme = AppTheme.SYSTEM,
     dynamicColor: Boolean = true,
+    accentArgb: Long = 0L,
+    fontChoice: FontChoice = FontChoice.SYSTEM,
     content: @Composable () -> Unit,
 ) {
     val systemDark = isSystemInDarkTheme()
@@ -80,16 +131,27 @@ fun VaultGuardTheme(
         AppTheme.DARK, AppTheme.HIGH_CONTRAST -> true
     }
     val context = LocalContext.current
-    val colorScheme = when {
+    // A user-chosen accent overrides Material You (but never the high-contrast theme).
+    val hasCustomAccent = accentArgb != 0L && appTheme != AppTheme.HIGH_CONTRAST
+    val base = when {
         appTheme == AppTheme.HIGH_CONTRAST -> HighContrastColors
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+        !hasCustomAccent && dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         darkTheme -> DarkColors
         else -> LightColors
     }
+    val colorScheme = if (hasCustomAccent) {
+        val accent = Color(accentArgb)
+        base.copy(
+            primary = accent,
+            onPrimary = onColorFor(accent),
+            primaryContainer = accent.copy(alpha = 0.18f).compositeOver(base.surface),
+            onPrimaryContainer = accent,
+        )
+    } else base
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography(),
+        typography = typographyFor(fontChoice),
         content = content,
     )
 }

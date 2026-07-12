@@ -1,15 +1,29 @@
 package com.vaultguard.app.ui.settings
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -18,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SegmentedButton
@@ -37,7 +52,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
@@ -46,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vaultguard.app.config.AppTheme
+import com.vaultguard.app.config.FontChoice
 import com.vaultguard.app.config.ConnectionConfig
 import com.vaultguard.app.config.ConnectionMode
 import com.vaultguard.app.config.DefaultView
@@ -100,7 +122,7 @@ fun SettingsScreen(
                     2 -> SecurityTab(s, viewModel, onLocked)
                     3 -> StorageTab(viewModel, config, onEditConnection, onOpenDeviceSetup)
                     4 -> BackupTab(onOpenImport, onOpen1Password)
-                    5 -> MaintenanceTab(viewModel)
+                    5 -> MaintenanceTab(viewModel, onLocked)
                     6 -> ShortcutsTab()
                     7 -> AboutTab()
                 }
@@ -125,6 +147,19 @@ private fun AppearanceTab(s: com.vaultguard.app.config.AppSettings, vm: Settings
             }
         }
         SwitchRow("Dynamic colour (Material You)", s.dynamicColor) { vm.update { c -> c.copy(dynamicColor = it) } }
+    }
+
+    SectionCard("Accent Colour") {
+        Text("Pick an accent to personalise VaultGuard. “Default” follows Material You / the built-in theme. " +
+            "(Not applied in High Contrast.)",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        AccentPicker(selected = s.accentArgb) { argb -> vm.update { it.copy(accentArgb = argb) } }
+    }
+
+    SectionCard("Font") {
+        Text("Choose a typeface for the whole app.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRowFonts(selected = s.fontChoice) { choice -> vm.update { it.copy(fontChoice = choice) } }
     }
 
     SectionCard("Default View") {
@@ -190,18 +225,39 @@ private fun AccessibilityTab(s: com.vaultguard.app.config.AppSettings, vm: Setti
 @Composable
 private fun SecurityTab(s: com.vaultguard.app.config.AppSettings, vm: SettingsViewModel, onLocked: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val autofillManager = remember { context.getSystemService(android.view.autofill.AutofillManager::class.java) }
+    var autofillEnabled by remember { mutableStateOf(autofillManager?.hasEnabledAutofillServices() == true) }
+    // Re-check when returning from system Settings so the button reflects the real current state.
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME)
+                autofillEnabled = autofillManager?.hasEnabledAutofillServices() == true
+        }
+        lifecycleOwner.lifecycle.addObserver(obs)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
+    }
     SectionCard("Autofill") {
-        Text("Set VaultGuard as your device password manager so it can fill logins in apps and browsers.",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        OutlinedButton(onClick = {
-            runCatching {
-                val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE)
-                    .setData(android.net.Uri.parse("package:${context.packageName}"))
-                context.startActivity(intent)
-            }.onFailure {
-                runCatching { context.startActivity(android.content.Intent(android.provider.Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE)) }
-            }
-        }) { Text("Set as autofill provider") }
+        if (autofillEnabled) {
+            Text("VaultGuard is your device autofill provider — it can fill logins in apps and browsers.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(onClick = {
+                runCatching { autofillManager?.disableAutofillServices() }
+                autofillEnabled = false
+            }) { Text("Turn off autofill") }
+        } else {
+            Text("Set VaultGuard as your device password manager so it can fill logins in apps and browsers.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(onClick = {
+                runCatching {
+                    val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE)
+                        .setData(android.net.Uri.parse("package:${context.packageName}"))
+                    context.startActivity(intent)
+                }.onFailure {
+                    runCatching { context.startActivity(android.content.Intent(android.provider.Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE)) }
+                }
+            }) { Text("Set as autofill provider") }
+        }
     }
     SectionCard("Two-Factor Authentication") {
         Text("Enter your account 2FA code at sign-in when enabled, and use biometrics below as a second factor.",
@@ -216,8 +272,10 @@ private fun SecurityTab(s: com.vaultguard.app.config.AppSettings, vm: SettingsVi
             vm.update { c -> c.copy(autoLockMinutes = it.roundToInt()) }
         }
     }
-    SectionCard("Sign-in Approvals") {
-        Text("Get a GitHub-style prompt on this phone to approve sign-ins by tapping the matching number. Codes are valid for 60 seconds.",
+    SectionCard("Approvals") {
+        Text("2FA-style number matching on important actions — editing, deleting or saving password items " +
+            "and categories, and changing your master password. Approve by tapping the matching number on " +
+            "this phone. Codes are valid for 60 seconds.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         SwitchRow("Number-matching approvals", s.numberMatchApprovals) { vm.update { c -> c.copy(numberMatchApprovals = it) } }
     }
@@ -327,24 +385,49 @@ private fun BackupTab(onOpenImport: () -> Unit, onOpen1Password: () -> Unit = {}
 
 // ---- Maintenance ----------------------------------------------------------
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MaintenanceTab(vm: SettingsViewModel) {
+private fun MaintenanceTab(vm: SettingsViewModel, onLocked: () -> Unit) {
     val maintMessage by vm.maintMessage.collectAsStateWithLifecycle()
+    // Independent, combinable delete options — tick any mix (e.g. seed data + accounts, or just seed data).
+    var delSeed by remember { mutableStateOf(false) }
+    var delItems by remember { mutableStateOf(false) }
+    var delAccounts by remember { mutableStateOf(false) }
+    var confirm by remember { mutableStateOf(false) }
+    val anySelected = delSeed || delItems || delAccounts
+
     SectionCard("Seed Data") {
         Text("Populate the default \"Personal\" vault with sample logins, a card, Wi-Fi and a secure note — " +
             "in the same categories as the desktop app. Local mode only.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(onClick = vm::seedDemoData) { Text("Seed demo data") }
-            OutlinedButton(onClick = vm::resetLocalVault) { Text("Clear local vault") }
+        OutlinedButton(onClick = vm::seedDemoData) { Text("Seed demo data") }
+    }
+
+    // Danger zone — tick everything you want to remove, then confirm.
+    SectionCard("Delete Data") {
+        Text("Choose one or more things to remove on this device, then confirm.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        CheckRow("Seed / demo data", "Removes only the built-in demo items.", delSeed) { delSeed = it }
+        CheckRow("All my items", "Removes every item in the vault (keeps your accounts).", delItems) { delItems = it }
+        CheckRow("User accounts", "Removes all local accounts, their items and saved keys — returns to the account picker.", delAccounts) { delAccounts = it }
+
+        Button(
+            onClick = { confirm = true },
+            enabled = anySelected,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError,
+            ),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(Icons.Filled.DeleteForever, null)
+            Text("  Delete selected")
         }
+
         maintMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall) }
     }
-    SectionCard("Users") {
-        Text("In API mode, accounts and default users are created on the server via the VaultGuard web app " +
-            "(Setup wizard → Seed users). In local mode this device uses a single master-password vault.",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
+
     SectionCard("Database Management") {
         Text("Schema is kept up to date automatically. In local mode the encrypted SQLite database lives in the app's private storage.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -352,6 +435,39 @@ private fun MaintenanceTab(vm: SettingsViewModel) {
     SectionCard("Diagnostics") {
         Text("Logs are written to the app's private files directory. Share them from your device settings if support requests them.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+
+    if (confirm) {
+        val summary = buildList {
+            if (delSeed) add("• Seed / demo data")
+            if (delItems) add("• All your items")
+            if (delAccounts) add("• All user accounts and saved keys")
+        }.joinToString("\n")
+        AlertDialog(
+            onDismissRequest = { confirm = false },
+            icon = { Icon(Icons.Filled.WarningAmber, null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("Delete the selected data?") },
+            text = { Text("This will remove:\n$summary\n\nThis can’t be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirm = false
+                    vm.runDelete(delSeed, delItems, delAccounts, onReset = onLocked)
+                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { confirm = false }) { Text("Cancel") } },
+        )
+    }
+}
+
+/** A labelled checkbox row with a supporting description, used for the multi-select delete options. */
+@Composable
+private fun CheckRow(title: String, subtitle: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.Top) {
+        androidx.compose.material3.Checkbox(checked = checked, onCheckedChange = onChange)
+        Column(Modifier.padding(top = 12.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyMedium)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
@@ -494,6 +610,135 @@ private fun SliderRow(label: String, value: Float, min: Float, max: Float, value
             Text(label)
             Text(valueLabel, color = MaterialTheme.colorScheme.primary)
         }
-        Slider(value = value, onValueChange = onChange, valueRange = min..max)
+        Slider(
+            value = value, onValueChange = onChange, valueRange = min..max,
+            modifier = Modifier.semantics { contentDescription = "$label, $valueLabel" },
+        )
+    }
+}
+
+// ---- Accent colour picker (palettes + specific colours) -------------------
+
+private data class AccentPreset(val argb: Long, val name: String)
+
+private val AccentPresets = listOf(
+    AccentPreset(0L, "Default"),
+    AccentPreset(0xFF0A84FF, "Blue"),
+    AccentPreset(0xFF5E5CE6, "Indigo"),
+    AccentPreset(0xFF30B0C7, "Teal"),
+    AccentPreset(0xFF34C759, "Green"),
+    AccentPreset(0xFFFF9F0A, "Orange"),
+    AccentPreset(0xFFFF375F, "Pink"),
+    AccentPreset(0xFFBF5AF2, "Purple"),
+    AccentPreset(0xFFFF453A, "Red"),
+)
+
+private fun onColorForArgb(argb: Long): Color =
+    if (Color(argb).luminance() > 0.5f) Color.Black else Color.White
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FlowRowFonts(selected: FontChoice, onPick: (FontChoice) -> Unit) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        FontChoice.entries.forEach { fc ->
+            FilterChip(
+                selected = selected == fc,
+                onClick = { onPick(fc) },
+                label = { Text(fc.label) },
+                modifier = Modifier.semantics { stateDescription = if (selected == fc) "Selected" else "Not selected" },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AccentPicker(selected: Long, onPick: (Long) -> Unit) {
+    val isCustom = selected != 0L && AccentPresets.none { it.argb == selected }
+    var showCustom by remember(selected) { mutableStateOf(isCustom) }
+
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        AccentPresets.forEach { p ->
+            AccentSwatch(argb = p.argb, name = p.name, selected = selected == p.argb) {
+                showCustom = false; onPick(p.argb)
+            }
+        }
+        AccentSwatch(argb = if (isCustom) selected else 0xFF8E8E93, name = "Custom", selected = isCustom, isCustomTile = true) {
+            showCustom = true
+        }
+    }
+
+    if (showCustom) {
+        CustomColorEditor(initial = if (isCustom) selected else 0xFF0A84FF, onApply = onPick)
+    }
+}
+
+@Composable
+private fun AccentSwatch(argb: Long, name: String, selected: Boolean, isCustomTile: Boolean = false, onClick: () -> Unit) {
+    val isDefault = argb == 0L
+    val fill = if (isDefault) MaterialTheme.colorScheme.surfaceVariant else Color(argb)
+    Box(
+        Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .background(fill)
+            .border(
+                width = if (selected) 3.dp else 1.dp,
+                color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant,
+                shape = CircleShape,
+            )
+            .clickable(onClick = onClick)
+            .semantics {
+                contentDescription = "$name accent colour"
+                stateDescription = if (selected) "Selected" else "Not selected"
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        when {
+            selected -> Icon(Icons.Filled.Check, null,
+                tint = if (isDefault) MaterialTheme.colorScheme.onSurface else onColorForArgb(argb))
+            isDefault -> Text("A", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
+            isCustomTile -> Text("+", color = Color.White, style = MaterialTheme.typography.titleMedium)
+        }
+    }
+}
+
+/** RGB editor for a specific custom accent colour (with a live preview + hex readout). */
+@Composable
+private fun CustomColorEditor(initial: Long, onApply: (Long) -> Unit) {
+    var r by remember(initial) { mutableStateOf(((initial shr 16) and 0xFF).toInt()) }
+    var g by remember(initial) { mutableStateOf(((initial shr 8) and 0xFF).toInt()) }
+    var b by remember(initial) { mutableStateOf((initial and 0xFF).toInt()) }
+    val argb = 0xFF000000L or (r.toLong() shl 16) or (g.toLong() shl 8) or b.toLong()
+
+    Column(Modifier.fillMaxWidth().padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(36.dp).clip(CircleShape).background(Color(argb))
+                    .semantics { contentDescription = "Selected custom colour preview" },
+            )
+            Text(
+                "#%06X".format(argb and 0xFFFFFF),
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.padding(start = 12.dp),
+            )
+        }
+        ColorSlider("Red", r) { r = it }
+        ColorSlider("Green", g) { g = it }
+        ColorSlider("Blue", b) { b = it }
+        Button(onClick = { onApply(argb) }, modifier = Modifier.fillMaxWidth()) { Text("Use this colour") }
+    }
+}
+
+@Composable
+private fun ColorSlider(label: String, value: Int, onChange: (Int) -> Unit) {
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) { Text(label); Text("$value") }
+        Slider(
+            value = value.toFloat(),
+            onValueChange = { onChange(it.roundToInt()) },
+            valueRange = 0f..255f,
+            modifier = Modifier.semantics { contentDescription = "$label channel, $value of 255" },
+        )
     }
 }

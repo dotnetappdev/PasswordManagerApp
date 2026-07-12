@@ -436,6 +436,24 @@ class VaultRepository @Inject constructor(
         dao.deleteAllForProfile(pid())
     }
 
+    /** Erase every locally-stored item for ALL profiles (used by the "delete accounts / everything" reset). */
+    suspend fun wipeAllLocalItems() {
+        dao.deleteAll()
+    }
+
+    /**
+     * Delete only the seeded demo items (matched by their well-known titles), leaving the user's own
+     * items, categories and account intact — the local-mode equivalent of the desktop "Delete Seed
+     * Data" with categories/users kept. Returns how many demo items were removed. Local mode only.
+     */
+    suspend fun deleteSeedData(): Int {
+        if (mode() != ConnectionMode.LOCAL) return 0
+        val demoTitles = DEMO_ITEMS.map { it.title }.toSet()
+        val victims = dao.getAll(pid()).filter { it.title in demoTitles }
+        victims.forEach { dao.deleteById(it.id) }
+        return victims.size
+    }
+
     /**
      * Full reset of the active profile's local vault to recover from a forgotten/mismatched master
      * password: clears that profile's verifier + salt AND its items (undecryptable once the key is gone),
@@ -512,5 +530,6 @@ class VaultRepository @Inject constructor(
         tags = tagsCsv?.split(',')?.filter { it.isNotBlank() } ?: emptyList(),
         customFields = decodeCustomFields(customFieldsJson),
         vaultId = vaultId,
+        createdAt = createdAt,
     )
 }

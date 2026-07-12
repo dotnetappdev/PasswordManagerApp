@@ -142,7 +142,10 @@ final class VaultRepository {
             guard let site = (item.website ?? item.loginUrl).flatMap({ $0.isEmpty ? nil : $0 }),
                   let user = (item.username ?? item.email).flatMap({ $0.isEmpty ? nil : $0 }) else { continue }
             guard let sec = try? await secret(id: item.id), let pw = sec.password, !pw.isEmpty else { continue }
-            creds.append(AutoFillCred(identifier: site, username: user, password: pw))
+            creds.append(AutoFillCred(
+                identifier: site, username: user, password: pw,
+                title: item.title, categoryName: item.categoryName, createdAt: item.createdAt
+            ))
         }
         AutoFillCredentialStore.save(creds)
     }
@@ -264,12 +267,41 @@ final class VaultRepository {
         local.deleteAll()
     }
 
+    /// Delete only the seeded demo items (matched by their well-known titles), keeping the user's own
+    /// items and accounts — the local-mode equivalent of the desktop "Delete Seed Data". Returns the count.
+    @discardableResult
+    func deleteSeedData() -> Int {
+        guard mode == .local else { return 0 }
+        let demoTitles = Set(Self.demoItems.map { $0.title })
+        let victims = local.all().filter { demoTitles.contains($0.title) }
+        for v in victims { local.delete(v.id) }
+        return victims.count
+    }
+
+    /// Full local reset: wipes all items, saved accounts and local vault keys, then locks the session so
+    /// the app returns to the unlock / account picker. When `clearAppSecrets` is true it also removes the
+    /// API key, passcode and saved 1Password Connect credentials — a complete factory reset of local data.
+    func wipeAllLocal(clearAppSecrets: Bool) {
+        local.deleteAll()
+        for id in accountsStore.accounts.map({ $0.id }) { accountsStore.remove(id) }
+        keychain.delete(Keychain.Keys.localSalt)
+        keychain.delete(Keychain.Keys.localVerifier)
+        if clearAppSecrets {
+            keychain.delete(Keychain.Keys.apiKey)
+            keychain.delete(Keychain.Keys.passcode)
+            keychain.delete(Keychain.Keys.onePasswordHost)
+            keychain.delete(Keychain.Keys.onePasswordToken)
+        }
+        session.lock()
+    }
+
     private func toVaultItem(_ r: VaultRow) -> VaultItem {
         VaultItem(id: r.id, title: r.title, description: r.descriptionText, type: ItemType.from(r.type),
                   isFavorite: r.isFavorite, isArchived: r.isArchived, isDeleted: r.isDeleted,
                   username: r.username, email: r.email, website: r.website, loginUrl: r.loginUrl,
                   notes: r.notes, categoryName: r.categoryName, tags: [],
-                  customFields: Self.decodeCustomFields(r.customFieldsJson))
+                  customFields: Self.decodeCustomFields(r.customFieldsJson),
+                  createdAt: r.createdAt)
     }
 
     /// Serialize custom fields for the local JSON column (nil when none).

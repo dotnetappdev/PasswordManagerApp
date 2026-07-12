@@ -16,6 +16,13 @@ public sealed partial class SecurityPage : Page
     private IServiceProvider? _serviceProvider;
     private IPasswordItemService? _passwordItemService;
     private ISecurityAuditService? _auditService;
+    private IBreachCheckService? _breachService;
+
+    // Kept between the audit scan and the (on-demand, network) breach scan so we can re-render together.
+    private List<PasswordItem> _items = new();
+    private VaultHealthReport? _report;
+    private List<SecurityAuditEntry> _breachedEntries = new();
+    private bool _breachScanned;
 
     // Lightweight view model for the issue-section template.
     private sealed class IssueSection
@@ -36,6 +43,7 @@ public sealed partial class SecurityPage : Page
             _serviceProvider = sp;
             _passwordItemService = sp.GetService<IPasswordItemService>();
             _auditService = sp.GetService<ISecurityAuditService>();
+            _breachService = sp.GetService<IBreachCheckService>();
         }
         await LoadAsync();
     }
@@ -46,15 +54,80 @@ public sealed partial class SecurityPage : Page
     {
         if (_passwordItemService == null || _auditService == null) return;
 
+        // A fresh audit invalidates any earlier breach results.
+        _breachScanned = false;
+        _breachedEntries = new List<SecurityAuditEntry>();
+
         try
         {
             var items = await _passwordItemService.GetAllAsync();
-            var report = _auditService.Analyze(items);
-            Render(report);
+            _items = items?.ToList() ?? new List<PasswordItem>();
+            _report = _auditService.Analyze(_items);
+            Render(_report);
         }
         catch
         {
-            Render(_auditService.Analyze(Array.Empty<PasswordItem>()));
+            _items = new List<PasswordItem>();
+            _report = _auditService.Analyze(Array.Empty<PasswordItem>());
+            Render(_report);
+        }
+    }
+
+    // On-demand Have I Been Pwned scan (k-anonymity). Network call, so it's a separate button.
+    private async void BreachScanButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_breachService == null || _report == null) return;
+
+        BreachScanButton.IsEnabled = false;
+        BreachScanButtonText.Text = "Checking…";
+        try
+        {
+            var found = new List<SecurityAuditEntry>();
+            var seen = new Dictionary<string, BreachCheckResult>(StringComparer.Ordinal);
+            var checkFailed = false;
+
+            foreach (var item in _items)
+            {
+                var pwd = item.LoginItem?.Password ?? item.Password;
+                if (string.IsNullOrEmpty(pwd)) continue;
+
+                if (!seen.TryGetValue(pwd, out var result))
+                {
+                    result = await _breachService.CheckPasswordAsync(pwd);
+                    seen[pwd] = result;
+                }
+
+                if (result.CheckFailed) checkFailed = true;
+                else if (result.IsBreached)
+                    found.Add(new SecurityAuditEntry
+                    {
+                        ItemId = item.Id,
+                        Title = item.Title ?? "(untitled)",
+                        Detail = $"seen {result.TimesSeen:N0} time(s) in breaches"
+                    });
+            }
+
+            _breachedEntries = found.OrderByDescending(f =>
+            {
+                var digits = new string(f.Detail.Where(char.IsDigit).ToArray());
+                return long.TryParse(digits, out var n) ? n : 0L;
+            }).ToList();
+            _breachScanned = true;
+
+            Render(_report);
+
+            if (checkFailed)
+                VaultGuard.WPF.Services.ToastService.Instance.Show(
+                    "Some passwords couldn't be checked — the breach service was unreachable.",
+                    VaultGuard.WPF.Services.ToastType.Warning, "Breach check");
+            else if (_breachedEntries.Count == 0)
+                VaultGuard.WPF.Services.ToastService.Instance.Success(
+                    "None of your passwords were found in known data breaches.", "Breach check");
+        }
+        finally
+        {
+            BreachScanButton.IsEnabled = true;
+            BreachScanButtonText.Text = "Check for breaches";
         }
     }
 
@@ -77,6 +150,16 @@ public sealed partial class SecurityPage : Page
         No2faCountText.Text = report.MissingTwoFactorCount.ToString();
 
         var sections = new List<IssueSection>();
+
+        // Compromised (breach) results go first — they're the most urgent. Only shown after a scan.
+        if (_breachScanned && _breachedEntries.Count > 0)
+            sections.Add(new IssueSection
+            {
+                Color = ParseBrush("#DC2626"),
+                Heading = $"Compromised passwords ({_breachedEntries.Count})",
+                Subtitle = "These appear in known data breaches (Have I Been Pwned — only a partial hash was sent). Change them as soon as possible.",
+                Entries = _breachedEntries
+            });
 
         if (report.WeakCount > 0)
             sections.Add(new IssueSection
@@ -131,7 +214,7 @@ public sealed partial class SecurityPage : Page
             });
 
         IssueSectionsList.ItemsSource = sections;
-        AllClearBorder.Visibility = (report.TotalIssues == 0 && report.MissingTwoFactorCount == 0)
+        AllClearBorder.Visibility = (report.TotalIssues == 0 && report.MissingTwoFactorCount == 0 && _breachedEntries.Count == 0)
             ? Visibility.Visible
             : Visibility.Collapsed;
     }

@@ -45,13 +45,23 @@ You can change these later in **Settings → Storage → API Configuration**.
   Secure Notes, Wi‑Fi, Identities), Security Dashboard, Manage Categories, Vaults, Import, Archive,
   Recently Deleted, Settings, About, My Account.
 - **Category filter chips** above the search bar; **search**; grouped, 1Password‑style item list.
+- **Bottom navigation**: Home, **Favourites** (quick access to starred items), Items, Security, Search —
+  plus a prominent accent **New Item** button (pencil glyph) that reads as the primary create action.
 - Item detail with **reveal password**, copy, and a live **TOTP** code.
 - Polished **add/edit** form with **password generator**, strength meter, **category picker**, and
   **QR scanning** for authenticator (TOTP) secrets.
+- **Account popup menu** on the top‑left profile avatar (1Password‑style): identity header plus
+  **My Profile, Switch Account, Settings, Lock** and **Exit**. The full navigation drawer opens from the
+  hamburger icon.
+- **Typed custom fields** with the exact same 13 field types as the desktop app — Text, Password, Date,
+  Number, Email, URL, Text area, Phone, File, Toggle (Yes/No), Address, One‑Time Password and Sign‑in‑with.
+  Full CRUD: each field has a type picker, type‑aware keyboard/masking, and a reveal toggle for secrets.
 - **Vault CRUD** (create / rename / delete) in API mode.
 - Eight‑tab **Settings** mirroring the desktop (Appearance, Accessibility, Security, Storage,
   Backup/Import/Export, Maintenance, Shortcuts, About), including editable API configuration and
-  **seed / reset demo data**.
+  **seed / delete demo data**. **Maintenance → Delete Data** presents a scope selector — **Seed data**
+  (demo items only), **User accounts** (all local accounts + their vaults), or **Everything** (full
+  factory reset) — each with a confirmation dialog. The same scoped delete is on iOS.
 - **Sign in a computer**: tap the QR icon on the home screen and scan the QR shown on the desktop/web
   sign‑in screen — the desktop is signed into the same account (API mode).
 - Default **Personal** vault + the same six default categories as the desktop app.

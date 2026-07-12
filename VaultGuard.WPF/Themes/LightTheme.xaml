@@ -5,9 +5,9 @@
 
     <!-- Enhanced Light Theme Color Palette - Professional Style -->
     <Color xmlns:ui="http://schemas.modernwpf.com/2019"
-    x:Key="LightModernPrimaryColor">#7C3AED</Color>
-    <Color x:Key="LightModernPrimaryLightColor">#A78BFA</Color>
-    <Color x:Key="LightModernPrimaryDarkColor">#5B21B6</Color>
+    x:Key="LightModernPrimaryColor">#2563EB</Color>
+    <Color x:Key="LightModernPrimaryLightColor">#60A5FA</Color>
+    <Color x:Key="LightModernPrimaryDarkColor">#1D4ED8</Color>
     <Color x:Key="LightModernAccentColor">#EC4899</Color>
     <Color x:Key="LightModernAccentLightColor">#F472B6</Color>
     <Color x:Key="LightModernSuccessColor">#10B981</Color>
@@ -26,7 +26,7 @@
     <Color x:Key="LightModernSidebarBackgroundColor">#F8FAFC</Color>
 
         <!-- New item button color (match primary color) -->
-        <Color x:Key="LightModernNewItemButtonColor">#7C3AED</Color>
+        <Color x:Key="LightModernNewItemButtonColor">#2563EB</Color>
 
     <!-- Enhanced Light Text Colors -->
     <Color x:Key="LightModernTextPrimaryColor">#1E293B</Color>

@@ -32,7 +32,7 @@ struct SidebarView: View {
                     ForEach(VaultSection.categories) { row($0) }
                 }
                 Section("Security") {
-                    Button { onSelectRoute(.security) } label: { Label("Security Dashboard", systemImage: "shield.lefthalf.filled") }
+                    Button { onSelectRoute(.security) } label: { Label("Security Center", systemImage: "shield.lefthalf.filled") }
                 }
                 Section("Manage") {
                     Button { onSelectRoute(.categories) } label: { Label("Manage Categories", systemImage: "folder.badge.gearshape") }

@@ -44,7 +44,7 @@ class MainActivity : FragmentActivity() {
                 toaster.messages.collect { snackbarHostState.showSnackbar(it) }
             }
 
-            VaultGuardTheme(appTheme = settings.theme, dynamicColor = settings.dynamicColor) {
+            VaultGuardTheme(appTheme = settings.theme, dynamicColor = settings.dynamicColor, accentArgb = settings.accentArgb, fontChoice = settings.fontChoice) {
                 val base = LocalDensity.current
                 val fontScale = base.fontScale * settings.uiZoom * (settings.fontSizePt / 14f)
                 CompositionLocalProvider(

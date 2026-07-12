@@ -141,28 +141,35 @@ struct ItemDetailView: View {
     }
 }
 
-/// A single custom-field row in the detail view. Secret fields stay masked until revealed.
+/// A single custom-field row in the detail view. Password/OTP fields stay masked until revealed;
+/// Toggle fields read as Yes/No. The type matches the desktop custom-field types.
 private struct CustomFieldRow: View {
     let field: CustomFieldData
     let onCopy: (String) -> Void
     @State private var revealed = false
+
+    private var isToggle: Bool { field.fieldType == .toggle }
+    private var masked: Bool { field.isMasked && !revealed }
+
+    private var displayValue: String {
+        if isToggle { return (field.value.lowercased() == "true" || field.value == "1") ? "Yes" : "No" }
+        return masked ? String(repeating: "•", count: max(6, min(field.value.count, 12))) : field.value
+    }
 
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(field.name.isEmpty ? "Field" : field.name)
                     .font(.caption).foregroundStyle(.secondary)
-                if field.secret && !revealed {
-                    Text(String(repeating: "•", count: max(6, min(field.value.count, 12))))
-                        .font(.system(.body, design: .monospaced))
-                } else {
-                    Text(field.value).textSelection(.enabled)
-                }
+                Text(displayValue)
+                    .font(field.isMasked ? .system(.body, design: .monospaced) : .body)
+                    .textSelection(.enabled)
+                    .lineLimit(field.fieldType.isMultiline ? 6 : 2)
             }
             Spacer()
-            if field.secret && !revealed {
+            if masked {
                 Button { revealed = true } label: { Image(systemName: "eye") }.buttonStyle(.borderless)
-            } else {
+            } else if !isToggle {
                 Button { onCopy(field.value) } label: { Image(systemName: "doc.on.doc") }.buttonStyle(.borderless)
             }
         }

@@ -130,6 +130,13 @@ class ItemEditViewModel @Inject constructor(
         s.copy(customFields = s.customFields.mapIndexed { i, f -> if (i == index) f.copy(secret = !f.secret) else f })
     }
 
+    fun setCustomFieldType(index: Int, type: com.vaultguard.app.data.model.CustomFieldType) = _state.update { s ->
+        s.copy(customFields = s.customFields.mapIndexed { i, f ->
+            // Password/OTP types imply a masked value; keep the explicit secret flag for other types.
+            if (i == index) f.copy(type = type.code, secret = f.secret || type.isSecret) else f
+        })
+    }
+
     fun removeCustomField(index: Int) = _state.update { s ->
         s.copy(customFields = s.customFields.filterIndexed { i, _ -> i != index })
     }

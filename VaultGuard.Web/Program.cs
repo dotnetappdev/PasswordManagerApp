@@ -176,6 +176,7 @@ builder.Services.AddSingleton<ITotpService, VaultGuard.Services.Services.TotpSer
 builder.Services.AddSingleton<IQrCodeService, VaultGuard.Services.Services.QrCodeService>();
 builder.Services.AddSingleton<ISecurityAuditService, VaultGuard.Services.Services.SecurityAuditService>();
 builder.Services.AddSingleton<IPassphraseGenerator, VaultGuard.Services.Services.PassphraseGenerator>();
+builder.Services.AddSingleton<VaultGuard.Services.Interfaces.IBreachCheckService, VaultGuard.Services.Services.HibpBreachCheckService>();
 builder.Services.AddScoped<ICollectionService, VaultGuard.Services.Services.CollectionService>();
 builder.Services.AddScoped<IAuthService, VaultGuard.Services.Services.AuthService>();
 builder.Services.AddScoped<IUserProfileService, VaultGuard.Services.Services.UserProfileService>();

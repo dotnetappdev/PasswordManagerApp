@@ -17,13 +17,14 @@
 
 .top-row {
     height: 3.5rem;
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #e5e7eb;
+    /* Follow the MudBlazor theme so the sidebar looks right in both light and dark modes. */
+    background-color: var(--mud-palette-surface, #f8f9fa);
+    border-bottom: 1px solid var(--mud-palette-lines-default, #e5e7eb);
 }
 
 .navbar-brand {
     font-size: 1.1rem;
-    color: #1f2937 !important;
+    color: var(--mud-palette-text-primary, #1f2937) !important;
     font-weight: 600;
 }
 
@@ -85,8 +86,8 @@
     }
 
     .nav-item ::deep a {
-        color: #374151;
-        border-radius: 6px;
+        color: var(--mud-palette-text-primary, #374151);
+        border-radius: 8px;
         height: 40px;
         display: flex;
         align-items: center;
@@ -100,21 +101,22 @@
     }
 
         .nav-item ::deep a.active {
-            background-color: #e0f2fe;
-            color: #0891b2;
-            border-left-color: #0891b2;
-            font-weight: 500;
+            /* Tint with the theme's primary accent so the active item matches the rest of the app. */
+            background-color: var(--mud-palette-primary-hover, rgba(8, 145, 178, 0.12));
+            color: var(--mud-palette-primary, #0891b2);
+            border-left-color: var(--mud-palette-primary, #0891b2);
+            font-weight: 600;
         }
 
         .nav-item ::deep a:hover {
-            background-color: #f1f5f9;
-            color: #374151;
+            background-color: var(--mud-palette-action-default-hover, #f1f5f9);
+            color: var(--mud-palette-text-primary, #374151);
         }
 
 .nav-scrollable {
     display: none;
-    background-color: #ffffff;
-    border-right: 1px solid #e5e7eb;
+    background-color: var(--mud-palette-surface, #ffffff);
+    border-right: 1px solid var(--mud-palette-lines-default, #e5e7eb);
 }
 
 .navbar-toggler:checked ~ .nav-scrollable {
@@ -132,7 +134,7 @@
         /* Allow sidebar to scroll for tall menus */
         height: calc(100vh - 3.5rem);
         overflow-y: auto;
-        background-color: #ffffff;
-        border-right: 1px solid #e5e7eb;
+        background-color: var(--mud-palette-surface, #ffffff);
+        border-right: 1px solid var(--mud-palette-lines-default, #e5e7eb);
     }
 }

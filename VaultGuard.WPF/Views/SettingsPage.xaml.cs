@@ -1411,16 +1411,23 @@ public sealed partial class SettingsPage : Page
 
     private async void DeleteSeedDataButton_Click(object sender, RoutedEventArgs e) => await RunClearSeedDataAsync();
 
-    // Removes the demo/seed data (categories, collections, tags, password items) for the current user
-    // and the built-in test user. User accounts are NOT touched.
+    // Removes the demo/seed data for the current user and the built-in test user. Password items are
+    // always deleted; when "Keep categories" is ticked the categories, collections and tags survive.
+    // User accounts are NEVER touched.
     private async System.Threading.Tasks.Task RunClearSeedDataAsync()
     {
         try
         {
+            // Honour the "keep categories" option (only present in the Maintenance panel). Defaults to a
+            // full seed wipe when the checkbox isn't shown (e.g. the Storage-tab "Clear Seed Data" button).
+            var keepCategories = KeepCategoriesCheckBox?.IsChecked == true;
+
             var confirmDialog = new ModernWpf.Controls.ContentDialog
             {
                 Title = "Delete Seed Data",
-                Content = "This will permanently remove all categories, collections, tags, and password items (including the built-in demo data).\n\nYour user accounts are kept. This cannot be undone. Continue?",
+                Content = keepCategories
+                    ? "This will permanently remove all password items (including the built-in demo data).\n\nYour categories, collections, tags and user accounts are kept. This cannot be undone. Continue?"
+                    : "This will permanently remove all categories, collections, tags, and password items (including the built-in demo data).\n\nYour user accounts are kept. This cannot be undone. Continue?",
                 PrimaryButtonText = "Yes, Delete Seed Data",
                 CloseButtonText = "Cancel",
                 DefaultButton = ModernWpf.Controls.ContentDialogButton.Close,
@@ -1450,12 +1457,16 @@ public sealed partial class SettingsPage : Page
                 }
             }
 
-            // STEP 2 — clear categories, collections, tags and any leftover rows (FK constraints off),
-            // then mark the database as seeded so startup never re-adds the demo data.
-            var resetService = _serviceProvider.GetService<VaultGuard.Services.Interfaces.IDatabaseResetService>();
+            // STEP 2 — unless the user opted to keep categories, clear categories, collections, tags and
+            // any leftover rows (FK constraints off). Either way, mark the database as seeded so startup
+            // never re-adds the demo data.
             VaultGuard.Services.Interfaces.DatabaseResetResult? reset = null;
-            if (resetService != null)
-                reset = await resetService.ResetDataTablesAsync();
+            if (!keepCategories)
+            {
+                var resetService = _serviceProvider.GetService<VaultGuard.Services.Interfaces.IDatabaseResetService>();
+                if (resetService != null)
+                    reset = await resetService.ResetDataTablesAsync();
+            }
 
             try
             {
@@ -1465,7 +1476,7 @@ public sealed partial class SettingsPage : Page
                     {
                         using var scope = scopeFactory.CreateScope();
                         var db = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
-                        TestDataSeeder.ClearSeedData(db, TestDataSeeder.TestUserId);
+                        TestDataSeeder.ClearSeedData(db, TestDataSeeder.TestUserId, keepCategories);
                         TryMarkSeedComplete(db);
                     });
                 }
@@ -1475,13 +1486,15 @@ public sealed partial class SettingsPage : Page
                 await _logger.LogErrorAsync("SettingsPage", "Per-user seed cleanup failed (items already deleted)", inner);
             }
 
-            await _logger.LogAsync("SettingsPage", $"Delete seed data: {itemsDeleted} items deleted; reset: {reset?.Message}");
+            await _logger.LogAsync("SettingsPage", $"Delete seed data: {itemsDeleted} items deleted; keepCategories={keepCategories}; reset: {reset?.Message}");
 
             // Tell the live items / dashboard views to reload so the cleared data disappears immediately.
             VaultGuard.WPF.Services.AppEvents.RaiseVaultDataChanged();
 
             VaultGuard.WPF.Services.ToastService.Instance.Success(
-                $"Removed {itemsDeleted} item(s) plus their categories, collections & tags. Your accounts were kept.",
+                keepCategories
+                    ? $"Removed {itemsDeleted} item(s). Your categories, collections, tags and accounts were kept."
+                    : $"Removed {itemsDeleted} item(s) plus their categories, collections & tags. Your accounts were kept.",
                 "Seed data deleted");
         }
         catch (Exception ex)

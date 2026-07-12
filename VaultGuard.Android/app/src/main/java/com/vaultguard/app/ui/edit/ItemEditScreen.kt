@@ -44,6 +44,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -61,6 +62,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.vaultguard.app.ui.common.ItemIconTile
+import com.vaultguard.app.data.model.CustomFieldType
 import com.vaultguard.app.data.model.ItemType
 import com.vaultguard.app.ui.navigation.Routes
 
@@ -207,7 +209,7 @@ fun ItemEditScreen(
                 onAdd = viewModel::addCustomField,
                 onName = viewModel::setCustomFieldName,
                 onValue = viewModel::setCustomFieldValue,
-                onToggleSecret = viewModel::toggleCustomFieldSecret,
+                onType = viewModel::setCustomFieldType,
                 onRemove = viewModel::removeCustomField,
             )
 
@@ -235,24 +237,30 @@ fun ItemEditScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CustomFieldsSection(
     fields: List<com.vaultguard.app.data.model.CustomFieldData>,
     onAdd: () -> Unit,
     onName: (Int, String) -> Unit,
     onValue: (Int, String) -> Unit,
-    onToggleSecret: (Int) -> Unit,
+    onType: (Int, CustomFieldType) -> Unit,
     onRemove: (Int) -> Unit,
 ) {
+    // Per-field "reveal" toggles for masked (password / OTP) values — display only.
+    val revealed = remember { mutableStateMapOf<Int, Boolean>() }
+
     FormSection("Custom fields") {
         if (fields.isEmpty()) {
             Text(
-                "Add your own fields — a PIN, a recovery code, a membership number…",
+                "Add your own fields — a PIN, a recovery code, a membership number… " +
+                    "with the same field types as the desktop app.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         fields.forEachIndexed { index, field ->
+            val type = field.fieldType
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
@@ -267,28 +275,80 @@ private fun CustomFieldsSection(
                         Icon(Icons.Filled.DeleteOutline, "Remove field", tint = MaterialTheme.colorScheme.error)
                     }
                 }
-                OutlinedTextField(
-                    value = field.value,
-                    onValueChange = { onValue(index, it) },
-                    label = { Text(if (field.secret) "Value (hidden)" else "Value") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    visualTransformation = if (field.secret) PasswordVisualTransformation() else VisualTransformation.None,
-                    trailingIcon = {
-                        IconButton(onClick = { onToggleSecret(index) }) {
-                            Icon(
-                                if (field.secret) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                if (field.secret) "Make visible" else "Hide value",
-                            )
+
+                // Field type picker — mirrors the WPF/Blazor custom-field types exactly.
+                CustomFieldTypeDropdown(type) { onType(index, it) }
+
+                when (type) {
+                    CustomFieldType.Toggle -> {
+                        val on = field.value.equals("true", ignoreCase = true) || field.value == "1"
+                        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
+                            Text(if (on) "Yes" else "No")
+                            Switch(checked = on, onCheckedChange = { onValue(index, if (it) "true" else "false") })
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                    }
+                    else -> {
+                        val masked = field.isMasked && revealed[index] != true
+                        OutlinedTextField(
+                            value = field.value,
+                            onValueChange = { onValue(index, it) },
+                            label = { Text(if (field.isMasked) "Value (hidden)" else "Value") },
+                            singleLine = !type.isMultiline,
+                            minLines = if (type.isMultiline) 3 else 1,
+                            shape = RoundedCornerShape(14.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = keyboardTypeFor(type)),
+                            visualTransformation = if (masked) PasswordVisualTransformation() else VisualTransformation.None,
+                            trailingIcon = if (field.isMasked) {
+                                {
+                                    IconButton(onClick = { revealed[index] = revealed[index] != true }) {
+                                        Icon(
+                                            if (masked) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                            if (masked) "Reveal value" else "Hide value",
+                                        )
+                                    }
+                                }
+                            } else null,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
             }
         }
         TextButton(onClick = onAdd) {
             Icon(Icons.Filled.Add, null)
             Text("  Add custom field")
+        }
+    }
+}
+
+/** Keyboard best suited to a custom-field type (parity with the desktop input hints). */
+private fun keyboardTypeFor(type: CustomFieldType): KeyboardType = when (type) {
+    CustomFieldType.Number -> KeyboardType.Number
+    CustomFieldType.Email -> KeyboardType.Email
+    CustomFieldType.Phone -> KeyboardType.Phone
+    CustomFieldType.Url, CustomFieldType.SignInWith -> KeyboardType.Uri
+    CustomFieldType.Password, CustomFieldType.OneTimePassword -> KeyboardType.Password
+    else -> KeyboardType.Text
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CustomFieldTypeDropdown(selected: CustomFieldType, onSelect: (CustomFieldType) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = selected.label,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Type") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier.fillMaxWidth().menuAnchor(),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            CustomFieldType.entries.forEach { t ->
+                DropdownMenuItem(text = { Text(t.label) }, onClick = { onSelect(t); expanded = false })
+            }
         }
     }
 }

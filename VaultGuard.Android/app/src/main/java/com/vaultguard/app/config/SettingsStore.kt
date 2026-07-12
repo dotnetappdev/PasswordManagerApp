@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -18,6 +19,14 @@ private val Context.settingsDataStore by preferencesDataStore(name = "vaultguard
 enum class AppTheme { SYSTEM, LIGHT, DARK, HIGH_CONTRAST }
 enum class DefaultView { DASHBOARD, ALL_ITEMS, FAVORITES }
 
+/** Selectable UI typeface for accessibility/personalisation. */
+enum class FontChoice(val label: String) {
+    SYSTEM("System default"),
+    SANS_SERIF("Sans-serif"),
+    SERIF("Serif"),
+    MONOSPACE("Monospace"),
+}
+
 /**
  * Full mirror of the WPF Settings surface (Appearance / Accessibility / Security / Storage /
  * Backup-Import-Export / Maintenance). Persisted with DataStore so choices survive restarts.
@@ -26,6 +35,9 @@ data class AppSettings(
     // Appearance
     val theme: AppTheme = AppTheme.SYSTEM,
     val dynamicColor: Boolean = true,
+    /** Custom accent colour as 0xAARRGGBB; 0 = use the built-in theme accent / Material You. */
+    val accentArgb: Long = 0L,
+    val fontChoice: FontChoice = FontChoice.SYSTEM,
     val defaultView: DefaultView = DefaultView.ALL_ITEMS,
     val showItemCount: Boolean = true,
     val animateTransitions: Boolean = true,
@@ -63,6 +75,8 @@ class SettingsStore @Inject constructor(
     private object K {
         val theme = stringPreferencesKey("theme")
         val dynamicColor = booleanPreferencesKey("dynamic_color")
+        val accentArgb = longPreferencesKey("accent_argb")
+        val fontChoice = stringPreferencesKey("font_choice")
         val defaultView = stringPreferencesKey("default_view")
         val showItemCount = booleanPreferencesKey("show_item_count")
         val animateTransitions = booleanPreferencesKey("animate_transitions")
@@ -95,6 +109,8 @@ class SettingsStore @Inject constructor(
         AppSettings(
             theme = p[K.theme]?.let { runCatching { AppTheme.valueOf(it) }.getOrNull() } ?: d.theme,
             dynamicColor = p[K.dynamicColor] ?: d.dynamicColor,
+            accentArgb = p[K.accentArgb] ?: d.accentArgb,
+            fontChoice = p[K.fontChoice]?.let { runCatching { FontChoice.valueOf(it) }.getOrNull() } ?: d.fontChoice,
             defaultView = p[K.defaultView]?.let { runCatching { DefaultView.valueOf(it) }.getOrNull() } ?: d.defaultView,
             showItemCount = p[K.showItemCount] ?: d.showItemCount,
             animateTransitions = p[K.animateTransitions] ?: d.animateTransitions,
@@ -130,6 +146,8 @@ class SettingsStore @Inject constructor(
             val next = transform(current)
             p[K.theme] = next.theme.name
             p[K.dynamicColor] = next.dynamicColor
+            p[K.accentArgb] = next.accentArgb
+            p[K.fontChoice] = next.fontChoice.name
             p[K.defaultView] = next.defaultView.name
             p[K.showItemCount] = next.showItemCount
             p[K.animateTransitions] = next.animateTransitions
@@ -163,6 +181,8 @@ class SettingsStore @Inject constructor(
         return AppSettings(
             theme = p[K.theme]?.let { runCatching { AppTheme.valueOf(it) }.getOrNull() } ?: d.theme,
             dynamicColor = p[K.dynamicColor] ?: d.dynamicColor,
+            accentArgb = p[K.accentArgb] ?: d.accentArgb,
+            fontChoice = p[K.fontChoice]?.let { runCatching { FontChoice.valueOf(it) }.getOrNull() } ?: d.fontChoice,
             defaultView = p[K.defaultView]?.let { runCatching { DefaultView.valueOf(it) }.getOrNull() } ?: d.defaultView,
             showItemCount = p[K.showItemCount] ?: d.showItemCount,
             animateTransitions = p[K.animateTransitions] ?: d.animateTransitions,

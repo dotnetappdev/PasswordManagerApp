@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -102,7 +103,16 @@ fun ItemDetailScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             if (item == null) {
-                state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                Box(Modifier.fillMaxWidth().padding(top = 48.dp), Alignment.Center) {
+                    when {
+                        state.loading -> CircularProgressIndicator()
+                        state.error != null -> Text(state.error!!, color = MaterialTheme.colorScheme.error)
+                        else -> Text(
+                            "This item couldn't be found. It may have been deleted.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
                 return@Column
             }
 
@@ -239,7 +249,16 @@ private fun DetailRow(label: String, value: String, mono: Boolean, onCopy: () ->
 
 @Composable
 private fun CustomFieldRow(field: com.vaultguard.app.data.model.CustomFieldData, onCopy: () -> Unit) {
-    var revealed by remember(field) { mutableStateOf(!field.secret) }
+    val type = field.fieldType
+    val masked = field.isMasked
+    var revealed by remember(field) { mutableStateOf(!masked) }
+    // Toggle fields read as Yes/No; everything else shows its (optionally masked) value.
+    val display = when {
+        type == com.vaultguard.app.data.model.CustomFieldType.Toggle ->
+            if (field.value.equals("true", true) || field.value == "1") "Yes" else "No"
+        revealed -> field.value
+        else -> "•".repeat(field.value.length.coerceIn(6, 12))
+    }
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -248,17 +267,17 @@ private fun CustomFieldRow(field: com.vaultguard.app.data.model.CustomFieldData,
             Text(field.name.ifBlank { "field" }.lowercase(), style = MaterialTheme.typography.labelMedium, color = Lavender)
             Spacer(Modifier.height(2.dp))
             Text(
-                if (revealed) field.value else "•".repeat(field.value.length.coerceIn(6, 12)),
+                display,
                 style = MaterialTheme.typography.bodyLarge,
-                fontFamily = if (field.secret) FontFamily.Monospace else FontFamily.Default,
-                maxLines = 2,
+                fontFamily = if (masked) FontFamily.Monospace else FontFamily.Default,
+                maxLines = if (type.isMultiline) 6 else 2,
                 overflow = TextOverflow.Ellipsis,
             )
         }
         Spacer(Modifier.width(8.dp))
-        if (field.secret && !revealed) {
+        if (masked && !revealed) {
             CircleButton(Icons.Filled.Visibility, "Reveal ${field.name}") { revealed = true }
-        } else {
+        } else if (type != com.vaultguard.app.data.model.CustomFieldType.Toggle) {
             CircleButton(Icons.Filled.ContentCopy, "Copy ${field.name}", onCopy)
         }
     }

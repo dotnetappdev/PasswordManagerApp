@@ -249,6 +249,20 @@ Full CRUD operations for all password item types:
 - **Secure Notes**: Encrypted text notes
 - **WiFi Credentials**: Network passwords and settings
 
+### Security Center
+
+The **Security Center** (`/security`, formerly "Watchtower") scores your vault and flags weak, reused,
+unsecured, old and no-2FA passwords. A **"Check for breaches"** action runs on-demand breach monitoring
+against Have I Been Pwned using **k-anonymity** — only the first five characters of each password's SHA-1
+hash are ever sent — and lists any compromised passwords with how often they appear in breaches.
+
+### Typed Custom Fields
+
+Every item supports **typed custom fields** with a MudBlazor type picker and drag-to-reorder, matching the
+WPF desktop app and the native Android/iOS apps exactly. Available types: **Text, URL, Email, Address, Date,
+One-Time Password, Password, Phone, Number, Toggle (Yes/No), Multiline text** and **Sign-in-with**. Add,
+edit, reorder and delete fields inline — changes persist through the shared `IPasswordItemService`.
+
 ### Search and Filtering
 
 - **Real-time Search**: Search across all fields instantly

@@ -69,7 +69,32 @@ public class PasswordItemService : IPasswordItemService
     public async Task<PasswordItem> UpdateAsync(PasswordItem item)
     {
         item.LastModified = DateTime.UtcNow;
-        
+
+        // Snapshot the previous password into the item's rolling history (migration-free reserved custom
+        // field) whenever it changes, so the user can review or restore an earlier one. Only the existing
+        // ciphertext is stored — never plaintext — so this adds no new at-rest exposure.
+        try
+        {
+            var previous = await _context.LoginItems.AsNoTracking()
+                .Where(l => l.PasswordItemId == item.Id)
+                .Select(l => new { l.EncryptedPassword, l.PasswordNonce, l.PasswordAuthTag })
+                .FirstOrDefaultAsync();
+
+            var newEncrypted = item.LoginItem?.EncryptedPassword;
+            if (previous != null
+                && !string.IsNullOrEmpty(previous.EncryptedPassword)
+                && !string.Equals(previous.EncryptedPassword, newEncrypted, StringComparison.Ordinal))
+            {
+                VaultGuard.Services.Utilities.PasswordHistoryHelper.Append(
+                    item, previous.EncryptedPassword, previous.PasswordNonce, previous.PasswordAuthTag);
+            }
+        }
+        catch (Exception ex)
+        {
+            // History is best-effort — never block a save because the snapshot failed.
+            VaultGuard.Services.Logging.AppLogger.Warning("Password history snapshot skipped", ex);
+        }
+
         _context.PasswordItems.Update(item);
         await _context.SaveChangesAsync();
         return item;

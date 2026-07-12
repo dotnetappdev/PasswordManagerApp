@@ -592,9 +592,11 @@
                                      IsOn="{Binding RequireCodeOnItemDelete, Mode=TwoWay}"
                                      Margin="0,0,0,8"/>
                         <ui:ToggleSwitch x:Name="NumberMatchApprovalsToggle"
-                                     Header="Number-matching sign-in approvals (approve on your phone, 60s)"
+                                     Header="Number-matching approvals"
                                      IsOn="{Binding NumberMatchApprovals, Mode=TwoWay}"
-                                     Margin="0,0,0,8"/>
+                                     Margin="0,0,0,2"/>
+                        <TextBlock Text="2FA-style number matching on important actions — editing, deleting or saving password items and categories, and changing your master password. Approve by tapping the matching number on your phone (valid for 60 seconds)."
+                                   TextWrapping="Wrap" Opacity="0.8" FontSize="12" Margin="0,0,0,8"/>
 
                         <Button x:Name="ChangePasswordButton"
                                Style="{StaticResource ModernSecondaryButtonStyle}"
@@ -1817,10 +1819,14 @@
                                               FontWeight="SemiBold"
                                               FontSize="14"/>
                                 </StackPanel>
-                                <TextBlock Text="Removes the built-in demo data (password items, categories, collections, tags) and stops it being re-added on next launch. Your user accounts are kept."
+                                <TextBlock Text="Removes the built-in demo data (password items, categories, collections, tags) and stops it being re-added on next launch. Your user accounts are always kept."
                                           Style="{StaticResource ModernCaptionStyle}"
                                           TextWrapping="Wrap"
                                           Opacity="0.8"/>
+
+                                <CheckBox x:Name="KeepCategoriesCheckBox"
+                                         Content="Keep my categories, collections &amp; tags (only delete items)"
+                                         Margin="8,8,8,4"/>
 
                                 <Button x:Name="DeleteSeedDataButton"
                                        Background="Transparent"

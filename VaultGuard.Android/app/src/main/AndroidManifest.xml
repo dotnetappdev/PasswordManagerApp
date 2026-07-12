@@ -27,6 +27,14 @@
             </intent-filter>
         </activity>
 
+        <!-- Quick-access picker launched from the Autofill suggestion list; not user-launchable. -->
+        <activity
+            android:name=".autofill.AutofillPickerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.VaultGuard"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop" />
+
         <!-- System autofill provider: lets VaultGuard fill passwords in other apps and browsers. -->
         <service
             android:name=".autofill.VaultGuardAutofillService"

@@ -420,7 +420,7 @@
                 <!-- Passkeys: hidden from the menu — manage them from Settings → Security instead -->
                 <!-- Vaults: managed entirely from the sidebar VAULTS list (create/rename/delete) -->
 
-                <ui:NavigationViewItem Content="Security Dashboard" Tag="Security"
+                <ui:NavigationViewItem Content="Security Center" Tag="Security"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE8E1;" FontSize="{DynamicResource MenuIconSize}"/>

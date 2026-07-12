@@ -118,7 +118,46 @@ data class CustomFieldData(
     val name: String,
     val value: String,
     val secret: Boolean = false,
-)
+    /**
+     * WPF `CustomFieldType` code (1=Text … 13=SignInWith). Stored as an Int so the JSON stays
+     * forward/backward compatible with older items that predate typed custom fields.
+     */
+    val type: Int = CustomFieldType.Text.code,
+) {
+    val fieldType: CustomFieldType get() = CustomFieldType.fromCode(type)
+    /** Password/OTP fields (or an explicit secret flag) are masked in the UI. */
+    val isMasked: Boolean get() = secret || fieldType.isSecret
+}
+
+/**
+ * Mirrors the desktop `VaultGuard.Models.CustomFieldType` so mobile custom fields offer the exact same
+ * field types as the WPF and Blazor forms (full CRUD parity).
+ */
+enum class CustomFieldType(val code: Int, val label: String) {
+    Text(1, "Text"),
+    Password(2, "Password"),
+    Date(3, "Date"),
+    Number(4, "Number"),
+    Email(5, "Email"),
+    Url(6, "URL"),
+    TextArea(7, "Text area"),
+    Phone(8, "Phone"),
+    File(9, "File"),
+    Toggle(10, "Toggle (Yes/No)"),
+    Address(11, "Address"),
+    OneTimePassword(12, "One-Time Password"),
+    SignInWith(13, "Sign in with");
+
+    /** Password and OTP values are always masked regardless of the per-field secret flag. */
+    val isSecret: Boolean get() = this == Password || this == OneTimePassword
+
+    /** Multi-line fields (address / free-text notes). */
+    val isMultiline: Boolean get() = this == TextArea || this == Address
+
+    companion object {
+        fun fromCode(code: Int): CustomFieldType = entries.firstOrNull { it.code == code } ?: Text
+    }
+}
 
 @Serializable
 data class VaultDto(
@@ -292,6 +331,8 @@ data class VaultItem(
     val customFields: List<CustomFieldData> = emptyList(),
     /** Which vault this item lives in (LOCAL mode). Null in API mode (vault↔collection bridge). */
     val vaultId: Int? = null,
+    /** Epoch millis the item was created; used to group items by month in quick-access/search UI. */
+    val createdAt: Long = 0L,
 ) {
     companion object {
         fun from(dto: PasswordItemDto) = VaultItem(
@@ -310,6 +351,11 @@ data class VaultItem(
             notes = dto.loginItem?.notes,
             categoryName = dto.category?.name,
             tags = dto.tags.map { it.name },
+            createdAt = parseIsoMillis(dto.createdAt),
         )
+
+        private fun parseIsoMillis(iso: String?): Long =
+            if (iso.isNullOrBlank()) 0L
+            else runCatching { java.time.Instant.parse(iso).toEpochMilli() }.getOrDefault(0L)
     }
 }

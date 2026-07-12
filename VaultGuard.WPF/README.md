@@ -20,8 +20,15 @@ and theme files are in place and working.
   and searches the whole vault from anywhere. `Ctrl+F` focuses it. Per-page inline search
   bars have been removed in favour of this one global entry point.
 - **Full item CRUD** with live password-strength metering and live TOTP codes.
+- **Typed custom fields** — 13 field types (Text, Password, Date, Number, Email, URL, Text area, Phone,
+  File, Toggle, Address, One-Time Password, Sign-in-with), mirrored across the web, Android and iOS apps.
+- **Security Center** (formerly "Watchtower") — vault health check plus on-demand **breach monitoring**
+  via Have I Been Pwned (k-anonymity — only a partial password hash is ever sent).
 - **Vaults, categories, tags, favourites, archive, recently-deleted.**
 - **Passkeys / Windows Hello**, cloud backup (Google Drive + OneDrive), import/export.
+- **Maintenance → Delete Seed Data** removes the built-in demo data and never touches your user accounts.
+  A **"Keep my categories, collections & tags"** option deletes only the sample *items* while preserving
+  your vault's organisation (backed by `TestDataSeeder.ClearSeedData(db, userId, keepCategories)`).
 - **Keyboard shortcuts** (see Settings → Shortcuts).
 
 ## Security

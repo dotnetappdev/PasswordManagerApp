@@ -3,17 +3,22 @@
 @using VaultGuard.Models
 @inject IPasswordItemService PasswordItemService
 @inject ISecurityAuditService AuditService
+@inject IBreachCheckService BreachService
 @inject NavigationManager Navigation
 
-<PageTitle>Watchtower - VaultGuard</PageTitle>
+<PageTitle>Security Center - VaultGuard</PageTitle>
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-5">
     <MudIcon Icon="@Icons.Material.Filled.HealthAndSafety" Style="font-size:2.2rem; color:var(--mud-palette-primary);" />
     <div>
-        <MudText Typo="Typo.h4" Style="font-weight:700; line-height:1.1;">Watchtower</MudText>
+        <MudText Typo="Typo.h4" Style="font-weight:700; line-height:1.1;">Security Center</MudText>
         <MudText Typo="Typo.body2" Class="mud-text-secondary">A health check of every credential in your vault</MudText>
     </div>
     <MudSpacer />
+    <MudButton StartIcon="@Icons.Material.Filled.Shield" Variant="Variant.Filled" Color="Color.Error"
+               OnClick="@ScanBreachesAsync" Disabled="@(_loading || _breachScanning)" Class="mr-2">
+        @(_breachScanning ? "Checking…" : "Check for breaches")
+    </MudButton>
     <MudButton StartIcon="@Icons.Material.Filled.Refresh" Variant="Variant.Outlined" Color="Color.Primary"
                OnClick="@LoadAsync" Disabled="@_loading">Re-scan</MudButton>
 </MudStack>
@@ -61,7 +66,49 @@ else if (_report is not null)
         <div style="flex:1 1 140px;">@SummaryTile("Unsecured", _report.UnsecuredCount, Icons.Material.Filled.LockOpen, "#DC2626")</div>
         <div style="flex:1 1 140px;">@SummaryTile("No 2FA", _report.MissingTwoFactorCount, Icons.Material.Filled.Smartphone, "#71717A")</div>
         <div style="flex:1 1 140px;">@SummaryTile("Old", _report.OldCount, Icons.Material.Filled.HistoryToggleOff, "#0891B2")</div>
+        @if (_breachScanned)
+        {
+            <div style="flex:1 1 140px;">@SummaryTile("Compromised", _breached.Count, Icons.Material.Filled.GppBad, "#DC2626")</div>
+        }
     </div>
+
+    @if (_breachFailed)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mt-2" Icon="@Icons.Material.Filled.CloudOff">
+            Some passwords couldn't be checked (the breach service was unreachable). Try again when you're online.
+        </MudAlert>
+    }
+    @if (_breachScanned && _breached.Count > 0)
+    {
+        <MudExpansionPanels Elevation="1" Class="mt-2">
+            <MudExpansionPanel Expanded="true">
+                <TitleContent>@PanelTitle("Compromised passwords", _breached.Count, "#DC2626", Icons.Material.Filled.GppBad)</TitleContent>
+                <ChildContent>
+                    <MudText Typo="Typo.body2" Class="mb-2 mud-text-secondary">
+                        These passwords appear in known data breaches (via Have I Been Pwned — only a partial hash was
+                        ever sent). Change them as soon as possible.
+                    </MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var b in _breached)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.GppBad" OnClick="@(() => GoToItem(b.Id))">
+                                @b.Title
+                                <MudText Typo="Typo.caption" Class="ml-2 mud-text-secondary" Style="display:inline;">
+                                    — seen @b.TimesSeen.ToString("N0") time(s) in breaches
+                                </MudText>
+                            </MudListItem>
+                        }
+                    </MudList>
+                </ChildContent>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    }
+    else if (_breachScanned)
+    {
+        <MudAlert Severity="Severity.Success" Class="mt-2" Icon="@Icons.Material.Filled.VerifiedUser">
+            None of your passwords were found in known data breaches.
+        </MudAlert>
+    }
 
     @if (_report.TotalIssues == 0)
     {
@@ -122,21 +169,63 @@ else if (_report is not null)
     bool _loading = true;
     VaultHealthReport? _report;
 
+    // Breach monitoring (Have I Been Pwned, k-anonymity) — run on demand since it's a network call.
+    List<PasswordItem> _items = new();
+    List<(string Title, int Id, int TimesSeen)> _breached = new();
+    bool _breachScanning;
+    bool _breachScanned;
+    bool _breachFailed;
+
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
     async Task LoadAsync()
     {
         _loading = true;
+        // A fresh vault scan invalidates any earlier breach results.
+        _breachScanned = false;
+        _breachFailed = false;
+        _breached.Clear();
         try
         {
             var items = await PasswordItemService.GetAllAsync();
-            _report = AuditService.Analyze(items);
+            _items = items?.ToList() ?? new List<PasswordItem>();
+            _report = AuditService.Analyze(_items);
         }
         catch
         {
+            _items = new List<PasswordItem>();
             _report = AuditService.Analyze(Array.Empty<PasswordItem>());
         }
         finally { _loading = false; }
+    }
+
+    async Task ScanBreachesAsync()
+    {
+        _breachScanning = true;
+        _breachFailed = false;
+        var found = new List<(string Title, int Id, int TimesSeen)>();
+        try
+        {
+            // Cache by password so identical/reused passwords are only checked once.
+            var seen = new Dictionary<string, BreachCheckResult>(StringComparer.Ordinal);
+            foreach (var item in _items)
+            {
+                var pwd = item.LoginItem?.Password ?? item.Password;
+                if (string.IsNullOrEmpty(pwd)) continue;
+
+                if (!seen.TryGetValue(pwd, out var result))
+                {
+                    result = await BreachService.CheckPasswordAsync(pwd);
+                    seen[pwd] = result;
+                }
+
+                if (result.CheckFailed) _breachFailed = true;
+                else if (result.IsBreached) found.Add((item.Title ?? "(untitled)", item.Id, result.TimesSeen));
+            }
+            _breached = found.OrderByDescending(b => b.TimesSeen).ToList();
+            _breachScanned = true;
+        }
+        finally { _breachScanning = false; }
     }
 
     void GoToItem(int id) => Navigation.NavigateTo("/passwords");

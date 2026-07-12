@@ -42,9 +42,20 @@ public static class TestDataSeeder
     }
 
     public static void ClearSeedData(VaultGuardDbContext db, string userId)
+        => ClearSeedData(db, userId, keepCategories: false);
+
+    /// <summary>
+    /// Removes the demo/seed data for a user. Password items are always deleted. When
+    /// <paramref name="keepCategories"/> is true the user's categories, collections and tags are
+    /// preserved (only the sample entries are cleared) so the vault keeps its organisation. User
+    /// accounts themselves are never touched here — sign-in credentials always survive a seed wipe.
+    /// </summary>
+    public static void ClearSeedData(VaultGuardDbContext db, string userId, bool keepCategories)
     {
         var items = db.PasswordItems.Where(p => p.UserId == userId).ToList();
         if (items.Any()) { db.PasswordItems.RemoveRange(items); db.SaveChanges(); }
+
+        if (keepCategories) return;
 
         var categories = db.Categories.Where(c => c.UserId == userId).ToList();
         if (categories.Any()) { db.Categories.RemoveRange(categories); db.SaveChanges(); }

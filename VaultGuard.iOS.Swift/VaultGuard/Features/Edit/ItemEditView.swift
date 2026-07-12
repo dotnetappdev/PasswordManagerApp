@@ -75,21 +75,18 @@ struct ItemEditView: View {
                     VStack(spacing: 6) {
                         TextField("Label", text: $customFields[i].name)
                             .font(.subheadline.weight(.medium))
-                        HStack {
-                            Group {
-                                if customFields[i].secret {
-                                    SecureField("Value", text: $customFields[i].value)
-                                } else {
-                                    TextField("Value", text: $customFields[i].value)
-                                }
-                            }
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                            Button { customFields[i].secret.toggle() } label: {
-                                Image(systemName: customFields[i].secret ? "eye.slash" : "eye")
-                            }
-                            .buttonStyle(.borderless)
+
+                        // Field type picker — mirrors the WPF/Blazor/Android custom-field types exactly.
+                        Picker("Type", selection: Binding(
+                            get: { customFields[i].fieldType },
+                            set: { customFields[i].type = $0.code
+                                   if $0.isSecret { customFields[i].secret = true } })
+                        ) {
+                            ForEach(CustomFieldType.allCases) { t in Text(t.label).tag(t) }
                         }
+                        .font(.caption)
+
+                        customFieldValueEditor(index: i)
                     }
                     .padding(.vertical, 2)
                 }
@@ -129,6 +126,54 @@ struct ItemEditView: View {
             .autocorrectionDisabled(keyboard == .emailAddress || keyboard == .URL)
     }
 
+    /// A value editor adapted to the field's type — Yes/No toggle, multi-line text, secure entry, or a
+    /// keyboard-appropriate text field — matching the desktop custom-field types.
+    @ViewBuilder
+    private func customFieldValueEditor(index i: Int) -> some View {
+        let type = customFields[i].fieldType
+        switch type {
+        case .toggle:
+            Toggle(isOn: Binding(
+                get: { customFields[i].value.lowercased() == "true" || customFields[i].value == "1" },
+                set: { customFields[i].value = $0 ? "true" : "false" })
+            ) { Text("Yes / No") }
+                .font(.subheadline)
+        case .textArea, .address:
+            TextField("Value", text: $customFields[i].value, axis: .vertical)
+                .lineLimit(3...6)
+                .autocorrectionDisabled()
+        default:
+            HStack {
+                Group {
+                    if customFields[i].isMasked {
+                        SecureField("Value", text: $customFields[i].value)
+                    } else {
+                        TextField("Value", text: $customFields[i].value)
+                            .keyboardType(keyboardType(for: type))
+                    }
+                }
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                if type.isSecret == false {
+                    Button { customFields[i].secret.toggle() } label: {
+                        Image(systemName: customFields[i].secret ? "eye.slash" : "eye")
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+        }
+    }
+
+    private func keyboardType(for type: CustomFieldType) -> UIKeyboardType {
+        switch type {
+        case .number: return .numberPad
+        case .email: return .emailAddress
+        case .phone: return .phonePad
+        case .url, .signInWith: return .URL
+        default: return .default
+        }
+    }
+
     private func loadIfEditing() async {
         guard let itemId else { return }
         if let item = await env.repository.get(id: itemId) {
@@ -165,7 +210,7 @@ struct ItemEditView: View {
             customFields: customFields
                 .map { CustomFieldData(name: $0.name.trimmingCharacters(in: .whitespaces),
                                        value: $0.value.trimmingCharacters(in: .whitespaces),
-                                       secret: $0.secret) }
+                                       secret: $0.secret, type: $0.type) }
                 .filter { !$0.name.isEmpty || !$0.value.isEmpty })
         do {
             if let itemId { try await env.repository.update(id: itemId, input) }

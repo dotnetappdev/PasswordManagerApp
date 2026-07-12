@@ -65,13 +65,30 @@ data class SecurityStats(
     val loading: Boolean = true,
 )
 
+/** A password found in a known breach. */
+data class BreachHit(val id: Int, val title: String, val timesSeen: Int)
+
+/** State of the on-demand Have I Been Pwned scan. */
+sealed interface BreachScan {
+    data object Idle : BreachScan
+    data object Scanning : BreachScan
+    data class Done(val compromised: List<BreachHit>, val someFailed: Boolean) : BreachScan
+}
+
 @HiltViewModel
-class SecurityViewModel @Inject constructor(private val repository: VaultRepository) : ViewModel() {
+class SecurityViewModel @Inject constructor(
+    private val repository: VaultRepository,
+    private val breachChecker: com.vaultguard.app.domain.BreachChecker,
+) : ViewModel() {
     private val _stats = MutableStateFlow(SecurityStats())
     val stats = _stats.asStateFlow()
 
+    private val _breach = MutableStateFlow<BreachScan>(BreachScan.Idle)
+    val breach = _breach.asStateFlow()
+
     init { load() }
     fun load() = viewModelScope.launch {
+        _breach.value = BreachScan.Idle
         val items = runCatching { repository.list() }.getOrDefault(emptyList())
         val active = items.filter { !it.isDeleted }
         _stats.update {
@@ -84,5 +101,25 @@ class SecurityViewModel @Inject constructor(private val repository: VaultReposit
                 loading = false,
             )
         }
+    }
+
+    /** Check every stored password against known breaches (k-anonymity). Network call, hence on-demand. */
+    fun scanBreaches() = viewModelScope.launch {
+        _breach.value = BreachScan.Scanning
+        val items = runCatching { repository.list() }.getOrDefault(emptyList())
+            .filter { !it.isDeleted && !it.isArchived }
+        val hits = mutableListOf<BreachHit>()
+        var someFailed = false
+        val cache = HashMap<String, Int?>()
+        for (item in items) {
+            val pwd = runCatching { repository.secret(item.id).password }.getOrNull()
+            if (pwd.isNullOrEmpty()) continue
+            val count = if (cache.containsKey(pwd)) cache[pwd] else breachChecker.timesSeen(pwd).also { cache[pwd] = it }
+            when {
+                count == null -> someFailed = true
+                count > 0 -> hits.add(BreachHit(item.id, item.title, count))
+            }
+        }
+        _breach.value = BreachScan.Done(hits.sortedByDescending { it.timesSeen }, someFailed)
     }
 }

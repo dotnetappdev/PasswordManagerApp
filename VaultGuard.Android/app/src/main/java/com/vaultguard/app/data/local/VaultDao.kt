@@ -25,6 +25,9 @@ interface VaultDao {
     @Query("DELETE FROM vault_items WHERE profileId = :profileId")
     suspend fun deleteAllForProfile(profileId: String)
 
+    @Query("DELETE FROM vault_items")
+    suspend fun deleteAll()
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: VaultItemEntity): Long
 

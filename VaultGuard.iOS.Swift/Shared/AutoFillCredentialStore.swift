@@ -15,6 +15,11 @@ struct AutoFillCred: Codable {
     let identifier: String   // service/domain, e.g. "github.com"
     let username: String
     let password: String
+    /// Item title, category, and creation date — carried along so the extension's picker can offer
+    /// the same category filter + month-grouped list as the in-app Quick Access popup.
+    var title: String = ""
+    var categoryName: String?
+    var createdAt: Double = 0
 }
 
 enum AutoFillCredentialStore {

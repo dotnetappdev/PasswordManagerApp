@@ -45,9 +45,13 @@ built in.
 ## Features
 
 - **One vault, every platform.** Logins, secure notes, credit cards, identities and Wi-Fi credentials, organised into vaults, collections, categories and tags.
+- **Typed custom fields.** 13 field types (Text, Password, Date, Number, Email, URL, Text area, Phone, File, Toggle, Address, One-Time Password, Sign-in-with) with full CRUD — identical on WPF, web, Android and iOS.
+- **Security Center.** A vault health check — weak, reused, unsecured, old and no-2FA passwords — plus on-demand **breach monitoring** via Have I Been Pwned. The breach check is privacy-preserving (k-anonymity: only the first 5 characters of each password's SHA-1 hash ever leave the device). On all four apps.
+- **Password history.** Every password change is recorded so you can review when it changed; stored encrypted, no plaintext.
 - **Two-factor authentication.** TOTP authenticator support with hashed, single-use recovery codes. On a trusted device a 2FA account signs in with just the authenticator code.
-- **Step-up verification.** Optionally require an authenticator code before deleting a vault or an item.
+- **Step-up verification.** 2FA-style number-matching approval on important actions (editing, deleting or saving items and categories, and changing your master password).
 - **Passkeys.** WebAuthn/FIDO2 sign-in, including a software authenticator for the browser extension.
+- **Personalisation & accessibility.** Light / dark / system and a Windows-style **yellow-on-black high-contrast** theme; a custom **accent-colour** picker (palette swatches + specific colours) and selectable **fonts**; UI zoom and per-section text scaling; screen-reader labels.
 - **Bring your own database.** SQLite out of the box; switch to SQL Server, MySQL or PostgreSQL from Settings.
 - **Encrypted backups.** Local, NAS/SMB, FTP/FTPS, OneDrive and Google Drive — always encrypted before they leave the device.
 - **Import from anywhere.** 1Password, Bitwarden, LastPass, KeePass, Chrome, Edge, Firefox, Safari, Dashlane, NordPass, Keeper, Enpass, RoboForm and Apple Passwords.

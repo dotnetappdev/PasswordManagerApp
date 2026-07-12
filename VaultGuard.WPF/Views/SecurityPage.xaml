@@ -15,18 +15,28 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="Security Dashboard" FontSize="22" FontWeight="Bold"
+                    <TextBlock Text="Security Center" FontSize="22" FontWeight="Bold"
                                Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                     <TextBlock Text="A health check of every credential in your vault"
                                FontSize="13" Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                 </StackPanel>
-                <Button Grid.Column="1" x:Name="RescanButton" Click="RescanButton_Click"
-                        Style="{StaticResource ModernSecondaryButtonStyle}" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="Re-scan" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="BreachScanButton" Click="BreachScanButton_Click"
+                            Style="{StaticResource ModernSecondaryButtonStyle}" VerticalAlignment="Center" Margin="0,0,8,0"
+                            ToolTipService.ToolTip="Check every password against known data breaches (Have I Been Pwned, privacy-preserving)">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xEA18;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="BreachScanButtonText" Text="Check for breaches" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="RescanButton" Click="RescanButton_Click"
+                            Style="{StaticResource ModernSecondaryButtonStyle}" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Re-scan" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
 
             <!-- Score + summary row -->

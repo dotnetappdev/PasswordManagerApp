@@ -569,7 +569,7 @@
                 <div class="nav-item @(selectedCategory == "watchtower" ? "active" : "")"
                     @onclick="@(async () => await SelectCategory("watchtower"))">>
                     <span class="nav-icon">🛡️</span>
-                    <span class="nav-text">Watchtower</span>
+                    <span class="nav-text">Security Center</span>
                 </div>
             </div>
 
@@ -2081,7 +2081,7 @@
             "notes" => "Secure Notes",
             "wifi" => "WiFi",
             "favorites" => "Favorites",
-            "watchtower" => "Watchtower",
+            "watchtower" => "Security Center",
             "archive" => "Archive",
             "recently-deleted" => "Recently Deleted",
             _ when !string.IsNullOrEmpty(selectedTag) => $"Tagged: {selectedTag}",

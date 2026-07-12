@@ -117,7 +117,12 @@
                         <MudSwitch T="bool" @bind-Value="_enablePasskeySignIn"
                                    Label="Enable Passkey Sign-In" Color="Color.Primary" />
                         <MudSwitch T="bool" @bind-Value="_numberMatchApprovals"
-                                   Label="Number-matching sign-in approvals (GitHub-style, 60s)" Color="Color.Primary" />
+                                   Label="Number-matching approvals" Color="Color.Primary" />
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            2FA-style number matching on important actions — editing, deleting or saving password
+                            items and categories, and changing your master password. Approve by tapping the matching
+                            number on your phone. Codes are valid for 60 seconds.
+                        </MudText>
                         <MudButton Href="/passkeys" StartIcon="@Icons.Material.Filled.Fingerprint"
                                    Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">
                             Manage App Passkeys (Biometric)

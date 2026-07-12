@@ -17,6 +17,7 @@ import android.view.autofill.AutofillId
 import android.view.autofill.AutofillValue
 import android.widget.RemoteViews
 import com.vaultguard.app.MainActivity
+import com.vaultguard.app.R
 import com.vaultguard.app.data.model.VaultItem
 import com.vaultguard.app.data.repo.LoginItemInput
 import com.vaultguard.app.data.repo.SessionManager
@@ -64,30 +65,48 @@ class VaultGuardAutofillService : AutofillService() {
         val matches = runBlocking {
             withTimeoutOrNull(2500) { matchingItems(parsed.domain) } ?: emptyList()
         }
-        if (matches.isEmpty()) { callback.onSuccess(null); return }
 
         var added = 0
         for (item in matches.take(8)) {
             val secret = runBlocking { withTimeoutOrNull(2500) { repository.secret(item.id) } }
             val username = item.username ?: item.email
             val label = item.title.ifBlank { username ?: "VaultGuard" }
+            val row = presentation(label, username)
             val dataset = Dataset.Builder()
             var any = false
             // Fill the username field only when we actually have one — but never skip the whole item
             // just because a password-only field (e.g. a two-step login) has no username.
             parsed.usernameId?.let { uid ->
                 if (!username.isNullOrBlank()) {
-                    dataset.setValue(uid, AutofillValue.forText(username), presentation(label)); any = true
+                    dataset.setValue(uid, AutofillValue.forText(username), row); any = true
                 }
             }
             parsed.passwordId?.let { pid ->
                 val pw = secret?.password
                 if (!pw.isNullOrBlank()) {
-                    dataset.setValue(pid, AutofillValue.forText(pw), presentation(label)); any = true
+                    dataset.setValue(pid, AutofillValue.forText(pw), row); any = true
                 }
             }
             if (any) { response.addDataset(dataset.build()); added++ }
         }
+
+        // "Quick Access" entry — opens a rich in-app picker (search + category filter, items
+        // grouped by month, 1Password-style) for cases where the ranked matches above aren't it.
+        val pickerIntent = Intent(this, AutofillPickerActivity::class.java).apply {
+            putExtra(AutofillPickerActivity.EXTRA_USERNAME_ID, parsed.usernameId)
+            putExtra(AutofillPickerActivity.EXTRA_PASSWORD_ID, parsed.passwordId)
+            putExtra(AutofillPickerActivity.EXTRA_DOMAIN, parsed.domain)
+        }
+        val pickerPending = PendingIntent.getActivity(
+            this, 1002, pickerIntent,
+            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val searchDataset = Dataset.Builder()
+        parsed.usernameId?.let { searchDataset.setValue(it, null, presentation("Search VaultGuard…", null, android.R.drawable.ic_menu_search)) }
+        parsed.passwordId?.let { searchDataset.setValue(it, null, presentation("Search VaultGuard…", null, android.R.drawable.ic_menu_search)) }
+        searchDataset.setAuthentication(pickerPending.intentSender)
+        response.addDataset(searchDataset.build())
+        added++
 
         // Offer to save new credentials the user types.
         val saveIds = autofillIds
@@ -189,8 +208,19 @@ class VaultGuardAutofillService : AutofillService() {
         return matched.ifEmpty { all }
     }
 
-    private fun presentation(text: String): RemoteViews =
-        RemoteViews(packageName, android.R.layout.simple_list_item_1).apply {
-            setTextViewText(android.R.id.text1, text)
+    private fun presentation(
+        title: String,
+        subtitle: String? = null,
+        iconRes: Int = android.R.drawable.ic_lock_idle_lock,
+    ): RemoteViews =
+        RemoteViews(packageName, R.layout.autofill_item).apply {
+            setTextViewText(R.id.autofill_title, title)
+            setImageViewResource(R.id.autofill_icon, iconRes)
+            if (subtitle.isNullOrBlank()) {
+                setViewVisibility(R.id.autofill_subtitle, android.view.View.GONE)
+            } else {
+                setTextViewText(R.id.autofill_subtitle, subtitle)
+                setViewVisibility(R.id.autofill_subtitle, android.view.View.VISIBLE)
+            }
         }
 }

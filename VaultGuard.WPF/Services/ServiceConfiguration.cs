@@ -226,6 +226,7 @@ public static class ServiceConfiguration
         services.AddSingleton<IQrCodeService, QrCodeService>();
         services.AddSingleton<ISecurityAuditService, SecurityAuditService>();
         services.AddSingleton<IPassphraseGenerator, PassphraseGenerator>();
+        services.AddSingleton<VaultGuard.Services.Interfaces.IBreachCheckService, VaultGuard.Services.Services.HibpBreachCheckService>();
 
         services.AddScoped<Fido2NetLib.IFido2>(provider =>
         {

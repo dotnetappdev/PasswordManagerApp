@@ -4,11 +4,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -28,6 +31,17 @@ import com.vaultguard.app.ui.login.UnlockScreen
 import com.vaultguard.app.ui.qr.QrScannerScreen
 import com.vaultguard.app.ui.settings.SettingsScreen
 import com.vaultguard.app.ui.setup.ConnectionSetupScreen
+
+/**
+ * Rapid repeated back presses can queue more than one pop against the same
+ * back-stack entry while its exit transition is still in flight, overshooting
+ * onto a transient/blank destination. Only pop when the current entry is
+ * actually RESUMED so extra taps in flight are no-ops instead of double-pops.
+ */
+private fun NavController.safePopBackStack(): Boolean {
+    val resumed = currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED
+    return if (resumed) popBackStack() else false
+}
 
 @Composable
 fun VaultGuardNavGraph(rootViewModel: RootViewModel = hiltViewModel()) {
@@ -78,12 +92,19 @@ fun VaultGuardNavGraph(rootViewModel: RootViewModel = hiltViewModel()) {
                     route = Routes.DETAIL,
                     arguments = listOf(navArgument("id") { type = NavType.IntType }),
                 ) { entry ->
-                    val id = entry.arguments?.getInt("id") ?: return@composable
-                    ItemDetailScreen(
-                        itemId = id,
-                        onBack = { navController.popBackStack() },
-                        onEdit = { navController.navigate(Routes.edit(id)) },
-                    )
+                    val id = entry.arguments?.getInt("id")
+                    if (id == null) {
+                        // Transient null args mid back-stack-transition: bail out to Home
+                        // instead of rendering a blank screen with no way forward.
+                        LaunchedEffect(Unit) { navController.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true } } }
+                        Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
+                    } else {
+                        ItemDetailScreen(
+                            itemId = id,
+                            onBack = { navController.safePopBackStack() },
+                            onEdit = { navController.navigate(Routes.edit(id)) },
+                        )
+                    }
                 }
 
                 composable(
@@ -99,28 +120,28 @@ fun VaultGuardNavGraph(rootViewModel: RootViewModel = hiltViewModel()) {
                         itemId = id,
                         autoScan = autoScan,
                         navController = navController,
-                        onDone = { navController.popBackStack() },
+                        onDone = { navController.safePopBackStack() },
                         onScanTotp = { navController.navigate(Routes.SCAN) },
                     )
                 }
 
                 composable(Routes.QR_LOGIN) {
-                    com.vaultguard.app.ui.qr.QrLoginScreen(onDone = { navController.popBackStack() })
+                    com.vaultguard.app.ui.qr.QrLoginScreen(onDone = { navController.safePopBackStack() })
                 }
 
                 composable(Routes.SCAN) {
                     QrScannerScreen(
                         onResult = { value ->
                             navController.previousBackStackEntry?.savedStateHandle?.set(Routes.SCAN_RESULT, value)
-                            navController.popBackStack()
+                            navController.safePopBackStack()
                         },
-                        onCancel = { navController.popBackStack() },
+                        onCancel = { navController.safePopBackStack() },
                     )
                 }
 
                 composable(Routes.SETTINGS) {
                     SettingsScreen(
-                        onBack = { navController.popBackStack() },
+                        onBack = { navController.safePopBackStack() },
                         onEditConnection = { navController.navigate(Routes.SETUP) },
                         onLocked = { navController.navigate(Routes.UNLOCK) { popUpTo(0) { inclusive = true } } },
                         onOpenImport = { navController.navigate(Routes.IMPORT) },
@@ -130,26 +151,26 @@ fun VaultGuardNavGraph(rootViewModel: RootViewModel = hiltViewModel()) {
                 }
 
                 composable(Routes.DEVICE_SETUP) {
-                    com.vaultguard.app.ui.setup.DeviceSetupScreen(onBack = { navController.popBackStack() })
+                    com.vaultguard.app.ui.setup.DeviceSetupScreen(onBack = { navController.safePopBackStack() })
                 }
 
-                composable(Routes.VAULTS) { VaultsScreen(onBack = { navController.popBackStack() }) }
-                composable(Routes.CATEGORIES) { CategoriesScreen(onBack = { navController.popBackStack() }) }
-                composable(Routes.SECURITY) { SecurityDashboardScreen(onBack = { navController.popBackStack() }) }
-                composable(Routes.PASSKEYS) { com.vaultguard.app.ui.passkeys.PasskeysScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.VAULTS) { VaultsScreen(onBack = { navController.safePopBackStack() }) }
+                composable(Routes.CATEGORIES) { CategoriesScreen(onBack = { navController.safePopBackStack() }) }
+                composable(Routes.SECURITY) { SecurityDashboardScreen(onBack = { navController.safePopBackStack() }) }
+                composable(Routes.PASSKEYS) { com.vaultguard.app.ui.passkeys.PasskeysScreen(onBack = { navController.safePopBackStack() }) }
                 composable(Routes.IMPORT) {
                     ImportScreen(
-                        onBack = { navController.popBackStack() },
+                        onBack = { navController.safePopBackStack() },
                         onOpenOnePassword = { navController.navigate(Routes.IMPORT_1PASSWORD) },
                     )
                 }
                 composable(Routes.IMPORT_1PASSWORD) {
-                    OnePasswordImportScreen(onBack = { navController.popBackStack() })
+                    OnePasswordImportScreen(onBack = { navController.safePopBackStack() })
                 }
-                composable(Routes.ABOUT) { AboutScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.ABOUT) { AboutScreen(onBack = { navController.safePopBackStack() }) }
                 composable(Routes.PROFILE) {
                     ProfileScreen(
-                        onBack = { navController.popBackStack() },
+                        onBack = { navController.safePopBackStack() },
                         onLocked = { navController.navigate(Routes.UNLOCK) { popUpTo(0) { inclusive = true } } },
                     )
                 }

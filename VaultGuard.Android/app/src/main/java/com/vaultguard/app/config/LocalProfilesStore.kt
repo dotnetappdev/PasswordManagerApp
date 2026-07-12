@@ -85,6 +85,14 @@ class LocalProfilesStore @Inject constructor(
         }
     }
 
+    /** Wipe every local profile and the active selection, so the picker re-seeds the demo accounts. */
+    suspend fun clearAll() {
+        context.localProfilesDataStore.edit { prefs ->
+            prefs.remove(Keys.LIST)
+            prefs.remove(Keys.ACTIVE)
+        }
+    }
+
     companion object {
         val DEFAULTS = listOf(
             LocalProfile("admin", "Administrator", "Admin", "admin@passwordmanager.local", 0xFF7C3AEDL),
