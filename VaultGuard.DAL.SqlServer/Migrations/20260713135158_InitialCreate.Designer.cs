@@ -12,7 +12,7 @@ using VaultGuard.DAL;
 namespace VaultGuard.DAL.SqlServer.Migrations
 {
     [DbContext(typeof(VaultGuardDbContext))]
-    [Migration("20260710103702_InitialCreate")]
+    [Migration("20260713135158_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -2241,7 +2241,7 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                     b.HasOne("VaultGuard.Models.Vault", "Vault")
                         .WithMany()
                         .HasForeignKey("VaultId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("ParentCollection");
 
@@ -2261,7 +2261,7 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                     b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("CreditCardItems")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("PasswordItem");
@@ -2302,7 +2302,7 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                     b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("LoginItems")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("PasswordItem");
@@ -2374,7 +2374,7 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                     b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("SecureNoteItems")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("PasswordItem");
@@ -2477,7 +2477,7 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                     b.HasOne("VaultGuard.Models.ApplicationUser", "User")
                         .WithMany("WiFiItems")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("PasswordItem");

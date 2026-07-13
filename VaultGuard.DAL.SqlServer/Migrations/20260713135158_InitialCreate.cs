@@ -608,8 +608,7 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         name: "FK_Collections_Vault_VaultId",
                         column: x => x.VaultId,
                         principalTable: "Vault",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -752,8 +751,7 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         name: "FK_CreditCardItems_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_CreditCardItems_PasswordItems_PasswordItemId",
                         column: x => x.PasswordItemId,
@@ -849,8 +847,7 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         name: "FK_LoginItems_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_LoginItems_PasswordItems_PasswordItemId",
                         column: x => x.PasswordItemId,
@@ -965,8 +962,7 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         name: "FK_SecureNoteItems_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_SecureNoteItems_PasswordItems_PasswordItemId",
                         column: x => x.PasswordItemId,
@@ -1037,8 +1033,7 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         name: "FK_WiFiItems_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_WiFiItems_PasswordItems_PasswordItemId",
                         column: x => x.PasswordItemId,

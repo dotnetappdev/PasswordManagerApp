@@ -41,10 +41,9 @@
                     <div class="form-group">
                         <label for="masterKey">Master Key</label>
                         <div class="password-input-group">
-                            <input type="@(showPassword ? "text" : "password")" 
-                                   id="masterKey" 
-                                   @bind="masterKey" 
-                                   @onkeyup="ValidatePassword"
+                            <input type="@(showPassword ? "text" : "password")"
+                                   id="masterKey"
+                                   value="@masterKey"
                                    @oninput="OnMasterKeyInput"
                                    placeholder="Enter your master key"
                                    class="form-input @(masterKeyError ? "input-error" : "")" />
@@ -66,10 +65,10 @@
 
                     <div class="form-group">
                         <label for="confirmKey">Confirm Master Key</label>
-                        <input type="@(showConfirmPassword ? "text" : "password")" 
-                               id="confirmKey" 
-                               @bind="confirmKey"
-                               @oninput="OnConfirmKeyInput" 
+                        <input type="@(showConfirmPassword ? "text" : "password")"
+                               id="confirmKey"
+                               value="@confirmKey"
+                               @oninput="OnConfirmKeyInput"
                                placeholder="Confirm your master key"
                                class="form-input @(confirmKeyError ? "input-error" : "")" />
                         <button type="button" class="password-toggle" @onclick="ToggleConfirmPasswordVisibility">
@@ -497,15 +496,18 @@
         return true;
     }
     
-    private void OnMasterKeyInput()
+    private void OnMasterKeyInput(ChangeEventArgs e)
     {
-        // Clear error state when user starts typing
+        // Update the bound value on every keystroke (oninput) so the "Create Master Key" button enables
+        // live as the user types — @bind alone updates only on blur, which left the button greyed out.
+        masterKey = e.Value?.ToString() ?? string.Empty;
         masterKeyError = false;
+        ValidatePassword();
     }
-    
-    private void OnConfirmKeyInput()
+
+    private void OnConfirmKeyInput(ChangeEventArgs e)
     {
-        // Clear error state when user starts typing
+        confirmKey = e.Value?.ToString() ?? string.Empty;
         confirmKeyError = false;
     }
     

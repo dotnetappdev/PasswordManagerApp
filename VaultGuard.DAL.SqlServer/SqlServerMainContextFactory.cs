@@ -28,7 +28,7 @@ namespace VaultGuard.DAL.SqlServer
                 .AddEnvironmentVariables()
                 .Build();
 
-            var connectionString = SecretManagerConnectionResolver.Resolve(config)
+            var connectionString = config.GetConnectionString("DefaultConnection")
                 ?? "Server=localhost;Database=VaultGuardDesignTime;Trusted_Connection=True;TrustServerCertificate=True";
 
             var optionsBuilder = new DbContextOptionsBuilder<VaultGuardDbContext>();

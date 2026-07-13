@@ -57,6 +57,8 @@ data class AppSettings(
     val biometricUnlock: Boolean = false,
     val autoLockMinutes: Int = 5,
     val clipboardClearSeconds: Int = 30,
+    /** Seconds a revealed password stays visible before it auto-hides again (0 = stay visible). */
+    val passwordAutoHideSeconds: Int = 30,
     val confirmOnDelete: Boolean = true,
     val numberMatchApprovals: Boolean = true,
     // Password generator defaults
@@ -94,6 +96,7 @@ class SettingsStore @Inject constructor(
         val biometricUnlock = booleanPreferencesKey("biometric_unlock")
         val autoLockMinutes = intPreferencesKey("auto_lock_minutes")
         val clipboardClearSeconds = intPreferencesKey("clipboard_clear_seconds")
+        val passwordAutoHideSeconds = intPreferencesKey("password_auto_hide_seconds")
         val confirmOnDelete = booleanPreferencesKey("confirm_on_delete")
         val numberMatchApprovals = booleanPreferencesKey("number_match_approvals")
         val pwLength = intPreferencesKey("pw_length")
@@ -128,6 +131,7 @@ class SettingsStore @Inject constructor(
             biometricUnlock = p[K.biometricUnlock] ?: d.biometricUnlock,
             autoLockMinutes = p[K.autoLockMinutes] ?: d.autoLockMinutes,
             clipboardClearSeconds = p[K.clipboardClearSeconds] ?: d.clipboardClearSeconds,
+            passwordAutoHideSeconds = p[K.passwordAutoHideSeconds] ?: d.passwordAutoHideSeconds,
             confirmOnDelete = p[K.confirmOnDelete] ?: d.confirmOnDelete,
             numberMatchApprovals = p[K.numberMatchApprovals] ?: d.numberMatchApprovals,
             pwLength = p[K.pwLength] ?: d.pwLength,
@@ -165,6 +169,7 @@ class SettingsStore @Inject constructor(
             p[K.biometricUnlock] = next.biometricUnlock
             p[K.autoLockMinutes] = next.autoLockMinutes
             p[K.clipboardClearSeconds] = next.clipboardClearSeconds
+            p[K.passwordAutoHideSeconds] = next.passwordAutoHideSeconds
             p[K.confirmOnDelete] = next.confirmOnDelete
             p[K.numberMatchApprovals] = next.numberMatchApprovals
             p[K.pwLength] = next.pwLength
@@ -200,6 +205,7 @@ class SettingsStore @Inject constructor(
             biometricUnlock = p[K.biometricUnlock] ?: d.biometricUnlock,
             autoLockMinutes = p[K.autoLockMinutes] ?: d.autoLockMinutes,
             clipboardClearSeconds = p[K.clipboardClearSeconds] ?: d.clipboardClearSeconds,
+            passwordAutoHideSeconds = p[K.passwordAutoHideSeconds] ?: d.passwordAutoHideSeconds,
             confirmOnDelete = p[K.confirmOnDelete] ?: d.confirmOnDelete,
             numberMatchApprovals = p[K.numberMatchApprovals] ?: d.numberMatchApprovals,
             pwLength = p[K.pwLength] ?: d.pwLength,

@@ -13,18 +13,51 @@ namespace VaultGuard.Services.Logging
         {
             _baseLogPath = baseLogPath ?? ResolveDefaultLogPath();
             _minLevel = minLevel;
+
+            // Create the logs folder under the app directory up front so it exists on first boot. Wrapped so
+            // a read-only/denied location can never crash application startup (logging is best-effort).
+            try
+            {
+                Directory.CreateDirectory(_baseLogPath);
+            }
+            catch
+            {
+                // Best-effort: if we can't create it here, FileLogger will retry per-write and swallow errors.
+            }
         }
 
         public static string ResolveDefaultLogPath()
         {
-            var dir = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
-            while (dir != null)
+            // Dev convenience: place logs in the repo root (next to the .sln) by walking up from the app
+            // folder. On locked-down hosts (e.g. SmarterASP, where the app lives under h:\root\home\...),
+            // a parent directory may not be enumerable — treat that (or any probe failure) as "stop here"
+            // and fall back to the app-local logs folder, which is always writable (web.config writes its
+            // stdout log there too). Never let log-path discovery crash application startup.
+            try
             {
-                if (dir.GetFiles("*.sln").Length > 0)
+                var dir = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+                while (dir != null)
                 {
-                    return Path.Combine(dir.FullName, "logs");
+                    FileInfo[] solutions;
+                    try
+                    {
+                        solutions = dir.GetFiles("*.sln");
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        break; // Not allowed to enumerate this parent — use the app-local fallback.
+                    }
+
+                    if (solutions.Length > 0)
+                    {
+                        return Path.Combine(dir.FullName, "logs");
+                    }
+                    dir = dir.Parent;
                 }
-                dir = dir.Parent;
+            }
+            catch
+            {
+                // Any other filesystem issue while probing — fall back to the app-local logs folder.
             }
 
             return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");

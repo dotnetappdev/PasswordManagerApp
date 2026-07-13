@@ -159,6 +159,8 @@ struct SettingsView: View {
         Section("Clipboard & Deletion") {
             Stepper(settingsStore.settings.clipboardClearSeconds == 0 ? "Clear clipboard: Never" : "Clear clipboard: \(settingsStore.settings.clipboardClearSeconds)s",
                     value: s.clipboardClearSeconds, in: 0...120, step: 5)
+            Stepper(settingsStore.settings.passwordAutoHideSeconds == 0 ? "Hide revealed password: Off" : "Hide revealed password: \(settingsStore.settings.passwordAutoHideSeconds)s",
+                    value: s.passwordAutoHideSeconds, in: 0...120, step: 5)
             Toggle("Confirm before deleting", isOn: s.confirmOnDelete)
         }
         Section {

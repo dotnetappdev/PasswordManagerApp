@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -156,7 +157,9 @@ fun ItemDetailScreen(
                     PasswordRow(
                         revealed = state.revealedPassword,
                         revealing = state.revealing,
+                        hideRemaining = state.passwordHideRemaining,
                         onReveal = viewModel::reveal,
+                        onHide = viewModel::hidePassword,
                         onCopy = { pwd -> clipboard.setText(AnnotatedString(pwd)) },
                     )
                 }
@@ -287,7 +290,9 @@ private fun CustomFieldRow(field: com.vaultguard.app.data.model.CustomFieldData,
 private fun PasswordRow(
     revealed: String?,
     revealing: Boolean,
+    hideRemaining: Int,
     onReveal: () -> Unit,
+    onHide: () -> Unit,
     onCopy: (String) -> Unit,
 ) {
     Row(
@@ -305,6 +310,9 @@ private fun PasswordRow(
                 )
             } else {
                 Text(revealed, style = MaterialTheme.typography.bodyLarge, fontFamily = FontFamily.Monospace, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (hideRemaining > 0) {
+                    Text("Hides in ${hideRemaining}s", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
         Spacer(Modifier.width(8.dp))
@@ -316,6 +324,8 @@ private fun PasswordRow(
         if (revealed == null) {
             CircleButton(Icons.Filled.Visibility, "Reveal password", onReveal)
         } else {
+            CircleButton(Icons.Filled.VisibilityOff, "Hide password", onHide)
+            Spacer(Modifier.width(8.dp))
             CircleButton(Icons.Filled.ContentCopy, "Copy password") { onCopy(revealed) }
         }
     }

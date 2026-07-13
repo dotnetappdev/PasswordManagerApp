@@ -16,12 +16,10 @@ using VaultGuard.ExceptionReporting.Sentry;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Secrets management: when the "GoogleSecretManager" section is enabled, pull secrets (connection strings,
-// JWT key, Sentry DSN, SMS/Supabase credentials, …) from Google Cloud Secret Manager (project
-// vaultguard-dev / vaultguard-prod) and layer them over appsettings.json so the rest of the app keeps
-// reading Configuration[...] unchanged. The dbserver/dbusername/dbpassword secrets are composed into a
-// SQL Server connection string. No-op when disabled.
-builder.Configuration.AddGoogleSecretManager();
+// Configuration comes from appsettings.json (+ appsettings.{Environment}.json) and environment variables.
+// The SQL Server connection string lives in ConnectionStrings:DefaultConnection — set the real production
+// value on the server (SmarterASP control panel or the ConnectionStrings__DefaultConnection environment
+// variable in web.config), never committed to source control.
 
 // Durable serial file logging for the whole app: logs/{yyyy}/{MMMM}/{dd}.txt.
 builder.Logging.AddProvider(new VaultGuard.Services.Logging.FileLoggerProvider(
@@ -331,14 +329,13 @@ VaultGuard.Services.Logging.AppLogger.Initialize(
     app.Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
 
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
-{
+ 
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", builder.Configuration["ApiSettings:Title"] ?? "Vault Guard API");
     });
-}
+ 
 
 app.UseHttpsRedirection();
 

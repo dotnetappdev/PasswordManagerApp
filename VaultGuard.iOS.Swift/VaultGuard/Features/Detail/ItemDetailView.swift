@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 struct ItemDetailView: View {
     @EnvironmentObject var env: AppEnvironment
+    @EnvironmentObject var settingsStore: SettingsStore
     @Environment(\.dismiss) private var dismiss
     let itemId: Int
     @Binding var path: [HomeRoute]
@@ -11,6 +12,7 @@ struct ItemDetailView: View {
     @State private var item: VaultItem?
     @State private var revealed: String?
     @State private var revealing = false
+    @State private var revealSecondsLeft = 0
     @State private var totpCode: String?
     @State private var totpRemaining = 0
     @State private var totpSecret: String?
@@ -45,10 +47,14 @@ struct ItemDetailView: View {
 
                 Section("Password") {
                     if let revealed {
-                        HStack {
+                        HStack(spacing: 16) {
                             Text(revealed).font(.system(.body, design: .monospaced)).textSelection(.enabled)
                             Spacer()
-                            Button { copy(revealed) } label: { Image(systemName: "doc.on.doc") }
+                            Button { hidePassword() } label: { Image(systemName: "eye.slash") }.buttonStyle(.borderless)
+                            Button { copy(revealed) } label: { Image(systemName: "doc.on.doc") }.buttonStyle(.borderless)
+                        }
+                        if revealSecondsLeft > 0 {
+                            Text("Hides in \(revealSecondsLeft)s").font(.caption).foregroundStyle(.secondary)
                         }
                     } else {
                         Button { Task { await reveal() } } label: {
@@ -92,12 +98,23 @@ struct ItemDetailView: View {
                 Button(role: .destructive) { Task { await deleteItem() } } label: { Image(systemName: "trash") }
             }
         }
-        .task { item = await env.repository.get(id: itemId) }
+        .task {
+            item = await env.repository.get(id: itemId)
+            await loadTotp()
+        }
         .onReceive(timer) { _ in
-            guard let secret = totpSecret, let code = Totp.generate(base32Secret: secret) else { return }
-            totpCode = code.value; totpRemaining = code.secondsRemaining
+            if let secret = totpSecret, let code = Totp.generate(base32Secret: secret) {
+                totpCode = code.value; totpRemaining = code.secondsRemaining
+            }
+            // Auto-hide a revealed password once its countdown elapses.
+            if revealed != nil && revealSecondsLeft > 0 {
+                revealSecondsLeft -= 1
+                if revealSecondsLeft == 0 { hidePassword() }
+            }
         }
     }
+
+    private func hidePassword() { revealed = nil; revealSecondsLeft = 0 }
 
     private func field(_ label: String, _ value: String) -> some View {
         Section(label) { Text(value).textSelection(.enabled) }
@@ -116,14 +133,20 @@ struct ItemDetailView: View {
     private func reveal() async {
         revealing = true; error = nil
         do {
-            let secret = try await env.repository.secret(id: itemId)
-            revealed = secret.password
-            if let t = secret.totpSecret, !t.isEmpty {
-                totpSecret = t
-                if let code = Totp.generate(base32Secret: t) { totpCode = code.value; totpRemaining = code.secondsRemaining }
-            }
+            revealed = try await env.repository.secret(id: itemId).password
+            // Start the user-configurable auto-hide countdown (0 = stay visible).
+            revealSecondsLeft = revealed == nil ? 0 : settingsStore.settings.passwordAutoHideSeconds
         } catch { self.error = error.localizedDescription }
         revealing = false
+    }
+
+    /// Loads the authenticator secret up front so the one-time code is always visible — the password
+    /// stays hidden behind "Reveal password", but the TOTP code shows immediately like an authenticator app.
+    private func loadTotp() async {
+        guard let s = try? await env.repository.secret(id: itemId),
+              let secret = s.totpSecret, !secret.isEmpty else { return }
+        totpSecret = secret
+        if let code = Totp.generate(base32Secret: secret) { totpCode = code.value; totpRemaining = code.secondsRemaining }
     }
 
     private func deleteItem() async {
