@@ -1,75 +1,75 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <!-- SmarterASP.NET runs sites in a shared IIS application pool. IIS forbids mixing hosting models
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<!-- SmarterASP.NET runs sites in a shared IIS application pool. IIS forbids mixing hosting models
          within one pool (HTTP 500.34), so pin OutOfProcess to match the rest of the pool. This makes the
          published web.config emit hostingModel="outofprocess" (ANCM reverse-proxies to the Kestrel process). -->
-	  <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>    <!-- Pomelo.EntityFrameworkCore.MySql (pulled transitively via VaultGuard.Services) has no EF Core 10
+		<AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
+		<!-- Pomelo.EntityFrameworkCore.MySql (pulled transitively via VaultGuard.Services) has no EF Core 10
          build yet, so it pins Relational <= 9.x while the solution runs EF Core 10. Suppress the resulting
          NU1608 until Pomelo ships an EF Core 10 release. Matches the suppression in Services/Web/DAL.MySql. -->
-    <NoWarn>$(NoWarn);NU1608</NoWarn>
-  </PropertyGroup>
+		<NoWarn>$(NoWarn);NU1608</NoWarn>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Google.Cloud.SecretManager.V1" Version="2.5.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
-    <!-- Patched native SQLite bundle (transitive 2.1.11 has advisory GHSA-2m69-gcr7-jv3q). -->
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
-    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.13.1" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.13.1" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.6.9" />
-    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-    <PackageReference Include="FluentValidation" Version="12.0.0" />
-    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
-    <PackageReference Include="Sentry.AspNetCore" Version="5.0.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+		<!-- Patched native SQLite bundle (transitive 2.1.11 has advisory GHSA-2m69-gcr7-jv3q). -->
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.13.1" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.13.1" />
+		<PackageReference Include="Scalar.AspNetCore" Version="2.6.9" />
+		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+		<PackageReference Include="FluentValidation" Version="12.0.0" />
+		<PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
+		<PackageReference Include="Sentry.AspNetCore" Version="5.0.0" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
-    <ProjectReference Include="..\VaultGuard.DAL\VaultGuard.DAL.csproj" />
-    <!-- SQL Server migrations assembly (applied at runtime by MigrateAsync). -->
-    <ProjectReference Include="..\VaultGuard.DAL.SqlServer\VaultGuard.DAL.SqlServer.csproj" />
-    <ProjectReference Include="..\VaultGuard.DAL.SupaBase\VaultGuard.DAL.SupaBase.csproj" />
-    <ProjectReference Include="..\VaultGuard.Crypto\VaultGuard.Crypto.csproj" />
-    <ProjectReference Include="..\VaultGuard.Services\VaultGuard.Services.csproj" />
-    <ProjectReference Include="..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
-    <ProjectReference Include="..\VaultGuard.ExceptionReporting\VaultGuard.ExceptionReporting.csproj" />
-    <ProjectReference Include="..\VaultGuard.ExceptionReporting.Sentry\VaultGuard.ExceptionReporting.Sentry.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
+		<ProjectReference Include="..\VaultGuard.DAL\VaultGuard.DAL.csproj" />
+		<!-- SQL Server migrations assembly (applied at runtime by MigrateAsync). -->
+		<ProjectReference Include="..\VaultGuard.DAL.SqlServer\VaultGuard.DAL.SqlServer.csproj" />
+		<ProjectReference Include="..\VaultGuard.DAL.SupaBase\VaultGuard.DAL.SupaBase.csproj" />
+		<ProjectReference Include="..\VaultGuard.Crypto\VaultGuard.Crypto.csproj" />
+		<ProjectReference Include="..\VaultGuard.Services\VaultGuard.Services.csproj" />
+		<ProjectReference Include="..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
+		<ProjectReference Include="..\VaultGuard.ExceptionReporting\VaultGuard.ExceptionReporting.csproj" />
+		<ProjectReference Include="..\VaultGuard.ExceptionReporting.Sentry\VaultGuard.ExceptionReporting.Sentry.csproj" />
+	</ItemGroup>
 
-  <!-- Ensure Development config is not copied into outputs/publish (prevents MSIX duplicate payloads) -->
-  <ItemGroup>
-    <None Update="appsettings.Development.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </None>
-  </ItemGroup>
+	<!-- Ensure Development config is not copied into outputs/publish (prevents MSIX duplicate payloads) -->
+	<ItemGroup>
+		<None Update="appsettings.Development.json">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
+		</None>
+	</ItemGroup>
 
-  <ItemGroup>
-    <Content Update="appsettings.Development.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </Content>
-  </ItemGroup>
+	<ItemGroup>
+		<Content Update="appsettings.Development.json">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
+		</Content>
+	</ItemGroup>
 
-  <!-- ANCM writes stdout to .\logs\stdout.txt (see web.config); make sure the folder ships in the
+	<!-- ANCM writes stdout to .\logs\stdout.txt (see web.config); make sure the folder ships in the
        publish output so logging works on first boot without creating it by hand on the server. -->
-  <Target Name="EnsureLogsFolder" AfterTargets="Publish">
-    <MakeDir Directories="$(PublishDir)logs" />
-  </Target>
+	<Target Name="EnsureLogsFolder" AfterTargets="Publish">
+		<MakeDir Directories="$(PublishDir)logs" />
+	</Target>
 
 </Project>

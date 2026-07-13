@@ -5,6 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <NoWarn>$(NoWarn);NU1608</NoWarn>
+	  <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
+
   </PropertyGroup>
 
   <ItemGroup>
@@ -65,5 +67,17 @@
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
+
+  <!-- Each referenced VaultGuardImports.* plugin project ships its own plugin.json with
+       CopyToOutputDirectory. Referencing all of them here makes every plugin.json land at the same relative
+       publish path ('plugin.json'), which fails publish with NETSDK1152 (duplicate output files). The web
+       app doesn't use these root-level files — it discovers plugins from imports/otherpasswordmanagers/<name>/
+       at runtime — so drop the transitive plugin.json copies from this project's publish output. -->
+  <Target Name="RemoveDuplicateImportPluginJson" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                             Condition="'%(Filename)%(Extension)' == 'plugin.json'" />
+    </ItemGroup>
+  </Target>
 
 </Project>

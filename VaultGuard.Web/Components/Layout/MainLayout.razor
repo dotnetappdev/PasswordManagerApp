@@ -1,10 +1,22 @@
 @inherits LayoutComponentBase
 @implements IDisposable
+@using Microsoft.AspNetCore.Components.Routing
 @inject VaultGuard.Components.Shared.Services.ThemeService ThemeService
 @inject IJSRuntime JS
 @inject VaultGuard.Services.Interfaces.IAuthService AuthService
 @inject NavigationManager Navigation
 
+@if (!_authorized)
+{
+    @* AUTH GATE: not authenticated (or still verifying). Render a chrome-free themed blank page while we
+       redirect to /login. Crucially we do NOT render @Body here, so protected pages are never instantiated
+       and no vault data is ever loaded or shown before the gate. This runs in OnParametersSetAsync (before
+       the first render), so the dashboard can never flash on screen ahead of the login page. *@
+    <MudThemeProvider Theme="_theme" IsDarkMode="@ThemeService.IsDarkMode" />
+    <div style="min-height:100vh; background: var(--mud-palette-background);"></div>
+}
+else
+{
 <MudThemeProvider Theme="_theme" IsDarkMode="@ThemeService.IsDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
@@ -96,10 +108,18 @@
         <MudButton Color="Color.Primary" OnClick="@(() => _aboutOpen = false)">Close</MudButton>
     </DialogActions>
 </MudDialog>
+}
 
 @code {
     bool _drawerOpen = true;
     bool _aboutOpen = false;
+
+    // Auth gate state. Starts false so nothing protected renders until we've verified the vault is unlocked.
+    bool _authorized;
+
+    // Routes that never require the vault to be unlocked. Login/Setup already use EmptyLayout (so they don't
+    // pass through this layout at all), but keeping them here makes the gate safe even if that ever changes.
+    static readonly string[] PublicPaths = { "/login", "/setup", "/register", "/profilelogin" };
 
     MudTheme _theme = new();
 
@@ -108,6 +128,51 @@
         _theme = VaultGuard.Components.Shared.Services.ThemeService.BuildTheme(ThemeService.AccentColor, ThemeService.IsHighContrast);
         ThemeService.ThemeSettingsChanged += OnThemeSettingsChanged;
         ThemeService.ThemeChanged += OnThemeChanged;
+    }
+
+    // Runs before every render, including the first and after each navigation — so the auth check completes
+    // before @Body is ever rendered. This is what prevents the dashboard from flashing ahead of login.
+    protected override async Task OnParametersSetAsync()
+    {
+        await EnforceAuthAsync();
+    }
+
+    private bool IsPublicPath()
+    {
+        var path = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var q = path.IndexOf('?');
+        if (q >= 0) path = path.Substring(0, q);
+        path = "/" + path.Trim('/');
+        return PublicPaths.Any(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task EnforceAuthAsync()
+    {
+        if (IsPublicPath())
+        {
+            _authorized = true;
+            return;
+        }
+
+        bool authenticated;
+        try
+        {
+            authenticated = await AuthService.IsAuthenticatedAsync();
+        }
+        catch (Exception ex)
+        {
+            // Fail CLOSED — an auth-check error must never expose the vault.
+            VaultGuard.Services.Logging.AppLogger.Warning("Auth gate check failed; redirecting to login", ex);
+            authenticated = false;
+        }
+
+        _authorized = authenticated;
+        if (!authenticated)
+        {
+            // Send them to the chrome-free login page. NavigateTo during prerender throws a handled
+            // NavigationException that performs the redirect server-side (no dashboard is ever sent).
+            Navigation.NavigateTo("/login");
+        }
     }
 
     // CSS zoom string for the app root (invariant culture so "1.2" not "1,2").
@@ -121,19 +186,6 @@
             // Resolve "System" to the browser's actual preference on first paint.
             await ThemeService.DetectAndApplySystemThemeAsync(JS);
             await InvokeAsync(StateHasChanged);
-
-            // WPF-style unlock gate: the main app requires an authenticated session. Login/Setup use the
-            // chrome-free EmptyLayout so they're never gated here. Fail-open on error so a JS hiccup can't
-            // lock the user out entirely.
-            try
-            {
-                if (!await AuthService.IsAuthenticatedAsync())
-                    Navigation.NavigateTo("/login");
-            }
-            catch (Exception ex)
-            {
-                VaultGuard.Services.Logging.AppLogger.Warning("Auth gate check failed; allowing access", ex);
-            }
         }
     }
 

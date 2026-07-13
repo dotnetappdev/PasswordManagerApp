@@ -406,3 +406,7 @@ VaultGuard.iOS.Swift/VaultGuard.xcodeproj/
 # Kotlin compiler daemon session artifacts
 VaultGuard.Android/.kotlin/
 .kotlin/
+
+# Server-only secrets: real production connection string lives here, never committed
+appsettings.Production.json
+**/appsettings.Production.json

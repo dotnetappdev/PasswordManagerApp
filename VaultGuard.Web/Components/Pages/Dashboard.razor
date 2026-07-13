@@ -144,6 +144,14 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // Defence in depth: never load or expose vault data unless the vault is unlocked. The MainLayout
+        // auth gate already blocks rendering, but guard here too so this page can't leak data on its own.
+        if (!AuthService.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login");
+            return;
+        }
+
         try
         {
             var allItemsEnum = await PasswordItemService.GetAllAsync();

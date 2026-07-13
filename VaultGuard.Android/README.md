@@ -29,6 +29,8 @@ need the **API URL** and the **key** — nothing else.
    - The key is stored hashed in the primary SQL database **and** mirrored into a per‑user local SQLite
      database, so the same key works whether the device talks to the API or a local vault.
 6. Note your **API URL** — the base address of the API, e.g. `https://your-server:7001`.
+   - **Demo server:** `https://vaultguardapi.dotnetappdevni.com` — use this as the **API URL** to try the app
+     without running your own server. Enter it exactly as shown (the root, **without** a `/api/` suffix).
 
 ### Enter it in the app
 
