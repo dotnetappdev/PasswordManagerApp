@@ -4,7 +4,10 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- Pomelo.EntityFrameworkCore.MySql (pulled transitively via VaultGuard.Services) has no EF Core 10
+    <!-- SmarterASP.NET runs sites in a shared IIS application pool. IIS forbids mixing hosting models
+         within one pool (HTTP 500.34), so pin OutOfProcess to match the rest of the pool. This makes the
+         published web.config emit hostingModel="outofprocess" (ANCM reverse-proxies to the Kestrel process). -->
+	  <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>    <!-- Pomelo.EntityFrameworkCore.MySql (pulled transitively via VaultGuard.Services) has no EF Core 10
          build yet, so it pins Relational <= 9.x while the solution runs EF Core 10. Suppress the resulting
          NU1608 until Pomelo ships an EF Core 10 release. Matches the suppression in Services/Web/DAL.MySql. -->
     <NoWarn>$(NoWarn);NU1608</NoWarn>
@@ -62,5 +65,11 @@
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
+
+  <!-- ANCM writes stdout to .\logs\stdout.txt (see web.config); make sure the folder ships in the
+       publish output so logging works on first boot without creating it by hand on the server. -->
+  <Target Name="EnsureLogsFolder" AfterTargets="Publish">
+    <MakeDir Directories="$(PublishDir)logs" />
+  </Target>
 
 </Project>

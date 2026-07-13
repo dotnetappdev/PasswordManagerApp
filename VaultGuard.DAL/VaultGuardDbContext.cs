@@ -112,7 +112,9 @@ public class VaultGuardDbContext : IdentityDbContext<ApplicationUser, Applicatio
             entity.HasOne(e => e.User)
                   .WithMany(u => u.LoginItems)
                   .HasForeignKey(e => e.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                  // NoAction: these rows are already cascade-deleted via their parent PasswordItem
+                  // (User->PasswordItem->LoginItem), so a second Cascade here is a multiple cascade path SQL Server rejects.
+                  .OnDelete(DeleteBehavior.NoAction);
         });
 
         // Configure CreditCardItem
@@ -133,7 +135,8 @@ public class VaultGuardDbContext : IdentityDbContext<ApplicationUser, Applicatio
             entity.HasOne(e => e.User)
                   .WithMany(u => u.CreditCardItems)
                   .HasForeignKey(e => e.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                  // NoAction: cascade-deleted via parent PasswordItem; avoids a second cascade path.
+                  .OnDelete(DeleteBehavior.NoAction);
         });
 
         // Configure SecureNoteItem
@@ -150,7 +153,8 @@ public class VaultGuardDbContext : IdentityDbContext<ApplicationUser, Applicatio
             entity.HasOne(e => e.User)
                   .WithMany(u => u.SecureNoteItems)
                   .HasForeignKey(e => e.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                  // NoAction: cascade-deleted via parent PasswordItem; avoids a second cascade path.
+                  .OnDelete(DeleteBehavior.NoAction);
         });
 
         // Configure WiFiItem
@@ -169,7 +173,8 @@ public class VaultGuardDbContext : IdentityDbContext<ApplicationUser, Applicatio
             entity.HasOne(e => e.User)
                   .WithMany(u => u.WiFiItems)
                   .HasForeignKey(e => e.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                  // NoAction: cascade-deleted via parent PasswordItem; avoids a second cascade path.
+                  .OnDelete(DeleteBehavior.NoAction);
         });
 
         // Configure CustomField
@@ -278,7 +283,10 @@ public class VaultGuardDbContext : IdentityDbContext<ApplicationUser, Applicatio
                   .WithMany()
                   .HasForeignKey(e => e.VaultId)
                   .IsRequired(false)
-                  .OnDelete(DeleteBehavior.SetNull);
+                  // NoAction (not SetNull): SQL Server rejects the SetNull here because Collections are
+                  // already reachable from a user via Collection.UserId, so User->Vault(Cascade)->Collection
+                  // would be a second cascade path. Vault removal is handled in app code (soft-delete).
+                  .OnDelete(DeleteBehavior.NoAction);
         });
 
         // Configure ApiKey

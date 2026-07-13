@@ -27,6 +27,8 @@ struct AppSettings: Codable {
     var biometricUnlock = false
     var autoLockMinutes: Int = 5
     var clipboardClearSeconds: Int = 30
+    /// Seconds a revealed password stays visible before it auto-hides again (0 = stay visible).
+    var passwordAutoHideSeconds: Int = 30
     var confirmOnDelete = true
     var numberMatchApprovals = true
     // Password generator

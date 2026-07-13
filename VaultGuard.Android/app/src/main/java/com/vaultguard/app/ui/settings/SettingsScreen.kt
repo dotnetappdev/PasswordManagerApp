@@ -284,6 +284,10 @@ private fun SecurityTab(s: com.vaultguard.app.config.AppSettings, vm: SettingsVi
             if (s.clipboardClearSeconds == 0) "Never" else "${s.clipboardClearSeconds}s") {
             vm.update { c -> c.copy(clipboardClearSeconds = it.roundToInt()) }
         }
+        SliderRow("Hide revealed password after", s.passwordAutoHideSeconds.toFloat(), 0f, 120f,
+            if (s.passwordAutoHideSeconds == 0) "Off" else "${s.passwordAutoHideSeconds}s") {
+            vm.update { c -> c.copy(passwordAutoHideSeconds = it.roundToInt()) }
+        }
         SwitchRow("Confirm before deleting", s.confirmOnDelete) { vm.update { c -> c.copy(confirmOnDelete = it) } }
     }
     OutlinedButton(onClick = { vm.lock(); onLocked() }, modifier = Modifier.fillMaxWidth()) { Text("Lock vault now") }

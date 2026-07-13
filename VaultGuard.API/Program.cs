@@ -331,14 +331,13 @@ VaultGuard.Services.Logging.AppLogger.Initialize(
     app.Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
 
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
-{
+ 
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", builder.Configuration["ApiSettings:Title"] ?? "Vault Guard API");
     });
-}
+ 
 
 app.UseHttpsRedirection();
 

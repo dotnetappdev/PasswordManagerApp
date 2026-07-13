@@ -1,0 +1,132 @@
+VaultGuard — EF Core Tooling (SQLite + SQL Server)
+==================================================
+Run ALL commands from the solution root:
+  E:\sassproducts\passwordmanagermergec\PasswordManagerApp
+
+Context name: VaultGuardDbContext  (single, merged Identity + vault context)
+
+
+KEY CONCEPT — the design-time factory decides the provider
+----------------------------------------------------------
+VaultGuardDbContext has TWO IDesignTimeDbContextFactory implementations. The EF
+CLI uses whichever factory lives in the assembly it scans (the project you pass
+as --project / --startup-project) and IGNORES appsettings.json / DatabaseProvider
+whenever a factory is present:
+
+  * VaultGuard.DAL\VaultGuardDbContextFactory.cs
+        -> SQLite, hardcoded file at
+           %LocalAppData%\VaultGuard\data\passwordmanager.db
+
+  * VaultGuard.DAL.SqlServer\SqlServerMainContextFactory.cs
+        -> SQL Server; the connection string is composed from Google Secret
+           Manager (dbserver / dbusername / dbpassword) via
+           SecretManagerConnectionResolver.cs
+
+>>> DO NOT use "--startup-project VaultGuard.API" for these commands.  The API
+    references VaultGuard.DAL, so EF finds the SQLite factory and silently uses
+    SQLite — this is the "Provider name: Microsoft.EntityFrameworkCore.Sqlite ...
+    Data source: ...\VaultGuard\data\passwordmanager.db" surprise.
+
+>>> Pass the DAL project that MATCHES the provider you want as BOTH
+    --project AND --startup-project.
+
+Migrations live in:
+  SQL Server : VaultGuard.DAL.SqlServer\Migrations
+  SQLite     : VaultGuard.DAL\Migrations   (local SQLite normally uses runtime
+               EnsureCreated/schema helpers instead — CLI migrations optional)
+
+
+=============================================================================
+SQL SERVER  — production, and the shared dev SQL database   (USE THIS FOR PROD)
+=============================================================================
+Prerequisites:
+  * gcloud auth application-default login
+      (an account with roles/secretmanager.secretAccessor on the target project)
+  * Network access to {dbserver}.
+
+Tell the design-time factory which Secret Manager project to read. The factory
+reads environment variables, so these work no matter what folder you run from.
+
+  PRODUCTION  (GCP project smart-firmament-502009-a3, secrets labelled env=prod):
+    $env:ASPNETCORE_ENVIRONMENT                = "Production"
+    $env:GoogleSecretManager__Enabled          = "true"
+    $env:GoogleSecretManager__ProjectId        = "smart-firmament-502009-a3"
+    $env:GoogleSecretManager__EnvironmentLabel = "prod"
+
+  DEV DATABASE  (GCP project project-e96017a0-d8f6-420f-955, env=dev):
+    $env:ASPNETCORE_ENVIRONMENT                = "Development"
+    $env:GoogleSecretManager__Enabled          = "true"
+    $env:GoogleSecretManager__ProjectId        = "project-e96017a0-d8f6-420f-955"
+    $env:GoogleSecretManager__EnvironmentLabel = "dev"
+
+1) VERIFY the resolved server first (read-only — do this before applying):
+     dotnet ef dbcontext info --context VaultGuardDbContext --project VaultGuard.DAL.SqlServer --startup-project VaultGuard.DAL.SqlServer
+   Expect:  Provider name: Microsoft.EntityFrameworkCore.SqlServer
+            Data source:   {dbserver}
+
+2) ADD a migration (after changing the EF model):
+     dotnet ef migrations add <Name> --context VaultGuardDbContext --project VaultGuard.DAL.SqlServer --startup-project VaultGuard.DAL.SqlServer
+
+3) APPLY migrations (create/update the database):
+     dotnet ef database update --context VaultGuardDbContext --project VaultGuard.DAL.SqlServer --startup-project VaultGuard.DAL.SqlServer
+
+SQL Server note: by the smartasp.net convention the database NAME equals the
+login (dbusername) unless a 'dbname' secret exists. In SSMS, connect to
+{dbserver} and open the database named after the login.
+
+Equivalent that skips the EF CLI (runs the API's real startup pipeline, applies
+all pending migrations to the Secret-Manager-configured DB, then exits). Fewer
+moving parts; recommended for production. Needs ADC for prod:
+     $env:ASPNETCORE_ENVIRONMENT = "Production"
+     dotnet run --project VaultGuard.API -- --migrate
+
+
+=============================================================================
+SQLITE  — local, file-based dev vault (offline, no cloud, no ADC)
+=============================================================================
+Uses VaultGuard.DAL's SQLite factory:
+  %LocalAppData%\VaultGuard\data\passwordmanager.db
+Optionally point it at a different file:
+  $env:ConnectionStrings__SqliteConnection = "Data Source=C:\path\to\vault.db"
+
+1) VERIFY:
+     dotnet ef dbcontext info --context VaultGuardDbContext --project VaultGuard.DAL --startup-project VaultGuard.DAL
+   Expect:  Provider name: Microsoft.EntityFrameworkCore.Sqlite
+
+2) ADD a migration:
+     dotnet ef migrations add <Name> --context VaultGuardDbContext --project VaultGuard.DAL --startup-project VaultGuard.DAL
+
+3) APPLY migrations:
+     dotnet ef database update --context VaultGuardDbContext --project VaultGuard.DAL --startup-project VaultGuard.DAL
+
+
+=============================================================================
+TROUBLESHOOTING
+=============================================================================
+* Says "Provider name: ...Sqlite" but you wanted SQL Server:
+    You used --startup-project VaultGuard.API (or VaultGuard.DAL). Re-run with
+    BOTH --project and --startup-project = VaultGuard.DAL.SqlServer.
+
+* SQL Server resolves to the localhost / "VaultGuardDesignTime" placeholder:
+    The GoogleSecretManager__* env vars didn't take, or ADC / secret access
+    failed. Re-check the four env vars above and run
+    'gcloud auth application-default login'. Confirm the db* secrets are
+    labelled with the matching env (prod/dev) in the right GCP project.
+
+* Clear the env vars from the current shell:
+    Remove-Item Env:GoogleSecretManager__Enabled, Env:GoogleSecretManager__ProjectId, Env:GoogleSecretManager__EnvironmentLabel
+
+* Install / upgrade the EF CLI:
+    dotnet tool install --global dotnet-ef
+    dotnet tool update  --global dotnet-ef
+
+The EF tooling needs Microsoft.EntityFrameworkCore.Design, already referenced by
+VaultGuard.DAL and VaultGuard.DAL.SqlServer. In VaultGuard.DAL.SqlServer the
+Google Secret Manager SDK is referenced with PrivateAssets="all" so it is
+available to the CLI but does not flow into the WPF/WinUi/Web clients.
+
+Provider selection at RUNTIME (not the CLI): appsettings.json sets
+DatabaseProvider = "SqlServer" (production); appsettings.Development.json
+overrides it to "Sqlite" for offline local dev. When the dev db* secrets are
+reachable they compose a SQL Server connection and upgrade the provider to
+SqlServer for the dev database.
