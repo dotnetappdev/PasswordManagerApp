@@ -1,3 +1,4 @@
+using Allure.NUnit;
 using NUnit.Framework;
 using VaultGuard.Models;
 using VaultGuard.Services.Utilities;
@@ -5,6 +6,7 @@ using VaultGuard.Services.Utilities;
 namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
+[AllureNUnit]
 public class TotpHelperTests
 {
     private const string Secret = "GEZDGNBVGY3TQOJQ";

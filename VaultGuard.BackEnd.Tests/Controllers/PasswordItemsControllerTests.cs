@@ -1,3 +1,4 @@
+using Allure.NUnit;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
@@ -6,6 +7,7 @@ using VaultGuard.API.Controllers;
 namespace VaultGuard.BackEnd.Tests.Controllers;
 
 [TestFixture]
+[AllureNUnit]
 public class PasswordItemsControllerTests
 {
     // Simplified controller tests for PasswordItems

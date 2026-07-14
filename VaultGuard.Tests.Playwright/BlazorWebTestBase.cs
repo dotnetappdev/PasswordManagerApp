@@ -127,6 +127,11 @@ public abstract class BlazorWebTestBase : PageTest
             try { File.Delete(_tempDbPath); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Failed to delete temp db: {ex.Message}"); }
         }
 
+        // Reset so a later test class re-launches the app instead of pointing at a dead process.
+        _appProcess = null;
+        _baseUrl = null;
+        _tempDbPath = null;
+
         return Task.CompletedTask;
     }
 

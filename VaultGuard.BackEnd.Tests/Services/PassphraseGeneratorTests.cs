@@ -1,3 +1,4 @@
+using Allure.NUnit;
 using NUnit.Framework;
 using VaultGuard.Services.Interfaces;
 using VaultGuard.Services.Services;
@@ -5,6 +6,7 @@ using VaultGuard.Services.Services;
 namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
+[AllureNUnit]
 public class PassphraseGeneratorTests
 {
     private PassphraseGenerator _gen = null!;
