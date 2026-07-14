@@ -22,8 +22,8 @@ Download the latest installer from the [GitHub Releases](https://github.com/dotn
 
 | File | What it is |
 |------|-----------|
-| `VaultGuardSetup-x.y.z.exe` | EXE installer (Inno Setup) — wizard, auto .NET download |
-| `VaultGuardSetup-x.y.z.msi` | MSI installer — for IT / Group Policy / MDM deployment |
+| `VaultGuardSetup-x.y.z.exe` | EXE installer (Inno Setup) - wizard, auto .NET download |
+| `VaultGuardSetup-x.y.z.msi` | MSI installer - for IT / Group Policy / MDM deployment |
 
 The app checks for updates automatically. Go to **Settings → About → Check for Updates** to trigger a manual check at any time.
 
@@ -50,7 +50,7 @@ dotnet restore
 dotnet run --project VaultGuard.WPF
 ```
 
-### 4. Run the API (optional — only needed for sync / web access)
+### 4. Run the API (optional - only needed for sync / web access)
 
 ```bash
 # Apply migrations first (SQLite, no setup required)
@@ -70,7 +70,7 @@ dotnet run
 
 ## Database Configuration
 
-The default is **SQLite** — zero configuration, works immediately. Switch the provider in `appsettings.json`:
+The default is **SQLite** - zero configuration, works immediately. Switch the provider in `appsettings.json`:
 
 ### SQLite (default)
 
@@ -122,11 +122,11 @@ See [docs/DATABASE.md](docs/DATABASE.md) for detailed MySQL and other provider i
 
 ## First Steps
 
-1. **Register an account** — launch the WPF app or web app and create your user
-2. **Set a strong master password** — this derives your encryption key; it is never stored
-3. **Add passwords** — manually or via the **Import** tab (supports 1Password, Bitwarden, LastPass, Chrome, Firefox)
-4. **Install the browser extension** — see [INSTALLATION.md](INSTALLATION.md) for autofill setup
-5. **Enable sync** (optional) — run the API and point the desktop app at it via **Settings → Database**
+1. **Register an account** - launch the WPF app or web app and create your user
+2. **Set a strong master password** - this derives your encryption key; it is never stored
+3. **Add passwords** - manually or via the **Import** tab (supports 1Password, Bitwarden, LastPass, Chrome, Firefox)
+4. **Install the browser extension** - see [INSTALLATION.md](INSTALLATION.md) for autofill setup
+5. **Enable sync** (optional) - run the API and point the desktop app at it via **Settings → Database**
 
 ---
 
@@ -137,7 +137,7 @@ The WPF app has a built-in update checker:
 1. Go to **Settings → About**
 2. Click **Check for Updates**
 3. If a newer version is on GitHub Releases, a download button appears
-4. Click **Download & Install** — the installer launches and the app exits cleanly
+4. Click **Download & Install** - the installer launches and the app exits cleanly
 
 Updates are distributed as signed EXE + MSI on every tagged GitHub release via [GitHub Actions](https://github.com/dotnetappdev/VaultGuardApp/actions).
 
@@ -145,7 +145,7 @@ Updates are distributed as signed EXE + MSI on every tagged GitHub release via [
 
 ## Next Steps
 
-- [Development Guide](DEVELOPMENT.md) — contributing, architecture, testing
-- [User Guide](USER_GUIDE.md) — detailed feature walkthrough
-- [Encryption & Security](docs/SECURITY.md) — how AES-256-GCM protects your data
-- [Installer Docs](installers/README.md) — building EXE / MSI, silent installs, CI/CD
+- [Development Guide](DEVELOPMENT.md) - contributing, architecture, testing
+- [User Guide](USER_GUIDE.md) - detailed feature walkthrough
+- [Encryption & Security](docs/SECURITY.md) - how AES-256-GCM protects your data
+- [Installer Docs](installers/README.md) - building EXE / MSI, silent installs, CI/CD

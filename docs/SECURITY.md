@@ -39,15 +39,15 @@ baseline the app adheres to:
 
 - **Secret-safe, tamper-evident logging.** All diagnostics flow through a single `AppLogger`
   facade that writes durable, dated log files and forwards to the host pipeline. **No secret
-  values are ever logged** — master passwords, derived/master keys, TOTP secrets, recovery codes,
+  values are ever logged** - master passwords, derived/master keys, TOTP secrets, recovery codes,
   CVV, session tokens, API keys and password hints are excluded; emails/PII are redacted via
   `AppLogger.Redact`. **No swallowed exceptions:** every `catch` now records the failure (the only
   intentional silent catches are inside the logger itself), giving auditable failure trails for
-  incident response. The browser native host logs to file/stderr only — never to its stdout
+  incident response. The browser native host logs to file/stderr only - never to its stdout
   protocol channel.
 - **Passkeys / WebAuthn (FIDO2).** Account passkeys use server-verified Fido2 ceremonies; the
   vault also acts as a zero-knowledge software authenticator for third-party sites (private keys
-  AES-256-GCM encrypted under the master key). Local biometric unlock **fails closed** — it
+  AES-256-GCM encrypted under the master key). Local biometric unlock **fails closed** - it
   releases a securely-cached master key only after a genuine platform assertion. A prior
   passkey-login auth-bypass (a client returning `true` with no verification) was removed.
 - **Fail-closed posture.** Authentication/verification helpers default to denying access on error
@@ -268,36 +268,36 @@ _sessions[sessionId] = (session.userId, null, false);
 > a statement of engineering practice, not a claim of formal certification or third-party audit.
 
 ### Cryptography & Key Management
-- ✅ **OWASP Password Storage Cheat Sheet** — PBKDF2-HMAC-SHA256, 600,000 iterations (exceeds the
+- ✅ **OWASP Password Storage Cheat Sheet** - PBKDF2-HMAC-SHA256, 600,000 iterations (exceeds the
   2024 minimum)
-- ✅ **NIST SP 800-132** — PBKDF2 key derivation with per-user 256-bit salts
-- ✅ **FIPS 197** — AES; **NIST SP 800-38D** — AES-256-GCM authenticated encryption (AEAD)
-- ✅ **NIST SP 800-63B** — memorized-secret and biometric/authenticator guidance (master password
+- ✅ **NIST SP 800-132** - PBKDF2 key derivation with per-user 256-bit salts
+- ✅ **FIPS 197** - AES; **NIST SP 800-38D** - AES-256-GCM authenticated encryption (AEAD)
+- ✅ **NIST SP 800-63B** - memorized-secret and biometric/authenticator guidance (master password
   + platform-authenticator unlock)
 
 ### Authentication & Passkeys
-- ✅ **W3C WebAuthn / FIDO2** — passkey registration & assertion (Fido2NetLib), server-verified
-- ✅ **Fail-closed authentication** — verification denies on error; challenges are single-use and
+- ✅ **W3C WebAuthn / FIDO2** - passkey registration & assertion (Fido2NetLib), server-verified
+- ✅ **Fail-closed authentication** - verification denies on error; challenges are single-use and
   time-bound
 
 ### Application Security
-- ✅ **OWASP ASVS** alignment — V2 Authentication, V6 Cryptography, V7 Error Handling & Logging,
+- ✅ **OWASP ASVS** alignment - V2 Authentication, V6 Cryptography, V7 Error Handling & Logging,
   V9 Communications
-- ✅ **OWASP Top 10** mitigations — injection (parameterised EF Core), broken access control
+- ✅ **OWASP Top 10** mitigations - injection (parameterised EF Core), broken access control
   (per-user/IDOR fixes), cryptographic failures (above), security logging failures (below)
-- ✅ **OWASP Logging Cheat Sheet** — security-relevant events are logged with timestamps; **secrets
+- ✅ **OWASP Logging Cheat Sheet** - security-relevant events are logged with timestamps; **secrets
   and full PII are never written to logs**; no exceptions are silently swallowed
 
 ### Privacy & Data Handling
-- ✅ **Data minimisation (GDPR-aligned)** — only data needed to operate is stored; secrets are
+- ✅ **Data minimisation (GDPR-aligned)** - only data needed to operate is stored; secrets are
   encrypted at rest; logs exclude personal data / are redacted
-- ✅ **Zero-knowledge architecture** — operators cannot decrypt user vaults
-- ✅ **Right to erasure** — account deletion removes the user's passwords, categories, collections
+- ✅ **Zero-knowledge architecture** - operators cannot decrypt user vaults
+- ✅ **Right to erasure** - account deletion removes the user's passwords, categories, collections
   and tags
 
 ### Security Best Practices
 - ✅ Authenticated encryption (AEAD) everywhere secrets are stored
-- ✅ Memory safety — cryptographic material zeroed (`Array.Clear`) on lock/logout
+- ✅ Memory safety - cryptographic material zeroed (`Array.Clear`) on lock/logout
 - ✅ Defense in depth (multiple security layers) and separation of concerns (auth vs. encryption)
 - ✅ Durable, secret-free audit logging across every platform
 

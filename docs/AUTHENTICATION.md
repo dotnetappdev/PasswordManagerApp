@@ -1012,7 +1012,7 @@ The test suite includes:
 
 ## Security Considerations
 
-- Store SMS provider credentials securely (use Google Cloud Secret Manager — see CONFIGURATION_GUIDE.md — or another secrets manager)
+- Store SMS provider credentials securely (use Google Cloud Secret Manager - see CONFIGURATION_GUIDE.md - or another secrets manager)
 - Monitor for unusual OTP request patterns
 - Implement CAPTCHA for repeated failed attempts
 - Consider implementing device fingerprinting

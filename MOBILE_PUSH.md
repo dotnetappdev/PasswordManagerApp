@@ -1,19 +1,19 @@
 # Push notifications to the mobile apps
 
 The API can push notifications to a user's registered mobile devices. The pipeline is wired end‑to‑end and
-is a **safe no‑op until Firebase Cloud Messaging (FCM) is configured** — so nothing breaks out of the box.
+is a **safe no‑op until Firebase Cloud Messaging (FCM) is configured** - so nothing breaks out of the box.
 
 ## Server (VaultGuard.API)
 
 Already implemented:
 
 - `PushController` (`/api/push`):
-  - `POST /api/push/register` `{ token, platform }` — the app calls this after sign‑in.
+  - `POST /api/push/register` `{ token, platform }` - the app calls this after sign‑in.
   - `POST /api/push/unregister` `{ token }`.
-  - `POST /api/push/test` `{ title?, body? }` — sends a test push to the caller's devices.
-- `IPushDeviceRegistry` → `PushDeviceSqliteRegistry` — stores tokens in a small local SQLite db
+  - `POST /api/push/test` `{ title?, body? }` - sends a test push to the caller's devices.
+- `IPushDeviceRegistry` → `PushDeviceSqliteRegistry` - stores tokens in a small local SQLite db
   (`%LocalAppData%/VaultGuard/push/devices.db`), no EF migration required.
-- `IPushNotificationService` → `FcmPushNotificationService` — sends via **FCM HTTP v1**.
+- `IPushNotificationService` → `FcmPushNotificationService` - sends via **FCM HTTP v1**.
 - `IFcmAccessTokenProvider` → `NullFcmAccessTokenProvider` (returns null → logged no‑op).
 
 ### To enable sending

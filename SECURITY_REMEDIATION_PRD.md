@@ -1,4 +1,4 @@
-# Security Remediation PRD — Vault Guard
+# Security Remediation PRD - Vault Guard
 
 > **Update 2026-06-27:** Beyond the original findings, the codebase now has secret-free,
 > no-swallowed-exceptions logging across all platforms (`AppLogger`), a server-verified
@@ -24,12 +24,12 @@ documented manual verification.
 ## 2. Ground rules for the implementing agent
 
 1. **Don't weaken existing crypto.** AES-256-GCM + PBKDF2 (600k) for the vault stays. The master
-   password is the only thing that derives the vault key — never log it, never persist it in
+   password is the only thing that derives the vault key - never log it, never persist it in
    plaintext, never "encrypt" it with a constant key.
 2. **Hash, don't encrypt, verifiers.** Anything you only need to *check* (passwords, recovery
    codes, API keys) is salted-hashed, never reversibly stored.
 3. **One implementation per concern.** Where two implementations exist (2FA/backup codes), keep the
-   secure one and delete the other — don't leave dead, insecure code paths.
+   secure one and delete the other - don't leave dead, insecure code paths.
 4. **Fail closed.** Authorization checks default to deny; missing/empty identity → `401`/`404`.
 5. **Build + verify after every item.** Run the project build for each affected platform and the
    test suite (`dotnet test`). Update or add tests for the behavior you change.
@@ -39,7 +39,7 @@ documented manual verification.
 
 ## 3. Severity legend
 
-🔴 Critical · 🟠 High · 🟡 Medium · 🔵 Low — implement in that order.
+🔴 Critical · 🟠 High · 🟡 Medium · 🔵 Low - implement in that order.
 
 ---
 
@@ -47,11 +47,11 @@ documented manual verification.
 
 > Each item: **what's wrong → required change → files → acceptance criteria → verify.**
 
-### 🔴 C1 — Remove the zero-key "encryption" of 2FA backup codes
+### 🔴 C1 - Remove the zero-key "encryption" of 2FA backup codes
 - **Platforms:** API (also fixes Web/MAUI/WPF since they consume the same backend).
 - **Problem:** `AuthController` setup-2FA path encrypts backup codes with `new byte[32]` (all zeros)
-  and stores them in `ApplicationUser.BackupCodes` — effectively plaintext to anyone with the DB.
-- **Files:** `VaultGuard.API/Controllers/AuthController.cs` (~470–511, 540–715),
+  and stores them in `ApplicationUser.BackupCodes` - effectively plaintext to anyone with the DB.
+- **Files:** `VaultGuard.API/Controllers/AuthController.cs` (~470-511, 540-715),
   `VaultGuard.Services/Services/OtpService.cs`, `ApplicationUser.BackupCodes`.
 - **Change:** Delete the `IOtpService`/`user.BackupCodes` backup-code path. Route all 2FA setup,
   verification, disable, and recovery through `TwoFactorService` + the `UserTwoFactorBackupCodes`
@@ -62,12 +62,12 @@ documented manual verification.
 - **Verify:** `dotnet test`; manually enable 2FA on a test user, confirm `UserTwoFactorBackupCodes`
   rows are hashes and `BackupCodes` is unused.
 
-### 🟠 H1 — Fix IDOR on item read endpoints
+### 🟠 H1 - Fix IDOR on item read endpoints
 - **Platforms:** API.
 - **Problem:** `GET /api/passworditems/{id}` (and `collection/{id}`, `category/{id}`, `tag/{id}`)
-  return items without verifying they belong to the caller — cross-user metadata disclosure.
+  return items without verifying they belong to the caller - cross-user metadata disclosure.
 - **Files:** `VaultGuard.API/Controllers/PasswordItemsController.cs` (`GetById` ~90; collection/
-  category/tag GETs ~111–164), and any other controller that loads by id (Vaults, Collections,
+  category/tag GETs ~111-164), and any other controller that loads by id (Vaults, Collections,
   Categories, Tags, CustomFields).
 - **Change:** After loading, compare the resource's `UserId` to the authenticated user (mirror the
   `CanAccessResourceAsync` pattern already used by `PUT`/reveal). Return `404` (not `403`) on
@@ -75,7 +75,7 @@ documented manual verification.
 - **Acceptance:** A request for another user's item id returns `404`; the owner still gets `200`.
 - **Verify:** Add an integration test: user A creates an item, user B (different API key) gets `404`.
 
-### 🟠 H2 — Remove hardcoded credentials from config
+### 🟠 H2 - Remove hardcoded credentials from config
 - **Platforms:** API (Web/MAUI configs too).
 - **Problem:** `appsettings.json` ships real-looking DB credentials (`sa`/`sa12345`, etc.).
 - **Files:** `VaultGuard.API/appsettings*.json`, any `appsettings` in Web/MAUI.
@@ -85,7 +85,7 @@ documented manual verification.
 - **Acceptance:** No usable credential is committed. App reads connection strings from env/secrets.
 - **Verify:** `git grep -i "password=" -- '*.json'` returns only placeholders; app starts with env vars set.
 
-### 🟠 H3 — Collapse to one 2FA implementation
+### 🟠 H3 - Collapse to one 2FA implementation
 - **Platforms:** API/Services (shared).
 - **Problem:** `TwoFactorService` (hashed, correct) and `OtpService`/`AuthController` (zero-key) coexist.
 - **Files:** `VaultGuard.Services/Services/OtpService.cs`, `AuthController.cs`, `ITwoFactorService`.
@@ -94,11 +94,11 @@ documented manual verification.
 - **Acceptance:** Exactly one backup-code store and one verify path remain. Solution builds.
 - **Verify:** Grep shows no remaining references to the removed path; `dotnet test`.
 
-### 🟡 M1 — Make the auth model explicit and correct
+### 🟡 M1 - Make the auth model explicit and correct
 - **Platforms:** API.
 - **Problem:** `app.UseAuthentication()` is missing, so Identity bearer tokens/`JwtService` never
   authenticate controllers; API keys are the de-facto sole auth. The token path is dead/confusing.
-- **Files:** `VaultGuard.API/Program.cs` (pipeline ~223–235), `JwtService.cs`.
+- **Files:** `VaultGuard.API/Program.cs` (pipeline ~223-235), `JwtService.cs`.
 - **Change:** Decide and document one model:
   - **(Preferred)** Keep API-key auth for service-to-service, and add `app.UseAuthentication()` +
     a real bearer scheme for interactive clients; ensure `[Authorize]` accepts both schemes. **Or**
@@ -107,15 +107,15 @@ documented manual verification.
 - **Acceptance:** No dead auth code; `UseAuthentication` present iff token auth is used; API keys expire.
 - **Verify:** Authenticated endpoints reject missing/expired credentials; `dotnet test`.
 
-### 🟡 M2 — Restrict CORS
+### 🟡 M2 - Restrict CORS
 - **Platforms:** API.
-- **Files:** `Program.cs` (~198–206, 225).
+- **Files:** `Program.cs` (~198-206, 225).
 - **Change:** Replace `AllowAnyOrigin()` with an allow-list from config (the Web app origin and any
   trusted clients). Keep credentials off unless needed.
 - **Acceptance:** Requests from unlisted origins are blocked by CORS.
 - **Verify:** Preflight from an unlisted origin fails; from the Web origin succeeds.
 
-### 🟡 M3 — Refresh tokens + dead interface method
+### 🟡 M3 - Refresh tokens + dead interface method
 - **Platforms:** API.
 - **Files:** `JwtService.cs` (static `_refreshTokens` ~20; `IJwtService.GetPrincipalFromExpiredToken` ~157).
 - **Change:** If keeping refresh tokens, persist them hashed with expiry (DB table), not a static
@@ -123,7 +123,7 @@ documented manual verification.
   are removed under M1, delete this file.
 - **Acceptance:** No in-memory token store; no method throws `NotImplementedException` in a live path.
 
-### 🟡 M4 — Constant-time secret comparison
+### 🟡 M4 - Constant-time secret comparison
 - **Platforms:** Crypto (shared by all).
 - **Files:** `VaultGuard.Crypto/Services/PasswordCryptoService.cs` (`VerifyMasterPassword` ~195,
   `VerifyMasterKeyIdentifier` ~324).
@@ -132,17 +132,17 @@ documented manual verification.
 - **Acceptance:** Verification uses fixed-time comparison; existing logins still succeed.
 - **Verify:** Crypto unit tests pass.
 
-### 🟡 M5 — Strengthen the master-key identifier
-- **Platforms:** Crypto / Services (affects stored data — needs migration plan).
-- **Files:** `PasswordCryptoService.CreateMasterKeyIdentifier` (~281–308).
-- **Problem:** It's PBKDF2 of the raw master password at only 100k iterations — a cheaper offline
+### 🟡 M5 - Strengthen the master-key identifier
+- **Platforms:** Crypto / Services (affects stored data - needs migration plan).
+- **Files:** `PasswordCryptoService.CreateMasterKeyIdentifier` (~281-308).
+- **Problem:** It's PBKDF2 of the raw master password at only 100k iterations - a cheaper offline
   brute-force target than the 600k auth hash.
 - **Change:** Derive the lookup identifier from the already-stretched master key (not the raw
   password), or raise to ≥600k. Provide a one-time re-derivation/migration on next successful login.
 - **Acceptance:** New identifiers are not a weaker password oracle; existing users migrate transparently.
 - **Verify:** Login + master-key-login still work pre/post migration; unit test the new derivation.
 
-### 🟡 M6 — Fix DELETE claim mismatch
+### 🟡 M6 - Fix DELETE claim mismatch
 - **Platforms:** API.
 - **Files:** `PasswordItemsController.cs` (~348 reads `c.Type == "sub"`).
 - **Change:** Use `ClaimTypes.NameIdentifier` consistently (what the API-key middleware sets); add
@@ -150,10 +150,10 @@ documented manual verification.
 - **Acceptance:** Owner can delete their item; others get `404`; non-owner cannot.
 - **Verify:** Integration test for delete ownership.
 
-### 🟡 M7 — Harden "remember this device"
-- **Platforms:** Web (Blazor Server), MAUI, WPF — the cross-platform cache feature.
+### 🟡 M7 - Harden "remember this device"
+- **Platforms:** Web (Blazor Server), MAUI, WPF - the cross-platform cache feature.
 - **Problem:** On Blazor Server the cached master password is recoverable by the server
-  (`ProtectedLocalStorage` uses server keys) — a threat-model shift. WPF (DPAPI) / MAUI
+  (`ProtectedLocalStorage` uses server keys) - a threat-model shift. WPF (DPAPI) / MAUI
   (SecureStorage) are device-local and acceptable, but all three store the *password*.
 - **Files:** `VaultGuard.Components.Shared/Services/IMasterKeyCacheService.cs` + impls
   (`VaultGuard.Web/Services/WebMasterKeyCacheService.cs`,
@@ -168,7 +168,7 @@ documented manual verification.
 - **Verify:** Toggle off → password required next login; TTL expiry → password required; password
   change → cache cleared.
 
-### 🟡 M8 — Android: disable `allowBackup`
+### 🟡 M8 - Android: disable `allowBackup`
 - **Platforms:** MAUI (Android).
 - **Files:** `VaultGuard.App/Platforms/Android/AndroidManifest.xml`.
 - **Change:** Set `android:allowBackup="false"` and add `android:fullBackupContent`/
@@ -176,7 +176,7 @@ documented manual verification.
 - **Acceptance:** `adb backup` cannot extract the vault DB; cleartext traffic blocked.
 - **Verify:** Manifest contains the flags; app builds.
 
-### 🟡 M9 — Don't ship Debug-level file logging in release (MAUI)
+### 🟡 M9 - Don't ship Debug-level file logging in release (MAUI)
 - **Platforms:** MAUI.
 - **Files:** `VaultGuard.App/MauiProgram.cs` (~150, `FileLoggerProvider(minLevel: LogLevel.Debug)`).
 - **Change:** Gate verbose file logging behind `#if DEBUG` (or read level from config); default
@@ -185,12 +185,12 @@ documented manual verification.
 - **Acceptance:** Release builds don't write Debug logs to disk; no sensitive data in any log statement.
 - **Verify:** Inspect a release-config log file is empty/minimal; grep logging calls for sensitive args.
 
-### 🔵 L-batch — Hardening
-- **L1 (API):** add `app.UseHsts()`; tighten `AllowedHosts` from `*` to real hosts. — `Program.cs`.
-- **L2 (API):** Fido2 `ServerDomain`/`Origins` from config, not hardcoded `localhost`. — `Program.cs ~181`.
-- **L3 (API):** stop logging API-key prefixes; review user-id logging. — `ApiKeyAuthenticationMiddleware.cs`.
-- **L4 (Identity):** review password policy (length ≥ 12, consider `RequireConfirmedAccount`). — `Program.cs ~103`.
-- **L5 (MAUI):** confirm Sentry `SendDefaultPii=false`; move the hardcoded DSN to config. — `MauiProgram.cs ~42`.
+### 🔵 L-batch - Hardening
+- **L1 (API):** add `app.UseHsts()`; tighten `AllowedHosts` from `*` to real hosts. - `Program.cs`.
+- **L2 (API):** Fido2 `ServerDomain`/`Origins` from config, not hardcoded `localhost`. - `Program.cs ~181`.
+- **L3 (API):** stop logging API-key prefixes; review user-id logging. - `ApiKeyAuthenticationMiddleware.cs`.
+- **L4 (Identity):** review password policy (length ≥ 12, consider `RequireConfirmedAccount`). - `Program.cs ~103`.
+- **L5 (MAUI):** confirm Sentry `SendDefaultPii=false`; move the hardcoded DSN to config. - `MauiProgram.cs ~42`.
 
 ---
 

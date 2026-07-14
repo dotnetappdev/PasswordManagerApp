@@ -4,7 +4,7 @@
 
 # Vault Guard
 
-**A self-hosted password manager for Windows, web and mobile — one encrypted vault, the same app everywhere.**
+**A self-hosted password manager for Windows, web and mobile - one encrypted vault, the same app everywhere.**
 
 [![Build WPF](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-wpf.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-wpf.yml)
 [![Build Web (Blazor)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml)
@@ -21,7 +21,7 @@
 
 Vault Guard keeps your logins, secure notes, cards and Wi-Fi credentials in an encrypted vault. Everything
 is encrypted on your device with a key derived from your master password before it touches disk or the
-network — so a stolen database or backup file is just noise without that password.
+network - so a stolen database or backup file is just noise without that password.
 
 A WPF desktop app, a Blazor web app, an API server, a MAUI mobile app and a browser extension all sit on
 top of one shared core (models, data access, crypto, services), so the behaviour is the same wherever you
@@ -38,22 +38,22 @@ built in.
 | 🌐 **Web** | `VaultGuard.Web` | Blazor Server | [![Build Web (Blazor)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml) |
 | 🔌 **API** | `VaultGuard.API` | ASP.NET Core | [![Build API](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-api.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-api.yml) |
 | 📱 **Mobile** | `VaultGuard.App` | MAUI (Android/iOS/Windows) | [![Build MAUI](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-maui.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-maui.yml) |
-| 🧩 **Extension** | `VaultGuard.BrowserExtension` | Chrome/Edge/Firefox | — |
+| 🧩 **Extension** | `VaultGuard.BrowserExtension` | Chrome/Edge/Firefox | - |
 
 ---
 
 ## Features
 
 - **One vault, every platform.** Logins, secure notes, credit cards, identities and Wi-Fi credentials, organised into vaults, collections, categories and tags.
-- **Typed custom fields.** 13 field types (Text, Password, Date, Number, Email, URL, Text area, Phone, File, Toggle, Address, One-Time Password, Sign-in-with) with full CRUD — identical on WPF, web, Android and iOS.
-- **Security Center.** A vault health check — weak, reused, unsecured, old and no-2FA passwords — plus on-demand **breach monitoring** via Have I Been Pwned. The breach check is privacy-preserving (k-anonymity: only the first 5 characters of each password's SHA-1 hash ever leave the device). On all four apps.
+- **Typed custom fields.** 13 field types (Text, Password, Date, Number, Email, URL, Text area, Phone, File, Toggle, Address, One-Time Password, Sign-in-with) with full CRUD - identical on WPF, web, Android and iOS.
+- **Security Center.** A vault health check - weak, reused, unsecured, old and no-2FA passwords - plus on-demand **breach monitoring** via Have I Been Pwned. The breach check is privacy-preserving (k-anonymity: only the first 5 characters of each password's SHA-1 hash ever leave the device). On all four apps.
 - **Password history.** Every password change is recorded so you can review when it changed; stored encrypted, no plaintext.
 - **Two-factor authentication.** TOTP authenticator support with hashed, single-use recovery codes. On a trusted device a 2FA account signs in with just the authenticator code.
 - **Step-up verification.** 2FA-style number-matching approval on important actions (editing, deleting or saving items and categories, and changing your master password).
 - **Passkeys.** WebAuthn/FIDO2 sign-in, including a software authenticator for the browser extension.
 - **Personalisation & accessibility.** Light / dark / system and a Windows-style **yellow-on-black high-contrast** theme; a custom **accent-colour** picker (palette swatches + specific colours) and selectable **fonts**; UI zoom and per-section text scaling; screen-reader labels.
 - **Bring your own database.** SQLite out of the box; switch to SQL Server, MySQL or PostgreSQL from Settings.
-- **Encrypted backups.** Local, NAS/SMB, FTP/FTPS, OneDrive and Google Drive — always encrypted before they leave the device.
+- **Encrypted backups.** Local, NAS/SMB, FTP/FTPS, OneDrive and Google Drive - always encrypted before they leave the device.
 - **Import from anywhere.** 1Password, Bitwarden, LastPass, KeePass, Chrome, Edge, Firefox, Safari, Dashlane, NordPass, Keeper, Enpass, RoboForm and Apple Passwords.
 
 ---
@@ -62,7 +62,7 @@ built in.
 
 <div align="center">
 
-### 🌐 Web — Blazor (dark theme)
+### 🌐 Web - Blazor (dark theme)
 
 | Dashboard | Passwords | Vaults |
 |:---:|:---:|:---:|
@@ -88,7 +88,7 @@ built in.
 
 ---
 
-### 🌐 Web — Blazor (light theme)
+### 🌐 Web - Blazor (light theme)
 
 | Dashboard | All items | Settings |
 |:---:|:---:|:---:|
@@ -98,7 +98,7 @@ built in.
 
 ---
 
-### 🖥️ Desktop — WPF (dark theme)
+### 🖥️ Desktop - WPF (dark theme)
 
 | Login | Dashboard | All Items |
 |:---:|:---:|:---:|
@@ -108,7 +108,7 @@ built in.
 | **Settings › Maintenance** | | |
 | ![WPF Maintenance](screenshots/wpf/dark/settings-maintenance.png) | | |
 
-### 🖥️ Desktop — WPF (light theme)
+### 🖥️ Desktop - WPF (light theme)
 
 | Login | Dashboard | All Items |
 |:---:|:---:|:---:|
@@ -118,7 +118,7 @@ built in.
 
 ---
 
-### 📱 Mobile — MAUI Android
+### 📱 Mobile - MAUI Android
 
 | Dashboard (dark) | All Items (dark) | Vaults (dark) | Settings (dark) |
 |:---:|:---:|:---:|:---:|
@@ -126,7 +126,7 @@ built in.
 | **Dashboard (light)** | **All Items (light)** | **Vaults (light)** | **Settings (light)** |
 | ![Android Dashboard light](screenshots/mobile/android/light/dashboard.png) | ![Android Items light](screenshots/mobile/android/light/all-items.png) | ![Android Vaults light](screenshots/mobile/android/light/vaults.png) | ![Android Settings light](screenshots/mobile/android/light/settings.png) |
 
-### 📱 Mobile — MAUI iOS
+### 📱 Mobile - MAUI iOS
 
 | Dashboard (dark) | All Items (dark) | Vaults (dark) | Settings (dark) |
 |:---:|:---:|:---:|:---:|
@@ -136,7 +136,7 @@ built in.
 
 </div>
 
-More captures — including item forms and per-platform galleries — live in [`screenshots/`](screenshots/README.md).
+More captures - including item forms and per-platform galleries - live in [`screenshots/`](screenshots/README.md).
 
 ---
 
@@ -144,8 +144,8 @@ More captures — including item forms and per-platform galleries — live in [`
 
 Tagged releases publish ready-to-run Windows installers on the [Releases](../../releases) page:
 
-- **Vault Guard Setup (.exe)** — Inno Setup installer, the easy option for most people.
-- **Vault Guard Setup (.msi)** — for managed/enterprise deployment.
+- **Vault Guard Setup (.exe)** - Inno Setup installer, the easy option for most people.
+- **Vault Guard Setup (.msi)** - for managed/enterprise deployment.
 
 Both bundle the .NET runtime, so there's nothing else to install. The web app and API run from source or Docker.
 
@@ -155,7 +155,7 @@ Both bundle the .NET runtime, so there's nothing else to install. The web app an
 
 **Prerequisites**
 
-- .NET 10 SDK — `10.0.301` or newer (pinned in [`global.json`](global.json))
+- .NET 10 SDK - `10.0.301` or newer (pinned in [`global.json`](global.json))
 - Visual Studio 2026 or JetBrains Rider, or just the `dotnet` CLI
 - For the mobile app: `dotnet workload install maui`
 
@@ -194,7 +194,7 @@ The mobile apps and browser extension authenticate to the API with an **API key*
 2. Open the **web app** in a browser and **sign in** with your account.
 3. Go to **Settings → API Keys**, or browse directly to **`/api-keys`**.
 4. Under **Create New API Key**, enter a descriptive name (e.g. *"My Pixel 8"*) and click **Create API Key**.
-5. **Copy the generated key** — it is shown **only once**, so store it somewhere safe.
+5. **Copy the generated key** - it is shown **only once**, so store it somewhere safe.
    - The key is stored **hashed** in the primary database and mirrored into a per-user local SQLite database,
      so the same key works whether the client talks to the API or a local vault.
 6. Your **API URL** is the base address of the API server, e.g. `https://localhost:7001`.
@@ -215,7 +215,7 @@ If you don't want to use the web UI, you can generate a key by calling the API d
 setting up a mobile device or testing with **Postman**, **Insomnia** or **curl**. You prove who you are with
 your account **email + master password**, and the API returns a key bound to your user.
 
-**Request** — this endpoint does **not** need an API key (it's how you get your first one):
+**Request** - this endpoint does **not** need an API key (it's how you get your first one):
 
 ```
 POST  {API_URL}/api/authentication/generate-api-key
@@ -231,7 +231,7 @@ Content-Type: application/json
 In Postman: choose **POST**, paste the URL, open the **Body** tab → **raw** → **JSON**, and paste the JSON
 above. (No auth tab needed for this call.)
 
-**Response** — copy the `apiKey`; it is shown **only this once**:
+**Response** - copy the `apiKey`; it is shown **only this once**:
 
 ```json
 {
@@ -242,7 +242,7 @@ above. (No auth tab needed for this call.)
 }
 ```
 
-**Use the key** — send it as the `X-API-Key` header on every other request. For example, signing in:
+**Use the key** - send it as the `X-API-Key` header on every other request. For example, signing in:
 
 ```
 POST  {API_URL}/api/auth/login/enhanced
@@ -259,7 +259,7 @@ session **token**; send it as `Authorization: Bearer <token>` for endpoints that
 > so you can try the flow above immediately against a fresh dev server.
 
 Notes:
-- Only `/health`, `/scalar`, `/openapi` and `/api/authentication/*` are exempt from the `X-API-Key` gate —
+- Only `/health`, `/scalar`, `/openapi` and `/api/authentication/*` are exempt from the `X-API-Key` gate -
   everything else (including login) requires the header.
 - The key is stored **hashed**; the plaintext is returned only in that first response.
 
@@ -300,16 +300,16 @@ below hold identically wherever you sign in.
 random salt are run through **PBKDF2-HMAC-SHA256 at 600,000 iterations** (the OWASP 2024 recommendation) to
 derive a 256-bit **master key**. The salt is generated with a cryptographic RNG and is unique per user; the
 iteration count is deliberately high to make brute-forcing a stolen hash expensive. The core also supports
-**Argon2id** — a memory-hard KDF that resists GPU/ASIC cracking — via a **self-describing hash format**
-(`$argon2id$…`), so authentication hashes can upgrade to Argon2id while existing PBKDF2 vaults keep verifying
+**Argon2id** - a memory-hard KDF that resists GPU/ASIC cracking - via a **self-describing hash format**
+(`$argon2id$...`), so authentication hashes can upgrade to Argon2id while existing PBKDF2 vaults keep verifying
 unchanged. Because verification auto-detects the format in the shared core, this works identically on every
 client with no migration required.
 
-**Key separation (HKDF).** Independent, purpose-specific sub-keys (encryption, authentication, backup, …) are
+**Key separation (HKDF).** Independent, purpose-specific sub-keys (encryption, authentication, backup, ...) are
 derived from the master key with **HKDF-SHA256** domain separation, so a leak of one sub-key never exposes the
 others.
 
-**Encryption (AES-256-GCM).** Every secret — passwords, notes, card numbers, TOTP seeds, custom fields — is
+**Encryption (AES-256-GCM).** Every secret - passwords, notes, card numbers, TOTP seeds, custom fields - is
 sealed with **AES-256-GCM authenticated encryption**. Each encryption uses a fresh **96-bit random nonce** and
 produces a **128-bit authentication tag**, so any tampering with the ciphertext is detected and rejected on
 decrypt. Nothing is ever stored with a static IV or an unauthenticated cipher mode.
@@ -324,14 +324,14 @@ step is a single PBKDF2 pass over that already-hardened key.
 every operation) and is explicitly zeroed with `Array.Clear` as soon as it is no longer needed. Intermediate
 buffers holding key material are wiped the same way.
 
-**Constant-time comparisons.** All verification of security-sensitive values — master-password auth hashes,
-passcode hashes, lookup hashes, **2FA/TOTP codes and hashed recovery codes** — uses
+**Constant-time comparisons.** All verification of security-sensitive values - master-password auth hashes,
+passcode hashes, lookup hashes, **2FA/TOTP codes and hashed recovery codes** - uses
 `CryptographicOperations.FixedTimeEquals`, so an attacker cannot learn bytes from response timing. (Hardened
 across `VaultGuard.Crypto`, `PasscodeService`, `TwoFactorService` and the extension's native host.)
 
-**Same protocols on every platform — including the standalone WPF desktop app.** All clients (WPF, Blazor,
+**Same protocols on every platform - including the standalone WPF desktop app.** All clients (WPF, Blazor,
 MAUI, API, browser extension) authenticate and encrypt through the one shared `VaultGuard.Crypto` /
-`VaultGuard.Services` core — the desktop app has no separate crypto path. So the **local SQLite vault** used by
+`VaultGuard.Services` core - the desktop app has no separate crypto path. So the **local SQLite vault** used by
 the standalone WPF app is protected with the exact same KDF, AES-256-GCM item encryption, constant-time
 verification and re-encryption-on-password-change as the server-backed builds.
 
@@ -351,7 +351,7 @@ verification and re-encryption-on-password-change as the server-backed builds.
   single-use. Optional step-up verification can require an authenticator code before deleting a vault or item.
 - **Passkeys.** WebAuthn/FIDO2 sign-in, including a software authenticator for the browser extension.
 - **"Remember this device."** The cached credential is protected by the platform's secure store, never as
-  plaintext — Windows **DPAPI** (WPF), **Keychain/Keystore** (MAUI), and **ProtectedLocalStorage** encrypted
+  plaintext - Windows **DPAPI** (WPF), **Keychain/Keystore** (MAUI), and **ProtectedLocalStorage** encrypted
   with the server's data-protection keys (Blazor web).
 - **Encrypted backups.** Local, NAS/SMB, FTP/FTPS, OneDrive and Google Drive backups are encrypted on the
   device *before* upload, so those targets only ever see ciphertext.
@@ -360,8 +360,8 @@ verification and re-encryption-on-password-change as the server-backed builds.
   and mobile apps additionally throttle local passcode attempts.
 - **Transport.** The API and web app run over HTTPS with an explicit CORS allow-list; the API additionally
   gates requests with bearer-token authentication and an API-key middleware.
-- **Secrets management.** The API can source its secrets — database credentials, JWT signing key, Sentry DSN,
-  SMS/Supabase keys — from [**Google Cloud Secret Manager**](https://cloud.google.com/secret-manager) (the
+- **Secrets management.** The API can source its secrets - database credentials, JWT signing key, Sentry DSN,
+  SMS/Supabase keys - from [**Google Cloud Secret Manager**](https://cloud.google.com/secret-manager) (the
   `vaultguard-dev` / `vaultguard-prod` projects) instead of config files, so nothing sensitive is committed.
   Disabled by default; see [`CONFIGURATION_GUIDE.md`](CONFIGURATION_GUIDE.md#secrets-management-google-secret-manager).
 
@@ -398,7 +398,7 @@ Per-platform details live in each project's own `README.md` (e.g. `VaultGuard.WP
 ## Contributing
 
 [`DEVELOPMENT.md`](DEVELOPMENT.md) covers build commands, the migration workflow and how to add an import
-plugin. Pull requests are welcome — keep changes focused, add tests where it makes sense, and run
+plugin. Pull requests are welcome - keep changes focused, add tests where it makes sense, and run
 `dotnet test` before opening one.
 
 ## License

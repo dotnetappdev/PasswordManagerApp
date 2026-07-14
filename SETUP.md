@@ -1,4 +1,4 @@
-# Setup Guide — VaultGuard
+# Setup Guide - VaultGuard
 
 Welcome to the VaultGuard development setup guide. This walks you through the environment, database configuration, and running each application component.
 
@@ -404,7 +404,7 @@ dotnet ef database update MigrationName --project ../VaultGuard.DAL --startup-pr
 
 ### Shipping a release
 
-Push a semantic version tag — GitHub Actions builds all three workflows automatically:
+Push a semantic version tag - GitHub Actions builds all three workflows automatically:
 
 ```bash
 git tag v1.2.3
@@ -415,10 +415,10 @@ This produces on the [Releases page](https://github.com/dotnetappdev/VaultGuardA
 
 | Asset | Workflow |
 |-------|---------|
-| `VaultGuardSetup-1.2.3.exe` | `build-wpf.yml` — Inno Setup EXE |
-| `VaultGuardSetup-1.2.3.msi` | `build-wpf.yml` — WiX v4 MSI |
-| `VaultGuardAPI-1.2.3.zip` | `build-api.yml` — self-contained API publish |
-| `VaultGuardWeb-1.2.3.zip` | `build-web.yml` — Blazor publish |
+| `VaultGuardSetup-1.2.3.exe` | `build-wpf.yml` - Inno Setup EXE |
+| `VaultGuardSetup-1.2.3.msi` | `build-wpf.yml` - WiX v4 MSI |
+| `VaultGuardAPI-1.2.3.zip` | `build-api.yml` - self-contained API publish |
+| `VaultGuardWeb-1.2.3.zip` | `build-web.yml` - Blazor publish |
 
 ### In-app update check
 

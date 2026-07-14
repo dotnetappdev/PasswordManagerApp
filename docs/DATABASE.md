@@ -24,11 +24,11 @@ This document describes how to support multiple database providers (MySQL, SQL S
 - The main API loads the correct provider/factory at runtime based on configuration.
 
 ## Structure
-- `VaultGuard.DAL.SqlServer/` — Contains context factory and migrations for SQL Server
-- `VaultGuard.DAL.MySql/` — Contains context factory and migrations for MySQL
-- `VaultGuard.DAL.Postgres/` — Contains context factory and migrations for PostgreSQL
-- `VaultGuard.DAL.SupaBase/` — Contains context factory and migrations for Supabase (Postgres)
-- `VaultGuard.DAL/` — Contains context factory and migrations for SQLite (default)
+- `VaultGuard.DAL.SqlServer/` - Contains context factory and migrations for SQL Server
+- `VaultGuard.DAL.MySql/` - Contains context factory and migrations for MySQL
+- `VaultGuard.DAL.Postgres/` - Contains context factory and migrations for PostgreSQL
+- `VaultGuard.DAL.SupaBase/` - Contains context factory and migrations for Supabase (Postgres)
+- `VaultGuard.DAL/` - Contains context factory and migrations for SQLite (default)
 
 ## Configuration
 In both `VaultGuard.API/appsettings.json` and `VaultGuard.App/appsettings.json`:
