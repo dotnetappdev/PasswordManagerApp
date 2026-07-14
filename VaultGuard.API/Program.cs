@@ -281,14 +281,28 @@ builder.Services.AddScoped<IOtpService, VaultGuard.Services.Services.OtpService>
 builder.Services.AddScoped<IPlatformDetectionService, VaultGuard.Services.Services.PlatformDetectionService>();
 builder.Services.AddScoped<ISmsSettingsService, VaultGuard.Services.Services.SmsSettingsService>();
 
-// Register Fido2 service for passkeys
+// Register Fido2 service for (account-level) passkeys. The WebAuthn Relying Party domain MUST match the
+// RP the clients use — for VaultGuard that's the web app host (also the domain that serves the passkey
+// association files at /.well-known/assetlinks.json and /apple-app-site-association), so web AND native
+// mobile passkeys share one RP identity. Comes from the "Fido2" config section; local dev falls back to
+// localhost. Getting this wrong is why passkeys registered via the API fail on the real domain.
 builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
 {
+    var fido = builder.Configuration.GetSection("Fido2");
+    var serverDomain = fido["ServerDomain"];
+    if (string.IsNullOrWhiteSpace(serverDomain)) serverDomain = "localhost";
+    var serverName = fido["ServerName"];
+    if (string.IsNullOrWhiteSpace(serverName)) serverName = "Vault Guard";
+    var origins = fido.GetSection("Origins").Get<string[]>();
+    var originSet = (origins is { Length: > 0 })
+        ? new HashSet<string>(origins)
+        : new HashSet<string> { "https://localhost", "http://localhost" };
+
     var config = new Fido2NetLib.Fido2Configuration
     {
-        ServerDomain = "localhost", // Update this for production
-        ServerName = "VaultGuard",
-        Origins = new HashSet<string> { "https://localhost", "http://localhost" },
+        ServerDomain = serverDomain,
+        ServerName = serverName,
+        Origins = originSet,
         TimestampDriftTolerance = 300000
     };
     return new Fido2NetLib.Fido2(config);
