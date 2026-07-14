@@ -1,4 +1,3 @@
-using Allure.NUnit;
 using NUnit.Framework;
 using VaultGuard.Models;
 using VaultGuard.Services.Services;
@@ -7,7 +6,6 @@ using VaultGuard.Services.Utilities;
 namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
-[AllureNUnit]
 public class SecurityAuditServiceTests
 {
     private SecurityAuditService _service = null!;

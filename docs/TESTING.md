@@ -6,7 +6,7 @@ VaultGuard has unit/integration tests and browser-driven UI tests, with an Allur
 
 | Project | Framework | What it covers |
 | --- | --- | --- |
-| `VaultGuard.BackEnd.Tests` | NUnit | Services, controllers, crypto, seeding, validation - the bulk of the unit/integration suite (~194 tests). **Allure-instrumented.** |
+| `VaultGuard.BackEnd.Tests` | NUnit | Services, controllers, crypto, seeding, validation - the bulk of the unit/integration suite (~194 tests). |
 | `VaultGuard.Tests.QrLogin` | xUnit | Passkey engine (`PasskeyServiceTests`), 2FA/passkey DTOs, QR login |
 | `VaultGuard.Tests.OTP` | xUnit | OTP / TOTP |
 | `VaultGuard.Tests.Playwright` | MSTest + Playwright | **UI automation** against the Blazor web app (its own library) |
@@ -56,18 +56,26 @@ deep-linkable `Settings?tab=Name` tabs) and the passkeys page.
 
 [Allure](https://allurereport.org/) turns test results into an interactive HTML dashboard.
 
-- **Instrumentation:** NUnit fixtures in `VaultGuard.BackEnd.Tests` carry `[AllureNUnit]` (via `Allure.NUnit`),
-  and an `allureConfig.json` sends per-test JSON to each project's `allure-results` output folder.
-- **Prerequisites for generating the HTML:** the Allure CLI, or Node (`npx`) + a JRE. Java is used by the
-  Allure CLI under the hood.
+**How it is wired (framework-agnostic):** every test project references `JunitXml.TestLogger`, so
+`dotnet test --logger junit` produces a JUnit XML file per suite - uniformly for NUnit, xUnit and
+MSTest/Playwright. Allure's bundled JUnit plugin reads those XML files, so **all suites appear in one
+dashboard** without any per-framework Allure adapter or attributes. (We tried the native `Allure.Xunit` /
+`Allure.NUnit` / `Allure.MSTest` adapters first; the xUnit one wouldn't engage under the VSTest v3 runner and
+the MSTest one needs a base class that conflicts with Playwright's `PageTest`. JUnit XML sidesteps both.)
+
+**Prerequisites for generating the HTML:** the Allure CLI, or Node (`npx`) + a JRE (the Allure CLI runs on
+Java under the hood). Both are used automatically by the script.
 
 Generate and view the dashboard:
 
 ```powershell
-# Runs the instrumented suites, aggregates results and writes ./allure-report
+# Runs the non-UI suites, writes JUnit XML into ./allure-results and builds ./allure-report
 pwsh scripts/run-tests-allure.ps1
 
-# Or open a live, auto-refreshing report
+# Include the Playwright UI suite (launches the web app + a browser; slower)
+pwsh scripts/run-tests-allure.ps1 -IncludeUi
+
+# Open a live, auto-refreshing report instead of a static site
 pwsh scripts/run-tests-allure.ps1 -Serve
 ```
 
@@ -75,10 +83,11 @@ Open `allure-report/index.html`. Both `allure-results/` and `allure-report/` are
 
 ### Adding another suite to the dashboard
 
-- **NUnit:** add `[AllureNUnit]` to the `[TestFixture]`, add `Allure.NUnit` + an `allureConfig.json` (copied
-  to output), then list the project in `scripts/run-tests-allure.ps1`.
-- **MSTest (Playwright):** `Allure.MSTest` needs the test class to derive from its base type, which conflicts
-  with Playwright's `PageTest`, so the UI suite is not wired into Allure yet - run it on its own for now.
-- **xUnit:** `Allure.Xunit` requires selecting its reporter (`-- xUnit.ReporterSwitch=allure` or a
-  `.runsettings`); it did not engage cleanly under the current VSTest v3 runner, so the xUnit suites are run
-  normally and are not in the Allure dashboard yet.
+Reference `JunitXml.TestLogger` in the project and add it to the `$projects` list in
+`scripts/run-tests-allure.ps1`. Nothing else - no attributes, no base classes.
+
+### Running a suite with JUnit output manually
+
+```bash
+dotnet test <project> --logger "junit;LogFilePath=allure-results/<name>.junit.xml"
+```
