@@ -47,19 +47,14 @@ public class PasskeyServiceTests
         context.SaveChanges();
         userId = user.Id;
 
-        var fido2 = new Fido2(new Fido2Configuration
-        {
-            ServerDomain = "localhost",
-            ServerName = "VaultGuard Tests",
-            Origins = new HashSet<string> { "https://localhost" },
-        });
-
         return new PasskeyService(
             context,
             crypto,
-            Mock.Of<IPasswordEncryptionService>(), // not used by the vault passkey path
+            Mock.Of<IPasswordEncryptionService>(), // encryption service is not used by the vault passkey path
             NullLogger<PasskeyService>.Instance,
-            fido2);
+            // IFido2 only drives the account register/authenticate ceremonies, which these tests don't
+            // touch - the vault create/assert path signs with the software authenticator. So mock it.
+            Mock.Of<IFido2>());
     }
 
     private static string Base64Url(byte[] bytes) =>
