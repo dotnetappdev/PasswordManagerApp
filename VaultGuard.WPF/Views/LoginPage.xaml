@@ -537,6 +537,18 @@
                                          Margin="0,12,0,0"
                                          Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
 
+                        <!-- Windows Hello quick unlock — shown only when a real TPM-backed Hello key is
+                             linked (Settings → Passkeys) and a master password is cached on this device. -->
+                        <Button x:Name="WindowsHelloUnlockButton" x:FieldModifier="private"
+                                Content="🔐  Unlock with Windows Hello"
+                                Style="{StaticResource ModernSecondaryButtonStyle}"
+                                HorizontalAlignment="Stretch"
+                                MinHeight="44" FontSize="14"
+                                Margin="0,12,0,0"
+                                Visibility="{Binding CanUseWindowsHello, Converter={StaticResource BoolToVisibilityConverter}}"
+                                Click="WindowsHelloUnlockButton_Click"
+                                ToolTipService.ToolTip="Unlock using the fingerprint, face, or PIN registered with Windows Hello"/>
+
                         <!-- Sign in from your phone (QR hand-off) -->
                         <Button x:Name="QrPhoneSignInButton" x:FieldModifier="private"
                                 Content="📷  Sign in from your phone"

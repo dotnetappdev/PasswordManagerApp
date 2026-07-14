@@ -55,3 +55,19 @@ data class PasskeyRegistrationComplete(
 
 @Serializable
 data class PasskeyDeleteRequest(val masterPassword: String)
+
+@Serializable
+data class PasskeyAuthenticationStartRequest(val email: String)
+
+@Serializable
+data class PasskeyAuthenticationStartResponse(
+    val challenge: String = "",
+    val credentialRequestOptions: String = "",
+)
+
+@Serializable
+data class PasskeyAuthenticationComplete(
+    val challenge: String,
+    val credentialResponse: String,
+    val originalOptionsJson: String,
+)

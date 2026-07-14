@@ -18,6 +18,7 @@ public class LoginViewModel : BaseViewModel
     private readonly IUserProfileService _userProfileService;
     private readonly ITwoFactorService? _twoFactorService;
     private readonly IMasterPasswordCacheService? _masterPasswordCacheService;
+    private readonly IWindowsHelloService? _helloService;
     private string _masterPassword = string.Empty;
     private string _confirmMasterPassword = string.Empty;
     private string _passwordHint = string.Empty;
@@ -39,6 +40,9 @@ public class LoginViewModel : BaseViewModel
     private bool _useBackupCode = false;
     private string _twoFactorCode = string.Empty;
 
+    // ── Windows Hello quick-unlock state ─────────────────────────────
+    private bool _canUseWindowsHello = false;
+
     public LoginViewModel(IServiceProvider serviceProvider)
     {
         _authService = serviceProvider.GetRequiredService<IAuthService>();
@@ -47,6 +51,7 @@ public class LoginViewModel : BaseViewModel
         _userProfileService = serviceProvider.GetRequiredService<IUserProfileService>();
         _twoFactorService = serviceProvider.GetService<ITwoFactorService>();
         _masterPasswordCacheService = serviceProvider.GetService<IMasterPasswordCacheService>();
+        _helloService = serviceProvider.GetService<IWindowsHelloService>();
 
         // Initialize with default state and then asynchronously update
         UpdateUIForSetupMode(); // Set initial UI state
@@ -354,6 +359,18 @@ public class LoginViewModel : BaseViewModel
     /// <summary>The classic master-password textbox is shown unless we're doing a 2FA-only quick unlock.</summary>
     public bool ShowMasterPasswordEntry => !RequiresTwoFactor;
 
+    /// <summary>
+    /// True when the selected profile has Windows Hello linked (a real TPM-backed key registered via
+    /// the Passkeys page) AND a cached master password is available on this device — in that case the
+    /// UI offers an "Unlock with Windows Hello" button. Independent of <see cref="RequiresTwoFactor"/>:
+    /// a profile can offer either, both, or neither.
+    /// </summary>
+    public bool CanUseWindowsHello
+    {
+        get => _canUseWindowsHello;
+        set => SetProperty(ref _canUseWindowsHello, value);
+    }
+
     public void GoToRegistration()
     {
         ShowRegistrationForm = true;
@@ -648,6 +665,7 @@ public class LoginViewModel : BaseViewModel
         // Decide whether this profile can do a 2FA-only quick unlock: 2FA must be enabled for
         // the user AND we must already have a cached master password for them on this device.
         _ = EvaluateTwoFactorQuickUnlockAsync(user);
+        _ = EvaluateWindowsHelloQuickUnlockAsync(user);
     }
 
     /// <summary>
@@ -684,6 +702,93 @@ public class LoginViewModel : BaseViewModel
         }
     }
 
+    /// <summary>
+    /// Checks whether the selected profile qualifies for Windows Hello quick unlock: a Hello key is
+    /// actually registered on this PC (real TPM check, not a database flag) AND a cached master
+    /// password is present. Purely local — this does not consult or claim the server-side FIDO2
+    /// "PasskeysEnabled" account flag used by the Web/mobile passkey system.
+    /// </summary>
+    private async Task EvaluateWindowsHelloQuickUnlockAsync(UserDto user)
+    {
+        try
+        {
+            if (_helloService == null || _masterPasswordCacheService == null)
+            {
+                CanUseWindowsHello = false;
+                return;
+            }
+
+            if (!await _helloService.IsAvailableAsync() ||
+                !await _helloService.KeyExistsAsync(WindowsHelloService.DefaultKeyName))
+            {
+                CanUseWindowsHello = false;
+                return;
+            }
+
+            CanUseWindowsHello = await _masterPasswordCacheService.HasCachedMasterPasswordAsync(user.Id);
+        }
+        catch
+        {
+            CanUseWindowsHello = false;
+        }
+    }
+
+    /// <summary>
+    /// Unlocks with Windows Hello: requires a genuine TPM-backed signature (real biometric/PIN
+    /// prompt) via <see cref="IWindowsHelloService.VerifyAsync"/> before releasing the DPAPI-cached
+    /// master password. Hello proves presence only — the actual vault key still comes from the
+    /// cached master password, exactly as with the 2FA quick-unlock path.
+    /// </summary>
+    public async Task<bool> AuthenticateWithWindowsHelloAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            ErrorMessage = string.Empty;
+
+            if (SelectedUser == null)
+            {
+                ErrorMessage = "No profile selected.";
+                return false;
+            }
+
+            if (_helloService == null || _masterPasswordCacheService == null)
+            {
+                ErrorMessage = "Windows Hello unlock is unavailable right now.";
+                return false;
+            }
+
+            var cachedPassword = await _masterPasswordCacheService.GetCachedMasterPasswordAsync(SelectedUser.Id);
+            if (string.IsNullOrEmpty(cachedPassword))
+            {
+                ErrorMessage = "Your saved sign-in expired on this device. Please enter your master password.";
+                CanUseWindowsHello = false;
+                return false;
+            }
+
+            var helloResult = await _helloService.VerifyAsync("Unlock your VaultGuard vault");
+            if (helloResult != HelloResult.Success)
+            {
+                ErrorMessage = helloResult == HelloResult.Cancelled
+                    ? "Windows Hello verification was cancelled."
+                    : "Windows Hello verification failed. Please enter your master password.";
+                return false;
+            }
+
+            return await AuthenticateSpecificUserAsync(SelectedUser, cachedPassword);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Windows Hello unlock failed: {ex.Message}";
+            return false;
+        }
+        finally
+        {
+            IsLoading = false;
+            OnPropertyChanged(nameof(HasError));
+        }
+    }
+
     public void ToggleBackupCodeMode()
     {
         UseBackupCode = !UseBackupCode;
@@ -715,6 +820,7 @@ public class LoginViewModel : BaseViewModel
         RequiresTwoFactor = false;
         UseBackupCode = false;
         TwoFactorCode = string.Empty;
+        CanUseWindowsHello = false;
 
         OnPropertyChanged(nameof(ShowProfileSelection));
         OnPropertyChanged(nameof(ShowPasswordEntry));

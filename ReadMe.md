@@ -369,10 +369,29 @@ verification and re-encryption-on-password-change as the server-backed builds.
 
 Please report suspected security issues privately via a GitHub security advisory rather than a public issue.
 
-More detail: [`ENCRYPTION_IMPLEMENTATION.md`](ENCRYPTION_IMPLEMENTATION.md),
-[`MASTER_PASSWORD_SECURITY.md`](MASTER_PASSWORD_SECURITY.md),
-[`OWASP_PBKDF2_UPGRADE_SUMMARY.md`](OWASP_PBKDF2_UPGRADE_SUMMARY.md) and
-[`SECURITY_SUMMARY.md`](SECURITY_SUMMARY.md).
+More detail: [`docs/SECURITY.md`](docs/SECURITY.md) (encryption, master-password security &
+security overview) and [`SECURITY_REMEDIATION_PRD.md`](SECURITY_REMEDIATION_PRD.md). The PBKDF2
+600k-iteration upgrade is noted in [`docs/HISTORY.md`](docs/HISTORY.md).
+
+---
+
+## Documentation
+
+Start here, then dive into a topic:
+
+| Guide | What's in it |
+| --- | --- |
+| [`GETTING_STARTED.md`](GETTING_STARTED.md) · [`SETUP.md`](SETUP.md) · [`CONFIGURATION_GUIDE.md`](CONFIGURATION_GUIDE.md) | Install, first run, configuration |
+| [`USER_GUIDE.md`](USER_GUIDE.md) | End-user feature walkthrough |
+| [`DEVELOPMENT.md`](DEVELOPMENT.md) · [`TECHNOLOGY_STACK.md`](TECHNOLOGY_STACK.md) | Building, architecture, tech stack |
+| [`docs/SECURITY.md`](docs/SECURITY.md) · [`SECURITY_REMEDIATION_PRD.md`](SECURITY_REMEDIATION_PRD.md) | Encryption, master-password security, remediation |
+| [`docs/AUTHENTICATION.md`](docs/AUTHENTICATION.md) | Master-key login, 2FA, passkeys, OTP, biometrics, passcode, QR sign-in, device management, profiles |
+| [`docs/DATABASE.md`](docs/DATABASE.md) | Providers, EF Identity setup, MySQL, migrations |
+| [`docs/UI_AND_UX.md`](docs/UI_AND_UX.md) | Design system, theming, validation UX, accessibility, navigation |
+| [`docs/HISTORY.md`](docs/HISTORY.md) | Consolidated record of past fixes & implementation notes |
+
+Per-platform details live in each project's own `README.md` (e.g. `VaultGuard.WPF/`, `VaultGuard.Web/`,
+`VaultGuard.Android/`, `VaultGuard.BrowserExtension/`).
 
 ---
 

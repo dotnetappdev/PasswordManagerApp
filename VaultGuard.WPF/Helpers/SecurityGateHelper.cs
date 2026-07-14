@@ -77,25 +77,22 @@ public static class SecurityGateHelper
         if (string.IsNullOrEmpty(userId))
             return true; // No identifiable signed-in user — don't block the action.
 
-        // Passkeys are an independent, stronger factor — try Windows Hello first regardless of
-        // whether 2FA is also enabled. Only a definitive "user cancelled" fails the gate outright;
-        // anything else (not configured/available/failed) falls through to the TOTP flow below.
-        var passkeyService = serviceProvider.GetService<IPasskeyService>();
-        if (passkeyService != null)
+        // Windows Hello is an independent, stronger local factor — try it first regardless of whether
+        // TOTP 2FA is also enabled. Gated on a real KeyCredentialManager key actually existing on this
+        // PC (a genuine, TPM-verified check via Windows itself) — never on the server-trusted
+        // PasskeysEnabled account flag, which belongs to the separate Web/mobile WebAuthn passkey
+        // system; a local device key must not be able to satisfy it by proxy. Only a definitive "user
+        // cancelled" fails the gate outright; anything else falls through to the TOTP flow below.
+        var helloService = serviceProvider.GetService<VaultGuard.WPF.Services.IWindowsHelloService>();
+        if (helloService != null &&
+            await helloService.IsAvailableAsync() &&
+            await helloService.KeyExistsAsync(VaultGuard.WPF.Services.WindowsHelloService.DefaultKeyName))
         {
-            var passkeyStatus = await passkeyService.GetPasskeyStatusAsync(userId);
-            if (passkeyStatus.IsEnabled)
-            {
-                var helloService = serviceProvider.GetService<VaultGuard.WPF.Services.IWindowsHelloService>();
-                if (helloService != null)
-                {
-                    var helloResult = await helloService.VerifyAsync(HelloReasonFor(action));
-                    if (helloResult == VaultGuard.WPF.Services.HelloResult.Success)
-                        return true;
-                    if (helloResult == VaultGuard.WPF.Services.HelloResult.Cancelled)
-                        return false;
-                }
-            }
+            var helloResult = await helloService.VerifyAsync(HelloReasonFor(action));
+            if (helloResult == VaultGuard.WPF.Services.HelloResult.Success)
+                return true;
+            if (helloResult == VaultGuard.WPF.Services.HelloResult.Cancelled)
+                return false;
         }
 
         var twoFactor = serviceProvider.GetService<ITwoFactorService>();

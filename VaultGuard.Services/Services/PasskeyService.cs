@@ -244,61 +244,11 @@ public class PasskeyService : IPasskeyService
     {
         try
         {
-            // Parse credential response
-            var credentialResponse = JsonSerializer.Deserialize<AuthenticatorAssertionRawResponse>(completeDto.CredentialResponse);
-            if (credentialResponse == null)
-            {
-                _logger.LogWarning("Invalid credential response for passkey authentication");
-                return null;
-            }
-
-            // Find passkey
-            var credentialId = Convert.ToBase64String(credentialResponse.Id);
-            var passkey = await _context.UserPasskeys
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.CredentialId == credentialId && p.IsActive);
-
+            var passkey = await VerifyAuthenticationAssertionAsync(completeDto);
             if (passkey == null)
             {
-                _logger.LogWarning("Passkey not found: {CredentialId}", credentialId);
                 return null;
             }
-
-            // Verify challenge
-            if (!await VerifyAndRemoveChallengeAsync(completeDto.Challenge, passkey.UserId))
-            {
-                _logger.LogWarning("Invalid challenge for passkey authentication: {UserId}", passkey.UserId);
-                return null;
-            }
-
-            // Rebuild the ORIGINAL assertion options the browser was challenged with.
-            var options = AssertionOptions.FromJson(completeDto.OriginalOptionsJson);
-            if (!options.Challenge.SequenceEqual(Convert.FromBase64String(completeDto.Challenge)))
-            {
-                _logger.LogWarning("Challenge mismatch for passkey authentication: {UserId}", passkey.UserId);
-                return null;
-            }
-
-            // Fido2 verifies the signature against the stored public key and the signature counter.
-            var result = await _fido2.MakeAssertionAsync(
-                credentialResponse, options, Convert.FromBase64String(passkey.PublicKey),
-                passkey.SignatureCounter, IsUserHandleOwnerOfCredentialIdAsync);
-            if (result.Status != "ok")
-            {
-                _logger.LogWarning("Passkey authentication failed: {Result}", result.ErrorMessage);
-                return null;
-            }
-
-            // Update passkey last used
-            passkey.LastUsedAt = DateTime.UtcNow;
-            passkey.SignatureCounter = result.Counter;
-
-            // Update user last login
-            passkey.User.LastLoginAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation("Passkey authentication successful for user: {UserId}", passkey.UserId);
 
             // Issue a real signed token + refresh token via the JWT service. Without it we cannot
             // mint a valid session, so fail closed rather than return a placeholder token.
@@ -315,6 +265,84 @@ public class PasskeyService : IPasskeyService
             _logger.LogError(ex, "Error completing passkey authentication");
             return null;
         }
+    }
+
+    public async Task<string?> VerifyPasskeyLoginAndGetUserIdAsync(PasskeyAuthenticationCompleteDto completeDto)
+    {
+        try
+        {
+            var passkey = await VerifyAuthenticationAssertionAsync(completeDto);
+            return passkey?.UserId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error verifying passkey login assertion");
+            return null;
+        }
+    }
+
+    // Cryptographically verifies a WebAuthn assertion against the stored credential and, on
+    // success, updates LastUsedAt/SignatureCounter/LastLoginAt. Shared by the API-token login
+    // flow (CompletePasskeyAuthenticationAsync) and the local/session-based login flow
+    // (VerifyPasskeyLoginAndGetUserIdAsync) so both trust the exact same verification path.
+    private async Task<UserPasskey?> VerifyAuthenticationAssertionAsync(PasskeyAuthenticationCompleteDto completeDto)
+    {
+        // Parse credential response
+        var credentialResponse = JsonSerializer.Deserialize<AuthenticatorAssertionRawResponse>(completeDto.CredentialResponse);
+        if (credentialResponse == null)
+        {
+            _logger.LogWarning("Invalid credential response for passkey authentication");
+            return null;
+        }
+
+        // Find passkey
+        var credentialId = Convert.ToBase64String(credentialResponse.Id);
+        var passkey = await _context.UserPasskeys
+            .Include(p => p.User)
+            .FirstOrDefaultAsync(p => p.CredentialId == credentialId && p.IsActive);
+
+        if (passkey == null)
+        {
+            _logger.LogWarning("Passkey not found: {CredentialId}", credentialId);
+            return null;
+        }
+
+        // Verify challenge
+        if (!await VerifyAndRemoveChallengeAsync(completeDto.Challenge, passkey.UserId))
+        {
+            _logger.LogWarning("Invalid challenge for passkey authentication: {UserId}", passkey.UserId);
+            return null;
+        }
+
+        // Rebuild the ORIGINAL assertion options the browser was challenged with.
+        var options = AssertionOptions.FromJson(completeDto.OriginalOptionsJson);
+        if (!options.Challenge.SequenceEqual(Convert.FromBase64String(completeDto.Challenge)))
+        {
+            _logger.LogWarning("Challenge mismatch for passkey authentication: {UserId}", passkey.UserId);
+            return null;
+        }
+
+        // Fido2 verifies the signature against the stored public key and the signature counter.
+        var result = await _fido2.MakeAssertionAsync(
+            credentialResponse, options, Convert.FromBase64String(passkey.PublicKey),
+            passkey.SignatureCounter, IsUserHandleOwnerOfCredentialIdAsync);
+        if (result.Status != "ok")
+        {
+            _logger.LogWarning("Passkey authentication failed: {Result}", result.ErrorMessage);
+            return null;
+        }
+
+        // Update passkey last used
+        passkey.LastUsedAt = DateTime.UtcNow;
+        passkey.SignatureCounter = result.Counter;
+
+        // Update user last login
+        passkey.User.LastLoginAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Passkey authentication successful for user: {UserId}", passkey.UserId);
+        return passkey;
     }
 
     public async Task<PasskeyListResponseDto> GetUserPasskeysAsync(string userId)

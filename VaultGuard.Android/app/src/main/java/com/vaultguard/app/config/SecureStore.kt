@@ -80,14 +80,27 @@ class SecureStore @Inject constructor(
         }.apply()
 
     /**
-     * The master password cached for quick unlock (fingerprint / passcode). Stored in the Keystore-backed
-     * encrypted prefs and only ever read after a successful biometric prompt or a verified passcode, so the
-     * user doesn't have to retype the master key every time.
+     * The master password, sealed for fingerprint/face quick unlock via [com.vaultguard.app.security.BiometricCrypto]
+     * (RSA-OAEP-wrapped AES-GCM envelope, keyed by a hardware Keystore key that requires a fresh
+     * BIOMETRIC_STRONG auth to unwrap). Unlike a plain encrypted-prefs value, this can't be read by any code
+     * that merely has access to this store — the TEE/StrongBox itself refuses to run the unwrap operation
+     * without a matching biometric event, so a compromised app process alone can't recover it.
      */
-    var quickUnlockMaster: String?
-        get() = prefs.getString(KEY_QUICK_MASTER, null)
+    var quickUnlockSealedBiometric: String?
+        get() = prefs.getString(KEY_QUICK_BIOMETRIC, null)
         set(value) = prefs.edit().apply {
-            if (value.isNullOrBlank()) remove(KEY_QUICK_MASTER) else putString(KEY_QUICK_MASTER, value)
+            if (value.isNullOrBlank()) remove(KEY_QUICK_BIOMETRIC) else putString(KEY_QUICK_BIOMETRIC, value)
+        }.apply()
+
+    /**
+     * The master password, encrypted (AES-GCM via [com.vaultguard.app.domain.VaultCrypto]) with a key derived
+     * (PBKDF2) from the numeric [passcode] PIN + its stored salt. Decrypting requires re-deriving the same key
+     * from the correct PIN — knowing the PIN hash alone (or just reading this store) isn't enough.
+     */
+    var quickUnlockEncPasscode: String?
+        get() = prefs.getString(KEY_QUICK_PASSCODE, null)
+        set(value) = prefs.edit().apply {
+            if (value.isNullOrBlank()) remove(KEY_QUICK_PASSCODE) else putString(KEY_QUICK_PASSCODE, value)
         }.apply()
 
     /** Numeric passcode stored as "saltB64:hashB64" (PBKDF2). Non-null = a passcode is set. */
@@ -111,12 +124,18 @@ class SecureStore @Inject constructor(
             if (value.isNullOrBlank()) remove(KEY_1P_TOKEN) else putString(KEY_1P_TOKEN, value)
         }.apply()
 
-    val hasQuickUnlock: Boolean get() = !quickUnlockMaster.isNullOrBlank()
+    val hasBiometricQuickUnlock: Boolean get() = !quickUnlockSealedBiometric.isNullOrBlank()
+    val hasQuickUnlock: Boolean get() = hasBiometricQuickUnlock || !quickUnlockEncPasscode.isNullOrBlank()
     val hasPasscode: Boolean get() = !passcode.isNullOrBlank()
 
     /** Forget the cached master password + passcode (e.g. on sign-out or "disable quick unlock"). */
     fun clearQuickUnlock() {
-        prefs.edit().remove(KEY_QUICK_MASTER).remove(KEY_PASSCODE).apply()
+        com.vaultguard.app.security.BiometricCrypto.deleteKey()
+        prefs.edit()
+            .remove(KEY_QUICK_BIOMETRIC)
+            .remove(KEY_QUICK_PASSCODE)
+            .remove(KEY_PASSCODE)
+            .apply()
     }
 
     // Per-account API keys for the account switcher (keyed by account id).
@@ -136,7 +155,8 @@ class SecureStore @Inject constructor(
         const val KEY_LOCAL_SALT = "local_vault_salt"
         const val KEY_LOCAL_VERIFIER = "local_verifier"
         const val KEY_APP_TOTP = "app_totp_secret"
-        const val KEY_QUICK_MASTER = "quick_unlock_master"
+        const val KEY_QUICK_BIOMETRIC = "quick_unlock_biometric_sealed"
+        const val KEY_QUICK_PASSCODE = "quick_unlock_passcode_enc"
         const val KEY_PASSCODE = "quick_unlock_passcode"
         const val KEY_1P_HOST = "onepassword_connect_host"
         const val KEY_1P_TOKEN = "onepassword_connect_token"

@@ -140,7 +140,7 @@ brew install mysql
 3. Create user (optional): `CREATE USER 'pmuser'@'localhost' IDENTIFIED BY 'password';`
 4. Grant permissions: `GRANT ALL PRIVILEGES ON VaultGuard.* TO 'pmuser'@'localhost';`
 
-📋 **For detailed MySQL setup, see [MySQL Setup Guide](MYSQL_SETUP_GUIDE.md)**
+📋 **For detailed MySQL setup, see [Database & Migrations Guide](docs/DATABASE.md)**
 
 ### PostgreSQL
 

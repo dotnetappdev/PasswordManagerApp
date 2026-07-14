@@ -3,7 +3,7 @@
 > **Update 2026-06-27:** Beyond the original findings, the codebase now has secret-free,
 > no-swallowed-exceptions logging across all platforms (`AppLogger`), a server-verified
 > passkey/WebAuthn implementation, and a removed passkey-login auth-bypass. See
-> [SECURITY_SUMMARY.md](SECURITY_SUMMARY.md) → "Recent Security Updates" and "Compliance and
+> [docs/SECURITY.md](docs/SECURITY.md) → "Recent Security Updates" and "Compliance and
 > Standards" for the current posture and the standards the app is built to align with.
 
 **Status:** Ready for implementation

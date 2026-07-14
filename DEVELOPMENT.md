@@ -203,7 +203,7 @@ The `VaultGuard.Components.Shared` project contains:
 - AES-256-GCM authenticated encryption
 - Session-based vault management
 
-For detailed security information, see [ENCRYPTION_IMPLEMENTATION.md](ENCRYPTION_IMPLEMENTATION.md).
+For detailed security information, see [docs/SECURITY.md](docs/SECURITY.md).
 
 ## Performance
 

@@ -97,6 +97,31 @@ class AuthRepository @Inject constructor(
         }
     }
 
+    /** Starts a real WebAuthn sign-in: asks the server for assertion options for this account's passkey. */
+    suspend fun passkeyAuthStart(email: String): Result<com.vaultguard.app.data.model.PasskeyAuthenticationStartResponse> =
+        runCatching { apiProvider.api().passkeyAuthenticateStart(com.vaultguard.app.data.model.PasskeyAuthenticationStartRequest(email.trim())) }
+
+    /** Completes the WebAuthn ceremony: the server cryptographically verifies the assertion and issues a real session token. */
+    suspend fun passkeyAuthComplete(challenge: String, optionsJson: String, responseJson: String, email: String): LoginResult {
+        return try {
+            val auth = apiProvider.api().passkeyAuthenticateComplete(
+                com.vaultguard.app.data.model.PasskeyAuthenticationComplete(
+                    challenge = challenge, credentialResponse = responseJson, originalOptionsJson = optionsJson,
+                )
+            )
+            if (auth.token.isNotBlank()) {
+                // No master password: a passkey assertion proves identity, never the zero-knowledge vault key.
+                session.onLoggedIn(auth.token, auth.user, null)
+                rememberAccount(email.trim())
+                LoginResult.Success
+            } else LoginResult.Error("Passkey sign-in failed.")
+        } catch (e: retrofit2.HttpException) {
+            LoginResult.Error(if (e.code() == 401) "Passkey verification failed." else "Passkey sign-in failed (HTTP ${e.code()}).")
+        } catch (e: Exception) {
+            LoginResult.Error(e.message ?: "Unable to reach the server.")
+        }
+    }
+
     suspend fun currentMode(): ConnectionMode = configStore.config.first().mode
 
     /** Save the just-used connection as a switchable account. */

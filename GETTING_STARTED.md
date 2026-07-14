@@ -116,7 +116,7 @@ The default is **SQLite** — zero configuration, works immediately. Switch the 
 }
 ```
 
-See [MYSQL_SETUP_GUIDE.md](MYSQL_SETUP_GUIDE.md) for detailed MySQL instructions.
+See [docs/DATABASE.md](docs/DATABASE.md) for detailed MySQL and other provider instructions.
 
 ---
 
@@ -147,5 +147,5 @@ Updates are distributed as signed EXE + MSI on every tagged GitHub release via [
 
 - [Development Guide](DEVELOPMENT.md) — contributing, architecture, testing
 - [User Guide](USER_GUIDE.md) — detailed feature walkthrough
-- [Encryption & Security](ENCRYPTION_IMPLEMENTATION.md) — how AES-256-GCM protects your data
+- [Encryption & Security](docs/SECURITY.md) — how AES-256-GCM protects your data
 - [Installer Docs](installers/README.md) — building EXE / MSI, silent installs, CI/CD

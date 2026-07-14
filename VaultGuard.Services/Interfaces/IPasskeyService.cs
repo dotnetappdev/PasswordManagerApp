@@ -39,6 +39,15 @@ public interface IPasskeyService
     Task<AuthResponseDto?> CompletePasskeyAuthenticationAsync(PasskeyAuthenticationCompleteDto completeDto);
 
     /// <summary>
+    /// Verifies a WebAuthn assertion for login without minting an API JWT — for callers (e.g. the
+    /// Blazor Web login page) that manage their own local session and only need to know which
+    /// account the verified passkey belongs to.
+    /// </summary>
+    /// <param name="completeDto">Authentication completion data</param>
+    /// <returns>The owning user's id if the assertion verified successfully, otherwise null</returns>
+    Task<string?> VerifyPasskeyLoginAndGetUserIdAsync(PasskeyAuthenticationCompleteDto completeDto);
+
+    /// <summary>
     /// Gets all passkeys for a user
     /// </summary>
     /// <param name="userId">The user ID</param>

@@ -16,7 +16,10 @@ import com.vaultguard.app.data.repo.SessionManager
 import com.vaultguard.app.data.repo.VaultRepository
 import com.vaultguard.app.domain.Totp
 import com.vaultguard.app.domain.VaultCrypto
+import com.vaultguard.app.security.BiometricCrypto
+import com.vaultguard.app.security.SealedSecret
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.crypto.Cipher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -44,6 +47,7 @@ data class UnlockState(
     val info: String? = null,
     // Quick unlock (fingerprint / passcode)
     val hasQuickUnlock: Boolean = false,
+    val hasBiometricQuickUnlock: Boolean = false,
     val hasPasscode: Boolean = false,
     /** After a successful unlock with no quick-unlock configured: offer to set one up. */
     val offerQuickSetup: Boolean = false,
@@ -89,6 +93,7 @@ class UnlockViewModel @Inject constructor(
                 it.copy(
                     mode = configStore.config.first().mode,
                     hasQuickUnlock = secureStore.hasQuickUnlock,
+                    hasBiometricQuickUnlock = secureStore.hasBiometricQuickUnlock,
                     hasPasscode = secureStore.hasPasscode,
                 )
             }
@@ -162,6 +167,44 @@ class UnlockViewModel @Inject constructor(
                     needsTwoFactor = false,
                     error = null,
                 )
+            }
+        }
+    }
+
+    /**
+     * Real WebAuthn sign-in: verified by the server against the account's registered passkey — the same
+     * kind managed on the Passkeys screen. No password is ever sent or cached client-side.
+     */
+    fun loginWithPasskey(context: android.content.Context) {
+        val email = _state.value.email
+        if (email.isBlank()) {
+            _state.update { it.copy(error = "Enter your email first, then sign in with your passkey.") }
+            return
+        }
+        viewModelScope.launch {
+            _state.update { it.copy(loading = true, error = null) }
+            val start = authRepository.passkeyAuthStart(email).getOrElse {
+                _state.update { s -> s.copy(loading = false, error = "No passkey registered for this account.") }
+                return@launch
+            }
+            try {
+                val manager = androidx.credentials.CredentialManager.create(context)
+                val request = androidx.credentials.GetCredentialRequest(
+                    listOf(androidx.credentials.GetPublicKeyCredentialOption(start.credentialRequestOptions))
+                )
+                val result = manager.getCredential(context, request)
+                val credential = result.credential as androidx.credentials.PublicKeyCredential
+                when (val outcome = authRepository.passkeyAuthComplete(
+                    start.challenge, start.credentialRequestOptions, credential.authenticationResponseJson, email,
+                )) {
+                    is LoginResult.Success -> proceedAfterPassword()
+                    is LoginResult.Error -> _state.update { it.copy(loading = false, error = outcome.message) }
+                    is LoginResult.NeedsTwoFactor -> _state.update {
+                        it.copy(loading = false, error = "Two-factor is required. Sign in with your master password instead.")
+                    }
+                }
+            } catch (e: Exception) {
+                _state.update { it.copy(loading = false, error = e.message ?: "Passkey sign-in was cancelled.") }
             }
         }
     }
@@ -271,15 +314,57 @@ class UnlockViewModel @Inject constructor(
 
     // ---- Quick unlock (fingerprint / passcode) -----------------------------
 
-    /** Called by the screen after a successful biometric prompt to unlock with the cached master password. */
-    fun biometricQuickUnlock() = completeQuickUnlock()
+    /**
+     * Returns the RSA Cipher the screen must hand to [com.vaultguard.app.security.Biometrics.promptForDecrypt];
+     * only the platform's TEE/StrongBox — after a fresh biometric — can actually make this Cipher usable.
+     * Null means quick unlock isn't set up (or the key was invalidated), so the caller should fall back
+     * to typing the master password.
+     */
+    fun biometricUnlockCipher(): Cipher? {
+        if (secureStore.quickUnlockSealedBiometric.isNullOrBlank()) return null
+        return runCatching { BiometricCrypto.unwrapCipher() }.getOrElse {
+            // Key was invalidated (e.g. biometrics were re-enrolled) — the old secret is unrecoverable.
+            secureStore.clearQuickUnlock()
+            _state.update { it.copy(hasQuickUnlock = secureStore.hasQuickUnlock, hasBiometricQuickUnlock = false) }
+            null
+        }
+    }
 
-    private fun completeQuickUnlock() {
-        val master = secureStore.quickUnlockMaster
+    /** Called by the screen once BiometricPrompt hands back an authenticated Cipher (or null on cancel/failure). */
+    fun biometricQuickUnlockWithCipher(cipher: Cipher?) {
+        val sealed = secureStore.quickUnlockSealedBiometric
+        if (cipher == null || sealed.isNullOrBlank()) {
+            _state.update { it.copy(error = "Passkey verification was cancelled or failed.") }
+            return
+        }
+        val master = runCatching { BiometricCrypto.open(cipher, SealedSecret.decode(sealed)) }.getOrNull()
         if (master.isNullOrBlank()) {
+            _state.update { it.copy(error = "Couldn't unlock. Enter your master password.") }
+            return
+        }
+        completeQuickUnlockWith(master)
+    }
+
+    /** Called after the numeric passcode's PBKDF2 hash matches — derives the same key to decrypt the master. */
+    private fun completeQuickUnlockWithPasscode(pin: String) {
+        val parts = secureStore.passcode?.split(':')
+        val enc = secureStore.quickUnlockEncPasscode
+        if (parts?.size != 2 || enc.isNullOrBlank()) {
             _state.update { it.copy(error = "Quick unlock isn't set up. Enter your master password.") }
             return
         }
+        val master = runCatching {
+            val key = crypto.deriveKey(pin, crypto.fromBase64(parts[0]))
+            crypto.decrypt(enc, key)
+        }.getOrNull()
+        if (master.isNullOrBlank()) {
+            _state.update { it.copy(error = "Couldn't unlock. Enter your master password.") }
+            return
+        }
+        completeQuickUnlockWith(master)
+    }
+
+    private fun completeQuickUnlockWith(master: String) {
         viewModelScope.launch {
             _state.update { it.copy(loading = true, error = null) }
             when (authRepository.unlockLocal(master, _state.value.selectedProfileId)) {
@@ -288,7 +373,7 @@ class UnlockViewModel @Inject constructor(
                     // The cached master no longer matches (vault was reset?) — clear it and fall back to typing.
                     secureStore.clearQuickUnlock()
                     _state.update {
-                        it.copy(loading = false, hasQuickUnlock = false, hasPasscode = false,
+                        it.copy(loading = false, hasQuickUnlock = false, hasBiometricQuickUnlock = false, hasPasscode = false,
                             showPasscode = false, error = "Couldn't unlock. Enter your master password.")
                     }
                 }
@@ -296,14 +381,18 @@ class UnlockViewModel @Inject constructor(
         }
     }
 
-    /** Enable fingerprint unlock from the offer: cache the just-used master password (Keystore-encrypted). */
+    /** Enable fingerprint unlock from the offer: seal the just-used master password behind the Keystore key. */
     fun enableFingerprintFromOffer() {
         val master = session.masterPassword
         if (!master.isNullOrBlank()) {
-            secureStore.quickUnlockMaster = master
-            viewModelScope.launch { settingsStore.update { it.copy(biometricUnlock = true) } }
+            runCatching { secureStore.quickUnlockSealedBiometric = BiometricCrypto.seal(master).encode() }
+                .onSuccess { viewModelScope.launch { settingsStore.update { it.copy(biometricUnlock = true) } } }
+                .onFailure {
+                    _state.update { it.copy(offerQuickSetup = false, unlocked = true, error = "Couldn't enable fingerprint unlock on this device.") }
+                    return
+                }
         }
-        _state.update { it.copy(offerQuickSetup = false, hasQuickUnlock = true, unlocked = true) }
+        _state.update { it.copy(offerQuickSetup = false, hasQuickUnlock = true, hasBiometricQuickUnlock = true, unlocked = true) }
     }
 
     /** From the offer: open the pad to choose a numeric passcode. */
@@ -368,9 +457,12 @@ class UnlockViewModel @Inject constructor(
             return
         }
         val salt = crypto.newSalt()
-        val hash = crypto.toBase64(crypto.deriveKey(pin, salt))
+        val key = crypto.deriveKey(pin, salt)
+        val hash = crypto.toBase64(key)
         secureStore.passcode = "${crypto.toBase64(salt)}:$hash"
-        secureStore.quickUnlockMaster = master
+        // Encrypted with a key derived from the PIN itself — decrypting requires the correct PIN,
+        // not just a store read, mirroring how the biometric path requires an actual biometric event.
+        secureStore.quickUnlockEncPasscode = crypto.encrypt(master, key)
         _state.update {
             it.copy(showPasscode = false, settingPasscode = false, confirmingPasscode = false,
                 firstPasscodeEntry = "", passcodeInput = "",
@@ -383,7 +475,7 @@ class UnlockViewModel @Inject constructor(
         val ok = parts?.size == 2 && runCatching {
             crypto.toBase64(crypto.deriveKey(pin, crypto.fromBase64(parts[0]))) == parts[1]
         }.getOrDefault(false)
-        if (ok) completeQuickUnlock()
+        if (ok) completeQuickUnlockWithPasscode(pin)
         else _state.update { it.copy(passcodeInput = "", error = "Incorrect passcode.") }
     }
 

@@ -28,6 +28,7 @@ targets:
         CFBundleDisplayName: VaultGuard
         UILaunchScreen: {}
         NSCameraUsageDescription: "VaultGuard uses the camera to scan QR codes for authenticator (TOTP) secrets and login."
+        NSFaceIDUsageDescription: "VaultGuard uses Face ID to unlock your vault quickly without retyping your master password."
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UISupportedInterfaceOrientations~ipad:

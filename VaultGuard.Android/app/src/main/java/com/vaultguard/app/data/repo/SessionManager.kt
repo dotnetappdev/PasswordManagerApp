@@ -37,7 +37,12 @@ class SessionManager @Inject constructor(
         get() = secureStore.sessionToken
         private set(value) { secureStore.sessionToken = value }
 
-    fun onLoggedIn(token: String, user: UserDto?, masterPassword: String) {
+    /**
+     * [masterPassword] is null for a real passkey sign-in: WebAuthn proves identity to the server but
+     * (correctly, for a zero-knowledge vault) never yields the master password, so features that need it
+     * client-side (password reveal, QR hand-off) require the user to enter it separately in that flow.
+     */
+    fun onLoggedIn(token: String, user: UserDto?, masterPassword: String?) {
         this.sessionToken = token
         this.masterPassword = masterPassword
         _user.value = user

@@ -36,6 +36,7 @@ public static class ServiceConfiguration
         services.AddSingleton<IPlatformService, WpfPlatformService>();
         services.AddSingleton<ISecureStorageService, WpfSecureStorageService>();
         services.AddSingleton<IMasterPasswordCacheService, MasterPasswordCacheService>();
+        services.AddSingleton<IWindowsHelloService, WindowsHelloService>();
 
         // Database services
         ConfigureDatabaseServices(services);

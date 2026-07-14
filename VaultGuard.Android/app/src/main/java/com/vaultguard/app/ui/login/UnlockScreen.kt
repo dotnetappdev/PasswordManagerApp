@@ -72,15 +72,17 @@ fun UnlockScreen(
             else viewModel.biometricResult(true)
         }
     }
-    // Bank-style: when quick unlock is set up, prompt for the fingerprint automatically once on open.
+    // Bank-style: when biometric quick unlock is set up, prompt automatically once on open. The Cipher comes
+    // from the Keystore-backed key itself — BiometricPrompt only returns it usable after a real biometric auth.
     var autoPrompted by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(state.hasQuickUnlock) {
-        if (state.hasQuickUnlock && !autoPrompted && !state.showPasscode && !state.offerQuickSetup) {
+    LaunchedEffect(state.hasBiometricQuickUnlock) {
+        if (state.hasBiometricQuickUnlock && !autoPrompted && !state.showPasscode && !state.offerQuickSetup) {
             autoPrompted = true
             val activity = context as? FragmentActivity
-            if (activity != null && Biometrics.isAvailable(activity)) {
-                Biometrics.prompt(activity, subtitle = "Use your fingerprint to unlock your vault") { ok ->
-                    if (ok) viewModel.biometricQuickUnlock()
+            val cipher = viewModel.biometricUnlockCipher()
+            if (activity != null && cipher != null && Biometrics.isStrongBiometricAvailable(activity)) {
+                Biometrics.promptForDecrypt(activity, cipher) { resultCipher ->
+                    viewModel.biometricQuickUnlockWithCipher(resultCipher)
                 }
             }
         }
@@ -143,7 +145,7 @@ fun UnlockScreen(
         // Offer to set up quick unlock right after a successful master-password unlock.
         if (state.offerQuickSetup) {
             QuickSetupOffer(
-                biometricAvailable = Biometrics.isAvailable(context),
+                biometricAvailable = Biometrics.isStrongBiometricAvailable(context),
                 onEnableFingerprint = viewModel::enableFingerprintFromOffer,
                 onSetPasscode = viewModel::startSetPasscode,
                 onSkip = viewModel::skipQuickSetup,
@@ -169,12 +171,16 @@ fun UnlockScreen(
         // Primary quick-unlock actions when a fingerprint/passcode has been set up.
         if (state.hasQuickUnlock) {
             QuickUnlockRow(
+                hasBiometric = state.hasBiometricQuickUnlock,
                 hasPasscode = state.hasPasscode,
                 loading = state.loading,
                 onFingerprint = {
                     val activity = context as? FragmentActivity
-                    if (activity != null) Biometrics.prompt(activity, subtitle = "Use your fingerprint to unlock your vault") { ok ->
-                        if (ok) viewModel.biometricQuickUnlock()
+                    val cipher = viewModel.biometricUnlockCipher()
+                    if (activity != null && cipher != null) {
+                        Biometrics.promptForDecrypt(activity, cipher) { resultCipher ->
+                            viewModel.biometricQuickUnlockWithCipher(resultCipher)
+                        }
                     }
                 },
                 onPasscode = viewModel::showPasscodeUnlock,
@@ -265,6 +271,16 @@ fun UnlockScreen(
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
             )
+            androidx.compose.material3.OutlinedButton(
+                onClick = { viewModel.loginWithPasskey(context) },
+                enabled = !state.loading,
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) {
+                Icon(Icons.Filled.Fingerprint, null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Sign in with account passkey")
+            }
         }
 
         val selectedName = state.localProfiles.firstOrNull { it.id == state.selectedProfileId }?.name
@@ -492,27 +508,36 @@ private fun avatarColorFor(key: String): androidx.compose.ui.graphics.Color {
 
 @Composable
 private fun QuickUnlockRow(
+    hasBiometric: Boolean,
     hasPasscode: Boolean,
     loading: Boolean,
     onFingerprint: () -> Unit,
     onPasscode: () -> Unit,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-        Button(
-            onClick = onFingerprint,
-            enabled = !loading,
-            shape = RoundedCornerShape(14.dp),
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) {
-            if (loading) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-            else {
-                Icon(Icons.Filled.Fingerprint, null, modifier = Modifier.size(22.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Unlock with fingerprint")
+        if (hasBiometric) {
+            Button(
+                onClick = onFingerprint,
+                enabled = !loading,
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) {
+                if (loading) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                else {
+                    Icon(Icons.Filled.Fingerprint, null, modifier = Modifier.size(22.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Unlock with fingerprint")
+                }
             }
         }
         if (hasPasscode) {
-            TextButton(onClick = onPasscode) { Text("Use passcode instead") }
+            if (hasBiometric) TextButton(onClick = onPasscode) { Text("Use passcode instead") }
+            else Button(
+                onClick = onPasscode,
+                enabled = !loading,
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) { Text("Unlock with passcode") }
         }
         Text(
             "or enter your master password below",

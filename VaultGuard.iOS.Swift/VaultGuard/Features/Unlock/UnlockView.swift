@@ -14,6 +14,8 @@ struct UnlockView: View {
     @State private var loading = false
     @State private var error: String?
     @State private var showSetup = false
+    @State private var hasQuickUnlock = false
+    @State private var biometricBusy = false
 
     private var isLocal: Bool { configStore.config.mode == .local }
 
@@ -67,12 +69,38 @@ struct UnlockView: View {
             .disabled(loading)
             .padding(.horizontal)
 
+            if isLocal && hasQuickUnlock {
+                Button(action: { Task { await unlockWithBiometrics() } }) {
+                    HStack {
+                        if biometricBusy { ProgressView() } else { Image(systemName: "faceid") }
+                        Text("Unlock with \(BiometricAuth.displayName)")
+                    }.frame(maxWidth: .infinity).padding(.vertical, 6)
+                }
+                .buttonStyle(.bordered)
+                .disabled(loading || biometricBusy)
+                .padding(.horizontal)
+            }
+
             Button("Connection settings") { showSetup = true }
                 .font(.footnote)
             Spacer()
         }
         .padding()
         .sheet(isPresented: $showSetup) { ConnectionSetupView() }
+        .onAppear { hasQuickUnlock = isLocal && env.repository.hasQuickUnlock }
+    }
+
+    private func unlockWithBiometrics() async {
+        biometricBusy = true; error = nil
+        let result = await env.repository.unlockWithBiometrics()
+        biometricBusy = false
+        switch result {
+        case .success: break
+        case .needsTwoFactor: break // Local mode never needs this branch.
+        case .error(let m):
+            error = m
+            hasQuickUnlock = env.repository.hasQuickUnlock // reflect if a stale item was just cleared
+        }
     }
 
     private var accountSwitcher: some View {

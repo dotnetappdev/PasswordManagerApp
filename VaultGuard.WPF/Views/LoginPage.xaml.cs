@@ -522,6 +522,30 @@ public sealed partial class LoginPage : Page
         }
     }
 
+    // ── Windows Hello quick unlock ───────────────────────────────────────
+    private async void WindowsHelloUnlockButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null) return;
+
+        var button = sender as Button;
+        var authProgressRing = this.FindName("AuthProgressRing") as ModernWpf.Controls.ProgressRing;
+
+        try
+        {
+            if (button != null) button.IsEnabled = false;
+            if (authProgressRing != null) authProgressRing.IsActive = true;
+
+            var success = await _viewModel.AuthenticateWithWindowsHelloAsync();
+            if (success && GetMainWindow() is MainWindow mainWindow)
+                mainWindow.NavigateToHome();
+        }
+        finally
+        {
+            if (button != null) button.IsEnabled = true;
+            if (authProgressRing != null) authProgressRing.IsActive = false;
+        }
+    }
+
     private void ToggleBackupCodeButton_Click(object sender, RoutedEventArgs e)
     {
         _viewModel?.ToggleBackupCodeMode();

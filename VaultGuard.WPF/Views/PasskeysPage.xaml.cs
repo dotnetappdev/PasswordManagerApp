@@ -263,11 +263,13 @@ public sealed partial class PasskeysPage : Page
         if (toggle.IsOn)
         {
             // Enable — this call raises the Windows Hello dialog.
+            // Real KeyCredentialManager registration IS the source of truth from here on — nothing else
+            // to persist. The DB's AspNetUsers.PasskeysEnabled flag belongs to the separate, server-
+            // verified WebAuthn passkey system (Web/mobile) and must never be set from a local device key.
             var result = await _hello.RegisterKeyAsync(Services.WindowsHelloService.DefaultKeyName);
             if (result == Services.HelloResult.Success)
             {
-                await SetPasskeysEnabledAsync(true);
-                ToastService.Instance.Success("Passkeys enabled — Windows Hello is now linked to VaultGuard.", "Passkeys on");
+                ToastService.Instance.Success("Windows Hello is now linked to VaultGuard on this PC.", "Windows Hello on");
             }
             else
             {
@@ -281,35 +283,10 @@ public sealed partial class PasskeysPage : Page
         else
         {
             await _hello.DeleteKeyAsync(Services.WindowsHelloService.DefaultKeyName);
-            await SetPasskeysEnabledAsync(false);
-            ToastService.Instance.Info("Passkeys disabled. Windows Hello is no longer linked.", "Passkeys off");
+            ToastService.Instance.Info("Windows Hello is no longer linked to VaultGuard.", "Windows Hello off");
         }
 
         await RefreshHelloStatusAsync();
-    }
-
-    // Best-effort persistence of the user's passkey preference.
-    private async Task SetPasskeysEnabledAsync(bool enabled)
-    {
-        try
-        {
-            if (_serviceProvider == null) return;
-            using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetService<VaultGuard.DAL.VaultGuardDbContext>();
-            var auth = scope.ServiceProvider.GetService<IAuthService>();
-            var userId = auth?.CurrentUser?.Id;
-            if (db == null || string.IsNullOrEmpty(userId)) return;
-
-            var user = await db.Users.FindAsync(userId);
-            if (user != null)
-            {
-                user.PasskeysEnabled = enabled;
-                if (enabled && user.PasskeysEnabledAt == null)
-                    user.PasskeysEnabledAt = DateTime.UtcNow;
-                await db.SaveChangesAsync();
-            }
-        }
-        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to persist passkeys preference", ex); }
     }
 
     private async void SetupHelloButton_Click(object sender, RoutedEventArgs e)

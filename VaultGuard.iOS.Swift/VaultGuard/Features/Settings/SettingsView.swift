@@ -29,6 +29,18 @@ struct SettingsView: View {
 
     private var s: Binding<AppSettings> { $settingsStore.settings }
 
+    /// Backed by the real Keychain item (Face ID/Touch ID access control), not just a settings flag —
+    /// turning this on/off actually seals or discards the cached master password.
+    private var biometricUnlockBinding: Binding<Bool> {
+        Binding(
+            get: { env.repository.hasQuickUnlock },
+            set: { newValue in
+                if newValue { env.repository.enableQuickUnlock() } else { env.repository.disableQuickUnlock() }
+                settingsStore.update { $0.biometricUnlock = newValue }
+            }
+        )
+    }
+
     var body: some View {
         Form {
             Picker("Section", selection: $tab) {
@@ -128,7 +140,14 @@ struct SettingsView: View {
         }
         Section("App Lock") {
             Toggle("Require unlock on launch", isOn: s.requirePasscodeOnLaunch)
-            Toggle("Biometric unlock (Face ID / Touch ID)", isOn: s.biometricUnlock)
+            if configStore.config.mode == .local {
+                if BiometricAuth.isAvailable() {
+                    Toggle("\(BiometricAuth.displayName) unlock", isOn: biometricUnlockBinding)
+                } else {
+                    Text("\(BiometricAuth.displayName) isn't set up on this device.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+            }
             Stepper(settingsStore.settings.autoLockMinutes == 0 ? "Auto-lock: Never" : "Auto-lock: \(settingsStore.settings.autoLockMinutes) min",
                     value: s.autoLockMinutes, in: 0...60)
         }

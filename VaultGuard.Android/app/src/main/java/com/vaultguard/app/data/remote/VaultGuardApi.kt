@@ -59,6 +59,13 @@ interface VaultGuardApi {
     @HTTP(method = "DELETE", path = "api/passkey/{id}", hasBody = true)
     suspend fun deletePasskey(@Path("id") id: Int, @Body body: com.vaultguard.app.data.model.PasskeyDeleteRequest)
 
+    /** Real WebAuthn sign-in (no email/password): server verifies the assertion against the account's passkey. */
+    @POST("api/passkey/authenticate/start")
+    suspend fun passkeyAuthenticateStart(@Body body: com.vaultguard.app.data.model.PasskeyAuthenticationStartRequest): com.vaultguard.app.data.model.PasskeyAuthenticationStartResponse
+
+    @POST("api/passkey/authenticate/complete")
+    suspend fun passkeyAuthenticateComplete(@Body body: com.vaultguard.app.data.model.PasskeyAuthenticationComplete): com.vaultguard.app.data.model.AuthResponse
+
     @GET("api/approvals/pending")
     suspend fun pendingApprovals(): List<PendingApprovalDto>
 

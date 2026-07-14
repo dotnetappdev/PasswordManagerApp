@@ -95,10 +95,43 @@ final class VaultRepository {
                 rememberAccount(email: "")
                 return .success
             }
+            // The stale cached secret (if any) no longer matches — drop it so quick unlock doesn't
+            // silently keep offering a password that's since changed.
+            keychain.delete(Keychain.Keys.quickUnlockBiometric)
             return .error("Incorrect master password.")
         } catch {
             return .error(error.localizedDescription)
         }
+    }
+
+    /// True once Face ID/Touch ID quick unlock has been set up (a real Keychain item exists — checked
+    /// without prompting). LOCAL mode only, mirroring Android/WPF quick unlock.
+    var hasQuickUnlock: Bool { keychain.hasBiometricProtected(Keychain.Keys.quickUnlockBiometric) }
+
+    /// Seals the currently-unlocked session's master password behind Face ID/Touch ID.
+    func enableQuickUnlock() {
+        guard let master = session.masterPassword else { return }
+        keychain.setBiometricProtected(master, for: Keychain.Keys.quickUnlockBiometric)
+    }
+
+    func disableQuickUnlock() {
+        keychain.delete(Keychain.Keys.quickUnlockBiometric)
+    }
+
+    /// Unlocks the local vault via Face ID/Touch ID. The OS releases the cached master password only
+    /// after a real biometric (or passcode-fallback) evaluation succeeds — a prompt alone never
+    /// unlocks; the master password still has to correctly decrypt the local verifier, exactly as a
+    /// typed password would. The Keychain call blocks on the system's Face ID/Touch ID UI, so it runs
+    /// off the main actor via `Task.detached`.
+    func unlockWithBiometrics() async -> LoginResult {
+        let kc = keychain
+        let master = await Task.detached(priority: .userInitiated) {
+            kc.getBiometricProtected(Keychain.Keys.quickUnlockBiometric, prompt: "Unlock your VaultGuard vault")
+        }.value
+        guard let master, !master.isEmpty else {
+            return .error("Face ID/Touch ID verification was cancelled or failed.")
+        }
+        return unlockLocal(masterPassword: master)
     }
 
     // MARK: - Listing
