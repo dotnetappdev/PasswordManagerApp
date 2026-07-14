@@ -48,7 +48,13 @@
         // credential id (base64url). Throws if WebAuthn is unavailable or the user cancels.
         async enroll(userName, rpName) {
             if (!window.PublicKeyCredential) {
-                throw new Error('WebAuthn is not supported on this device');
+                throw new Error('WebAuthn is not supported by this browser.');
+            }
+            // Passkeys require a secure context. localhost is exempt, but a deployed site must be served over
+            // VALID, trusted HTTPS — otherwise the browser blocks credential creation. Surfacing this beats
+            // the generic "cancelled" message, which browsers also throw for security failures.
+            if (!window.isSecureContext) {
+                throw new Error('Passkeys require a secure (HTTPS) connection. This page is not a secure context — make sure the site is served over valid HTTPS (localhost is the only HTTP exception).');
             }
             const publicKey = {
                 challenge: randomBytes(32),
@@ -70,9 +76,22 @@
                 timeout: 60000,
                 attestation: 'none'
             };
-            const cred = await navigator.credentials.create({ publicKey });
+            let cred;
+            try {
+                cred = await navigator.credentials.create({ publicKey });
+            } catch (e) {
+                // Browsers report NotAllowedError for BOTH a real user-cancel AND several security/context
+                // failures (insecure origin, blocked by permissions policy, no usable platform authenticator).
+                // Include the error name so the true cause is visible instead of a bare "cancelled".
+                const name = e && e.name ? e.name : 'Error';
+                const msg = e && e.message ? e.message : 'Passkey creation failed';
+                if (name === 'NotAllowedError') {
+                    throw new Error('Passkey creation was not allowed. This is usually a cancelled prompt, a non-HTTPS/untrusted origin, or no available biometric (Windows Hello / Touch ID). (' + msg + ')');
+                }
+                throw new Error(name + ': ' + msg);
+            }
             if (!cred) {
-                throw new Error('Passkey enrollment was cancelled');
+                throw new Error('Passkey creation was cancelled.');
             }
             return bufToB64url(cred.rawId);
         },

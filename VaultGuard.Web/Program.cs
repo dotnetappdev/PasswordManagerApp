@@ -222,14 +222,27 @@ builder.Services.AddScoped<VaultGuard.Imports.Interfaces.IImportService, VaultGu
 // Register crypto services
 builder.Services.AddCryptographyServices();
 
-// Register Fido2 service for passkeys
+// Register Fido2 service for (account-level) passkeys. The WebAuthn Relying Party domain and origins MUST
+// match the site the browser is actually on, so they come from the "Fido2" config section. Set the deployed
+// host in appsettings.json (ServerDomain = vaultguardapp.dotnetappdevni.com, Origins = https://…); local dev
+// falls back to localhost. Getting this wrong is why passkeys fail on the real domain.
 builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
 {
+    var fido = builder.Configuration.GetSection("Fido2");
+    var serverDomain = fido["ServerDomain"];
+    if (string.IsNullOrWhiteSpace(serverDomain)) serverDomain = "localhost";
+    var serverName = fido["ServerName"];
+    if (string.IsNullOrWhiteSpace(serverName)) serverName = "Vault Guard";
+    var origins = fido.GetSection("Origins").Get<string[]>();
+    var originSet = (origins is { Length: > 0 })
+        ? new HashSet<string>(origins)
+        : new HashSet<string> { "https://localhost", "http://localhost" };
+
     var config = new Fido2NetLib.Fido2Configuration
     {
-        ServerDomain = "localhost", // Update this for production
-        ServerName = "VaultGuard",
-        Origins = new HashSet<string> { "https://localhost", "http://localhost" },
+        ServerDomain = serverDomain,
+        ServerName = serverName,
+        Origins = originSet,
         TimestampDriftTolerance = 300000
     };
     return new Fido2NetLib.Fido2(config);
@@ -253,7 +266,7 @@ builder.Services.AddHttpClient("VaultGuardAPI", client =>
 {
     var apiBaseUrl = !string.IsNullOrWhiteSpace(sharedApiBaseUrl)
         ? sharedApiBaseUrl
-        : (builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7001");
+        : (builder.Configuration["ApiSettings:BaseUrl"] ?? "https://vaultguardapi.dotnetappdevni.com");
     client.BaseAddress = new Uri(apiBaseUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     // API key / client credential access (configured in Settings → API Connection). The API validates

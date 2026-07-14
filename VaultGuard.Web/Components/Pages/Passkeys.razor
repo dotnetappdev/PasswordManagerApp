@@ -4,10 +4,12 @@
 @using VaultGuard.Models.DTOs.Auth
 @using Microsoft.JSInterop
 @inject IPasskeyService PasskeyService
+@inject IPasswordItemService PasswordItemService
 @inject IAuthService AuthService
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 @inject ISnackbar Snackbar
+@inject NavigationManager Navigation
 
 <PageTitle>Passkeys - VaultGuard</PageTitle>
 
@@ -109,6 +111,59 @@
         </div>
     </MudStack>
 </MudAlert>
+
+<!-- ── Passkeys saved for your websites (password-manager style) ─────────────── -->
+<MudPaper Class="pa-4 mb-5" Elevation="2" Style="border-radius:12px;">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-1">
+        <MudText Typo="Typo.h6" Style="font-weight:600;">Passkeys saved for your websites</MudText>
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudChip T="string" Size="Size.Small" Color="Color.Default">@(_sitePasskeys?.Count ?? 0)</MudChip>
+            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.OpenInFull"
+                       OnClick="@(() => Navigation.NavigateTo("/passwords?type=Passkey"))">Manage in vault</MudButton>
+        </MudStack>
+    </MudStack>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
+        Passkeys VaultGuard stores for other sites — each tied to the website it belongs to. New ones are
+        captured automatically by the VaultGuard browser extension or mobile app when you create a passkey on a
+        site (a site's passkey can only be created on that site).
+    </MudText>
+
+    @if (_sitePasskeys is { Count: > 0 })
+    {
+        @foreach (var item in _sitePasskeys)
+        {
+            <MudPaper Class="pa-3 mb-2" Elevation="0"
+                      Style="border:1px solid rgba(255,255,255,0.08); border-radius:10px;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Spacing="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                        <MudIcon Icon="@Icons.Material.Filled.Fingerprint" Style="color:#A3A3AB; font-size:1.5rem;" />
+                        <div>
+                            <MudText Typo="Typo.subtitle2" Style="font-weight:600; line-height:1.2;">@item.Title</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                @(string.IsNullOrWhiteSpace(item.Website) ? "No website set" : item.Website)@(string.IsNullOrWhiteSpace(item.Username) ? "" : $" · {item.Username}")
+                            </MudText>
+                        </div>
+                    </MudStack>
+                    @if (!string.IsNullOrWhiteSpace(item.Website))
+                    {
+                        <MudTooltip Text="Open website">
+                            <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small"
+                                           Href="@NormalizeUrl(item.Website)" Target="_blank" />
+                        </MudTooltip>
+                    }
+                </MudStack>
+            </MudPaper>
+        }
+    }
+    else
+    {
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+            No website passkeys saved yet. Install the VaultGuard browser extension (or use the mobile app),
+            then create a passkey on a site like github.com — it will appear here with its URL.
+        </MudText>
+    }
+</MudPaper>
 
 <!-- ── Loading ────────────────────────────────────────────────────────────── -->
 @if (isLoading)
@@ -303,6 +358,10 @@ else
     bool isRegistering = false;
     bool isDeleting = false;
 
+    // Passkeys VaultGuard stores FOR other websites (ItemType.Passkey vault items), each with its site URL.
+    // These are captured by the browser extension / mobile authenticator, not created on this page.
+    List<VaultGuard.Models.PasswordItem>? _sitePasskeys;
+
     string _passkeyName = string.Empty;
     string _masterPasswordForPasskey = string.Empty;
     bool _storeInVault = true;
@@ -332,6 +391,32 @@ else
             passkeys = new();
         }
         finally { isLoading = false; }
+
+        // Load the passkeys saved for websites (vault items). Separate try so a failure here never hides the
+        // account passkeys above.
+        try
+        {
+            var all = await PasswordItemService.GetAllAsync();
+            _sitePasskeys = all
+                .Where(i => i.Type == VaultGuard.Models.ItemType.Passkey && !i.IsDeleted && !i.IsArchived)
+                .OrderBy(i => i.Title)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Warning("Failed to load website passkeys", ex);
+            _sitePasskeys = new();
+        }
+    }
+
+    // Ensure a website value opens as an absolute URL in a new tab.
+    private static string NormalizeUrl(string? website)
+    {
+        if (string.IsNullOrWhiteSpace(website)) return "#";
+        return website.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || website.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            ? website
+            : "https://" + website;
     }
 
     void OpenRegisterDialog()
@@ -368,15 +453,23 @@ else
             if (start == null)
             { Snackbar.Add("Failed to start registration. Check your master password.", Severity.Error); return; }
 
-            // 2. Run the browser WebAuthn ceremony (prompts biometric/PIN/security key).
+            // 2. Run the browser WebAuthn ceremony (prompts biometric/PIN/security key). This is the
+            //    Windows Hello / Touch ID prompt — the platform generates and KEEPS the private key; we
+            //    only get back the public attestation. There is no way to pull the passkey itself into the
+            //    vault from here (that's WebAuthn by design); to store site passkeys in the vault use the
+            //    browser extension's virtual authenticator instead.
             string attestationJson;
             try
             {
                 attestationJson = await JSRuntime.InvokeAsync<string>("passkey.createForServer", start.CredentialCreationOptions);
             }
-            catch (Exception)
+            catch (Exception jsEx)
             {
-                Snackbar.Add("Passkey creation was cancelled or is not supported on this device.", Severity.Warning);
+                // Surface the REAL WebAuthn reason (passkey.js now includes the error name / secure-context
+                // hint) rather than a blanket "cancelled" — a stuck dialog with no explanation is the symptom
+                // of an origin/RP mismatch being reported as NotAllowedError.
+                VaultGuard.Services.Logging.AppLogger.Warning("Passkey WebAuthn create failed", jsEx);
+                Snackbar.Add($"Passkey creation failed: {jsEx.Message}", Severity.Warning);
                 return;
             }
 
@@ -395,14 +488,24 @@ else
             {
                 Snackbar.Add($"Passkey \"{_passkeyName}\" registered.", Severity.Success);
                 _registerDialogVisible = false;
+                StateHasChanged();      // ensure the dialog actually closes after the async ceremony
                 await LoadPasskeys();
             }
             else
             {
-                Snackbar.Add("Passkey registration could not be verified. Please try again.", Severity.Error);
+                // Server-side FIDO2 verification rejected the attestation. The usual cause is the
+                // Fido2:ServerDomain / Origins not matching the site's real origin (see Program.cs +
+                // appsettings) — so the ceremony succeeds in Windows Hello but we can't verify it here.
+                VaultGuard.Services.Logging.AppLogger.Warning(
+                    $"Passkey registration verification failed for '{_passkeyName}'. Check Fido2:ServerDomain/Origins match the current origin.");
+                Snackbar.Add("Passkey registration could not be verified — the server rejected it. This usually means the site's passkey domain (Fido2 settings) doesn't match this URL.", Severity.Error);
             }
         }
-        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error("Passkey registration error", ex);
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
         finally { isRegistering = false; }
     }
 

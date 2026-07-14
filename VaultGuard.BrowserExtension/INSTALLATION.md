@@ -264,6 +264,27 @@ If using API Mode:
    - **Auto-Retry**: Automatically retry failed requests
    - **HTTPS Only**: Force HTTPS connections
 
+**4. Passkeys — "Intercept website passkeys"**
+
+In the Settings screen's **Passkeys** section there's a single toggle, **Intercept website passkeys
+(save them in Vault Guard)**:
+
+- **On (default)** — Vault Guard acts as the passkey authenticator. When you create a passkey on a
+  website, the key is generated *inside your vault* (encrypted) instead of by Windows Hello / your
+  device, so it syncs with the rest of your vault and can be used from any device signed into the same
+  vault. This is the 1Password‑style behaviour and is what makes "save the passkey in the app" possible.
+- **Off** — passkeys are handled entirely by your browser/OS as normal; the extension does not touch
+  `navigator.credentials`. Choose this if you prefer platform passkeys (Windows Hello, Touch ID, a
+  hardware key) and only want Vault Guard for passwords/autofill.
+
+Turning it **off** takes effect immediately (even on already‑open tabs). Turning it back **on** for a
+tab that's already open may need a page refresh. The choice is stored per‑profile in
+`chrome.storage.sync` (`interceptPasskeys`).
+
+> Note: this only affects *website* passkeys. The private key still never leaves your vault, and the
+> extension always falls back to the platform authenticator when the vault is locked or has no matching
+> key — so existing passkeys keep working either way.
+
 ### Database Path Configuration Files
 
 For Native Host mode, the database path can be configured in multiple ways:
@@ -449,10 +470,15 @@ In Native Host mode the extension doubles as a **software passkey authenticator*
 and use passkeys for websites, with the private keys stored AES‑256‑GCM encrypted inside your vault
 (zero‑knowledge; the browser never sees them).
 
-1. **Unlock the vault** in the extension first (passkeys are gated behind your master password).
-2. On a site's "Create a passkey" prompt, choose Vault Guard — the host generates a P‑256 key pair,
+1. **Enable interception** — make sure **Settings → Passkeys → "Intercept website passkeys"** is on
+   (it is by default). With it off, the browser/OS handles passkeys and nothing is saved to the vault.
+2. **Unlock the vault** in the extension first (passkeys are gated behind your master password).
+3. On a site's "Create a passkey" prompt, choose Vault Guard — the host generates a P‑256 key pair,
    encrypts the private key under your master key and saves it to the `UserPasskeys` table.
-3. On sign‑in, the host decrypts the key and signs the challenge; the site logs you in.
+4. On sign‑in, the host decrypts the key and signs the challenge; the site logs you in.
+
+The saved passkeys then show up in the Vault Guard apps (WPF, web, Android, iOS) under **Passkeys →
+"Passkeys saved for your websites"**, each tied to the site it belongs to.
 
 See [PASSKEYS_SETUP.md](PASSKEYS_SETUP.md) for the full setup and supported‑site notes.
 

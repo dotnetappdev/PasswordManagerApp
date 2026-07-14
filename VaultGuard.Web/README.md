@@ -11,7 +11,8 @@ A modern Blazor Server web application for password management with full theme s
 - **🎨 Theme Support**: Light, Dark, and System theme modes with instant switching
 - **🔐 Master Password Authentication**: Secure vault unlock using Bitwarden-compatible encryption
 - **📱 Responsive Design**: Works perfectly on desktop, tablet, and mobile browsers
-- **🔑 API Key Management**: Built-in interface for generating and managing API keys
+- **🔑 API Key Management**: Built-in interface for generating and managing API keys. In **Settings → API Server**, *Generate API Key* now creates a **real, registered key** (hash stored, plaintext shown once) via `IApiKeyService.CreateApiKeyAsync` — not a throwaway string — and *Test API* makes an authenticated `GET /api/passworditems` call with the `X-API-Key` header and reports the item count it gets back. A key only authenticates against the API server that shares its database. Only **API URL + API Key** are required (Client ID/Secret were removed as unused); SQL Server details appear only when the *self-hosting* toggle is on.
+- **🔐 Passkeys**: The **Passkeys** page lists *"Passkeys saved for your websites"* — your `ItemType.Passkey` vault items, each tied to the **website/URL** it belongs to (captured by the browser extension / mobile authenticator; a site's passkey can only be created on that site). Account-level *sign-in-to-VaultGuard* passkeys (ASP.NET Core Identity / FIDO2) are also supported — the FIDO2 Relying Party domain is set via the `Fido2` config section (`ServerDomain` + `Origins`) so it works on the deployed host. Consistent with the WPF, Android and iOS apps.
 - **🔍 Real-time Search**: Instant search across all password items
 - **📂 Category Filtering**: Filter by categories, collections, and tags
 - **📋 One-Click Copy**: Copy passwords to clipboard with visual feedback

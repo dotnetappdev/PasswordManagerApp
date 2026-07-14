@@ -175,8 +175,24 @@
           <div id="activeDbInfo" class="info-text" style="display: none; margin-top: 8px; word-break: break-all;"></div>
         </div>
 
+        <h3 style="margin-top: 20px;">Passkeys</h3>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="interceptPasskeys" checked>
+            <span class="checkmark"></span>
+            Intercept website passkeys (save them in Vault Guard)
+          </label>
+          <small>
+            When <strong>on</strong>, Vault Guard acts as the passkey authenticator: creating a passkey on a
+            website generates the key inside the vault (encrypted) instead of Windows Hello / your device, so it
+            syncs with the rest of your vault. When <strong>off</strong>, passkeys are handled by your
+            browser/device as usual. Turning this off applies immediately; turning it on for a page already open
+            may need a refresh.
+          </small>
+        </div>
+
         <button type="button" id="saveSettingsBtn" class="btn btn-primary">Save Settings</button>
-        
+
         <h3 style="margin-top: 20px;">Database Connection</h3>
         <p>This extension can connect to your password manager using multiple methods.</p>
         <p class="info-text">For Native Messaging, ensure the desktop app is running and the native host is installed.</p>

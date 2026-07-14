@@ -44,6 +44,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -299,9 +300,17 @@ private fun SecurityTab(s: com.vaultguard.app.config.AppSettings, vm: SettingsVi
 @Composable
 private fun StorageTab(vm: SettingsViewModel, config: ConnectionConfig, onEditConnection: () -> Unit, onOpenDeviceSetup: () -> Unit) {
     val apiMessage by vm.apiMessage.collectAsStateWithLifecycle()
+    val issuedKey by vm.issuedKey.collectAsStateWithLifecycle()
     var mode by remember(config.mode) { mutableStateOf(config.mode) }
     var url by remember(config.apiBaseUrl) { mutableStateOf(config.apiBaseUrl) }
     var key by remember { mutableStateOf(vm.currentApiKey()) }
+    var issueEmail by remember { mutableStateOf("") }
+    var issueMaster by remember { mutableStateOf("") }
+
+    // When the server issues a key, drop it into the API Key field and clear the master password.
+    LaunchedEffect(issuedKey) {
+        issuedKey?.let { key = it; issueMaster = "" }
+    }
 
     SectionCard("Connection Mode") {
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
@@ -336,6 +345,28 @@ private fun StorageTab(vm: SettingsViewModel, config: ConnectionConfig, onEditCo
                 OutlinedButton(onClick = { vm.testApiConfig(url, key) }) { Text("Test") }
                 OutlinedButton(onClick = { vm.saveApiConfig(mode, url, key) }) { Text("Save") }
             }
+
+            HorizontalDivider(Modifier.padding(vertical = 4.dp))
+            Text("Generate a real key from this API",
+                style = MaterialTheme.typography.titleSmall)
+            Text("A key only works against the server that created it. Enter your account email and master " +
+                "password to have the API above issue a key into its own database — that's the key the test " +
+                "needs. (A key made in another app's local database is rejected here with 401.)",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedTextField(
+                value = issueEmail, onValueChange = { issueEmail = it },
+                label = { Text("Account email") }, placeholder = { Text("you@example.com") },
+                singleLine = true, modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = issueMaster, onValueChange = { issueMaster = it },
+                label = { Text("Master password") }, singleLine = true,
+                visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedButton(onClick = { vm.issueApiKey(url, issueEmail, issueMaster) }) {
+                Text("Generate key from server & save")
+            }
+
             apiMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall) }
         }
     } else {

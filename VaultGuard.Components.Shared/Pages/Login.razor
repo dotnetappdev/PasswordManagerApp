@@ -183,17 +183,17 @@
                                 <span>@GetDisplayName(_selectedProfile)</span>
                             </div>
                         }
-                        <p class="form-description">Enter your master password to unlock your vault.</p>
+                        <p class="form-description">Enter your master key to unlock your vault.</p>
 
                         <div class="form-group">
-                            <label for="loginKey">Account password</label>
+                            <label for="loginKey">Master key</label>
                             <div class="password-input-group">
                                 <input type="@(showPassword ? "text" : "password")"
                                        id="loginKey"
                                        @bind="loginKey"
                                        @oninput="OnLoginKeyInput"
                                        @onkeypress="HandleKeyPress"
-                                       placeholder="Enter your account password"
+                                       placeholder="Enter your master key"
                                        class="form-input @(loginKeyError ? "input-error" : "")" />
                                 <button type="button" class="password-toggle" @onclick="TogglePasswordVisibility">
                                     @(showPassword ? "👁️" : "👁️")
@@ -250,7 +250,7 @@
                                 </button>
                             }
                             <button type="button" class="link-button" @onclick="ResetVault">
-                                Forgot your password?
+                                Forgot your master key?
                             </button>
                             <button type="button" class="link-button" @onclick="GenerateDefaultAccounts" disabled="@isSeeding">
                                 @(isSeeding ? "Creating default accounts…" : "Create default accounts")
@@ -588,14 +588,14 @@
             }
             else
             {
-                errorMessage = "Failed to setup master password. Please try again.";
+                errorMessage = "Failed to set up your master key. Please try again.";
                 masterKeyError = true;
                 Snackbar.Add(errorMessage, Severity.Error);
             }
         }
         catch (Exception ex)
         {
-            errorMessage = "Failed to setup master password. Please try again.";
+            errorMessage = "Failed to set up your master key. Please try again.";
             masterKeyError = true;
             Snackbar.Add(errorMessage, Severity.Error);
         }
@@ -612,7 +612,7 @@
         
         if (string.IsNullOrEmpty(loginKey))
         {
-            errorMessage = "Please enter your password.";
+            errorMessage = "Please enter your master key.";
             loginKeyError = true;
             Snackbar.Add(errorMessage, Severity.Warning);
             return;
@@ -620,7 +620,7 @@
 
         if (loginKey.Length < 2)
         {
-            errorMessage = "Password must be at least 2 characters long.";
+            errorMessage = "Master key must be at least 2 characters long.";
             loginKeyError = true;
             Snackbar.Add(errorMessage, Severity.Warning);
             return;
@@ -657,7 +657,7 @@
             }
             else
             {
-                errorMessage = "Incorrect master password. Please try again.";
+                errorMessage = "Incorrect master key. Please try again.";
                 loginKey = string.Empty;
                 loginKeyError = true;
                 Snackbar.Add(errorMessage, Severity.Error);
@@ -852,7 +852,9 @@
         catch (Exception ex)
         {
             VaultGuard.Services.Logging.AppLogger.Error("Passkey enrolment failed", ex);
-            errorMessage = "Passkey registration failed. Please try again.";
+            // Surface the real reason (e.g. "Passkeys require a secure (HTTPS) connection", "NotAllowedError")
+            // instead of a generic message — the JS layer now reports the actual WebAuthn failure.
+            errorMessage = $"Passkey registration failed: {ex.Message}";
             Snackbar.Add(errorMessage, Severity.Error);
         }
     }
@@ -1163,7 +1165,7 @@
 
         if (string.IsNullOrEmpty(loginKey))
         {
-            Snackbar.Add("Enter your account password, then scan again to sign in the other device.", Severity.Info);
+            Snackbar.Add("Enter your master key, then scan again to sign in the other device.", Severity.Info);
             StateHasChanged();
             return;
         }
@@ -1241,7 +1243,7 @@
 
         if (string.IsNullOrEmpty(loginKey))
         {
-            Snackbar.Add("Enter your account password, then scan again to approve the sign-in.", Severity.Info);
+            Snackbar.Add("Enter your master key, then scan again to approve the sign-in.", Severity.Info);
             StateHasChanged();
             return;
         }

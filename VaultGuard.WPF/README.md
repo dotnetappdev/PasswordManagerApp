@@ -25,7 +25,12 @@ and theme files are in place and working.
 - **Security Center** (formerly "Watchtower") — vault health check plus on-demand **breach monitoring**
   via Have I Been Pwned (k-anonymity — only a partial password hash is ever sent).
 - **Vaults, categories, tags, favourites, archive, recently-deleted.**
-- **Passkeys / Windows Hello**, cloud backup (Google Drive + OneDrive), import/export.
+- **Passkeys** — the Passkeys page lists the passkeys VaultGuard stores **for your websites**
+  (`ItemType.Passkey` vault items), each shown with the **website/URL it belongs to** and its username; a
+  site's passkey can only be created on that site, so this page manages/stores them. Saving one also
+  registers a key in the **Windows Hello** credential store (prompts Hello); *account-level* biometric
+  unlock of VaultGuard uses the same Windows Hello system. Same model as the web, Android and iOS apps.
+- Cloud backup (Google Drive + OneDrive), import/export.
 - **Maintenance → Delete Seed Data** removes the built-in demo data and never touches your user accounts.
   A **"Keep my categories, collections & tags"** option deletes only the sample *items* while preserving
   your vault's organisation (backed by `TestDataSeeder.ClearSeedData(db, userId, keepCategories)`).

@@ -65,6 +65,33 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // Newly-issued key from the server, so the UI can drop it into the API Key field.
+    private val _issuedKey = MutableStateFlow<String?>(null)
+    val issuedKey = _issuedKey.asStateFlow()
+
+    /**
+     * Have the configured API server mint a REAL key (into its own DB) from the account email + master
+     * password, then save it as the current API key. This is the key that passes the connection test — a
+     * key generated in another app's local DB is rejected here with 401.
+     */
+    fun issueApiKey(url: String, email: String, masterPassword: String) {
+        viewModelScope.launch {
+            if (url.isBlank() || email.isBlank() || masterPassword.isBlank()) {
+                _apiMessage.value = "Enter the API URL, account email and master password."
+                return@launch
+            }
+            _apiMessage.value = "Requesting a key from the server…"
+            val result = apiProvider.issueApiKey(url.trim(), email.trim(), masterPassword)
+            result.onSuccess { key ->
+                configStore.save(ConnectionMode.API, url.trim(), key)
+                _issuedKey.value = key
+                _apiMessage.value = "Key issued by the server and saved. Tap Test to confirm."
+            }.onFailure {
+                _apiMessage.value = it.message ?: "Could not issue a key."
+            }
+        }
+    }
+
     fun update(transform: (AppSettings) -> AppSettings) {
         viewModelScope.launch { settingsStore.update(transform) }
     }

@@ -3,15 +3,19 @@ package com.vaultguard.app.data.remote
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.vaultguard.app.config.ConfigStore
 import com.vaultguard.app.config.SecureStore
+import com.vaultguard.app.data.model.IssueApiKeyRequest
+import com.vaultguard.app.data.model.IssueApiKeyResponse
 import com.vaultguard.app.data.repo.SessionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import javax.inject.Inject
@@ -95,4 +99,36 @@ class ApiProvider @Inject constructor(
             Result.failure(Exception(e.message ?: "Could not reach the server."))
         }
     }
+
+    /**
+     * Ask the configured API server to issue a REAL key into its own database, authenticated by the
+     * account's email + master password. Returns the plaintext key (shown once) so it can be saved and then
+     * used for X-API-Key calls. Anonymous endpoint — no key/token needed to call it.
+     */
+    suspend fun issueApiKey(baseUrl: String, email: String, masterPassword: String): Result<String> =
+        withContext(Dispatchers.IO) {
+            try {
+                val normalized = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
+                val payload = json.encodeToString(IssueApiKeyRequest(email.trim(), masterPassword))
+                val request = Request.Builder()
+                    .url("${normalized}api/apikeys/issue")
+                    .header("Accept", "application/json")
+                    .post(payload.toRequestBody("application/json".toMediaType()))
+                    .build()
+                OkHttpClient().newCall(request).execute().use { resp ->
+                    val body = resp.body?.string().orEmpty()
+                    when {
+                        resp.isSuccessful -> {
+                            val key = runCatching { json.decodeFromString<IssueApiKeyResponse>(body).keyValue }.getOrDefault("")
+                            if (key.isBlank()) Result.failure(Exception("The server did not return a key value."))
+                            else Result.success(key)
+                        }
+                        resp.code == 401 -> Result.failure(Exception("Invalid email or master password for this server."))
+                        else -> Result.failure(Exception("Server returned HTTP ${resp.code}."))
+                    }
+                }
+            } catch (e: Exception) {
+                Result.failure(Exception(e.message ?: "Could not reach the server."))
+            }
+        }
 }

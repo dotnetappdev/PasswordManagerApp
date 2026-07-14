@@ -359,3 +359,21 @@ data class VaultItem(
             else runCatching { java.time.Instant.parse(iso).toEpochMilli() }.getOrDefault(0L)
     }
 }
+
+/**
+ * Request/response for POST api/apikeys/issue — has the configured API server mint a REAL API key into its
+ * OWN database using the account's email + master password. That key (unlike one made in another app's local
+ * DB) actually authenticates against this server, so it passes the connection test.
+ */
+@Serializable
+data class IssueApiKeyRequest(
+    val email: String,
+    val masterPassword: String,
+    val name: String = "Android app",
+)
+
+@Serializable
+data class IssueApiKeyResponse(
+    val keyValue: String = "",
+    val name: String = "",
+)

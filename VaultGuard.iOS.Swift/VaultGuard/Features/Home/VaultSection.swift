@@ -20,6 +20,7 @@ enum VaultSection: Hashable, Identifiable {
             case .secureNote: return "Secure Notes"
             case .wifi: return "Wi-Fi"
             case .identity: return "Identities"
+            case .passkey: return "Passkeys"
             default: return t.label
             }
         }
@@ -47,6 +48,6 @@ enum VaultSection: Hashable, Identifiable {
 
     static let categories: [VaultSection] = [
         .category(.login), .category(.creditCard), .category(.secureNote),
-        .category(.wifi), .category(.identity),
+        .category(.wifi), .category(.identity), .category(.passkey),
     ]
 }

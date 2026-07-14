@@ -19,6 +19,8 @@ namespace VaultGuard.Services.Services
     public class ApiKeySqliteMirrorService : IApiKeySqliteMirror
     {
         private readonly string _baseDirectory;
+        // The base dir resolved to one we can actually create/write (cached after first success).
+        private string? _resolvedDirectory;
 
         public ApiKeySqliteMirrorService(IAppSettingsService? appSettings = null)
         {
@@ -34,11 +36,55 @@ namespace VaultGuard.Services.Services
 
         public string GetDatabasePath(string userId)
         {
-            Directory.CreateDirectory(_baseDirectory);
+            var dir = EnsureBaseDirectory();
             // userId is a GUID/identity string; strip anything that isn't filename-safe just in case.
             var safe = new string(userId.Where(c => char.IsLetterOrDigit(c) || c is '-' or '_').ToArray());
             if (string.IsNullOrEmpty(safe)) safe = "shared";
-            return Path.Combine(_baseDirectory, $"{safe}.db");
+            return Path.Combine(dir, $"{safe}.db");
+        }
+
+        /// <summary>
+        /// Resolves a writable directory for the per-user SQLite files. On locked-down hosts (IIS/ANCM app
+        /// pools run without a loaded user profile, so %LocalAppData% resolves to
+        /// C:\Windows\system32\config\systemprofile\AppData\Local — not writable), the preferred directory
+        /// can't be created. Fall back to an app-local App_Data folder, then temp, so creating an API key
+        /// never crashes the request. Cached once a candidate succeeds.
+        /// </summary>
+        private string EnsureBaseDirectory()
+        {
+            if (_resolvedDirectory != null)
+                return _resolvedDirectory;
+
+            foreach (var candidate in EnumerateCandidates())
+            {
+                if (string.IsNullOrWhiteSpace(candidate))
+                    continue;
+                try
+                {
+                    Directory.CreateDirectory(candidate);
+                    _resolvedDirectory = candidate;
+                    return candidate;
+                }
+                catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or NotSupportedException)
+                {
+                    AppLogger.Warning($"API key store directory not usable: {candidate}. Trying next fallback.", ex);
+                }
+            }
+
+            // Last resort: temp (always writable). CreateDirectory here is allowed to throw if even this fails.
+            var tmp = Path.Combine(Path.GetTempPath(), "VaultGuard", "apikeys");
+            Directory.CreateDirectory(tmp);
+            _resolvedDirectory = tmp;
+            return tmp;
+        }
+
+        private IEnumerable<string> EnumerateCandidates()
+        {
+            // 1) Configured / %LocalAppData% default (works on desktop + shared-machine setups).
+            yield return _baseDirectory;
+            // 2) App-local, writable on shared hosting where the profile path is denied. App_Data is also
+            //    blocked from direct HTTP access by IIS, so the key databases aren't web-servable.
+            yield return Path.Combine(AppContext.BaseDirectory, "App_Data", "VaultGuard", "apikeys");
         }
 
         private async Task<SqliteConnection> OpenAndEnsureSchemaAsync(string userId, CancellationToken ct)

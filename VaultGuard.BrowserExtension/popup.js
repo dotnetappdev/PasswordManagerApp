@@ -207,15 +207,18 @@ class VaultGuardPopup {
 
   async showSettings() {
     // Load current settings before showing settings screen
-    const settings = await chrome.storage.sync.get(['connectionMode', 'apiUrl', 'databasePath']);
-    
+    const settings = await chrome.storage.sync.get(['connectionMode', 'apiUrl', 'databasePath', 'interceptPasskeys']);
+
     const connectionModeSelect = document.getElementById('connectionMode');
     const apiUrlInput = document.getElementById('apiUrl');
     const databasePathInput = document.getElementById('databasePath');
-    
+    const interceptPasskeysInput = document.getElementById('interceptPasskeys');
+
     connectionModeSelect.value = settings.connectionMode || 'auto';
     apiUrlInput.value = settings.apiUrl || 'http://localhost:5000';
     databasePathInput.value = settings.databasePath || '';
+    // Default ON (preserves the original always-intercept behaviour) unless explicitly disabled.
+    if (interceptPasskeysInput) interceptPasskeysInput.checked = settings.interceptPasskeys !== false;
     
     // Show/hide fields based on connection mode
     this.handleConnectionModeChange({ target: connectionModeSelect });
@@ -250,13 +253,16 @@ class VaultGuardPopup {
     const connectionMode = document.getElementById('connectionMode').value;
     const apiUrl = document.getElementById('apiUrl').value;
     const databasePath = document.getElementById('databasePath').value;
+    const interceptPasskeysEl = document.getElementById('interceptPasskeys');
+    const interceptPasskeys = interceptPasskeysEl ? interceptPasskeysEl.checked : true;
     const messageDiv = document.getElementById('settingsMessage');
-    
+
     try {
       await chrome.storage.sync.set({
         connectionMode: connectionMode,
         apiUrl: apiUrl,
-        databasePath: databasePath
+        databasePath: databasePath,
+        interceptPasskeys: interceptPasskeys
       });
       
       messageDiv.textContent = 'Settings saved successfully!';

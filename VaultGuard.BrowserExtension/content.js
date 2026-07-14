@@ -1421,17 +1421,46 @@ if (document.readyState === 'loading') {
 (function installPasskeyBridge() {
   const REQUEST = 'PM_PASSKEY_REQUEST';
   const RESPONSE = 'PM_PASSKEY_RESPONSE';
+  const CONFIG = 'PM_PASSKEY_CONFIG';
 
-  // 1. Inject the page-world hook as early as possible.
-  try {
-    const script = document.createElement('script');
-    script.src = chrome.runtime.getURL('inpage.js');
-    script.async = false;
-    (document.head || document.documentElement).appendChild(script);
-    script.onload = () => script.remove();
-  } catch (e) {
-    console.warn('Vault Guard: failed to inject passkey hook', e);
+  // 1. Inject the page-world hook. Whether it actually intercepts passkeys is the user's choice
+  //    (Settings → "Intercept website passkeys"), stored as `interceptPasskeys` (default ON). We read
+  //    it first and pass the initial value to inpage.js via a data-attribute so there's no window
+  //    where it intercepts against the user's wish. Passkey ceremonies are user-initiated (a click),
+  //    so the async storage read always resolves well before one runs.
+  function injectHook(intercept) {
+    try {
+      const script = document.createElement('script');
+      script.src = chrome.runtime.getURL('inpage.js');
+      script.dataset.pmIntercept = intercept ? '1' : '0';
+      script.async = false;
+      (document.head || document.documentElement).appendChild(script);
+      script.onload = () => script.remove();
+    } catch (e) {
+      console.warn('Vault Guard: failed to inject passkey hook', e);
+    }
   }
+
+  try {
+    chrome.storage.sync.get({ interceptPasskeys: true }, (res) => {
+      injectHook(res && res.interceptPasskeys !== false);
+    });
+  } catch (e) {
+    // storage unavailable → default to intercepting (previous behaviour).
+    injectHook(true);
+  }
+
+  // Live toggle: when the user flips the setting, tell the already-injected hook without a reload.
+  // (Turning it back ON works instantly; the override was installed at load either way.)
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'sync' && changes.interceptPasskeys) {
+        window.postMessage(
+          { type: CONFIG, intercept: changes.interceptPasskeys.newValue !== false },
+          window.location.origin);
+      }
+    });
+  } catch (_) { /* no storage events available */ }
 
   // 2. Relay page → background → page.
   window.addEventListener('message', (event) => {

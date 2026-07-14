@@ -238,26 +238,31 @@ namespace VaultGuard.Components.Shared.Services
             var darkPalette = highContrast
                 ? new PaletteDark
                 {
-                    Primary = "#B0B0B8",           // bright neutral grey for contrast (no blue)
-                    PrimaryLighten = "#D0D0D6",
-                    PrimaryDarken = "#84848C",
-                    Secondary = "#FFD400",
-                    Tertiary = "#00E5FF",
+                    // Classic Windows / Android "High Contrast Black" look: bright yellow on pure black.
+                    Primary = "#FFFF00",           // yellow accent (nav, buttons, icons, focus)
+                    PrimaryLighten = "#FFFF66",
+                    PrimaryDarken = "#CCCC00",
+                    PrimaryContrastText = "#000000", // black text on yellow (filled) buttons
+                    Secondary = "#00FFFF",          // cyan — the second high-contrast accent (links)
+                    SecondaryContrastText = "#000000",
+                    Tertiary = "#00FFFF",
                     AppbarBackground = "#000000",
-                    AppbarText = "#FFFFFF",
+                    AppbarText = "#FFFF00",
                     Background = "#000000",
                     BackgroundGray = "#000000",
-                    Surface = "#0A0A0A",
+                    Surface = "#000000",
                     DrawerBackground = "#000000",
-                    DrawerText = "#FFFFFF",
-                    DrawerIcon = "#FFFFFF",
-                    TextPrimary = "#FFFFFF",
-                    TextSecondary = "#EDEDED",
-                    ActionDefault = "#FFFFFF",
-                    Divider = "#FFFFFF",
-                    LinesDefault = "#FFFFFF",
-                    LinesInputs = "#FFFFFF",
-                    TableLines = "#FFFFFF",
+                    DrawerText = "#FFFF00",
+                    DrawerIcon = "#FFFF00",
+                    TextPrimary = "#FFFF00",        // yellow body text
+                    TextSecondary = "#FFFF00",
+                    ActionDefault = "#FFFF00",
+                    ActionDisabled = "#7A7A00",
+                    Divider = "#FFFF00",
+                    DividerLight = "#FFFF00",
+                    LinesDefault = "#FFFF00",
+                    LinesInputs = "#FFFF00",
+                    TableLines = "#FFFF00",
                     OverlayDark = "rgba(0,0,0,0.9)",
                 }
                 : new PaletteDark

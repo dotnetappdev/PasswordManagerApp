@@ -4,6 +4,7 @@
 @inject VaultGuard.Components.Shared.Services.ThemeService ThemeService
 @inject IJSRuntime JS
 @inject VaultGuard.Services.Interfaces.IAuthService AuthService
+@inject VaultGuard.Services.Interfaces.IVaultService VaultService
 @inject NavigationManager Navigation
 
 @if (!_authorized)
@@ -61,7 +62,22 @@ else
             <MudNavLink Href="/categories" Icon="@Icons.Material.Filled.Category">Categories</MudNavLink>
             <MudNavLink Href="/collections" Icon="@Icons.Material.Filled.FolderSpecial">Collections</MudNavLink>
             <MudNavLink Href="/tags" Icon="@Icons.Material.Filled.Tag">Tags</MudNavLink>
-            <MudNavLink Href="/vaults" Icon="@Icons.Material.Filled.Shield">Vaults</MudNavLink>
+            <MudNavGroup Title="Vaults" Icon="@Icons.Material.Filled.Shield" Expanded="false">
+                <MudNavLink Href="/vaults" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.GridView">All Vaults</MudNavLink>
+                @if (_vaults is { Count: > 0 })
+                {
+                    @foreach (var v in _vaults)
+                    {
+                        <MudNavLink Href="@($"/passwords?vaultId={v.Id}")" Icon="@Icons.Material.Filled.Shield">
+                            @(string.IsNullOrWhiteSpace(v.Icon) ? "" : v.Icon + " ")@v.Name
+                        </MudNavLink>
+                    }
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Class="px-4 py-1" Style="color:#6B7280;">No vaults yet</MudText>
+                }
+            </MudNavGroup>
             <MudNavLink Href="/api-keys" Icon="@Icons.Material.Filled.Key">API Keys</MudNavLink>
             <MudNavLink Href="/import" Icon="@Icons.Material.Filled.ImportExport">Import / Export</MudNavLink>
 
@@ -69,7 +85,13 @@ else
             <MudNavLink Href="/passwords?status=archived" Icon="@Icons.Material.Filled.Archive">Archive</MudNavLink>
             <MudNavLink Href="/passwords?status=deleted" Icon="@Icons.Material.Filled.DeleteSweep">Recently Deleted</MudNavLink>
             <MudNavLink Href="/audit-logs" Icon="@Icons.Material.Filled.History">Audit Logs</MudNavLink>
-            <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
+            <MudNavGroup Title="Settings" Icon="@Icons.Material.Filled.Settings" Expanded="false">
+                <MudNavLink Href="/settings" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Tune">All Settings</MudNavLink>
+                @foreach (var t in SettingsTabs)
+                {
+                    <MudNavLink Href="@($"/settings?tab={t.Key}")" Icon="@t.Value">@t.Key</MudNavLink>
+                }
+            </MudNavGroup>
             <MudNavLink Icon="@Icons.Material.Filled.Info" OnClick="@(() => _aboutOpen = true)">About</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
@@ -116,6 +138,28 @@ else
 
     // Auth gate state. Starts false so nothing protected renders until we've verified the vault is unlocked.
     bool _authorized;
+
+    // Vaults shown as sub-items under the "Vaults" nav group. Loaded once after auth passes; each links to
+    // the item list filtered to that vault. Never blocks the drawer if loading fails.
+    List<VaultGuard.Models.Vault>? _vaults;
+    bool _vaultsLoaded;
+
+    // Settings tabs mirrored as nav sub-items → /settings?tab=<name>. Order/names match the MudTabPanels in
+    // Settings.razor (which reads the ?tab= query param to open the right panel).
+    static readonly IReadOnlyList<KeyValuePair<string, string>> SettingsTabs = new[]
+    {
+        new KeyValuePair<string, string>("Security",      Icons.Material.Filled.Security),
+        new KeyValuePair<string, string>("Appearance",    Icons.Material.Filled.Palette),
+        new KeyValuePair<string, string>("Database",      Icons.Material.Filled.Storage),
+        new KeyValuePair<string, string>("Sync",          Icons.Material.Filled.Sync),
+        new KeyValuePair<string, string>("Notifications", Icons.Material.Filled.Notifications),
+        new KeyValuePair<string, string>("Vaults",        Icons.Material.Filled.Shield),
+        new KeyValuePair<string, string>("Generator",     Icons.Material.Filled.Key),
+        new KeyValuePair<string, string>("Encryption",    Icons.Material.Filled.EnhancedEncryption),
+        new KeyValuePair<string, string>("Shortcuts",     Icons.Material.Filled.Keyboard),
+        new KeyValuePair<string, string>("Maintenance",   Icons.Material.Filled.Build),
+        new KeyValuePair<string, string>("About",         Icons.Material.Filled.Info),
+    };
 
     // Routes that never require the vault to be unlocked. Login/Setup already use EmptyLayout (so they don't
     // pass through this layout at all), but keeping them here makes the gate safe even if that ever changes.
@@ -167,6 +211,13 @@ else
         }
 
         _authorized = authenticated;
+        if (authenticated && !_vaultsLoaded)
+        {
+            // Populate the Vaults nav sub-menu. Best-effort — a failure here must never break the layout.
+            _vaultsLoaded = true;
+            try { _vaults = await VaultService.GetAllAsync(); }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Failed to load vaults for nav menu", ex); }
+        }
         if (!authenticated)
         {
             // Send them to the chrome-free login page. NavigateTo during prerender throws a handled

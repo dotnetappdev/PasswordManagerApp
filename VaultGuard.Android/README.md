@@ -59,6 +59,12 @@ You can change these later in **Settings → Storage → API Configuration**.
   Number, Email, URL, Text area, Phone, File, Toggle (Yes/No), Address, One‑Time Password and Sign‑in‑with.
   Full CRUD: each field has a type picker, type‑aware keyboard/masking, and a reveal toggle for secrets.
 - **Vault CRUD** (create / rename / delete) in API mode.
+- **Passkeys** — the Passkeys screen has a *"Passkeys saved for your websites"* section listing your
+  passkey vault items (`ItemType.Passkey`), each shown with the **website/URL it belongs to**. These are the
+  passkeys VaultGuard stores for third‑party sites (captured by the authenticator when you create a passkey
+  on a site) — the same model as the WPF, web and iOS apps. The separate *account* passkey (biometric
+  sign‑in to VaultGuard via Android Credential Manager) is also on this screen. A site's passkey can only be
+  created on that site, so this screen manages/stores them rather than minting them for a URL.
 - Eight‑tab **Settings** mirroring the desktop (Appearance, Accessibility, Security, Storage,
   Backup/Import/Export, Maintenance, Shortcuts, About), including editable API configuration and
   **seed / delete demo data**. **Maintenance → Delete Data** presents a scope selector — **Seed data**

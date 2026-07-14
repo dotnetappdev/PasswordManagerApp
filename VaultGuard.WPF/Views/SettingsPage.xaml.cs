@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.IO;
 using System.Net.Http;
+using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using VaultGuard.Services.Interfaces;
 using VaultGuard.Models.DTOs;
@@ -740,6 +741,66 @@ public sealed partial class SettingsPage : Page
         catch (Exception ex)
         {
             await ShowErrorDialog("API Connection", $"Could not reach the API: {ex.Message}");
+        }
+    }
+
+    // Ask the CONFIGURED API server to issue a REAL key into its own database, authenticated by the
+    // account's email + master password. This is the key that will pass "Test API Connection" — unlike a
+    // key generated locally (which lives in this app's DB and gets a 401/403 from the remote API).
+    private async void GenerateApiKeyFromServerButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null)
+            return;
+
+        var baseUrl = _viewModel.ApiBaseUrl?.Trim();
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            await ShowErrorDialog("Generate API Key", "Enter the API base URL first.");
+            return;
+        }
+
+        var email = IssueEmailTextBox.Text?.Trim();
+        var master = IssueMasterPasswordBox.Password;
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(master))
+        {
+            await ShowErrorDialog("Generate API Key", "Enter your account email and master password.");
+            return;
+        }
+
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+            var baseUri = baseUrl.TrimEnd('/');
+            var payload = new { email, masterPassword = master, name = $"WPF app ({DateTime.Now:yyyy-MM-dd HH:mm})" };
+            var resp = await client.PostAsJsonAsync($"{baseUri}/api/apikeys/issue", payload);
+
+            if (resp.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                await ShowErrorDialog("Generate API Key", "The API rejected those credentials. Check the email and master password for this server's account.");
+                return;
+            }
+            if (!resp.IsSuccessStatusCode)
+            {
+                await ShowErrorDialog("Generate API Key", $"Couldn't issue a key: {(int)resp.StatusCode} {resp.ReasonPhrase}.");
+                return;
+            }
+
+            using var doc = System.Text.Json.JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+            var key = doc.RootElement.TryGetProperty("keyValue", out var kv) ? kv.GetString() : null;
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                await ShowErrorDialog("Generate API Key", "The server did not return a key value.");
+                return;
+            }
+
+            _viewModel.ApiKey = key;
+            IssueMasterPasswordBox.Clear();
+            await _viewModel.SaveSettingsAsync();
+            VaultGuard.WPF.Services.ToastService.Instance.Show("Real API key issued by the server and saved. Use Test API Connection to confirm.", VaultGuard.WPF.Services.ToastType.Success);
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog("Generate API Key", $"Could not reach the API: {ex.Message}");
         }
     }
 

@@ -590,7 +590,7 @@
                     {
                         <div class="fg">
                             <label>API base URL</label>
-                            <input class="fc" type="text" @bind="_apiBaseUrl" placeholder="https://localhost:7001" />
+                            <input class="fc" type="text" @bind="_apiBaseUrl" placeholder="https://vaultguardapi.dotnetappdevni.com" />
                             <small>Root URL of the Vault Guard API server.</small>
                         </div>
                     }
@@ -812,7 +812,7 @@
 
     // API server connection (shared with the WPF app via AuthMode / ApiBaseUrl)
     private string _authMode = "Local Database";
-    private string _apiBaseUrl = "https://localhost:7001";
+    private string _apiBaseUrl = "https://vaultguardapi.dotnetappdevni.com";
     private string _apiSavedMessage = string.Empty;
 
     private void SaveApiSettings()
@@ -889,7 +889,7 @@
         try
         {
             _authMode = AppSettings.Get("AuthMode", "Local Database");
-            _apiBaseUrl = AppSettings.Get("ApiBaseUrl", "https://localhost:7001");
+            _apiBaseUrl = AppSettings.Get("ApiBaseUrl", "https://vaultguardapi.dotnetappdevni.com");
         }
         catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }

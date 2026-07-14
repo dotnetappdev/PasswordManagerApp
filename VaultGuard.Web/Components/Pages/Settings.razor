@@ -15,10 +15,12 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject VaultGuard.Components.Shared.Services.ThemeService ThemeService
 @inject VaultGuard.Web.Services.AppNotificationService Notify
+@inject IApiKeyService ApiKeyService
 @inject IServiceProvider Services
 @using Microsoft.Extensions.DependencyInjection
 @using System.Linq
 @using System.Collections.Generic
+@using System.Net.Http.Json
 
 <PageTitle>Settings - VaultGuard</PageTitle>
 
@@ -32,7 +34,7 @@
     </div>
 </MudStack>
 
-<MudTabs Elevation="2" Rounded="true" PanelClass="pa-4">
+<MudTabs Elevation="2" Rounded="true" PanelClass="pa-4" @bind-ActivePanelIndex="_activeTabIndex">
     <MudTabPanel Text="Security" Icon="@Icons.Material.Filled.Security">
         <MudGrid>
             <MudItem xs="12" md="6">
@@ -252,44 +254,65 @@
                     @if (_authMode == "API Server")
                     {
                         <MudTextField @bind-Value="_apiBaseUrl" Label="API URL" Variant="Variant.Outlined"
-                                      Class="mb-3" Placeholder="https://localhost:7001"
+                                      Class="mb-3" Placeholder="https://vaultguardapi.dotnetappdevni.com"
                                       HelperText="Root URL of the VaultGuard API (a restart applies the change)." />
                         <MudTextField @bind-Value="_apiKey" Label="API Key" Variant="Variant.Outlined"
                                       Class="mb-3" InputType="InputType.Password"
-                                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AutoFixHigh"
-                                      OnAdornmentClick="@GenerateApiKey" AdornmentAriaLabel="Generate API key"
-                                      HelperText="Sent as the X-Api-Key header. Click the wand to generate." />
-                        <MudTextField @bind-Value="_clientId" Label="Client ID" Variant="Variant.Outlined"
-                                      Class="mb-3"
-                                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AutoFixHigh"
-                                      OnAdornmentClick="@GenerateClientId" AdornmentAriaLabel="Generate client ID" />
-                        <MudTextField @bind-Value="_clientSecret" Label="Client Secret" Variant="Variant.Outlined"
-                                      Class="mb-3" InputType="InputType.Password"
-                                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AutoFixHigh"
-                                      OnAdornmentClick="@GenerateClientSecret" AdornmentAriaLabel="Generate client secret" />
+                                      HelperText="Sent as the X-Api-Key header. Generate one from the server below, or paste an existing key." />
+
+                        <MudPaper Class="pa-3 mb-3" Elevation="0" Style="border:1px solid rgba(255,255,255,0.08); border-radius:10px;">
+                            <MudText Typo="Typo.subtitle2" Style="font-weight:600;">Generate a real key from this API</MudText>
+                            <MudText Typo="Typo.caption" Class="d-block mb-2 mud-text-secondary">
+                                A key only works against the API server that created it. Enter your account email and
+                                master password to have <strong>@(FormatHost(_apiBaseUrl))</strong> issue a key into its own
+                                database — that's the key that will pass the connection test. (A key made in "Local Database"
+                                mode lives in this app's local DB and will be rejected by the remote API with 401/403.)
+                            </MudText>
+                            <MudTextField @bind-Value="_issueEmail" Label="Account email" Variant="Variant.Outlined"
+                                          Class="mb-2" Placeholder="you@example.com" />
+                            <MudTextField @bind-Value="_issueMasterPassword" Label="Master password" Variant="Variant.Outlined"
+                                          Class="mb-2" InputType="InputType.Password"
+                                          HelperText="Used once to authorize issuing the key; never stored." />
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.VpnKey" OnClick="@IssueKeyFromServer"
+                                       Disabled="@_issuingKey">
+                                @if (_issuingKey) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                                Generate key from server &amp; save
+                            </MudButton>
+                        </MudPaper>
 
                         <MudDivider Class="my-3" />
-                        <MudText Typo="Typo.subtitle2" Class="mb-1" Style="font-weight:600;">SQL Server (API database)</MudText>
+                        <MudSwitch T="bool" @bind-Value="_selfHostApi" Color="Color.Primary"
+                                   Label="I'm self-hosting the API server" Class="mb-1" />
                         <MudText Typo="Typo.caption" Class="d-block mb-2 mud-text-secondary">
-                            The database the API server uses. Test the connection and seed accounts / demo vault data — same as the desktop app.
+                            Leave this off to use VaultGuard's hosted database — nothing else to set up. Turn it
+                            on only if you run your own API against your own SQL Server.
                         </MudText>
-                        <MudTextField @bind-Value="_dbServer" Label="Server" Variant="Variant.Outlined" Class="mb-3"
-                                      Placeholder="sql.example.com" />
-                        <MudTextField @bind-Value="_dbName" Label="Database" Variant="Variant.Outlined" Class="mb-3" />
-                        <MudTextField @bind-Value="_dbUser" Label="User" Variant="Variant.Outlined" Class="mb-3" />
-                        <MudTextField @bind-Value="_dbPassword" Label="Password" Variant="Variant.Outlined" Class="mb-3"
-                                      InputType="InputType.Password" />
-                        <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap" Class="mb-2">
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-                                       StartIcon="@Icons.Material.Filled.Link" OnClick="@TestSqlServer"
-                                       Disabled="@_dbBusy">Test SQL Server</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
-                                       StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="@SeedUsers"
-                                       Disabled="@_dbBusy">Seed Users</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
-                                       StartIcon="@Icons.Material.Filled.Dataset" OnClick="@SeedTestData"
-                                       Disabled="@_dbBusy">Seed Test Data</MudButton>
-                        </MudStack>
+
+                        @if (_selfHostApi)
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="mb-1" Style="font-weight:600;">SQL Server (your API database)</MudText>
+                            <MudText Typo="Typo.caption" Class="d-block mb-2 mud-text-secondary">
+                                The database your self-hosted API uses. Test the connection and seed accounts / demo vault data.
+                            </MudText>
+                            <MudTextField @bind-Value="_dbServer" Label="Server" Variant="Variant.Outlined" Class="mb-3"
+                                          Placeholder="sql.example.com" />
+                            <MudTextField @bind-Value="_dbName" Label="Database" Variant="Variant.Outlined" Class="mb-3" />
+                            <MudTextField @bind-Value="_dbUser" Label="User" Variant="Variant.Outlined" Class="mb-3" />
+                            <MudTextField @bind-Value="_dbPassword" Label="Password" Variant="Variant.Outlined" Class="mb-3"
+                                          InputType="InputType.Password" />
+                            <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap" Class="mb-2">
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                           StartIcon="@Icons.Material.Filled.Link" OnClick="@TestSqlServer"
+                                           Disabled="@_dbBusy">Test SQL Server</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
+                                           StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="@SeedUsers"
+                                           Disabled="@_dbBusy">Seed Users</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
+                                           StartIcon="@Icons.Material.Filled.Dataset" OnClick="@SeedTestData"
+                                           Disabled="@_dbBusy">Seed Test Data</MudButton>
+                            </MudStack>
+                        }
                     }
                     else
                     {
@@ -362,25 +385,18 @@
                 <MudPaper Class="pa-4 rounded-lg" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">API Connection</MudText>
                     <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
-                        This app connects to a VaultGuard API server. Configure the URL and access credentials below.
+                        This app connects to a VaultGuard API server. Enter the API URL and your API Key.
                     </MudText>
                     <MudGrid>
                         <MudItem xs="12" md="6">
                             <MudTextField @bind-Value="_apiBaseUrl" Label="API URL"
-                                          Variant="Variant.Outlined" Placeholder="https://localhost:7001"
+                                          Variant="Variant.Outlined" Placeholder="https://vaultguardapi.dotnetappdevni.com"
                                           HelperText="Root URL of the VaultGuard API (a restart applies the change)." />
                         </MudItem>
                         <MudItem xs="12" md="6">
                             <MudTextField @bind-Value="_apiKey" Label="API Key" Variant="Variant.Outlined"
                                           InputType="InputType.Password"
-                                          HelperText="Sent as the X-Api-Key header." />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="_clientId" Label="Client ID" Variant="Variant.Outlined" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="_clientSecret" Label="Client Secret" Variant="Variant.Outlined"
-                                          InputType="InputType.Password" />
+                                          HelperText="Create one under Settings → API Keys, then paste it here." />
                         </MudItem>
                     </MudGrid>
                     <MudStack Row="true" Spacing="2" Class="mt-3">
@@ -942,6 +958,28 @@
 </MudDialog>
 
 @code {
+    // ── Deep-linkable tabs ──────────────────────────────────────────────────────
+    // The nav drawer lists each settings tab as its own menu item and links to
+    // /settings?tab=<name>. Map that name to the panel index so the right tab opens.
+    [Parameter, SupplyParameterFromQuery(Name = "tab")] public string? Tab { get; set; }
+    int _activeTabIndex;
+
+    // Order MUST match the MudTabPanel order in the markup above.
+    static readonly string[] TabOrder =
+    {
+        "Security", "Appearance", "Database", "Sync", "Notifications", "Vaults",
+        "Generator", "Encryption", "Shortcuts", "Maintenance", "About",
+    };
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrWhiteSpace(Tab))
+        {
+            var idx = Array.FindIndex(TabOrder, t => string.Equals(t, Tab, StringComparison.OrdinalIgnoreCase));
+            if (idx >= 0) _activeTabIndex = idx;
+        }
+    }
+
     // ── Two-factor (authenticator app) ──
     bool _2faDialogOpen, _twoFactorEnabled, _2faBusy;
     int _backupCodesRemaining;
@@ -1167,7 +1205,11 @@
         {
             using var scope = Services.CreateScope();
             var ctx = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
-            var userId = ctx.Users.Select(u => u.Id).FirstOrDefault()
+            // Seed the sample data under the CURRENT signed-in user (who has already entered their master
+            // key), not the first user in the DB — otherwise the demo items belong to a seeded default
+            // account and the app asks you to sign into that account instead.
+            var userId = await CurrentUserIdAsync()
+                         ?? ctx.Users.Select(u => u.Id).FirstOrDefault()
                          ?? VaultGuard.DAL.Seed.TestDataSeeder.TestUserId;
             VaultGuard.DAL.Seed.TestDataSeeder.SeedTestData(ctx, userId);
             Snackbar.Add("Sample data reseeded successfully.", Severity.Success);
@@ -1435,13 +1477,16 @@
 
     // Connection mode / API server (shared with WPF via "AuthMode" / "ApiBaseUrl")
     string _authMode = "API Server";   // Blazor is API-only (no local DB provider selection)
-    string _apiBaseUrl = "https://localhost:7001";
+    string _apiBaseUrl = "https://vaultguardapi.dotnetappdevni.com";
     string _apiKey = string.Empty;      // sent as X-Api-Key header
     string _clientId = string.Empty;
     string _clientSecret = string.Empty;
     // SQL Server (the API's database) — same fields the Secret Manager composes (dbserver/dbusername/dbpassword)
     string _dbServer = string.Empty, _dbName = string.Empty, _dbUser = string.Empty, _dbPassword = string.Empty;
     bool _dbBusy;
+    // When false (default) the app uses VaultGuard's hosted database; the SQL Server details below are only
+    // relevant when the user runs their own API (self-hosting).
+    bool _selfHostApi;
 
     void SaveApiSettings()
     {
@@ -1452,10 +1497,15 @@
             AppSettings.Set("ApiKey", _apiKey);
             AppSettings.Set("ApiClientId", _clientId);
             AppSettings.Set("ApiClientSecret", _clientSecret);
-            AppSettings.Set("dbserver", _dbServer);
-            AppSettings.Set("dbname", _dbName);
-            AppSettings.Set("dbusername", _dbUser);
-            AppSettings.Set("dbpassword", _dbPassword);
+            AppSettings.Set("SelfHostApi", _selfHostApi.ToString());
+            // Only persist SQL Server credentials when self-hosting — otherwise we use the hosted database.
+            if (_selfHostApi)
+            {
+                AppSettings.Set("dbserver", _dbServer);
+                AppSettings.Set("dbname", _dbName);
+                AppSettings.Set("dbusername", _dbUser);
+                AppSettings.Set("dbpassword", _dbPassword);
+            }
         }
         else
         {
@@ -1477,10 +1527,58 @@
         return Convert.ToBase64String(buf).Replace("+", "-").Replace("/", "_").TrimEnd('=');
     }
 
-    void GenerateApiKey()
+    // Fields for issuing a real key from the remote API (see IssueKeyFromServer).
+    string _issueEmail = string.Empty;
+    string _issueMasterPassword = string.Empty;
+    bool _issuingKey;
+
+    // Show just the host of an API URL in help text (e.g. "vaultguardapi.dotnetappdevni.com").
+    static string FormatHost(string? url)
     {
-        _apiKey = "vg_" + RandomToken(32);
-        Snackbar.Add("API key generated — Save to apply.", Severity.Info);
+        if (string.IsNullOrWhiteSpace(url)) return "the API server";
+        return Uri.TryCreate(url, UriKind.Absolute, out var u) ? u.Host : url;
+    }
+
+    // Ask the CONFIGURED API server to issue a real key into ITS OWN database, authenticated by the
+    // account's email + master password. This is the key that will pass the connection test — unlike a
+    // key generated locally (which lives in this app's DB and is rejected by the remote API with 401/403).
+    async Task IssueKeyFromServer()
+    {
+        if (string.IsNullOrWhiteSpace(_apiBaseUrl)) { Snackbar.Add("Enter the API URL first.", Severity.Warning); return; }
+        if (string.IsNullOrWhiteSpace(_issueEmail) || string.IsNullOrWhiteSpace(_issueMasterPassword))
+        { Snackbar.Add("Enter your account email and master password.", Severity.Warning); return; }
+
+        _issuingKey = true;
+        try
+        {
+            var baseUri = _apiBaseUrl.TrimEnd('/');
+            var client = HttpClientFactory.CreateClient();
+            client.Timeout = TimeSpan.FromSeconds(15);
+
+            var payload = new { email = _issueEmail, masterPassword = _issueMasterPassword, name = $"Web app ({DateTime.Now:yyyy-MM-dd HH:mm})" };
+            var resp = await client.PostAsJsonAsync($"{baseUri}/api/apikeys/issue", payload);
+
+            if (resp.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            { Snackbar.Add("The API rejected those credentials. Check the email and master password for THIS server's account.", Severity.Error); return; }
+            if (!resp.IsSuccessStatusCode)
+            { Snackbar.Add($"Couldn't issue a key: {(int)resp.StatusCode} {resp.ReasonPhrase}.", Severity.Error); return; }
+
+            using var doc = System.Text.Json.JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+            var keyValue = doc.RootElement.TryGetProperty("keyValue", out var kv) ? kv.GetString() : null;
+            if (string.IsNullOrWhiteSpace(keyValue))
+            { Snackbar.Add("The server did not return a key value.", Severity.Error); return; }
+
+            _apiKey = keyValue;
+            AppSettings.Set("ApiKey", _apiKey);
+            AppSettings.Save();
+            _issueMasterPassword = string.Empty; // don't keep it around
+            Snackbar.Add("Real API key issued by the server and saved. Use \"Test API\" to confirm it authenticates.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            await Notify.ShowErrorAsync("Couldn't reach the API to issue a key.", ex);
+        }
+        finally { _issuingKey = false; }
     }
 
     void GenerateClientId()
@@ -1549,7 +1647,11 @@
         {
             using var scope = Services.CreateScope();
             var ctx = scope.ServiceProvider.GetRequiredService<VaultGuard.DAL.VaultGuardDbContext>();
-            var userId = ctx.Users.Select(u => u.Id).FirstOrDefault()
+            // Seed under the CURRENT signed-in user so the demo items belong to the account that already
+            // has the master key entered (otherwise they attach to a seeded default account and you get
+            // prompted to sign into that one).
+            var userId = await CurrentUserIdAsync()
+                         ?? ctx.Users.Select(u => u.Id).FirstOrDefault()
                          ?? VaultGuard.DAL.Seed.TestDataSeeder.TestUserId;
             VaultGuard.DAL.Seed.TestDataSeeder.SeedTestData(ctx, userId);
             Snackbar.Add("Demo vault data seeded into the configured database.", Severity.Success);
@@ -1565,16 +1667,66 @@
     async Task TestApiConnection()
     {
         if (string.IsNullOrWhiteSpace(_apiBaseUrl)) { Snackbar.Add("Enter the API base URL first.", Severity.Warning); return; }
+        var baseUri = _apiBaseUrl.TrimEnd('/');
         try
         {
             var client = HttpClientFactory.CreateClient();
-            client.Timeout = TimeSpan.FromSeconds(8);
-            var baseUri = _apiBaseUrl.TrimEnd('/');
-            var resp = await client.GetAsync($"{baseUri}/health");
-            Snackbar.Add(resp.IsSuccessStatusCode
-                ? "API reachable — health check passed."
-                : $"API responded with {(int)resp.StatusCode} {resp.ReasonPhrase}.",
-                resp.IsSuccessStatusCode ? Severity.Success : Severity.Warning);
+            client.Timeout = TimeSpan.FromSeconds(10);
+
+            // 1) Reachability — unauthenticated health check.
+            try
+            {
+                var health = await client.GetAsync($"{baseUri}/health");
+                if (!health.IsSuccessStatusCode)
+                    Snackbar.Add($"Health check returned {(int)health.StatusCode} {health.ReasonPhrase} — trying an authenticated call anyway.", Severity.Warning);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Could not reach the API at {baseUri}: {ex.Message}", Severity.Error);
+                return;
+            }
+
+            // 2) No key yet → we can only confirm reachability.
+            if (string.IsNullOrWhiteSpace(_apiKey))
+            {
+                Snackbar.Add("API is reachable. Generate or paste an API Key to test authenticated access.", Severity.Info);
+                return;
+            }
+
+            // 3) Real authenticated call with the key — proves the key works AND returns actual data.
+            using var req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, $"{baseUri}/api/passworditems");
+            req.Headers.Add("X-API-Key", _apiKey);
+            var resp = await client.SendAsync(req);
+
+            if (resp.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+            {
+                Snackbar.Add("API reachable, but the API Key was rejected (401/403). The key must be one registered on THIS API's database.", Severity.Error);
+                return;
+            }
+            if (!resp.IsSuccessStatusCode)
+            {
+                Snackbar.Add($"Authenticated call returned {(int)resp.StatusCode} {resp.ReasonPhrase}.", Severity.Warning);
+                return;
+            }
+
+            // Parse the response and report a real value (item count) so the test proves data flows.
+            var body = await resp.Content.ReadAsStringAsync();
+            int count = -1;
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(body);
+                var root = doc.RootElement;
+                if (root.ValueKind == System.Text.Json.JsonValueKind.Array)
+                    count = root.GetArrayLength();
+                else if (root.TryGetProperty("items", out var items) && items.ValueKind == System.Text.Json.JsonValueKind.Array)
+                    count = items.GetArrayLength();
+            }
+            catch { /* unexpected/non-JSON body — still a 2xx, treat as pass */ }
+
+            Snackbar.Add(count >= 0
+                ? $"Success — API Key authenticated. The API returned {count} item{(count == 1 ? "" : "s")}."
+                : "Success — API Key authenticated and the API returned a valid response.",
+                Severity.Success);
         }
         catch (Exception ex)
         {
@@ -1706,10 +1858,11 @@
 
         // Connection (shared keys with WPF). Blazor supports Local Database (SQLite) or API Server.
         _authMode = AppSettings.Get("AuthMode", "Local Database");
-        _apiBaseUrl = AppSettings.Get("ApiBaseUrl", "https://localhost:7001");
+        _apiBaseUrl = AppSettings.Get("ApiBaseUrl", "https://vaultguardapi.dotnetappdevni.com");
         _apiKey = AppSettings.Get("ApiKey", "");
         _clientId = AppSettings.Get("ApiClientId", "");
         _clientSecret = AppSettings.Get("ApiClientSecret", "");
+        _selfHostApi = bool.TryParse(AppSettings.Get("SelfHostApi", "false"), out var _sh) && _sh;
         _dbServer = AppSettings.Get("dbserver", "");
         _dbName = AppSettings.Get("dbname", "");
         _dbUser = AppSettings.Get("dbusername", "");
@@ -1758,6 +1911,10 @@
         finally { _vaultsLoading = false; }
 
         try { await LoadTwoFactorStatusAsync(); } catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
+
+        // Prefill the "issue key from server" email with the signed-in account's email for convenience.
+        try { _issueEmail = AuthService.CurrentUser?.Email ?? _issueEmail; }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
     // ── Generator ────────────────────────────────────────────────────────────────
