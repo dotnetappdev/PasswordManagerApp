@@ -1,11 +1,9 @@
-using Allure.NUnit;
 using NUnit.Framework;
 using VaultGuard.Services.Helpers;
 
 namespace VaultGuard.BackEnd.Tests.Helpers;
 
 [TestFixture]
-[AllureNUnit]
 public class InputValidationHelperTests
 {
     [Test]

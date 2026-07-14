@@ -1,4 +1,3 @@
-using Allure.NUnit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
@@ -9,7 +8,6 @@ using System.Threading.Tasks;
 namespace VaultGuard.BackEnd.Tests.Services
 {
     [TestFixture]
-    [AllureNUnit]
     public class DatabaseMigrationServiceTests
     {
         private DatabaseMigrationService _migrationService;

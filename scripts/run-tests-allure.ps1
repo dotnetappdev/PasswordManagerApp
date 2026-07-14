@@ -1,21 +1,26 @@
 <#
 .SYNOPSIS
-  Runs the test suites, aggregates Allure results and builds (optionally serves) the HTML dashboard.
+  Runs the test suites and builds (optionally serves) an Allure HTML dashboard from their results.
 
 .DESCRIPTION
-  Allure-instrumented suites (currently VaultGuard.BackEnd.Tests - all NUnit fixtures carry [AllureNUnit])
-  write per-test JSON into their output allure-results folder. This script runs the tests, collects every
-  allure-results folder into a single ./allure-results, then generates ./allure-report via the Allure CLI
-  (falls back to `npx allure-commandline`, which needs Node + Java).
+  Every test project references JunitXml.TestLogger, so `dotnet test --logger junit` produces a JUnit XML
+  file per suite - uniformly across NUnit, xUnit and MSTest/Playwright (no per-framework Allure adapter).
+  Allure's bundled JUnit plugin turns those XML files into the dashboard, so all suites appear together.
+
+  Results (JUnit XML) are written straight into ./allure-results, then ./allure-report is generated with the
+  Allure CLI (or `npx allure-commandline`, which needs Node + a JRE).
 
 .PARAMETER Serve
-  After generating, open the live report in a browser instead of writing a static site.
+  Open a live, auto-refreshing report instead of writing a static site.
+
+.PARAMETER IncludeUi
+  Also run the Playwright UI suite (self-hosts the Blazor app + Chromium; slower, needs browsers installed).
 
 .EXAMPLE
   pwsh scripts/run-tests-allure.ps1
-  pwsh scripts/run-tests-allure.ps1 -Serve
+  pwsh scripts/run-tests-allure.ps1 -IncludeUi -Serve
 #>
-param([switch]$Serve)
+param([switch]$Serve, [switch]$IncludeUi)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -26,26 +31,24 @@ $report  = Join-Path $root 'allure-report'
 Remove-Item -Recurse -Force $results -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $results | Out-Null
 
-# Allure-instrumented test projects. Add more here as suites gain the Allure adapter.
-$projects = @(
-  'VaultGuard.BackEnd.Tests/VaultGuard.BackEnd.Tests.csproj'
+# Non-UI suites always run. The UI suite is opt-in (it launches the web app + a browser).
+$projects = [System.Collections.ArrayList]@(
+  'VaultGuard.BackEnd.Tests/VaultGuard.BackEnd.Tests.csproj',
+  'VaultGuard.Tests.QrLogin/VaultGuard.Tests.QrLogin.csproj',
+  'VaultGuard.Tests.OTP/VaultGuard.Tests.OTP.csproj'
 )
+if ($IncludeUi) { [void]$projects.Add('VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj') }
 
 foreach ($p in $projects) {
-  Write-Host "Running $p ..." -ForegroundColor Cyan
-  # Don't stop the whole run on a failing test - we still want the report.
-  dotnet test $p -v q --nologo
+  $name = [System.IO.Path]::GetFileNameWithoutExtension($p)
+  $xml  = Join-Path $results "$name.junit.xml"
+  Write-Host "Running $name ..." -ForegroundColor Cyan
+  # A failing test must not abort the report, so swallow the non-zero exit code.
+  & dotnet test $p -v q --nologo --logger "junit;LogFilePath=$xml"
 }
 
-# Collect every produced allure-results folder (in project output dirs) into the aggregate directory.
-Get-ChildItem -Recurse -Directory -Filter 'allure-results' |
-  Where-Object { $_.FullName -ne $results } |
-  ForEach-Object {
-    Get-ChildItem $_.FullName -File | Copy-Item -Destination $results -Force
-  }
-
-$count = (Get-ChildItem $results -File -ErrorAction SilentlyContinue | Measure-Object).Count
-Write-Host "Aggregated $count Allure result files into $results" -ForegroundColor Green
+$count = (Get-ChildItem $results -Filter *.xml -File -ErrorAction SilentlyContinue | Measure-Object).Count
+Write-Host "Wrote $count JUnit result file(s) to $results" -ForegroundColor Green
 
 function Invoke-Allure([string[]]$AllureArgs) {
   if (Get-Command allure -ErrorAction SilentlyContinue) { & allure @AllureArgs }

@@ -1,4 +1,3 @@
-using Allure.NUnit;
 using Moq;
 using NUnit.Framework;
 using VaultGuard.Crypto.Interfaces;
@@ -9,7 +8,6 @@ using System.Text;
 namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
-[AllureNUnit]
 public class PasswordCryptoServiceTests
 {
     private Mock<ICryptographyService> _mockCryptographyService = null!;

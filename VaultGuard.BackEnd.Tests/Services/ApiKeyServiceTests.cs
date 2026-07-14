@@ -1,4 +1,3 @@
-using Allure.NUnit;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
@@ -21,7 +20,6 @@ namespace VaultGuard.BackEnd.Tests.Services;
 /// a shared context would leak that mutation into later queries.
 /// </summary>
 [TestFixture]
-[AllureNUnit]
 public class ApiKeyServiceTests
 {
     private string _dbName = null!;

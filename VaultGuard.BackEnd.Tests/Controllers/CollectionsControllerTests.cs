@@ -1,4 +1,3 @@
-using Allure.NUnit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -10,7 +9,6 @@ using VaultGuard.Services.Interfaces;
 namespace VaultGuard.BackEnd.Tests.Controllers;
 
 [TestFixture]
-[AllureNUnit]
 public class CollectionsControllerTests
 {
     private Mock<ICollectionApiService> _mockCollectionService = null!;

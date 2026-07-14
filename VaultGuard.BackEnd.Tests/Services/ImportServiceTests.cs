@@ -1,4 +1,3 @@
-using Allure.NUnit;
 using Moq;
 using NUnit.Framework;
 using VaultGuard.Imports.Interfaces;
@@ -9,7 +8,6 @@ using VaultGuard.Services.Interfaces;
 namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
-[AllureNUnit]
 public class ImportServiceTests
 {
     private Mock<IPasswordItemService> _itemMock = null!;

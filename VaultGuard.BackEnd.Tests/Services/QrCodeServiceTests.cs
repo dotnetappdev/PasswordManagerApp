@@ -1,11 +1,9 @@
-using Allure.NUnit;
 using NUnit.Framework;
 using VaultGuard.Services.Services;
 
 namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
-[AllureNUnit]
 public class QrCodeServiceTests
 {
     private QrCodeService _service = null!;

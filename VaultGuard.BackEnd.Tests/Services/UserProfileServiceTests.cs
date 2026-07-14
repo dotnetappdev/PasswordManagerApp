@@ -1,4 +1,3 @@
-using Allure.NUnit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -12,7 +11,6 @@ using VaultGuard.Services.Services;
 namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
-[AllureNUnit]
 public class UserProfileServiceTests
 {
     private Mock<UserManager<ApplicationUser>> _mockUserManager = null!;
