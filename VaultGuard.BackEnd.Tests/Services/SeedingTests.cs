@@ -1,3 +1,4 @@
+using Allure.NUnit;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
@@ -14,6 +15,7 @@ namespace VaultGuard.BackEnd.Tests.Services;
 /// these, which is why failures only appeared at runtime.
 /// </summary>
 [TestFixture]
+[AllureNUnit]
 public class SeedingTests
 {
     private SqliteConnection  _connection = null!;

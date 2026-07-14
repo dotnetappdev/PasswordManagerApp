@@ -410,3 +410,9 @@ VaultGuard.Android/.kotlin/
 # Server-only secrets: real production connection string lives here, never committed
 appsettings.Production.json
 **/appsettings.Production.json
+
+# Allure test reporting (generated locally / in CI)
+allure-results/
+allure-report/
+**/allure-results/
+.allure/

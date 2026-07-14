@@ -1,3 +1,4 @@
+using Allure.NUnit;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
@@ -10,6 +11,7 @@ using VaultGuard.Services.Services;
 namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
+[AllureNUnit]
 public class CategoryServiceTests
 {
     private DbContextOptions<VaultGuardDbContext> _options = null!;

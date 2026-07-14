@@ -1,3 +1,4 @@
+using Allure.NUnit;
 using System.Security.Cryptography;
 using System.Text;
 using NUnit.Framework;
@@ -13,6 +14,7 @@ namespace VaultGuard.BackEnd.Tests.Services;
 /// against silent regressions.
 /// </summary>
 [TestFixture]
+[AllureNUnit]
 public class CryptographyTests
 {
     private CryptographyService _crypto = null!;

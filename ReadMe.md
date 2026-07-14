@@ -389,6 +389,7 @@ Start here, then dive into a topic:
 | [`docs/PASSKEYS.md`](docs/PASSKEYS.md) | Website passkeys (extension) and device passkeys (sign-in), RP setup, mobile association files |
 | [`docs/DATABASE.md`](docs/DATABASE.md) | Providers, EF Identity setup, MySQL, migrations |
 | [`docs/UI_AND_UX.md`](docs/UI_AND_UX.md) | Design system, theming, validation UX, accessibility, navigation |
+| [`docs/TESTING.md`](docs/TESTING.md) | Unit/integration tests, Playwright UI automation, and the Allure dashboard |
 | [`docs/HISTORY.md`](docs/HISTORY.md) | Consolidated record of past fixes & implementation notes |
 
 Per-platform details live in each project's own `README.md` (e.g. `VaultGuard.WPF/`, `VaultGuard.Web/`,
