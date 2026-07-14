@@ -386,6 +386,7 @@ Start here, then dive into a topic:
 | [`DEVELOPMENT.md`](DEVELOPMENT.md) · [`TECHNOLOGY_STACK.md`](TECHNOLOGY_STACK.md) | Building, architecture, tech stack |
 | [`docs/SECURITY.md`](docs/SECURITY.md) · [`SECURITY_REMEDIATION_PRD.md`](SECURITY_REMEDIATION_PRD.md) | Encryption, master-password security, remediation |
 | [`docs/AUTHENTICATION.md`](docs/AUTHENTICATION.md) | Master-key login, 2FA, passkeys, OTP, biometrics, passcode, QR sign-in, device management, profiles |
+| [`docs/PASSKEYS.md`](docs/PASSKEYS.md) | Website passkeys (extension) and device passkeys (sign-in), RP setup, mobile association files |
 | [`docs/DATABASE.md`](docs/DATABASE.md) | Providers, EF Identity setup, MySQL, migrations |
 | [`docs/UI_AND_UX.md`](docs/UI_AND_UX.md) | Design system, theming, validation UX, accessibility, navigation |
 | [`docs/HISTORY.md`](docs/HISTORY.md) | Consolidated record of past fixes & implementation notes |

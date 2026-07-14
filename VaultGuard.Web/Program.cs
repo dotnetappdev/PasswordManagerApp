@@ -308,6 +308,43 @@ app.MapRazorComponents<App>()
 // Health check endpoint (used by Docker health checks)
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
+// ── Passkey Relying Party association files ─────────────────────────────────────────────────────────
+// Native passkeys only bind to this domain if it serves these files over valid HTTPS. Android Credential
+// Manager reads /.well-known/assetlinks.json; iOS AutoFill reads /apple-app-site-association. This host is
+// the WebAuthn RP (Fido2:ServerDomain), so web + Android + iOS share one passkey identity. Values come from
+// the "PasskeyAssociations" config section — set the RELEASE signing SHA-256 and your Apple Team ID there.
+var assoc = app.Configuration.GetSection("PasskeyAssociations");
+
+app.MapGet("/.well-known/assetlinks.json", () =>
+{
+    var pkg = assoc["AndroidPackageName"];
+    if (string.IsNullOrWhiteSpace(pkg)) pkg = "com.vaultguard.app";
+    var fps = assoc.GetSection("AndroidSha256CertFingerprints").Get<string[]>() ?? Array.Empty<string>();
+    var doc = new[]
+    {
+        new
+        {
+            relation = new[] { "delegate_permission/common.get_login_creds", "delegate_permission/common.handle_all_urls" },
+            target = new { @namespace = "android_app", package_name = pkg, sha256_cert_fingerprints = fps }
+        }
+    };
+    return Results.Json(doc, contentType: "application/json");
+});
+
+// iOS reads this at the apex (no extension); some tooling also probes /.well-known/. Serve both.
+IResult AppleAppSiteAssociation()
+{
+    var team = assoc["AppleTeamId"] ?? string.Empty;
+    var bundles = assoc.GetSection("AppleAppBundleIds").Get<string[]>() ?? Array.Empty<string>();
+    // Apple app IDs are "<TeamID>.<BundleID>"; without a Team ID configured we can't emit valid entries.
+    var apps = string.IsNullOrWhiteSpace(team)
+        ? Array.Empty<string>()
+        : bundles.Select(b => $"{team}.{b}").ToArray();
+    return Results.Json(new { webcredentials = new { apps } }, contentType: "application/json");
+}
+app.MapGet("/apple-app-site-association", AppleAppSiteAssociation);
+app.MapGet("/.well-known/apple-app-site-association", AppleAppSiteAssociation);
+
 // Initialize database with migration handling
 using (var scope = app.Services.CreateScope())
 {
