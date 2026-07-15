@@ -14,48 +14,53 @@ on:
       - '**.csproj'
       - '.github/workflows/run-tests.yml'
 
+permissions:
+  contents: write
+  checks: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
     name: Run Unit Tests
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup .NET 9.0
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
-    
+
     - name: Setup .NET 10.0
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '10.0.x'
-    
+
     - name: Restore dependencies
       run: dotnet restore
-    
+
     - name: Build test projects
       run: |
         dotnet build VaultGuard.App.Tests/VaultGuard.App.Tests.csproj --no-restore --configuration Release
         dotnet build VaultGuard.Web.Tests/VaultGuard.Web.Tests.csproj --no-restore --configuration Release
         dotnet build VaultGuard.WinUi.Tests/VaultGuard.WinUi.Tests.csproj --no-restore --configuration Release
-    
+
     - name: Run App Tests
       run: dotnet test VaultGuard.App.Tests/VaultGuard.App.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=app-tests.trx"
-    
+
     - name: Run Web Tests
       run: dotnet test VaultGuard.Web.Tests/VaultGuard.Web.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=web-tests.trx"
-    
+
     - name: Run WinUI Tests
       run: dotnet test VaultGuard.WinUi.Tests/VaultGuard.WinUi.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=winui-tests.trx"
-    
+
     - name: Run Backend Tests
+      if: always()
       run: |
         if [ -d "VaultGuard.BackEnd.Tests" ]; then
           dotnet test VaultGuard.BackEnd.Tests/VaultGuard.BackEnd.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=backend-tests.trx"
         fi
-    
+
     - name: Publish Test Results
       uses: dorny/test-reporter@v1
       if: always()
@@ -64,3 +69,45 @@ jobs:
         path: '**/*.trx'
         reporter: dotnet-trx
         fail-on-error: true
+
+    - name: Collect Allure results
+      if: always()
+      run: |
+        mkdir -p allure-results
+        find . -type d -name allure-results -not -path './allure-results' -exec sh -c 'cp -f "$1"/*.json allure-results/ 2>/dev/null || true' _ {} \;
+        echo "Collected $(find allure-results -type f | wc -l) Allure result files"
+
+    - name: Get Allure history
+      uses: actions/checkout@v4
+      if: always()
+      continue-on-error: true
+      with:
+        ref: gh-pages
+        path: gh-pages
+
+    - name: Build Allure report
+      uses: simple-elf/allure-report-action@master
+      if: always()
+      id: allure-report
+      with:
+        allure_results: allure-results
+        allure_history: allure-history
+        allure_report: allure-report
+        keep_reports: 20
+        gh_pages: gh-pages
+
+    - name: Publish Allure report to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      if: always() && github.event_name == 'push'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_branch: gh-pages
+        publish_dir: allure-history
+
+    - name: Upload Allure report artifact
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: allure-report
+        path: allure-history
+        retention-days: 20

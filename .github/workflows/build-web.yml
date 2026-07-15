@@ -68,9 +68,14 @@ jobs:
           -p:Version=${{ steps.ver.outputs.VERSION }}
 
       - name: Test
+        # VaultGuard.Web.Tests is never built by the "Build" step above (nothing here references it,
+        # since it's the Tests project that references VaultGuard.Web, not the other way round), so
+        # --no-build has nothing to run against - let dotnet test restore/build it itself. Also target
+        # the .csproj explicitly rather than the bare directory: on the .NET 10 SDK, --no-build against
+        # a directory path resolves to "The argument <dll> is invalid" instead of running the tests.
         run: |
           if [ -d "VaultGuard.Web.Tests" ]; then
-            dotnet test VaultGuard.Web.Tests --no-build --configuration Release
+            dotnet test VaultGuard.Web.Tests/VaultGuard.Web.Tests.csproj --configuration Release --logger "trx;LogFileName=web-tests.trx"
           else
             echo "No Web tests found, skipping"
           fi

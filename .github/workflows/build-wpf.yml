@@ -42,13 +42,15 @@ jobs:
         run: dotnet restore ${{ env.PROJECT }}
 
       - name: Build
+        # Only -p:Version is set here - the SDK derives AssemblyVersion/FileVersion from it
+        # automatically (stripping any -suffix, e.g. "-dev"), since those two MSBuild properties
+        # feed [AssemblyVersion]/[AssemblyFileVersion] attributes which require a purely numeric
+        # major[.minor[.build[.revision]]] value and would fail to compile (CS7034) otherwise.
         run: >
           dotnet build ${{ env.PROJECT }}
           --configuration Release
           --no-restore
           -p:Version=${{ steps.ver.outputs.VERSION }}
-          -p:AssemblyVersion=${{ steps.ver.outputs.VERSION }}
-          -p:FileVersion=${{ steps.ver.outputs.VERSION }}
 
       - name: Publish (self-contained win-x64)
         run: >
