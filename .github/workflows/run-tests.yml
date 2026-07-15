@@ -2,17 +2,18 @@ name: Unit Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ devmain, main, develop ]
     paths:
       - '**.cs'
       - '**.csproj'
       - '.github/workflows/run-tests.yml'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ devmain, main, develop ]
     paths:
       - '**.cs'
       - '**.csproj'
       - '.github/workflows/run-tests.yml'
+  workflow_dispatch: {}
 
 permissions:
   contents: write
