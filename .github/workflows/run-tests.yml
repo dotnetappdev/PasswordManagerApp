@@ -105,6 +105,9 @@ jobs:
         keep_reports: 20
         gh_pages: gh-pages
 
+    # destination_dir + keep_files so this coexists with the docs site (build-docs.yml), which also
+    # publishes to gh-pages but at the branch root - without keep_files, each publish wipes the branch
+    # and the two workflows would clobber each other.
     - name: Publish Allure report to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       if: always() && github.event_name == 'push'
@@ -112,6 +115,8 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_branch: gh-pages
         publish_dir: allure-history
+        destination_dir: allure-report
+        keep_files: true
 
     - name: Upload Allure report artifact
       uses: actions/upload-artifact@v4
