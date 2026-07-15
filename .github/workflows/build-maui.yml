@@ -27,10 +27,13 @@ jobs:
       - name: Install MAUI workload
         run: dotnet workload install maui --skip-manifest-update
 
+      # Pin the Windows TFM and RID explicitly - the csproj multi-targets
+      # net10.0-android;net10.0-windows10.0.19041.0 on Windows runners, and without a RID, NuGet
+      # never resolves the win-x64 runtime pack the Windows head needs (NETSDK1112).
       - name: Restore
-        run: dotnet restore ${{ env.PROJECT }}
+        run: dotnet restore ${{ env.PROJECT }} -f net10.0-windows10.0.19041.0 -p:RuntimeIdentifier=win10-x64
 
       # The csproj targets net10.0-windows when building on Windows, so this validates the
       # Windows head of the MAUI app (and, transitively, the shared Blazor UI it hosts).
       - name: Build
-        run: dotnet build ${{ env.PROJECT }} --configuration Release --no-restore
+        run: dotnet build ${{ env.PROJECT }} --configuration Release --no-restore -f net10.0-windows10.0.19041.0 -p:RuntimeIdentifier=win10-x64
