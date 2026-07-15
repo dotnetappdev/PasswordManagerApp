@@ -171,25 +171,24 @@ public class SeedingTests
     public void SeedPasswordItemsForUser_RequiresCollectionsCategoriesTags()
     {
         // Calling SeedPasswordItemsForUser WITHOUT seeding collections/categories/tags
-        // first means the FK lookups fall back to Id=1, which may not exist.
-        // This test proves that without dependencies the seeder either
-        // throws (SQLite FK violation) or inserts items with null/invalid FKs.
+        // first means the FK lookups fall back to a hardcoded Id=1, which doesn't exist -
+        // CategoryId/CollectionId are nullable columns, but a non-null value pointing at a
+        // nonexistent row is still a real FK violation under SQLite (this test class exists
+        // specifically to catch that; see class remarks).
         EnsureUser();
 
         // Do NOT seed collections / categories / tags
-        Assert.DoesNotThrow(() =>
+        Assert.Throws<DbUpdateException>(() =>
         {
-            // Seeder uses fallback IDs (1,2,…) when dependent rows are absent.
-            // SQLite may not throw here if the FK is optional (nullable).
             TestDataSeeder.SeedPasswordItemsForUser(_db, UserId);
         },
-        "Seeder should not crash even when dependencies are absent, " +
-        "but items may have invalid FK references.");
+        "Seeder should fail fast on the FK violation when its collections/categories/tags " +
+        "dependencies haven't been seeded first, rather than silently writing bad references.");
 
-        // The items ARE inserted (nullable FKs allow it)
+        // The failed SaveChanges rolled back - nothing should have been inserted.
         var count = _db.PasswordItems.Count(p => p.UserId == UserId);
-        Assert.That(count, Is.GreaterThan(0),
-            "At least some password items should have been inserted.");
+        Assert.That(count, Is.Zero,
+            "No password items should have been inserted once the batch insert failed.");
     }
 
     [Test]
