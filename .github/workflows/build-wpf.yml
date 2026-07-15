@@ -70,22 +70,35 @@ jobs:
         shell: pwsh
         run: |
           $ver = "${{ steps.ver.outputs.VERSION }}"
-          iscc /DMyAppVersion=$ver /DPublishDir="${{ env.PUBLISH_DIR }}" installer/setup.iss
+          # Inno Setup resolves a relative [Files] Source against the .iss script's own directory
+          # (installer/), not the working directory iscc was invoked from - so PUBLISH_DIR ("publish/wpf",
+          # relative to the repo root) must be made absolute before being passed in.
+          $publishDir = (Resolve-Path "${{ env.PUBLISH_DIR }}").Path
+          iscc /DMyAppVersion=$ver /DPublishDir="$publishDir" installer/setup.iss
           echo "EXE_PATH=$(Get-Item installer/output/*.exe | Select-Object -ExpandProperty FullName)" >> $env:GITHUB_OUTPUT
         id: exe
 
       # ── MSI Installer (WiX v4) ────────────────────────────────────────────
       - name: Install WiX toolset
-        run: dotnet tool install --global wix --version 4.*
+        shell: pwsh
+        run: |
+          dotnet tool install --global wix --version 4.*
+          # Pin the extension to the same version as the CLI - an unpinned "wix extension add"
+          # grabs the latest package (e.g. a v7 build), which the v4 CLI can't load (WIX0144).
+          $wixVersion = (wix --version).Trim()
+          wix extension add "WixToolset.UI.wixext/$wixVersion"
 
       - name: Build MSI
         shell: pwsh
         run: |
           $ver = "${{ steps.ver.outputs.VERSION }}"
+          # Same relative-path gotcha as the Inno Setup step above: wix resolves a relative
+          # Source/PublishDir against setup.wxs's own directory (installer/), not the repo root.
+          $publishDir = (Resolve-Path "${{ env.PUBLISH_DIR }}").Path
           wix build installer/setup.wxs `
             -ext WixToolset.UI.wixext `
             -d Version=$ver `
-            -d PublishDir="${{ env.PUBLISH_DIR }}" `
+            -d PublishDir="$publishDir" `
             -o "installer/output/VaultGuardSetup-$ver.msi"
           echo "MSI_PATH=installer/output/VaultGuardSetup-$ver.msi" >> $env:GITHUB_OUTPUT
         id: msi

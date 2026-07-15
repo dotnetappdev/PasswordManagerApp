@@ -27,10 +27,11 @@ jobs:
       - name: Install MAUI workload
         run: dotnet workload install maui --skip-manifest-update
 
-      - name: Restore
-        run: dotnet restore ${{ env.PROJECT }}
-
-      # The csproj targets net10.0-windows when building on Windows, so this validates the
-      # Windows head of the MAUI app (and, transitively, the shared Blazor UI it hosts).
+      # The csproj multi-targets net10.0-android;net10.0-windows10.0.19041.0 on Windows runners, and
+      # this only needs to validate the Windows head (and, transitively, the shared Blazor UI it
+      # hosts). The RID for the Windows TFM is set inside the csproj itself, conditioned on
+      # $(TargetFramework), so it can't leak into the Android inner-build's own restore - passing it
+      # via CLI here (-r/-p:RuntimeIdentifier=) applies it project-wide and makes Android's restore
+      # look for a nonexistent win-x64 flavored Mono runtime pack (NU1102).
       - name: Build
-        run: dotnet build ${{ env.PROJECT }} --configuration Release --no-restore
+        run: dotnet build ${{ env.PROJECT }} --configuration Release -f net10.0-windows10.0.19041.0
