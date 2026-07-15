@@ -28,7 +28,13 @@ jobs:
     name: Capture Blazor Web screenshots
 
     steps:
+      # Explicit ref: pull_request's default checkout is a synthetic merge commit
+      # (refs/pull/N/merge, two parents combining base+branch) - rebasing that onto the branch tip in
+      # the commit step below produces spurious binary add/add conflicts. Checking out the real branch
+      # keeps history linear.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -89,6 +95,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
