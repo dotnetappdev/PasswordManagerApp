@@ -35,10 +35,16 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restore & build Playwright test project
+      # BlazorWebTestBase launches VaultGuard.Web as a separate process and builds it internally with
+      # --no-restore (expecting restore to have already happened) - it never checks that build's exit
+      # code, so if VaultGuard.Web was never restored, the app silently fails to start. Restore/build it
+      # explicitly here so that internal --no-restore build actually succeeds.
+      - name: Restore & build Playwright test project + VaultGuard.Web
         run: |
           dotnet restore VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj
           dotnet build VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj --no-restore -c Debug
+          dotnet restore VaultGuard.Web/VaultGuard.Web.csproj
+          dotnet build VaultGuard.Web/VaultGuard.Web.csproj --no-restore -c Debug
 
       - name: Install Playwright browser + OS deps
         run: pwsh VaultGuard.Tests.Playwright/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
@@ -109,6 +115,11 @@ jobs:
             sleep 2
           done
           echo "API did not become ready in time"; cat api.log; exit 1
+
+      # The standalone playwright CLI (via npx) has its own browser cache, separate from the .NET
+      # Playwright test project's - installing chromium there doesn't cover this.
+      - name: Install Playwright browser for screenshot CLI
+        run: npx -y playwright@1.49.0 install --with-deps chromium
 
       - name: Screenshot Swagger UI
         run: |
