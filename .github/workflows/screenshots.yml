@@ -64,6 +64,8 @@ jobs:
           git add screenshots/blazor
           if ! git diff --cached --quiet; then
             git commit -m "Update Blazor web screenshots [skip ci]"
+            git fetch origin ${{ github.head_ref || github.ref_name }}
+            git rebase origin/${{ github.head_ref || github.ref_name }}
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
           else
             echo "No screenshot changes to commit"
@@ -80,6 +82,10 @@ jobs:
   api-swagger:
     runs-on: ubuntu-latest
     name: Capture API Swagger UI screenshot
+    # Runs after blazor so the two jobs' "commit and push to the same branch" steps don't race each
+    # other - without this, whichever finishes second gets its push rejected (remote moved underneath
+    # it).
+    needs: blazor
 
     steps:
       - uses: actions/checkout@v4
@@ -140,6 +146,8 @@ jobs:
           git add screenshots/api
           if ! git diff --cached --quiet; then
             git commit -m "Update API Swagger screenshot [skip ci]"
+            git fetch origin ${{ github.head_ref || github.ref_name }}
+            git rebase origin/${{ github.head_ref || github.ref_name }}
             git push origin HEAD:${{ github.head_ref || github.ref_name }}
           else
             echo "No screenshot changes to commit"
