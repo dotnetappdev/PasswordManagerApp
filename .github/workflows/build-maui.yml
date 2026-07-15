@@ -27,17 +27,14 @@ jobs:
       - name: Install MAUI workload
         run: dotnet workload install maui --skip-manifest-update
 
-      # The csproj multi-targets net10.0-android;net10.0-windows10.0.19041.0 on Windows runners. A
-      # bare -r win-x64 applies the RID to every inner build, including Android's - which then tries
-      # to resolve a nonexistent Microsoft.NETCore.App.Runtime.Mono.win-x64 package (NU1102). Override
-      # the plural -p:TargetFrameworks= (the property the outer build actually reads to decide which
-      # inner builds to run at all) to scope restore/build to just the Windows TFM, so the RID is only
-      # ever applied there. "dotnet restore" has no -f/--framework option (unlike "dotnet build") -
-      # passing it gets forwarded to MSBuild as a second positional project argument (MSB1008).
-      - name: Restore
-        run: dotnet restore ${{ env.PROJECT }} -p:TargetFrameworks=net10.0-windows10.0.19041.0 -r win-x64
-
-      # The csproj targets net10.0-windows when building on Windows, so this validates the
-      # Windows head of the MAUI app (and, transitively, the shared Blazor UI it hosts).
+      # The csproj multi-targets net10.0-android;net10.0-windows10.0.19041.0 on Windows runners, and
+      # this only needs to validate the Windows head (and, transitively, the shared Blazor UI it
+      # hosts). No separate "dotnet restore" step here on purpose: "dotnet restore" has no -f option
+      # and forwards it to MSBuild as a stray positional (MSB1008); a -p:TargetFrameworks= override
+      # "works" for parsing but cascades into every ProjectReference too, breaking their own
+      # single-target restore (NETSDK1005); and a bare -r win-x64 with no TFM scoping gets applied to
+      # every inner build including Android's, which then looks for a nonexistent
+      # Microsoft.NETCore.App.Runtime.Mono.win-x64 package (NU1102). "dotnet build -f ... -r ..." does
+      # its own implicit restore scoped correctly to that one inner build, avoiding all three.
       - name: Build
-        run: dotnet build ${{ env.PROJECT }} --configuration Release --no-restore -p:TargetFrameworks=net10.0-windows10.0.19041.0 -r win-x64
+        run: dotnet build ${{ env.PROJECT }} --configuration Release -f net10.0-windows10.0.19041.0 -r win-x64
