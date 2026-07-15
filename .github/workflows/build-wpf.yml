@@ -80,9 +80,13 @@ jobs:
 
       # ── MSI Installer (WiX v4) ────────────────────────────────────────────
       - name: Install WiX toolset
+        shell: pwsh
         run: |
           dotnet tool install --global wix --version 4.*
-          wix extension add WixToolset.UI.wixext
+          # Pin the extension to the same version as the CLI - an unpinned "wix extension add"
+          # grabs the latest package (e.g. a v7 build), which the v4 CLI can't load (WIX0144).
+          $wixVersion = (wix --version).Trim()
+          wix extension add "WixToolset.UI.wixext/$wixVersion"
 
       - name: Build MSI
         shell: pwsh
