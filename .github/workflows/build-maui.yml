@@ -33,9 +33,9 @@ jobs:
       # Note: "dotnet restore" (unlike "dotnet build") doesn't accept the -f shorthand here - it gets
       # forwarded to MSBuild as a second positional argument (MSB1008), so use -p:TargetFramework=.
       - name: Restore
-        run: dotnet restore ${{ env.PROJECT }} -p:TargetFramework=net10.0-windows10.0.19041.0 -p:RuntimeIdentifier=win10-x64
+        run: dotnet restore ${{ env.PROJECT }} -p:TargetFramework=net10.0-windows10.0.19041.0 -p:RuntimeIdentifier=win-x64
 
       # The csproj targets net10.0-windows when building on Windows, so this validates the
       # Windows head of the MAUI app (and, transitively, the shared Blazor UI it hosts).
       - name: Build
-        run: dotnet build ${{ env.PROJECT }} --configuration Release --no-restore -f net10.0-windows10.0.19041.0 -p:RuntimeIdentifier=win10-x64
+        run: dotnet build ${{ env.PROJECT }} --configuration Release --no-restore -f net10.0-windows10.0.19041.0 -p:RuntimeIdentifier=win-x64

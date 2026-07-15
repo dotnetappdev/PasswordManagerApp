@@ -80,7 +80,9 @@ jobs:
 
       # ── MSI Installer (WiX v4) ────────────────────────────────────────────
       - name: Install WiX toolset
-        run: dotnet tool install --global wix --version 4.*
+        run: |
+          dotnet tool install --global wix --version 4.*
+          wix extension add WixToolset.UI.wixext
 
       - name: Build MSI
         shell: pwsh
