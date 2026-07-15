@@ -288,6 +288,12 @@ FakesAssemblies/
 .ntvs_analysis.dat
 node_modules/
 
+# VitePress docs site build output + synced screenshots (see docs-site/sync-screenshots.mjs -
+# these are copied from screenshots/ at build time, not duplicated in git)
+docs-site/.vitepress/dist/
+docs-site/.vitepress/cache/
+docs-site/public/screenshots/
+
 # Visual Studio 6 build log
 *.plg
 
