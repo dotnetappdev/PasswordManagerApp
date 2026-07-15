@@ -30,6 +30,7 @@ on:
       - 'VaultGuard.DAL.MySql/**'
       - 'VaultGuard.DAL.Postgres/**'
       - 'VaultGuard.DAL.SupaBase/**'
+  workflow_dispatch: {}
 
 env:
   PROJECT: VaultGuard.Web/VaultGuard.Web.csproj

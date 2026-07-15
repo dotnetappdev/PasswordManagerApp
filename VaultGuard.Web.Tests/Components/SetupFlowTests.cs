@@ -47,6 +47,7 @@ public class SetupFlowTests
         });
 
         ctx.Services.AddSingleton(configService.Object);
+        ctx.Services.AddSingleton(CreateAppSettingsService().Object);
 
         var cut = ctx.RenderComponent<Setup>();
 
@@ -74,6 +75,7 @@ public class SetupFlowTests
         });
 
         ctx.Services.AddSingleton(configService.Object);
+        ctx.Services.AddSingleton(CreateAppSettingsService().Object);
 
         var cut = ctx.RenderComponent<Setup>();
 
@@ -87,5 +89,13 @@ public class SetupFlowTests
             Assert.That(cut.FindAll("button").Any(button => button.TextContent.Trim() == "Continue"), Is.False);
             Assert.That(cut.Markup, Does.Not.Contain("Save &amp; Continue"));
         });
+    }
+
+    private static Mock<IAppSettingsService> CreateAppSettingsService()
+    {
+        var appSettings = new Mock<IAppSettingsService>();
+        appSettings.Setup(x => x.Get(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns((string _, string fallback) => fallback);
+        return appSettings;
     }
 }

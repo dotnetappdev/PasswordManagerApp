@@ -6,6 +6,7 @@ on:
     tags:     [ 'v*' ]
   pull_request:
     branches: [ devmain, main ]
+  workflow_dispatch: {}
 
 env:
   PROJECT: VaultGuard.WPF/VaultGuard.WPF.csproj

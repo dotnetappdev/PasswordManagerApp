@@ -2,17 +2,18 @@ name: Unit Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ devmain, main, develop ]
     paths:
       - '**.cs'
       - '**.csproj'
       - '.github/workflows/run-tests.yml'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ devmain, main, develop ]
     paths:
       - '**.cs'
       - '**.csproj'
       - '.github/workflows/run-tests.yml'
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -36,14 +37,22 @@ jobs:
       with:
         dotnet-version: '10.0.x'
 
+    # Restore only the test projects, not the whole VaultGuard.sln - a bare "dotnet restore" picks up
+    # the solution file, which includes VaultGuard.App (MAUI) and needs the maui-android workload
+    # installed (NETSDK1147), which this runner doesn't have.
     - name: Restore dependencies
-      run: dotnet restore
+      run: |
+        dotnet restore VaultGuard.App.Tests/VaultGuard.App.Tests.csproj
+        dotnet restore VaultGuard.Web.Tests/VaultGuard.Web.Tests.csproj
+        dotnet restore VaultGuard.WinUi.Tests/VaultGuard.WinUi.Tests.csproj
+        dotnet restore VaultGuard.BackEnd.Tests/VaultGuard.BackEnd.Tests.csproj
 
     - name: Build test projects
       run: |
         dotnet build VaultGuard.App.Tests/VaultGuard.App.Tests.csproj --no-restore --configuration Release
         dotnet build VaultGuard.Web.Tests/VaultGuard.Web.Tests.csproj --no-restore --configuration Release
         dotnet build VaultGuard.WinUi.Tests/VaultGuard.WinUi.Tests.csproj --no-restore --configuration Release
+        dotnet build VaultGuard.BackEnd.Tests/VaultGuard.BackEnd.Tests.csproj --no-restore --configuration Release
 
     - name: Run App Tests
       run: dotnet test VaultGuard.App.Tests/VaultGuard.App.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=app-tests.trx"
