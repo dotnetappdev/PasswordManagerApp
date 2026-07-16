@@ -4,7 +4,7 @@
 use, and it runs the exact `VaultGuard.Services`/`VaultGuard.Crypto` core the in-process WPF and Blazor
 clients use - so behaviour is identical everywhere.
 
-Interactive docs are also served live by the API itself at `/swagger` (Swagger UI) when it's running.
+Interactive docs are also served live by the API itself at `/scalar` (Scalar API reference) when it's running.
 
 ## Base URL
 

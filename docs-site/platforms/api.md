@@ -6,16 +6,17 @@ and a fine target for scripts, Postman, or your own integrations. See the full
 
 ## Interactive docs
 
-The API serves a live Swagger UI at `/swagger` when running, generated from the actual controllers -
-always in sync with the deployed code.
+The API serves a live [Scalar](https://scalar.com) API reference at `/scalar` when running, rendered from
+the same OpenAPI document Swashbuckle generates at `/swagger/v1/swagger.json` - always in sync with the
+deployed code. Scalar replaced the classic Swagger UI for a dashboard-style layout (request/response
+samples, a searchable sidebar, try-it-out panel).
 
 ::: tip
 The `Capture Screenshots` GitHub Actions workflow (`.github/workflows/screenshots.yml`) boots the API
-and captures this live - it commits a fresh one on every push that touches `VaultGuard.API/**`. The
-image below is a placeholder until that first run lands.
+and captures this live - it commits a fresh one on every push that touches `VaultGuard.API/**`.
 :::
 
-<img src="/screenshots/api/swagger.png" alt="Swagger API documentation UI" style="border-radius: 8px; border: 1px solid var(--vp-c-divider)" />
+<img src="/screenshots/api/scalar.png" alt="Scalar API reference UI" style="border-radius: 8px; border: 1px solid var(--vp-c-divider)" />
 
 ## Health check
 
