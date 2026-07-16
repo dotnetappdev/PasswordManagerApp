@@ -183,7 +183,13 @@ builder.Services.AddScoped<IUserProfileService, VaultGuard.Services.Services.Use
 // Per-user local SQLite mirror of the API-key store (dual-store; see ApiKeySqliteMirrorService).
 builder.Services.AddScoped<IApiKeySqliteMirror, VaultGuard.Services.Services.ApiKeySqliteMirrorService>();
 builder.Services.AddScoped<IApiKeyService, VaultGuard.Services.Services.ApiKeyService>();
-builder.Services.AddScoped<IVaultSessionService, VaultGuard.Services.Services.VaultSessionService>();
+// Singleton, not Scoped: this backs the "is the vault unlocked" check MainLayout's auth gate runs on
+// every navigation. In Blazor Server, "Scoped" means per-circuit — any full page load (a browser
+// refresh, a bookmark, a non-SPA navigation) tears down the old circuit and creates a fresh, empty
+// session store, so the server-side unlock check always failed even though the client's sessionStorage
+// still said "authenticated", bouncing straight back to /login. The underlying store is already a
+// ConcurrentDictionary keyed by session id, so it's safe to share across circuits/requests.
+builder.Services.AddSingleton<IVaultSessionService, VaultGuard.Services.Services.VaultSessionService>();
 builder.Services.AddScoped<IQrLoginService, VaultGuard.Services.Services.QrLoginService>();
 builder.Services.AddScoped<IDatabaseContextFactory, VaultGuard.Services.Services.DatabaseContextFactory>();
 builder.Services.AddScoped<IDatabaseConfigurationService, VaultGuard.Services.Services.DatabaseConfigurationService>();
