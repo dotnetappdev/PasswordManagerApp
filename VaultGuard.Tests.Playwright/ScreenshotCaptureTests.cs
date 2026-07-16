@@ -145,7 +145,12 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
 
                 if (await Page.Locator("#loginKey").CountAsync() > 0)
                 {
+                    // #loginKey uses a plain @bind (fires on the DOM "change"/blur event, not "input") -
+                    // FillAsync alone leaves focus on the field, so the bound C# value never updates and
+                    // the Continue button (disabled while loginKey is empty) stays disabled forever.
+                    // Tabbing out after filling blurs it, which is what actually commits the value.
                     await Page.FillAsync("#loginKey", MasterKey);
+                    await Page.Locator("#loginKey").PressAsync("Tab");
                     await Page.ClickAsync("button:has-text('Continue')");
                     await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
                     await Task.Delay(2000);
