@@ -7,9 +7,21 @@ no separate backend for the web app to call.
 These are captured by the `Capture Screenshots` GitHub Actions workflow
 (`.github/workflows/screenshots.yml`), which runs `ScreenshotCaptureTests` in
 `VaultGuard.Tests.Playwright` against the current app on every push that touches the web app or its
-shared UI, and commits fresh PNGs straight into `screenshots/blazor/{dark,light}`. To regenerate
-locally: `HEADED=0 dotnet test VaultGuard.Tests.Playwright --filter FullyQualifiedName~ScreenshotCaptureTests`.
+shared UI, and commits fresh PNGs straight into `screenshots/blazor/{dark,light,onboarding}`. To
+regenerate locally: `HEADED=0 dotnet test VaultGuard.Tests.Playwright --filter FullyQualifiedName~ScreenshotCaptureTests`.
 :::
+
+## Getting set up
+
+First run walks you through picking a database provider (SQLite, SQL Server, or MySQL/MariaDB) and
+editing its connection settings on one screen, then unlocking with your master key:
+
+<div class="screenshot-grid">
+  <figure><img src="/screenshots/blazor/onboarding/database-setup.png" alt="Database setup wizard" /><figcaption>Database Setup</figcaption></figure>
+  <figure><img src="/screenshots/blazor/onboarding/login.png" alt="Sign-in / profile picker" /><figcaption>Sign In</figcaption></figure>
+</div>
+
+See the [Getting Started guide](/guide/getting-started) for the full self-hosting walkthrough.
 
 ## Dashboard
 
@@ -48,10 +60,29 @@ Every item type shares one dynamic form engine across all four apps:
   <figure><img src="/screenshots/api-credentials-form.png" alt="API credentials form" /><figcaption>API Credentials</figcaption></figure>
 </div>
 
-## Settings & import
+## Settings tour
+
+Settings is one page with 11 deep-linkable tabs (`/settings?tab=<name>`) - everything from vault
+encryption and two-factor auth to notification channels and update checks lives here:
 
 <div class="screenshot-grid">
-  <figure><img src="/screenshots/blazor/dark/settings.png" alt="Settings" /><figcaption>Settings</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/settings.png" alt="Security tab" /><figcaption>Security</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/settings-appearance.png" alt="Appearance tab" /><figcaption>Appearance (theme, colour, UI zoom)</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/settings-database.png" alt="Database tab" /><figcaption>Database</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/settings-sync.png" alt="Sync tab" /><figcaption>Sync</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/settings-notifications.png" alt="Notifications tab" /><figcaption>Notifications</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/settings-vaults.png" alt="Vaults tab" /><figcaption>Vaults</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/settings-generator.png" alt="Generator tab" /><figcaption>Password Generator</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/settings-encryption.png" alt="Encryption tab" /><figcaption>Encryption</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/settings-shortcuts.png" alt="Shortcuts tab" /><figcaption>Keyboard Shortcuts</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/settings-maintenance.png" alt="Maintenance tab" /><figcaption>Maintenance</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/settings-about.png" alt="About tab" /><figcaption>About</figcaption></figure>
+</div>
+
+## Profile & import
+
+<div class="screenshot-grid">
+  <figure><img src="/screenshots/blazor/dark/profile.png" alt="Profile" /><figcaption>Profile</figcaption></figure>
   <figure><img src="/screenshots/blazor/dark/import.png" alt="Import" /><figcaption>Import</figcaption></figure>
 </div>
 

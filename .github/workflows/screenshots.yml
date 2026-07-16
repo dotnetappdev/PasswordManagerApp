@@ -56,7 +56,7 @@ jobs:
         run: pwsh VaultGuard.Tests.Playwright/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
 
       # ScreenshotCaptureTests self-hosts VaultGuard.Web on a temp SQLite DB and writes straight into
-      # screenshots/blazor/{dark,light} - see the test class for details.
+      # screenshots/blazor/{dark,light,onboarding} - see the test class for details.
       - name: Run ScreenshotCaptureTests
         env:
           HEADED: '0'
