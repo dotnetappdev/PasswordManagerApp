@@ -19,6 +19,7 @@ export default withMermaid(defineConfig({
     nav: [
       { text: 'Guide', link: '/guide/overview' },
       { text: 'Platforms', link: '/platforms/web' },
+      { text: 'Gallery', link: '/gallery' },
       { text: 'API Reference', link: '/api/reference' },
       {
         text: 'More',

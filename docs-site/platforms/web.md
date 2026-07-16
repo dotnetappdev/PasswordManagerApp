@@ -3,6 +3,9 @@
 `VaultGuard.Web` is a Blazor Server app built on MudBlazor. It runs the shared core in-process - there's
 no separate backend for the web app to call.
 
+Prefer browsing visually? The **[Screenshot Gallery](/gallery)** has every page below (plus item-creation
+dialogs and forms) filterable and zoomable in one place.
+
 ::: tip
 These are captured by the `Capture Screenshots` GitHub Actions workflow
 (`.github/workflows/screenshots.yml`), which runs `ScreenshotCaptureTests` in
@@ -46,6 +49,14 @@ See the [Getting Started guide](/guide/getting-started) for the full self-hostin
   <figure><img src="/screenshots/blazor/dark/passkeys.png" alt="Passkeys" /><figcaption>Passkeys</figcaption></figure>
   <figure><img src="/screenshots/blazor/dark/api-keys.png" alt="API Keys" /><figcaption>API Keys</figcaption></figure>
   <figure><img src="/screenshots/blazor/dark/audit-logs.png" alt="Audit Logs" /><figcaption>Audit Logs</figcaption></figure>
+</div>
+
+## Actions
+
+<div class="screenshot-grid">
+  <figure><img src="/screenshots/blazor/dark/dialog-add-item.png" alt="Add item dialog" /><figcaption>Add Item (with the inline generator open)</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/dialog-new-vault.png" alt="New vault dialog" /><figcaption>New Vault</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/dialog-new-collection.png" alt="New collection dialog" /><figcaption>New Collection</figcaption></figure>
 </div>
 
 ## Item forms

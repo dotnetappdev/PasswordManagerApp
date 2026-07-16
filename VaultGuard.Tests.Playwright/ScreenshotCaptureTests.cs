@@ -89,6 +89,7 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
         foreach (var (route, name) in Pages)
             captured += await CaptureAsync(darkDir, route, name) ? 1 : 0;
         captured += await CaptureHighContrastAsync(darkDir) ? 1 : 0;
+        captured += await CaptureActionShotsAsync(darkDir) ? 1 : 0;
 
         await SetThemeAsync("Light");
         foreach (var (route, name) in Pages)
@@ -166,6 +167,70 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
         catch (Exception ex)
         {
             TestContext.WriteLine($"Sign-in encountered an issue (continuing best-effort): {ex.Message}");
+        }
+    }
+
+    // Captures a handful of key interactions (dark theme only, once per run — these are slower and
+    // duplicating them per-theme isn't worth the extra CI time) so the gallery shows the app in use,
+    // not just static list pages: opening the "Add item" dialog with the password generator expanded,
+    // and the "New Vault" / "New Collection" creation dialogs.
+    private async Task<bool> CaptureActionShotsAsync(string dir)
+    {
+        var any = false;
+        any |= await CaptureAddItemDialogAsync(dir);
+        any |= await CaptureSimpleDialogAsync(dir, "/vaults", "New Vault", "dialog-new-vault");
+        any |= await CaptureSimpleDialogAsync(dir, "/collections", "New Collection", "dialog-new-collection");
+        return any;
+    }
+
+    private async Task<bool> CaptureAddItemDialogAsync(string dir)
+    {
+        try
+        {
+            await Page.GotoAsync($"{BaseUrl}/passwords");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await Task.Delay(1000);
+
+            await Page.ClickAsync("button[title='Add item']");
+            await Task.Delay(800);
+
+            // Expand the inline generator (auto-fills a preview password) so the shot shows the
+            // dynamic form engine actually doing something, not just an empty form.
+            await Page.Locator(".mud-dialog-content button:has-text('Generate strong password')").ClickAsync();
+            await Task.Delay(600);
+
+            var path = Path.Combine(dir, "dialog-add-item.png");
+            await Page.ScreenshotAsync(new PageScreenshotOptions { Path = path, FullPage = true });
+            TestContext.WriteLine($"Captured {path}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            TestContext.WriteLine($"Failed to capture dialog-add-item: {ex.Message}");
+            return false;
+        }
+    }
+
+    private async Task<bool> CaptureSimpleDialogAsync(string dir, string route, string buttonText, string name)
+    {
+        try
+        {
+            await Page.GotoAsync($"{BaseUrl}{route}");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await Task.Delay(1000);
+
+            await Page.ClickAsync($"button:has-text('{buttonText}')");
+            await Task.Delay(800);
+
+            var path = Path.Combine(dir, $"{name}.png");
+            await Page.ScreenshotAsync(new PageScreenshotOptions { Path = path, FullPage = true });
+            TestContext.WriteLine($"Captured {path}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            TestContext.WriteLine($"Failed to capture {name}: {ex.Message}");
+            return false;
         }
     }
 
