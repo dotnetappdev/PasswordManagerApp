@@ -13,6 +13,9 @@ hero:
       text: Get Started
       link: /guide/getting-started
     - theme: alt
+      text: Screenshot Gallery
+      link: /gallery
+    - theme: alt
       text: Architecture
       link: /guide/architecture
     - theme: alt
@@ -39,3 +42,21 @@ features:
     title: Bring your own database
     details: SQLite out of the box; switch to SQL Server, MySQL or PostgreSQL from Settings.
 ---
+
+<script setup>
+const homeImages = [
+  { src: '/screenshots/blazor/dark/dashboard.png', alt: 'Dashboard', category: 'Dashboard' },
+  { src: '/screenshots/blazor/dark/dialog-add-item.png', alt: 'Add item — dynamic form + generator', category: 'Actions' },
+  { src: '/screenshots/blazor/dark/security.png', alt: 'Security Center', category: 'Security' },
+  { src: '/screenshots/blazor/dark/settings-appearance.png', alt: 'Settings — Appearance', category: 'Settings' },
+  { src: '/screenshots/blazor/dark/vaults.png', alt: 'Vaults', category: 'Organize' },
+  { src: '/screenshots/api/scalar.png', alt: 'API — Scalar reference UI', category: 'API' },
+]
+</script>
+
+## See it in action
+
+<Gallery :images="homeImages" />
+
+**[View the full gallery — every screen, every theme →](/gallery)**
+
