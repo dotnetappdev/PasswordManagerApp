@@ -112,45 +112,12 @@ Settings is one deep-linkable page (`/settings?tab=<name>`) covering everything 
 | **Vaults** | **Collections** | **High Contrast** |
 | ![Vaults light](screenshots/blazor/light/vaults.png) | ![Collections light](screenshots/blazor/light/collections.png) | ![High contrast light](screenshots/blazor/light/high-contrast.png) |
 
----
-
-### 🖥️ Desktop - WPF (dark theme)
-
-| Login | Dashboard | All Items |
-|:---:|:---:|:---:|
-| ![WPF Login dark](screenshots/wpf/dark/login.png) | ![WPF Dashboard dark](screenshots/wpf/dark/dashboard.png) | ![WPF All Items dark](screenshots/wpf/dark/all-items.png) |
-| **Vaults** | **Settings** | **Settings › Security** |
-| ![WPF Vaults dark](screenshots/wpf/dark/vaults.png) | ![WPF Settings dark](screenshots/wpf/dark/settings.png) | ![WPF Settings Security](screenshots/wpf/dark/settings-security.png) |
-| **Settings › Maintenance** | | |
-| ![WPF Maintenance](screenshots/wpf/dark/settings-maintenance.png) | | |
-
-### 🖥️ Desktop - WPF (light theme)
-
-| Login | Dashboard | All Items |
-|:---:|:---:|:---:|
-| ![WPF Login light](screenshots/wpf/light/login.png) | ![WPF Dashboard light](screenshots/wpf/light/dashboard.png) | ![WPF All Items light](screenshots/wpf/light/all-items.png) |
-| **Vaults** | **Settings** | |
-| ![WPF Vaults light](screenshots/wpf/light/vaults.png) | ![WPF Settings light](screenshots/wpf/light/settings.png) | |
-
----
-
-### 📱 Mobile - MAUI Android
-
-| Dashboard (dark) | All Items (dark) | Vaults (dark) | Settings (dark) |
-|:---:|:---:|:---:|:---:|
-| ![Android Dashboard dark](screenshots/mobile/android/dark/dashboard.png) | ![Android Items dark](screenshots/mobile/android/dark/all-items.png) | ![Android Vaults dark](screenshots/mobile/android/dark/vaults.png) | ![Android Settings dark](screenshots/mobile/android/dark/settings.png) |
-| **Dashboard (light)** | **All Items (light)** | **Vaults (light)** | **Settings (light)** |
-| ![Android Dashboard light](screenshots/mobile/android/light/dashboard.png) | ![Android Items light](screenshots/mobile/android/light/all-items.png) | ![Android Vaults light](screenshots/mobile/android/light/vaults.png) | ![Android Settings light](screenshots/mobile/android/light/settings.png) |
-
-### 📱 Mobile - MAUI iOS
-
-| Dashboard (dark) | All Items (dark) | Vaults (dark) | Settings (dark) |
-|:---:|:---:|:---:|:---:|
-| ![iOS Dashboard dark](screenshots/mobile/ios/dark/dashboard.png) | ![iOS Items dark](screenshots/mobile/ios/dark/all-items.png) | ![iOS Vaults dark](screenshots/mobile/ios/dark/vaults.png) | ![iOS Settings dark](screenshots/mobile/ios/dark/settings.png) |
-| **Dashboard (light)** | **All Items (light)** | **Vaults (light)** | **Settings (light)** |
-| ![iOS Dashboard light](screenshots/mobile/ios/light/dashboard.png) | ![iOS Items light](screenshots/mobile/ios/light/all-items.png) | ![iOS Vaults light](screenshots/mobile/ios/light/vaults.png) | ![iOS Settings light](screenshots/mobile/ios/light/settings.png) |
-
 </div>
+
+> **Desktop (WPF) and Mobile (Android/iOS) screenshots aren't available yet** - this build environment
+> can't run a Windows desktop session or an Android/iOS emulator to capture them. Once someone takes real
+> ones and drops them into `screenshots/wpf/{dark,light}/` and `screenshots/mobile/{android,ios}/{dark,light}/`,
+> they'll show up in the [documentation site](https://dotnetappdev.github.io/PasswordManagerApp/) automatically.
 
 More captures - including item forms and per-platform galleries - live in [`screenshots/`](screenshots/README.md).
 

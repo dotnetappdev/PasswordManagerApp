@@ -124,11 +124,15 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
             }
             else
             {
-                // Seeded accounts exist: pick the admin profile tile from the "Who's unlocking?" picker.
-                var profileTile = Page.Locator(".profile-tile", new PageLocatorOptions { HasTextString = "admin@passwordmanager.local" });
+                // Seeded accounts exist: pick whichever profile tile the "Who's unlocking?" picker
+                // rendered. All seeded accounts share MasterKey (see IdentityDataSeeder), so which one
+                // doesn't matter — this used to hardcode a match on "admin@passwordmanager.local", which
+                // silently no-opped (0 tiles matched) whenever a different account rendered first, leaving
+                // every subsequent capture stuck on this picker instead of the real page.
+                var profileTile = Page.Locator(".profile-tile").First;
                 if (await profileTile.CountAsync() > 0)
                 {
-                    await profileTile.First.ClickAsync();
+                    await profileTile.ClickAsync();
                     await Task.Delay(500);
                 }
 
@@ -141,6 +145,9 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
 
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await Task.Delay(2500);
+
+            if (Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
+                TestContext.WriteLine($"WARNING: still on /login after sign-in attempt (url={Page.Url}) - subsequent captures will show the login page.");
         }
         catch (Exception ex)
         {

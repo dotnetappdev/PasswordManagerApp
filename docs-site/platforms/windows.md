@@ -7,20 +7,11 @@ server-backed builds - see [Security Model](/guide/security).
 
 Distributed as an `.exe` (Inno Setup) or `.msi` (WiX) installer, both bundling the .NET runtime.
 
-::: warning Screenshots pending
-This build environment doesn't run a Windows desktop session, so these are placeholder frames, not live
-captures. Real screenshots need to be taken on Windows and dropped into `screenshots/wpf/{dark,light}/`
-in the repository, replacing the files below.
+::: warning Screenshots not yet available
+This build environment doesn't run a Windows desktop session, so there's no way to capture real
+screenshots here. Once someone takes them on Windows, drop them into `screenshots/wpf/{dark,light}/`
+in the repository and they'll show up here automatically.
 :::
-
-<div class="screenshot-grid">
-  <figure><img src="/screenshots/wpf/dark/login.png" alt="Login (dark)" /><figcaption>Login (dark)</figcaption></figure>
-  <figure><img src="/screenshots/wpf/dark/dashboard.png" alt="Dashboard (dark)" /><figcaption>Dashboard (dark)</figcaption></figure>
-  <figure><img src="/screenshots/wpf/dark/all-items.png" alt="All items (dark)" /><figcaption>All Items (dark)</figcaption></figure>
-  <figure><img src="/screenshots/wpf/dark/vaults.png" alt="Vaults (dark)" /><figcaption>Vaults (dark)</figcaption></figure>
-  <figure><img src="/screenshots/wpf/dark/settings.png" alt="Settings (dark)" /><figcaption>Settings (dark)</figcaption></figure>
-  <figure><img src="/screenshots/wpf/light/dashboard.png" alt="Dashboard (light)" /><figcaption>Dashboard (light)</figcaption></figure>
-</div>
 
 <style>
 .screenshot-grid {
