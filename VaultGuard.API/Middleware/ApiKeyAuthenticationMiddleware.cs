@@ -26,6 +26,7 @@ namespace VaultGuard.API.Middleware
             if (context.Request.Path.StartsWithSegments("/health") ||
                 context.Request.Path.StartsWithSegments("/scalar") ||
                 context.Request.Path.StartsWithSegments("/openapi") ||
+                context.Request.Path.StartsWithSegments("/swagger") ||
                 context.Request.Path.StartsWithSegments("/api/authentication"))
             {
                 await _next(context);

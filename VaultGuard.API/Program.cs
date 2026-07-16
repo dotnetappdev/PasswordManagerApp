@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Identity;
 using VaultGuard.Models;
 using VaultGuard.Models.Configuration;
 using VaultGuard.ExceptionReporting.Sentry;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -343,13 +344,15 @@ VaultGuard.Services.Logging.AppLogger.Initialize(
     app.Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
 
 // Configure the HTTP request pipeline
- 
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", builder.Configuration["ApiSettings:Title"] ?? "Vault Guard API");
-    });
- 
+// UseSwagger still generates the underlying OpenAPI document (/swagger/v1/swagger.json) - Scalar renders
+// the interactive reference UI from it (a dashboard-style layout, rather than Swashbuckle's classic UI).
+app.UseSwagger();
+app.MapScalarApiReference(options =>
+{
+    options.WithTitle(builder.Configuration["ApiSettings:Title"] ?? "Vault Guard API")
+        .WithOpenApiRoutePattern("/swagger/{documentName}.json")
+        .WithTheme(ScalarTheme.BluePlanet);
+});
 
 app.UseHttpsRedirection();
 

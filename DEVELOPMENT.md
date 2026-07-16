@@ -163,7 +163,7 @@ The solution includes integration tests for:
 - Use Hot Reload for faster development
 
 ### API Development
-- Use Swagger UI for API testing: `https://localhost:5001/swagger`
+- Use the Scalar API reference for API testing: `https://localhost:5001/scalar`
 - Check API logs for authentication issues
 - Test with Postman or similar tools
 
