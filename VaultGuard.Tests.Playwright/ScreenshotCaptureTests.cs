@@ -4,9 +4,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace VaultGuard.Tests.Playwright;
 
 /// <summary>
-/// On-demand utility that regenerates the Blazor web screenshots referenced by the READMEs.
-/// It boots the web app (temp SQLite DB, auto-seeded), signs in with the seeded account, then captures
-/// every key page in BOTH dark and light themes, writing PNGs straight into
+/// On-demand utility that regenerates the Blazor web screenshots referenced by the READMEs and docs site.
+/// It boots the web app (temp SQLite DB, auto-seeded), captures the pre-auth setup/login screens once
+/// (<c>screenshots/blazor/onboarding</c>), then signs in with the seeded account and captures every key
+/// page - including all 11 Settings tabs - in BOTH dark and light themes, writing PNGs straight into
 /// <c>screenshots/blazor/dark</c> and <c>screenshots/blazor/light</c> at the repo root.
 ///
 /// Run it explicitly (it needs a browser + display / headless Chromium):
@@ -37,7 +38,29 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
         ("/api-keys",                  "api-keys"),
         ("/import",                    "import"),
         ("/audit-logs",                "audit-logs"),
-        ("/settings",                  "settings"),
+        ("/profile",                   "profile"),
+        // Settings is one page with 11 deep-linkable tabs (/settings?tab=<name>, see Settings.razor) -
+        // capture each so the docs site can walk through the full settings surface, not just whichever
+        // tab happens to be selected by default.
+        ("/settings",                  "settings"), // defaults to the first tab (Security)
+        ("/settings?tab=Appearance",   "settings-appearance"),
+        ("/settings?tab=Database",     "settings-database"),
+        ("/settings?tab=Sync",         "settings-sync"),
+        ("/settings?tab=Notifications","settings-notifications"),
+        ("/settings?tab=Vaults",       "settings-vaults"),
+        ("/settings?tab=Generator",    "settings-generator"),
+        ("/settings?tab=Encryption",   "settings-encryption"),
+        ("/settings?tab=Shortcuts",    "settings-shortcuts"),
+        ("/settings?tab=Maintenance",  "settings-maintenance"),
+        ("/settings?tab=About",        "settings-about"),
+    };
+
+    // Pre-authentication pages (database setup wizard, sign-in/profile picker) - captured once, before
+    // SignInAsync, since there's no theme toggle available yet on these (EmptyLayout, no nav drawer).
+    private static readonly (string Route, string Name)[] OnboardingPages =
+    {
+        ("/setup", "database-setup"),
+        ("/login", "login"),
     };
 
     private static string ScreenshotsRoot => Path.GetFullPath(
@@ -50,12 +73,17 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
 
         var darkDir = Path.Combine(ScreenshotsRoot, "dark");
         var lightDir = Path.Combine(ScreenshotsRoot, "light");
+        var onboardingDir = Path.Combine(ScreenshotsRoot, "onboarding");
         Directory.CreateDirectory(darkDir);
         Directory.CreateDirectory(lightDir);
-
-        await SignInAsync();
+        Directory.CreateDirectory(onboardingDir);
 
         var captured = 0;
+
+        foreach (var (route, name) in OnboardingPages)
+            captured += await CaptureAsync(onboardingDir, route, name) ? 1 : 0;
+
+        await SignInAsync();
 
         await SetThemeAsync("Dark");
         foreach (var (route, name) in Pages)
