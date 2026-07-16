@@ -115,15 +115,22 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
                 await Task.Delay(2500);
             }
 
-            if (await Page.Locator("#confirmKey").CountAsync() > 0)
+            // Up to two passes. Creating the master key (first-run) only creates the account - it does
+            // NOT authenticate the session, so MainLayout's auth gate immediately bounces the post-create
+            // NavigateTo("/home") back to /login. At that point the account exists, so the second pass
+            // goes through the normal "pick a profile, enter its master key" flow to actually sign in.
+            for (var attempt = 0; attempt < 2; attempt++)
             {
-                // First-run, no seeded accounts: create the master key.
-                await Page.FillAsync("#masterKey", MasterKey);
-                await Page.FillAsync("#confirmKey", MasterKey);
-                await Page.ClickAsync("button:has-text('Create Master Key')");
-            }
-            else
-            {
+                if (await Page.Locator("#confirmKey").CountAsync() > 0)
+                {
+                    await Page.FillAsync("#masterKey", MasterKey);
+                    await Page.FillAsync("#confirmKey", MasterKey);
+                    await Page.ClickAsync("button:has-text('Create Master Key')");
+                    await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    await Task.Delay(2000);
+                    continue;
+                }
+
                 // Seeded accounts exist: pick whichever profile tile the "Who's unlocking?" picker
                 // rendered. All seeded accounts share MasterKey (see IdentityDataSeeder), so which one
                 // doesn't matter — this used to hardcode a match on "admin@passwordmanager.local", which
@@ -140,11 +147,13 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
                 {
                     await Page.FillAsync("#loginKey", MasterKey);
                     await Page.ClickAsync("button:has-text('Continue')");
+                    await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    await Task.Delay(2000);
                 }
-            }
 
-            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            await Task.Delay(2500);
+                if (!Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
+                    break;
+            }
 
             if (Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
                 TestContext.WriteLine($"WARNING: still on /login after sign-in attempt (url={Page.Url}) - subsequent captures will show the login page.");
