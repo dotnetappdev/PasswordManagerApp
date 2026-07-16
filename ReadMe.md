@@ -60,25 +60,41 @@ built in.
 
 ## Screenshots
 
+For the full interactive tour - setup wizard, every settings tab, API reference and platform walkthroughs - see the [documentation site](https://dotnetappdev.github.io/PasswordManagerApp/).
+
 <div align="center">
 
 ### 🌐 Web - Blazor (dark theme)
 
-| Dashboard | Passwords | Vaults |
+| Dashboard | All Items | Vaults |
 |:---:|:---:|:---:|
-| ![Dashboard](screenshots/blazor/dark/dashboard.png) | ![Passwords](screenshots/blazor/dark/passwords.png) | ![Vaults](screenshots/blazor/dark/vaults.png) |
+| ![Dashboard](screenshots/blazor/dark/dashboard.png) | ![All Items](screenshots/blazor/dark/all-items.png) | ![Vaults](screenshots/blazor/dark/vaults.png) |
 | **Collections** | **Categories** | **Tags** |
 | ![Collections](screenshots/blazor/dark/collections.png) | ![Categories](screenshots/blazor/dark/categories.png) | ![Tags](screenshots/blazor/dark/tags.png) |
 | **Archive** | **Recently Deleted** | **Audit Logs** |
 | ![Archive](screenshots/blazor/dark/archive.png) | ![Recently Deleted](screenshots/blazor/dark/recently-deleted.png) | ![Audit logs](screenshots/blazor/dark/audit-logs.png) |
+| **Security Center** | **Passkeys** | **API Keys** |
+| ![Security](screenshots/blazor/dark/security.png) | ![Passkeys](screenshots/blazor/dark/passkeys.png) | ![API Keys](screenshots/blazor/dark/api-keys.png) |
+| **Profile** | **Import** | |
+| ![Profile](screenshots/blazor/dark/profile.png) | ![Import](screenshots/blazor/dark/import.png) | |
 
-#### Settings
+#### Getting set up
 
-| General / Themes | Security | Maintenance |
-|:---:|:---:|:---:|
-| ![Settings Themes](screenshots/blazor/dark/settings-themes.png) | ![Settings Security](screenshots/blazor/dark/settings-security.png) | ![Settings Maintenance](screenshots/blazor/dark/settings-maintenance.png) |
-| **About** | **Database Settings** | **UI Zoom / Accessibility** |
-| ![Settings About](screenshots/blazor/dark/settings-about.png) | ![Database Settings](screenshots/blazor/dark/database-settings.png) | ![UI Zoom](screenshots/blazor/dark/ui-zoom.png) |
+| Database Setup | Sign In |
+|:---:|:---:|
+| ![Database Setup](screenshots/blazor/onboarding/database-setup.png) | ![Sign In](screenshots/blazor/onboarding/login.png) |
+
+#### Settings - all 11 tabs
+
+Settings is one deep-linkable page (`/settings?tab=<name>`) covering everything below:
+
+| Security | Appearance | Database | Sync |
+|:---:|:---:|:---:|:---:|
+| ![Security](screenshots/blazor/dark/settings.png) | ![Appearance](screenshots/blazor/dark/settings-appearance.png) | ![Database](screenshots/blazor/dark/settings-database.png) | ![Sync](screenshots/blazor/dark/settings-sync.png) |
+| **Notifications** | **Vaults** | **Generator** | **Encryption** |
+| ![Notifications](screenshots/blazor/dark/settings-notifications.png) | ![Vaults](screenshots/blazor/dark/settings-vaults.png) | ![Generator](screenshots/blazor/dark/settings-generator.png) | ![Encryption](screenshots/blazor/dark/settings-encryption.png) |
+| **Shortcuts** | **Maintenance** | **About** | |
+| ![Shortcuts](screenshots/blazor/dark/settings-shortcuts.png) | ![Maintenance](screenshots/blazor/dark/settings-maintenance.png) | ![About](screenshots/blazor/dark/settings-about.png) | |
 
 #### Themes
 
