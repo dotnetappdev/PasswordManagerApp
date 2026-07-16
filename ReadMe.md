@@ -60,25 +60,41 @@ built in.
 
 ## Screenshots
 
+For the full interactive tour - setup wizard, every settings tab, API reference and platform walkthroughs - see the [documentation site](https://dotnetappdev.github.io/PasswordManagerApp/).
+
 <div align="center">
 
 ### 🌐 Web - Blazor (dark theme)
 
-| Dashboard | Passwords | Vaults |
+| Dashboard | All Items | Vaults |
 |:---:|:---:|:---:|
-| ![Dashboard](screenshots/blazor/dark/dashboard.png) | ![Passwords](screenshots/blazor/dark/passwords.png) | ![Vaults](screenshots/blazor/dark/vaults.png) |
+| ![Dashboard](screenshots/blazor/dark/dashboard.png) | ![All Items](screenshots/blazor/dark/all-items.png) | ![Vaults](screenshots/blazor/dark/vaults.png) |
 | **Collections** | **Categories** | **Tags** |
 | ![Collections](screenshots/blazor/dark/collections.png) | ![Categories](screenshots/blazor/dark/categories.png) | ![Tags](screenshots/blazor/dark/tags.png) |
 | **Archive** | **Recently Deleted** | **Audit Logs** |
 | ![Archive](screenshots/blazor/dark/archive.png) | ![Recently Deleted](screenshots/blazor/dark/recently-deleted.png) | ![Audit logs](screenshots/blazor/dark/audit-logs.png) |
+| **Security Center** | **Passkeys** | **API Keys** |
+| ![Security](screenshots/blazor/dark/security.png) | ![Passkeys](screenshots/blazor/dark/passkeys.png) | ![API Keys](screenshots/blazor/dark/api-keys.png) |
+| **Profile** | **Import** | |
+| ![Profile](screenshots/blazor/dark/profile.png) | ![Import](screenshots/blazor/dark/import.png) | |
 
-#### Settings
+#### Getting set up
 
-| General / Themes | Security | Maintenance |
-|:---:|:---:|:---:|
-| ![Settings Themes](screenshots/blazor/dark/settings-themes.png) | ![Settings Security](screenshots/blazor/dark/settings-security.png) | ![Settings Maintenance](screenshots/blazor/dark/settings-maintenance.png) |
-| **About** | **Database Settings** | **UI Zoom / Accessibility** |
-| ![Settings About](screenshots/blazor/dark/settings-about.png) | ![Database Settings](screenshots/blazor/dark/database-settings.png) | ![UI Zoom](screenshots/blazor/dark/ui-zoom.png) |
+| Database Setup | Sign In |
+|:---:|:---:|
+| ![Database Setup](screenshots/blazor/onboarding/database-setup.png) | ![Sign In](screenshots/blazor/onboarding/login.png) |
+
+#### Settings - all 11 tabs
+
+Settings is one deep-linkable page (`/settings?tab=<name>`) covering everything below:
+
+| Security | Appearance | Database | Sync |
+|:---:|:---:|:---:|:---:|
+| ![Security](screenshots/blazor/dark/settings.png) | ![Appearance](screenshots/blazor/dark/settings-appearance.png) | ![Database](screenshots/blazor/dark/settings-database.png) | ![Sync](screenshots/blazor/dark/settings-sync.png) |
+| **Notifications** | **Vaults** | **Generator** | **Encryption** |
+| ![Notifications](screenshots/blazor/dark/settings-notifications.png) | ![Vaults](screenshots/blazor/dark/settings-vaults.png) | ![Generator](screenshots/blazor/dark/settings-generator.png) | ![Encryption](screenshots/blazor/dark/settings-encryption.png) |
+| **Shortcuts** | **Maintenance** | **About** | |
+| ![Shortcuts](screenshots/blazor/dark/settings-shortcuts.png) | ![Maintenance](screenshots/blazor/dark/settings-maintenance.png) | ![About](screenshots/blazor/dark/settings-about.png) | |
 
 #### Themes
 
@@ -96,45 +112,12 @@ built in.
 | **Vaults** | **Collections** | **High Contrast** |
 | ![Vaults light](screenshots/blazor/light/vaults.png) | ![Collections light](screenshots/blazor/light/collections.png) | ![High contrast light](screenshots/blazor/light/high-contrast.png) |
 
----
-
-### 🖥️ Desktop - WPF (dark theme)
-
-| Login | Dashboard | All Items |
-|:---:|:---:|:---:|
-| ![WPF Login dark](screenshots/wpf/dark/login.png) | ![WPF Dashboard dark](screenshots/wpf/dark/dashboard.png) | ![WPF All Items dark](screenshots/wpf/dark/all-items.png) |
-| **Vaults** | **Settings** | **Settings › Security** |
-| ![WPF Vaults dark](screenshots/wpf/dark/vaults.png) | ![WPF Settings dark](screenshots/wpf/dark/settings.png) | ![WPF Settings Security](screenshots/wpf/dark/settings-security.png) |
-| **Settings › Maintenance** | | |
-| ![WPF Maintenance](screenshots/wpf/dark/settings-maintenance.png) | | |
-
-### 🖥️ Desktop - WPF (light theme)
-
-| Login | Dashboard | All Items |
-|:---:|:---:|:---:|
-| ![WPF Login light](screenshots/wpf/light/login.png) | ![WPF Dashboard light](screenshots/wpf/light/dashboard.png) | ![WPF All Items light](screenshots/wpf/light/all-items.png) |
-| **Vaults** | **Settings** | |
-| ![WPF Vaults light](screenshots/wpf/light/vaults.png) | ![WPF Settings light](screenshots/wpf/light/settings.png) | |
-
----
-
-### 📱 Mobile - MAUI Android
-
-| Dashboard (dark) | All Items (dark) | Vaults (dark) | Settings (dark) |
-|:---:|:---:|:---:|:---:|
-| ![Android Dashboard dark](screenshots/mobile/android/dark/dashboard.png) | ![Android Items dark](screenshots/mobile/android/dark/all-items.png) | ![Android Vaults dark](screenshots/mobile/android/dark/vaults.png) | ![Android Settings dark](screenshots/mobile/android/dark/settings.png) |
-| **Dashboard (light)** | **All Items (light)** | **Vaults (light)** | **Settings (light)** |
-| ![Android Dashboard light](screenshots/mobile/android/light/dashboard.png) | ![Android Items light](screenshots/mobile/android/light/all-items.png) | ![Android Vaults light](screenshots/mobile/android/light/vaults.png) | ![Android Settings light](screenshots/mobile/android/light/settings.png) |
-
-### 📱 Mobile - MAUI iOS
-
-| Dashboard (dark) | All Items (dark) | Vaults (dark) | Settings (dark) |
-|:---:|:---:|:---:|:---:|
-| ![iOS Dashboard dark](screenshots/mobile/ios/dark/dashboard.png) | ![iOS Items dark](screenshots/mobile/ios/dark/all-items.png) | ![iOS Vaults dark](screenshots/mobile/ios/dark/vaults.png) | ![iOS Settings dark](screenshots/mobile/ios/dark/settings.png) |
-| **Dashboard (light)** | **All Items (light)** | **Vaults (light)** | **Settings (light)** |
-| ![iOS Dashboard light](screenshots/mobile/ios/light/dashboard.png) | ![iOS Items light](screenshots/mobile/ios/light/all-items.png) | ![iOS Vaults light](screenshots/mobile/ios/light/vaults.png) | ![iOS Settings light](screenshots/mobile/ios/light/settings.png) |
-
 </div>
+
+> **Desktop (WPF) and Mobile (Android/iOS) screenshots aren't available yet** - this build environment
+> can't run a Windows desktop session or an Android/iOS emulator to capture them. Once someone takes real
+> ones and drops them into `screenshots/wpf/{dark,light}/` and `screenshots/mobile/{android,ios}/{dark,light}/`,
+> they'll show up in the [documentation site](https://dotnetappdev.github.io/PasswordManagerApp/) automatically.
 
 More captures - including item forms and per-platform galleries - live in [`screenshots/`](screenshots/README.md).
 
