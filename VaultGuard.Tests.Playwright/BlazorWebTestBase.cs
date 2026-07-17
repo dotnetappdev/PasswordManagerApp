@@ -52,16 +52,31 @@ public abstract class BlazorWebTestBase : PageTest
             // Use a temp SQLite database for test isolation
             _tempDbPath = Path.Combine(Path.GetTempPath(), $"pm-playwright-{Guid.NewGuid():N}.db");
 
-            // Pre-build the web project so startup is fast
+            // Pre-build the web project so startup is fast. Shared compilation (the persistent
+            // VBCSCompiler/MSBuild server processes dotnet reuses across invocations to save startup
+            // time) has a real failure mode: if a prior server process in this environment gets into a
+            // bad state, a later build's client can block forever waiting on it - no output, no error,
+            // just an indefinite hang with no way to tell it apart from a slow build. Since this is a
+            // one-off test-infra build (not a hot loop where server reuse's speedup matters), disable
+            // it entirely and add a hard timeout as a second line of defense so a hung build can never
+            // block the whole test run - only degrade it to "used whatever was already built."
             var buildProcess = Process.Start(new ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = $"build \"{WebProjectPath}\" -c Debug --no-restore -v q",
+                Arguments = $"build \"{WebProjectPath}\" -c Debug --no-restore -v q -p:UseSharedCompilation=false",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
-                RedirectStandardError = true
+                RedirectStandardError = true,
+                Environment = { ["MSBUILDDISABLENODEREUSE"] = "1" }
             })!;
-            await buildProcess.WaitForExitAsync();
+            var buildExited = buildProcess.WaitForExitAsync();
+            var winner = await Task.WhenAny(buildExited, Task.Delay(TimeSpan.FromMinutes(2)));
+            if (winner != buildExited)
+            {
+                Debug.WriteLine("Pre-build of VaultGuard.Web timed out after 2 minutes (likely a wedged " +
+                    "build-server process) - killing it and continuing with whatever was already built.");
+                try { buildProcess.Kill(entireProcessTree: true); } catch (Exception ex) { Debug.WriteLine($"Failed to kill hung build process: {ex.Message}"); }
+            }
 
             _appProcess = new Process
             {
