@@ -16,6 +16,10 @@
 [![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Web%20%7C%20Android%20%7C%20iOS-blue)](#front-ends)
 [![Encryption](https://img.shields.io/badge/encryption-AES--256--GCM-2ea44f)](#security)
 [![License](https://img.shields.io/github/license/dotnetappdev/PasswordManagerApp)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-dotnetappdev.github.io-blue?logo=readthedocs&logoColor=white)](https://dotnetappdev.github.io/PasswordManagerApp/)
+
+**📖 [Live documentation site](https://dotnetappdev.github.io/PasswordManagerApp/)** - full screenshot
+gallery, setup guides, architecture, security model and a live API "Try It" client.
 
 </div>
 
