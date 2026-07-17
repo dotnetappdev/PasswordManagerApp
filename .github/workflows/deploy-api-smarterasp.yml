@@ -81,14 +81,10 @@ jobs:
 
       # See ReadMe.md "Deploying the API to SmarterASP.NET" for where these come from in the
       # SmarterASP.NET control panel's Web Deploy settings.
-      #
-      # NOTE: website-name reuses APIUSER below - on SmarterASP.NET's single-site plans the Web Deploy
-      # "site name" is conventionally the same as your account username. If your deploy fails with a
-      # site-not-found error, add a separate secret for the actual site name and swap it in here.
       - name: Deploy to SmarterASP.NET
         uses: jahbenjah/SmarterASP.NET-web-deploy@1.0.0.alpha.8
         with:
-          website-name: ${{ secrets.APIUSER }}
+          website-name: ${{ secrets.APISiteName }}
           server-computer-name: ${{ secrets.APISERVER }}
           server-username: ${{ secrets.APIUSER }}
           server-password: ${{ secrets.APIPASSWORD }}
