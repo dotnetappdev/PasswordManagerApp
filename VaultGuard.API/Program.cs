@@ -350,7 +350,7 @@ app.UseSwagger();
 app.MapScalarApiReference(options =>
 {
     options.WithTitle(builder.Configuration["ApiSettings:Title"] ?? "Vault Guard API")
-        .WithOpenApiRoutePattern("/swagger/{documentName}.json")
+        .WithOpenApiRoutePattern("/swagger/{documentName}/swagger.json")
         .WithTheme(ScalarTheme.BluePlanet);
 });
 

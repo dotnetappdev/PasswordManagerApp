@@ -85,16 +85,24 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
 
         await SignInAsync();
 
-        await SetThemeAsync("Dark");
+        await SetThemeAsync("Dark Mode");
         foreach (var (route, name) in Pages)
             captured += await CaptureAsync(darkDir, route, name) ? 1 : 0;
-        captured += await CaptureHighContrastAsync(darkDir) ? 1 : 0;
         captured += await CaptureActionShotsAsync(darkDir) ? 1 : 0;
+        captured += await CaptureApiKeyGenerationAsync(darkDir) ? 1 : 0;
 
-        await SetThemeAsync("Light");
+        await SetThemeAsync("Light Mode");
         foreach (var (route, name) in Pages)
             captured += await CaptureAsync(lightDir, route, name) ? 1 : 0;
-        captured += await CaptureHighContrastAsync(lightDir) ? 1 : 0;
+
+        // High Contrast is a fourth, standalone Theme option (not an overlay on light/dark - see the
+        // Theme MudRadioGroup in Settings.razor), so there's only one meaningful capture of it. Save it
+        // into both theme directories since the README/docs site galleries link both paths.
+        await SetThemeAsync("High Contrast");
+        var highContrastCaptured = await CaptureAsync(darkDir, "/", "high-contrast");
+        if (highContrastCaptured)
+            File.Copy(Path.Combine(darkDir, "high-contrast.png"), Path.Combine(lightDir, "high-contrast.png"), overwrite: true);
+        captured += highContrastCaptured ? 1 : 0;
 
         TestContext.WriteLine($"Captured {captured} screenshot(s) into {ScreenshotsRoot}");
         Assert.IsTrue(captured > 0, "No screenshots were captured — check that the app booted and sign-in succeeded.");
@@ -211,6 +219,38 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
         }
     }
 
+    // Captures the "Create API Key" flow on /api-keys: filling in a name and the one-time
+    // "API Key Created Successfully" reveal dialog that shows the generated key.
+    private async Task<bool> CaptureApiKeyGenerationAsync(string dir)
+    {
+        try
+        {
+            await Page.GotoAsync($"{BaseUrl}/api-keys");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await Task.Delay(1000);
+
+            // Like #loginKey (see SignInAsync), this MudTextField's @bind-Value commits on blur/change,
+            // not "input" - FillAsync alone leaves focus in the field, so the bound name stays empty and
+            // the Create button (disabled while the name is empty) never enables. Tab out to commit it.
+            var nameField = Page.GetByLabel("API Key Name");
+            await nameField.FillAsync("Pixel 8");
+            await nameField.PressAsync("Tab");
+            await Task.Delay(500);
+            await Page.ClickAsync("button:has-text('Create API Key')");
+            await Task.Delay(1200);
+
+            var path = Path.Combine(dir, "dialog-api-key-generated.png");
+            await Page.ScreenshotAsync(new PageScreenshotOptions { Path = path, FullPage = true });
+            TestContext.WriteLine($"Captured {path}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            TestContext.WriteLine($"Failed to capture dialog-api-key-generated: {ex.Message}");
+            return false;
+        }
+    }
+
     private async Task<bool> CaptureSimpleDialogAsync(string dir, string route, string buttonText, string name)
     {
         try
@@ -234,67 +274,25 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
         }
     }
 
-    // Sets the theme via Settings → Appearance → Theme (a MudSelect with Light/Dark/System options)
-    // so full-page reloads honour it (ThemeService persists the choice to the shared settings.json).
-    private async Task SetThemeAsync(string mode)
+    // Sets the theme via Settings → Appearance → Theme - a MudRadioGroup with four options ("Dark
+    // Mode", "Light Mode", "High Contrast", "System Default"), NOT a dropdown - so full-page reloads
+    // honour it (ThemeService persists the choice to the shared settings.json). Pass the exact radio
+    // label text (e.g. "Dark Mode", "Light Mode", "High Contrast").
+    private async Task SetThemeAsync(string radioLabel)
     {
         try
         {
-            await Page.GotoAsync($"{BaseUrl}/settings");
+            await Page.GotoAsync($"{BaseUrl}/settings?tab=Appearance");
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await Task.Delay(1000);
 
-            // Open the "Theme" MudSelect dropdown.
-            var select = Page.Locator(".mud-input-control", new PageLocatorOptions { HasTextString = "Theme" }).First;
-            await select.ClickAsync();
-            await Task.Delay(400);
-
-            // Pick the matching option from the popover list (last opened popover, exact text).
-            var option = Page.Locator(".mud-list-item", new PageLocatorOptions { HasTextString = mode }).Last;
-            await option.ClickAsync();
+            var radio = Page.Locator("label.mud-radio", new PageLocatorOptions { HasTextString = radioLabel }).First;
+            await radio.ClickAsync();
             await Task.Delay(1200);
         }
         catch (Exception ex)
         {
-            TestContext.WriteLine($"Setting theme '{mode}' failed (continuing): {ex.Message}");
-        }
-    }
-
-    // Toggles Accessibility → High contrast on, captures the dashboard, then toggles it back off
-    // so it doesn't leak into subsequent captures.
-    private async Task<bool> CaptureHighContrastAsync(string dir)
-    {
-        try
-        {
-            await Page.GotoAsync($"{BaseUrl}/settings");
-            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            await Task.Delay(1000);
-
-            var toggle = Page.Locator(".mud-switch", new PageLocatorOptions { HasTextString = "High contrast" }).First;
-            await toggle.ClickAsync();
-            await Task.Delay(800);
-
-            await Page.GotoAsync($"{BaseUrl}/");
-            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            await Task.Delay(1200);
-            var path = Path.Combine(dir, "high-contrast.png");
-            await Page.ScreenshotAsync(new PageScreenshotOptions { Path = path, FullPage = true });
-            TestContext.WriteLine($"Captured {path}");
-
-            // Reset so it doesn't affect the next theme pass.
-            await Page.GotoAsync($"{BaseUrl}/settings");
-            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            await Task.Delay(1000);
-            var toggleOff = Page.Locator(".mud-switch", new PageLocatorOptions { HasTextString = "High contrast" }).First;
-            await toggleOff.ClickAsync();
-            await Task.Delay(600);
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            TestContext.WriteLine($"Failed to capture high-contrast: {ex.Message}");
-            return false;
+            TestContext.WriteLine($"Setting theme '{radioLabel}' failed (continuing): {ex.Message}");
         }
     }
 
