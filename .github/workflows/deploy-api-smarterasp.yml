@@ -72,15 +72,18 @@ jobs:
       - name: Publish API
         run: dotnet publish ${{ env.PROJECT }} --configuration Release --output ${{ env.PUBLISH_DIR }}
 
-      # See CONFIGURATION_GUIDE.md "Deploying the API to SmarterASP.NET" for what SMARTERASP_WEBSITE_NAME
-      # / SMARTERASP_SERVER / SMARTERASP_USERNAME / SMARTERASP_PASSWORD need to be, and where to find the
-      # values in the SmarterASP.NET control panel's Web Deploy settings.
+      # See ReadMe.md "Deploying the API to SmarterASP.NET" for where these come from in the
+      # SmarterASP.NET control panel's Web Deploy settings.
+      #
+      # NOTE: website-name reuses APIUSER below - on SmarterASP.NET's single-site plans the Web Deploy
+      # "site name" is conventionally the same as your account username. If your deploy fails with a
+      # site-not-found error, add a separate secret for the actual site name and swap it in here.
       - name: Deploy to SmarterASP.NET
         uses: jahbenjah/SmarterASP.NET-web-deploy@1.0.0.alpha.8
         with:
-          website-name: ${{ secrets.SMARTERASP_WEBSITE_NAME }}
-          server-computer-name: ${{ secrets.SMARTERASP_SERVER }}
-          server-username: ${{ secrets.SMARTERASP_USERNAME }}
-          server-password: ${{ secrets.SMARTERASP_PASSWORD }}
+          website-name: ${{ secrets.APIUSER }}
+          server-computer-name: ${{ secrets.APISERVER }}
+          server-username: ${{ secrets.APIUSER }}
+          server-password: ${{ secrets.APIPASSWORD }}
           source-path: '${{ env.PUBLISH_DIR }}\'
           target-delete: 'true'

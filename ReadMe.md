@@ -212,10 +212,15 @@ SmarterASP.NET control panel's Web Deploy settings:
 
 | Secret | Value |
 |---|---|
-| `SMARTERASP_WEBSITE_NAME` | Your site's Web Deploy site identifier |
-| `SMARTERASP_SERVER` | Web Deploy server address, e.g. `https://server.smarterasp.net:8172` |
-| `SMARTERASP_USERNAME` | Web Deploy username |
-| `SMARTERASP_PASSWORD` | Web Deploy password |
+| `APISERVER` | Web Deploy server address, e.g. `https://server.smarterasp.net:8172` |
+| `APIUSER` | Web Deploy username (also used as the Web Deploy site name - see note below) |
+| `APIPASSWORD` | Web Deploy password |
+
+> **Site name note:** the action also needs a "site name" (`website-name`) separate from the server
+> address. The workflow currently reuses `APIUSER` for this, since SmarterASP.NET's single-site plans
+> conventionally use your account username as the site name too. If your plan's site name differs, add
+> a dedicated secret and update `website-name` in `.github/workflows/deploy-api-smarterasp.yml`
+> accordingly.
 
 > The deploy action shells out to `msdeploy.exe`, so the job runs on `windows-latest` (not the
 > `ubuntu-latest` used by the rest of CI). `target-delete` is enabled, so anything on the target site
