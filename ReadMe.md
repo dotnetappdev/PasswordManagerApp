@@ -211,7 +211,17 @@ if those tests pass**; a failure stops the job before anything reaches the serve
 publish output, so the SmarterASP.NET server doesn't need a matching runtime installed. Combined with
 `VaultGuard.API.csproj`'s `AspNetCoreHostingModel=OutOfProcess` (already set to match SmarterASP.NET's
 shared IIS app-pool constraints), `dotnet publish` generates the right `web.config` for IIS/ANCM to run
-the self-contained executable.
+the self-contained executable. `-p:Version=` stamps the computed version into the assembly, which is what
+makes it show up live in Scalar's title badge and `/swagger/v1/swagger.json` (see `Program.cs`'s
+`AddSwaggerGen` call).
+
+**Versioning and releases are fully automatic** - no manual `git tag && git push` needed. Once the deploy
+above succeeds, the job:
+1. Computes the next version by reading the highest existing `api-vX.Y.Z` tag and bumping the patch
+   number (starts at `1.0.0` if none exist yet).
+2. Tags the exact commit that was deployed and pushes the tag.
+3. Creates a `release/api-vX.Y.Z` branch off that same commit.
+4. Zips the publish output and attaches it to a new GitHub Release for that tag.
 
 **Required GitHub repo secrets** (Settings → Secrets and variables → Actions) - values come from your
 SmarterASP.NET control panel's Web Deploy settings:
@@ -232,7 +242,10 @@ SmarterASP.NET control panel's Web Deploy settings:
 
 `.github/workflows/deploy-web-smarterasp.yml` mirrors the API workflow above for **only**
 `VaultGuard.Web` (the Blazor Server web app) - same action, same self-contained `win-x64` publish, same
-`AspNetCoreHostingModel=OutOfProcess` reasoning (already set in `VaultGuard.Web.csproj`).
+`AspNetCoreHostingModel=OutOfProcess` reasoning (already set in `VaultGuard.Web.csproj`), and the same
+automatic version bump → tag (`web-vX.Y.Z`) → `release/web-vX.Y.Z` branch → zipped GitHub Release cycle
+once the deploy succeeds. `-p:Version=` stamps the assembly version that Settings → About displays
+(`VaultGuard.Web/Components/Pages/Settings.razor`'s `_appVersion`).
 
 **When it runs:** on every pull request into `devmain` that touches Web-relevant code (`VaultGuard.Web`,
 `VaultGuard.Components.Shared`, or the web test project). `VaultGuard.Web.Tests` runs first in the same

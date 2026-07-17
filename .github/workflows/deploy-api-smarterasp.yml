@@ -33,7 +33,7 @@ env:
   RUNTIME_ID: win-x64
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   test-and-deploy:
@@ -44,12 +44,33 @@ jobs:
     name: Test & Deploy VaultGuard.API
 
     steps:
+      # Explicit ref + full history: pull_request's default checkout is a synthetic merge commit that
+      # doesn't exist in the branch's real history (bad tag target), and version-bumping below needs the
+      # full tag history, not the default shallow clone.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # Next version = latest api-vX.Y.Z tag with patch+1, or 1.0.0 if none exists yet.
+      - name: Compute next version
+        id: ver
+        shell: bash
+        run: |
+          latest=$(git tag -l 'api-v*' | sed 's/^api-v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
+          if [ -z "$latest" ]; then
+            next="1.0.0"
+          else
+            IFS='.' read -r major minor patch <<< "$latest"
+            next="$major.$minor.$((patch + 1))"
+          fi
+          echo "Next version: $next"
+          echo "VERSION=$next" >> "$GITHUB_OUTPUT"
 
       - name: Restore backend tests
         run: dotnet restore ${{ env.TEST_PROJECT }}
@@ -77,6 +98,7 @@ jobs:
         run: >
           dotnet publish ${{ env.PROJECT }} --configuration Release --no-restore
           --self-contained true -r ${{ env.RUNTIME_ID }}
+          -p:Version=${{ steps.ver.outputs.VERSION }}
           --output ${{ env.PUBLISH_DIR }}
 
       # See ReadMe.md "Deploying the API to SmarterASP.NET" for where these come from in the
@@ -90,3 +112,31 @@ jobs:
           server-password: ${{ secrets.APIPASSWORD }}
           source-path: '${{ env.PUBLISH_DIR }}\'
           target-delete: 'true'
+
+      # Only reached if the deploy above succeeded: tag the deployed commit, branch off it, zip the
+      # publish output, and turn all of that into a GitHub Release - the whole tag/branch/release cycle
+      # runs here with no manual `git tag && git push` step needed.
+      - name: Tag release and create release branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          sha="${{ github.event.pull_request.head.sha || github.sha }}"
+          git tag "api-v${{ steps.ver.outputs.VERSION }}" "$sha"
+          git push origin "api-v${{ steps.ver.outputs.VERSION }}"
+          git branch "release/api-v${{ steps.ver.outputs.VERSION }}" "$sha"
+          git push origin "release/api-v${{ steps.ver.outputs.VERSION }}"
+
+      - name: Zip publish output
+        shell: pwsh
+        run: Compress-Archive -Path "${{ env.PUBLISH_DIR }}\*" -DestinationPath "VaultGuardAPI-${{ steps.ver.outputs.VERSION }}.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: api-v${{ steps.ver.outputs.VERSION }}
+          name: VaultGuard API v${{ steps.ver.outputs.VERSION }}
+          generate_release_notes: true
+          files: VaultGuardAPI-${{ steps.ver.outputs.VERSION }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

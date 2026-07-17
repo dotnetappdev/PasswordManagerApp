@@ -311,7 +311,18 @@ builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
 
 // Add API documentation with Swagger (compatible with .NET 8)
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    // Reads the assembly's actual version instead of Swashbuckle's hardcoded "1.0" default, so the
+    // version shown here (Scalar's title badge, /swagger/v1/swagger.json) tracks whatever -p:Version=
+    // was stamped in at publish time (see .github/workflows/deploy-api-smarterasp.yml).
+    var apiVersion = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = builder.Configuration["ApiSettings:Title"] ?? "Vault Guard API",
+        Version = apiVersion
+    });
+});
 
 // Add CORS — restrict to an explicit allow-list instead of AllowAnyOrigin. Origins come from the
 // "Cors:AllowedOrigins" config array (set per environment); the default covers local dev only.
