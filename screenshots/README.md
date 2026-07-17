@@ -37,7 +37,10 @@ overlay on top of light/dark.
 
 | Dark Mode | Light Mode | High Contrast |
 |:---:|:---:|:---:|
-| ![](blazor/dark/dashboard.png) | ![](blazor/light/dashboard.png) | ![](blazor/dark/high-contrast.png) |
+| ![](blazor/dark/dashboard.png) | ![](blazor/light/dashboard.png) | ![](blazor/high-contrast/dashboard.png) |
+
+High Contrast gets full page coverage in `blazor/high-contrast/`, same as `dark/` and `light/` -
+e.g. `blazor/high-contrast/settings.png`, `blazor/high-contrast/vaults.png`, etc.
 
 ### Light theme
 

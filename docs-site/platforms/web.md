@@ -112,7 +112,18 @@ of which of the other three was active beforehand.
   <figure><img src="/screenshots/blazor/light/collections.png" alt="Light collections" /><figcaption>Light theme — Collections</figcaption></figure>
   <figure><img src="/screenshots/blazor/light/security.png" alt="Light security center" /><figcaption>Light theme — Security Center</figcaption></figure>
   <figure><img src="/screenshots/blazor/light/settings.png" alt="Light settings" /><figcaption>Light theme — Settings</figcaption></figure>
-  <figure><img src="/screenshots/blazor/dark/high-contrast.png" alt="High contrast" /><figcaption>High Contrast</figcaption></figure>
+  <figure><img src="/screenshots/blazor/high-contrast/dashboard.png" alt="High contrast dashboard" /><figcaption>High Contrast — Dashboard</figcaption></figure>
+</div>
+
+High Contrast gets the same full page coverage as Dark/Light, not just the dashboard:
+
+<div class="screenshot-grid">
+  <figure><img src="/screenshots/blazor/high-contrast/all-items.png" alt="High contrast all items" /><figcaption>High Contrast — All Items</figcaption></figure>
+  <figure><img src="/screenshots/blazor/high-contrast/vaults.png" alt="High contrast vaults" /><figcaption>High Contrast — Vaults</figcaption></figure>
+  <figure><img src="/screenshots/blazor/high-contrast/security.png" alt="High contrast security center" /><figcaption>High Contrast — Security Center</figcaption></figure>
+  <figure><img src="/screenshots/blazor/high-contrast/api-keys.png" alt="High contrast API keys" /><figcaption>High Contrast — API Keys</figcaption></figure>
+  <figure><img src="/screenshots/blazor/high-contrast/settings.png" alt="High contrast settings" /><figcaption>High Contrast — Settings</figcaption></figure>
+  <figure><img src="/screenshots/blazor/high-contrast/import.png" alt="High contrast import" /><figcaption>High Contrast — Import</figcaption></figure>
 </div>
 
 ## API reference (Scalar)

@@ -16,6 +16,10 @@
 [![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Web%20%7C%20Android%20%7C%20iOS-blue)](#front-ends)
 [![Encryption](https://img.shields.io/badge/encryption-AES--256--GCM-2ea44f)](#security)
 [![License](https://img.shields.io/github/license/dotnetappdev/PasswordManagerApp)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-dotnetappdev.github.io-blue?logo=readthedocs&logoColor=white)](https://dotnetappdev.github.io/PasswordManagerApp/)
+
+**📖 [Live documentation site](https://dotnetappdev.github.io/PasswordManagerApp/)** - full screenshot
+gallery, setup guides, architecture, security model and a live API "Try It" client.
 
 </div>
 
@@ -114,11 +118,17 @@ Settings is one deep-linkable page (`/settings?tab=<name>`) covering everything 
 
 | Dark Mode | Light Mode | High Contrast |
 |:---:|:---:|:---:|
-| ![Dark theme](screenshots/blazor/dark/dashboard.png) | ![Light theme](screenshots/blazor/light/dashboard.png) | ![High contrast](screenshots/blazor/dark/high-contrast.png) |
+| ![Dark theme](screenshots/blazor/dark/dashboard.png) | ![Light theme](screenshots/blazor/light/dashboard.png) | ![High contrast](screenshots/blazor/high-contrast/dashboard.png) |
 
 High Contrast is a dedicated fourth Theme option (Settings → Appearance), not an overlay on light/dark -
 it always renders the same yellow-on-black palette regardless of which theme was active before you
-switched to it.
+switched to it. It gets the same full page coverage as Dark/Light, not just the dashboard:
+
+| All Items | Vaults | Security Center |
+|:---:|:---:|:---:|
+| ![High contrast all items](screenshots/blazor/high-contrast/all-items.png) | ![High contrast vaults](screenshots/blazor/high-contrast/vaults.png) | ![High contrast security](screenshots/blazor/high-contrast/security.png) |
+| **API Keys** | **Settings** | **Import** |
+| ![High contrast API keys](screenshots/blazor/high-contrast/api-keys.png) | ![High contrast settings](screenshots/blazor/high-contrast/settings.png) | ![High contrast import](screenshots/blazor/high-contrast/import.png) |
 
 </div>
 

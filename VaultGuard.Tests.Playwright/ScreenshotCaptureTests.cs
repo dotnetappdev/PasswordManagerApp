@@ -7,8 +7,8 @@ namespace VaultGuard.Tests.Playwright;
 /// On-demand utility that regenerates the Blazor web screenshots referenced by the READMEs and docs site.
 /// It boots the web app (temp SQLite DB, auto-seeded), captures the pre-auth setup/login screens once
 /// (<c>screenshots/blazor/onboarding</c>), then signs in with the seeded account and captures every key
-/// page - including all 11 Settings tabs - in BOTH dark and light themes, writing PNGs straight into
-/// <c>screenshots/blazor/dark</c> and <c>screenshots/blazor/light</c> at the repo root.
+/// page - including all 11 Settings tabs - in dark, light AND high-contrast themes, writing PNGs straight
+/// into <c>screenshots/blazor/{dark,light,high-contrast}</c> at the repo root.
 ///
 /// Run it explicitly (it needs a browser + display / headless Chromium):
 ///   dotnet test VaultGuard.Tests.Playwright --filter FullyQualifiedName~ScreenshotCaptureTests
@@ -73,15 +73,17 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
 
         var darkDir = Path.Combine(ScreenshotsRoot, "dark");
         var lightDir = Path.Combine(ScreenshotsRoot, "light");
+        var highContrastDir = Path.Combine(ScreenshotsRoot, "high-contrast");
         var onboardingDir = Path.Combine(ScreenshotsRoot, "onboarding");
         Directory.CreateDirectory(darkDir);
         Directory.CreateDirectory(lightDir);
+        Directory.CreateDirectory(highContrastDir);
         Directory.CreateDirectory(onboardingDir);
 
         var captured = 0;
 
         foreach (var (route, name) in OnboardingPages)
-            captured += await CaptureAsync(onboardingDir, route, name) ? 1 : 0;
+            captured += await CaptureAsync(onboardingDir, route, name, expectAuthenticated: false) ? 1 : 0;
 
         await SignInAsync();
 
@@ -96,13 +98,10 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
             captured += await CaptureAsync(lightDir, route, name) ? 1 : 0;
 
         // High Contrast is a fourth, standalone Theme option (not an overlay on light/dark - see the
-        // Theme MudRadioGroup in Settings.razor), so there's only one meaningful capture of it. Save it
-        // into both theme directories since the README/docs site galleries link both paths.
+        // Theme MudRadioGroup in Settings.razor) - capture every page under it too, same as dark/light.
         await SetThemeAsync("High Contrast");
-        var highContrastCaptured = await CaptureAsync(darkDir, "/", "high-contrast");
-        if (highContrastCaptured)
-            File.Copy(Path.Combine(darkDir, "high-contrast.png"), Path.Combine(lightDir, "high-contrast.png"), overwrite: true);
-        captured += highContrastCaptured ? 1 : 0;
+        foreach (var (route, name) in Pages)
+            captured += await CaptureAsync(highContrastDir, route, name) ? 1 : 0;
 
         TestContext.WriteLine($"Captured {captured} screenshot(s) into {ScreenshotsRoot}");
         Assert.IsTrue(captured > 0, "No screenshots were captured — check that the app booted and sign-in succeeded.");
@@ -296,13 +295,34 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
         }
     }
 
-    private async Task<bool> CaptureAsync(string dir, string route, string name)
+    // expectAuthenticated: false for the onboarding routes (/setup, /login), which are SUPPOSED to show
+    // the login/setup screen. For every other route, landing on /login means the session was lost
+    // between captures - rather than silently saving a login-page screenshot mislabeled as e.g.
+    // "settings.png" (which is exactly what happened before this guard existed), re-authenticate and
+    // retry the navigation once before giving up.
+    private async Task<bool> CaptureAsync(string dir, string route, string name, bool expectAuthenticated = true)
     {
         try
         {
             await Page.GotoAsync($"{BaseUrl}{route}");
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await Task.Delay(1200); // let MudBlazor render + theme settle
+
+            if (expectAuthenticated && Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
+            {
+                TestContext.WriteLine($"WARNING: session dropped before capturing {name} ({route}) - re-authenticating and retrying once.");
+                await SignInAsync();
+                await Page.GotoAsync($"{BaseUrl}{route}");
+                await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                await Task.Delay(1200);
+
+                if (Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
+                {
+                    TestContext.WriteLine($"FAILED: still on /login for {name} ({route}) after re-authenticating - skipping rather than saving a login-page screenshot.");
+                    return false;
+                }
+            }
+
             var path = Path.Combine(dir, $"{name}.png");
             await Page.ScreenshotAsync(new PageScreenshotOptions { Path = path, FullPage = true });
             TestContext.WriteLine($"Captured {path}");
