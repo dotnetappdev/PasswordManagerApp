@@ -27,6 +27,10 @@ env:
   TEST_PROJECT: VaultGuard.BackEnd.Tests/VaultGuard.BackEnd.Tests.csproj
   PUBLISH_DIR: publish\api
   DOTNET_VERSION: '10.0.x'
+  # SmarterASP.NET's IIS hosts are Windows x64 - self-contained means the .NET 10 runtime ships inside
+  # the publish output, so the server doesn't need a matching runtime installed. If your plan runs a
+  # 32-bit app pool, change this to win-x86.
+  RUNTIME_ID: win-x64
 
 permissions:
   contents: read
@@ -67,10 +71,13 @@ jobs:
           fail-on-error: true
 
       - name: Restore API
-        run: dotnet restore ${{ env.PROJECT }}
+        run: dotnet restore ${{ env.PROJECT }} -r ${{ env.RUNTIME_ID }}
 
-      - name: Publish API
-        run: dotnet publish ${{ env.PROJECT }} --configuration Release --output ${{ env.PUBLISH_DIR }}
+      - name: Publish API (self-contained)
+        run: >
+          dotnet publish ${{ env.PROJECT }} --configuration Release --no-restore
+          --self-contained true -r ${{ env.RUNTIME_ID }}
+          --output ${{ env.PUBLISH_DIR }}
 
       # See ReadMe.md "Deploying the API to SmarterASP.NET" for where these come from in the
       # SmarterASP.NET control panel's Web Deploy settings.

@@ -207,6 +207,12 @@ its shared libraries, or the backend test project). The job first restores, buil
 `VaultGuard.BackEnd.Tests` (the unit tests covering `VaultGuard.API`) - **publish and deploy only happen
 if those tests pass**; a failure stops the job before anything reaches the server.
 
+**Publish is self-contained** (`--self-contained true -r win-x64`) - the .NET 10 runtime ships inside the
+publish output, so the SmarterASP.NET server doesn't need a matching runtime installed. Combined with
+`VaultGuard.API.csproj`'s `AspNetCoreHostingModel=OutOfProcess` (already set to match SmarterASP.NET's
+shared IIS app-pool constraints), `dotnet publish` generates the right `web.config` for IIS/ANCM to run
+the self-contained executable.
+
 **Required GitHub repo secrets** (Settings → Secrets and variables → Actions) - values come from your
 SmarterASP.NET control panel's Web Deploy settings:
 
