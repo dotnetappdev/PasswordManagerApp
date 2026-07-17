@@ -195,6 +195,35 @@ to the GitHub release. To build them locally, see [`installers/README.md`](insta
 
 ---
 
+## Deploying the API to SmarterASP.NET
+
+`.github/workflows/deploy-api-smarterasp.yml` deploys **only** `VaultGuard.API` to a
+[SmarterASP.NET](https://www.smarterasp.net/) site via [Web Deploy](https://learn.microsoft.com/iis/publish/using-web-deploy/introduction-to-web-deploy),
+using the [`jahbenjah/SmarterASP.NET-web-deploy`](https://github.com/marketplace/actions/smarterasp-net-web-deploy)
+action.
+
+**When it runs:** on every pull request into `devmain` that touches API-relevant code (`VaultGuard.API`,
+its shared libraries, or the backend test project). The job first restores, builds and runs
+`VaultGuard.BackEnd.Tests` (the unit tests covering `VaultGuard.API`) - **publish and deploy only happen
+if those tests pass**; a failure stops the job before anything reaches the server.
+
+**Required GitHub repo secrets** (Settings → Secrets and variables → Actions) - values come from your
+SmarterASP.NET control panel's Web Deploy settings:
+
+| Secret | Value |
+|---|---|
+| `SMARTERASP_WEBSITE_NAME` | Your site's Web Deploy site identifier |
+| `SMARTERASP_SERVER` | Web Deploy server address, e.g. `https://server.smarterasp.net:8172` |
+| `SMARTERASP_USERNAME` | Web Deploy username |
+| `SMARTERASP_PASSWORD` | Web Deploy password |
+
+> The deploy action shells out to `msdeploy.exe`, so the job runs on `windows-latest` (not the
+> `ubuntu-latest` used by the rest of CI). `target-delete` is enabled, so anything on the target site
+> that isn't part of the published API output gets removed on each deploy - point it at a site/folder
+> dedicated to the API, not one shared with other content.
+
+---
+
 ## Run in development
 
 ```bash
