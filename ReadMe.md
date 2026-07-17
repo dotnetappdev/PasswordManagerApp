@@ -118,11 +118,17 @@ Settings is one deep-linkable page (`/settings?tab=<name>`) covering everything 
 
 | Dark Mode | Light Mode | High Contrast |
 |:---:|:---:|:---:|
-| ![Dark theme](screenshots/blazor/dark/dashboard.png) | ![Light theme](screenshots/blazor/light/dashboard.png) | ![High contrast](screenshots/blazor/dark/high-contrast.png) |
+| ![Dark theme](screenshots/blazor/dark/dashboard.png) | ![Light theme](screenshots/blazor/light/dashboard.png) | ![High contrast](screenshots/blazor/high-contrast/dashboard.png) |
 
 High Contrast is a dedicated fourth Theme option (Settings → Appearance), not an overlay on light/dark -
 it always renders the same yellow-on-black palette regardless of which theme was active before you
-switched to it.
+switched to it. It gets the same full page coverage as Dark/Light, not just the dashboard:
+
+| All Items | Vaults | Security Center |
+|:---:|:---:|:---:|
+| ![High contrast all items](screenshots/blazor/high-contrast/all-items.png) | ![High contrast vaults](screenshots/blazor/high-contrast/vaults.png) | ![High contrast security](screenshots/blazor/high-contrast/security.png) |
+| **API Keys** | **Settings** | **Import** |
+| ![High contrast API keys](screenshots/blazor/high-contrast/api-keys.png) | ![High contrast settings](screenshots/blazor/high-contrast/settings.png) | ![High contrast import](screenshots/blazor/high-contrast/import.png) |
 
 </div>
 

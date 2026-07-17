@@ -53,7 +53,12 @@ const images = [
   { src: '/screenshots/blazor/light/collections.png', alt: 'Light theme — Collections', category: 'Themes' },
   { src: '/screenshots/blazor/light/security.png', alt: 'Light theme — Security Center', category: 'Themes' },
   { src: '/screenshots/blazor/light/settings.png', alt: 'Light theme — Settings', category: 'Themes' },
-  { src: '/screenshots/blazor/dark/high-contrast.png', alt: 'High contrast theme', category: 'Themes' },
+  { src: '/screenshots/blazor/high-contrast/dashboard.png', alt: 'High contrast — Dashboard', category: 'Themes' },
+  { src: '/screenshots/blazor/high-contrast/all-items.png', alt: 'High contrast — All items', category: 'Themes' },
+  { src: '/screenshots/blazor/high-contrast/vaults.png', alt: 'High contrast — Vaults', category: 'Themes' },
+  { src: '/screenshots/blazor/high-contrast/security.png', alt: 'High contrast — Security Center', category: 'Themes' },
+  { src: '/screenshots/blazor/high-contrast/api-keys.png', alt: 'High contrast — API Keys', category: 'Themes' },
+  { src: '/screenshots/blazor/high-contrast/settings.png', alt: 'High contrast — Settings', category: 'Themes' },
 
   { src: '/screenshots/api/scalar.png', alt: 'API — Scalar reference UI', category: 'API' },
   { src: '/screenshots/api/scalar-tryit.png', alt: 'API — Scalar Test Request (try it) panel', category: 'API' },
