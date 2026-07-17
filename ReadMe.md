@@ -265,6 +265,24 @@ job - publish and deploy only happen if it passes.
 > site is actually on a different server, add a dedicated secret and update
 > `deploy-web-smarterasp.yml` accordingly.
 
+## Cutting a manual combined release
+
+`.github/workflows/release.yml` is a separate, manual release path: push a tag like `v1.2.3` and it
+builds + zips **both** `VaultGuard.API` and `VaultGuard.Web` (self-contained, `win-x64`), creates a
+`release/v1.2.3` branch off that commit, and publishes a GitHub Release with both zips attached -
+no deploy involved, just a combined build artifact + release.
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+This is separate from the automatic per-deploy releases described above (`api-vX.Y.Z` / `web-vX.Y.Z`,
+created automatically on every successful SmarterASP.NET deploy, no manual tagging needed).
+`build-api.yml`/`build-web.yml` also each build+zip+release their own project individually on a `v*` tag
+push (without a release branch) - all three contribute files to the same GitHub Release for a given tag
+rather than conflicting, but a `v*` tag does trigger three workflow runs.
+
 ---
 
 ## Run in development

@@ -1,0 +1,82 @@
+name: Automated Release
+
+# Manual release path: push a tag like v1.2.3 and this builds + zips both VaultGuard.API and
+# VaultGuard.Web (self-contained, win-x64), creates a release/vX.Y.Z branch off that commit, and
+# publishes a GitHub Release with both zips attached.
+#
+# This is separate from the automatic per-deploy releases in deploy-api-smarterasp.yml /
+# deploy-web-smarterasp.yml (which tag as api-vX.Y.Z / web-vX.Y.Z on every successful SmarterASP.NET
+# deploy, no manual tagging needed) - use this one when you want to cut a single combined release by
+# hand. build-api.yml and build-web.yml also already build+zip+release their own project individually on
+# a v* tag push (without a release branch) - all three contribute files to the same GitHub Release for a
+# given tag rather than conflicting, but this does mean a v* tag triggers three workflow runs.
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  RUNTIME_ID: win-x64
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Release Branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BRANCH_NAME="release/${{ github.ref_name }}"
+          git checkout -b "$BRANCH_NAME"
+          git push origin "$BRANCH_NAME"
+
+      - name: Extract version from tag
+        id: ver
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Publish API (self-contained)
+        run: >
+          dotnet publish VaultGuard.API/VaultGuard.API.csproj --configuration Release
+          --self-contained true -r ${{ env.RUNTIME_ID }}
+          -p:Version=${{ steps.ver.outputs.VERSION }}
+          --output publish/api
+
+      - name: Publish Web (self-contained)
+        run: >
+          dotnet publish VaultGuard.Web/VaultGuard.Web.csproj --configuration Release
+          --self-contained true -r ${{ env.RUNTIME_ID }}
+          -p:Version=${{ steps.ver.outputs.VERSION }}
+          --output publish/web
+
+      - name: Bundle Files
+        run: |
+          (cd publish/api && zip -r "$OLDPWD/VaultGuardAPI-${{ steps.ver.outputs.VERSION }}.zip" .)
+          (cd publish/web && zip -r "$OLDPWD/VaultGuardWeb-${{ steps.ver.outputs.VERSION }}.zip" .)
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            VaultGuardAPI-${{ steps.ver.outputs.VERSION }}.zip
+            VaultGuardWeb-${{ steps.ver.outputs.VERSION }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
