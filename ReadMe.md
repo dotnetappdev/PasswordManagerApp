@@ -228,6 +228,30 @@ SmarterASP.NET control panel's Web Deploy settings:
 > that isn't part of the published API output gets removed on each deploy - point it at a site/folder
 > dedicated to the API, not one shared with other content.
 
+## Deploying the Web app to SmarterASP.NET
+
+`.github/workflows/deploy-web-smarterasp.yml` mirrors the API workflow above for **only**
+`VaultGuard.Web` (the Blazor Server web app) - same action, same self-contained `win-x64` publish, same
+`AspNetCoreHostingModel=OutOfProcess` reasoning (already set in `VaultGuard.Web.csproj`).
+
+**When it runs:** on every pull request into `devmain` that touches Web-relevant code (`VaultGuard.Web`,
+`VaultGuard.Components.Shared`, or the web test project). `VaultGuard.Web.Tests` runs first in the same
+job - publish and deploy only happen if it passes.
+
+**Required GitHub repo secrets:**
+
+| Secret | Value |
+|---|---|
+| `BLAZORUSERNAME` | Web Deploy username |
+| `BLAZORPASSWORD` | Web Deploy password |
+| `BLAZORSITENAME` | Web Deploy site name |
+
+> **No separate server secret:** this workflow reuses `APISERVER` for `server-computer-name` - there's
+> no `BLAZORSERVER` secret, and SmarterASP.NET accounts commonly use one Web Deploy server address for
+> every site/subdomain under the account, with only the site name/credentials differing. If the Blazor
+> site is actually on a different server, add a dedicated secret and update
+> `deploy-web-smarterasp.yml` accordingly.
+
 ---
 
 ## Run in development
