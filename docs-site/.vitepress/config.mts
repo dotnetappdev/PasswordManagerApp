@@ -58,6 +58,7 @@ export default withMermaid(defineConfig({
           text: 'API Reference',
           items: [
             { text: 'Overview & Auth', link: '/api/reference' },
+            { text: 'Try It Live', link: '/api/try-it' },
             { text: 'Password Items', link: '/api/password-items' },
             { text: 'Collections, Categories & Tags', link: '/api/organization' },
             { text: 'Users & Settings', link: '/api/users' },

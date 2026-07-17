@@ -57,6 +57,9 @@ const images = [
 
   { src: '/screenshots/api/scalar.png', alt: 'API — Scalar reference UI', category: 'API' },
   { src: '/screenshots/api/scalar-tryit.png', alt: 'API — Scalar Test Request (try it) panel', category: 'API' },
+  { src: '/screenshots/api/scalar-standalone-response.png', alt: 'API — Scalar live response', category: 'API' },
+  { src: '/screenshots/api/tryit-live-docs.png', alt: 'API — Try It Live, embedded in the docs site', category: 'API' },
+  { src: '/screenshots/api/tryit-live-response.png', alt: 'API — Try It Live, real response', category: 'API' },
 ]
 </script>
 

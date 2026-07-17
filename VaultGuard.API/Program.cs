@@ -344,6 +344,14 @@ VaultGuard.Services.Logging.AppLogger.Initialize(
     app.Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
 
 // Configure the HTTP request pipeline
+// CORS must run before UseSwagger/MapScalarApiReference below - both are effectively terminal
+// middleware for their routes (they write the response directly rather than flowing through the
+// endpoint pipeline), so registering UseCors after them means their responses never carry CORS
+// headers. That silently broke cross-origin fetches of /swagger/v1/swagger.json (e.g. the docs
+// site's embedded "Try It Live" Scalar client) even though preflight OPTIONS requests - handled by
+// the CORS middleware itself regardless of downstream ordering - looked fine.
+app.UseCors("Default");
+
 // UseSwagger still generates the underlying OpenAPI document (/swagger/v1/swagger.json) - Scalar renders
 // the interactive reference UI from it (a dashboard-style layout, rather than Swashbuckle's classic UI).
 app.UseSwagger();
@@ -355,8 +363,6 @@ app.MapScalarApiReference(options =>
 });
 
 app.UseHttpsRedirection();
-
-app.UseCors("Default");
 
 // Enforce the rate limits configured above (must run before endpoint execution).
 app.UseRateLimiter();

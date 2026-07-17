@@ -4,11 +4,53 @@
 use, and it runs the exact `VaultGuard.Services`/`VaultGuard.Crypto` core the in-process WPF and Blazor
 clients use - so behaviour is identical everywhere.
 
-Interactive docs are also served live by the API itself at `/scalar` (Scalar API reference) when it's running.
-
 ## Base URL
 
 Whatever host you run the API on, e.g. `https://localhost:7001` in development.
+
+## Accessing Scalar
+
+`VaultGuard.API` serves a full interactive reference UI ([Scalar](https://scalar.com/)) of its own,
+live, for free - no separate tool or account needed:
+
+```
+{API_BASE_URL}/scalar
+```
+
+e.g. `https://localhost:7001/scalar` in development, or `https://api.yourdomain.com/scalar` once
+deployed. Every endpoint is browsable there, and each one has a **Test Request** button that lets you
+fill in headers/body and call your running API directly from the browser - the same client Stripe/Twilio-style
+docs use, just self-hosted with your instance.
+
+Prefer staying on this docs site? **[Try It Live](/api/try-it)** embeds the same client here - point it
+at your API's URL and it works identically.
+
+> **CORS note:** the Test Request panel calls your API straight from your browser, so it's a real
+> cross-origin request unless you're browsing from the exact same origin as the API. `Cors:AllowedOrigins`
+> (see `appsettings.json`) defaults to `localhost` variants only - add whatever origin you're browsing
+> the docs from (e.g. `https://dotnetappdev.github.io` if using the hosted docs site against a public
+> instance) if requests get blocked.
+
+Below: the standalone `/scalar` page after clicking **Test Request → Send** on `POST /api/ApiKeys/issue` -
+a real request went out and a real response (`401 Unauthorized`, since no `X-API-Key` was set) came back
+in 14ms, shown in the response panel on the right.
+
+<div class="screenshot-grid">
+  <figure><img src="/screenshots/api/scalar.png" alt="Scalar endpoint reference" /><figcaption>Endpoint reference (sidebar + docs)</figcaption></figure>
+  <figure><img src="/screenshots/api/scalar-standalone-response.png" alt="Scalar live response" /><figcaption>Test Request → Send, with a real response</figcaption></figure>
+</div>
+
+<style>
+.screenshot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+.screenshot-grid figure { margin: 0; }
+.screenshot-grid img { width: 100%; border-radius: 8px; border: 1px solid var(--vp-c-divider); }
+.screenshot-grid figcaption { text-align: center; font-size: 0.85em; color: var(--vp-c-text-2); margin-top: 6px; }
+</style>
 
 ## Authentication
 

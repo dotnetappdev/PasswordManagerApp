@@ -122,17 +122,23 @@ switched to it.
 
 </div>
 
-### 🔌 API reference (Scalar)
+### 🔌 API reference (Scalar) - with a live "Try it" button
 
 Interactive, dashboard-style OpenAPI docs with a built-in request client - click any endpoint, hit
 **Test Request**, and call the live API (with auth headers, body editor, and response viewer) straight
 from the browser. No separate tool needed.
 
+- **Self-hosted, live:** run the API and open `{API_BASE_URL}/scalar` (e.g. `https://localhost:7001/scalar`).
+- **From the docs site, without running anything extra:** the
+  [documentation site](https://dotnetappdev.github.io/PasswordManagerApp/api/try-it)'s **Try It Live** page
+  embeds the same client - point it at your running `VaultGuard.API` and it calls it directly from your
+  browser, the same way this README's screenshots below were captured.
+
 <div align="center">
 
-| Endpoint reference | Try it - Test Request panel |
-|:---:|:---:|
-| ![Scalar API reference](screenshots/api/scalar.png) | ![Scalar Test Request](screenshots/api/scalar-tryit.png) |
+| Endpoint reference | Try it - Test Request panel | Real response |
+|:---:|:---:|:---:|
+| ![Scalar API reference](screenshots/api/scalar.png) | ![Scalar Test Request](screenshots/api/scalar-tryit.png) | ![Scalar live response](screenshots/api/scalar-standalone-response.png) |
 
 </div>
 
