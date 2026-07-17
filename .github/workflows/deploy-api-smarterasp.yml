@@ -1,0 +1,92 @@
+name: Deploy API to SmarterASP.NET
+
+# Deploys ONLY VaultGuard.API (the Web API project) to SmarterASP.NET via Web Deploy, and only when:
+#   1. A PR is opened/updated against devmain touching API-relevant code, AND
+#   2. VaultGuard.BackEnd.Tests (the unit tests that cover VaultGuard.API) pass.
+# The test step runs before publish/deploy in the same job, so a test failure stops the job there -
+# publish and deploy never run.
+on:
+  pull_request:
+    branches: [ devmain ]
+    paths:
+      - 'VaultGuard.API/**'
+      - 'VaultGuard.Models/**'
+      - 'VaultGuard.DAL/**'
+      - 'VaultGuard.Services/**'
+      - 'VaultGuard.Crypto/**'
+      - 'VaultGuard.DAL.SqlServer/**'
+      - 'VaultGuard.DAL.MySql/**'
+      - 'VaultGuard.DAL.Postgres/**'
+      - 'VaultGuard.DAL.SupaBase/**'
+      - 'VaultGuard.BackEnd.Tests/**'
+      - '.github/workflows/deploy-api-smarterasp.yml'
+  workflow_dispatch: {}
+
+env:
+  PROJECT: VaultGuard.API/VaultGuard.API.csproj
+  TEST_PROJECT: VaultGuard.BackEnd.Tests/VaultGuard.BackEnd.Tests.csproj
+  PUBLISH_DIR: publish\api
+  DOTNET_VERSION: '10.0.x'
+  # SmarterASP.NET's IIS hosts are Windows x64 - self-contained means the .NET 10 runtime ships inside
+  # the publish output, so the server doesn't need a matching runtime installed. If your plan runs a
+  # 32-bit app pool, change this to win-x86.
+  RUNTIME_ID: win-x64
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-deploy:
+    # The SmarterASP.NET-web-deploy action shells out to msdeploy.exe at a hardcoded Windows path
+    # (C:\Program Files (x86)\IIS\Microsoft Web Deploy V3\msdeploy.exe) - it only runs on Windows, so
+    # the whole job (including the test gate) runs here rather than splitting across OSes.
+    runs-on: windows-latest
+    name: Test & Deploy VaultGuard.API
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore backend tests
+        run: dotnet restore ${{ env.TEST_PROJECT }}
+
+      - name: Build backend tests
+        run: dotnet build ${{ env.TEST_PROJECT }} --no-restore --configuration Release
+
+      # Gate: everything below only runs if this succeeds.
+      - name: Run backend unit tests
+        run: dotnet test ${{ env.TEST_PROJECT }} --no-build --configuration Release --logger "trx;LogFileName=backend-tests.trx"
+
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Backend Unit Test Results
+          path: '**/backend-tests.trx'
+          reporter: dotnet-trx
+          fail-on-error: true
+
+      - name: Restore API
+        run: dotnet restore ${{ env.PROJECT }} -r ${{ env.RUNTIME_ID }}
+
+      - name: Publish API (self-contained)
+        run: >
+          dotnet publish ${{ env.PROJECT }} --configuration Release --no-restore
+          --self-contained true -r ${{ env.RUNTIME_ID }}
+          --output ${{ env.PUBLISH_DIR }}
+
+      # See ReadMe.md "Deploying the API to SmarterASP.NET" for where these come from in the
+      # SmarterASP.NET control panel's Web Deploy settings.
+      - name: Deploy to SmarterASP.NET
+        uses: jahbenjah/SmarterASP.NET-web-deploy@1.0.0.alpha.8
+        with:
+          website-name: ${{ secrets.APISiteName }}
+          server-computer-name: ${{ secrets.APISERVER }}
+          server-username: ${{ secrets.APIUSER }}
+          server-password: ${{ secrets.APIPASSWORD }}
+          source-path: '${{ env.PUBLISH_DIR }}\'
+          target-delete: 'true'
