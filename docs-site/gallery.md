@@ -39,6 +39,7 @@ const images = [
   { src: '/screenshots/blazor/dark/dialog-add-item.png', alt: 'Add item — dynamic form + generator', category: 'Actions' },
   { src: '/screenshots/blazor/dark/dialog-new-vault.png', alt: 'Create a new vault', category: 'Actions' },
   { src: '/screenshots/blazor/dark/dialog-new-collection.png', alt: 'Create a new collection', category: 'Actions' },
+  { src: '/screenshots/blazor/dark/dialog-api-key-generated.png', alt: 'API key created — one-time reveal dialog', category: 'Actions' },
 
   { src: '/screenshots/password-form.png', alt: 'Login / Password form', category: 'Item Forms' },
   { src: '/screenshots/credit-card-form.png', alt: 'Credit card form', category: 'Item Forms' },
@@ -47,9 +48,18 @@ const images = [
   { src: '/screenshots/api-credentials-form.png', alt: 'API credentials form', category: 'Item Forms' },
 
   { src: '/screenshots/blazor/light/dashboard.png', alt: 'Light theme — Dashboard', category: 'Themes' },
+  { src: '/screenshots/blazor/light/all-items.png', alt: 'Light theme — All items', category: 'Themes' },
+  { src: '/screenshots/blazor/light/vaults.png', alt: 'Light theme — Vaults', category: 'Themes' },
+  { src: '/screenshots/blazor/light/collections.png', alt: 'Light theme — Collections', category: 'Themes' },
+  { src: '/screenshots/blazor/light/security.png', alt: 'Light theme — Security Center', category: 'Themes' },
+  { src: '/screenshots/blazor/light/settings.png', alt: 'Light theme — Settings', category: 'Themes' },
   { src: '/screenshots/blazor/dark/high-contrast.png', alt: 'High contrast theme', category: 'Themes' },
 
   { src: '/screenshots/api/scalar.png', alt: 'API — Scalar reference UI', category: 'API' },
+  { src: '/screenshots/api/scalar-tryit.png', alt: 'API — Scalar Test Request (try it) panel', category: 'API' },
+  { src: '/screenshots/api/scalar-standalone-response.png', alt: 'API — Scalar live response', category: 'API' },
+  { src: '/screenshots/api/tryit-live-docs.png', alt: 'API — Try It Live, embedded in the docs site', category: 'API' },
+  { src: '/screenshots/api/tryit-live-response.png', alt: 'API — Try It Live, real response', category: 'API' },
 ]
 </script>
 

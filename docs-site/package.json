@@ -11,6 +11,7 @@
     "preview": "vitepress preview ."
   },
   "devDependencies": {
+    "@scalar/api-reference": "^1.62.9",
     "mermaid": "^11.16.0",
     "vitepress": "^1.6.4",
     "vitepress-plugin-mermaid": "^2.0.17"

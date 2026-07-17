@@ -75,8 +75,8 @@ For the full interactive tour - setup wizard, every settings tab, API reference 
 | ![Archive](screenshots/blazor/dark/archive.png) | ![Recently Deleted](screenshots/blazor/dark/recently-deleted.png) | ![Audit logs](screenshots/blazor/dark/audit-logs.png) |
 | **Security Center** | **Passkeys** | **API Keys** |
 | ![Security](screenshots/blazor/dark/security.png) | ![Passkeys](screenshots/blazor/dark/passkeys.png) | ![API Keys](screenshots/blazor/dark/api-keys.png) |
-| **Profile** | **Import** | |
-| ![Profile](screenshots/blazor/dark/profile.png) | ![Import](screenshots/blazor/dark/import.png) | |
+| **Profile** | **Import** | **API Key Created** |
+| ![Profile](screenshots/blazor/dark/profile.png) | ![Import](screenshots/blazor/dark/import.png) | ![API key generated](screenshots/blazor/dark/dialog-api-key-generated.png) |
 
 #### Getting set up
 
@@ -96,28 +96,57 @@ Settings is one deep-linkable page (`/settings?tab=<name>`) covering everything 
 | **Shortcuts** | **Maintenance** | **About** | |
 | ![Shortcuts](screenshots/blazor/dark/settings-shortcuts.png) | ![Maintenance](screenshots/blazor/dark/settings-maintenance.png) | ![About](screenshots/blazor/dark/settings-about.png) | |
 
-#### Themes
-
-| Dark (default) | Light | High Contrast |
-|:---:|:---:|:---:|
-| ![Dark theme](screenshots/blazor/dark/dashboard.png) | ![Light theme](screenshots/blazor/light/dashboard.png) | ![High contrast](screenshots/blazor/dark/high-contrast.png) |
-
 ---
 
 ### 🌐 Web - Blazor (light theme)
 
-| Dashboard | All items | Settings |
+| Dashboard | All Items | Vaults |
 |:---:|:---:|:---:|
-| ![Dashboard light](screenshots/blazor/light/dashboard.png) | ![All items light](screenshots/blazor/light/all-items.png) | ![Settings light](screenshots/blazor/light/settings.png) |
-| **Vaults** | **Collections** | **High Contrast** |
-| ![Vaults light](screenshots/blazor/light/vaults.png) | ![Collections light](screenshots/blazor/light/collections.png) | ![High contrast light](screenshots/blazor/light/high-contrast.png) |
+| ![Dashboard light](screenshots/blazor/light/dashboard.png) | ![All items light](screenshots/blazor/light/all-items.png) | ![Vaults light](screenshots/blazor/light/vaults.png) |
+| **Collections** | **Categories** | **Tags** |
+| ![Collections light](screenshots/blazor/light/collections.png) | ![Categories light](screenshots/blazor/light/categories.png) | ![Tags light](screenshots/blazor/light/tags.png) |
+| **Security Center** | **Passkeys** | **API Keys** |
+| ![Security light](screenshots/blazor/light/security.png) | ![Passkeys light](screenshots/blazor/light/passkeys.png) | ![API Keys light](screenshots/blazor/light/api-keys.png) |
+| **Profile** | **Import** | **Settings** |
+| ![Profile light](screenshots/blazor/light/profile.png) | ![Import light](screenshots/blazor/light/import.png) | ![Settings light](screenshots/blazor/light/settings.png) |
+
+#### Themes side by side
+
+| Dark Mode | Light Mode | High Contrast |
+|:---:|:---:|:---:|
+| ![Dark theme](screenshots/blazor/dark/dashboard.png) | ![Light theme](screenshots/blazor/light/dashboard.png) | ![High contrast](screenshots/blazor/dark/high-contrast.png) |
+
+High Contrast is a dedicated fourth Theme option (Settings → Appearance), not an overlay on light/dark -
+it always renders the same yellow-on-black palette regardless of which theme was active before you
+switched to it.
+
+</div>
+
+### 🔌 API reference (Scalar) - with a live "Try it" button
+
+Interactive, dashboard-style OpenAPI docs with a built-in request client - click any endpoint, hit
+**Test Request**, and call the live API (with auth headers, body editor, and response viewer) straight
+from the browser. No separate tool needed.
+
+- **Self-hosted, live:** run the API and open `{API_BASE_URL}/scalar` (e.g. `https://localhost:7001/scalar`).
+- **From the docs site, without running anything extra:** the
+  [documentation site](https://dotnetappdev.github.io/PasswordManagerApp/api/try-it)'s **Try It Live** page
+  embeds the same client - point it at your running `VaultGuard.API` and it calls it directly from your
+  browser, the same way this README's screenshots below were captured.
+
+<div align="center">
+
+| Endpoint reference | Try it - Test Request panel | Real response |
+|:---:|:---:|:---:|
+| ![Scalar API reference](screenshots/api/scalar.png) | ![Scalar Test Request](screenshots/api/scalar-tryit.png) | ![Scalar live response](screenshots/api/scalar-standalone-response.png) |
 
 </div>
 
 > **Desktop (WPF) and Mobile (Android/iOS) screenshots aren't available yet** - this build environment
-> can't run a Windows desktop session or an Android/iOS emulator to capture them. Once someone takes real
-> ones and drops them into `screenshots/wpf/{dark,light}/` and `screenshots/mobile/{android,ios}/{dark,light}/`,
-> they'll show up in the [documentation site](https://dotnetappdev.github.io/PasswordManagerApp/) automatically.
+> has no Windows desktop session, and no Android/iOS emulator (no `/dev/kvm`, no Android SDK) to capture
+> them. Once someone takes real ones and drops them into `screenshots/wpf/{dark,light}/` and
+> `screenshots/mobile/{android,ios}/{dark,light}/`, they'll show up in the
+> [documentation site](https://dotnetappdev.github.io/PasswordManagerApp/) automatically.
 
 More captures - including item forms and per-platform galleries - live in [`screenshots/`](screenshots/README.md).
 

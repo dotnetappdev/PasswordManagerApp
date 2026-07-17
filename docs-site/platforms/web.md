@@ -57,6 +57,7 @@ See the [Getting Started guide](/guide/getting-started) for the full self-hostin
   <figure><img src="/screenshots/blazor/dark/dialog-add-item.png" alt="Add item dialog" /><figcaption>Add Item (with the inline generator open)</figcaption></figure>
   <figure><img src="/screenshots/blazor/dark/dialog-new-vault.png" alt="New vault dialog" /><figcaption>New Vault</figcaption></figure>
   <figure><img src="/screenshots/blazor/dark/dialog-new-collection.png" alt="New collection dialog" /><figcaption>New Collection</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/dialog-api-key-generated.png" alt="API key generated dialog" /><figcaption>API Key Created (one-time reveal)</figcaption></figure>
 </div>
 
 ## Item forms
@@ -99,9 +100,30 @@ encryption and two-factor auth to notification channels and update checks lives 
 
 ## Light theme & high contrast
 
+Theme lives in Settings → Appearance as one Theme control with four options - Dark Mode, Light Mode,
+High Contrast and System Default - so switching is a single choice, not a light/dark toggle plus a
+separate accessibility switch. High Contrast always renders the same yellow-on-black palette, regardless
+of which of the other three was active beforehand.
+
 <div class="screenshot-grid">
-  <figure><img src="/screenshots/blazor/light/dashboard.png" alt="Light dashboard" /><figcaption>Light theme</figcaption></figure>
-  <figure><img src="/screenshots/blazor/dark/high-contrast.png" alt="High contrast" /><figcaption>High contrast</figcaption></figure>
+  <figure><img src="/screenshots/blazor/light/dashboard.png" alt="Light dashboard" /><figcaption>Light theme — Dashboard</figcaption></figure>
+  <figure><img src="/screenshots/blazor/light/all-items.png" alt="Light all items" /><figcaption>Light theme — All Items</figcaption></figure>
+  <figure><img src="/screenshots/blazor/light/vaults.png" alt="Light vaults" /><figcaption>Light theme — Vaults</figcaption></figure>
+  <figure><img src="/screenshots/blazor/light/collections.png" alt="Light collections" /><figcaption>Light theme — Collections</figcaption></figure>
+  <figure><img src="/screenshots/blazor/light/security.png" alt="Light security center" /><figcaption>Light theme — Security Center</figcaption></figure>
+  <figure><img src="/screenshots/blazor/light/settings.png" alt="Light settings" /><figcaption>Light theme — Settings</figcaption></figure>
+  <figure><img src="/screenshots/blazor/dark/high-contrast.png" alt="High contrast" /><figcaption>High Contrast</figcaption></figure>
+</div>
+
+## API reference (Scalar)
+
+The API's OpenAPI docs are served by [Scalar](https://scalar.com/) - a dashboard-style reference UI with
+a built-in interactive request client. Click any endpoint, hit **Test Request**, and the panel lets you
+fill in headers/body and call the live API directly from the browser - no Postman/curl needed.
+
+<div class="screenshot-grid">
+  <figure><img src="/screenshots/api/scalar.png" alt="Scalar API reference" /><figcaption>Endpoint reference</figcaption></figure>
+  <figure><img src="/screenshots/api/scalar-tryit.png" alt="Scalar Test Request panel" /><figcaption>Try it — Test Request panel</figcaption></figure>
 </div>
 
 <style>
