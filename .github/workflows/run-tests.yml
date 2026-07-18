@@ -110,9 +110,14 @@ jobs:
     # allure-report as a submodule gitlink instead of plain files, which has no .gitmodules entry and
     # breaks GitHub's own Pages build (fails checkout with "No url found for submodule path
     # 'allure-report'") - so the live site stops updating even though every workflow here reports success.
+    #
+    # sudo is required: allure-report-action runs inside a Docker container, so the files it writes into
+    # allure-history/.git are root-owned - a plain `rm -rf` as the runner's non-root user fails with
+    # "Permission denied" on every file, which fails this step (and so the whole job) even though every
+    # actual test passed.
     - name: Strip nested git metadata from Allure history
       if: always()
-      run: rm -rf allure-history/.git
+      run: sudo rm -rf allure-history/.git
 
     # destination_dir + keep_files so this coexists with the docs site (build-docs.yml), which also
     # publishes to gh-pages but at the branch root - without keep_files, each publish wipes the branch
