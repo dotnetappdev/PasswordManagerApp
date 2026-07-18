@@ -9,7 +9,7 @@ This guide provides an overview of all deployment options for the Vault Guard ap
 | **Docker** | Production servers, Cloud deployment | Low | [Docker Setup Guide](README.md) |
 | **Windows Installer** | Enterprise deployment, End users | Low | [Installer Guide](../installers/README.md) |
 | **MSIX Package** | Microsoft Store, Modern Windows | Medium | [MSIX Guide](../installers/MSIX_PACKAGING_GUIDE.md) |
-| **Manual Setup** | Development, Custom configuration | High | [Setup Guide](../SETUP.md) |
+| **Manual Setup** | Development, Custom configuration | High | [Setup Guide](../docs/SETUP.md) |
 
 ## 🐳 Docker Deployment (Recommended for Production)
 
@@ -187,7 +187,7 @@ dotnet run
 - Contributing
 - Testing
 
-**Full Documentation:** [SETUP.md](../SETUP.md)
+**Full Documentation:** [SETUP.md](../docs/SETUP.md)
 
 ---
 
@@ -347,9 +347,9 @@ server {
 
 ### Documentation
 - [Main README](../README.md)
-- [Setup Guide](../SETUP.md)
-- [Getting Started](../GETTING_STARTED.md)
-- [Development Guide](../DEVELOPMENT.md)
+- [Setup Guide](../docs/SETUP.md)
+- [Getting Started](../docs/GETTING_STARTED.md)
+- [Development Guide](../docs/DEVELOPMENT.md)
 
 ### Component-Specific
 - [Web API Documentation](../VaultGuard.API/README.md)
@@ -382,7 +382,7 @@ When creating an issue, include:
 
 ### Contributing
 
-See [DEVELOPMENT.md](../DEVELOPMENT.md) for contribution guidelines.
+See [DEVELOPMENT.md](../docs/DEVELOPMENT.md) for contribution guidelines.
 
 ---
 

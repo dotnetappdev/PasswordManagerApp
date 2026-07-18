@@ -234,5 +234,5 @@ When adding new tests:
 
 - [WinUI Project README](../VaultGuard.WinUi/README.md)
 - [Main Project README](../README.md)
-- [Development Guide](../DEVELOPMENT.md)
+- [Development Guide](../docs/DEVELOPMENT.md)
 - [Microsoft Playwright Documentation](https://playwright.dev/dotnet/)

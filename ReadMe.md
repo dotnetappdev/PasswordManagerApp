@@ -195,6 +195,9 @@ to the GitHub release. To build them locally, see [`installers/README.md`](insta
 
 ---
 
+> **Releasing?** See [`docs/RELEASING.md`](docs/RELEASING.md) for the full picture - the automatic
+> per-deploy releases below, the manual combined-tag release, and how to roll back to a previous one.
+
 ## Deploying the API to SmarterASP.NET
 
 `.github/workflows/deploy-api-smarterasp.yml` deploys **only** `VaultGuard.API` to a
@@ -475,14 +478,14 @@ verification and re-encryption-on-password-change as the server-backed builds.
 - **Secrets management.** The API can source its secrets - database credentials, JWT signing key, Sentry DSN,
   SMS/Supabase keys - from [**Google Cloud Secret Manager**](https://cloud.google.com/secret-manager) (the
   `vaultguard-dev` / `vaultguard-prod` projects) instead of config files, so nothing sensitive is committed.
-  Disabled by default; see [`CONFIGURATION_GUIDE.md`](CONFIGURATION_GUIDE.md#secrets-management-google-secret-manager).
+  Disabled by default; see [`CONFIGURATION_GUIDE.md`](docs/CONFIGURATION_GUIDE.md#secrets-management-google-secret-manager).
 
 ### Reporting a vulnerability
 
 Please report suspected security issues privately via a GitHub security advisory rather than a public issue.
 
 More detail: [`docs/SECURITY.md`](docs/SECURITY.md) (encryption, master-password security &
-security overview) and [`SECURITY_REMEDIATION_PRD.md`](SECURITY_REMEDIATION_PRD.md). The PBKDF2
+security overview) and [`SECURITY_REMEDIATION_PRD.md`](docs/SECURITY_REMEDIATION_PRD.md). The PBKDF2
 600k-iteration upgrade is noted in [`docs/HISTORY.md`](docs/HISTORY.md).
 
 ---
@@ -493,10 +496,11 @@ Start here, then dive into a topic:
 
 | Guide | What's in it |
 | --- | --- |
-| [`GETTING_STARTED.md`](GETTING_STARTED.md) · [`SETUP.md`](SETUP.md) · [`CONFIGURATION_GUIDE.md`](CONFIGURATION_GUIDE.md) | Install, first run, configuration |
-| [`USER_GUIDE.md`](USER_GUIDE.md) | End-user feature walkthrough |
-| [`DEVELOPMENT.md`](DEVELOPMENT.md) · [`TECHNOLOGY_STACK.md`](TECHNOLOGY_STACK.md) | Building, architecture, tech stack |
-| [`docs/SECURITY.md`](docs/SECURITY.md) · [`SECURITY_REMEDIATION_PRD.md`](SECURITY_REMEDIATION_PRD.md) | Encryption, master-password security, remediation |
+| [`GETTING_STARTED.md`](docs/GETTING_STARTED.md) · [`SETUP.md`](docs/SETUP.md) · [`CONFIGURATION_GUIDE.md`](docs/CONFIGURATION_GUIDE.md) | Install, first run, configuration |
+| [`USER_GUIDE.md`](docs/USER_GUIDE.md) | End-user feature walkthrough |
+| [`DEVELOPMENT.md`](docs/DEVELOPMENT.md) · [`TECHNOLOGY_STACK.md`](docs/TECHNOLOGY_STACK.md) | Building, architecture, tech stack |
+| [`docs/RELEASING.md`](docs/RELEASING.md) | Cutting releases: automated SmarterASP.NET deploys and the manual tag-based release |
+| [`docs/SECURITY.md`](docs/SECURITY.md) · [`SECURITY_REMEDIATION_PRD.md`](docs/SECURITY_REMEDIATION_PRD.md) | Encryption, master-password security, remediation |
 | [`docs/AUTHENTICATION.md`](docs/AUTHENTICATION.md) | Master-key login, 2FA, passkeys, OTP, biometrics, passcode, QR sign-in, device management, profiles |
 | [`docs/PASSKEYS.md`](docs/PASSKEYS.md) | Website passkeys (extension) and device passkeys (sign-in), RP setup, mobile association files |
 | [`docs/DATABASE.md`](docs/DATABASE.md) | Providers, EF Identity setup, MySQL, migrations |
@@ -511,7 +515,7 @@ Per-platform details live in each project's own `README.md` (e.g. `VaultGuard.WP
 
 ## Contributing
 
-[`DEVELOPMENT.md`](DEVELOPMENT.md) covers build commands, the migration workflow and how to add an import
+[`DEVELOPMENT.md`](docs/DEVELOPMENT.md) covers build commands, the migration workflow and how to add an import
 plugin. Pull requests are welcome - keep changes focused, add tests where it makes sense, and run
 `dotnet test` before opening one.
 

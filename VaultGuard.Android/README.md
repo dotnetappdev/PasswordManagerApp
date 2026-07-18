@@ -78,5 +78,5 @@ You can change these later in **Settings → Storage → API Configuration**.
 ## Notes / follow‑ups
 
 - Push notifications from the API require Firebase Cloud Messaging config (`google-services.json`) — see
-  the API `PushController` and `MOBILE_PUSH.md`.
+  the API `PushController` and `docs/MOBILE_PUSH.md`.
 - Cloud backup and file‑based import are performed on the desktop/web apps and sync down.

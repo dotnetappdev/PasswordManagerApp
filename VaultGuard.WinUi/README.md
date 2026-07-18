@@ -2,7 +2,7 @@
 
 This is a comprehensive WinUI 3 desktop application that provides the same functionality as the existing Blazor MAUI app using a native Windows interface.
 
-[View Interface Screenshots](../screenshots.md) - See the WinUI application in action with detailed interface screenshots.
+[View Interface Screenshots](../docs/screenshots.md) - See the WinUI application in action with detailed interface screenshots.
 
 ## Master Key Authentication
 
@@ -243,7 +243,7 @@ The WinUI application supports both packaged (MSIX) and unpackaged execution mod
 
 ## Interface Screenshots
 
-For a visual tour of the WinUI application interface, including screenshots of all major screens and features, see the [WinUI Screenshots Documentation](../screenshots.md).
+For a visual tour of the WinUI application interface, including screenshots of all major screens and features, see the [WinUI Screenshots Documentation](../docs/screenshots.md).
 
 The screenshots showcase:
 - Modern Windows 11 interface design

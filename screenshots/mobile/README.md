@@ -39,7 +39,7 @@ mobile/
 
 ## Capturing Screenshots
 
-For detailed instructions on capturing screenshots, see [MOBILE_SCREENSHOTS.md](../../MOBILE_SCREENSHOTS.md).
+For detailed instructions on capturing screenshots, see [MOBILE_SCREENSHOTS.md](../../docs/MOBILE_SCREENSHOTS.md).
 
 ### Quick Guide
 
@@ -105,7 +105,7 @@ The mobile app features a 1Password-inspired design with:
 2. App is built and running on target platform
 3. Sample data is loaded for demonstration
 
-To capture screenshots, follow the comprehensive guide in [MOBILE_SCREENSHOTS.md](../../MOBILE_SCREENSHOTS.md).
+To capture screenshots, follow the comprehensive guide in [MOBILE_SCREENSHOTS.md](../../docs/MOBILE_SCREENSHOTS.md).
 
 ## Notes
 

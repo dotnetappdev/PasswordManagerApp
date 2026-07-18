@@ -501,7 +501,7 @@ docker-compose up -d --scale api=3
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
 - [SQL Server on Docker](https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-docker-container-deployment)
 - [ASP.NET Core on Docker](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/docker/)
-- [Main Setup Guide](../SETUP.md)
+- [Main Setup Guide](../docs/SETUP.md)
 
 ## 🆘 Support
 

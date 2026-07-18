@@ -168,8 +168,8 @@ Or via **Settings → Apps → VaultGuard → Uninstall**.
 ## Additional Resources
 
 - [Main README](../README.md)
-- [Setup Guide](../SETUP.md)
-- [Getting Started](../GETTING_STARTED.md)
+- [Setup Guide](../docs/SETUP.md)
+- [Getting Started](../docs/GETTING_STARTED.md)
 - [GitHub Releases](https://github.com/dotnetappdev/VaultGuardApp/releases)
 - [Inno Setup Documentation](https://jrsoftware.org/ishelp/)
 - [WiX v4 Documentation](https://wixtoolset.org/docs/)
