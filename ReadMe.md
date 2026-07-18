@@ -17,9 +17,13 @@
 [![Encryption](https://img.shields.io/badge/encryption-AES--256--GCM-2ea44f)](#security)
 [![License](https://img.shields.io/github/license/dotnetappdev/PasswordManagerApp)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-dotnetappdev.github.io-blue?logo=readthedocs&logoColor=white)](https://dotnetappdev.github.io/PasswordManagerApp/)
+[![Allure Report](https://img.shields.io/badge/tests-Allure%20dashboard-orange?logo=testcafe&logoColor=white)](https://dotnetappdev.github.io/PasswordManagerApp/allure-report/)
 
 **📖 [Live documentation site](https://dotnetappdev.github.io/PasswordManagerApp/)** - full screenshot
 gallery, setup guides, architecture, security model and a live API "Try It" client.
+
+**✅ [Live test dashboard](https://dotnetappdev.github.io/PasswordManagerApp/allure-report/)** - see which
+unit/integration tests are currently passing or failing, updated on every push to `devmain`.
 
 </div>
 
