@@ -114,7 +114,8 @@ jobs:
     # sudo is required: allure-report-action runs inside a Docker container, so the files it writes into
     # allure-history/.git are root-owned - a plain `rm -rf` as the runner's non-root user fails with
     # "Permission denied" on every file, which fails this step (and so the whole job) even though every
-    # actual test passed.
+    # actual test passed. (A run before this fix landed left allure-report as a stale gitlink on
+    # gh-pages, which was cleaned up manually so this step's fix could take effect.)
     - name: Strip nested git metadata from Allure history
       if: always()
       run: sudo rm -rf allure-history/.git
