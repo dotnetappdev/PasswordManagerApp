@@ -49,13 +49,13 @@ jobs:
       # Explicit ref + full history: pull_request's default checkout is a synthetic merge commit that
       # doesn't exist in the branch's real history (bad tag target), and version-bumping below needs the
       # full tag history, not the default shallow clone.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -85,7 +85,7 @@ jobs:
         run: dotnet test ${{ env.TEST_PROJECT }} --no-build --configuration Release --logger "trx;LogFileName=web-tests.trx"
 
       - name: Publish Test Results
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: always()
         with:
           name: Web Unit Test Results
@@ -139,7 +139,7 @@ jobs:
         run: Compress-Archive -Path "${{ env.PUBLISH_DIR }}\*" -DestinationPath "VaultGuardWeb-${{ steps.ver.outputs.VERSION }}.zip"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: web-v${{ steps.ver.outputs.VERSION }}
           name: VaultGuard Web v${{ steps.ver.outputs.VERSION }}
