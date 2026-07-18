@@ -105,6 +105,15 @@ jobs:
         keep_reports: 20
         gh_pages: gh-pages
 
+    # allure-report-action populates allure-history from the "gh-pages" checkout above (path: gh-pages),
+    # which brings that checkout's .git along with it. Left in place, peaceiris/actions-gh-pages records
+    # allure-report as a submodule gitlink instead of plain files, which has no .gitmodules entry and
+    # breaks GitHub's own Pages build (fails checkout with "No url found for submodule path
+    # 'allure-report'") - so the live site stops updating even though every workflow here reports success.
+    - name: Strip nested git metadata from Allure history
+      if: always()
+      run: rm -rf allure-history/.git
+
     # destination_dir + keep_files so this coexists with the docs site (build-docs.yml), which also
     # publishes to gh-pages but at the branch root - without keep_files, each publish wipes the branch
     # and the two workflows would clobber each other.
