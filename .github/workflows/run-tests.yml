@@ -25,15 +25,15 @@ jobs:
     name: Run Unit Tests
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Setup .NET 9.0
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: '9.0.x'
 
     - name: Setup .NET 10.0
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: '10.0.x'
 
@@ -71,7 +71,7 @@ jobs:
         fi
 
     - name: Publish Test Results
-      uses: dorny/test-reporter@v1
+      uses: dorny/test-reporter@v3
       if: always()
       with:
         name: Unit Test Results
@@ -87,7 +87,7 @@ jobs:
         echo "Collected $(find allure-results -type f | wc -l) Allure result files"
 
     - name: Get Allure history
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       if: always()
       continue-on-error: true
       with:
@@ -105,11 +105,20 @@ jobs:
         keep_reports: 20
         gh_pages: gh-pages
 
+    # allure-report-action populates allure-history from the "gh-pages" checkout above (path: gh-pages),
+    # which brings that checkout's .git along with it. Left in place, peaceiris/actions-gh-pages records
+    # allure-report as a submodule gitlink instead of plain files, which has no .gitmodules entry and
+    # breaks GitHub's own Pages build (fails checkout with "No url found for submodule path
+    # 'allure-report'") - so the live site stops updating even though every workflow here reports success.
+    - name: Strip nested git metadata from Allure history
+      if: always()
+      run: rm -rf allure-history/.git
+
     # destination_dir + keep_files so this coexists with the docs site (build-docs.yml), which also
     # publishes to gh-pages but at the branch root - without keep_files, each publish wipes the branch
     # and the two workflows would clobber each other.
     - name: Publish Allure report to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
+      uses: peaceiris/actions-gh-pages@v4
       if: always() && github.event_name == 'push'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -119,7 +128,7 @@ jobs:
         keep_files: true
 
     - name: Upload Allure report artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: allure-report
