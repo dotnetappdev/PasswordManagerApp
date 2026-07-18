@@ -56,6 +56,13 @@ deep-linkable `Settings?tab=Name` tabs) and the passkeys page.
 
 [Allure](https://allurereport.org/) turns test results into an interactive HTML dashboard.
 
+**Live CI dashboard:** [dotnetappdev.github.io/PasswordManagerApp/allure-report/](https://dotnetappdev.github.io/PasswordManagerApp/allure-report/)
+- republished by `.github/workflows/run-tests.yml` on every push to `devmain`/`main`/`develop`, with
+history across the last 20 runs so you can see trends, not just the latest pass/fail. The same link is
+also printed at the bottom of every run's summary page in the Actions tab. Pull request runs don't
+publish here (see `keep_files` note below) - their results are attached as the run's `allure-report`
+artifact instead, downloadable from that run's summary page.
+
 - **Instrumentation:** NUnit fixtures in `VaultGuard.BackEnd.Tests` carry `[AllureNUnit]` (via `Allure.NUnit`),
   and an `allureConfig.json` sends per-test JSON to each project's `allure-results` output folder.
 - **Prerequisites for generating the HTML:** the Allure CLI, or Node (`npx`) + a JRE. Java is used by the

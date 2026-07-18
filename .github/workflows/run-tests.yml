@@ -134,3 +134,20 @@ jobs:
         name: allure-report
         path: allure-history
         retention-days: 20
+
+    # Surfaces the Allure dashboard right on the run's summary page so pass/fail results are one click
+    # away instead of buried in raw dotnet test logs - shown even when tests failed (if: always()).
+    - name: Add Allure report link to job summary
+      if: always()
+      run: |
+        {
+          echo "## Allure test dashboard"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo ""
+            echo "📊 [View the live dashboard](https://dotnetappdev.github.io/PasswordManagerApp/allure-report/index.html) - updated with this run's results."
+          else
+            echo ""
+            echo "📊 This run's results are attached above as the **allure-report** artifact - download it and open \`index.html\`."
+            echo "Once merged, results publish to the [live dashboard](https://dotnetappdev.github.io/PasswordManagerApp/allure-report/index.html)."
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
