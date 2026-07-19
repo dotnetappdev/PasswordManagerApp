@@ -113,8 +113,16 @@ the 8 most-recently-modified items) for `"Chase Bank"` and a `"Search your vault
 never existed in the Blazor app at all (the real placeholder, on `/passwords`, is `"Search items..."`) -
 rewritten to check `/passwords`, which lists every seeded item unconditionally and has the real search box.
 
-**Known issue - ~9 tests in `VaultCrudTests`/`UserManagementCrudTests` intermittently fail (CI usually
-lands 50-51/60):** every one of these lands on `Page.Url=/login` at the point of failure -
+**UPDATE - the stdout-pipe-drain fix below took CI from 50-51/60 to 59/60 in one shot.** The section
+right after this one was the original ~9-failure investigation, kept for history; the pipe-blocking
+theory it eventually led to turned out to be the dominant cause. The one remaining failure after that
+fix was a different, narrower issue (see further down: the first test to run against a brand-new empty
+database pays real cold-start costs no returning-user test pays) - also addressed, not yet re-confirmed
+in CI as of this note.
+
+**Known issue (historical - see UPDATE above) - ~9 tests in `VaultCrudTests`/`UserManagementCrudTests`
+intermittently fail (CI usually lands 50-51/60):** every one of these lands on `Page.Url=/login` at the
+point of failure -
 `BlazorWebTestBase.SignInAsync()` genuinely fails to authenticate, it's not a locator, timing, or
 render issue (confirmed via `ExpectVisibleWithDiagnosticsAsync`, which logs the page URL/title/body
 snippet on failure - use it instead of a bare `Expect(...)` if you're debugging this further). Two
@@ -154,6 +162,27 @@ pipe permanently drained into a bounded in-memory tail (`BlazorWebTestBase.GetAp
 now also logged by `ExpectVisibleWithDiagnosticsAsync` and `SignInAsync`'s bounce-back warning - so even
 if this isn't the *whole* story, the next CI failure will show the app's own console state (exceptions,
 slow queries, whatever it was doing) at the moment of failure, not just the browser-side symptom.
+
+**Confirmed in CI:** the pipe-drain fix above took the Blazor UI Tests job from 50-51/60 to **59/60** in
+the very next run - only `ApplicationWorkflowTests.Dashboard_LoadsSuccessfully` (the first test in the
+whole run) still failed. Its captured `GetAppLogTail()` showed something genuinely different from the
+9-failure cluster: it was the *first-ever* request against a brand-new empty database, so unlike a
+returning-user login it has to pay for JIT warm-up, EF Core model building, and the intentionally-slow
+master-key KDF running **twice** (once via `SetupMasterPasswordAsync` to create the account, once via
+`AuthenticateAsync`/`LoginAsync` to actually log back in) - all inside `SignInAsync`'s own budget. Two
+changes address this:
+- `WaitForAppAsync` now does one `WarmUpLoginPageAsync` GET to `/login` once the app is reachable, so
+  ASP.NET Core's routing/middleware JIT cost is paid during app startup, not inside the first test's own
+  timeout. (This can't reach the interactive Blazor circuit's own code paths - a plain HTTP GET doesn't
+  open the SignalR connection Login.razor's `OnInitializedAsync` needs - so it's a partial warm-up, not
+  a full one.)
+- `SignInAsync`'s pass count went from 2 to 3. This is **not** a repeat of the reverted 2→4 bump above -
+  that one was chasing a *deterministic* race (same tests failed all retries identically); this one
+  covers a one-time cold-start cost that a genuinely fresh database pays exactly once, which retrying is
+  the correct response to.
+
+Not yet re-confirmed in CI as of this note - if `Dashboard_LoadsSuccessfully` still fails after this,
+its `GetAppLogTail()` dump is the next thing to read.
 
 ## Allure dashboard
 

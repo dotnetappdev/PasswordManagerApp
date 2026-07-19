@@ -281,11 +281,21 @@ public abstract class BlazorWebTestBase : PageTest
                 await Task.Delay(2500);
             }
 
-            // Up to two passes. Creating the master key (first-run) only creates the account - it does
+            // Up to three passes. Creating the master key (first-run) only creates the account - it does
             // NOT authenticate the session, so MainLayout's auth gate immediately bounces the post-create
             // NavigateTo("/home") back to /login. At that point the account exists, so the second pass
             // goes through the normal "pick a profile, enter its master key" flow to actually sign in.
-            for (var attempt = 0; attempt < 2; attempt++)
+            // The third pass exists for a different reason than the (reverted) 2->4 bump this file used
+            // to have: that one was chasing a *deterministic* late-run auth race (same tests failed all
+            // retries identically - more attempts never helped, see docs/TESTING.md). This one instead
+            // covers whichever test happens to run FIRST against a brand-new empty database, which pays
+            // real one-time costs (JIT warm-up, EF model building, the intentionally-slow master-key KDF
+            // running twice - once to create the account, once to log back in) that a returning-user
+            // login never pays. WarmUpLoginPageAsync (see EnsureAppStartedAsync/WaitForAppAsync) already
+            // covers some of that outside any test's budget; this is a cheap, narrowly-justified safety
+            // margin for whatever it doesn't reach (the interactive Blazor circuit + KDF calls, which a
+            // plain HTTP warm-up request can't exercise).
+            for (var attempt = 0; attempt < 3; attempt++)
             {
                 if (await Page.Locator("#confirmKey").CountAsync() > 0)
                 {
@@ -377,7 +387,10 @@ public abstract class BlazorWebTestBase : PageTest
             {
                 using var response = await client.GetAsync(baseUrl);
                 if ((int)response.StatusCode < 500)
+                {
+                    await WarmUpLoginPageAsync(baseUrl);
                     return;
+                }
             }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"App not ready yet: {ex.Message}"); }
 
@@ -385,5 +398,27 @@ public abstract class BlazorWebTestBase : PageTest
         }
 
         throw new TimeoutException($"Timed out waiting for VaultGuard.Web at {baseUrl}.");
+    }
+
+    /// <summary>
+    /// A GET to the base URL only proves Kestrel is listening - it doesn't touch the Login page's own
+    /// dependencies (IsFirstTimeSetupAsync/GetMasterPasswordHintAsync/LoadProfilesAsync, each a real EF
+    /// query) or force the JIT to compile any of that code path. Confirmed in CI: the very first test to
+    /// run against a freshly-created empty database pays ALL of that cold-start cost (plus the first
+    /// ever call into the intentionally-slow master-key KDF, twice - once to create the account, once to
+    /// log back in) inside its own SignInAsync budget, and can time out even though nothing is actually
+    /// broken. Paying that cost once here, outside any test's own timeout, means the first real test
+    /// only pays for a warm request. Best-effort: a failure here just means the first test pays the cold
+    /// cost as before, not a broken app - it should never fail app startup.
+    /// </summary>
+    private static async Task WarmUpLoginPageAsync(string baseUrl)
+    {
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            using var response = await client.GetAsync($"{baseUrl}/login");
+            System.Diagnostics.Debug.WriteLine($"Login page warm-up: {(int)response.StatusCode}");
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Login page warm-up failed (continuing - not fatal): {ex.Message}"); }
     }
 }
