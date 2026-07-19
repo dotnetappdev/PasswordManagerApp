@@ -94,6 +94,12 @@ jobs:
         ref: gh-pages
         path: gh-pages
 
+    # report_url overrides the base URL the action uses to build allure-history/index.html's redirect.
+    # Without it, the action assumes the report is published at the repo root and generates
+    # ".../PasswordManagerApp/<run>/index.html" - but the publish step below actually places it under
+    # destination_dir: allure-report, so that redirect 404s (there's no /<run>/ at the site root). This
+    # makes the redirect target ".../PasswordManagerApp/allure-report/<run>/index.html", which matches
+    # where the file actually ends up.
     - name: Build Allure report
       uses: simple-elf/allure-report-action@master
       if: always()
@@ -104,6 +110,7 @@ jobs:
         allure_report: allure-report
         keep_reports: 20
         gh_pages: gh-pages
+        report_url: https://dotnetappdev.github.io/PasswordManagerApp/allure-report
 
     # allure-report-action populates allure-history from the "gh-pages" checkout above (path: gh-pages),
     # which brings that checkout's .git along with it. Left in place, peaceiris/actions-gh-pages records
