@@ -95,6 +95,24 @@ it shows up as an actual attachment, not just a stray file. Runs with `if: alway
 run's screenshots - what the page actually looked like when an assertion failed - are downloadable too,
 as the `blazor-ui-test-screenshots` artifact.
 
+**Locator specificity:** once the auth fix above let these tests actually reach an authenticated page
+for the first time, a second, previously-invisible bug surfaced: most "page loaded" checks used a bare
+`Page.GetByText("Vaults")`/`"Categories"`/`"Dashboard"`/etc. That word almost always also appears in the
+nav drawer (a nav link, a nav group title, or both) rendered on every authenticated page, so once real
+content was on screen, Playwright's strict mode correctly refused to guess which of the 2-7 matching
+elements was meant and threw instead. Fixed by scoping to the page's own heading -
+`Page.GetByRole(AriaRole.Heading, new() { Name = "Vaults", Exact = true })` - which only ever matches
+that page's own `<h4>`/`<h6>` title, never a nav link or nav group title (neither has heading role). The
+one page-load check against the Dashboard itself needed a different fix, since its stat-card labels
+("Vaults", "Categories") are `<p>` captions, not headings - scoped to `Page.Locator("p").GetByText(...)`
+instead. Two tests (`Dashboard_AppBar_HasBrandName`, `AppBar_HasDarkModeToggle`) were checking for
+`"VaultGuard"` (no space), but the app bar actually renders `"🔐 Vault Guard"` (with a space) - a
+genuine copy mismatch, not a locator-scoping issue, fixed by matching the real text. `SeededDemoDataTests`
+had the same problem one level deeper: it checked the Dashboard's Recent Items widget (which only shows
+the 8 most-recently-modified items) for `"Chase Bank"` and a `"Search your vault..."` placeholder that
+never existed in the Blazor app at all (the real placeholder, on `/passwords`, is `"Search items..."`) -
+rewritten to check `/passwords`, which lists every seeded item unconditionally and has the real search box.
+
 ## Allure dashboard
 
 [Allure](https://allurereport.org/) turns test results into an interactive HTML dashboard.

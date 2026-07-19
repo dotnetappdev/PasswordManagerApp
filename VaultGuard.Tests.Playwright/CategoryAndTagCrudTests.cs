@@ -23,21 +23,21 @@ public class CategoryCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task CategoriesPage_LoadsSuccessfully()
     {
-        await Expect(Page.GetByText("Categories")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Categories", Exact = true })).ToBeVisibleAsync();
         await SaveEvidenceAsync("categories_page_loaded");
     }
 
     [TestMethod]
     public async Task CategoriesPage_HasExpectedUIElements()
     {
-        await Expect(Page.GetByText("Categories")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Categories", Exact = true })).ToBeVisibleAsync();
         await SaveEvidenceAsync("categories_ui_elements");
     }
 
     [TestMethod]
     public async Task CreateCategory_ShouldOpenDialogAndCreateCategory()
     {
-        await Expect(Page.GetByText("Categories")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Categories", Exact = true })).ToBeVisibleAsync();
 
         var addButton = Page.GetByRole(AriaRole.Button, new() { Name = "Add" })
                             .Or(Page.GetByRole(AriaRole.Button, new() { Name = "New Category" }))
@@ -55,7 +55,7 @@ public class CategoryCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task EditCategory_ShouldUpdateCategoryDetails()
     {
-        await Expect(Page.GetByText("Categories")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Categories", Exact = true })).ToBeVisibleAsync();
 
         var editButtons = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" })
                               .Or(Page.Locator("button[aria-label='edit']"));
@@ -72,7 +72,7 @@ public class CategoryCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task DeleteCategory_ShouldRemoveCategoryFromList()
     {
-        await Expect(Page.GetByText("Categories")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Categories", Exact = true })).ToBeVisibleAsync();
 
         var deleteButtons = Page.GetByRole(AriaRole.Button, new() { Name = "Delete" })
                                 .Or(Page.Locator("button[aria-label='delete']"));
@@ -89,7 +89,7 @@ public class CategoryCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task CreateCategory_WithInvalidData_ShouldShowValidationErrors()
     {
-        await Expect(Page.GetByText("Categories")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Categories", Exact = true })).ToBeVisibleAsync();
 
         var addButton = Page.GetByRole(AriaRole.Button, new() { Name = "Add" })
                             .Or(Page.GetByRole(AriaRole.Button, new() { Name = "Add Category" }));
@@ -134,14 +134,14 @@ public class TagCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task TagsPage_LoadsSuccessfully()
     {
-        await Expect(Page.GetByText("Tags")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Tags", Exact = true })).ToBeVisibleAsync();
         await SaveEvidenceAsync("tags_page_loaded");
     }
 
     [TestMethod]
     public async Task CreateTag_ShouldOpenDialogAndCreateTag()
     {
-        await Expect(Page.GetByText("Tags")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Tags", Exact = true })).ToBeVisibleAsync();
 
         var addButton = Page.GetByRole(AriaRole.Button, new() { Name = "Add" })
                             .Or(Page.GetByRole(AriaRole.Button, new() { Name = "Add Tag" }))
@@ -159,7 +159,7 @@ public class TagCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task EditTag_ShouldUpdateTagDetails()
     {
-        await Expect(Page.GetByText("Tags")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Tags", Exact = true })).ToBeVisibleAsync();
 
         var editButtons = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" })
                               .Or(Page.Locator("button[aria-label='edit']"));
@@ -176,7 +176,7 @@ public class TagCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task DeleteTag_ShouldRemoveTagFromList()
     {
-        await Expect(Page.GetByText("Tags")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Tags", Exact = true })).ToBeVisibleAsync();
 
         var deleteButtons = Page.GetByRole(AriaRole.Button, new() { Name = "Delete" })
                                 .Or(Page.Locator("button[aria-label='delete']"));

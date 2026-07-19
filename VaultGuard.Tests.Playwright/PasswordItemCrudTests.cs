@@ -23,7 +23,7 @@ public class PasswordItemCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task PasswordItemsPage_LoadsSuccessfully()
     {
-        await Expect(Page.GetByText("All Items")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "All Items", Exact = true })).ToBeVisibleAsync();
         await SaveEvidenceAsync("passwords_page_loaded");
     }
 
@@ -46,7 +46,7 @@ public class PasswordItemCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task CreatePasswordItem_ShouldOpenDialogAndCreateItem()
     {
-        await Expect(Page.GetByText("All Items")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "All Items", Exact = true })).ToBeVisibleAsync();
 
         var addBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Add Item" })
                          .Or(Page.GetByRole(AriaRole.Button, new() { Name = "Add" }));
@@ -80,7 +80,7 @@ public class PasswordItemCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task CreateCreditCardItem_ShouldFillCreditCardForm()
     {
-        await Expect(Page.GetByText("All Items")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "All Items", Exact = true })).ToBeVisibleAsync();
 
         var addBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Add Item" })
                          .Or(Page.GetByRole(AriaRole.Button, new() { Name = "Add" }));
@@ -102,7 +102,7 @@ public class PasswordItemCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task ViewPasswordItemDetails_ShouldOpenDetailsDialog()
     {
-        await Expect(Page.GetByText("All Items")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "All Items", Exact = true })).ToBeVisibleAsync();
 
         // Look for any existing row/item to click
         var rows = Page.Locator("tr.mud-table-row").Or(Page.Locator("[data-testid='password-row']"));
@@ -119,7 +119,7 @@ public class PasswordItemCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task UpdatePasswordItem_ShouldEditExistingItem()
     {
-        await Expect(Page.GetByText("All Items")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "All Items", Exact = true })).ToBeVisibleAsync();
 
         var editButtons = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" })
                               .Or(Page.Locator("button[aria-label='edit']"))
@@ -137,7 +137,7 @@ public class PasswordItemCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task DeletePasswordItem_ShouldRemoveItemFromList()
     {
-        await Expect(Page.GetByText("All Items")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "All Items", Exact = true })).ToBeVisibleAsync();
 
         var deleteButtons = Page.GetByRole(AriaRole.Button, new() { Name = "Delete" })
                                 .Or(Page.Locator("button[aria-label='delete']"))
@@ -155,7 +155,7 @@ public class PasswordItemCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task CreatePasswordItem_WithInvalidData_ShouldShowValidationErrors()
     {
-        await Expect(Page.GetByText("All Items")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "All Items", Exact = true })).ToBeVisibleAsync();
 
         var addBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Add Item" })
                          .Or(Page.GetByRole(AriaRole.Button, new() { Name = "Add" }));
@@ -179,7 +179,7 @@ public class PasswordItemCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task SearchBox_FiltersItems()
     {
-        await Expect(Page.GetByText("All Items")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "All Items", Exact = true })).ToBeVisibleAsync();
 
         var searchBox = Page.GetByPlaceholder("Search items...");
         await searchBox.FillAsync("test");
@@ -191,7 +191,7 @@ public class PasswordItemCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task FavoritesFilter_FiltersItems()
     {
-        await Expect(Page.GetByText("All Items")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "All Items", Exact = true })).ToBeVisibleAsync();
 
         var favCheckbox = Page.GetByLabel("Favorites only")
                               .Or(Page.GetByText("Favorites only"));

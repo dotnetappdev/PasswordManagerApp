@@ -30,7 +30,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     {
         await Page.GotoAsync($"{BaseUrl}/settings");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await Expect(Page.GetByText("Settings")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Settings", Exact = true })).ToBeVisibleAsync();
         await SaveEvidenceAsync("settings_page_loaded");
     }
 
@@ -39,7 +39,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     {
         await Page.GotoAsync($"{BaseUrl}/audit-logs");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await Expect(Page.GetByText("Audit")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Audit Logs", Exact = true })).ToBeVisibleAsync();
         await SaveEvidenceAsync("audit_logs_loaded");
     }
 
@@ -65,7 +65,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     {
         await Page.GotoAsync($"{BaseUrl}/import");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await Expect(Page.GetByText("Import")).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Import Passwords", Exact = true })).ToBeVisibleAsync();
         await SaveEvidenceAsync("import_page_loaded");
     }
 
@@ -88,8 +88,10 @@ public class UserManagementCrudTests : BlazorWebTestBase
                               .Or(Page.Locator("button", new() { HasText = "DarkMode" }))
                               .Or(Page.Locator("[aria-label='toggle theme']"));
 
-        // Just confirm the app bar is rendered with the brand
-        await Expect(Page.GetByText("VaultGuard")).ToBeVisibleAsync();
+        // Just confirm the app bar is rendered with the brand. MainLayout.razor renders the app bar
+        // title as "🔐 Vault Guard" (a space between "Vault" and "Guard") - "VaultGuard" (no space)
+        // is not a substring of that, so it never matched and this assertion always timed out.
+        await Expect(Page.GetByText("Vault Guard")).ToBeVisibleAsync();
         await SaveEvidenceAsync("appbar_rendered");
     }
 
