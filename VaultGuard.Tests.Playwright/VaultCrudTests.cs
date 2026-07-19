@@ -15,6 +15,7 @@ public class VaultCrudTests : BlazorWebTestBase
     public new async Task NavigateToHomePageAsync()
     {
         await base.NavigateToHomePageAsync();
+        await SignInAsync();
         await Page.GotoAsync($"{BaseUrl}/vaults");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }

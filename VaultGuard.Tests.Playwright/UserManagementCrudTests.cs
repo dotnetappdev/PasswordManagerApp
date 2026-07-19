@@ -11,6 +11,11 @@ public class UserManagementCrudTests : BlazorWebTestBase
     [ClassCleanup]
     public static Task CleanupAsync() => StopAppAsync();
 
+    // Runs after the base class's own [TestInitialize] (NavigateToHomePageAsync) - every test method
+    // below navigates straight to a protected route, which bounces to /login without this.
+    [TestInitialize]
+    public async Task SignInBeforeTestsAsync() => await SignInAsync();
+
     [TestMethod]
     public async Task ProfilePage_LoadsSuccessfully()
     {

@@ -15,6 +15,7 @@ public class CategoryCrudTests : BlazorWebTestBase
     public new async Task NavigateToHomePageAsync()
     {
         await base.NavigateToHomePageAsync();
+        await SignInAsync();
         await Page.GotoAsync($"{BaseUrl}/categories");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
@@ -125,6 +126,7 @@ public class TagCrudTests : BlazorWebTestBase
     public new async Task NavigateToHomePageAsync()
     {
         await base.NavigateToHomePageAsync();
+        await SignInAsync();
         await Page.GotoAsync($"{BaseUrl}/tags");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }

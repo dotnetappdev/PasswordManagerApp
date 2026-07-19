@@ -200,11 +200,13 @@ jobs:
     # Excludes ScreenshotCaptureTests (image capture only, no assertions - covered by screenshots.yml)
     # so this job runs every real assertion-based UI test class: ApplicationWorkflowTests,
     # CategoryAndTagCrudTests, PasswordItemCrudTests, UserManagementCrudTests, VaultCrudTests,
-    # PasskeysAndSettingsTests, SeededDemoDataTests.
+    # PasskeysAndSettingsTests, SeededDemoDataTests. Every one of those calls SaveEvidenceAsync at key
+    # steps (SignInAsync, page loads, dialog opens, etc.), writing a screenshot into
+    # --results-directory and attaching it to that test's result via TestContext.AddResultFile.
     - name: Run Blazor UI assertion tests
       env:
         HEADED: '0'
-      run: dotnet test VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj --no-build -c Debug --filter "FullyQualifiedName!~ScreenshotCaptureTests" --logger "trx;LogFileName=blazor-ui-tests.trx"
+      run: dotnet test VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj --no-build -c Debug --filter "FullyQualifiedName!~ScreenshotCaptureTests" --results-directory ./blazor-ui-test-results --logger "trx;LogFileName=blazor-ui-tests.trx"
 
     # Not Allure-wired: Allure.MSTest requires the test class to derive from its base type, which
     # conflicts with Playwright's PageTest base class (see docs/TESTING.md) - dotnet-trx reporting only.
@@ -216,3 +218,14 @@ jobs:
         path: '**/blazor-ui-tests.trx'
         reporter: dotnet-trx
         fail-on-error: true
+
+    # if: always() so evidence from a failing run is downloadable too - that's the whole point of
+    # SaveEvidenceAsync, seeing what the page actually looked like when an assertion failed.
+    - name: Upload Blazor UI test screenshots
+      uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: blazor-ui-test-screenshots
+        path: blazor-ui-test-results/**/*.png
+        if-no-files-found: warn
+        retention-days: 20

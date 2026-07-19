@@ -156,7 +156,87 @@ public abstract class BlazorWebTestBase : PageTest
         Directory.CreateDirectory(dir);
         var path = Path.Combine(dir, $"{name}.png");
         await Page.ScreenshotAsync(new PageScreenshotOptions { Path = path, FullPage = true });
+        // Without this, the PNG sits on disk but is never attached to the test result - AddResultFile
+        // is what makes it show up as evidence alongside the test outcome (trx attachment / VSTest
+        // "Attachments" list), not just a stray file a CI artifact upload happens to sweep up.
+        TestContext.AddResultFile(path);
         TestContext.WriteLine($"Screenshot: {path}");
+    }
+
+    // The seeded default accounts' master key (see IdentityDataSeeder.CommonMasterKey).
+    protected const string SeededMasterKey = "7hm3Z!Csu:Y64nm";
+
+    /// <summary>
+    /// Signs in with a seeded account, creating the default accounts first if this is a fresh database.
+    /// Every UI test other than the pre-auth onboarding captures in ScreenshotCaptureTests needs this
+    /// before navigating to any real page - without it, protected routes bounce back to /login and the
+    /// test just times out waiting for content that's never going to render.
+    /// </summary>
+    protected async Task SignInAsync()
+    {
+        try
+        {
+            await Page.GotoAsync($"{BaseUrl}/login");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await Task.Delay(1500);
+
+            // Make sure the default accounts exist (button added to the login screen), best-effort.
+            var createBtn = Page.Locator("button:has-text('Create default accounts')");
+            if (await createBtn.CountAsync() > 0 && await createBtn.First.IsVisibleAsync())
+            {
+                await createBtn.First.ClickAsync();
+                await Task.Delay(2500);
+            }
+
+            // Up to two passes. Creating the master key (first-run) only creates the account - it does
+            // NOT authenticate the session, so MainLayout's auth gate immediately bounces the post-create
+            // NavigateTo("/home") back to /login. At that point the account exists, so the second pass
+            // goes through the normal "pick a profile, enter its master key" flow to actually sign in.
+            for (var attempt = 0; attempt < 2; attempt++)
+            {
+                if (await Page.Locator("#confirmKey").CountAsync() > 0)
+                {
+                    await Page.FillAsync("#masterKey", SeededMasterKey);
+                    await Page.FillAsync("#confirmKey", SeededMasterKey);
+                    await Page.ClickAsync("button:has-text('Create Master Key')");
+                    await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    await Task.Delay(2000);
+                    continue;
+                }
+
+                // Seeded accounts exist: pick whichever profile tile the "Who's unlocking?" picker
+                // rendered. All seeded accounts share SeededMasterKey (see IdentityDataSeeder).
+                var profileTile = Page.Locator(".profile-tile").First;
+                if (await profileTile.CountAsync() > 0)
+                {
+                    await profileTile.ClickAsync();
+                    await Task.Delay(500);
+                }
+
+                if (await Page.Locator("#loginKey").CountAsync() > 0)
+                {
+                    // #loginKey uses a plain @bind (fires on the DOM "change"/blur event, not "input") -
+                    // FillAsync alone leaves focus on the field, so the bound C# value never updates and
+                    // the Continue button (disabled while loginKey is empty) stays disabled forever.
+                    // Tabbing out after filling blurs it, which is what actually commits the value.
+                    await Page.FillAsync("#loginKey", SeededMasterKey);
+                    await Page.Locator("#loginKey").PressAsync("Tab");
+                    await Page.ClickAsync("button:has-text('Continue')");
+                    await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    await Task.Delay(2000);
+                }
+
+                if (!Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
+                    break;
+            }
+
+            if (Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
+                TestContext.WriteLine($"WARNING: still on /login after sign-in attempt (url={Page.Url}) - subsequent test steps will see the login page instead of the real one.");
+        }
+        catch (Exception ex)
+        {
+            TestContext.WriteLine($"Sign-in encountered an issue (continuing best-effort): {ex.Message}");
+        }
     }
 
     private static async Task WaitForAppAsync(string baseUrl, Process process)

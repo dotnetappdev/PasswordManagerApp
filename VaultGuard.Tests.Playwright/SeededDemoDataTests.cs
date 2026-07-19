@@ -11,6 +11,11 @@ public class SeededDemoDataTests : BlazorWebTestBase
         return StopAppAsync();
     }
 
+    // Runs after the base class's own [TestInitialize] (NavigateToHomePageAsync) - both tests below
+    // expect authenticated dashboard content, which never renders without this.
+    [TestInitialize]
+    public async Task SignInBeforeTestsAsync() => await SignInAsync();
+
     [TestMethod]
     public async Task HomePage_ShowsSeededDemoContent()
     {

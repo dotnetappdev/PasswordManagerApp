@@ -66,6 +66,21 @@ in `screenshots.yml` instead. This suite isn't Allure-wired: `Allure.MSTest` nee
 derive from its base type, which conflicts with Playwright's `PageTest` base class - it reports via
 `dotnet-trx`/`dorny/test-reporter` like the other suites instead.
 
+**Authentication:** `BlazorWebTestBase.SignInAsync()` (shared, not `ScreenshotCaptureTests`' own private
+copy - see below) signs in with the seeded demo account, creating the default accounts first on a fresh
+database. Every class above except `ScreenshotCaptureTests` calls it from a `[TestInitialize]` before its
+tests run, since all of them navigate straight to a protected route - without signing in first, that just
+bounces to `/login` and the test times out waiting for content that's never going to render.
+`ScreenshotCaptureTests` deliberately keeps its own private, near-identical copy: it needs precise control
+over *when* sign-in happens, since it captures the pre-auth onboarding screens (`/setup`, `/login`)
+before ever calling it.
+
+**Evidence:** every test method above calls `SaveEvidenceAsync(name)` at its key steps - a full-page
+screenshot into `--results-directory`, attached to that test's result via `TestContext.AddResultFile` so
+it shows up as an actual attachment, not just a stray file. Runs with `if: always()` in CI, so a failing
+run's screenshots - what the page actually looked like when an assertion failed - are downloadable too,
+as the `blazor-ui-test-screenshots` artifact.
+
 ## Allure dashboard
 
 [Allure](https://allurereport.org/) turns test results into an interactive HTML dashboard.
