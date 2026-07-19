@@ -113,6 +113,31 @@ the 8 most-recently-modified items) for `"Chase Bank"` and a `"Search your vault
 never existed in the Blazor app at all (the real placeholder, on `/passwords`, is `"Search items..."`) -
 rewritten to check `/passwords`, which lists every seeded item unconditionally and has the real search box.
 
+**Known issue - ~9 tests in `VaultCrudTests`/`UserManagementCrudTests` intermittently fail (CI usually
+lands 50-51/60):** every one of these lands on `Page.Url=/login` at the point of failure -
+`BlazorWebTestBase.SignInAsync()` genuinely fails to authenticate, it's not a locator, timing, or
+render issue (confirmed via `ExpectVisibleWithDiagnosticsAsync`, which logs the page URL/title/body
+snippet on failure - use it instead of a bare `Expect(...)` if you're debugging this further). Two
+fixes were tried and ruled out:
+- Bumping the assertion timeout 5s→15s changed nothing - the exact same 9 tests failed either way,
+  ruling out "just needs more time" for the target page's own render.
+- Replacing `SignInAsync`'s fixed post-click delays with an actual `WaitForURLAsync` wait for the
+  redirect away from `/login` also didn't help on its own - its own timeout warning never fired, which
+  means the URL *does* leave `/login` successfully, then bounces back before the sign-in flow's own
+  final check. Adding a settle-wait for that second bounce plus raising the retry count 2→4 made
+  things measurably worse (50/60 vs 51/60) and revealed the failure is **deterministic once it
+  happens** - all 4 retries failed identically for the affected tests, not intermittently - which
+  rules out "just needs more retries" too, so this change was reverted.
+
+Current best theory: `MainLayout.EnforceAuthAsync()`'s server-side "is the vault actually unlocked"
+check (`VaultSessionService.IsVaultUnlocked`, an in-memory `ConcurrentDictionary` with no expiry) races
+against the client-side post-login redirect, and something about being late in this assembly's long
+shared test run (both affected classes are among the last to execute, after ~50 prior tests' worth of
+requests against the one shared `VaultGuard.Web` process) makes that race lose more often - but this
+hasn't been confirmed, only the symptom (bounces back to `/login`) has. Worth an actual look at the
+`blazor-ui-test-screenshots` CI artifact or a debugger-attached local repro rather than more blind
+CI-cycle guessing.
+
 ## Allure dashboard
 
 [Allure](https://allurereport.org/) turns test results into an interactive HTML dashboard.
