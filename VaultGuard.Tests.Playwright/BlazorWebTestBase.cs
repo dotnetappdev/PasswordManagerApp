@@ -235,11 +235,12 @@ public abstract class BlazorWebTestBase : PageTest
                 await Task.Delay(2500);
             }
 
-            // Up to two passes. Creating the master key (first-run) only creates the account - it does
-            // NOT authenticate the session, so MainLayout's auth gate immediately bounces the post-create
-            // NavigateTo("/home") back to /login. At that point the account exists, so the second pass
-            // goes through the normal "pick a profile, enter its master key" flow to actually sign in.
-            for (var attempt = 0; attempt < 2; attempt++)
+            // Up to four passes (raised from two - see the bounce-back note below). Creating the master
+            // key (first-run) only creates the account - it does NOT authenticate the session, so
+            // MainLayout's auth gate immediately bounces the post-create NavigateTo("/home") back to
+            // /login. At that point the account exists, so the next pass goes through the normal "pick
+            // a profile, enter its master key" flow to actually sign in.
+            for (var attempt = 0; attempt < 4; attempt++)
             {
                 if (await Page.Locator("#confirmKey").CountAsync() > 0)
                 {
@@ -271,10 +272,24 @@ public abstract class BlazorWebTestBase : PageTest
                     await Page.ClickAsync("button:has-text('Continue')");
                     await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
                     await WaitForLoginRedirectAsync();
+
+                    // Confirmed in CI: WaitForLoginRedirectAsync above can resolve cleanly (the URL
+                    // genuinely leaves /login) and yet this loop's own end-of-attempt check below still
+                    // finds it back on /login - MainLayout's auth gate (EnforceAuthAsync) bounces straight
+                    // back if the server-side "is the vault actually unlocked" check hasn't caught up with
+                    // the client-side redirect yet. Give that second bounce a moment to happen (or not)
+                    // before this attempt's own check decides whether sign-in actually stuck.
+                    if (!Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
+                    {
+                        await Task.Delay(1000);
+                        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    }
                 }
 
                 if (!Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
                     break;
+
+                TestContext.WriteLine($"SignInAsync attempt {attempt + 1}/4: still on /login (url={Page.Url}) after the bounce-back settle wait - retrying.");
             }
 
             if (Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
