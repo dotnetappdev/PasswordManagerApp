@@ -247,7 +247,7 @@ public abstract class BlazorWebTestBase : PageTest
                     await Page.FillAsync("#confirmKey", SeededMasterKey);
                     await Page.ClickAsync("button:has-text('Create Master Key')");
                     await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-                    await Task.Delay(2000);
+                    await WaitForLoginRedirectAsync();
                     continue;
                 }
 
@@ -257,7 +257,7 @@ public abstract class BlazorWebTestBase : PageTest
                 if (await profileTile.CountAsync() > 0)
                 {
                     await profileTile.ClickAsync();
-                    await Task.Delay(500);
+                    await Page.Locator("#loginKey").WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
                 }
 
                 if (await Page.Locator("#loginKey").CountAsync() > 0)
@@ -270,7 +270,7 @@ public abstract class BlazorWebTestBase : PageTest
                     await Page.Locator("#loginKey").PressAsync("Tab");
                     await Page.ClickAsync("button:has-text('Continue')");
                     await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-                    await Task.Delay(2000);
+                    await WaitForLoginRedirectAsync();
                 }
 
                 if (!Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
@@ -283,6 +283,28 @@ public abstract class BlazorWebTestBase : PageTest
         catch (Exception ex)
         {
             TestContext.WriteLine($"Sign-in encountered an issue (continuing best-effort): {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Waits for the post-login redirect away from /login, instead of a fixed delay. Master-key
+    /// verification runs an intentionally slow KDF server-side (see PasswordCryptoService) - a fixed
+    /// delay that "usually" covers it can silently strand the test on /login once the self-hosted
+    /// dev server is under more load (e.g. late in a long shared test run with many prior requests
+    /// already processed), which is exactly what a fixed delay can't adapt to. Swallows its own
+    /// timeout - the caller's retry loop / final /login check already handles "still stuck" - this
+    /// only replaces the blind wait with a real one when the redirect happens sooner.
+    /// </summary>
+    private async Task WaitForLoginRedirectAsync()
+    {
+        try
+        {
+            await Page.WaitForURLAsync(url => !url.Contains("/login", StringComparison.OrdinalIgnoreCase),
+                new PageWaitForURLOptions { Timeout = 15000 });
+        }
+        catch (Exception ex)
+        {
+            TestContext.WriteLine($"WaitForLoginRedirectAsync: no redirect away from /login within 15s (url={Page.Url}): {ex.Message}");
         }
     }
 
