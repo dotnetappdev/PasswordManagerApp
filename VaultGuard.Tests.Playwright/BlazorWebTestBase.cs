@@ -401,23 +401,48 @@ public abstract class BlazorWebTestBase : PageTest
     }
 
     /// <summary>
-    /// A GET to the base URL only proves Kestrel is listening - it doesn't touch the Login page's own
-    /// dependencies (IsFirstTimeSetupAsync/GetMasterPasswordHintAsync/LoadProfilesAsync, each a real EF
-    /// query) or force the JIT to compile any of that code path. Confirmed in CI: the very first test to
-    /// run against a freshly-created empty database pays ALL of that cold-start cost (plus the first
-    /// ever call into the intentionally-slow master-key KDF, twice - once to create the account, once to
-    /// log back in) inside its own SignInAsync budget, and can time out even though nothing is actually
-    /// broken. Paying that cost once here, outside any test's own timeout, means the first real test
-    /// only pays for a warm request. Best-effort: a failure here just means the first test pays the cold
-    /// cost as before, not a broken app - it should never fail app startup.
+    /// Confirmed in CI: an HttpClient-only warm-up here (a plain GET to /login) does NOT fix the first
+    /// test's cold-start timeout, because App.razor renders with prerender:false - a plain HTTP GET never
+    /// opens the SignalR circuit, so it never actually runs Login.razor's OnInitializedAsync (its EF
+    /// queries), never renders any Razor component, and never JIT-compiles any of that code. All of the
+    /// real cold-start cost (interactive circuit setup, MudBlazor's own component init, and the
+    /// intentionally-slow master-key KDF - see PasswordCryptoService) was still being paid entirely by
+    /// the first real test's own SignInAsync call, which is why WaitForLoginRedirectAsync's redirect
+    /// still succeeded (proving the URL genuinely left /login) but the final auth check still bounced
+    /// back - the same "leaves then bounces" symptom as the old late-run cluster, just triggered by
+    /// cold-start slowness instead of the (now-fixed) stdout pipe block.
+    ///
+    /// This uses a real headless browser instead, and actually runs the same "Create Master Key" flow
+    /// SignInAsync would otherwise have to run cold. JIT-compiled machine code is a process-wide cache,
+    /// not per-circuit - so paying this cost against a throwaway warm-up circuit here still speeds up
+    /// every later circuit in the same VaultGuard.Web process, including the real first test's. On a
+    /// fresh database this also creates the seeded account for real, which is fine: SignInAsync already
+    /// handles "account already exists" (it's what happens for every test after the first one anyway),
+    /// so the real first test just goes straight to the faster profile-picker/login path.
     /// </summary>
     private static async Task WarmUpLoginPageAsync(string baseUrl)
     {
         try
         {
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-            using var response = await client.GetAsync($"{baseUrl}/login");
-            System.Diagnostics.Debug.WriteLine($"Login page warm-up: {(int)response.StatusCode}");
+            using var playwright = await Microsoft.Playwright.Playwright.CreateAsync();
+            await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+            var page = await browser.NewPageAsync();
+            await page.GotoAsync($"{baseUrl}/login");
+            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+            var confirmKey = page.Locator("#confirmKey");
+            if (await confirmKey.CountAsync() > 0 && await confirmKey.IsVisibleAsync())
+            {
+                await page.FillAsync("#masterKey", SeededMasterKey);
+                await page.FillAsync("#confirmKey", SeededMasterKey);
+                await page.ClickAsync("button:has-text('Create Master Key')");
+                await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                // No redirect-wait needed here - unlike SignInAsync this warm-up doesn't need to actually
+                // finish signing in, only to have forced the JIT/circuit/KDF cost to happen once.
+                await Task.Delay(2000);
+            }
+
+            System.Diagnostics.Debug.WriteLine("Login page warm-up complete.");
         }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Login page warm-up failed (continuing - not fatal): {ex.Message}"); }
     }

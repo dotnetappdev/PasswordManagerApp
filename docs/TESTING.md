@@ -181,8 +181,19 @@ changes address this:
   covers a one-time cold-start cost that a genuinely fresh database pays exactly once, which retrying is
   the correct response to.
 
-Not yet re-confirmed in CI as of this note - if `Dashboard_LoadsSuccessfully` still fails after this,
-its `GetAppLogTail()` dump is the next thing to read.
+**Confirmed in CI: the HTTP-only warm-up did not fix it** - same test, same failure shape (redirect away
+from `/login` succeeds per `WaitForLoginRedirectAsync`'s own silence, then bounces back), 59/60 again.
+Root cause: `App.razor` renders with `prerender:false`, so a plain `HttpClient` GET to `/login` never
+opens the SignalR circuit - it never runs `Login.razor`'s `OnInitializedAsync` (its EF queries), never
+renders a Razor component, and never JIT-compiles any of that code. All the real cold-start cost
+(interactive circuit setup, MudBlazor's own component init, the master-key KDF) was still being paid
+entirely by the first real test. `WarmUpLoginPageAsync` now uses a real headless browser instead, and
+actually runs the "Create Master Key" flow with `SeededMasterKey` - JIT-compiled machine code is a
+process-wide cache, not per-circuit, so paying this cost against a throwaway warm-up circuit still
+speeds up every later circuit in the same `VaultGuard.Web` process, including the real first test's.
+This also means the seeded account already exists by the time the real first test runs, so it takes the
+faster profile-picker/login path instead of the create-then-login path - not yet re-confirmed in CI as
+of this note.
 
 ## Allure dashboard
 
