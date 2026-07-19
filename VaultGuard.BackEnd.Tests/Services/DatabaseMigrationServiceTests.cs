@@ -1,4 +1,5 @@
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
@@ -10,6 +11,8 @@ namespace VaultGuard.BackEnd.Tests.Services
 {
     [TestFixture]
     [AllureNUnit]
+    [AllureEpic("Platform & Infrastructure")]
+    [AllureFeature("Database Migrations")]
     public class DatabaseMigrationServiceTests
     {
         private DatabaseMigrationService _migrationService;

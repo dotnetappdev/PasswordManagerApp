@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +24,8 @@ namespace VaultGuard.BackEnd.Tests.Controllers;
 /// </summary>
 [TestFixture]
 [AllureNUnit]
+[AllureEpic("Vault Data Management")]
+[AllureFeature("Password Items")]
 public class PasswordItemsControllerTests
 {
     private Mock<IPasswordItemApiService> _mockItemService = null!;

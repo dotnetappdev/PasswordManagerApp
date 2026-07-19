@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -21,6 +22,8 @@ namespace VaultGuard.BackEnd.Tests.Controllers;
 /// </summary>
 [TestFixture]
 [AllureNUnit]
+[AllureEpic("Accounts & API Access")]
+[AllureFeature("API Keys")]
 public class ApiKeysControllerTests
 {
     private Mock<IApiKeyService> _mockApiKeyService = null!;

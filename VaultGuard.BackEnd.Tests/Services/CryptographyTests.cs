@@ -1,4 +1,5 @@
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using System.Security.Cryptography;
 using System.Text;
 using NUnit.Framework;
@@ -15,6 +16,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 /// </summary>
 [TestFixture]
 [AllureNUnit]
+[AllureEpic("Cryptography & Security")]
+[AllureFeature("Encryption & Key Derivation")]
 public class CryptographyTests
 {
     private CryptographyService _crypto = null!;

@@ -1,4 +1,5 @@
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Moq;
 using NUnit.Framework;
 using VaultGuard.Imports.Interfaces;
@@ -10,6 +11,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
 [AllureNUnit]
+[AllureEpic("Vault Data Management")]
+[AllureFeature("Import")]
 public class ImportServiceTests
 {
     private Mock<IPasswordItemService> _itemMock = null!;

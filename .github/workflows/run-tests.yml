@@ -164,3 +164,55 @@ jobs:
             echo "Once merged, results publish to the [live dashboard](https://dotnetappdev.github.io/PasswordManagerApp/allure-report/index.html)."
           fi
         } >> "$GITHUB_STEP_SUMMARY"
+
+  # VaultGuard.Tests.Playwright has ~56 real assertion-based Blazor UI tests (CRUD flows, vaults,
+  # categories, users, passkeys, settings) that self-host VaultGuard.Web and drive it with a real
+  # browser via Expect() - separate from ScreenshotCaptureTests, which only captures images and runs in
+  # screenshots.yml. These were never wired into any CI workflow, so they've been running nowhere. This
+  # is a distinct, heavier setup (installs a real browser, self-hosts the Blazor app) so it runs as its
+  # own job rather than folding into the `test` job above - it shows up as its own check, and a failure
+  # here doesn't block the faster unit-test suite from reporting.
+  blazor-ui-tests:
+    runs-on: ubuntu-latest
+    name: Run Blazor UI Tests (Playwright)
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: '10.0.x'
+
+    # BlazorWebTestBase launches VaultGuard.Web as a separate process and builds it internally with
+    # --no-restore (expecting restore to have already happened) - restore/build it explicitly here so
+    # that internal --no-restore build actually succeeds.
+    - name: Restore & build Playwright test project + VaultGuard.Web
+      run: |
+        dotnet restore VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj
+        dotnet build VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj --no-restore -c Debug
+        dotnet restore VaultGuard.Web/VaultGuard.Web.csproj
+        dotnet build VaultGuard.Web/VaultGuard.Web.csproj --no-restore -c Debug
+
+    - name: Install Playwright browser + OS deps
+      run: pwsh VaultGuard.Tests.Playwright/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
+
+    # Excludes ScreenshotCaptureTests (image capture only, no assertions - covered by screenshots.yml)
+    # so this job runs every real assertion-based UI test class: ApplicationWorkflowTests,
+    # CategoryAndTagCrudTests, PasswordItemCrudTests, UserManagementCrudTests, VaultCrudTests,
+    # PasskeysAndSettingsTests, SeededDemoDataTests.
+    - name: Run Blazor UI assertion tests
+      env:
+        HEADED: '0'
+      run: dotnet test VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj --no-build -c Debug --filter "FullyQualifiedName!~ScreenshotCaptureTests" --logger "trx;LogFileName=blazor-ui-tests.trx"
+
+    # Not Allure-wired: Allure.MSTest requires the test class to derive from its base type, which
+    # conflicts with Playwright's PageTest base class (see docs/TESTING.md) - dotnet-trx reporting only.
+    - name: Publish Blazor UI Test Results
+      uses: dorny/test-reporter@v3
+      if: always()
+      with:
+        name: Blazor UI Test Results (Playwright)
+        path: '**/blazor-ui-tests.trx'
+        reporter: dotnet-trx
+        fail-on-error: true

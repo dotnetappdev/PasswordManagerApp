@@ -1,4 +1,5 @@
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
@@ -22,6 +23,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 /// </summary>
 [TestFixture]
 [AllureNUnit]
+[AllureEpic("Accounts & API Access")]
+[AllureFeature("API Keys")]
 public class ApiKeyServiceTests
 {
     private string _dbName = null!;

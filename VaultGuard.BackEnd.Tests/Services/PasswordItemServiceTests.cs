@@ -1,4 +1,5 @@
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 using VaultGuard.DAL;
@@ -10,6 +11,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
 [AllureNUnit]
+[AllureEpic("Vault Data Management")]
+[AllureFeature("Password Items")]
 public class PasswordItemServiceTests
 {
     private DbContextOptions<VaultGuardDbContext> _options = null!;

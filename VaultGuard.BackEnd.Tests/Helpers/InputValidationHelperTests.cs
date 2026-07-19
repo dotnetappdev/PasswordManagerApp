@@ -1,4 +1,5 @@
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using NUnit.Framework;
 using VaultGuard.Services.Helpers;
 
@@ -6,6 +7,8 @@ namespace VaultGuard.BackEnd.Tests.Helpers;
 
 [TestFixture]
 [AllureNUnit]
+[AllureEpic("Cryptography & Security")]
+[AllureFeature("Input Validation")]
 public class InputValidationHelperTests
 {
     [Test]

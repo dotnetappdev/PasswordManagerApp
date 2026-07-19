@@ -1,4 +1,5 @@
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -11,6 +12,8 @@ namespace VaultGuard.BackEnd.Tests.Controllers;
 
 [TestFixture]
 [AllureNUnit]
+[AllureEpic("Vault Data Management")]
+[AllureFeature("Categories & Collections")]
 public class CollectionsControllerTests
 {
     private Mock<ICollectionApiService> _mockCollectionService = null!;

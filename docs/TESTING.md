@@ -9,7 +9,7 @@ VaultGuard has unit/integration tests and browser-driven UI tests, with an Allur
 | `VaultGuard.BackEnd.Tests` | NUnit | Services, controllers, crypto, seeding, validation - the bulk of the unit/integration suite (~194 tests). **Allure-instrumented.** |
 | `VaultGuard.Tests.QrLogin` | xUnit | Passkey engine (`PasskeyServiceTests`), 2FA/passkey DTOs, QR login |
 | `VaultGuard.Tests.OTP` | xUnit | OTP / TOTP |
-| `VaultGuard.Tests.Playwright` | MSTest + Playwright | **UI automation** against the Blazor web app (its own library) |
+| `VaultGuard.Tests.Playwright` | MSTest + Playwright | **UI automation** against the Blazor web app (its own library) - ~56 assertion-based tests run in CI via `run-tests.yml`'s `blazor-ui-tests` job |
 | `VaultGuard.Tests.UI` | - | Additional UI checks |
 
 ## Running the unit/integration tests
@@ -32,6 +32,12 @@ Notable coverage added recently:
   crypto so the zero-knowledge private-key storage is exercised.
 - `ApiKeyServiceTests` - keys stored hash-only, plaintext returned once, validation by hash, revoke is a
   soft delete scoped to the owner.
+- `CryptographyEdgeCaseTests` - argument-validation and boundary coverage for `CryptographyService` /
+  `PasswordCryptoService` that the happy-path suite (`CryptographyTests`) doesn't exercise: invalid
+  key/salt/iteration/Argon2id-parameter inputs, malformed Argon2id PHC strings (wrong part count,
+  non-numeric params, invalid base64 - `VerifyMasterPassword` must reject all of these without throwing),
+  `HashPassword`/`VerifyPassword` exercised directly (not just via `PasswordCryptoService`), per-salt
+  uniqueness of the master-key lookup identifier, and a large-payload AES-GCM round trip.
 
 ## UI automation (Blazor web) - `VaultGuard.Tests.Playwright`
 
@@ -52,6 +58,14 @@ already-running instance instead of self-hosting. Screenshots are saved next to 
 Covered pages include the dashboard, password items, categories, tags, vaults, settings (incl. the
 deep-linkable `Settings?tab=Name` tabs) and the passkeys page.
 
+**In CI:** `run-tests.yml`'s `blazor-ui-tests` job runs every real assertion-based class -
+`ApplicationWorkflowTests`, `CategoryAndTagCrudTests`, `PasswordItemCrudTests`, `UserManagementCrudTests`,
+`VaultCrudTests`, `PasskeysAndSettingsTests`, `SeededDemoDataTests` - as its own check, separate from the
+`test` job above. `ScreenshotCaptureTests` is excluded there (image capture only, no assertions) - it runs
+in `screenshots.yml` instead. This suite isn't Allure-wired: `Allure.MSTest` needs the test class to
+derive from its base type, which conflicts with Playwright's `PageTest` base class - it reports via
+`dotnet-trx`/`dorny/test-reporter` like the other suites instead.
+
 ## Allure dashboard
 
 [Allure](https://allurereport.org/) turns test results into an interactive HTML dashboard.
@@ -65,6 +79,13 @@ artifact instead, downloadable from that run's summary page.
 
 - **Instrumentation:** NUnit fixtures in `VaultGuard.BackEnd.Tests` carry `[AllureNUnit]` (via `Allure.NUnit`),
   and an `allureConfig.json` sends per-test JSON to each project's `allure-results` output folder.
+- **Categorization:** every fixture also carries `[AllureEpic]` + `[AllureFeature]` (from
+  `Allure.NUnit.Attributes`), so the dashboard's Behaviors tab groups the ~200+ tests by area instead of
+  dumping everything into one flat list keyed off namespace. Epics: `Cryptography & Security`,
+  `Vault Data Management`, `Accounts & API Access`, `Platform & Infrastructure` - each with several
+  Features underneath (e.g. `Cryptography & Security` → `Encryption & Key Derivation`,
+  `Password Vault Cryptography`, `Two-Factor Authentication`, `Security Auditing`, `Input Validation`).
+  Add the same two attributes to a new fixture's class declaration to place it in the right group.
 - **Prerequisites for generating the HTML:** the Allure CLI, or Node (`npx`) + a JRE. Java is used by the
   Allure CLI under the hood.
 

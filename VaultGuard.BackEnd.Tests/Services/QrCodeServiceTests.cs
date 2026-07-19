@@ -1,4 +1,5 @@
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using NUnit.Framework;
 using VaultGuard.Services.Services;
 
@@ -6,6 +7,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
 [AllureNUnit]
+[AllureEpic("Cryptography & Security")]
+[AllureFeature("Two-Factor Authentication")]
 public class QrCodeServiceTests
 {
     private QrCodeService _service = null!;

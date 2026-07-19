@@ -1,4 +1,5 @@
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
@@ -16,6 +17,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 /// </summary>
 [TestFixture]
 [AllureNUnit]
+[AllureEpic("Platform & Infrastructure")]
+[AllureFeature("Data Seeding")]
 public class SeedingTests
 {
     private SqliteConnection  _connection = null!;

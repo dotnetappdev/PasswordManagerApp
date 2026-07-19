@@ -1,4 +1,5 @@
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using NUnit.Framework;
 using VaultGuard.Services.Interfaces;
 using VaultGuard.Services.Services;
@@ -7,6 +8,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
 [AllureNUnit]
+[AllureEpic("Vault Data Management")]
+[AllureFeature("Password Strength & Generation")]
 public class PassphraseGeneratorTests
 {
     private PassphraseGenerator _gen = null!;
