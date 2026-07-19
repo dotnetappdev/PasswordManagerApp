@@ -22,6 +22,13 @@ on:
       - '.github/workflows/deploy-api-smarterasp.yml'
   workflow_dispatch: {}
 
+# Serializes runs for the same PR/branch (default cancel-in-progress: false, so a deploy already in
+# flight is queued behind, never killed). Without this, two pushes to the same open PR in quick
+# succession can both check out before either has pushed its own release tag - both then compute the
+# same "next" api-vX.Y.Z and race to push it, and the loser fails with "tag already exists".
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
 env:
   PROJECT: VaultGuard.API/VaultGuard.API.csproj
   TEST_PROJECT: VaultGuard.BackEnd.Tests/VaultGuard.BackEnd.Tests.csproj
