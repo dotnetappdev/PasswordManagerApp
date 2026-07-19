@@ -8,6 +8,20 @@ namespace VaultGuard.Tests.Playwright;
 [TestClass]
 public abstract class BlazorWebTestBase : PageTest
 {
+    static BlazorWebTestBase()
+    {
+        // Every test class in this assembly shares ONE running VaultGuard.Web instance and ONE SQLite
+        // db for the whole run (see EnsureAppStartedAsync below) - once SeededDemoDataTests seeds real
+        // demo data (categories/collections/tags/~50 password items) for the shared signed-in account,
+        // every page rendered by any class that runs afterward has meaningfully more content (nav
+        // sidebar vault list, item counts, etc.) and Blazor Server round-trips get measurably slower on
+        // top of an already-loaded CI runner. Playwright's default 5s assertion timeout was fine
+        // against a near-empty database but started flaking on genuinely slower (not broken) renders
+        // once real content existed - bumped process-wide so it isn't tuned to whichever class happens
+        // to run first.
+        Assertions.SetDefaultExpectTimeout(15000);
+    }
+
     private static Process? _appProcess;
     private static string? _baseUrl;
     private static string? _tempDbPath;
