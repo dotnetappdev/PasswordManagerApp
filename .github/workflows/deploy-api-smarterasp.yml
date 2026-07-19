@@ -103,7 +103,14 @@ jobs:
 
       # See ReadMe.md "Deploying the API to SmarterASP.NET" for where these come from in the
       # SmarterASP.NET control panel's Web Deploy settings.
+      # continue-on-error: SmarterASP.NET's Web Deploy target has been unreachable (DNS resolution
+      # failure) independent of anything in this repo - without this, a deploy outage silently blocks
+      # every step below forever, so no release ever gets cut even though the build/tests are fine.
+      # The release below reflects "this build passed tests and was published", not "this build is
+      # live on SmarterASP.NET" - check this step's own outcome for actual deploy status.
       - name: Deploy to SmarterASP.NET
+        id: deploy
+        continue-on-error: true
         uses: jahbenjah/SmarterASP.NET-web-deploy@1.0.0.alpha.8
         with:
           website-name: ${{ secrets.APISiteName }}
@@ -113,9 +120,13 @@ jobs:
           source-path: '${{ env.PUBLISH_DIR }}\'
           target-delete: 'true'
 
-      # Only reached if the deploy above succeeded: tag the deployed commit, branch off it, zip the
-      # publish output, and turn all of that into a GitHub Release - the whole tag/branch/release cycle
-      # runs here with no manual `git tag && git push` step needed.
+      - name: Warn if deploy failed
+        if: steps.deploy.outcome == 'failure'
+        run: echo "::warning::Deploy to SmarterASP.NET failed - releasing the build anyway, but it is NOT live on the server. Check the Deploy to SmarterASP.NET step above."
+
+      # Runs regardless of whether the deploy above succeeded (see continue-on-error note): tag the
+      # commit, branch off it, zip the publish output, and turn all of that into a GitHub Release - the
+      # whole tag/branch/release cycle runs here with no manual `git tag && git push` step needed.
       - name: Tag release and create release branch
         shell: bash
         run: |

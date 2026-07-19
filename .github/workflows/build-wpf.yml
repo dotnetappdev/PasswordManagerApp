@@ -8,6 +8,9 @@ on:
     branches: [ devmain, main ]
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 env:
   PROJECT: VaultGuard.WPF/VaultGuard.WPF.csproj
   PUBLISH_DIR: publish/wpf
@@ -18,26 +21,46 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      # Explicit ref + full history: pull_request's default checkout is a synthetic merge commit that
+      # doesn't exist in the branch's real history (bad tag target), and the release version-bump
+      # below needs the full tag history, not the default shallow clone.
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # ── Derive version from git tag (v1.2.3) or use 0.0.0-dev ────────────
+      # ── Derive version: from a git tag (v1.2.3), auto-incremented from the latest wpf-vX.Y.Z tag on
+      # a merged PR into devmain (mirrors deploy-api/web-smarterasp.yml's scheme), or 0.0.0-dev
+      # otherwise (plain branch pushes/other PRs - build validation only, no release) ───────────────
       - name: Set version
         id: ver
-        shell: pwsh
+        shell: bash
         run: |
-          if ("${{ github.ref }}" -match "^refs/tags/v(.+)$") {
-            $ver = $matches[1]
-          } else {
-            $ver = "0.0.0-dev"
-          }
-          echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
-          echo "Resolved version: $ver"
+          if [[ "${{ github.ref }}" =~ ^refs/tags/v(.+)$ ]]; then
+            ver="${BASH_REMATCH[1]}"
+            tag="${{ github.ref_name }}"
+          elif [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.base.ref }}" = "devmain" ]; then
+            latest=$(git tag -l 'wpf-v*' | sed 's/^wpf-v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
+            if [ -z "$latest" ]; then
+              ver="1.0.0"
+            else
+              IFS='.' read -r major minor patch <<< "$latest"
+              ver="$major.$minor.$((patch + 1))"
+            fi
+            tag="wpf-v$ver"
+          else
+            ver="0.0.0-dev"
+            tag=""
+          fi
+          echo "VERSION=$ver" >> "$GITHUB_OUTPUT"
+          echo "TAG=$tag" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $ver (tag: $tag)"
 
       - name: Restore
         run: dotnet restore ${{ env.PROJECT }}
@@ -117,12 +140,27 @@ jobs:
           name: VaultGuard-MSI-${{ steps.ver.outputs.VERSION }}
           path: installer/output/*.msi
 
-      # ── Publish to GitHub Releases (tag builds only) ──────────────────────
+      # ── Publish to GitHub Releases: manual vX.Y.Z tag push, or a merged PR into devmain ──────────
+      # Only the PR-merge case needs a new tag - a manual vX.Y.Z tag already exists (the user pushed
+      # it), so there's nothing to create here; the release step below just attaches the installers to
+      # that existing tag's release.
+      - name: Tag release and create release branch
+        if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          sha="${{ github.event.pull_request.head.sha }}"
+          git tag "${{ steps.ver.outputs.TAG }}" "$sha"
+          git push origin "${{ steps.ver.outputs.TAG }}"
+          git branch "release/${{ steps.ver.outputs.TAG }}" "$sha"
+          git push origin "release/${{ steps.ver.outputs.TAG }}"
+
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain')
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ steps.ver.outputs.TAG }}
           name: VaultGuard ${{ steps.ver.outputs.VERSION }}
           generate_release_notes: true
           files: |

@@ -8,6 +8,9 @@ on:
     branches: [ devmain, main ]
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 env:
   PROJECT: VaultGuard.App/VaultGuard.App.csproj
   DOTNET_VERSION: '10.0.x'
@@ -17,8 +20,14 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      # Explicit ref + full history: pull_request's default checkout is a synthetic merge commit that
+      # doesn't exist in the branch's real history (bad tag target), and the release version-bump
+      # below needs the full tag history, not the default shallow clone.
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
@@ -36,3 +45,64 @@ jobs:
       # look for a nonexistent win-x64 flavored Mono runtime pack (NU1102).
       - name: Build
         run: dotnet build ${{ env.PROJECT }} --configuration Release -f net10.0-windows10.0.19041.0
+
+      # ── Android release: on a merged PR into devmain (auto-versioned, mirrors deploy-api/web-
+      # smarterasp.yml's "android-vX.Y.Z" tag scheme) or a manual vX.Y.Z tag push. Gated separately
+      # from the Windows-head build above so it never affects that build's own trigger scope. ──────
+      - name: Compute release version
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain')
+        id: ver
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" =~ ^refs/tags/v(.+)$ ]]; then
+            ver="${BASH_REMATCH[1]}"
+            tag="${{ github.ref_name }}"
+          else
+            latest=$(git tag -l 'android-v*' | sed 's/^android-v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
+            if [ -z "$latest" ]; then
+              ver="1.0.0"
+            else
+              IFS='.' read -r major minor patch <<< "$latest"
+              ver="$major.$minor.$((patch + 1))"
+            fi
+            tag="android-v$ver"
+          fi
+          echo "Resolved version: $ver (tag: $tag)"
+          echo "VERSION=$ver" >> "$GITHUB_OUTPUT"
+          echo "TAG=$tag" >> "$GITHUB_OUTPUT"
+
+      # No signing key is configured (see VaultGuard.App.csproj) - the SDK auto-generates a debug
+      # keystore, so this APK installs fine sideloaded ("install unknown apps") but isn't Play-Store
+      # signed. -f net10.0-android only (no -r/-p:RuntimeIdentifier) keeps this from leaking a Windows
+      # RID into Android's own restore, per the Build step's comment above.
+      - name: Publish Android APK
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain')
+        run: >
+          dotnet publish ${{ env.PROJECT }} -f net10.0-android --configuration Release
+          -p:Version=${{ steps.ver.outputs.VERSION }}
+          --output publish/android
+
+      # Only for the PR-merge case - a manual vX.Y.Z tag already exists (the user pushed it), so there's
+      # nothing to tag here; the release step below just attaches the APK to that existing tag's release.
+      - name: Tag release and create release branch
+        if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          sha="${{ github.event.pull_request.head.sha }}"
+          git tag "${{ steps.ver.outputs.TAG }}" "$sha"
+          git push origin "${{ steps.ver.outputs.TAG }}"
+          git branch "release/${{ steps.ver.outputs.TAG }}" "$sha"
+          git push origin "release/${{ steps.ver.outputs.TAG }}"
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain')
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.ver.outputs.TAG }}
+          name: VaultGuard Android v${{ steps.ver.outputs.VERSION }}
+          generate_release_notes: true
+          files: publish/android/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
