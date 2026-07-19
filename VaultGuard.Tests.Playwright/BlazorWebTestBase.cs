@@ -177,6 +177,39 @@ public abstract class BlazorWebTestBase : PageTest
         TestContext.WriteLine($"Screenshot: {path}");
     }
 
+    /// <summary>
+    /// Wraps a "page loaded" Expect(...).ToBeVisibleAsync() so a failure logs the actual page state
+    /// (URL, title, a body-text snippet) plus a screenshot before rethrowing - a plain
+    /// LocatorAssertions timeout only says "not found within Xms", which can't distinguish a slow
+    /// render from a silent redirect (e.g. bounced back to /login) or a genuinely broken page. Use
+    /// this for the top assertion in a test instead of a bare Expect(...) when the failure mode is
+    /// still being diagnosed.
+    /// </summary>
+    protected async Task ExpectVisibleWithDiagnosticsAsync(ILocator locator, string evidenceName)
+    {
+        try
+        {
+            await Expect(locator).ToBeVisibleAsync();
+        }
+        catch (Exception ex)
+        {
+            TestContext.WriteLine($"[{evidenceName}] FAILED - Page.Url={Page.Url}");
+            try { TestContext.WriteLine($"[{evidenceName}] Page title={await Page.TitleAsync()}"); }
+            catch (Exception titleEx) { TestContext.WriteLine($"[{evidenceName}] Could not read title: {titleEx.Message}"); }
+            try
+            {
+                var bodyText = await Page.Locator("body").InnerTextAsync();
+                var snippet = bodyText.Length > 400 ? bodyText[..400] : bodyText;
+                TestContext.WriteLine($"[{evidenceName}] Body text snippet: {snippet.ReplaceLineEndings(" | ")}");
+            }
+            catch (Exception bodyEx) { TestContext.WriteLine($"[{evidenceName}] Could not read body text: {bodyEx.Message}"); }
+            try { await SaveEvidenceAsync($"{evidenceName}_FAILURE"); }
+            catch (Exception evEx) { TestContext.WriteLine($"[{evidenceName}] Could not save failure screenshot: {evEx.Message}"); }
+            TestContext.WriteLine($"[{evidenceName}] Original exception: {ex.Message}");
+            throw;
+        }
+    }
+
     // The seeded default accounts' master key (see IdentityDataSeeder.CommonMasterKey).
     protected const string SeededMasterKey = "7hm3Z!Csu:Y64nm";
 

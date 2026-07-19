@@ -30,7 +30,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     {
         await Page.GotoAsync($"{BaseUrl}/settings");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Settings", Exact = true })).ToBeVisibleAsync();
+        await ExpectVisibleWithDiagnosticsAsync(Page.GetByRole(AriaRole.Heading, new() { Name = "Settings", Exact = true }), "SettingsHeading");
         await SaveEvidenceAsync("settings_page_loaded");
     }
 
@@ -39,7 +39,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     {
         await Page.GotoAsync($"{BaseUrl}/audit-logs");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Audit Logs", Exact = true })).ToBeVisibleAsync();
+        await ExpectVisibleWithDiagnosticsAsync(Page.GetByRole(AriaRole.Heading, new() { Name = "Audit Logs", Exact = true }), "AuditLogsHeading");
         await SaveEvidenceAsync("audit_logs_loaded");
     }
 
@@ -65,7 +65,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     {
         await Page.GotoAsync($"{BaseUrl}/import");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Import Passwords", Exact = true })).ToBeVisibleAsync();
+        await ExpectVisibleWithDiagnosticsAsync(Page.GetByRole(AriaRole.Heading, new() { Name = "Import Passwords", Exact = true }), "ImportPasswordsHeading");
         await SaveEvidenceAsync("import_page_loaded");
     }
 
@@ -91,7 +91,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
         // Just confirm the app bar is rendered with the brand. MainLayout.razor renders the app bar
         // title as "🔐 Vault Guard" (a space between "Vault" and "Guard") - "VaultGuard" (no space)
         // is not a substring of that, so it never matched and this assertion always timed out.
-        await Expect(Page.GetByText("Vault Guard")).ToBeVisibleAsync();
+        await ExpectVisibleWithDiagnosticsAsync(Page.GetByText("Vault Guard"), "AppBarBrand");
         await SaveEvidenceAsync("appbar_rendered");
     }
 
