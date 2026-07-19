@@ -20,6 +20,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureFeature("Encryption & Key Derivation")]
 [AllureParentSuite("Cryptography & Security")]
 [AllureSuite("Encryption & Key Derivation")]
+[AllureStory("Happy-Path Round Trips")]
+[AllureSubSuite("Happy-Path Round Trips")]
 public class CryptographyTests
 {
     private CryptographyService _crypto = null!;

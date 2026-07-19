@@ -14,6 +14,8 @@ namespace VaultGuard.BackEnd.Tests.Helpers;
 public class InputValidationHelperTests
 {
     [Test]
+    [AllureStory("Username Validation")]
+    [AllureSubSuite("Username Validation")]
     public void ValidateUsername_WithNullOrEmpty_ReturnsFalse()
     {
         // Arrange & Act
@@ -29,6 +31,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Username Validation")]
+    [AllureSubSuite("Username Validation")]
     public void ValidateUsername_WithSingleCharacter_ReturnsFalse()
     {
         // Arrange & Act
@@ -40,6 +44,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Username Validation")]
+    [AllureSubSuite("Username Validation")]
     public void ValidateUsername_WithIllegalCharacters_ReturnsFalse()
     {
         // Arrange & Act
@@ -55,6 +61,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Username Validation")]
+    [AllureSubSuite("Username Validation")]
     public void ValidateUsername_WithLegalCharacters_ReturnsTrue()
     {
         // Arrange & Act
@@ -71,6 +79,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Password Length Validation")]
+    [AllureSubSuite("Password Length Validation")]
     public void ValidatePassword_WithNullOrEmpty_ReturnsFalse()
     {
         // Arrange & Act
@@ -86,6 +96,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Password Length Validation")]
+    [AllureSubSuite("Password Length Validation")]
     public void ValidatePassword_WithSingleCharacter_ReturnsFalse()
     {
         // Arrange & Act
@@ -97,6 +109,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Password Length Validation")]
+    [AllureSubSuite("Password Length Validation")]
     public void ValidatePassword_WithValidLength_ReturnsTrue()
     {
         // Arrange & Act
@@ -107,6 +121,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Master Password Strength Rules")]
+    [AllureSubSuite("Master Password Strength Rules")]
     public void ValidateMasterPassword_WithShortPassword_ReturnsFalse()
     {
         // Arrange & Act
@@ -122,6 +138,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Master Password Strength Rules")]
+    [AllureSubSuite("Master Password Strength Rules")]
     public void ValidateMasterPassword_WithoutUppercase_ReturnsFalse()
     {
         // Arrange & Act
@@ -133,6 +151,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Master Password Strength Rules")]
+    [AllureSubSuite("Master Password Strength Rules")]
     public void ValidateMasterPassword_WithoutLowercase_ReturnsFalse()
     {
         // Arrange & Act
@@ -144,6 +164,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Master Password Strength Rules")]
+    [AllureSubSuite("Master Password Strength Rules")]
     public void ValidateMasterPassword_WithoutDigit_ReturnsFalse()
     {
         // Arrange & Act
@@ -155,6 +177,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Master Password Strength Rules")]
+    [AllureSubSuite("Master Password Strength Rules")]
     public void ValidateMasterPassword_WithAllRequirements_ReturnsTrue()
     {
         // Arrange & Act
@@ -166,6 +190,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Name Validation")]
+    [AllureSubSuite("Name Validation")]
     public void ValidateName_WithNullOrEmpty_ReturnsFalse()
     {
         // Arrange & Act
@@ -181,6 +207,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Name Validation")]
+    [AllureSubSuite("Name Validation")]
     public void ValidateName_WithSingleCharacter_ReturnsFalse()
     {
         // Arrange & Act
@@ -192,6 +220,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Name Validation")]
+    [AllureSubSuite("Name Validation")]
     public void ValidateName_WithIllegalCharacters_ReturnsFalse()
     {
         // Arrange & Act
@@ -207,6 +237,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Name Validation")]
+    [AllureSubSuite("Name Validation")]
     public void ValidateName_WithLegalCharacters_ReturnsTrue()
     {
         // Arrange & Act
@@ -223,6 +255,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Email Validation")]
+    [AllureSubSuite("Email Validation")]
     public void ValidateEmail_WithNullOrEmpty_ReturnsFalse()
     {
         // Arrange & Act
@@ -238,6 +272,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Email Validation")]
+    [AllureSubSuite("Email Validation")]
     public void ValidateEmail_WithTooShort_ReturnsFalse()
     {
         // Arrange & Act
@@ -249,6 +285,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Email Validation")]
+    [AllureSubSuite("Email Validation")]
     public void ValidateEmail_WithInvalidFormat_ReturnsFalse()
     {
         // Arrange & Act
@@ -265,6 +303,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Email Validation")]
+    [AllureSubSuite("Email Validation")]
     public void ValidateEmail_WithValidFormat_ReturnsTrue()
     {
         // Arrange & Act
@@ -279,6 +319,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Password Confirmation Matching")]
+    [AllureSubSuite("Password Confirmation Matching")]
     public void ValidatePasswordMatch_WithMatchingPasswords_ReturnsTrue()
     {
         // Arrange & Act
@@ -290,6 +332,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Password Confirmation Matching")]
+    [AllureSubSuite("Password Confirmation Matching")]
     public void ValidatePasswordMatch_WithDifferentPasswords_ReturnsFalse()
     {
         // Arrange & Act
@@ -301,6 +345,8 @@ public class InputValidationHelperTests
     }
 
     [Test]
+    [AllureStory("Password Confirmation Matching")]
+    [AllureSubSuite("Password Confirmation Matching")]
     public void ValidatePasswordMatch_CaseSensitive_ReturnsFalse()
     {
         // Arrange & Act

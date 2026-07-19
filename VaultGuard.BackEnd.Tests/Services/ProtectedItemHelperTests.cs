@@ -12,6 +12,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureFeature("Password Items")]
 [AllureParentSuite("Vault Data Management")]
 [AllureSuite("Password Items")]
+[AllureStory("Protected-Field Encryption Helper")]
+[AllureSubSuite("Protected-Field Encryption Helper")]
 public class ProtectedItemHelperTests
 {
     [Test]

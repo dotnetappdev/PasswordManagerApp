@@ -18,6 +18,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureFeature("Encryption & Key Derivation")]
 [AllureParentSuite("Cryptography & Security")]
 [AllureSuite("Encryption & Key Derivation")]
+[AllureStory("Boundary & Edge Cases")]
+[AllureSubSuite("Boundary & Edge Cases")]
 public class CryptographyEdgeCaseTests
 {
     private CryptographyService _crypto = null!;

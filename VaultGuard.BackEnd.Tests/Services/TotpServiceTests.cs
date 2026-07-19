@@ -11,6 +11,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureFeature("Two-Factor Authentication")]
 [AllureParentSuite("Cryptography & Security")]
 [AllureSuite("Two-Factor Authentication")]
+[AllureStory("TOTP Service")]
+[AllureSubSuite("TOTP Service")]
 public class TotpServiceTests
 {
     private TotpService _service = null!;

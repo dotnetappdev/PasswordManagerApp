@@ -28,6 +28,8 @@ namespace VaultGuard.BackEnd.Tests.Controllers;
 [AllureFeature("Password Items")]
 [AllureParentSuite("Vault Data Management")]
 [AllureSuite("Password Items")]
+[AllureStory("Controller Endpoints")]
+[AllureSubSuite("Controller Endpoints")]
 public class PasswordItemsControllerTests
 {
     private Mock<IPasswordItemApiService> _mockItemService = null!;

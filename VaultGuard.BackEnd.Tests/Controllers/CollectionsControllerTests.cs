@@ -16,6 +16,8 @@ namespace VaultGuard.BackEnd.Tests.Controllers;
 [AllureFeature("Categories & Collections")]
 [AllureParentSuite("Vault Data Management")]
 [AllureSuite("Categories & Collections")]
+[AllureStory("Collections Controller")]
+[AllureSubSuite("Collections Controller")]
 public class CollectionsControllerTests
 {
     private Mock<ICollectionApiService> _mockCollectionService = null!;

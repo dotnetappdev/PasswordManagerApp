@@ -36,6 +36,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Encryption")]
+    [AllureSubSuite("Encryption")]
     public void EncryptPassword_WithValidInputs_ShouldReturnEncryptedData()
     {
         // Arrange
@@ -69,6 +71,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Encryption")]
+    [AllureSubSuite("Encryption")]
     public void EncryptPassword_WithNullPassword_ShouldThrowArgumentException()
     {
         // Act & Assert
@@ -80,6 +84,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Encryption")]
+    [AllureSubSuite("Encryption")]
     public void EncryptPassword_WithEmptyPassword_ShouldThrowArgumentException()
     {
         // Act & Assert
@@ -91,6 +97,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Encryption")]
+    [AllureSubSuite("Encryption")]
     public void EncryptPassword_WithNullMasterPassword_ShouldThrowArgumentException()
     {
         // Act & Assert
@@ -102,6 +110,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Encryption")]
+    [AllureSubSuite("Encryption")]
     public void EncryptPassword_WithNullUserSalt_ShouldThrowArgumentException()
     {
         // Act & Assert
@@ -113,6 +123,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Encryption")]
+    [AllureSubSuite("Encryption")]
     public void EncryptPassword_WithEmptyUserSalt_ShouldThrowArgumentException()
     {
         // Act & Assert
@@ -124,6 +136,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Decryption")]
+    [AllureSubSuite("Decryption")]
     public void DecryptPassword_WithValidInputs_ShouldReturnOriginalPassword()
     {
         // Arrange
@@ -158,6 +172,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Decryption")]
+    [AllureSubSuite("Decryption")]
     public void DecryptPassword_WithNullEncryptedData_ShouldThrowArgumentNullException()
     {
         // Act & Assert
@@ -168,6 +184,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Decryption")]
+    [AllureSubSuite("Decryption")]
     public void DecryptPassword_WithInvalidBase64_ShouldThrowFormatException()
     {
         // Arrange
@@ -184,6 +202,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Salt Generation")]
+    [AllureSubSuite("Salt Generation")]
     public void GenerateUserSalt_ShouldReturnCorrectLength()
     {
         // Arrange
@@ -205,6 +225,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Master Password Hashing & Verification")]
+    [AllureSubSuite("Master Password Hashing & Verification")]
     public void CreateMasterPasswordHash_WithValidInputs_ShouldReturnHash()
     {
         // Arrange
@@ -232,6 +254,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Master Password Hashing & Verification")]
+    [AllureSubSuite("Master Password Hashing & Verification")]
     public void CreateMasterPasswordHash_WithNullMasterPassword_ShouldThrowArgumentException()
     {
         // Act & Assert
@@ -242,6 +266,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Master Password Hashing & Verification")]
+    [AllureSubSuite("Master Password Hashing & Verification")]
     public void VerifyMasterPassword_WithCorrectPassword_ShouldReturnTrue()
     {
         // Arrange
@@ -268,6 +294,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Master Password Hashing & Verification")]
+    [AllureSubSuite("Master Password Hashing & Verification")]
     public void VerifyMasterPassword_WithIncorrectPassword_ShouldReturnFalse()
     {
         // Arrange
@@ -294,6 +322,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Encryption")]
+    [AllureSubSuite("Encryption")]
     public void EncryptPassword_CryptographyServiceThrows_ShouldPropagateException()
     {
         // Arrange
@@ -309,6 +339,8 @@ public class PasswordCryptoServiceTests
     }
 
     [Test]
+    [AllureStory("Decryption")]
+    [AllureSubSuite("Decryption")]
     public void DecryptPassword_CryptographyServiceThrows_ShouldPropagateException()
     {
         // Arrange
