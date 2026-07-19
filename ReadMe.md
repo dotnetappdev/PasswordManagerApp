@@ -200,7 +200,8 @@ to the GitHub release. To build them locally, see [`installers/README.md`](insta
 ---
 
 > **Releasing?** See [`docs/RELEASING.md`](docs/RELEASING.md) for the full picture - the automatic
-> per-deploy releases below, the manual combined-tag release, and how to roll back to a previous one.
+> per-merge releases (all four apps) below, the manual combined-tag release, and how to roll back to
+> a previous one.
 
 ## Deploying the API to SmarterASP.NET
 
@@ -222,11 +223,15 @@ the self-contained executable. `-p:Version=` stamps the computed version into th
 makes it show up live in Scalar's title badge and `/swagger/v1/swagger.json` (see `Program.cs`'s
 `AddSwaggerGen` call).
 
-**Versioning and releases are fully automatic** - no manual `git tag && git push` needed. Once the deploy
-above succeeds, the job:
+**Versioning and releases are fully automatic** - no manual `git tag && git push` needed. The release
+step runs regardless of whether the deploy above actually succeeds (`continue-on-error: true` on that
+step - SmarterASP.NET's Web Deploy target being unreachable shouldn't block cutting a release for a
+build that passed its tests). Check the `Deploy to SmarterASP.NET` step's own outcome, or the
+`::warning::` it logs on failure, to see whether a given release is actually live on the server. The
+job:
 1. Computes the next version by reading the highest existing `api-vX.Y.Z` tag and bumping the patch
    number (starts at `1.0.0` if none exist yet).
-2. Tags the exact commit that was deployed and pushes the tag.
+2. Tags the commit from the PR's head and pushes the tag.
 3. Creates a `release/api-vX.Y.Z` branch off that same commit.
 4. Zips the publish output and attaches it to a new GitHub Release for that tag.
 
@@ -250,8 +255,9 @@ SmarterASP.NET control panel's Web Deploy settings:
 `.github/workflows/deploy-web-smarterasp.yml` mirrors the API workflow above for **only**
 `VaultGuard.Web` (the Blazor Server web app) - same action, same self-contained `win-x64` publish, same
 `AspNetCoreHostingModel=OutOfProcess` reasoning (already set in `VaultGuard.Web.csproj`), and the same
-automatic version bump → tag (`web-vX.Y.Z`) → `release/web-vX.Y.Z` branch → zipped GitHub Release cycle
-once the deploy succeeds. `-p:Version=` stamps the assembly version that Settings → About displays
+automatic version bump → tag (`web-vX.Y.Z`) → `release/web-vX.Y.Z` branch → zipped GitHub Release cycle,
+released regardless of whether the deploy itself succeeds (same `continue-on-error` reasoning as the API
+workflow above). `-p:Version=` stamps the assembly version that Settings → About displays
 (`VaultGuard.Web/Components/Pages/Settings.razor`'s `_appVersion`).
 
 **When it runs:** on every pull request into `devmain` that touches Web-relevant code (`VaultGuard.Web`,
@@ -272,20 +278,33 @@ job - publish and deploy only happen if it passes.
 > site is actually on a different server, add a dedicated secret and update
 > `deploy-web-smarterasp.yml` accordingly.
 
+## Android and WPF releases
+
+`build-maui.yml` (Android) and `build-wpf.yml` (WPF) follow the same automatic pattern as the API/Web
+workflows above - a merged pull request into `devmain` auto-versions (`android-vX.Y.Z` / `wpf-vX.Y.Z`,
+independently from the API/Web numbers), tags the commit, creates a matching `release/*` branch, and
+attaches the built artifact (an `.apk` for Android; an `.exe` and `.msi` installer for WPF) to a new
+GitHub Release. Neither has an external deploy step, so there's no `continue-on-error` concern - they
+release as soon as the build succeeds. See [`docs/RELEASING.md`](docs/RELEASING.md) for the full
+per-app trigger/tag table.
+
 ## Cutting a manual combined release
 
 `.github/workflows/release.yml` is a separate, manual release path: push a tag like `v1.2.3` and it
 builds + zips **both** `VaultGuard.API` and `VaultGuard.Web` (self-contained, `win-x64`), creates a
 `release/v1.2.3` branch off that commit, and publishes a GitHub Release with both zips attached -
-no deploy involved, just a combined build artifact + release.
+no deploy involved, just a combined build artifact + release. `build-api.yml`, `build-web.yml`,
+`build-maui.yml` and `build-wpf.yml` each also build+release their own project on the same `v*` tag,
+contributing an API zip, Web zip, Android APK, and WPF installers to that same release.
 
 ```bash
 git tag v1.2.3
 git push origin v1.2.3
 ```
 
-This is separate from the automatic per-deploy releases described above (`api-vX.Y.Z` / `web-vX.Y.Z`,
-created automatically on every successful SmarterASP.NET deploy, no manual tagging needed).
+This is separate from the automatic per-merge releases described above (`api-vX.Y.Z` / `web-vX.Y.Z` /
+`android-vX.Y.Z` / `wpf-vX.Y.Z`, created automatically on every PR merged into `devmain`, no manual
+tagging needed).
 `build-api.yml`/`build-web.yml` also each build+zip+release their own project individually on a `v*` tag
 push (without a release branch) - all three contribute files to the same GitHub Release for a given tag
 rather than conflicting, but a `v*` tag does trigger three workflow runs.
