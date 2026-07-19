@@ -47,14 +47,14 @@ public class ApplicationWorkflowTests : BlazorWebTestBase
     [TestMethod]
     public async Task Navigation_ToDashboard_Works()
     {
-        await Page.GotoAsync("/");
+        await Page.GotoAsync(BaseUrl);
         await Expect(Page.GetByText("Dashboard")).ToBeVisibleAsync();
     }
 
     [TestMethod]
     public async Task Navigation_ToPasswordItems_Works()
     {
-        await Page.GotoAsync("/passwords");
+        await Page.GotoAsync($"{BaseUrl}/passwords");
         await Expect(Page.GetByText("All Items")).ToBeVisibleAsync();
         await SaveEvidenceAsync("nav_passwords");
     }
@@ -62,7 +62,7 @@ public class ApplicationWorkflowTests : BlazorWebTestBase
     [TestMethod]
     public async Task Navigation_ToCategories_Works()
     {
-        await Page.GotoAsync("/categories");
+        await Page.GotoAsync($"{BaseUrl}/categories");
         await Expect(Page.GetByText("Categories")).ToBeVisibleAsync();
         await SaveEvidenceAsync("nav_categories");
     }
@@ -70,7 +70,7 @@ public class ApplicationWorkflowTests : BlazorWebTestBase
     [TestMethod]
     public async Task Navigation_ToTags_Works()
     {
-        await Page.GotoAsync("/tags");
+        await Page.GotoAsync($"{BaseUrl}/tags");
         await Expect(Page.GetByText("Tags")).ToBeVisibleAsync();
         await SaveEvidenceAsync("nav_tags");
     }
@@ -78,7 +78,7 @@ public class ApplicationWorkflowTests : BlazorWebTestBase
     [TestMethod]
     public async Task Navigation_ToVaults_Works()
     {
-        await Page.GotoAsync("/vaults");
+        await Page.GotoAsync($"{BaseUrl}/vaults");
         await Expect(Page.GetByText("Vaults")).ToBeVisibleAsync();
         await SaveEvidenceAsync("nav_vaults");
     }
@@ -86,7 +86,7 @@ public class ApplicationWorkflowTests : BlazorWebTestBase
     [TestMethod]
     public async Task Navigation_ToSettings_Works()
     {
-        await Page.GotoAsync("/settings");
+        await Page.GotoAsync($"{BaseUrl}/settings");
         await Expect(Page.GetByText("Settings")).ToBeVisibleAsync();
         await SaveEvidenceAsync("nav_settings");
     }
@@ -94,7 +94,7 @@ public class ApplicationWorkflowTests : BlazorWebTestBase
     [TestMethod]
     public async Task Navigation_ToProfile_Works()
     {
-        await Page.GotoAsync("/profile");
+        await Page.GotoAsync($"{BaseUrl}/profile");
         await Expect(Page.GetByText("Profile")).ToBeVisibleAsync();
         await SaveEvidenceAsync("nav_profile");
     }
@@ -104,7 +104,7 @@ public class ApplicationWorkflowTests : BlazorWebTestBase
     [TestMethod]
     public async Task AdminUserManagementWorkflow_ShouldExecuteSuccessfully()
     {
-        await Page.GotoAsync("/");
+        await Page.GotoAsync(BaseUrl);
         await Expect(Page.GetByText("Dashboard")).ToBeVisibleAsync();
 
         // Check profile link exists in account menu
@@ -113,7 +113,7 @@ public class ApplicationWorkflowTests : BlazorWebTestBase
                               .Or(Page.GetByRole(AriaRole.Button, new() { Name = "account" }));
 
         // Profile page is accessible
-        await Page.GotoAsync("/profile");
+        await Page.GotoAsync($"{BaseUrl}/profile");
         await Expect(Page.GetByText("Profile")).ToBeVisibleAsync();
         await SaveEvidenceAsync("admin_workflow_profile");
     }
@@ -123,7 +123,7 @@ public class ApplicationWorkflowTests : BlazorWebTestBase
     [TestMethod]
     public async Task ImportExportWorkflow_ShouldHandleDataTransfer()
     {
-        await Page.GotoAsync("/import");
+        await Page.GotoAsync($"{BaseUrl}/import");
         await Expect(Page.GetByText("Import")).ToBeVisibleAsync();
         await SaveEvidenceAsync("import_page_loaded");
     }
@@ -138,22 +138,22 @@ public class ApplicationWorkflowTests : BlazorWebTestBase
         await SaveEvidenceAsync("workflow_01_dashboard");
 
         // Navigate to passwords
-        await Page.GotoAsync("/passwords");
+        await Page.GotoAsync($"{BaseUrl}/passwords");
         await Expect(Page.GetByText("All Items")).ToBeVisibleAsync();
         await SaveEvidenceAsync("workflow_02_passwords");
 
         // Navigate to categories
-        await Page.GotoAsync("/categories");
+        await Page.GotoAsync($"{BaseUrl}/categories");
         await Expect(Page.GetByText("Categories")).ToBeVisibleAsync();
         await SaveEvidenceAsync("workflow_03_categories");
 
         // Navigate to vaults
-        await Page.GotoAsync("/vaults");
+        await Page.GotoAsync($"{BaseUrl}/vaults");
         await Expect(Page.GetByText("Vaults")).ToBeVisibleAsync();
         await SaveEvidenceAsync("workflow_04_vaults");
 
         // Return to dashboard
-        await Page.GotoAsync("/");
+        await Page.GotoAsync(BaseUrl);
         await Expect(Page.GetByText("Dashboard")).ToBeVisibleAsync();
         await SaveEvidenceAsync("workflow_05_back_to_dashboard");
     }

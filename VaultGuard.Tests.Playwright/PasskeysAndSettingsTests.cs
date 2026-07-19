@@ -17,7 +17,7 @@ public class PasskeysAndSettingsTests : BlazorWebTestBase
     [TestMethod]
     public async Task Passkeys_Page_Loads()
     {
-        await Page.GotoAsync("/passkeys");
+        await Page.GotoAsync($"{BaseUrl}/passkeys");
         await Expect(Page.GetByText("Passkeys").First).ToBeVisibleAsync();
         await SaveEvidenceAsync("passkeys_page");
     }
@@ -25,7 +25,7 @@ public class PasskeysAndSettingsTests : BlazorWebTestBase
     [TestMethod]
     public async Task Passkeys_Page_ShowsWebsitePasskeysSection()
     {
-        await Page.GotoAsync("/passkeys");
+        await Page.GotoAsync($"{BaseUrl}/passkeys");
         // The password-manager-style section that lists ItemType.Passkey vault items.
         await Expect(Page.GetByText("Passkeys saved for your websites")).ToBeVisibleAsync();
         await SaveEvidenceAsync("passkeys_website_section");
@@ -34,7 +34,7 @@ public class PasskeysAndSettingsTests : BlazorWebTestBase
     [TestMethod]
     public async Task Passkeys_Page_HasRegisterAction()
     {
-        await Page.GotoAsync("/passkeys");
+        await Page.GotoAsync($"{BaseUrl}/passkeys");
         // Either the empty-state CTA or the header button is present.
         var register = Page.GetByRole(AriaRole.Button, new() { Name = "Register" });
         await Expect(register.First).ToBeVisibleAsync();
@@ -50,7 +50,7 @@ public class PasskeysAndSettingsTests : BlazorWebTestBase
     [DataRow("Generator")]
     public async Task Settings_DeepLink_ActivatesRequestedTab(string tab)
     {
-        await Page.GotoAsync($"/settings?tab={tab}");
+        await Page.GotoAsync($"{BaseUrl}/settings?tab={tab}");
         // MudBlazor marks the selected tab header with .mud-tab-active; deep-linking must select it.
         await Expect(Page.Locator(".mud-tab-active")).ToContainTextAsync(tab);
         await SaveEvidenceAsync($"settings_tab_{tab.ToLowerInvariant()}");
@@ -61,7 +61,7 @@ public class PasskeysAndSettingsTests : BlazorWebTestBase
     [TestMethod]
     public async Task Nav_SettingsGroup_ExpandsToTabLinks()
     {
-        await Page.GotoAsync("/");
+        await Page.GotoAsync(BaseUrl);
         // The "Settings" nav group header expands to per-tab sub-links.
         await Page.GetByText("Settings", new() { Exact = true }).First.ClickAsync();
         await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "All Settings" })).ToBeVisibleAsync();
@@ -71,7 +71,7 @@ public class PasskeysAndSettingsTests : BlazorWebTestBase
     [TestMethod]
     public async Task Nav_VaultsGroup_ExpandsToAllVaultsLink()
     {
-        await Page.GotoAsync("/");
+        await Page.GotoAsync(BaseUrl);
         await Page.GetByText("Vaults", new() { Exact = true }).First.ClickAsync();
         await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "All Vaults" })).ToBeVisibleAsync();
         await SaveEvidenceAsync("nav_vaults_group");

@@ -1,4 +1,5 @@
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Microsoft.Data.SqlClient;
 using Moq;
 using NUnit.Framework;
@@ -9,6 +10,10 @@ namespace VaultGuard.BackEnd.Tests.Configuration;
 
 [TestFixture]
 [AllureNUnit]
+[AllureEpic("Platform & Infrastructure")]
+[AllureFeature("Configuration")]
+[AllureParentSuite("Platform & Infrastructure")]
+[AllureSuite("Configuration")]
 public class SharedMachineDatabaseSettingsTests
 {
     [Test]

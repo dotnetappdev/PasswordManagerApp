@@ -15,7 +15,7 @@ public class VaultCrudTests : BlazorWebTestBase
     public new async Task NavigateToHomePageAsync()
     {
         await base.NavigateToHomePageAsync();
-        await Page.GotoAsync("/vaults");
+        await Page.GotoAsync($"{BaseUrl}/vaults");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 
@@ -81,7 +81,7 @@ public class VaultCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task VaultsPage_ShowsDashboardStats()
     {
-        await Page.GotoAsync("/");
+        await Page.GotoAsync(BaseUrl);
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Dashboard shows vault count stat card

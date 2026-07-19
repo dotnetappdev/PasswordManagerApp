@@ -1,4 +1,5 @@
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
@@ -10,6 +11,10 @@ namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
 [AllureNUnit]
+[AllureEpic("Vault Data Management")]
+[AllureFeature("Categories & Collections")]
+[AllureParentSuite("Vault Data Management")]
+[AllureSuite("Categories & Collections")]
 public class CollectionServiceTests
 {
     private DbContextOptions<VaultGuardDbContext> _options = null!;
@@ -17,6 +22,7 @@ public class CollectionServiceTests
     private CollectionService _collectionService = null!;
     private const string TestUserId = "test-user-id";
 
+    [AllureBefore("Create a fresh EF Core in-memory database context")]
     [SetUp]
     public void Setup()
     {
@@ -28,6 +34,7 @@ public class CollectionServiceTests
         _collectionService = new CollectionService(_context);
     }
 
+    [AllureAfter("Drop and dispose the in-memory database context")]
     [TearDown]
     public void TearDown()
     {

@@ -1,4 +1,5 @@
 using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,10 @@ namespace VaultGuard.BackEnd.Tests.Controllers;
 /// </summary>
 [TestFixture]
 [AllureNUnit]
+[AllureEpic("Accounts & API Access")]
+[AllureFeature("User Profiles")]
+[AllureParentSuite("Accounts & API Access")]
+[AllureSuite("User Profiles")]
 public class UserProfileControllerTests
 {
     private Mock<IUserProfileService> _mockUserProfileService = null!;
@@ -26,6 +31,7 @@ public class UserProfileControllerTests
 
     private const string UserId = "user-1";
 
+    [AllureBefore("Create a mocked IUserProfileService and logger, and construct the controller under test")]
     [SetUp]
     public void Setup()
     {
