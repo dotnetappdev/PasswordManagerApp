@@ -24,6 +24,8 @@ namespace VaultGuard.BackEnd.Tests.Controllers;
 [AllureNUnit]
 [AllureEpic("Accounts & API Access")]
 [AllureFeature("API Keys")]
+[AllureParentSuite("Accounts & API Access")]
+[AllureSuite("API Keys")]
 public class ApiKeysControllerTests
 {
     private Mock<IApiKeyService> _mockApiKeyService = null!;
@@ -35,6 +37,7 @@ public class ApiKeysControllerTests
     private const string UserId = "user-1";
     private const string Email = "user@example.com";
 
+    [AllureBefore("Create mocked IApiKeyService and UserManager, and construct the controller under test")]
     [SetUp]
     public void Setup()
     {

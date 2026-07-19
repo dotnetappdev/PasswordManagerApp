@@ -14,12 +14,15 @@ namespace VaultGuard.BackEnd.Tests.Controllers;
 [AllureNUnit]
 [AllureEpic("Vault Data Management")]
 [AllureFeature("Categories & Collections")]
+[AllureParentSuite("Vault Data Management")]
+[AllureSuite("Categories & Collections")]
 public class CollectionsControllerTests
 {
     private Mock<ICollectionApiService> _mockCollectionService = null!;
     private Mock<ILogger<CollectionsController>> _mockLogger = null!;
     private CollectionsController _controller = null!;
 
+    [AllureBefore("Create mocked ICollectionApiService and logger, and construct the controller under test")]
     [SetUp]
     public void Setup()
     {

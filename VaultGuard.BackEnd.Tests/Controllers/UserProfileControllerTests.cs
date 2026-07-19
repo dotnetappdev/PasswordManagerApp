@@ -21,6 +21,8 @@ namespace VaultGuard.BackEnd.Tests.Controllers;
 [AllureNUnit]
 [AllureEpic("Accounts & API Access")]
 [AllureFeature("User Profiles")]
+[AllureParentSuite("Accounts & API Access")]
+[AllureSuite("User Profiles")]
 public class UserProfileControllerTests
 {
     private Mock<IUserProfileService> _mockUserProfileService = null!;
@@ -29,6 +31,7 @@ public class UserProfileControllerTests
 
     private const string UserId = "user-1";
 
+    [AllureBefore("Create a mocked IUserProfileService and logger, and construct the controller under test")]
     [SetUp]
     public void Setup()
     {

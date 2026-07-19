@@ -10,6 +10,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureNUnit]
 [AllureEpic("Vault Data Management")]
 [AllureFeature("Password Items")]
+[AllureParentSuite("Vault Data Management")]
+[AllureSuite("Password Items")]
 public class ProtectedItemHelperTests
 {
     [Test]

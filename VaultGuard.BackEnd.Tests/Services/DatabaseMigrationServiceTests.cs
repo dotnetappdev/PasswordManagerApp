@@ -13,12 +13,15 @@ namespace VaultGuard.BackEnd.Tests.Services
     [AllureNUnit]
     [AllureEpic("Platform & Infrastructure")]
     [AllureFeature("Database Migrations")]
+    [AllureParentSuite("Platform & Infrastructure")]
+    [AllureSuite("Database Migrations")]
     public class DatabaseMigrationServiceTests
     {
         private DatabaseMigrationService _migrationService;
         private VaultGuardDbContext _context;
         private ILogger<DatabaseMigrationService> _logger;
 
+        [AllureBefore("Create a fresh EF Core in-memory database context for migration testing")]
         [SetUp]
         public void SetUp()
         {
@@ -34,6 +37,7 @@ namespace VaultGuard.BackEnd.Tests.Services
             _migrationService = new DatabaseMigrationService(_context, _logger);
         }
 
+        [AllureAfter("Dispose the database context")]
         [TearDown]
         public void TearDown()
         {

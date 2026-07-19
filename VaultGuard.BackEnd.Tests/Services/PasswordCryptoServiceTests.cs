@@ -13,6 +13,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureNUnit]
 [AllureEpic("Cryptography & Security")]
 [AllureFeature("Password Vault Cryptography")]
+[AllureParentSuite("Cryptography & Security")]
+[AllureSuite("Password Vault Cryptography")]
 public class PasswordCryptoServiceTests
 {
     private Mock<ICryptographyService> _mockCryptographyService = null!;
@@ -21,6 +23,7 @@ public class PasswordCryptoServiceTests
     private const string TestMasterPassword = "TestMasterPassword123!";
     private const string TestPassword = "MySecretPassword";
 
+    [AllureBefore("Create a mocked ICryptographyService and a fixed test user salt")]
     [SetUp]
     public void Setup()
     {

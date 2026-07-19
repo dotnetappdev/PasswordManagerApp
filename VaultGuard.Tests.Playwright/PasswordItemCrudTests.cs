@@ -15,7 +15,7 @@ public class PasswordItemCrudTests : BlazorWebTestBase
     public new async Task NavigateToHomePageAsync()
     {
         await base.NavigateToHomePageAsync();
-        await Page.GotoAsync("/passwords");
+        await Page.GotoAsync($"{BaseUrl}/passwords");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 

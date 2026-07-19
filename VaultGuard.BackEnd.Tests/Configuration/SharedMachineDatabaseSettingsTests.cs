@@ -12,6 +12,8 @@ namespace VaultGuard.BackEnd.Tests.Configuration;
 [AllureNUnit]
 [AllureEpic("Platform & Infrastructure")]
 [AllureFeature("Configuration")]
+[AllureParentSuite("Platform & Infrastructure")]
+[AllureSuite("Configuration")]
 public class SharedMachineDatabaseSettingsTests
 {
     [Test]

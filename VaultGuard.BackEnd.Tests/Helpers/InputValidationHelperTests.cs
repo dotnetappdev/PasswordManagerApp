@@ -9,6 +9,8 @@ namespace VaultGuard.BackEnd.Tests.Helpers;
 [AllureNUnit]
 [AllureEpic("Cryptography & Security")]
 [AllureFeature("Input Validation")]
+[AllureParentSuite("Cryptography & Security")]
+[AllureSuite("Input Validation")]
 public class InputValidationHelperTests
 {
     [Test]

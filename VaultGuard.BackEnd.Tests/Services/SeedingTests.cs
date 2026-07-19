@@ -19,6 +19,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureNUnit]
 [AllureEpic("Platform & Infrastructure")]
 [AllureFeature("Data Seeding")]
+[AllureParentSuite("Platform & Infrastructure")]
+[AllureSuite("Data Seeding")]
 public class SeedingTests
 {
     private SqliteConnection  _connection = null!;
@@ -53,6 +55,7 @@ public class SeedingTests
 
     // ── Setup / Teardown ────────────────────────────────────────────────────
 
+    [AllureBefore("Open a persistent in-memory SQLite connection so the database survives across DbContext instances")]
     [SetUp]
     public void Setup()
     {
@@ -65,6 +68,7 @@ public class SeedingTests
         _db.Database.EnsureCreated();   // creates schema from current EF model
     }
 
+    [AllureAfter("Dispose the DbContext and close the in-memory SQLite connection")]
     [TearDown]
     public void TearDown()
     {

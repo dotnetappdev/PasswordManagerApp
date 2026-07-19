@@ -25,6 +25,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureNUnit]
 [AllureEpic("Accounts & API Access")]
 [AllureFeature("API Keys")]
+[AllureParentSuite("Accounts & API Access")]
+[AllureSuite("API Keys")]
 public class ApiKeyServiceTests
 {
     private string _dbName = null!;
@@ -32,6 +34,7 @@ public class ApiKeyServiceTests
     private const string UserId = "user-1";
     private const string OtherUserId = "user-2";
 
+    [AllureBefore("Create a fresh in-memory database and mocked SQLite mirror for this test")]
     [SetUp]
     public void Setup()
     {
@@ -48,6 +51,7 @@ public class ApiKeyServiceTests
         ctx.SaveChanges();
     }
 
+    [AllureAfter("Drop the in-memory test database")]
     [TearDown]
     public void TearDown()
     {

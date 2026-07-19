@@ -26,6 +26,8 @@ namespace VaultGuard.BackEnd.Tests.Controllers;
 [AllureNUnit]
 [AllureEpic("Vault Data Management")]
 [AllureFeature("Password Items")]
+[AllureParentSuite("Vault Data Management")]
+[AllureSuite("Password Items")]
 public class PasswordItemsControllerTests
 {
     private Mock<IPasswordItemApiService> _mockItemService = null!;
@@ -40,6 +42,7 @@ public class PasswordItemsControllerTests
     private const string UserId = "user-1";
     private const string OtherUserId = "user-2";
 
+    [AllureBefore("Create mocked item, encryption and vault-session services, and construct the controller under test")]
     [SetUp]
     public void Setup()
     {

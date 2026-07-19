@@ -18,11 +18,14 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureNUnit]
 [AllureEpic("Cryptography & Security")]
 [AllureFeature("Encryption & Key Derivation")]
+[AllureParentSuite("Cryptography & Security")]
+[AllureSuite("Encryption & Key Derivation")]
 public class CryptographyTests
 {
     private CryptographyService _crypto = null!;
     private PasswordCryptoService _passwordCrypto = null!;
 
+    [AllureBefore("Construct real CryptographyService and PasswordCryptoService instances")]
     [SetUp]
     public void SetUp()
     {

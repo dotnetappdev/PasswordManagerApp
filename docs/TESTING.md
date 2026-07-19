@@ -79,13 +79,25 @@ artifact instead, downloadable from that run's summary page.
 
 - **Instrumentation:** NUnit fixtures in `VaultGuard.BackEnd.Tests` carry `[AllureNUnit]` (via `Allure.NUnit`),
   and an `allureConfig.json` sends per-test JSON to each project's `allure-results` output folder.
-- **Categorization:** every fixture also carries `[AllureEpic]` + `[AllureFeature]` (from
-  `Allure.NUnit.Attributes`), so the dashboard's Behaviors tab groups the ~200+ tests by area instead of
-  dumping everything into one flat list keyed off namespace. Epics: `Cryptography & Security`,
-  `Vault Data Management`, `Accounts & API Access`, `Platform & Infrastructure` - each with several
-  Features underneath (e.g. `Cryptography & Security` → `Encryption & Key Derivation`,
-  `Password Vault Cryptography`, `Two-Factor Authentication`, `Security Auditing`, `Input Validation`).
-  Add the same two attributes to a new fixture's class declaration to place it in the right group.
+- **Categorization:** every fixture carries both pairs of grouping attributes (`Allure.NUnit.Attributes`),
+  covering the dashboard's two different views of the same ~200+ tests:
+  - `[AllureEpic]` + `[AllureFeature]` drive the **Behaviors** tab.
+  - `[AllureParentSuite]` + `[AllureSuite]` drive the **Suites** tab - without these, Suites only ever
+    shows the four top-level namespace folders (`Configuration`/`Controllers`/`Helpers`/`Services`), each
+    dumping everything under it into one flat bucket (e.g. `Services` alone held 154 tests).
+
+  Both pairs use the same values, so the two tabs mirror each other: 4 top-level groups -
+  `Cryptography & Security`, `Vault Data Management`, `Accounts & API Access`,
+  `Platform & Infrastructure` - each split into several sub-groups (e.g. `Cryptography & Security` →
+  `Encryption & Key Derivation`, `Password Vault Cryptography`, `Two-Factor Authentication`,
+  `Security Auditing`, `Input Validation`). Add all four attributes to a new fixture's class declaration
+  to place it correctly in both tabs.
+- **Setup/teardown as named steps:** `[AllureNUnit]` alone does *not* surface `[SetUp]`/`[TearDown]` in
+  the report - each one needs an explicit `[AllureBefore("description")]` / `[AllureAfter("description")]`
+  attribute (placed above the `[SetUp]`/`[TearDown]` attribute) or it's invisible in the test's step
+  timeline. Every fixture with a `[SetUp]`/`[TearDown]` now has one, describing what that fixture's setup
+  actually does (e.g. "Create a fresh EF Core in-memory database context", "Open a persistent in-memory
+  SQLite connection...") rather than a generic placeholder.
 - **Prerequisites for generating the HTML:** the Allure CLI, or Node (`npx`) + a JRE. Java is used by the
   Allure CLI under the hood.
 

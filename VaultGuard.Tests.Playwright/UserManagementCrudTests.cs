@@ -14,7 +14,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task ProfilePage_LoadsSuccessfully()
     {
-        await Page.GotoAsync("/profile");
+        await Page.GotoAsync($"{BaseUrl}/profile");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Expect(Page.GetByText("Profile")).ToBeVisibleAsync();
         await SaveEvidenceAsync("profile_page_loaded");
@@ -23,7 +23,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task SettingsPage_LoadsSuccessfully()
     {
-        await Page.GotoAsync("/settings");
+        await Page.GotoAsync($"{BaseUrl}/settings");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Expect(Page.GetByText("Settings")).ToBeVisibleAsync();
         await SaveEvidenceAsync("settings_page_loaded");
@@ -32,7 +32,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task AuditLogsPage_LoadsSuccessfully()
     {
-        await Page.GotoAsync("/audit-logs");
+        await Page.GotoAsync($"{BaseUrl}/audit-logs");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Expect(Page.GetByText("Audit")).ToBeVisibleAsync();
         await SaveEvidenceAsync("audit_logs_loaded");
@@ -41,7 +41,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task ApiKeyManagementPage_LoadsSuccessfully()
     {
-        await Page.GotoAsync("/api-keys");
+        await Page.GotoAsync($"{BaseUrl}/api-keys");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         // Page renders without error
         await SaveEvidenceAsync("api_keys_loaded");
@@ -50,7 +50,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task PasskeysPage_LoadsSuccessfully()
     {
-        await Page.GotoAsync("/passkeys");
+        await Page.GotoAsync($"{BaseUrl}/passkeys");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await SaveEvidenceAsync("passkeys_page_loaded");
     }
@@ -58,7 +58,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task ImportPage_LoadsSuccessfully()
     {
-        await Page.GotoAsync("/import");
+        await Page.GotoAsync($"{BaseUrl}/import");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Expect(Page.GetByText("Import")).ToBeVisibleAsync();
         await SaveEvidenceAsync("import_page_loaded");
@@ -67,7 +67,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task CollectionsPage_LoadsSuccessfully()
     {
-        await Page.GotoAsync("/collections");
+        await Page.GotoAsync($"{BaseUrl}/collections");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await SaveEvidenceAsync("collections_page_loaded");
     }
@@ -75,7 +75,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task AppBar_HasDarkModeToggle()
     {
-        await Page.GotoAsync("/");
+        await Page.GotoAsync(BaseUrl);
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Dark/light mode toggle button
@@ -91,7 +91,7 @@ public class UserManagementCrudTests : BlazorWebTestBase
     [TestMethod]
     public async Task SetupPage_LoadsSuccessfully()
     {
-        await Page.GotoAsync("/setup");
+        await Page.GotoAsync($"{BaseUrl}/setup");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await SaveEvidenceAsync("setup_page_loaded");
     }

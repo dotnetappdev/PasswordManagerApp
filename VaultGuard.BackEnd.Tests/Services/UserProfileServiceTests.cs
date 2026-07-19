@@ -16,6 +16,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureNUnit]
 [AllureEpic("Accounts & API Access")]
 [AllureFeature("User Profiles")]
+[AllureParentSuite("Accounts & API Access")]
+[AllureSuite("User Profiles")]
 public class UserProfileServiceTests
 {
     private Mock<UserManager<ApplicationUser>> _mockUserManager = null!;
@@ -26,6 +28,7 @@ public class UserProfileServiceTests
     private const string TestUserId = "test-user-id";
     private const string TestEmail = "test@example.com";
 
+    [AllureBefore("Create mocked UserManager and PasswordCryptoService dependencies")]
     [SetUp]
     public void Setup()
     {

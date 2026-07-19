@@ -10,6 +10,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureNUnit]
 [AllureEpic("Cryptography & Security")]
 [AllureFeature("Two-Factor Authentication")]
+[AllureParentSuite("Cryptography & Security")]
+[AllureSuite("Two-Factor Authentication")]
 public class TotpHelperTests
 {
     private const string Secret = "GEZDGNBVGY3TQOJQ";

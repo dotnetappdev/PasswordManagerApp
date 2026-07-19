@@ -10,10 +10,13 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureNUnit]
 [AllureEpic("Vault Data Management")]
 [AllureFeature("Password Strength & Generation")]
+[AllureParentSuite("Vault Data Management")]
+[AllureSuite("Password Strength & Generation")]
 public class PasswordStrengthServiceTests
 {
     private PasswordStrengthService _service = null!;
 
+    [AllureBefore("Construct a real PasswordStrengthService instance")]
     [SetUp]
     public void Setup() => _service = new PasswordStrengthService();
 

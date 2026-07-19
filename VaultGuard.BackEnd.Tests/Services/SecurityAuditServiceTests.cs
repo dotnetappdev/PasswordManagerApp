@@ -11,10 +11,13 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureNUnit]
 [AllureEpic("Cryptography & Security")]
 [AllureFeature("Security Auditing")]
+[AllureParentSuite("Cryptography & Security")]
+[AllureSuite("Security Auditing")]
 public class SecurityAuditServiceTests
 {
     private SecurityAuditService _service = null!;
 
+    [AllureBefore("Construct a real SecurityAuditService backed by a real PasswordStrengthService")]
     [SetUp]
     public void Setup() => _service = new SecurityAuditService(new PasswordStrengthService());
 
