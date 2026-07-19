@@ -19,6 +19,14 @@ on:
       - '.github/workflows/screenshots.yml'
   workflow_dispatch: {}
 
+# Serializes runs for the same PR/branch (default cancel-in-progress: false, so a run already in
+# flight is queued behind, never killed). Without this, two pushes to the same open PR in quick
+# succession can both auto-commit updated screenshots and race to push - the loser's push is rejected,
+# falls back to a rebase, and that rebase conflicts on the binary PNG files (git can't 3-way-merge
+# binaries), failing the job. Confirmed happening in CI.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
 permissions:
   contents: write
 

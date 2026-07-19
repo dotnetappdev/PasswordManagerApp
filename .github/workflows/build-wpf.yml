@@ -8,6 +8,14 @@ on:
     branches: [ devmain, main ]
   workflow_dispatch: {}
 
+# Serializes runs for the same PR/branch (default cancel-in-progress: false, so a build already in
+# flight is queued behind, never killed). Without this, two pushes to the same open PR in quick
+# succession can both check out before either has pushed its own release tag/screenshot commit - both
+# then compute the same "next" wpf-vX.Y.Z and race to push it, and the loser fails with "tag already
+# exists". Confirmed happening in CI.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
 permissions:
   contents: write
 
