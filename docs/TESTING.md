@@ -76,9 +76,10 @@ deep-linkable `Settings?tab=Name` tabs) and the passkeys page.
 `ApplicationWorkflowTests`, `CategoryAndTagCrudTests`, `PasswordItemCrudTests`, `UserManagementCrudTests`,
 `VaultCrudTests`, `PasskeysAndSettingsTests`, `SeededDemoDataTests` - as its own check, separate from the
 `test` job above. `ScreenshotCaptureTests` is excluded there (image capture only, no assertions) - it runs
-in `screenshots.yml` instead. This suite isn't Allure-wired: `Allure.MSTest` needs the test class to
-derive from its base type, which conflicts with Playwright's `PageTest` base class - it reports via
-`dotnet-trx`/`dorny/test-reporter` like the other suites instead.
+in `screenshots.yml` instead. It reports via `dotnet-trx`/`dorny/test-reporter` for the PR check-run
+(same as the other suites), and its raw `.trx` also feeds the combined Allure dashboard - see "Allure
+dashboard" below for how, since there's no `[Allure*]`-attribute path for MSTest the way there is for
+NUnit.
 
 **Authentication:** `BlazorWebTestBase.SignInAsync()` (shared, not `ScreenshotCaptureTests`' own private
 copy - see below) signs in with the seeded demo account, creating the default accounts first on a fresh
@@ -284,8 +285,16 @@ Open `allure-report/index.html`. Both `allure-results/` and `allure-report/` are
 
 - **NUnit:** add `[AllureNUnit]` to the `[TestFixture]`, add `Allure.NUnit` + an `allureConfig.json` (copied
   to output), then list the project in `scripts/run-tests-allure.ps1`.
-- **MSTest (Playwright):** `Allure.MSTest` needs the test class to derive from its base type, which conflicts
-  with Playwright's `PageTest`, so the UI suite is not wired into Allure yet - run it on its own for now.
+- **MSTest (Playwright):** there's no maintained Allure adapter for MSTest - `allure-mstest` is
+  deprecated, superseded by Allure 2's own report generator gaining a native `.trx`-reading plugin
+  (`trx-plugin`), so no `[Allure*]` attributes are needed at all. `VaultGuard.Tests.Playwright` is wired
+  into the dashboard this way: in CI, `run-tests.yml`'s `publish-allure-report` job downloads the
+  `blazor-ui-tests.trx` artifact `blazor-ui-tests` uploads and drops it straight into the same
+  `allure-results` directory as the NUnit suites' JSON - `allure generate` picks up both. Locally, run
+  `scripts/run-tests-allure.ps1 -IncludeBlazorUi` to do the same (off by default - this suite installs a
+  real browser and self-hosts `VaultGuard.Web`, several minutes slower than the NUnit-only default). Note
+  this path gives per-test pass/fail/duration/error only, not the richer Behaviors/Suites categorization
+  the NUnit suites get from their `[Allure*]` attributes - `trx-plugin` groups by the test class instead.
 - **xUnit:** `Allure.Xunit` requires selecting its reporter (`-- xUnit.ReporterSwitch=allure` or a
   `.runsettings`); it did not engage cleanly under the current VSTest v3 runner, so the xUnit suites are run
   normally and are not in the Allure dashboard yet.
