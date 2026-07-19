@@ -26,6 +26,31 @@ public abstract class BlazorWebTestBase : PageTest
     private static string? _baseUrl;
     private static string? _tempDbPath;
 
+    // Bounded tail of the shared VaultGuard.Web process's console output (stdout+stderr interleaved),
+    // kept for failure diagnostics - see the comment on BeginOutputReadLine/BeginErrorReadLine below
+    // for why this needs to be drained continuously rather than read on demand.
+    private const int MaxAppLogTailLines = 400;
+    private static readonly object AppLogLock = new();
+    private static readonly List<string> AppLogTail = new();
+
+    private static void AppendAppLogLine(string? line)
+    {
+        if (line is null) return;
+        lock (AppLogLock)
+        {
+            AppLogTail.Add(line);
+            if (AppLogTail.Count > MaxAppLogTailLines)
+                AppLogTail.RemoveAt(0);
+        }
+    }
+
+    /// <summary>Snapshot of the shared app process's most recent console output, for failure diagnostics.</summary>
+    protected static string GetAppLogTail()
+    {
+        lock (AppLogLock)
+            return string.Join(Environment.NewLine, AppLogTail);
+    }
+
     /// <summary>Base URL of the app under test (set once the app has started).</summary>
     protected static string BaseUrl => _baseUrl ?? throw new InvalidOperationException("App not started yet.");
 
@@ -111,7 +136,23 @@ public abstract class BlazorWebTestBase : PageTest
             _appProcess.StartInfo.Environment["ConnectionStrings__DefaultConnection"] = $"Data Source={_tempDbPath}";
             _appProcess.StartInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
 
+            // RedirectStandardOutput/Error means the OS gives this process's stdout/stderr a small
+            // fixed-size pipe buffer (~64KB on Linux) instead of a real console - nothing drains it
+            // unless we read it here. Development-environment logging (EF Core "Executed DbCommand"
+            // at Information level logs the full SQL text of every query) is verbose enough that,
+            // across dozens of shared tests' worth of page loads before this process is torn down,
+            // the buffer can fill completely. Once it does, the app's next Console write BLOCKS the
+            // thread doing it - which can stall in-flight requests indefinitely and has no relation
+            // to any client-side (Playwright) timeout, however generous. Wiring these up (and calling
+            // BeginOutputReadLine/BeginErrorReadLine below) keeps the pipe permanently drained so the
+            // app process can never block on writing to it. Keep only a bounded tail for diagnostics -
+            // this is a whole app's console output across the entire shared test run.
+            _appProcess.OutputDataReceived += (_, e) => AppendAppLogLine(e.Data);
+            _appProcess.ErrorDataReceived += (_, e) => AppendAppLogLine(e.Data);
+
             _appProcess.Start();
+            _appProcess.BeginOutputReadLine();
+            _appProcess.BeginErrorReadLine();
 
             await WaitForAppAsync(_baseUrl, _appProcess);
         }
@@ -205,6 +246,11 @@ public abstract class BlazorWebTestBase : PageTest
             catch (Exception bodyEx) { TestContext.WriteLine($"[{evidenceName}] Could not read body text: {bodyEx.Message}"); }
             try { await SaveEvidenceAsync($"{evidenceName}_FAILURE"); }
             catch (Exception evEx) { TestContext.WriteLine($"[{evidenceName}] Could not save failure screenshot: {evEx.Message}"); }
+            // Tail of the shared app process's own console output as of this failure - e.g. an EF Core
+            // exception, an unhandled exception in a Razor component, or (previously) evidence of the
+            // process stalling on a full stdout pipe (see EnsureAppStartedAsync) would show up here even
+            // though the browser side never sees more than a generic redirect/timeout.
+            TestContext.WriteLine($"[{evidenceName}] --- VaultGuard.Web console tail ---{Environment.NewLine}{GetAppLogTail()}");
             TestContext.WriteLine($"[{evidenceName}] Original exception: {ex.Message}");
             throw;
         }
@@ -278,7 +324,10 @@ public abstract class BlazorWebTestBase : PageTest
             }
 
             if (Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
+            {
                 TestContext.WriteLine($"WARNING: still on /login after sign-in attempt (url={Page.Url}) - subsequent test steps will see the login page instead of the real one.");
+                TestContext.WriteLine($"--- VaultGuard.Web console tail at sign-in failure ---{Environment.NewLine}{GetAppLogTail()}");
+            }
         }
         catch (Exception ex)
         {
@@ -316,10 +365,12 @@ public abstract class BlazorWebTestBase : PageTest
         {
             if (process.HasExited)
             {
-                var stdOut = await process.StandardOutput.ReadToEndAsync();
-                var stdErr = await process.StandardError.ReadToEndAsync();
+                // Stdout/stderr are drained continuously via BeginOutputReadLine/BeginErrorReadLine
+                // (see EnsureAppStartedAsync) into AppLogTail - reading process.StandardOutput/Error
+                // directly here would race the async line reader against this synchronous read on the
+                // same underlying stream.
                 throw new InvalidOperationException(
-                    $"VaultGuard.Web exited before tests started.{Environment.NewLine}{stdOut}{Environment.NewLine}{stdErr}");
+                    $"VaultGuard.Web exited before tests started.{Environment.NewLine}{GetAppLogTail()}");
             }
 
             try

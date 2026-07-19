@@ -138,6 +138,23 @@ hasn't been confirmed, only the symptom (bounces back to `/login`) has. Worth an
 `blazor-ui-test-screenshots` CI artifact or a debugger-attached local repro rather than more blind
 CI-cycle guessing.
 
+**New lead found by reading `EnsureAppStartedAsync`, not by CI-cycle guessing:** the shared
+`VaultGuard.Web` process was started with `RedirectStandardOutput`/`RedirectStandardError` but nothing
+ever read those pipes while the process was running (only after it had already exited, in
+`WaitForAppAsync`'s failure path). On Linux a redirected pipe has a small fixed OS buffer (~64KB) -
+once full, the child process **blocks** on its next console write. `appsettings.Development.json` logs
+at `Default: Information`, which includes EF Core's `Executed DbCommand` logging (full SQL text for
+every query) - verbose enough that ~50 shared tests' worth of page loads before `VaultCrudTests`/
+`UserManagementCrudTests` run could plausibly fill that buffer. This lines up with every observed
+symptom: deterministic once it starts (not flaky), only affects tests late in the run, and a stall deep
+in request handling wouldn't show up as a client-side (Playwright) timeout distinguishable from any
+other kind of slowness. Fixed in the same change that added this note: `EnsureAppStartedAsync` now
+wires `OutputDataReceived`/`ErrorDataReceived` + `BeginOutputReadLine`/`BeginErrorReadLine` to keep the
+pipe permanently drained into a bounded in-memory tail (`BlazorWebTestBase.GetAppLogTail()`), which is
+now also logged by `ExpectVisibleWithDiagnosticsAsync` and `SignInAsync`'s bounce-back warning - so even
+if this isn't the *whole* story, the next CI failure will show the app's own console state (exceptions,
+slow queries, whatever it was doing) at the moment of failure, not just the browser-side symptom.
+
 ## Allure dashboard
 
 [Allure](https://allurereport.org/) turns test results into an interactive HTML dashboard.
