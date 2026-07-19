@@ -38,6 +38,20 @@ Notable coverage added recently:
   non-numeric params, invalid base64 - `VerifyMasterPassword` must reject all of these without throwing),
   `HashPassword`/`VerifyPassword` exercised directly (not just via `PasswordCryptoService`), per-salt
   uniqueness of the master-key lookup identifier, and a large-payload AES-GCM round trip.
+- `JwtServiceTests` - the first coverage for `VaultGuard.Services.Services.JwtService`, the real JWT/
+  refresh-token implementation `PasskeyService` uses (there's a second, unregistered `JwtService` under
+  `VaultGuard.API` that nothing actually calls - don't confuse the two). Covers token claims, that two
+  tokens for the same user never collide, decoding an already-expired token, rejecting a token signed
+  with the wrong key, and the refresh-token store's round-trip/5-per-user cap/revoke behavior. Every test
+  uses a fresh `Guid` as the user ID, since the refresh-token store is a `static` dictionary shared across
+  the whole test run.
+- `PassphraseGeneratorEdgeCaseTests` - boundary/formatting coverage for `PassphraseGenerator` beyond what
+  `PassphraseGeneratorTests` already covers: explicit `null` options, both word-count clamp directions, an
+  empty separator (words run together with no delimiter), a multi-character separator, and the exact
+  shape of the word/number segments. This is the only backend password-generator worth unit testing -
+  traditional random-character generation is duplicated as private, untestable methods inline in several
+  client UIs (Blazor `PasswordEdit.razor`/`Settings.razor`, WPF/WinUI dialogs, native iOS/Android) with no
+  shared service or interface behind any of them.
 
 ## UI automation (Blazor web) - `VaultGuard.Tests.Playwright`
 
@@ -65,6 +79,39 @@ deep-linkable `Settings?tab=Name` tabs) and the passkeys page.
 in `screenshots.yml` instead. This suite isn't Allure-wired: `Allure.MSTest` needs the test class to
 derive from its base type, which conflicts with Playwright's `PageTest` base class - it reports via
 `dotnet-trx`/`dorny/test-reporter` like the other suites instead.
+
+**Authentication:** `BlazorWebTestBase.SignInAsync()` (shared, not `ScreenshotCaptureTests`' own private
+copy - see below) signs in with the seeded demo account, creating the default accounts first on a fresh
+database. Every class above except `ScreenshotCaptureTests` calls it from a `[TestInitialize]` before its
+tests run, since all of them navigate straight to a protected route - without signing in first, that just
+bounces to `/login` and the test times out waiting for content that's never going to render.
+`ScreenshotCaptureTests` deliberately keeps its own private, near-identical copy: it needs precise control
+over *when* sign-in happens, since it captures the pre-auth onboarding screens (`/setup`, `/login`)
+before ever calling it.
+
+**Evidence:** every test method above calls `SaveEvidenceAsync(name)` at its key steps - a full-page
+screenshot into `--results-directory`, attached to that test's result via `TestContext.AddResultFile` so
+it shows up as an actual attachment, not just a stray file. Runs with `if: always()` in CI, so a failing
+run's screenshots - what the page actually looked like when an assertion failed - are downloadable too,
+as the `blazor-ui-test-screenshots` artifact.
+
+**Locator specificity:** once the auth fix above let these tests actually reach an authenticated page
+for the first time, a second, previously-invisible bug surfaced: most "page loaded" checks used a bare
+`Page.GetByText("Vaults")`/`"Categories"`/`"Dashboard"`/etc. That word almost always also appears in the
+nav drawer (a nav link, a nav group title, or both) rendered on every authenticated page, so once real
+content was on screen, Playwright's strict mode correctly refused to guess which of the 2-7 matching
+elements was meant and threw instead. Fixed by scoping to the page's own heading -
+`Page.GetByRole(AriaRole.Heading, new() { Name = "Vaults", Exact = true })` - which only ever matches
+that page's own `<h4>`/`<h6>` title, never a nav link or nav group title (neither has heading role). The
+one page-load check against the Dashboard itself needed a different fix, since its stat-card labels
+("Vaults", "Categories") are `<p>` captions, not headings - scoped to `Page.Locator("p").GetByText(...)`
+instead. Two tests (`Dashboard_AppBar_HasBrandName`, `AppBar_HasDarkModeToggle`) were checking for
+`"VaultGuard"` (no space), but the app bar actually renders `"🔐 Vault Guard"` (with a space) - a
+genuine copy mismatch, not a locator-scoping issue, fixed by matching the real text. `SeededDemoDataTests`
+had the same problem one level deeper: it checked the Dashboard's Recent Items widget (which only shows
+the 8 most-recently-modified items) for `"Chase Bank"` and a `"Search your vault..."` placeholder that
+never existed in the Blazor app at all (the real placeholder, on `/passwords`, is `"Search items..."`) -
+rewritten to check `/passwords`, which lists every seeded item unconditionally and has the real search box.
 
 ## Allure dashboard
 

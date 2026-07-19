@@ -107,7 +107,10 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
         Assert.IsTrue(captured > 0, "No screenshots were captured — check that the app booted and sign-in succeeded.");
     }
 
-    private async Task SignInAsync()
+    // Deliberately hides the base class's SignInAsync: this class needs full control over exactly when
+    // sign-in happens (onboarding screenshots are captured pre-auth, see CaptureAllScreenshots above),
+    // so it keeps its own copy rather than sharing the one every other test class now uses.
+    private new async Task SignInAsync()
     {
         try
         {
