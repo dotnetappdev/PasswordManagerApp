@@ -176,6 +176,27 @@ public abstract class BlazorWebTestBase : PageTest
     public async Task NavigateToHomePageAsync()
     {
         await EnsureAppStartedAsync();
+
+        // Blazor Server's SignalR circuit posts reconnect/circuit-lifecycle messages to the browser
+        // console (blazor.server.js), not the server-side console GetAppLogTail() already captures.
+        // Confirmed in CI: SignInAsync can finish believing it succeeded (no bounce-back warning logged)
+        // and the very next assertion still finds itself back on /login - i.e. the bounce happens AFTER
+        // sign-in returns, which a client-side circuit disconnect/reconnect (triggering a fresh circuit
+        // with a fresh scoped AuthService, or a transient JS-interop failure mid-reconnect that
+        // CheckAuthenticationStatusAsync's fail-closed catch swallows) would exactly explain. Written
+        // immediately (not buffered) so it shows up in TestContext Messages for whichever test happens
+        // to be running when it fires, regardless of which assertion helper that test uses.
+        Page.Console += (_, msg) =>
+        {
+            var text = msg.Text ?? string.Empty;
+            if (msg.Type == "error" ||
+                text.Contains("econnect", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("circuit", StringComparison.OrdinalIgnoreCase))
+            {
+                TestContext.WriteLine($"[browser console {msg.Type}] {text}");
+            }
+        };
+
         await Page.GotoAsync(_baseUrl ?? throw new InvalidOperationException("Base URL not initialized."));
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }

@@ -192,8 +192,27 @@ actually runs the "Create Master Key" flow with `SeededMasterKey` - JIT-compiled
 process-wide cache, not per-circuit, so paying this cost against a throwaway warm-up circuit still
 speeds up every later circuit in the same `VaultGuard.Web` process, including the real first test's.
 This also means the seeded account already exists by the time the real first test runs, so it takes the
-faster profile-picker/login path instead of the create-then-login path - not yet re-confirmed in CI as
-of this note.
+faster profile-picker/login path instead of the create-then-login path.
+
+**Confirmed in CI: the real-browser warm-up fixed `Dashboard_LoadsSuccessfully`** (the specific failure
+that was being chased) - but a *different* test, `Dashboard_AppBar_HasBrandName` (the third test in the
+same class), failed instead, still 59/60. This one is informative: its `[TestInitialize]` calls
+`SignInAsync()` same as every test in the class, and `SignInAsync` logged **no** "still on /login"
+warning - meaning it believed sign-in had succeeded - yet the test's very first assertion immediately
+hit a Playwright strict-mode violation because it matched both the dashboard-adjacent brand text *and*
+the login page's own `"Sign in to Vault Guard"` heading, i.e. the page really was back on `/login` by
+the time the assertion ran. So the bounce happened **after** `SignInAsync` returned believing it had
+succeeded - a delayed second auth failure, not a slow/failed initial one. This is the original
+`EnforceAuthAsync` race theory from earlier in this doc, now isolated from both the pipe-blocking and
+cold-start causes already fixed above: something (a SignalR circuit disconnect/reconnect creating a
+fresh circuit with a fresh scoped `AuthService`, or a transient JS-interop failure mid-reconnect that
+`CheckAuthenticationStatusAsync`'s intentional fail-closed catch swallows - see `AuthService.cs`) can
+undo an already-successful login shortly after the fact. Server-side console output
+(`GetAppLogTail()`) can't see this - Blazor's circuit-lifecycle/reconnect messages go to the *browser*
+console via `blazor.server.js`. `BlazorWebTestBase.NavigateToHomePageAsync` now subscribes to
+`Page.Console` and writes any `error`-typed or reconnect/circuit-mentioning message straight to
+`TestContext` as it happens, so the next occurrence (rare - roughly 1-2/60 now, down from ~9/60 before
+any of these fixes) should show definitive evidence instead of another theory.
 
 ## Allure dashboard
 
