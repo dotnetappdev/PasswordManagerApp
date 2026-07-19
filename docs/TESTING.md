@@ -38,6 +38,20 @@ Notable coverage added recently:
   non-numeric params, invalid base64 - `VerifyMasterPassword` must reject all of these without throwing),
   `HashPassword`/`VerifyPassword` exercised directly (not just via `PasswordCryptoService`), per-salt
   uniqueness of the master-key lookup identifier, and a large-payload AES-GCM round trip.
+- `JwtServiceTests` - the first coverage for `VaultGuard.Services.Services.JwtService`, the real JWT/
+  refresh-token implementation `PasskeyService` uses (there's a second, unregistered `JwtService` under
+  `VaultGuard.API` that nothing actually calls - don't confuse the two). Covers token claims, that two
+  tokens for the same user never collide, decoding an already-expired token, rejecting a token signed
+  with the wrong key, and the refresh-token store's round-trip/5-per-user cap/revoke behavior. Every test
+  uses a fresh `Guid` as the user ID, since the refresh-token store is a `static` dictionary shared across
+  the whole test run.
+- `PassphraseGeneratorEdgeCaseTests` - boundary/formatting coverage for `PassphraseGenerator` beyond what
+  `PassphraseGeneratorTests` already covers: explicit `null` options, both word-count clamp directions, an
+  empty separator (words run together with no delimiter), a multi-character separator, and the exact
+  shape of the word/number segments. This is the only backend password-generator worth unit testing -
+  traditional random-character generation is duplicated as private, untestable methods inline in several
+  client UIs (Blazor `PasswordEdit.razor`/`Settings.razor`, WPF/WinUI dialogs, native iOS/Android) with no
+  shared service or interface behind any of them.
 
 ## UI automation (Blazor web) - `VaultGuard.Tests.Playwright`
 
