@@ -15,6 +15,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureFeature("Password Items")]
 [AllureParentSuite("Vault Data Management")]
 [AllureSuite("Password Items")]
+[AllureStory("Service Layer")]
+[AllureSubSuite("Service Layer")]
 public class PasswordItemServiceTests
 {
     private DbContextOptions<VaultGuardDbContext> _options = null!;

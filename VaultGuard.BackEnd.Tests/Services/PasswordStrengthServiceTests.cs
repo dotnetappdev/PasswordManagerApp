@@ -12,6 +12,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureFeature("Password Strength & Generation")]
 [AllureParentSuite("Vault Data Management")]
 [AllureSuite("Password Strength & Generation")]
+[AllureStory("Password Strength Scoring")]
+[AllureSubSuite("Password Strength Scoring")]
 public class PasswordStrengthServiceTests
 {
     private PasswordStrengthService _service = null!;

@@ -23,6 +23,8 @@ namespace VaultGuard.BackEnd.Tests.Controllers;
 [AllureFeature("User Profiles")]
 [AllureParentSuite("Accounts & API Access")]
 [AllureSuite("User Profiles")]
+[AllureStory("Controller Endpoints")]
+[AllureSubSuite("Controller Endpoints")]
 public class UserProfileControllerTests
 {
     private Mock<IUserProfileService> _mockUserProfileService = null!;

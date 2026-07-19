@@ -79,6 +79,8 @@ public class SeedingTests
     // ── 1. Schema sanity ────────────────────────────────────────────────────
 
     [Test]
+    [AllureStory("Schema Guards")]
+    [AllureSubSuite("Schema Guards")]
     public void Schema_PasswordItemsTable_DoesNotHaveVaultIdColumn()
     {
         // [NotMapped] on PasswordItem.VaultId means EF Core must not create
@@ -101,6 +103,8 @@ public class SeedingTests
     }
 
     [Test]
+    [AllureStory("Schema Guards")]
+    [AllureSubSuite("Schema Guards")]
     public void Schema_CategoriesTable_DoesNotHaveVaultIdColumn()
     {
         using var cmd = _connection.CreateCommand();
@@ -118,6 +122,8 @@ public class SeedingTests
     // ── 2. Collections ──────────────────────────────────────────────────────
 
     [Test]
+    [AllureStory("Collection Seeding")]
+    [AllureSubSuite("Collection Seeding")]
     public void SeedCollections_OnEmptyDb_InsertsRows()
     {
         EnsureUser();
@@ -128,6 +134,8 @@ public class SeedingTests
     }
 
     [Test]
+    [AllureStory("Collection Seeding")]
+    [AllureSubSuite("Collection Seeding")]
     public void SeedCollections_CalledTwice_DoesNotDuplicate()
     {
         EnsureUser();
@@ -141,6 +149,8 @@ public class SeedingTests
     // ── 3. Categories ───────────────────────────────────────────────────────
 
     [Test]
+    [AllureStory("Category Seeding")]
+    [AllureSubSuite("Category Seeding")]
     public void SeedCategories_OnEmptyDb_InsertsRows()
     {
         EnsureUser();
@@ -151,6 +161,8 @@ public class SeedingTests
     }
 
     [Test]
+    [AllureStory("Category Seeding")]
+    [AllureSubSuite("Category Seeding")]
     public void SeedCategories_WithoutVaultId_DoesNotThrow()
     {
         EnsureUser();
@@ -163,6 +175,8 @@ public class SeedingTests
     // ── 4. Tags ─────────────────────────────────────────────────────────────
 
     [Test]
+    [AllureStory("Tag Seeding")]
+    [AllureSubSuite("Tag Seeding")]
     public void SeedTags_OnEmptyDb_InsertsRows()
     {
         EnsureUser();
@@ -175,6 +189,8 @@ public class SeedingTests
     // ── 5. Full pipeline ────────────────────────────────────────────────────
 
     [Test]
+    [AllureStory("Password Item Seeding")]
+    [AllureSubSuite("Password Item Seeding")]
     public void SeedPasswordItemsForUser_RequiresCollectionsCategoriesTags()
     {
         // Calling SeedPasswordItemsForUser WITHOUT seeding collections/categories/tags
@@ -199,6 +215,8 @@ public class SeedingTests
     }
 
     [Test]
+    [AllureStory("Full Pipeline & Referential Integrity")]
+    [AllureSubSuite("Full Pipeline & Referential Integrity")]
     public void FullSeedPipeline_CollectionsThenCategoriesThenTagsThenItems_Succeeds()
     {
         // This is the correct order: collections → categories → tags → items.
@@ -229,6 +247,8 @@ public class SeedingTests
     // ── 6. ForceSeedPasswordItems ───────────────────────────────────────────
 
     [Test]
+    [AllureStory("Password Item Seeding")]
+    [AllureSubSuite("Password Item Seeding")]
     public void ForceSeedPasswordItems_ClearsExistingThenReseeds()
     {
         EnsureUser();
@@ -252,6 +272,8 @@ public class SeedingTests
     }
 
     [Test]
+    [AllureStory("Password Item Seeding")]
+    [AllureSubSuite("Password Item Seeding")]
     public void ForceSeedPasswordItems_OnEmptyItemSet_Succeeds()
     {
         EnsureUser();
@@ -269,6 +291,8 @@ public class SeedingTests
     // ── 7. FK integrity after seeding ───────────────────────────────────────
 
     [Test]
+    [AllureStory("Full Pipeline & Referential Integrity")]
+    [AllureSubSuite("Full Pipeline & Referential Integrity")]
     public void SeededItems_CategoryIds_ReferenceExistingCategories()
     {
         EnsureUser();
@@ -292,6 +316,8 @@ public class SeedingTests
     }
 
     [Test]
+    [AllureStory("Full Pipeline & Referential Integrity")]
+    [AllureSubSuite("Full Pipeline & Referential Integrity")]
     public void SeededItems_CollectionIds_ReferenceExistingCollections()
     {
         EnsureUser();
@@ -317,6 +343,8 @@ public class SeedingTests
     // ── 8. SampleDataSeeder flow simulation ─────────────────────────────────
 
     [Test]
+    [AllureStory("Full Pipeline & Referential Integrity")]
+    [AllureSubSuite("Full Pipeline & Referential Integrity")]
     public void SampleDataSeederFlow_SeedsOnlyOncePerUser()
     {
         // Simulates what SampleDataSeeder.SeedSampleDataAsync does for a real user.

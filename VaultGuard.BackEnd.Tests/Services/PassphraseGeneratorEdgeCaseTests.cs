@@ -20,6 +20,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureFeature("Password Strength & Generation")]
 [AllureParentSuite("Vault Data Management")]
 [AllureSuite("Password Strength & Generation")]
+[AllureStory("Passphrase Generator - Edge Cases")]
+[AllureSubSuite("Passphrase Generator - Edge Cases")]
 public class PassphraseGeneratorEdgeCaseTests
 {
     private PassphraseGenerator _gen = null!;

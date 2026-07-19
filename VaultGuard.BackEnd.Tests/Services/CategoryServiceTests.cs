@@ -17,6 +17,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureFeature("Categories & Collections")]
 [AllureParentSuite("Vault Data Management")]
 [AllureSuite("Categories & Collections")]
+[AllureStory("Categories Service")]
+[AllureSubSuite("Categories Service")]
 public class CategoryServiceTests
 {
     private DbContextOptions<VaultGuardDbContext> _options = null!;

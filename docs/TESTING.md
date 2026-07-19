@@ -139,6 +139,25 @@ artifact instead, downloadable from that run's summary page.
   `Encryption & Key Derivation`, `Password Vault Cryptography`, `Two-Factor Authentication`,
   `Security Auditing`, `Input Validation`). Add all four attributes to a new fixture's class declaration
   to place it correctly in both tabs.
+- **A third level - `[AllureStory]` / `[AllureSubSuite]`:** Epic/Feature and ParentSuite/Suite are both
+  only two levels deep, so a Feature shared by several fixtures (e.g. `Password Items` held
+  `PasswordItemsControllerTests`, `PasswordItemServiceTests` and `ProtectedItemHelperTests` with no
+  further breakdown) or a single large fixture (e.g. `InputValidationHelperTests`, 23 tests in one flat
+  bucket) still didn't show any internal structure. `[AllureStory("...")]` / `[AllureSubSuite("...")]`
+  add a third tier under Feature/Suite respectively:
+  - **Class-level**, when a Feature bundles multiple fixtures - each fixture gets its own Story naming
+    its role (e.g. `Password Items` → `Controller Endpoints` / `Service Layer` /
+    `Protected-Field Encryption Helper`, one per fixture).
+  - **Method-level**, when a single fixture's tests cluster into distinct concerns - e.g.
+    `InputValidationHelperTests` splits into `Username Validation` / `Email Validation` /
+    `Master Password Strength Rules` / etc.; `JwtServiceTests` into `Token Generation` /
+    `Refresh Token Store` / etc. Allure applies the closest attribute to a test method, so a method-level
+    `[AllureStory]` overrides any class-level one - only add a class-level Story when *every* test in the
+    fixture genuinely belongs to it.
+
+  Not every fixture needs a Story - small, already-cohesive fixtures (a handful of tests covering one
+  method, e.g. `SecurityAuditServiceTests`) are left at Feature-level only; forcing a third tier there
+  would add noise, not clarity.
 - **Setup/teardown as named steps:** `[AllureNUnit]` alone does *not* surface `[SetUp]`/`[TearDown]` in
   the report - each one needs an explicit `[AllureBefore("description")]` / `[AllureAfter("description")]`
   attribute (placed above the `[SetUp]`/`[TearDown]` attribute) or it's invisible in the test's step

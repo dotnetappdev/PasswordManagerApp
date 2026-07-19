@@ -26,6 +26,8 @@ namespace VaultGuard.BackEnd.Tests.Controllers;
 [AllureFeature("API Keys")]
 [AllureParentSuite("Accounts & API Access")]
 [AllureSuite("API Keys")]
+[AllureStory("Controller Endpoints")]
+[AllureSubSuite("Controller Endpoints")]
 public class ApiKeysControllerTests
 {
     private Mock<IApiKeyService> _mockApiKeyService = null!;

@@ -27,6 +27,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureFeature("API Keys")]
 [AllureParentSuite("Accounts & API Access")]
 [AllureSuite("API Keys")]
+[AllureStory("Service Layer")]
+[AllureSubSuite("Service Layer")]
 public class ApiKeyServiceTests
 {
     private string _dbName = null!;

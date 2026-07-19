@@ -11,6 +11,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureFeature("Two-Factor Authentication")]
 [AllureParentSuite("Cryptography & Security")]
 [AllureSuite("Two-Factor Authentication")]
+[AllureStory("QR Code Provisioning")]
+[AllureSubSuite("QR Code Provisioning")]
 public class QrCodeServiceTests
 {
     private QrCodeService _service = null!;

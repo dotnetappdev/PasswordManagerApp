@@ -12,6 +12,8 @@ namespace VaultGuard.BackEnd.Tests.Services;
 [AllureFeature("Two-Factor Authentication")]
 [AllureParentSuite("Cryptography & Security")]
 [AllureSuite("Two-Factor Authentication")]
+[AllureStory("TOTP Helper Algorithms")]
+[AllureSubSuite("TOTP Helper Algorithms")]
 public class TotpHelperTests
 {
     private const string Secret = "GEZDGNBVGY3TQOJQ";

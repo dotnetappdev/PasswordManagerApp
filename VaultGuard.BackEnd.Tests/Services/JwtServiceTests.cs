@@ -66,6 +66,8 @@ public class JwtServiceTests
     // ── GenerateToken ──────────────────────────────────────────────────────────
 
     [Test]
+    [AllureStory("Token Generation")]
+    [AllureSubSuite("Token Generation")]
     public void GenerateToken_ProducesWellFormedJwtWithExpectedClaims()
     {
         var user = NewUser();
@@ -84,6 +86,8 @@ public class JwtServiceTests
     }
 
     [Test]
+    [AllureStory("Token Generation")]
+    [AllureSubSuite("Token Generation")]
     public void GenerateToken_TwoCallsForSameUser_ProduceDifferentTokens()
     {
         var user = NewUser();
@@ -93,6 +97,8 @@ public class JwtServiceTests
     }
 
     [Test]
+    [AllureStory("Token Generation")]
+    [AllureSubSuite("Token Generation")]
     public void GenerateToken_MissingNames_TrimsToEmptyNameClaim()
     {
         var user = NewUser();
@@ -108,6 +114,8 @@ public class JwtServiceTests
     // ── GenerateRefreshToken ───────────────────────────────────────────────────
 
     [Test]
+    [AllureStory("Refresh Token Generation")]
+    [AllureSubSuite("Refresh Token Generation")]
     public void GenerateRefreshToken_ProducesNonEmptyBase64String()
     {
         var token = _jwtService.GenerateRefreshToken();
@@ -116,6 +124,8 @@ public class JwtServiceTests
     }
 
     [Test]
+    [AllureStory("Refresh Token Generation")]
+    [AllureSubSuite("Refresh Token Generation")]
     public void GenerateRefreshToken_VariesPerCall()
     {
         var a = _jwtService.GenerateRefreshToken();
@@ -126,6 +136,8 @@ public class JwtServiceTests
     // ── GetPrincipalFromExpiredToken ──────────────────────────────────────────
 
     [Test]
+    [AllureStory("Expired Token Decoding")]
+    [AllureSubSuite("Expired Token Decoding")]
     public void GetPrincipalFromExpiredToken_AcceptsAnAlreadyExpiredToken()
     {
         var user = NewUser();
@@ -138,6 +150,8 @@ public class JwtServiceTests
     }
 
     [Test]
+    [AllureStory("Expired Token Decoding")]
+    [AllureSubSuite("Expired Token Decoding")]
     public void GetPrincipalFromExpiredToken_WrongSigningKey_Throws()
     {
         var user = NewUser();
@@ -153,6 +167,8 @@ public class JwtServiceTests
     // ── CreateAuthResponseAsync ────────────────────────────────────────────────
 
     [Test]
+    [AllureStory("Auth Response Assembly")]
+    [AllureSubSuite("Auth Response Assembly")]
     public async Task CreateAuthResponseAsync_ReturnsPopulatedResponse_AndPersistsTheRefreshToken()
     {
         var user = NewUser();
@@ -170,12 +186,16 @@ public class JwtServiceTests
     // ── ValidateRefreshTokenAsync / SaveRefreshTokenAsync / RevokeRefreshTokenAsync ──
 
     [Test]
+    [AllureStory("Refresh Token Store")]
+    [AllureSubSuite("Refresh Token Store")]
     public async Task ValidateRefreshTokenAsync_UnknownUser_ReturnsFalse()
     {
         Assert.That(await _jwtService.ValidateRefreshTokenAsync(Guid.NewGuid().ToString(), "some-token"), Is.False);
     }
 
     [Test]
+    [AllureStory("Refresh Token Store")]
+    [AllureSubSuite("Refresh Token Store")]
     public async Task ValidateRefreshTokenAsync_KnownUserWrongToken_ReturnsFalse()
     {
         var userId = Guid.NewGuid().ToString();
@@ -185,6 +205,8 @@ public class JwtServiceTests
     }
 
     [Test]
+    [AllureStory("Refresh Token Store")]
+    [AllureSubSuite("Refresh Token Store")]
     public async Task SaveRefreshTokenAsync_ThenValidate_RoundTrips()
     {
         var userId = Guid.NewGuid().ToString();
@@ -196,6 +218,8 @@ public class JwtServiceTests
     }
 
     [Test]
+    [AllureStory("Refresh Token Store")]
+    [AllureSubSuite("Refresh Token Store")]
     public async Task SaveRefreshTokenAsync_KeepsOnlyTheLastFiveTokensPerUser()
     {
         var userId = Guid.NewGuid().ToString();
@@ -214,6 +238,8 @@ public class JwtServiceTests
     }
 
     [Test]
+    [AllureStory("Refresh Token Store")]
+    [AllureSubSuite("Refresh Token Store")]
     public async Task RevokeRefreshTokenAsync_RemovesTheToken()
     {
         var userId = Guid.NewGuid().ToString();
@@ -226,6 +252,8 @@ public class JwtServiceTests
     }
 
     [Test]
+    [AllureStory("Refresh Token Store")]
+    [AllureSubSuite("Refresh Token Store")]
     public async Task RevokeRefreshTokenAsync_DoesNotAffectOtherTokensForSameUser()
     {
         var userId = Guid.NewGuid().ToString();
@@ -241,6 +269,8 @@ public class JwtServiceTests
     }
 
     [Test]
+    [AllureStory("Refresh Token Store")]
+    [AllureSubSuite("Refresh Token Store")]
     public void RevokeRefreshTokenAsync_UnknownUserOrToken_DoesNotThrow()
     {
         Assert.DoesNotThrowAsync(async () =>
