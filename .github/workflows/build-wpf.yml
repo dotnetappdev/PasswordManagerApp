@@ -6,6 +6,18 @@ on:
     tags:     [ 'v*' ]
   pull_request:
     branches: [ devmain, main ]
+  workflow_dispatch: {}
+
+# Serializes runs for the same PR/branch (default cancel-in-progress: false, so a build already in
+# flight is queued behind, never killed). Without this, two pushes to the same open PR in quick
+# succession can both check out before either has pushed its own release tag/screenshot commit - both
+# then compute the same "next" wpf-vX.Y.Z and race to push it, and the loser fails with "tag already
+# exists". Confirmed happening in CI.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: write
 
 env:
   PROJECT: VaultGuard.WPF/VaultGuard.WPF.csproj
@@ -17,38 +29,60 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      # Explicit ref + full history: pull_request's default checkout is a synthetic merge commit that
+      # doesn't exist in the branch's real history (bad tag target), and the release version-bump
+      # below needs the full tag history, not the default shallow clone.
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # ── Derive version from git tag (v1.2.3) or use 0.0.0-dev ────────────
+      # ── Derive version: from a git tag (v1.2.3), auto-incremented from the latest wpf-vX.Y.Z tag on
+      # a merged PR into devmain (mirrors deploy-api/web-smarterasp.yml's scheme), or 0.0.0-dev
+      # otherwise (plain branch pushes/other PRs - build validation only, no release) ───────────────
       - name: Set version
         id: ver
-        shell: pwsh
+        shell: bash
         run: |
-          if ("${{ github.ref }}" -match "^refs/tags/v(.+)$") {
-            $ver = $matches[1]
-          } else {
-            $ver = "0.0.0-dev"
-          }
-          echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
-          echo "Resolved version: $ver"
+          if [[ "${{ github.ref }}" =~ ^refs/tags/v(.+)$ ]]; then
+            ver="${BASH_REMATCH[1]}"
+            tag="${{ github.ref_name }}"
+          elif [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.base.ref }}" = "devmain" ]; then
+            latest=$(git tag -l 'wpf-v*' | sed 's/^wpf-v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
+            if [ -z "$latest" ]; then
+              ver="1.0.0"
+            else
+              IFS='.' read -r major minor patch <<< "$latest"
+              ver="$major.$minor.$((patch + 1))"
+            fi
+            tag="wpf-v$ver"
+          else
+            ver="0.0.0-dev"
+            tag=""
+          fi
+          echo "VERSION=$ver" >> "$GITHUB_OUTPUT"
+          echo "TAG=$tag" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $ver (tag: $tag)"
 
       - name: Restore
         run: dotnet restore ${{ env.PROJECT }}
 
       - name: Build
+        # Only -p:Version is set here - the SDK derives AssemblyVersion/FileVersion from it
+        # automatically (stripping any -suffix, e.g. "-dev"), since those two MSBuild properties
+        # feed [AssemblyVersion]/[AssemblyFileVersion] attributes which require a purely numeric
+        # major[.minor[.build[.revision]]] value and would fail to compile (CS7034) otherwise.
         run: >
           dotnet build ${{ env.PROJECT }}
           --configuration Release
           --no-restore
           -p:Version=${{ steps.ver.outputs.VERSION }}
-          -p:AssemblyVersion=${{ steps.ver.outputs.VERSION }}
-          -p:FileVersion=${{ steps.ver.outputs.VERSION }}
 
       - name: Publish (self-contained win-x64)
         run: >
@@ -68,45 +102,73 @@ jobs:
         shell: pwsh
         run: |
           $ver = "${{ steps.ver.outputs.VERSION }}"
-          iscc /DMyAppVersion=$ver /DPublishDir="${{ env.PUBLISH_DIR }}" installer/setup.iss
+          # Inno Setup resolves a relative [Files] Source against the .iss script's own directory
+          # (installer/), not the working directory iscc was invoked from - so PUBLISH_DIR ("publish/wpf",
+          # relative to the repo root) must be made absolute before being passed in.
+          $publishDir = (Resolve-Path "${{ env.PUBLISH_DIR }}").Path
+          iscc /DMyAppVersion=$ver /DPublishDir="$publishDir" installer/setup.iss
           echo "EXE_PATH=$(Get-Item installer/output/*.exe | Select-Object -ExpandProperty FullName)" >> $env:GITHUB_OUTPUT
         id: exe
 
       # ── MSI Installer (WiX v4) ────────────────────────────────────────────
       - name: Install WiX toolset
-        run: dotnet tool install --global wix --version 4.*
+        shell: pwsh
+        run: |
+          dotnet tool install --global wix --version 4.*
+          # Pin the extension to the same version as the CLI - an unpinned "wix extension add"
+          # grabs the latest package (e.g. a v7 build), which the v4 CLI can't load (WIX0144).
+          $wixVersion = (wix --version).Trim()
+          wix extension add "WixToolset.UI.wixext/$wixVersion"
 
       - name: Build MSI
         shell: pwsh
         run: |
           $ver = "${{ steps.ver.outputs.VERSION }}"
+          # Same relative-path gotcha as the Inno Setup step above: wix resolves a relative
+          # Source/PublishDir against setup.wxs's own directory (installer/), not the repo root.
+          $publishDir = (Resolve-Path "${{ env.PUBLISH_DIR }}").Path
           wix build installer/setup.wxs `
             -ext WixToolset.UI.wixext `
             -d Version=$ver `
-            -d PublishDir="${{ env.PUBLISH_DIR }}" `
+            -d PublishDir="$publishDir" `
             -o "installer/output/VaultGuardSetup-$ver.msi"
           echo "MSI_PATH=installer/output/VaultGuardSetup-$ver.msi" >> $env:GITHUB_OUTPUT
         id: msi
 
       # ── Upload artifacts for PRs / branch builds ─────────────────────────
       - name: Upload EXE artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: VaultGuard-EXE-${{ steps.ver.outputs.VERSION }}
           path: installer/output/*.exe
 
       - name: Upload MSI artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: VaultGuard-MSI-${{ steps.ver.outputs.VERSION }}
           path: installer/output/*.msi
 
-      # ── Publish to GitHub Releases (tag builds only) ──────────────────────
+      # ── Publish to GitHub Releases: manual vX.Y.Z tag push, or a merged PR into devmain ──────────
+      # Only the PR-merge case needs a new tag - a manual vX.Y.Z tag already exists (the user pushed
+      # it), so there's nothing to create here; the release step below just attaches the installers to
+      # that existing tag's release.
+      - name: Tag release and create release branch
+        if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          sha="${{ github.event.pull_request.head.sha }}"
+          git tag "${{ steps.ver.outputs.TAG }}" "$sha"
+          git push origin "${{ steps.ver.outputs.TAG }}"
+          git branch "release/${{ steps.ver.outputs.TAG }}" "$sha"
+          git push origin "release/${{ steps.ver.outputs.TAG }}"
+
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain')
+        uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ steps.ver.outputs.TAG }}
           name: VaultGuard ${{ steps.ver.outputs.VERSION }}
           generate_release_notes: true
           files: |

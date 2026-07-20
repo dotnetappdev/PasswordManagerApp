@@ -1,3 +1,5 @@
+using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
@@ -14,6 +16,11 @@ namespace VaultGuard.BackEnd.Tests.Services;
 /// these, which is why failures only appeared at runtime.
 /// </summary>
 [TestFixture]
+[AllureNUnit]
+[AllureEpic("Platform & Infrastructure")]
+[AllureFeature("Data Seeding")]
+[AllureParentSuite("Platform & Infrastructure")]
+[AllureSuite("Data Seeding")]
 public class SeedingTests
 {
     private SqliteConnection  _connection = null!;
@@ -48,6 +55,7 @@ public class SeedingTests
 
     // ── Setup / Teardown ────────────────────────────────────────────────────
 
+    [AllureBefore("Open a persistent in-memory SQLite connection so the database survives across DbContext instances")]
     [SetUp]
     public void Setup()
     {
@@ -60,6 +68,7 @@ public class SeedingTests
         _db.Database.EnsureCreated();   // creates schema from current EF model
     }
 
+    [AllureAfter("Dispose the DbContext and close the in-memory SQLite connection")]
     [TearDown]
     public void TearDown()
     {
@@ -70,6 +79,8 @@ public class SeedingTests
     // ── 1. Schema sanity ────────────────────────────────────────────────────
 
     [Test]
+    [AllureStory("Schema Guards")]
+    [AllureSubSuite("Schema Guards")]
     public void Schema_PasswordItemsTable_DoesNotHaveVaultIdColumn()
     {
         // [NotMapped] on PasswordItem.VaultId means EF Core must not create
@@ -92,6 +103,8 @@ public class SeedingTests
     }
 
     [Test]
+    [AllureStory("Schema Guards")]
+    [AllureSubSuite("Schema Guards")]
     public void Schema_CategoriesTable_DoesNotHaveVaultIdColumn()
     {
         using var cmd = _connection.CreateCommand();
@@ -109,6 +122,8 @@ public class SeedingTests
     // ── 2. Collections ──────────────────────────────────────────────────────
 
     [Test]
+    [AllureStory("Collection Seeding")]
+    [AllureSubSuite("Collection Seeding")]
     public void SeedCollections_OnEmptyDb_InsertsRows()
     {
         EnsureUser();
@@ -119,6 +134,8 @@ public class SeedingTests
     }
 
     [Test]
+    [AllureStory("Collection Seeding")]
+    [AllureSubSuite("Collection Seeding")]
     public void SeedCollections_CalledTwice_DoesNotDuplicate()
     {
         EnsureUser();
@@ -132,6 +149,8 @@ public class SeedingTests
     // ── 3. Categories ───────────────────────────────────────────────────────
 
     [Test]
+    [AllureStory("Category Seeding")]
+    [AllureSubSuite("Category Seeding")]
     public void SeedCategories_OnEmptyDb_InsertsRows()
     {
         EnsureUser();
@@ -142,6 +161,8 @@ public class SeedingTests
     }
 
     [Test]
+    [AllureStory("Category Seeding")]
+    [AllureSubSuite("Category Seeding")]
     public void SeedCategories_WithoutVaultId_DoesNotThrow()
     {
         EnsureUser();
@@ -154,6 +175,8 @@ public class SeedingTests
     // ── 4. Tags ─────────────────────────────────────────────────────────────
 
     [Test]
+    [AllureStory("Tag Seeding")]
+    [AllureSubSuite("Tag Seeding")]
     public void SeedTags_OnEmptyDb_InsertsRows()
     {
         EnsureUser();
@@ -166,31 +189,34 @@ public class SeedingTests
     // ── 5. Full pipeline ────────────────────────────────────────────────────
 
     [Test]
+    [AllureStory("Password Item Seeding")]
+    [AllureSubSuite("Password Item Seeding")]
     public void SeedPasswordItemsForUser_RequiresCollectionsCategoriesTags()
     {
         // Calling SeedPasswordItemsForUser WITHOUT seeding collections/categories/tags
-        // first means the FK lookups fall back to Id=1, which may not exist.
-        // This test proves that without dependencies the seeder either
-        // throws (SQLite FK violation) or inserts items with null/invalid FKs.
+        // first means the FK lookups fall back to a hardcoded Id=1, which doesn't exist -
+        // CategoryId/CollectionId are nullable columns, but a non-null value pointing at a
+        // nonexistent row is still a real FK violation under SQLite (this test class exists
+        // specifically to catch that; see class remarks).
         EnsureUser();
 
         // Do NOT seed collections / categories / tags
-        Assert.DoesNotThrow(() =>
+        Assert.Throws<DbUpdateException>(() =>
         {
-            // Seeder uses fallback IDs (1,2,…) when dependent rows are absent.
-            // SQLite may not throw here if the FK is optional (nullable).
             TestDataSeeder.SeedPasswordItemsForUser(_db, UserId);
         },
-        "Seeder should not crash even when dependencies are absent, " +
-        "but items may have invalid FK references.");
+        "Seeder should fail fast on the FK violation when its collections/categories/tags " +
+        "dependencies haven't been seeded first, rather than silently writing bad references.");
 
-        // The items ARE inserted (nullable FKs allow it)
+        // The failed SaveChanges rolled back - nothing should have been inserted.
         var count = _db.PasswordItems.Count(p => p.UserId == UserId);
-        Assert.That(count, Is.GreaterThan(0),
-            "At least some password items should have been inserted.");
+        Assert.That(count, Is.Zero,
+            "No password items should have been inserted once the batch insert failed.");
     }
 
     [Test]
+    [AllureStory("Full Pipeline & Referential Integrity")]
+    [AllureSubSuite("Full Pipeline & Referential Integrity")]
     public void FullSeedPipeline_CollectionsThenCategoriesThenTagsThenItems_Succeeds()
     {
         // This is the correct order: collections → categories → tags → items.
@@ -221,6 +247,8 @@ public class SeedingTests
     // ── 6. ForceSeedPasswordItems ───────────────────────────────────────────
 
     [Test]
+    [AllureStory("Password Item Seeding")]
+    [AllureSubSuite("Password Item Seeding")]
     public void ForceSeedPasswordItems_ClearsExistingThenReseeds()
     {
         EnsureUser();
@@ -244,6 +272,8 @@ public class SeedingTests
     }
 
     [Test]
+    [AllureStory("Password Item Seeding")]
+    [AllureSubSuite("Password Item Seeding")]
     public void ForceSeedPasswordItems_OnEmptyItemSet_Succeeds()
     {
         EnsureUser();
@@ -261,6 +291,8 @@ public class SeedingTests
     // ── 7. FK integrity after seeding ───────────────────────────────────────
 
     [Test]
+    [AllureStory("Full Pipeline & Referential Integrity")]
+    [AllureSubSuite("Full Pipeline & Referential Integrity")]
     public void SeededItems_CategoryIds_ReferenceExistingCategories()
     {
         EnsureUser();
@@ -284,6 +316,8 @@ public class SeedingTests
     }
 
     [Test]
+    [AllureStory("Full Pipeline & Referential Integrity")]
+    [AllureSubSuite("Full Pipeline & Referential Integrity")]
     public void SeededItems_CollectionIds_ReferenceExistingCollections()
     {
         EnsureUser();
@@ -309,6 +343,8 @@ public class SeedingTests
     // ── 8. SampleDataSeeder flow simulation ─────────────────────────────────
 
     [Test]
+    [AllureStory("Full Pipeline & Referential Integrity")]
+    [AllureSubSuite("Full Pipeline & Referential Integrity")]
     public void SampleDataSeederFlow_SeedsOnlyOncePerUser()
     {
         // Simulates what SampleDataSeeder.SeedSampleDataAsync does for a real user.

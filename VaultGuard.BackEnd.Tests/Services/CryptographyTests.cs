@@ -1,3 +1,5 @@
+using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using System.Security.Cryptography;
 using System.Text;
 using NUnit.Framework;
@@ -13,11 +15,19 @@ namespace VaultGuard.BackEnd.Tests.Services;
 /// against silent regressions.
 /// </summary>
 [TestFixture]
+[AllureNUnit]
+[AllureEpic("Cryptography & Security")]
+[AllureFeature("Encryption & Key Derivation")]
+[AllureParentSuite("Cryptography & Security")]
+[AllureSuite("Encryption & Key Derivation")]
+[AllureStory("Happy-Path Round Trips")]
+[AllureSubSuite("Happy-Path Round Trips")]
 public class CryptographyTests
 {
     private CryptographyService _crypto = null!;
     private PasswordCryptoService _passwordCrypto = null!;
 
+    [AllureBefore("Construct real CryptographyService and PasswordCryptoService instances")]
     [SetUp]
     public void SetUp()
     {

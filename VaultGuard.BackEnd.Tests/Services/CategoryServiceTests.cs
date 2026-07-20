@@ -1,3 +1,5 @@
+using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
@@ -10,6 +12,13 @@ using VaultGuard.Services.Services;
 namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
+[AllureNUnit]
+[AllureEpic("Vault Data Management")]
+[AllureFeature("Categories & Collections")]
+[AllureParentSuite("Vault Data Management")]
+[AllureSuite("Categories & Collections")]
+[AllureStory("Categories Service")]
+[AllureSubSuite("Categories Service")]
 public class CategoryServiceTests
 {
     private DbContextOptions<VaultGuardDbContext> _options = null!;
@@ -18,6 +27,7 @@ public class CategoryServiceTests
     private Mock<IAuthService> _authMock = null!;
     private const string UserId = "test-user-id-12345";
 
+    [AllureBefore("Create a fresh EF Core in-memory database context")]
     [SetUp]
     public void Setup()
     {
@@ -30,6 +40,7 @@ public class CategoryServiceTests
         _service  = new CategoryService(_context, _authMock.Object);
     }
 
+    [AllureAfter("Drop and dispose the in-memory database context")]
     [TearDown]
     public void TearDown()
     {

@@ -1,0 +1,19 @@
+{
+  "name": "vaultguard-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync-screenshots": "node sync-screenshots.mjs",
+    "predev": "npm run sync-screenshots",
+    "prebuild": "npm run sync-screenshots",
+    "dev": "vitepress dev .",
+    "build": "vitepress build .",
+    "preview": "vitepress preview ."
+  },
+  "devDependencies": {
+    "@scalar/api-reference": "^1.62.9",
+    "mermaid": "^11.16.0",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17"
+  }
+}

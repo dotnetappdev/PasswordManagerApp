@@ -1,3 +1,5 @@
+using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using NUnit.Framework;
 using VaultGuard.Models;
 using VaultGuard.Services.Utilities;
@@ -5,6 +7,13 @@ using VaultGuard.Services.Utilities;
 namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
+[AllureNUnit]
+[AllureEpic("Vault Data Management")]
+[AllureFeature("Password Items")]
+[AllureParentSuite("Vault Data Management")]
+[AllureSuite("Password Items")]
+[AllureStory("Protected-Field Encryption Helper")]
+[AllureSubSuite("Protected-Field Encryption Helper")]
 public class ProtectedItemHelperTests
 {
     [Test]

@@ -1745,7 +1745,7 @@ sequenceDiagram
 ## Testing the Implementation
 
 ### 1. View the Demo
-Open `qr-login-demo.html` in a browser to see the UI demonstration.
+Open `docs/demos/qr-login-demo.html` in a browser to see the UI demonstration.
 
 ### 2. Test API Endpoints
 

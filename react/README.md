@@ -776,7 +776,7 @@ MIT License - See LICENSE file for details
 | **[README.md](README.md)** | This file - Overview and quick start |
 | **[BUILD.md](BUILD.md)** | Complete build instructions for all platforms |
 | **[SETUP.md](SETUP.md)** | Detailed environment setup guide |
-| **[../REACT_NATIVE_MOBILE_APP.md](../REACT_NATIVE_MOBILE_APP.md)** | Project architecture and overview |
+| **[../docs/REACT_NATIVE_MOBILE_APP.md](../docs/REACT_NATIVE_MOBILE_APP.md)** | Project architecture and overview |
 
 ---
 

@@ -6,11 +6,16 @@ Interface captures for Vault Guard. Use sample data only — never real credenti
 
 ## 🌐 Web (Blazor)
 
+All pages below are captured for both themes by `ScreenshotCaptureTests` (see
+[`VaultGuard.Tests.Playwright`](../VaultGuard.Tests.Playwright)) - only the dark set is shown per-section
+here to keep this file short; swap `dark/` for `light/` in any path to see the light-theme version, or
+browse the full [Screenshot Gallery](https://dotnetappdev.github.io/PasswordManagerApp/gallery).
+
 ### Dark theme
 
-| Dashboard | Passwords | Vaults |
+| Dashboard | All Items | Vaults |
 |:---:|:---:|:---:|
-| ![](blazor/dark/dashboard.png) | ![](blazor/dark/passwords.png) | ![](blazor/dark/vaults.png) |
+| ![](blazor/dark/dashboard.png) | ![](blazor/dark/all-items.png) | ![](blazor/dark/vaults.png) |
 | **Collections** | **Categories** | **Tags** |
 | ![](blazor/dark/collections.png) | ![](blazor/dark/categories.png) | ![](blazor/dark/tags.png) |
 | **Archive** | **Recently Deleted** | **Audit Logs** |
@@ -18,25 +23,32 @@ Interface captures for Vault Guard. Use sample data only — never real credenti
 
 #### Settings tabs
 
-| General / Themes | Security | Maintenance |
+| Security | Appearance | Database |
 |:---:|:---:|:---:|
-| ![](blazor/dark/settings-themes.png) | ![](blazor/dark/settings-security.png) | ![](blazor/dark/settings-maintenance.png) |
-| **About** | **Database Settings** | **UI Zoom** |
-| ![](blazor/dark/settings-about.png) | ![](blazor/dark/database-settings.png) | ![](blazor/dark/ui-zoom.png) |
+| ![](blazor/dark/settings.png) | ![](blazor/dark/settings-appearance.png) | ![](blazor/dark/settings-database.png) |
+| **About** | **Maintenance** | **Encryption** |
+| ![](blazor/dark/settings-about.png) | ![](blazor/dark/settings-maintenance.png) | ![](blazor/dark/settings-encryption.png) |
 
 #### Theme variants
 
-| Default dark | High contrast |
-|:---:|:---:|
-| ![](blazor/dark/dashboard.png) | ![](blazor/dark/high-contrast.png) |
+Theme is one Settings → Appearance control with four options (Dark Mode / Light Mode / High Contrast /
+System Default) - High Contrast always renders the same yellow-on-black palette on its own, it isn't an
+overlay on top of light/dark.
+
+| Dark Mode | Light Mode | High Contrast |
+|:---:|:---:|:---:|
+| ![](blazor/dark/dashboard.png) | ![](blazor/light/dashboard.png) | ![](blazor/high-contrast/dashboard.png) |
+
+High Contrast gets full page coverage in `blazor/high-contrast/`, same as `dark/` and `light/` -
+e.g. `blazor/high-contrast/settings.png`, `blazor/high-contrast/vaults.png`, etc.
 
 ### Light theme
 
 | Dashboard | All items | Settings |
 |:---:|:---:|:---:|
 | ![](blazor/light/dashboard.png) | ![](blazor/light/all-items.png) | ![](blazor/light/settings.png) |
-| **Vaults** | **Collections** | **High contrast** |
-| ![](blazor/light/vaults.png) | ![](blazor/light/collections.png) | ![](blazor/light/high-contrast.png) |
+| **Vaults** | **Collections** | **Security Center** |
+| ![](blazor/light/vaults.png) | ![](blazor/light/collections.png) | ![](blazor/light/security.png) |
 
 ### Mobile browser (light)
 
@@ -46,43 +58,20 @@ Interface captures for Vault Guard. Use sample data only — never real credenti
 
 ---
 
-## 🖥️ Desktop — WPF
+## 🔌 API reference (Scalar)
 
-### Dark theme
-
-| Login | Dashboard | All Items |
-|:---:|:---:|:---:|
-| ![](wpf/dark/login.png) | ![](wpf/dark/dashboard.png) | ![](wpf/dark/all-items.png) |
-| **Vaults** | **Settings** | **Settings › Security** |
-| ![](wpf/dark/vaults.png) | ![](wpf/dark/settings.png) | ![](wpf/dark/settings-security.png) |
-| **Settings › Maintenance** | | |
-| ![](wpf/dark/settings-maintenance.png) | | |
-
-### Light theme
-
-| Login | Dashboard | All Items |
-|:---:|:---:|:---:|
-| ![](wpf/light/login.png) | ![](wpf/light/dashboard.png) | ![](wpf/light/all-items.png) |
-| **Vaults** | **Settings** | |
-| ![](wpf/light/vaults.png) | ![](wpf/light/settings.png) | |
+| Endpoint reference | Try it — Test Request panel |
+|:---:|:---:|
+| ![](api/scalar.png) | ![](api/scalar-tryit.png) |
 
 ---
 
-## 📱 Mobile — MAUI Android
+## 🖥️ Desktop (WPF) and 📱 Mobile (Android/iOS)
 
-| Dashboard (dark) | All Items (dark) | Vaults (dark) | Settings (dark) |
-|:---:|:---:|:---:|:---:|
-| ![](mobile/android/dark/dashboard.png) | ![](mobile/android/dark/all-items.png) | ![](mobile/android/dark/vaults.png) | ![](mobile/android/dark/settings.png) |
-| **Dashboard (light)** | **All Items (light)** | **Vaults (light)** | **Settings (light)** |
-| ![](mobile/android/light/dashboard.png) | ![](mobile/android/light/all-items.png) | ![](mobile/android/light/vaults.png) | ![](mobile/android/light/settings.png) |
-
-## 📱 Mobile — MAUI iOS
-
-| Dashboard (dark) | All Items (dark) | Vaults (dark) | Settings (dark) |
-|:---:|:---:|:---:|:---:|
-| ![](mobile/ios/dark/dashboard.png) | ![](mobile/ios/dark/all-items.png) | ![](mobile/ios/dark/vaults.png) | ![](mobile/ios/dark/settings.png) |
-| **Dashboard (light)** | **All Items (light)** | **Vaults (light)** | **Settings (light)** |
-| ![](mobile/ios/light/dashboard.png) | ![](mobile/ios/light/all-items.png) | ![](mobile/ios/light/vaults.png) | ![](mobile/ios/light/settings.png) |
+Not available yet - capturing these needs a Windows desktop session (WPF) or an Android/iOS emulator
+(neither exists in the environment these screenshots are generated from: no `/dev/kvm`, no Android SDK).
+Drop real captures into `wpf/{dark,light}/` and `mobile/{android,ios}/{dark,light}/` and they'll show up
+in the [documentation site](https://dotnetappdev.github.io/PasswordManagerApp/) automatically.
 
 ---
 

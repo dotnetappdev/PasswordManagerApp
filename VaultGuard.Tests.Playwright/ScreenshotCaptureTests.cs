@@ -4,10 +4,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace VaultGuard.Tests.Playwright;
 
 /// <summary>
-/// On-demand utility that regenerates the Blazor web screenshots referenced by the READMEs.
-/// It boots the web app (temp SQLite DB, auto-seeded), signs in with the seeded account, then captures
-/// every key page in BOTH dark and light themes, writing PNGs straight into
-/// <c>screenshots/blazor/dark</c> and <c>screenshots/blazor/light</c> at the repo root.
+/// On-demand utility that regenerates the Blazor web screenshots referenced by the READMEs and docs site.
+/// It boots the web app (temp SQLite DB, auto-seeded), captures the pre-auth setup/login screens once
+/// (<c>screenshots/blazor/onboarding</c>), then signs in with the seeded account and captures every key
+/// page - including all 11 Settings tabs - in dark, light AND high-contrast themes, writing PNGs straight
+/// into <c>screenshots/blazor/{dark,light,high-contrast}</c> at the repo root.
 ///
 /// Run it explicitly (it needs a browser + display / headless Chromium):
 ///   dotnet test VaultGuard.Tests.Playwright --filter FullyQualifiedName~ScreenshotCaptureTests
@@ -37,7 +38,29 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
         ("/api-keys",                  "api-keys"),
         ("/import",                    "import"),
         ("/audit-logs",                "audit-logs"),
-        ("/settings",                  "settings"),
+        ("/profile",                   "profile"),
+        // Settings is one page with 11 deep-linkable tabs (/settings?tab=<name>, see Settings.razor) -
+        // capture each so the docs site can walk through the full settings surface, not just whichever
+        // tab happens to be selected by default.
+        ("/settings",                  "settings"), // defaults to the first tab (Security)
+        ("/settings?tab=Appearance",   "settings-appearance"),
+        ("/settings?tab=Database",     "settings-database"),
+        ("/settings?tab=Sync",         "settings-sync"),
+        ("/settings?tab=Notifications","settings-notifications"),
+        ("/settings?tab=Vaults",       "settings-vaults"),
+        ("/settings?tab=Generator",    "settings-generator"),
+        ("/settings?tab=Encryption",   "settings-encryption"),
+        ("/settings?tab=Shortcuts",    "settings-shortcuts"),
+        ("/settings?tab=Maintenance",  "settings-maintenance"),
+        ("/settings?tab=About",        "settings-about"),
+    };
+
+    // Pre-authentication pages (database setup wizard, sign-in/profile picker) - captured once, before
+    // SignInAsync, since there's no theme toggle available yet on these (EmptyLayout, no nav drawer).
+    private static readonly (string Route, string Name)[] OnboardingPages =
+    {
+        ("/setup", "database-setup"),
+        ("/login", "login"),
     };
 
     private static string ScreenshotsRoot => Path.GetFullPath(
@@ -50,28 +73,44 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
 
         var darkDir = Path.Combine(ScreenshotsRoot, "dark");
         var lightDir = Path.Combine(ScreenshotsRoot, "light");
+        var highContrastDir = Path.Combine(ScreenshotsRoot, "high-contrast");
+        var onboardingDir = Path.Combine(ScreenshotsRoot, "onboarding");
         Directory.CreateDirectory(darkDir);
         Directory.CreateDirectory(lightDir);
-
-        await SignInAsync();
+        Directory.CreateDirectory(highContrastDir);
+        Directory.CreateDirectory(onboardingDir);
 
         var captured = 0;
 
-        await SetThemeAsync("Dark");
+        foreach (var (route, name) in OnboardingPages)
+            captured += await CaptureAsync(onboardingDir, route, name, expectAuthenticated: false) ? 1 : 0;
+
+        await SignInAsync();
+
+        await SetThemeAsync("Dark Mode");
         foreach (var (route, name) in Pages)
             captured += await CaptureAsync(darkDir, route, name) ? 1 : 0;
-        captured += await CaptureHighContrastAsync(darkDir) ? 1 : 0;
+        captured += await CaptureActionShotsAsync(darkDir) ? 1 : 0;
+        captured += await CaptureApiKeyGenerationAsync(darkDir) ? 1 : 0;
 
-        await SetThemeAsync("Light");
+        await SetThemeAsync("Light Mode");
         foreach (var (route, name) in Pages)
             captured += await CaptureAsync(lightDir, route, name) ? 1 : 0;
-        captured += await CaptureHighContrastAsync(lightDir) ? 1 : 0;
+
+        // High Contrast is a fourth, standalone Theme option (not an overlay on light/dark - see the
+        // Theme MudRadioGroup in Settings.razor) - capture every page under it too, same as dark/light.
+        await SetThemeAsync("High Contrast");
+        foreach (var (route, name) in Pages)
+            captured += await CaptureAsync(highContrastDir, route, name) ? 1 : 0;
 
         TestContext.WriteLine($"Captured {captured} screenshot(s) into {ScreenshotsRoot}");
         Assert.IsTrue(captured > 0, "No screenshots were captured — check that the app booted and sign-in succeeded.");
     }
 
-    private async Task SignInAsync()
+    // Deliberately hides the base class's SignInAsync: this class needs full control over exactly when
+    // sign-in happens (onboarding screenshots are captured pre-auth, see CaptureAllScreenshots above),
+    // so it keeps its own copy rather than sharing the one every other test class now uses.
+    private new async Task SignInAsync()
     {
         try
         {
@@ -87,32 +126,53 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
                 await Task.Delay(2500);
             }
 
-            if (await Page.Locator("#confirmKey").CountAsync() > 0)
+            // Up to two passes. Creating the master key (first-run) only creates the account - it does
+            // NOT authenticate the session, so MainLayout's auth gate immediately bounces the post-create
+            // NavigateTo("/home") back to /login. At that point the account exists, so the second pass
+            // goes through the normal "pick a profile, enter its master key" flow to actually sign in.
+            for (var attempt = 0; attempt < 2; attempt++)
             {
-                // First-run, no seeded accounts: create the master key.
-                await Page.FillAsync("#masterKey", MasterKey);
-                await Page.FillAsync("#confirmKey", MasterKey);
-                await Page.ClickAsync("button:has-text('Create Master Key')");
-            }
-            else
-            {
-                // Seeded accounts exist: pick the admin profile tile from the "Who's unlocking?" picker.
-                var profileTile = Page.Locator(".profile-tile", new PageLocatorOptions { HasTextString = "admin@passwordmanager.local" });
+                if (await Page.Locator("#confirmKey").CountAsync() > 0)
+                {
+                    await Page.FillAsync("#masterKey", MasterKey);
+                    await Page.FillAsync("#confirmKey", MasterKey);
+                    await Page.ClickAsync("button:has-text('Create Master Key')");
+                    await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    await Task.Delay(2000);
+                    continue;
+                }
+
+                // Seeded accounts exist: pick whichever profile tile the "Who's unlocking?" picker
+                // rendered. All seeded accounts share MasterKey (see IdentityDataSeeder), so which one
+                // doesn't matter — this used to hardcode a match on "admin@passwordmanager.local", which
+                // silently no-opped (0 tiles matched) whenever a different account rendered first, leaving
+                // every subsequent capture stuck on this picker instead of the real page.
+                var profileTile = Page.Locator(".profile-tile").First;
                 if (await profileTile.CountAsync() > 0)
                 {
-                    await profileTile.First.ClickAsync();
+                    await profileTile.ClickAsync();
                     await Task.Delay(500);
                 }
 
                 if (await Page.Locator("#loginKey").CountAsync() > 0)
                 {
+                    // #loginKey uses a plain @bind (fires on the DOM "change"/blur event, not "input") -
+                    // FillAsync alone leaves focus on the field, so the bound C# value never updates and
+                    // the Continue button (disabled while loginKey is empty) stays disabled forever.
+                    // Tabbing out after filling blurs it, which is what actually commits the value.
                     await Page.FillAsync("#loginKey", MasterKey);
+                    await Page.Locator("#loginKey").PressAsync("Tab");
                     await Page.ClickAsync("button:has-text('Continue')");
+                    await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    await Task.Delay(2000);
                 }
+
+                if (!Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
+                    break;
             }
 
-            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            await Task.Delay(2500);
+            if (Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
+                TestContext.WriteLine($"WARNING: still on /login after sign-in attempt (url={Page.Url}) - subsequent captures will show the login page.");
         }
         catch (Exception ex)
         {
@@ -120,77 +180,152 @@ public class ScreenshotCaptureTests : BlazorWebTestBase
         }
     }
 
-    // Sets the theme via Settings → Appearance → Theme (a MudSelect with Light/Dark/System options)
-    // so full-page reloads honour it (ThemeService persists the choice to the shared settings.json).
-    private async Task SetThemeAsync(string mode)
+    // Captures a handful of key interactions (dark theme only, once per run — these are slower and
+    // duplicating them per-theme isn't worth the extra CI time) so the gallery shows the app in use,
+    // not just static list pages: opening the "Add item" dialog with the password generator expanded,
+    // and the "New Vault" / "New Collection" creation dialogs.
+    private async Task<bool> CaptureActionShotsAsync(string dir)
     {
-        try
-        {
-            await Page.GotoAsync($"{BaseUrl}/settings");
-            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            await Task.Delay(1000);
-
-            // Open the "Theme" MudSelect dropdown.
-            var select = Page.Locator(".mud-input-control", new PageLocatorOptions { HasTextString = "Theme" }).First;
-            await select.ClickAsync();
-            await Task.Delay(400);
-
-            // Pick the matching option from the popover list (last opened popover, exact text).
-            var option = Page.Locator(".mud-list-item", new PageLocatorOptions { HasTextString = mode }).Last;
-            await option.ClickAsync();
-            await Task.Delay(1200);
-        }
-        catch (Exception ex)
-        {
-            TestContext.WriteLine($"Setting theme '{mode}' failed (continuing): {ex.Message}");
-        }
+        var any = false;
+        any |= await CaptureAddItemDialogAsync(dir);
+        any |= await CaptureSimpleDialogAsync(dir, "/vaults", "New Vault", "dialog-new-vault");
+        any |= await CaptureSimpleDialogAsync(dir, "/collections", "New Collection", "dialog-new-collection");
+        return any;
     }
 
-    // Toggles Accessibility → High contrast on, captures the dashboard, then toggles it back off
-    // so it doesn't leak into subsequent captures.
-    private async Task<bool> CaptureHighContrastAsync(string dir)
+    private async Task<bool> CaptureAddItemDialogAsync(string dir)
     {
         try
         {
-            await Page.GotoAsync($"{BaseUrl}/settings");
+            await Page.GotoAsync($"{BaseUrl}/passwords");
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await Task.Delay(1000);
 
-            var toggle = Page.Locator(".mud-switch", new PageLocatorOptions { HasTextString = "High contrast" }).First;
-            await toggle.ClickAsync();
+            await Page.ClickAsync("button[title='Add item']");
             await Task.Delay(800);
 
-            await Page.GotoAsync($"{BaseUrl}/");
-            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            await Task.Delay(1200);
-            var path = Path.Combine(dir, "high-contrast.png");
-            await Page.ScreenshotAsync(new PageScreenshotOptions { Path = path, FullPage = true });
-            TestContext.WriteLine($"Captured {path}");
-
-            // Reset so it doesn't affect the next theme pass.
-            await Page.GotoAsync($"{BaseUrl}/settings");
-            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            await Task.Delay(1000);
-            var toggleOff = Page.Locator(".mud-switch", new PageLocatorOptions { HasTextString = "High contrast" }).First;
-            await toggleOff.ClickAsync();
+            // Expand the inline generator (auto-fills a preview password) so the shot shows the
+            // dynamic form engine actually doing something, not just an empty form.
+            await Page.Locator(".mud-dialog-content button:has-text('Generate strong password')").ClickAsync();
             await Task.Delay(600);
 
+            var path = Path.Combine(dir, "dialog-add-item.png");
+            await Page.ScreenshotAsync(new PageScreenshotOptions { Path = path, FullPage = true });
+            TestContext.WriteLine($"Captured {path}");
             return true;
         }
         catch (Exception ex)
         {
-            TestContext.WriteLine($"Failed to capture high-contrast: {ex.Message}");
+            TestContext.WriteLine($"Failed to capture dialog-add-item: {ex.Message}");
             return false;
         }
     }
 
-    private async Task<bool> CaptureAsync(string dir, string route, string name)
+    // Captures the "Create API Key" flow on /api-keys: filling in a name and the one-time
+    // "API Key Created Successfully" reveal dialog that shows the generated key.
+    private async Task<bool> CaptureApiKeyGenerationAsync(string dir)
+    {
+        try
+        {
+            await Page.GotoAsync($"{BaseUrl}/api-keys");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await Task.Delay(1000);
+
+            // Like #loginKey (see SignInAsync), this MudTextField's @bind-Value commits on blur/change,
+            // not "input" - FillAsync alone leaves focus in the field, so the bound name stays empty and
+            // the Create button (disabled while the name is empty) never enables. Tab out to commit it.
+            var nameField = Page.GetByLabel("API Key Name");
+            await nameField.FillAsync("Pixel 8");
+            await nameField.PressAsync("Tab");
+            await Task.Delay(500);
+            await Page.ClickAsync("button:has-text('Create API Key')");
+            await Task.Delay(1200);
+
+            var path = Path.Combine(dir, "dialog-api-key-generated.png");
+            await Page.ScreenshotAsync(new PageScreenshotOptions { Path = path, FullPage = true });
+            TestContext.WriteLine($"Captured {path}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            TestContext.WriteLine($"Failed to capture dialog-api-key-generated: {ex.Message}");
+            return false;
+        }
+    }
+
+    private async Task<bool> CaptureSimpleDialogAsync(string dir, string route, string buttonText, string name)
+    {
+        try
+        {
+            await Page.GotoAsync($"{BaseUrl}{route}");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await Task.Delay(1000);
+
+            await Page.ClickAsync($"button:has-text('{buttonText}')");
+            await Task.Delay(800);
+
+            var path = Path.Combine(dir, $"{name}.png");
+            await Page.ScreenshotAsync(new PageScreenshotOptions { Path = path, FullPage = true });
+            TestContext.WriteLine($"Captured {path}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            TestContext.WriteLine($"Failed to capture {name}: {ex.Message}");
+            return false;
+        }
+    }
+
+    // Sets the theme via Settings → Appearance → Theme - a MudRadioGroup with four options ("Dark
+    // Mode", "Light Mode", "High Contrast", "System Default"), NOT a dropdown - so full-page reloads
+    // honour it (ThemeService persists the choice to the shared settings.json). Pass the exact radio
+    // label text (e.g. "Dark Mode", "Light Mode", "High Contrast").
+    private async Task SetThemeAsync(string radioLabel)
+    {
+        try
+        {
+            await Page.GotoAsync($"{BaseUrl}/settings?tab=Appearance");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await Task.Delay(1000);
+
+            var radio = Page.Locator("label.mud-radio", new PageLocatorOptions { HasTextString = radioLabel }).First;
+            await radio.ClickAsync();
+            await Task.Delay(1200);
+        }
+        catch (Exception ex)
+        {
+            TestContext.WriteLine($"Setting theme '{radioLabel}' failed (continuing): {ex.Message}");
+        }
+    }
+
+    // expectAuthenticated: false for the onboarding routes (/setup, /login), which are SUPPOSED to show
+    // the login/setup screen. For every other route, landing on /login means the session was lost
+    // between captures - rather than silently saving a login-page screenshot mislabeled as e.g.
+    // "settings.png" (which is exactly what happened before this guard existed), re-authenticate and
+    // retry the navigation once before giving up.
+    private async Task<bool> CaptureAsync(string dir, string route, string name, bool expectAuthenticated = true)
     {
         try
         {
             await Page.GotoAsync($"{BaseUrl}{route}");
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await Task.Delay(1200); // let MudBlazor render + theme settle
+
+            if (expectAuthenticated && Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
+            {
+                TestContext.WriteLine($"WARNING: session dropped before capturing {name} ({route}) - re-authenticating and retrying once.");
+                await SignInAsync();
+                await Page.GotoAsync($"{BaseUrl}{route}");
+                await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                await Task.Delay(1200);
+
+                if (Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
+                {
+                    TestContext.WriteLine($"FAILED: still on /login for {name} ({route}) after re-authenticating - skipping rather than saving a login-page screenshot.");
+                    return false;
+                }
+            }
+
             var path = Path.Combine(dir, $"{name}.png");
             await Page.ScreenshotAsync(new PageScreenshotOptions { Path = path, FullPage = true });
             TestContext.WriteLine($"Captured {path}");

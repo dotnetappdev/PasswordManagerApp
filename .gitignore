@@ -288,6 +288,12 @@ FakesAssemblies/
 .ntvs_analysis.dat
 node_modules/
 
+# VitePress docs site build output + synced screenshots (see docs-site/sync-screenshots.mjs -
+# these are copied from screenshots/ at build time, not duplicated in git)
+docs-site/.vitepress/dist/
+docs-site/.vitepress/cache/
+docs-site/public/screenshots/
+
 # Visual Studio 6 build log
 *.plg
 
@@ -416,3 +422,14 @@ allure-results/
 allure-report/
 **/allure-results/
 .allure/
+
+# Stray local build/diagnostic dumps and backups - keep the repo root clean
+/build_diag.txt
+/build_errors.txt
+/build_full_output.txt
+/errors.txt
+/winui_build.txt
+/winui_build_diag.txt
+/winui_build_output.txt
+*.sln.backup
+/logs/

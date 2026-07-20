@@ -104,7 +104,7 @@ Once the containers are running:
 - **Web UI:** http://localhost:8080
 - **Web API (HTTPS):** https://localhost:51650
 - **Web API (HTTP):** http://localhost:51651
-- **API Documentation:** https://localhost:51650/swagger
+- **API Documentation:** https://localhost:51650/scalar
 - **API Health Check:** http://localhost:51651/health
 - **Nginx Reverse Proxy (unified entry point):** http://localhost:80
   - Routes `/api/` → passwordmanager-api
@@ -501,7 +501,7 @@ docker-compose up -d --scale api=3
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
 - [SQL Server on Docker](https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-docker-container-deployment)
 - [ASP.NET Core on Docker](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/docker/)
-- [Main Setup Guide](../SETUP.md)
+- [Main Setup Guide](../docs/SETUP.md)
 
 ## 🆘 Support
 

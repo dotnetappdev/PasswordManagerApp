@@ -1,3 +1,5 @@
+using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 using VaultGuard.DAL;
@@ -8,6 +10,13 @@ using VaultGuard.Services.Utilities;
 namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
+[AllureNUnit]
+[AllureEpic("Vault Data Management")]
+[AllureFeature("Password Items")]
+[AllureParentSuite("Vault Data Management")]
+[AllureSuite("Password Items")]
+[AllureStory("Service Layer")]
+[AllureSubSuite("Service Layer")]
 public class PasswordItemServiceTests
 {
     private DbContextOptions<VaultGuardDbContext> _options = null!;
@@ -15,6 +24,7 @@ public class PasswordItemServiceTests
     private PasswordItemService _service = null!;
     private const string TestUserId = "test-user-id";
 
+    [AllureBefore("Create a fresh EF Core in-memory database context")]
     [SetUp]
     public void Setup()
     {
@@ -26,6 +36,7 @@ public class PasswordItemServiceTests
         _service = new PasswordItemService(_context);
     }
 
+    [AllureAfter("Drop and dispose the in-memory database context")]
     [TearDown]
     public void TearDown()
     {

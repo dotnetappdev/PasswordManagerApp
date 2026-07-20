@@ -1,3 +1,5 @@
+using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -9,12 +11,20 @@ using VaultGuard.Services.Interfaces;
 namespace VaultGuard.BackEnd.Tests.Controllers;
 
 [TestFixture]
+[AllureNUnit]
+[AllureEpic("Vault Data Management")]
+[AllureFeature("Categories & Collections")]
+[AllureParentSuite("Vault Data Management")]
+[AllureSuite("Categories & Collections")]
+[AllureStory("Collections Controller")]
+[AllureSubSuite("Collections Controller")]
 public class CollectionsControllerTests
 {
     private Mock<ICollectionApiService> _mockCollectionService = null!;
     private Mock<ILogger<CollectionsController>> _mockLogger = null!;
     private CollectionsController _controller = null!;
 
+    [AllureBefore("Create mocked ICollectionApiService and logger, and construct the controller under test")]
     [SetUp]
     public void Setup()
     {

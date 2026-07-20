@@ -1,0 +1,35 @@
+[
+  {
+    "name": "Ignored / skipped tests",
+    "matchedStatuses": ["skipped"]
+  },
+  {
+    "name": "Rate limiting (429 Too Many Requests)",
+    "matchedStatuses": ["failed", "broken"],
+    "messageRegex": ".*(429|Too Many Requests|RateLimit).*"
+  },
+  {
+    "name": "Database / FK constraint failures",
+    "matchedStatuses": ["failed", "broken"],
+    "messageRegex": ".*(FOREIGN KEY|SqliteException|DbUpdateException|constraint failed|UNIQUE constraint).*"
+  },
+  {
+    "name": "Authentication / authorization failures",
+    "matchedStatuses": ["failed", "broken"],
+    "messageRegex": ".*(401|Unauthorized|Forbidden|403|invalid.?token|master password).*"
+  },
+  {
+    "name": "UI timeouts & flaky Blazor tests",
+    "matchedStatuses": ["failed", "broken"],
+    "messageRegex": ".*(TimeoutException|Timeout .*exceeded|waiting for|locator.*not|element is not|net::ERR).*"
+  },
+  {
+    "name": "Assertion failures (product defects)",
+    "matchedStatuses": ["failed"],
+    "messageRegex": ".*(Assert\\.|Expected:|Assert\\.That|Assert\\.True|Assert\\.Equal|Is\\.EqualTo).*"
+  },
+  {
+    "name": "Test infrastructure / setup errors (broken)",
+    "matchedStatuses": ["broken", "unknown"]
+  }
+]

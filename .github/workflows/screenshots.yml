@@ -1,0 +1,179 @@
+name: Capture Screenshots
+
+on:
+  push:
+    branches: [ devmain, main ]
+    paths:
+      - 'VaultGuard.Web/**'
+      - 'VaultGuard.Components.Shared/**'
+      - 'VaultGuard.API/**'
+      - 'VaultGuard.Tests.Playwright/**'
+      - '.github/workflows/screenshots.yml'
+  pull_request:
+    branches: [ devmain, main ]
+    paths:
+      - 'VaultGuard.Web/**'
+      - 'VaultGuard.Components.Shared/**'
+      - 'VaultGuard.API/**'
+      - 'VaultGuard.Tests.Playwright/**'
+      - '.github/workflows/screenshots.yml'
+  workflow_dispatch: {}
+
+# Serializes runs for the same PR/branch (default cancel-in-progress: false, so a run already in
+# flight is queued behind, never killed). Without this, two pushes to the same open PR in quick
+# succession can both auto-commit updated screenshots and race to push - the loser's push is rejected,
+# falls back to a rebase, and that rebase conflicts on the binary PNG files (git can't 3-way-merge
+# binaries), failing the job. Confirmed happening in CI.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: write
+
+jobs:
+  blazor:
+    runs-on: ubuntu-latest
+    name: Capture Blazor Web screenshots
+
+    steps:
+      # Explicit ref: pull_request's default checkout is a synthetic merge commit
+      # (refs/pull/N/merge, two parents combining base+branch) - rebasing that onto the branch tip in
+      # the commit step below produces spurious binary add/add conflicts. Checking out the real branch
+      # keeps history linear.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      # BlazorWebTestBase launches VaultGuard.Web as a separate process and builds it internally with
+      # --no-restore (expecting restore to have already happened) - it never checks that build's exit
+      # code, so if VaultGuard.Web was never restored, the app silently fails to start. Restore/build it
+      # explicitly here so that internal --no-restore build actually succeeds.
+      - name: Restore & build Playwright test project + VaultGuard.Web
+        run: |
+          dotnet restore VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj
+          dotnet build VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj --no-restore -c Debug
+          dotnet restore VaultGuard.Web/VaultGuard.Web.csproj
+          dotnet build VaultGuard.Web/VaultGuard.Web.csproj --no-restore -c Debug
+
+      - name: Install Playwright browser + OS deps
+        run: pwsh VaultGuard.Tests.Playwright/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
+
+      # ScreenshotCaptureTests self-hosts VaultGuard.Web on a temp SQLite DB and writes straight into
+      # screenshots/blazor/{dark,light,onboarding} - see the test class for details.
+      - name: Run ScreenshotCaptureTests
+        env:
+          HEADED: '0'
+        run: dotnet test VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj --no-build -c Debug --filter FullyQualifiedName~ScreenshotCaptureTests --logger "console;verbosity=detailed"
+
+      - name: Commit updated screenshots
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add screenshots/blazor
+          if ! git diff --cached --quiet; then
+            git commit -m "Update Blazor web screenshots [skip ci]"
+            git fetch origin ${{ github.head_ref || github.ref_name }}
+            git rebase origin/${{ github.head_ref || github.ref_name }}
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          else
+            echo "No screenshot changes to commit"
+          fi
+
+      - name: Upload screenshots artifact
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: blazor-screenshots
+          path: screenshots/blazor
+          retention-days: 20
+
+  api-scalar:
+    runs-on: ubuntu-latest
+    name: Capture API Scalar UI screenshot
+    # Runs after blazor so the two jobs' "commit and push to the same branch" steps don't race each
+    # other - without this, whichever finishes second gets its push rejected (remote moved underneath
+    # it).
+    needs: blazor
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Build API
+        run: dotnet build VaultGuard.API/VaultGuard.API.csproj -c Debug
+
+      - name: Start API (temp SQLite db)
+        run: |
+          nohup dotnet run --project VaultGuard.API/VaultGuard.API.csproj --no-build -c Debug --urls http://127.0.0.1:5280 > api.log 2>&1 &
+          echo $! > api.pid
+        env:
+          DatabaseProvider: Sqlite
+          ConnectionStrings__SqliteConnection: 'Data Source=/tmp/screenshots-api.db'
+          ASPNETCORE_ENVIRONMENT: Development
+
+      - name: Wait for API to be ready
+        run: |
+          for i in $(seq 1 60); do
+            if curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5280/health | grep -q 200; then
+              echo "API is up"; exit 0
+            fi
+            sleep 2
+          done
+          echo "API did not become ready in time"; cat api.log; exit 1
+
+      # The standalone playwright CLI (via npx) has its own browser cache, separate from the .NET
+      # Playwright test project's - installing chromium there doesn't cover this.
+      - name: Install Playwright browser for screenshot CLI
+        run: npx -y playwright@1.49.0 install --with-deps chromium
+
+      - name: Screenshot Scalar API reference UI
+        run: |
+          mkdir -p /tmp/screenshots/api
+          npx -y playwright@1.49.0 screenshot --browser=chromium --wait-for-timeout=3000 --viewport-size=1440,1000 http://127.0.0.1:5280/scalar /tmp/screenshots/api/scalar.png
+
+      - name: Stop API
+        if: always()
+        run: kill "$(cat api.pid)" 2>/dev/null || true
+
+      - name: Commit updated screenshot
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          mkdir -p screenshots/api
+          cp /tmp/screenshots/api/scalar.png screenshots/api/scalar.png
+          rm -f screenshots/api/swagger.png
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add screenshots/api
+          if ! git diff --cached --quiet; then
+            git commit -m "Update API Scalar screenshot [skip ci]"
+            git fetch origin ${{ github.head_ref || github.ref_name }}
+            git rebase origin/${{ github.head_ref || github.ref_name }}
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+          else
+            echo "No screenshot changes to commit"
+          fi
+
+      - name: Upload screenshot artifact
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: api-scalar-screenshot
+          path: /tmp/screenshots/api
+          retention-days: 20

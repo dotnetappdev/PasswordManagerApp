@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Identity;
 using VaultGuard.Models;
 using VaultGuard.Models.Configuration;
 using VaultGuard.ExceptionReporting.Sentry;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,7 +56,11 @@ builder.Services.AddControllers();
 
 // Rate limiting (item 5) — blunt online password guessing / brute force while keeping the
 // zero-knowledge design intact. A global per-IP safety net, plus a stricter "auth" policy applied to
-// the login / Identity endpoints.
+// the login / Identity endpoints. Can be turned off via config (RateLimiting:Enabled=false) so
+// integration tests can exercise endpoint behaviour without tripping the per-IP limit.
+var rateLimitingEnabled = builder.Configuration.GetValue<bool>("RateLimiting:Enabled", true);
+if (rateLimitingEnabled)
+{
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -78,6 +83,7 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromMinutes(1)
             }));
 });
+}
 
 // Configure Entity Framework
 var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
@@ -310,7 +316,18 @@ builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
 
 // Add API documentation with Swagger (compatible with .NET 8)
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    // Reads the assembly's actual version instead of Swashbuckle's hardcoded "1.0" default, so the
+    // version shown here (Scalar's title badge, /swagger/v1/swagger.json) tracks whatever -p:Version=
+    // was stamped in at publish time (see .github/workflows/deploy-api-smarterasp.yml).
+    var apiVersion = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = builder.Configuration["ApiSettings:Title"] ?? "Vault Guard API",
+        Version = apiVersion
+    });
+});
 
 // Add CORS — restrict to an explicit allow-list instead of AllowAnyOrigin. Origins come from the
 // "Cors:AllowedOrigins" config array (set per environment); the default covers local dev only.
@@ -343,20 +360,31 @@ VaultGuard.Services.Logging.AppLogger.Initialize(
     app.Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
 
 // Configure the HTTP request pipeline
- 
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", builder.Configuration["ApiSettings:Title"] ?? "Vault Guard API");
-    });
- 
+// CORS must run before UseSwagger/MapScalarApiReference below - both are effectively terminal
+// middleware for their routes (they write the response directly rather than flowing through the
+// endpoint pipeline), so registering UseCors after them means their responses never carry CORS
+// headers. That silently broke cross-origin fetches of /swagger/v1/swagger.json (e.g. the docs
+// site's embedded "Try It Live" Scalar client) even though preflight OPTIONS requests - handled by
+// the CORS middleware itself regardless of downstream ordering - looked fine.
+app.UseCors("Default");
+
+// UseSwagger still generates the underlying OpenAPI document (/swagger/v1/swagger.json) - Scalar renders
+// the interactive reference UI from it (a dashboard-style layout, rather than Swashbuckle's classic UI).
+app.UseSwagger();
+app.MapScalarApiReference(options =>
+{
+    options.WithTitle(builder.Configuration["ApiSettings:Title"] ?? "Vault Guard API")
+        .WithOpenApiRoutePattern("/swagger/{documentName}/swagger.json")
+        .WithTheme(ScalarTheme.BluePlanet);
+});
 
 app.UseHttpsRedirection();
 
-app.UseCors("Default");
-
 // Enforce the rate limits configured above (must run before endpoint execution).
-app.UseRateLimiter();
+if (rateLimitingEnabled)
+{
+    app.UseRateLimiter();
+}
 
 // Run the framework authentication step (Identity bearer/cookie schemes registered by
 // AddIdentity().AddApiEndpoints()) before our API-key gate, so a request carrying a valid bearer
@@ -371,7 +399,11 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Map .NET 9 Identity API endpoints (login/register/refresh) behind the stricter "auth" rate limit.
-app.MapIdentityApi<ApplicationUser>().RequireRateLimiting("auth");
+var identityEndpoints = app.MapIdentityApi<ApplicationUser>();
+if (rateLimitingEnabled)
+{
+    identityEndpoints.RequireRateLimiting("auth");
+}
 
 app.MapHealthChecks("/health");
 

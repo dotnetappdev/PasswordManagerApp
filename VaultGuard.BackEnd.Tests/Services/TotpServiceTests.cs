@@ -1,9 +1,18 @@
+using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using NUnit.Framework;
 using VaultGuard.Services.Services;
 
 namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
+[AllureNUnit]
+[AllureEpic("Cryptography & Security")]
+[AllureFeature("Two-Factor Authentication")]
+[AllureParentSuite("Cryptography & Security")]
+[AllureSuite("Two-Factor Authentication")]
+[AllureStory("TOTP Service")]
+[AllureSubSuite("TOTP Service")]
 public class TotpServiceTests
 {
     private TotpService _service = null!;
@@ -11,6 +20,7 @@ public class TotpServiceTests
     // RFC 6238 test secret "12345678901234567890" (ASCII) in Base32.
     private const string Rfc6238Secret = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
 
+    [AllureBefore("Construct a real TotpService instance")]
     [SetUp]
     public void Setup() => _service = new TotpService();
 

@@ -1,3 +1,5 @@
+using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using NUnit.Framework;
 using VaultGuard.Models;
 using VaultGuard.Services.Utilities;
@@ -5,6 +7,13 @@ using VaultGuard.Services.Utilities;
 namespace VaultGuard.BackEnd.Tests.Services;
 
 [TestFixture]
+[AllureNUnit]
+[AllureEpic("Cryptography & Security")]
+[AllureFeature("Two-Factor Authentication")]
+[AllureParentSuite("Cryptography & Security")]
+[AllureSuite("Two-Factor Authentication")]
+[AllureStory("TOTP Helper Algorithms")]
+[AllureSubSuite("TOTP Helper Algorithms")]
 public class TotpHelperTests
 {
     private const string Secret = "GEZDGNBVGY3TQOJQ";

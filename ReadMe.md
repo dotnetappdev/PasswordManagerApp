@@ -16,6 +16,14 @@
 [![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Web%20%7C%20Android%20%7C%20iOS-blue)](#front-ends)
 [![Encryption](https://img.shields.io/badge/encryption-AES--256--GCM-2ea44f)](#security)
 [![License](https://img.shields.io/github/license/dotnetappdev/PasswordManagerApp)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-dotnetappdev.github.io-blue?logo=readthedocs&logoColor=white)](https://dotnetappdev.github.io/PasswordManagerApp/)
+[![Allure Report](https://img.shields.io/badge/tests-Allure%20dashboard-orange?logo=testcafe&logoColor=white)](https://dotnetappdev.github.io/PasswordManagerApp/allure-report/)
+
+**📖 [Live documentation site](https://dotnetappdev.github.io/PasswordManagerApp/)** - full screenshot
+gallery, setup guides, architecture, security model and a live API "Try It" client.
+
+**✅ [Live test dashboard](https://dotnetappdev.github.io/PasswordManagerApp/allure-report/)** - see which
+unit/integration tests are currently passing or failing, updated on every push to `devmain`.
 
 </div>
 
@@ -60,81 +68,99 @@ built in.
 
 ## Screenshots
 
+For the full interactive tour - setup wizard, every settings tab, API reference and platform walkthroughs - see the [documentation site](https://dotnetappdev.github.io/PasswordManagerApp/).
+
 <div align="center">
 
 ### 🌐 Web - Blazor (dark theme)
 
-| Dashboard | Passwords | Vaults |
+| Dashboard | All Items | Vaults |
 |:---:|:---:|:---:|
-| ![Dashboard](screenshots/blazor/dark/dashboard.png) | ![Passwords](screenshots/blazor/dark/passwords.png) | ![Vaults](screenshots/blazor/dark/vaults.png) |
+| ![Dashboard](screenshots/blazor/dark/dashboard.png) | ![All Items](screenshots/blazor/dark/all-items.png) | ![Vaults](screenshots/blazor/dark/vaults.png) |
 | **Collections** | **Categories** | **Tags** |
 | ![Collections](screenshots/blazor/dark/collections.png) | ![Categories](screenshots/blazor/dark/categories.png) | ![Tags](screenshots/blazor/dark/tags.png) |
 | **Archive** | **Recently Deleted** | **Audit Logs** |
 | ![Archive](screenshots/blazor/dark/archive.png) | ![Recently Deleted](screenshots/blazor/dark/recently-deleted.png) | ![Audit logs](screenshots/blazor/dark/audit-logs.png) |
+| **Security Center** | **Passkeys** | **API Keys** |
+| ![Security](screenshots/blazor/dark/security.png) | ![Passkeys](screenshots/blazor/dark/passkeys.png) | ![API Keys](screenshots/blazor/dark/api-keys.png) |
+| **Profile** | **Import** | **API Key Created** |
+| ![Profile](screenshots/blazor/dark/profile.png) | ![Import](screenshots/blazor/dark/import.png) | ![API key generated](screenshots/blazor/dark/dialog-api-key-generated.png) |
 
-#### Settings
+#### Getting set up
 
-| General / Themes | Security | Maintenance |
-|:---:|:---:|:---:|
-| ![Settings Themes](screenshots/blazor/dark/settings-themes.png) | ![Settings Security](screenshots/blazor/dark/settings-security.png) | ![Settings Maintenance](screenshots/blazor/dark/settings-maintenance.png) |
-| **About** | **Database Settings** | **UI Zoom / Accessibility** |
-| ![Settings About](screenshots/blazor/dark/settings-about.png) | ![Database Settings](screenshots/blazor/dark/database-settings.png) | ![UI Zoom](screenshots/blazor/dark/ui-zoom.png) |
+| Database Setup | Sign In |
+|:---:|:---:|
+| ![Database Setup](screenshots/blazor/onboarding/database-setup.png) | ![Sign In](screenshots/blazor/onboarding/login.png) |
 
-#### Themes
+#### Settings - all 11 tabs
 
-| Dark (default) | Light | High Contrast |
-|:---:|:---:|:---:|
-| ![Dark theme](screenshots/blazor/dark/dashboard.png) | ![Light theme](screenshots/blazor/light/dashboard.png) | ![High contrast](screenshots/blazor/dark/high-contrast.png) |
+Settings is one deep-linkable page (`/settings?tab=<name>`) covering everything below:
+
+| Security | Appearance | Database | Sync |
+|:---:|:---:|:---:|:---:|
+| ![Security](screenshots/blazor/dark/settings.png) | ![Appearance](screenshots/blazor/dark/settings-appearance.png) | ![Database](screenshots/blazor/dark/settings-database.png) | ![Sync](screenshots/blazor/dark/settings-sync.png) |
+| **Notifications** | **Vaults** | **Generator** | **Encryption** |
+| ![Notifications](screenshots/blazor/dark/settings-notifications.png) | ![Vaults](screenshots/blazor/dark/settings-vaults.png) | ![Generator](screenshots/blazor/dark/settings-generator.png) | ![Encryption](screenshots/blazor/dark/settings-encryption.png) |
+| **Shortcuts** | **Maintenance** | **About** | |
+| ![Shortcuts](screenshots/blazor/dark/settings-shortcuts.png) | ![Maintenance](screenshots/blazor/dark/settings-maintenance.png) | ![About](screenshots/blazor/dark/settings-about.png) | |
 
 ---
 
 ### 🌐 Web - Blazor (light theme)
 
-| Dashboard | All items | Settings |
+| Dashboard | All Items | Vaults |
 |:---:|:---:|:---:|
-| ![Dashboard light](screenshots/blazor/light/dashboard.png) | ![All items light](screenshots/blazor/light/all-items.png) | ![Settings light](screenshots/blazor/light/settings.png) |
-| **Vaults** | **Collections** | **High Contrast** |
-| ![Vaults light](screenshots/blazor/light/vaults.png) | ![Collections light](screenshots/blazor/light/collections.png) | ![High contrast light](screenshots/blazor/light/high-contrast.png) |
+| ![Dashboard light](screenshots/blazor/light/dashboard.png) | ![All items light](screenshots/blazor/light/all-items.png) | ![Vaults light](screenshots/blazor/light/vaults.png) |
+| **Collections** | **Categories** | **Tags** |
+| ![Collections light](screenshots/blazor/light/collections.png) | ![Categories light](screenshots/blazor/light/categories.png) | ![Tags light](screenshots/blazor/light/tags.png) |
+| **Security Center** | **Passkeys** | **API Keys** |
+| ![Security light](screenshots/blazor/light/security.png) | ![Passkeys light](screenshots/blazor/light/passkeys.png) | ![API Keys light](screenshots/blazor/light/api-keys.png) |
+| **Profile** | **Import** | **Settings** |
+| ![Profile light](screenshots/blazor/light/profile.png) | ![Import light](screenshots/blazor/light/import.png) | ![Settings light](screenshots/blazor/light/settings.png) |
 
----
+#### Themes side by side
 
-### 🖥️ Desktop - WPF (dark theme)
-
-| Login | Dashboard | All Items |
+| Dark Mode | Light Mode | High Contrast |
 |:---:|:---:|:---:|
-| ![WPF Login dark](screenshots/wpf/dark/login.png) | ![WPF Dashboard dark](screenshots/wpf/dark/dashboard.png) | ![WPF All Items dark](screenshots/wpf/dark/all-items.png) |
-| **Vaults** | **Settings** | **Settings › Security** |
-| ![WPF Vaults dark](screenshots/wpf/dark/vaults.png) | ![WPF Settings dark](screenshots/wpf/dark/settings.png) | ![WPF Settings Security](screenshots/wpf/dark/settings-security.png) |
-| **Settings › Maintenance** | | |
-| ![WPF Maintenance](screenshots/wpf/dark/settings-maintenance.png) | | |
+| ![Dark theme](screenshots/blazor/dark/dashboard.png) | ![Light theme](screenshots/blazor/light/dashboard.png) | ![High contrast](screenshots/blazor/high-contrast/dashboard.png) |
 
-### 🖥️ Desktop - WPF (light theme)
+High Contrast is a dedicated fourth Theme option (Settings → Appearance), not an overlay on light/dark -
+it always renders the same yellow-on-black palette regardless of which theme was active before you
+switched to it. It gets the same full page coverage as Dark/Light, not just the dashboard:
 
-| Login | Dashboard | All Items |
+| All Items | Vaults | Security Center |
 |:---:|:---:|:---:|
-| ![WPF Login light](screenshots/wpf/light/login.png) | ![WPF Dashboard light](screenshots/wpf/light/dashboard.png) | ![WPF All Items light](screenshots/wpf/light/all-items.png) |
-| **Vaults** | **Settings** | |
-| ![WPF Vaults light](screenshots/wpf/light/vaults.png) | ![WPF Settings light](screenshots/wpf/light/settings.png) | |
-
----
-
-### 📱 Mobile - MAUI Android
-
-| Dashboard (dark) | All Items (dark) | Vaults (dark) | Settings (dark) |
-|:---:|:---:|:---:|:---:|
-| ![Android Dashboard dark](screenshots/mobile/android/dark/dashboard.png) | ![Android Items dark](screenshots/mobile/android/dark/all-items.png) | ![Android Vaults dark](screenshots/mobile/android/dark/vaults.png) | ![Android Settings dark](screenshots/mobile/android/dark/settings.png) |
-| **Dashboard (light)** | **All Items (light)** | **Vaults (light)** | **Settings (light)** |
-| ![Android Dashboard light](screenshots/mobile/android/light/dashboard.png) | ![Android Items light](screenshots/mobile/android/light/all-items.png) | ![Android Vaults light](screenshots/mobile/android/light/vaults.png) | ![Android Settings light](screenshots/mobile/android/light/settings.png) |
-
-### 📱 Mobile - MAUI iOS
-
-| Dashboard (dark) | All Items (dark) | Vaults (dark) | Settings (dark) |
-|:---:|:---:|:---:|:---:|
-| ![iOS Dashboard dark](screenshots/mobile/ios/dark/dashboard.png) | ![iOS Items dark](screenshots/mobile/ios/dark/all-items.png) | ![iOS Vaults dark](screenshots/mobile/ios/dark/vaults.png) | ![iOS Settings dark](screenshots/mobile/ios/dark/settings.png) |
-| **Dashboard (light)** | **All Items (light)** | **Vaults (light)** | **Settings (light)** |
-| ![iOS Dashboard light](screenshots/mobile/ios/light/dashboard.png) | ![iOS Items light](screenshots/mobile/ios/light/all-items.png) | ![iOS Vaults light](screenshots/mobile/ios/light/vaults.png) | ![iOS Settings light](screenshots/mobile/ios/light/settings.png) |
+| ![High contrast all items](screenshots/blazor/high-contrast/all-items.png) | ![High contrast vaults](screenshots/blazor/high-contrast/vaults.png) | ![High contrast security](screenshots/blazor/high-contrast/security.png) |
+| **API Keys** | **Settings** | **Import** |
+| ![High contrast API keys](screenshots/blazor/high-contrast/api-keys.png) | ![High contrast settings](screenshots/blazor/high-contrast/settings.png) | ![High contrast import](screenshots/blazor/high-contrast/import.png) |
 
 </div>
+
+### 🔌 API reference (Scalar) - with a live "Try it" button
+
+Interactive, dashboard-style OpenAPI docs with a built-in request client - click any endpoint, hit
+**Test Request**, and call the live API (with auth headers, body editor, and response viewer) straight
+from the browser. No separate tool needed.
+
+- **Self-hosted, live:** run the API and open `{API_BASE_URL}/scalar` (e.g. `https://localhost:7001/scalar`).
+- **From the docs site, without running anything extra:** the
+  [documentation site](https://dotnetappdev.github.io/PasswordManagerApp/api/try-it)'s **Try It Live** page
+  embeds the same client - point it at your running `VaultGuard.API` and it calls it directly from your
+  browser, the same way this README's screenshots below were captured.
+
+<div align="center">
+
+| Endpoint reference | Try it - Test Request panel | Real response |
+|:---:|:---:|:---:|
+| ![Scalar API reference](screenshots/api/scalar.png) | ![Scalar Test Request](screenshots/api/scalar-tryit.png) | ![Scalar live response](screenshots/api/scalar-standalone-response.png) |
+
+</div>
+
+> **Desktop (WPF) and Mobile (Android/iOS) screenshots aren't available yet** - this build environment
+> has no Windows desktop session, and no Android/iOS emulator (no `/dev/kvm`, no Android SDK) to capture
+> them. Once someone takes real ones and drops them into `screenshots/wpf/{dark,light}/` and
+> `screenshots/mobile/{android,ios}/{dark,light}/`, they'll show up in the
+> [documentation site](https://dotnetappdev.github.io/PasswordManagerApp/) automatically.
 
 More captures - including item forms and per-platform galleries - live in [`screenshots/`](screenshots/README.md).
 
@@ -170,6 +196,118 @@ dotnet build VaultGuard.API/VaultGuard.API.csproj -c Release   # api
 
 The Windows installers are built by CI for every `v*` tag (`.github/workflows/build-wpf.yml`) and attached
 to the GitHub release. To build them locally, see [`installers/README.md`](installers/README.md).
+
+---
+
+> **Releasing?** See [`docs/RELEASING.md`](docs/RELEASING.md) for the full picture - the automatic
+> per-merge releases (all four apps) below, the manual combined-tag release, and how to roll back to
+> a previous one.
+
+## Deploying the API to SmarterASP.NET
+
+`.github/workflows/deploy-api-smarterasp.yml` deploys **only** `VaultGuard.API` to a
+[SmarterASP.NET](https://www.smarterasp.net/) site via [Web Deploy](https://learn.microsoft.com/iis/publish/using-web-deploy/introduction-to-web-deploy),
+using the [`jahbenjah/SmarterASP.NET-web-deploy`](https://github.com/marketplace/actions/smarterasp-net-web-deploy)
+action.
+
+**When it runs:** on every pull request into `devmain` that touches API-relevant code (`VaultGuard.API`,
+its shared libraries, or the backend test project). The job first restores, builds and runs
+`VaultGuard.BackEnd.Tests` (the unit tests covering `VaultGuard.API`) - **publish and deploy only happen
+if those tests pass**; a failure stops the job before anything reaches the server.
+
+**Publish is self-contained** (`--self-contained true -r win-x64`) - the .NET 10 runtime ships inside the
+publish output, so the SmarterASP.NET server doesn't need a matching runtime installed. Combined with
+`VaultGuard.API.csproj`'s `AspNetCoreHostingModel=OutOfProcess` (already set to match SmarterASP.NET's
+shared IIS app-pool constraints), `dotnet publish` generates the right `web.config` for IIS/ANCM to run
+the self-contained executable. `-p:Version=` stamps the computed version into the assembly, which is what
+makes it show up live in Scalar's title badge and `/swagger/v1/swagger.json` (see `Program.cs`'s
+`AddSwaggerGen` call).
+
+**Versioning and releases are fully automatic** - no manual `git tag && git push` needed. The release
+step runs regardless of whether the deploy above actually succeeds (`continue-on-error: true` on that
+step - SmarterASP.NET's Web Deploy target being unreachable shouldn't block cutting a release for a
+build that passed its tests). Check the `Deploy to SmarterASP.NET` step's own outcome, or the
+`::warning::` it logs on failure, to see whether a given release is actually live on the server. The
+job:
+1. Computes the next version by reading the highest existing `api-vX.Y.Z` tag and bumping the patch
+   number (starts at `1.0.0` if none exist yet).
+2. Tags the commit from the PR's head and pushes the tag.
+3. Creates a `release/api-vX.Y.Z` branch off that same commit.
+4. Zips the publish output and attaches it to a new GitHub Release for that tag.
+
+**Required GitHub repo secrets** (Settings → Secrets and variables → Actions) - values come from your
+SmarterASP.NET control panel's Web Deploy settings:
+
+| Secret | Value |
+|---|---|
+| `APISERVER` | Web Deploy server address, e.g. `https://server.smarterasp.net:8172` |
+| `APIUSER` | Web Deploy username |
+| `APIPASSWORD` | Web Deploy password |
+| `APISiteName` | Web Deploy site name |
+
+> The deploy action shells out to `msdeploy.exe`, so the job runs on `windows-latest` (not the
+> `ubuntu-latest` used by the rest of CI). `target-delete` is enabled, so anything on the target site
+> that isn't part of the published API output gets removed on each deploy - point it at a site/folder
+> dedicated to the API, not one shared with other content.
+
+## Deploying the Web app to SmarterASP.NET
+
+`.github/workflows/deploy-web-smarterasp.yml` mirrors the API workflow above for **only**
+`VaultGuard.Web` (the Blazor Server web app) - same action, same self-contained `win-x64` publish, same
+`AspNetCoreHostingModel=OutOfProcess` reasoning (already set in `VaultGuard.Web.csproj`), and the same
+automatic version bump → tag (`web-vX.Y.Z`) → `release/web-vX.Y.Z` branch → zipped GitHub Release cycle,
+released regardless of whether the deploy itself succeeds (same `continue-on-error` reasoning as the API
+workflow above). `-p:Version=` stamps the assembly version that Settings → About displays
+(`VaultGuard.Web/Components/Pages/Settings.razor`'s `_appVersion`).
+
+**When it runs:** on every pull request into `devmain` that touches Web-relevant code (`VaultGuard.Web`,
+`VaultGuard.Components.Shared`, or the web test project). `VaultGuard.Web.Tests` runs first in the same
+job - publish and deploy only happen if it passes.
+
+**Required GitHub repo secrets:**
+
+| Secret | Value |
+|---|---|
+| `BLAZORUSERNAME` | Web Deploy username |
+| `BLAZORPASSWORD` | Web Deploy password |
+| `BLAZORSITENAME` | Web Deploy site name |
+
+> **No separate server secret:** this workflow reuses `APISERVER` for `server-computer-name` - there's
+> no `BLAZORSERVER` secret, and SmarterASP.NET accounts commonly use one Web Deploy server address for
+> every site/subdomain under the account, with only the site name/credentials differing. If the Blazor
+> site is actually on a different server, add a dedicated secret and update
+> `deploy-web-smarterasp.yml` accordingly.
+
+## Android and WPF releases
+
+`build-maui.yml` (Android) and `build-wpf.yml` (WPF) follow the same automatic pattern as the API/Web
+workflows above - a merged pull request into `devmain` auto-versions (`android-vX.Y.Z` / `wpf-vX.Y.Z`,
+independently from the API/Web numbers), tags the commit, creates a matching `release/*` branch, and
+attaches the built artifact (an `.apk` for Android; an `.exe` and `.msi` installer for WPF) to a new
+GitHub Release. Neither has an external deploy step, so there's no `continue-on-error` concern - they
+release as soon as the build succeeds. See [`docs/RELEASING.md`](docs/RELEASING.md) for the full
+per-app trigger/tag table.
+
+## Cutting a manual combined release
+
+`.github/workflows/release.yml` is a separate, manual release path: push a tag like `v1.2.3` and it
+builds + zips **both** `VaultGuard.API` and `VaultGuard.Web` (self-contained, `win-x64`), creates a
+`release/v1.2.3` branch off that commit, and publishes a GitHub Release with both zips attached -
+no deploy involved, just a combined build artifact + release. `build-api.yml`, `build-web.yml`,
+`build-maui.yml` and `build-wpf.yml` each also build+release their own project on the same `v*` tag,
+contributing an API zip, Web zip, Android APK, and WPF installers to that same release.
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+This is separate from the automatic per-merge releases described above (`api-vX.Y.Z` / `web-vX.Y.Z` /
+`android-vX.Y.Z` / `wpf-vX.Y.Z`, created automatically on every PR merged into `devmain`, no manual
+tagging needed).
+`build-api.yml`/`build-web.yml` also each build+zip+release their own project individually on a `v*` tag
+push (without a release branch) - all three contribute files to the same GitHub Release for a given tag
+rather than conflicting, but a `v*` tag does trigger three workflow runs.
 
 ---
 
@@ -363,14 +501,14 @@ verification and re-encryption-on-password-change as the server-backed builds.
 - **Secrets management.** The API can source its secrets - database credentials, JWT signing key, Sentry DSN,
   SMS/Supabase keys - from [**Google Cloud Secret Manager**](https://cloud.google.com/secret-manager) (the
   `vaultguard-dev` / `vaultguard-prod` projects) instead of config files, so nothing sensitive is committed.
-  Disabled by default; see [`CONFIGURATION_GUIDE.md`](CONFIGURATION_GUIDE.md#secrets-management-google-secret-manager).
+  Disabled by default; see [`CONFIGURATION_GUIDE.md`](docs/CONFIGURATION_GUIDE.md#secrets-management-google-secret-manager).
 
 ### Reporting a vulnerability
 
 Please report suspected security issues privately via a GitHub security advisory rather than a public issue.
 
 More detail: [`docs/SECURITY.md`](docs/SECURITY.md) (encryption, master-password security &
-security overview) and [`SECURITY_REMEDIATION_PRD.md`](SECURITY_REMEDIATION_PRD.md). The PBKDF2
+security overview) and [`SECURITY_REMEDIATION_PRD.md`](docs/SECURITY_REMEDIATION_PRD.md). The PBKDF2
 600k-iteration upgrade is noted in [`docs/HISTORY.md`](docs/HISTORY.md).
 
 ---
@@ -381,10 +519,11 @@ Start here, then dive into a topic:
 
 | Guide | What's in it |
 | --- | --- |
-| [`GETTING_STARTED.md`](GETTING_STARTED.md) · [`SETUP.md`](SETUP.md) · [`CONFIGURATION_GUIDE.md`](CONFIGURATION_GUIDE.md) | Install, first run, configuration |
-| [`USER_GUIDE.md`](USER_GUIDE.md) | End-user feature walkthrough |
-| [`DEVELOPMENT.md`](DEVELOPMENT.md) · [`TECHNOLOGY_STACK.md`](TECHNOLOGY_STACK.md) | Building, architecture, tech stack |
-| [`docs/SECURITY.md`](docs/SECURITY.md) · [`SECURITY_REMEDIATION_PRD.md`](SECURITY_REMEDIATION_PRD.md) | Encryption, master-password security, remediation |
+| [`GETTING_STARTED.md`](docs/GETTING_STARTED.md) · [`SETUP.md`](docs/SETUP.md) · [`CONFIGURATION_GUIDE.md`](docs/CONFIGURATION_GUIDE.md) | Install, first run, configuration |
+| [`USER_GUIDE.md`](docs/USER_GUIDE.md) | End-user feature walkthrough |
+| [`DEVELOPMENT.md`](docs/DEVELOPMENT.md) · [`TECHNOLOGY_STACK.md`](docs/TECHNOLOGY_STACK.md) | Building, architecture, tech stack |
+| [`docs/RELEASING.md`](docs/RELEASING.md) | Cutting releases: automated SmarterASP.NET deploys and the manual tag-based release |
+| [`docs/SECURITY.md`](docs/SECURITY.md) · [`SECURITY_REMEDIATION_PRD.md`](docs/SECURITY_REMEDIATION_PRD.md) | Encryption, master-password security, remediation |
 | [`docs/AUTHENTICATION.md`](docs/AUTHENTICATION.md) | Master-key login, 2FA, passkeys, OTP, biometrics, passcode, QR sign-in, device management, profiles |
 | [`docs/PASSKEYS.md`](docs/PASSKEYS.md) | Website passkeys (extension) and device passkeys (sign-in), RP setup, mobile association files |
 | [`docs/DATABASE.md`](docs/DATABASE.md) | Providers, EF Identity setup, MySQL, migrations |
@@ -399,7 +538,7 @@ Per-platform details live in each project's own `README.md` (e.g. `VaultGuard.WP
 
 ## Contributing
 
-[`DEVELOPMENT.md`](DEVELOPMENT.md) covers build commands, the migration workflow and how to add an import
+[`DEVELOPMENT.md`](docs/DEVELOPMENT.md) covers build commands, the migration workflow and how to add an import
 plugin. Pull requests are welcome - keep changes focused, add tests where it makes sense, and run
 `dotnet test` before opening one.
 

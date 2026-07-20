@@ -1,26 +1,32 @@
 <#
 .SYNOPSIS
-  Runs the test suites and builds (optionally serves) an Allure HTML dashboard from their results.
+  Runs the test suites, aggregates Allure results and builds (optionally serves) the HTML dashboard.
 
 .DESCRIPTION
-  Every test project references JunitXml.TestLogger, so `dotnet test --logger junit` produces a JUnit XML
-  file per suite - uniformly across NUnit, xUnit and MSTest/Playwright (no per-framework Allure adapter).
-  Allure's bundled JUnit plugin turns those XML files into the dashboard, so all suites appear together.
+  Allure-instrumented suites (currently VaultGuard.BackEnd.Tests - all NUnit fixtures carry [AllureNUnit])
+  write per-test JSON into their output allure-results folder. This script runs the tests, collects every
+  allure-results folder into a single ./allure-results, then generates ./allure-report via the Allure CLI
+  (falls back to `npx allure-commandline`, which needs Node + Java).
 
-  Results (JUnit XML) are written straight into ./allure-results, then ./allure-report is generated with the
-  Allure CLI (or `npx allure-commandline`, which needs Node + a JRE).
+  scripts/allure-categories.json is copied into ./allure-results before generation so the report's
+  "Categories" tab groups failures into named buckets (rate limiting, DB/FK constraints, auth, UI
+  timeouts, assertions, skipped, broken) instead of Allure's two defaults.
 
 .PARAMETER Serve
-  Open a live, auto-refreshing report instead of writing a static site.
+  After generating, open the live report in a browser instead of writing a static site.
 
-.PARAMETER IncludeUi
-  Also run the Playwright UI suite (self-hosts the Blazor app + Chromium; slower, needs browsers installed).
+.PARAMETER IncludeBlazorUi
+  Also run VaultGuard.Tests.Playwright's assertion suite and fold its .trx into the same dashboard -
+  matching what run-tests.yml's publish-allure-report job does in CI. Off by default: this suite self-
+  hosts a whole VaultGuard.Web instance, installs a real browser, and takes several minutes, which isn't
+  what you want for a quick "did my NUnit fixture wire up right" check.
 
 .EXAMPLE
   pwsh scripts/run-tests-allure.ps1
-  pwsh scripts/run-tests-allure.ps1 -IncludeUi -Serve
+  pwsh scripts/run-tests-allure.ps1 -Serve
+  pwsh scripts/run-tests-allure.ps1 -IncludeBlazorUi
 #>
-param([switch]$Serve, [switch]$IncludeUi)
+param([switch]$Serve, [switch]$IncludeBlazorUi)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -31,24 +37,53 @@ $report  = Join-Path $root 'allure-report'
 Remove-Item -Recurse -Force $results -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $results | Out-Null
 
-# Non-UI suites always run. The UI suite is opt-in (it launches the web app + a browser).
-$projects = [System.Collections.ArrayList]@(
-  'VaultGuard.BackEnd.Tests/VaultGuard.BackEnd.Tests.csproj',
-  'VaultGuard.Tests.QrLogin/VaultGuard.Tests.QrLogin.csproj',
-  'VaultGuard.Tests.OTP/VaultGuard.Tests.OTP.csproj'
+# Allure-instrumented test projects. Add more here as suites gain the Allure adapter.
+$projects = @(
+  'VaultGuard.BackEnd.Tests/VaultGuard.BackEnd.Tests.csproj'
 )
-if ($IncludeUi) { [void]$projects.Add('VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj') }
 
 foreach ($p in $projects) {
-  $name = [System.IO.Path]::GetFileNameWithoutExtension($p)
-  $xml  = Join-Path $results "$name.junit.xml"
-  Write-Host "Running $name ..." -ForegroundColor Cyan
-  # A failing test must not abort the report, so swallow the non-zero exit code.
-  & dotnet test $p -v q --nologo --logger "junit;LogFilePath=$xml"
+  Write-Host "Running $p ..." -ForegroundColor Cyan
+  # Don't stop the whole run on a failing test - we still want the report.
+  dotnet test $p -v q --nologo
 }
 
-$count = (Get-ChildItem $results -Filter *.xml -File -ErrorAction SilentlyContinue | Measure-Object).Count
-Write-Host "Wrote $count JUnit result file(s) to $results" -ForegroundColor Green
+# Collect every produced allure-results folder (in project output dirs) into the aggregate directory.
+Get-ChildItem -Recurse -Directory -Filter 'allure-results' |
+  Where-Object { $_.FullName -ne $results } |
+  ForEach-Object {
+    Get-ChildItem $_.FullName -File | Copy-Item -Destination $results -Force
+  }
+
+if ($IncludeBlazorUi) {
+  Write-Host "Running VaultGuard.Tests.Playwright (assertion suite, excludes ScreenshotCaptureTests) ..." -ForegroundColor Cyan
+  $playwrightProject = 'VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj'
+  $playwrightTrxDir = Join-Path $root 'blazor-ui-test-results'
+  dotnet build $playwrightProject -c Debug --nologo -v q
+  pwsh (Join-Path $root 'VaultGuard.Tests.Playwright/bin/Debug/net10.0/playwright.ps1') install --with-deps chromium
+  $env:HEADED = '0'
+  # Allure 2's own trx-plugin reads this .trx directly - no [Allure*] adapter exists for MSTest (see
+  # docs/TESTING.md's Allure dashboard section), so it's copied straight into $results as-is rather than
+  # converted to the NUnit suites' per-test JSON format.
+  dotnet test $playwrightProject --no-build -c Debug --filter "FullyQualifiedName!~ScreenshotCaptureTests" --results-directory $playwrightTrxDir --logger "trx;LogFileName=blazor-ui-tests.trx"
+  Get-ChildItem -Recurse -Path $playwrightTrxDir -Filter 'blazor-ui-tests.trx' -ErrorAction SilentlyContinue |
+    Copy-Item -Destination $results -Force
+}
+
+$count = (Get-ChildItem $results -File -ErrorAction SilentlyContinue | Measure-Object).Count
+Write-Host "Aggregated $count Allure result files into $results" -ForegroundColor Green
+
+# Drop the category definitions next to the results so Allure groups failures into named buckets
+# (rate limiting, FK/db constraints, auth, UI timeouts, assertions, skipped, broken) on the report's
+# "Categories" tab. The tab is empty when everything passes - it only lists failing/skipped tests.
+$categories = Join-Path $PSScriptRoot 'allure-categories.json'
+if (Test-Path $categories) {
+  Copy-Item $categories (Join-Path $results 'categories.json') -Force
+  Write-Host "Applied Allure categories from $categories" -ForegroundColor Green
+}
+else {
+  Write-Host "No allure-categories.json found next to the script; report will use default categories." -ForegroundColor Yellow
+}
 
 function Invoke-Allure([string[]]$AllureArgs) {
   if (Get-Command allure -ErrorAction SilentlyContinue) { & allure @AllureArgs }

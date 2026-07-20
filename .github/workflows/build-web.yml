@@ -30,6 +30,7 @@ on:
       - 'VaultGuard.DAL.MySql/**'
       - 'VaultGuard.DAL.Postgres/**'
       - 'VaultGuard.DAL.SupaBase/**'
+  workflow_dispatch: {}
 
 env:
   PROJECT: VaultGuard.Web/VaultGuard.Web.csproj
@@ -42,10 +43,10 @@ jobs:
     name: Build & Publish Blazor Web
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -68,9 +69,14 @@ jobs:
           -p:Version=${{ steps.ver.outputs.VERSION }}
 
       - name: Test
+        # VaultGuard.Web.Tests is never built by the "Build" step above (nothing here references it,
+        # since it's the Tests project that references VaultGuard.Web, not the other way round), so
+        # --no-build has nothing to run against - let dotnet test restore/build it itself. Also target
+        # the .csproj explicitly rather than the bare directory: on the .NET 10 SDK, --no-build against
+        # a directory path resolves to "The argument <dll> is invalid" instead of running the tests.
         run: |
           if [ -d "VaultGuard.Web.Tests" ]; then
-            dotnet test VaultGuard.Web.Tests --no-build --configuration Release
+            dotnet test VaultGuard.Web.Tests/VaultGuard.Web.Tests.csproj --configuration Release --logger "trx;LogFileName=web-tests.trx"
           else
             echo "No Web tests found, skipping"
           fi
@@ -88,7 +94,7 @@ jobs:
           zip -r ../VaultGuardWeb-${{ steps.ver.outputs.VERSION }}.zip .
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: VaultGuard-Web-${{ steps.ver.outputs.VERSION }}
           path: publish/VaultGuardWeb-*.zip
@@ -96,7 +102,7 @@ jobs:
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           name: VaultGuard ${{ steps.ver.outputs.VERSION }}

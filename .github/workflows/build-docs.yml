@@ -1,0 +1,52 @@
+name: Build Docs Site
+
+on:
+  push:
+    branches: [ devmain, main ]
+    paths:
+      - 'docs-site/**'
+      - '.github/workflows/build-docs.yml'
+  pull_request:
+    branches: [ devmain, main ]
+    paths:
+      - 'docs-site/**'
+      - '.github/workflows/build-docs.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    name: Build & Publish Docs Site
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: docs-site/package-lock.json
+
+      - name: Install dependencies
+        working-directory: docs-site
+        run: npm install
+
+      - name: Build
+        working-directory: docs-site
+        run: npm run build
+
+      # destination_dir defaults to the branch root here on purpose - this is the "home" deployment on
+      # gh-pages, while run-tests.yml's Allure report publishes to the allure-report/ subdirectory with
+      # keep_files:true so the two don't clobber each other.
+      - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: github.event_name == 'push'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: docs-site/.vitepress/dist
+          keep_files: true

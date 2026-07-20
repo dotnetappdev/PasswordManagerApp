@@ -8,13 +8,13 @@ using System.Text.Json;
 
 namespace VaultGuard.Tests.QrLogin;
 
-public class QrLoginApiTests : IClassFixture<WebApplicationFactory<Program>>
+public class QrLoginApiTests : IClassFixture<TestWebApplicationFactory>
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly TestWebApplicationFactory _factory;
     private readonly HttpClient _client;
     private readonly HttpClient _authenticatedClient;
 
-    public QrLoginApiTests(WebApplicationFactory<Program> factory)
+    public QrLoginApiTests(TestWebApplicationFactory factory)
     {
         _factory = factory;
         _client = _factory.CreateClient();

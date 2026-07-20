@@ -1,0 +1,160 @@
+name: Deploy API to SmarterASP.NET
+
+# Deploys ONLY VaultGuard.API (the Web API project) to SmarterASP.NET via Web Deploy, and only when:
+#   1. A PR is opened/updated against devmain touching API-relevant code, AND
+#   2. VaultGuard.BackEnd.Tests (the unit tests that cover VaultGuard.API) pass.
+# The test step runs before publish/deploy in the same job, so a test failure stops the job there -
+# publish and deploy never run.
+on:
+  pull_request:
+    branches: [ devmain ]
+    paths:
+      - 'VaultGuard.API/**'
+      - 'VaultGuard.Models/**'
+      - 'VaultGuard.DAL/**'
+      - 'VaultGuard.Services/**'
+      - 'VaultGuard.Crypto/**'
+      - 'VaultGuard.DAL.SqlServer/**'
+      - 'VaultGuard.DAL.MySql/**'
+      - 'VaultGuard.DAL.Postgres/**'
+      - 'VaultGuard.DAL.SupaBase/**'
+      - 'VaultGuard.BackEnd.Tests/**'
+      - '.github/workflows/deploy-api-smarterasp.yml'
+  workflow_dispatch: {}
+
+# Serializes runs for the same PR/branch (default cancel-in-progress: false, so a deploy already in
+# flight is queued behind, never killed). Without this, two pushes to the same open PR in quick
+# succession can both check out before either has pushed its own release tag - both then compute the
+# same "next" api-vX.Y.Z and race to push it, and the loser fails with "tag already exists".
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+env:
+  PROJECT: VaultGuard.API/VaultGuard.API.csproj
+  TEST_PROJECT: VaultGuard.BackEnd.Tests/VaultGuard.BackEnd.Tests.csproj
+  PUBLISH_DIR: publish\api
+  DOTNET_VERSION: '10.0.x'
+  # SmarterASP.NET's IIS hosts are Windows x64 - self-contained means the .NET 10 runtime ships inside
+  # the publish output, so the server doesn't need a matching runtime installed. If your plan runs a
+  # 32-bit app pool, change this to win-x86.
+  RUNTIME_ID: win-x64
+
+permissions:
+  contents: write
+
+jobs:
+  test-and-deploy:
+    # The SmarterASP.NET-web-deploy action shells out to msdeploy.exe at a hardcoded Windows path
+    # (C:\Program Files (x86)\IIS\Microsoft Web Deploy V3\msdeploy.exe) - it only runs on Windows, so
+    # the whole job (including the test gate) runs here rather than splitting across OSes.
+    runs-on: windows-latest
+    name: Test & Deploy VaultGuard.API
+
+    steps:
+      # Explicit ref + full history: pull_request's default checkout is a synthetic merge commit that
+      # doesn't exist in the branch's real history (bad tag target), and version-bumping below needs the
+      # full tag history, not the default shallow clone.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # Next version = latest api-vX.Y.Z tag with patch+1, or 1.0.0 if none exists yet.
+      - name: Compute next version
+        id: ver
+        shell: bash
+        run: |
+          latest=$(git tag -l 'api-v*' | sed 's/^api-v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
+          if [ -z "$latest" ]; then
+            next="1.0.0"
+          else
+            IFS='.' read -r major minor patch <<< "$latest"
+            next="$major.$minor.$((patch + 1))"
+          fi
+          echo "Next version: $next"
+          echo "VERSION=$next" >> "$GITHUB_OUTPUT"
+
+      - name: Restore backend tests
+        run: dotnet restore ${{ env.TEST_PROJECT }}
+
+      - name: Build backend tests
+        run: dotnet build ${{ env.TEST_PROJECT }} --no-restore --configuration Release
+
+      # Gate: everything below only runs if this succeeds.
+      - name: Run backend unit tests
+        run: dotnet test ${{ env.TEST_PROJECT }} --no-build --configuration Release --logger "trx;LogFileName=backend-tests.trx"
+
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v3
+        if: always()
+        with:
+          name: Backend Unit Test Results
+          path: '**/backend-tests.trx'
+          reporter: dotnet-trx
+          fail-on-error: true
+
+      - name: Restore API
+        run: dotnet restore ${{ env.PROJECT }} -r ${{ env.RUNTIME_ID }}
+
+      - name: Publish API (self-contained)
+        run: >
+          dotnet publish ${{ env.PROJECT }} --configuration Release --no-restore
+          --self-contained true -r ${{ env.RUNTIME_ID }}
+          -p:Version=${{ steps.ver.outputs.VERSION }}
+          --output ${{ env.PUBLISH_DIR }}
+
+      # See ReadMe.md "Deploying the API to SmarterASP.NET" for where these come from in the
+      # SmarterASP.NET control panel's Web Deploy settings.
+      # continue-on-error: SmarterASP.NET's Web Deploy target has been unreachable (DNS resolution
+      # failure) independent of anything in this repo - without this, a deploy outage silently blocks
+      # every step below forever, so no release ever gets cut even though the build/tests are fine.
+      # The release below reflects "this build passed tests and was published", not "this build is
+      # live on SmarterASP.NET" - check this step's own outcome for actual deploy status.
+      - name: Deploy to SmarterASP.NET
+        id: deploy
+        continue-on-error: true
+        uses: jahbenjah/SmarterASP.NET-web-deploy@1.0.0.alpha.8
+        with:
+          website-name: ${{ secrets.APISiteName }}
+          server-computer-name: ${{ secrets.APISERVER }}
+          server-username: ${{ secrets.APIUSER }}
+          server-password: ${{ secrets.APIPASSWORD }}
+          source-path: '${{ env.PUBLISH_DIR }}\'
+          target-delete: 'true'
+
+      - name: Warn if deploy failed
+        if: steps.deploy.outcome == 'failure'
+        run: echo "::warning::Deploy to SmarterASP.NET failed - releasing the build anyway, but it is NOT live on the server. Check the Deploy to SmarterASP.NET step above."
+
+      # Runs regardless of whether the deploy above succeeded (see continue-on-error note): tag the
+      # commit, branch off it, zip the publish output, and turn all of that into a GitHub Release - the
+      # whole tag/branch/release cycle runs here with no manual `git tag && git push` step needed.
+      - name: Tag release and create release branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          sha="${{ github.event.pull_request.head.sha || github.sha }}"
+          git tag "api-v${{ steps.ver.outputs.VERSION }}" "$sha"
+          git push origin "api-v${{ steps.ver.outputs.VERSION }}"
+          git branch "release/api-v${{ steps.ver.outputs.VERSION }}" "$sha"
+          git push origin "release/api-v${{ steps.ver.outputs.VERSION }}"
+
+      - name: Zip publish output
+        shell: pwsh
+        run: Compress-Archive -Path "${{ env.PUBLISH_DIR }}\*" -DestinationPath "VaultGuardAPI-${{ steps.ver.outputs.VERSION }}.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: api-v${{ steps.ver.outputs.VERSION }}
+          name: VaultGuard API v${{ steps.ver.outputs.VERSION }}
+          generate_release_notes: true
+          files: VaultGuardAPI-${{ steps.ver.outputs.VERSION }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

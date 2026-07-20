@@ -5,9 +5,9 @@ A consolidated record of one-off fixes and implementation notes that used to liv
 notes - the code they describe has since moved on. Kept here as a single searchable history; the full
 original text of any entry is in git history (search the filename shown in brackets).
 
-For current, maintained documentation see the top-level guides (`ReadMe.md`, `GETTING_STARTED.md`,
-`SETUP.md`, `CONFIGURATION_GUIDE.md`, `DEVELOPMENT.md`, `USER_GUIDE.md`, `docs/SECURITY.md`,
-`TECHNOLOGY_STACK.md`) and each project's own `README.md`.
+For current, maintained documentation see `ReadMe.md` at the repo root, the guides alongside this file in
+`docs/` (`GETTING_STARTED.md`, `SETUP.md`, `CONFIGURATION_GUIDE.md`, `DEVELOPMENT.md`, `USER_GUIDE.md`,
+`SECURITY.md`, `TECHNOLOGY_STACK.md`), and each project's own `README.md`.
 
 ---
 
