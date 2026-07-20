@@ -11,11 +11,18 @@
 .PARAMETER Serve
   After generating, open the live report in a browser instead of writing a static site.
 
+.PARAMETER IncludeBlazorUi
+  Also run VaultGuard.Tests.Playwright's assertion suite and fold its .trx into the same dashboard -
+  matching what run-tests.yml's publish-allure-report job does in CI. Off by default: this suite self-
+  hosts a whole VaultGuard.Web instance, installs a real browser, and takes several minutes, which isn't
+  what you want for a quick "did my NUnit fixture wire up right" check.
+
 .EXAMPLE
   pwsh scripts/run-tests-allure.ps1
   pwsh scripts/run-tests-allure.ps1 -Serve
+  pwsh scripts/run-tests-allure.ps1 -IncludeBlazorUi
 #>
-param([switch]$Serve)
+param([switch]$Serve, [switch]$IncludeBlazorUi)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -43,6 +50,21 @@ Get-ChildItem -Recurse -Directory -Filter 'allure-results' |
   ForEach-Object {
     Get-ChildItem $_.FullName -File | Copy-Item -Destination $results -Force
   }
+
+if ($IncludeBlazorUi) {
+  Write-Host "Running VaultGuard.Tests.Playwright (assertion suite, excludes ScreenshotCaptureTests) ..." -ForegroundColor Cyan
+  $playwrightProject = 'VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj'
+  $playwrightTrxDir = Join-Path $root 'blazor-ui-test-results'
+  dotnet build $playwrightProject -c Debug --nologo -v q
+  pwsh (Join-Path $root 'VaultGuard.Tests.Playwright/bin/Debug/net10.0/playwright.ps1') install --with-deps chromium
+  $env:HEADED = '0'
+  # Allure 2's own trx-plugin reads this .trx directly - no [Allure*] adapter exists for MSTest (see
+  # docs/TESTING.md's Allure dashboard section), so it's copied straight into $results as-is rather than
+  # converted to the NUnit suites' per-test JSON format.
+  dotnet test $playwrightProject --no-build -c Debug --filter "FullyQualifiedName!~ScreenshotCaptureTests" --results-directory $playwrightTrxDir --logger "trx;LogFileName=blazor-ui-tests.trx"
+  Get-ChildItem -Recurse -Path $playwrightTrxDir -Filter 'blazor-ui-tests.trx' -ErrorAction SilentlyContinue |
+    Copy-Item -Destination $results -Force
+}
 
 $count = (Get-ChildItem $results -File -ErrorAction SilentlyContinue | Measure-Object).Count
 Write-Host "Aggregated $count Allure result files into $results" -ForegroundColor Green

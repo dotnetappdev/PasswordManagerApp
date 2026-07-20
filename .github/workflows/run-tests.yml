@@ -18,6 +18,10 @@ on:
 permissions:
   contents: write
   checks: write
+  # actions: read is required by publish-allure-report's actions/download-artifact steps - without it,
+  # explicitly listing any permissions here drops every unlisted scope to "none" (including the default
+  # actions: read), and those downloads fail with a permissions error.
+  actions: read
 
 jobs:
   test:
@@ -86,84 +90,16 @@ jobs:
         find . -type d -name allure-results -not -path './allure-results' -exec sh -c 'cp -f "$1"/*.json allure-results/ 2>/dev/null || true' _ {} \;
         echo "Collected $(find allure-results -type f | wc -l) Allure result files"
 
-    - name: Get Allure history
-      uses: actions/checkout@v7
-      if: always()
-      continue-on-error: true
-      with:
-        ref: gh-pages
-        path: gh-pages
-
-    # report_url overrides the base URL the action uses to build allure-history/index.html's redirect.
-    # Without it, the action assumes the report is published at the repo root and generates
-    # ".../PasswordManagerApp/<run>/index.html" - but the publish step below actually places it under
-    # destination_dir: allure-report, so that redirect 404s (there's no /<run>/ at the site root). This
-    # makes the redirect target ".../PasswordManagerApp/allure-report/<run>/index.html", which matches
-    # where the file actually ends up.
-    - name: Build Allure report
-      uses: simple-elf/allure-report-action@master
-      if: always()
-      id: allure-report
-      with:
-        allure_results: allure-results
-        allure_history: allure-history
-        allure_report: allure-report
-        keep_reports: 20
-        gh_pages: gh-pages
-        report_url: https://dotnetappdev.github.io/PasswordManagerApp/allure-report
-
-    # allure-report-action populates allure-history from the "gh-pages" checkout above (path: gh-pages),
-    # which brings that checkout's .git along with it. Left in place, peaceiris/actions-gh-pages records
-    # allure-report as a submodule gitlink instead of plain files, which has no .gitmodules entry and
-    # breaks GitHub's own Pages build (fails checkout with "No url found for submodule path
-    # 'allure-report'") - so the live site stops updating even though every workflow here reports success.
-    #
-    # sudo is required: allure-report-action runs inside a Docker container, so the files it writes into
-    # allure-history/.git are root-owned - a plain `rm -rf` as the runner's non-root user fails with
-    # "Permission denied" on every file, which fails this step (and so the whole job) even though every
-    # actual test passed. (A run before this fix landed left allure-report as a stale gitlink on
-    # gh-pages, which was cleaned up manually so this step's fix could take effect.)
-    - name: Strip nested git metadata from Allure history
-      if: always()
-      run: sudo rm -rf allure-history/.git
-
-    # destination_dir + keep_files so this coexists with the docs site (build-docs.yml), which also
-    # publishes to gh-pages but at the branch root - without keep_files, each publish wipes the branch
-    # and the two workflows would clobber each other.
-    - name: Publish Allure report to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v4
-      if: always() && github.event_name == 'push'
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_branch: gh-pages
-        publish_dir: allure-history
-        destination_dir: allure-report
-        keep_files: true
-
-    - name: Upload Allure report artifact
+    # Handed off to the publish-allure-report job below, which also pulls in the Blazor UI (Playwright)
+    # job's .trx - combining them here would mean this job has to wait for that much slower job to
+    # finish before it can report its own (fast) pass/fail check.
+    - name: Upload Allure results artifact
       uses: actions/upload-artifact@v7
       if: always()
       with:
-        name: allure-report
-        path: allure-history
-        retention-days: 20
-
-    # Surfaces the Allure dashboard right on the run's summary page so pass/fail results are one click
-    # away instead of buried in raw dotnet test logs - shown even when tests failed (if: always()).
-    - name: Add Allure report link to job summary
-      if: always()
-      run: |
-        {
-          echo "## Allure test dashboard"
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo ""
-            echo "📊 [View the live dashboard](https://dotnetappdev.github.io/PasswordManagerApp/allure-report/index.html) - updated with this run's results."
-          else
-            echo ""
-            echo "📊 This run's results are attached above as the **allure-report** artifact - download it and open \`index.html\`."
-            echo "Once merged, results publish to the [live dashboard](https://dotnetappdev.github.io/PasswordManagerApp/allure-report/index.html)."
-          fi
-        } >> "$GITHUB_STEP_SUMMARY"
+        name: allure-results-unit
+        path: allure-results
+        retention-days: 1
 
   # VaultGuard.Tests.Playwright has ~56 real assertion-based Blazor UI tests (CRUD flows, vaults,
   # categories, users, passkeys, settings) that self-host VaultGuard.Web and drive it with a real
@@ -208,8 +144,13 @@ jobs:
         HEADED: '0'
       run: dotnet test VaultGuard.Tests.Playwright/VaultGuard.Tests.Playwright.csproj --no-build -c Debug --filter "FullyQualifiedName!~ScreenshotCaptureTests" --results-directory ./blazor-ui-test-results --logger "trx;LogFileName=blazor-ui-tests.trx"
 
-    # Not Allure-wired: Allure.MSTest requires the test class to derive from its base type, which
-    # conflicts with Playwright's PageTest base class (see docs/TESTING.md) - dotnet-trx reporting only.
+    # There's no maintained Allure adapter for MSTest (the old allure-mstest package is deprecated -
+    # Allure 2's own report generator gained native .trx support instead, via a bundled trx-plugin), so
+    # this suite doesn't carry [Allure*] attributes like the NUnit ones do. It still reaches the same
+    # Allure dashboard, though: the publish-allure-report job below feeds this job's raw .trx straight
+    # into the same allure-results directory as the NUnit suites' native JSON results, and Allure 2's
+    # trx-plugin picks it up automatically - no per-test instrumentation required. dotnet-trx reporting
+    # (below) is kept too since it's what drives the PR check-run annotations.
     - name: Publish Blazor UI Test Results
       uses: dorny/test-reporter@v3
       if: always()
@@ -218,6 +159,15 @@ jobs:
         path: '**/blazor-ui-tests.trx'
         reporter: dotnet-trx
         fail-on-error: true
+
+    - name: Upload Allure results artifact (raw .trx - Allure 2's trx-plugin reads it directly)
+      uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: allure-results-blazor-ui
+        path: blazor-ui-test-results/**/blazor-ui-tests.trx
+        if-no-files-found: warn
+        retention-days: 1
 
     # if: always() so evidence from a failing run is downloadable too - that's the whole point of
     # SaveEvidenceAsync, seeing what the page actually looked like when an assertion failed.
@@ -229,3 +179,104 @@ jobs:
         path: blazor-ui-test-results/**/*.png
         if-no-files-found: warn
         retention-days: 20
+
+  # Combines both jobs above into the one Allure dashboard: the NUnit suites' native allure-results JSON
+  # (rich Behaviors/Suites categorization, via [AllureNUnit]) and the Blazor UI (Playwright) suite's raw
+  # .trx (via Allure 2's own trx-plugin - see the "Publish Blazor UI Test Results" step's comment) sit
+  # side by side in one allure-results directory, so `allure generate` produces a single combined report
+  # instead of two separate ones. needs: [test, blazor-ui-tests] + if: always() so this still runs (and
+  # the dashboard still reflects reality) even if one of them fails - a failure is exactly what the
+  # dashboard exists to surface, not something to hide by skipping the publish step.
+  publish-allure-report:
+    runs-on: ubuntu-latest
+    name: Publish Allure Report
+    needs: [test, blazor-ui-tests]
+    if: always()
+
+    steps:
+    - name: Download unit test Allure results
+      uses: actions/download-artifact@v7
+      with:
+        name: allure-results-unit
+        path: allure-results
+
+    - name: Download Blazor UI test Allure results
+      uses: actions/download-artifact@v7
+      continue-on-error: true
+      with:
+        name: allure-results-blazor-ui
+        path: allure-results
+
+    - name: Get Allure history
+      uses: actions/checkout@v7
+      continue-on-error: true
+      with:
+        ref: gh-pages
+        path: gh-pages
+
+    # report_url overrides the base URL the action uses to build allure-history/index.html's redirect.
+    # Without it, the action assumes the report is published at the repo root and generates
+    # ".../PasswordManagerApp/<run>/index.html" - but the publish step below actually places it under
+    # destination_dir: allure-report, so that redirect 404s (there's no /<run>/ at the site root). This
+    # makes the redirect target ".../PasswordManagerApp/allure-report/<run>/index.html", which matches
+    # where the file actually ends up.
+    - name: Build Allure report
+      uses: simple-elf/allure-report-action@master
+      id: allure-report
+      with:
+        allure_results: allure-results
+        allure_history: allure-history
+        allure_report: allure-report
+        keep_reports: 20
+        gh_pages: gh-pages
+        report_url: https://dotnetappdev.github.io/PasswordManagerApp/allure-report
+
+    # allure-report-action populates allure-history from the "gh-pages" checkout above (path: gh-pages),
+    # which brings that checkout's .git along with it. Left in place, peaceiris/actions-gh-pages records
+    # allure-report as a submodule gitlink instead of plain files, which has no .gitmodules entry and
+    # breaks GitHub's own Pages build (fails checkout with "No url found for submodule path
+    # 'allure-report'") - so the live site stops updating even though every workflow here reports success.
+    #
+    # sudo is required: allure-report-action runs inside a Docker container, so the files it writes into
+    # allure-history/.git are root-owned - a plain `rm -rf` as the runner's non-root user fails with
+    # "Permission denied" on every file, which fails this step (and so the whole job) even though every
+    # actual test passed. (A run before this fix landed left allure-report as a stale gitlink on
+    # gh-pages, which was cleaned up manually so this step's fix could take effect.)
+    - name: Strip nested git metadata from Allure history
+      run: sudo rm -rf allure-history/.git
+
+    # destination_dir + keep_files so this coexists with the docs site (build-docs.yml), which also
+    # publishes to gh-pages but at the branch root - without keep_files, each publish wipes the branch
+    # and the two workflows would clobber each other.
+    - name: Publish Allure report to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      if: github.event_name == 'push'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_branch: gh-pages
+        publish_dir: allure-history
+        destination_dir: allure-report
+        keep_files: true
+
+    - name: Upload Allure report artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: allure-report
+        path: allure-history
+        retention-days: 20
+
+    # Surfaces the Allure dashboard right on the run's summary page so pass/fail results are one click
+    # away instead of buried in raw dotnet test logs - shown even when tests failed.
+    - name: Add Allure report link to job summary
+      run: |
+        {
+          echo "## Allure test dashboard"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo ""
+            echo "📊 [View the live dashboard](https://dotnetappdev.github.io/PasswordManagerApp/allure-report/index.html) - updated with this run's results (unit tests + Blazor UI)."
+          else
+            echo ""
+            echo "📊 This run's results are attached above as the **allure-report** artifact - download it and open \`index.html\`."
+            echo "Once merged, results publish to the [live dashboard](https://dotnetappdev.github.io/PasswordManagerApp/allure-report/index.html)."
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"

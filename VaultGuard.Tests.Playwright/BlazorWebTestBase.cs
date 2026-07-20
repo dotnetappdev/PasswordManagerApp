@@ -26,6 +26,31 @@ public abstract class BlazorWebTestBase : PageTest
     private static string? _baseUrl;
     private static string? _tempDbPath;
 
+    // Bounded tail of the shared VaultGuard.Web process's console output (stdout+stderr interleaved),
+    // kept for failure diagnostics - see the comment on BeginOutputReadLine/BeginErrorReadLine below
+    // for why this needs to be drained continuously rather than read on demand.
+    private const int MaxAppLogTailLines = 400;
+    private static readonly object AppLogLock = new();
+    private static readonly List<string> AppLogTail = new();
+
+    private static void AppendAppLogLine(string? line)
+    {
+        if (line is null) return;
+        lock (AppLogLock)
+        {
+            AppLogTail.Add(line);
+            if (AppLogTail.Count > MaxAppLogTailLines)
+                AppLogTail.RemoveAt(0);
+        }
+    }
+
+    /// <summary>Snapshot of the shared app process's most recent console output, for failure diagnostics.</summary>
+    protected static string GetAppLogTail()
+    {
+        lock (AppLogLock)
+            return string.Join(Environment.NewLine, AppLogTail);
+    }
+
     /// <summary>Base URL of the app under test (set once the app has started).</summary>
     protected static string BaseUrl => _baseUrl ?? throw new InvalidOperationException("App not started yet.");
 
@@ -111,7 +136,23 @@ public abstract class BlazorWebTestBase : PageTest
             _appProcess.StartInfo.Environment["ConnectionStrings__DefaultConnection"] = $"Data Source={_tempDbPath}";
             _appProcess.StartInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
 
+            // RedirectStandardOutput/Error means the OS gives this process's stdout/stderr a small
+            // fixed-size pipe buffer (~64KB on Linux) instead of a real console - nothing drains it
+            // unless we read it here. Development-environment logging (EF Core "Executed DbCommand"
+            // at Information level logs the full SQL text of every query) is verbose enough that,
+            // across dozens of shared tests' worth of page loads before this process is torn down,
+            // the buffer can fill completely. Once it does, the app's next Console write BLOCKS the
+            // thread doing it - which can stall in-flight requests indefinitely and has no relation
+            // to any client-side (Playwright) timeout, however generous. Wiring these up (and calling
+            // BeginOutputReadLine/BeginErrorReadLine below) keeps the pipe permanently drained so the
+            // app process can never block on writing to it. Keep only a bounded tail for diagnostics -
+            // this is a whole app's console output across the entire shared test run.
+            _appProcess.OutputDataReceived += (_, e) => AppendAppLogLine(e.Data);
+            _appProcess.ErrorDataReceived += (_, e) => AppendAppLogLine(e.Data);
+
             _appProcess.Start();
+            _appProcess.BeginOutputReadLine();
+            _appProcess.BeginErrorReadLine();
 
             await WaitForAppAsync(_baseUrl, _appProcess);
         }
@@ -135,6 +176,27 @@ public abstract class BlazorWebTestBase : PageTest
     public async Task NavigateToHomePageAsync()
     {
         await EnsureAppStartedAsync();
+
+        // Blazor Server's SignalR circuit posts reconnect/circuit-lifecycle messages to the browser
+        // console (blazor.server.js), not the server-side console GetAppLogTail() already captures.
+        // Confirmed in CI: SignInAsync can finish believing it succeeded (no bounce-back warning logged)
+        // and the very next assertion still finds itself back on /login - i.e. the bounce happens AFTER
+        // sign-in returns, which a client-side circuit disconnect/reconnect (triggering a fresh circuit
+        // with a fresh scoped AuthService, or a transient JS-interop failure mid-reconnect that
+        // CheckAuthenticationStatusAsync's fail-closed catch swallows) would exactly explain. Written
+        // immediately (not buffered) so it shows up in TestContext Messages for whichever test happens
+        // to be running when it fires, regardless of which assertion helper that test uses.
+        Page.Console += (_, msg) =>
+        {
+            var text = msg.Text ?? string.Empty;
+            if (msg.Type == "error" ||
+                text.Contains("econnect", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("circuit", StringComparison.OrdinalIgnoreCase))
+            {
+                TestContext.WriteLine($"[browser console {msg.Type}] {text}");
+            }
+        };
+
         await Page.GotoAsync(_baseUrl ?? throw new InvalidOperationException("Base URL not initialized."));
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
@@ -205,6 +267,11 @@ public abstract class BlazorWebTestBase : PageTest
             catch (Exception bodyEx) { TestContext.WriteLine($"[{evidenceName}] Could not read body text: {bodyEx.Message}"); }
             try { await SaveEvidenceAsync($"{evidenceName}_FAILURE"); }
             catch (Exception evEx) { TestContext.WriteLine($"[{evidenceName}] Could not save failure screenshot: {evEx.Message}"); }
+            // Tail of the shared app process's own console output as of this failure - e.g. an EF Core
+            // exception, an unhandled exception in a Razor component, or (previously) evidence of the
+            // process stalling on a full stdout pipe (see EnsureAppStartedAsync) would show up here even
+            // though the browser side never sees more than a generic redirect/timeout.
+            TestContext.WriteLine($"[{evidenceName}] --- VaultGuard.Web console tail ---{Environment.NewLine}{GetAppLogTail()}");
             TestContext.WriteLine($"[{evidenceName}] Original exception: {ex.Message}");
             throw;
         }
@@ -235,11 +302,21 @@ public abstract class BlazorWebTestBase : PageTest
                 await Task.Delay(2500);
             }
 
-            // Up to two passes. Creating the master key (first-run) only creates the account - it does
+            // Up to three passes. Creating the master key (first-run) only creates the account - it does
             // NOT authenticate the session, so MainLayout's auth gate immediately bounces the post-create
             // NavigateTo("/home") back to /login. At that point the account exists, so the second pass
             // goes through the normal "pick a profile, enter its master key" flow to actually sign in.
-            for (var attempt = 0; attempt < 2; attempt++)
+            // The third pass exists for a different reason than the (reverted) 2->4 bump this file used
+            // to have: that one was chasing a *deterministic* late-run auth race (same tests failed all
+            // retries identically - more attempts never helped, see docs/TESTING.md). This one instead
+            // covers whichever test happens to run FIRST against a brand-new empty database, which pays
+            // real one-time costs (JIT warm-up, EF model building, the intentionally-slow master-key KDF
+            // running twice - once to create the account, once to log back in) that a returning-user
+            // login never pays. WarmUpLoginPageAsync (see EnsureAppStartedAsync/WaitForAppAsync) already
+            // covers some of that outside any test's budget; this is a cheap, narrowly-justified safety
+            // margin for whatever it doesn't reach (the interactive Blazor circuit + KDF calls, which a
+            // plain HTTP warm-up request can't exercise).
+            for (var attempt = 0; attempt < 3; attempt++)
             {
                 if (await Page.Locator("#confirmKey").CountAsync() > 0)
                 {
@@ -278,7 +355,10 @@ public abstract class BlazorWebTestBase : PageTest
             }
 
             if (Page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
+            {
                 TestContext.WriteLine($"WARNING: still on /login after sign-in attempt (url={Page.Url}) - subsequent test steps will see the login page instead of the real one.");
+                TestContext.WriteLine($"--- VaultGuard.Web console tail at sign-in failure ---{Environment.NewLine}{GetAppLogTail()}");
+            }
         }
         catch (Exception ex)
         {
@@ -316,17 +396,22 @@ public abstract class BlazorWebTestBase : PageTest
         {
             if (process.HasExited)
             {
-                var stdOut = await process.StandardOutput.ReadToEndAsync();
-                var stdErr = await process.StandardError.ReadToEndAsync();
+                // Stdout/stderr are drained continuously via BeginOutputReadLine/BeginErrorReadLine
+                // (see EnsureAppStartedAsync) into AppLogTail - reading process.StandardOutput/Error
+                // directly here would race the async line reader against this synchronous read on the
+                // same underlying stream.
                 throw new InvalidOperationException(
-                    $"VaultGuard.Web exited before tests started.{Environment.NewLine}{stdOut}{Environment.NewLine}{stdErr}");
+                    $"VaultGuard.Web exited before tests started.{Environment.NewLine}{GetAppLogTail()}");
             }
 
             try
             {
                 using var response = await client.GetAsync(baseUrl);
                 if ((int)response.StatusCode < 500)
+                {
+                    await WarmUpLoginPageAsync(baseUrl);
                     return;
+                }
             }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"App not ready yet: {ex.Message}"); }
 
@@ -334,5 +419,52 @@ public abstract class BlazorWebTestBase : PageTest
         }
 
         throw new TimeoutException($"Timed out waiting for VaultGuard.Web at {baseUrl}.");
+    }
+
+    /// <summary>
+    /// Confirmed in CI: an HttpClient-only warm-up here (a plain GET to /login) does NOT fix the first
+    /// test's cold-start timeout, because App.razor renders with prerender:false - a plain HTTP GET never
+    /// opens the SignalR circuit, so it never actually runs Login.razor's OnInitializedAsync (its EF
+    /// queries), never renders any Razor component, and never JIT-compiles any of that code. All of the
+    /// real cold-start cost (interactive circuit setup, MudBlazor's own component init, and the
+    /// intentionally-slow master-key KDF - see PasswordCryptoService) was still being paid entirely by
+    /// the first real test's own SignInAsync call, which is why WaitForLoginRedirectAsync's redirect
+    /// still succeeded (proving the URL genuinely left /login) but the final auth check still bounced
+    /// back - the same "leaves then bounces" symptom as the old late-run cluster, just triggered by
+    /// cold-start slowness instead of the (now-fixed) stdout pipe block.
+    ///
+    /// This uses a real headless browser instead, and actually runs the same "Create Master Key" flow
+    /// SignInAsync would otherwise have to run cold. JIT-compiled machine code is a process-wide cache,
+    /// not per-circuit - so paying this cost against a throwaway warm-up circuit here still speeds up
+    /// every later circuit in the same VaultGuard.Web process, including the real first test's. On a
+    /// fresh database this also creates the seeded account for real, which is fine: SignInAsync already
+    /// handles "account already exists" (it's what happens for every test after the first one anyway),
+    /// so the real first test just goes straight to the faster profile-picker/login path.
+    /// </summary>
+    private static async Task WarmUpLoginPageAsync(string baseUrl)
+    {
+        try
+        {
+            using var playwright = await Microsoft.Playwright.Playwright.CreateAsync();
+            await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+            var page = await browser.NewPageAsync();
+            await page.GotoAsync($"{baseUrl}/login");
+            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+            var confirmKey = page.Locator("#confirmKey");
+            if (await confirmKey.CountAsync() > 0 && await confirmKey.IsVisibleAsync())
+            {
+                await page.FillAsync("#masterKey", SeededMasterKey);
+                await page.FillAsync("#confirmKey", SeededMasterKey);
+                await page.ClickAsync("button:has-text('Create Master Key')");
+                await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                // No redirect-wait needed here - unlike SignInAsync this warm-up doesn't need to actually
+                // finish signing in, only to have forced the JIT/circuit/KDF cost to happen once.
+                await Task.Delay(2000);
+            }
+
+            System.Diagnostics.Debug.WriteLine("Login page warm-up complete.");
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Login page warm-up failed (continuing - not fatal): {ex.Message}"); }
     }
 }

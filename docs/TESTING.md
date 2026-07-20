@@ -76,9 +76,10 @@ deep-linkable `Settings?tab=Name` tabs) and the passkeys page.
 `ApplicationWorkflowTests`, `CategoryAndTagCrudTests`, `PasswordItemCrudTests`, `UserManagementCrudTests`,
 `VaultCrudTests`, `PasskeysAndSettingsTests`, `SeededDemoDataTests` - as its own check, separate from the
 `test` job above. `ScreenshotCaptureTests` is excluded there (image capture only, no assertions) - it runs
-in `screenshots.yml` instead. This suite isn't Allure-wired: `Allure.MSTest` needs the test class to
-derive from its base type, which conflicts with Playwright's `PageTest` base class - it reports via
-`dotnet-trx`/`dorny/test-reporter` like the other suites instead.
+in `screenshots.yml` instead. It reports via `dotnet-trx`/`dorny/test-reporter` for the PR check-run
+(same as the other suites), and its raw `.trx` also feeds the combined Allure dashboard - see "Allure
+dashboard" below for how, since there's no `[Allure*]`-attribute path for MSTest the way there is for
+NUnit.
 
 **Authentication:** `BlazorWebTestBase.SignInAsync()` (shared, not `ScreenshotCaptureTests`' own private
 copy - see below) signs in with the seeded demo account, creating the default accounts first on a fresh
@@ -113,8 +114,16 @@ the 8 most-recently-modified items) for `"Chase Bank"` and a `"Search your vault
 never existed in the Blazor app at all (the real placeholder, on `/passwords`, is `"Search items..."`) -
 rewritten to check `/passwords`, which lists every seeded item unconditionally and has the real search box.
 
-**Known issue - ~9 tests in `VaultCrudTests`/`UserManagementCrudTests` intermittently fail (CI usually
-lands 50-51/60):** every one of these lands on `Page.Url=/login` at the point of failure -
+**UPDATE - the stdout-pipe-drain fix below took CI from 50-51/60 to 59/60 in one shot.** The section
+right after this one was the original ~9-failure investigation, kept for history; the pipe-blocking
+theory it eventually led to turned out to be the dominant cause. The one remaining failure after that
+fix was a different, narrower issue (see further down: the first test to run against a brand-new empty
+database pays real cold-start costs no returning-user test pays) - also addressed, not yet re-confirmed
+in CI as of this note.
+
+**Known issue (historical - see UPDATE above) - ~9 tests in `VaultCrudTests`/`UserManagementCrudTests`
+intermittently fail (CI usually lands 50-51/60):** every one of these lands on `Page.Url=/login` at the
+point of failure -
 `BlazorWebTestBase.SignInAsync()` genuinely fails to authenticate, it's not a locator, timing, or
 render issue (confirmed via `ExpectVisibleWithDiagnosticsAsync`, which logs the page URL/title/body
 snippet on failure - use it instead of a bare `Expect(...)` if you're debugging this further). Two
@@ -137,6 +146,74 @@ requests against the one shared `VaultGuard.Web` process) makes that race lose m
 hasn't been confirmed, only the symptom (bounces back to `/login`) has. Worth an actual look at the
 `blazor-ui-test-screenshots` CI artifact or a debugger-attached local repro rather than more blind
 CI-cycle guessing.
+
+**New lead found by reading `EnsureAppStartedAsync`, not by CI-cycle guessing:** the shared
+`VaultGuard.Web` process was started with `RedirectStandardOutput`/`RedirectStandardError` but nothing
+ever read those pipes while the process was running (only after it had already exited, in
+`WaitForAppAsync`'s failure path). On Linux a redirected pipe has a small fixed OS buffer (~64KB) -
+once full, the child process **blocks** on its next console write. `appsettings.Development.json` logs
+at `Default: Information`, which includes EF Core's `Executed DbCommand` logging (full SQL text for
+every query) - verbose enough that ~50 shared tests' worth of page loads before `VaultCrudTests`/
+`UserManagementCrudTests` run could plausibly fill that buffer. This lines up with every observed
+symptom: deterministic once it starts (not flaky), only affects tests late in the run, and a stall deep
+in request handling wouldn't show up as a client-side (Playwright) timeout distinguishable from any
+other kind of slowness. Fixed in the same change that added this note: `EnsureAppStartedAsync` now
+wires `OutputDataReceived`/`ErrorDataReceived` + `BeginOutputReadLine`/`BeginErrorReadLine` to keep the
+pipe permanently drained into a bounded in-memory tail (`BlazorWebTestBase.GetAppLogTail()`), which is
+now also logged by `ExpectVisibleWithDiagnosticsAsync` and `SignInAsync`'s bounce-back warning - so even
+if this isn't the *whole* story, the next CI failure will show the app's own console state (exceptions,
+slow queries, whatever it was doing) at the moment of failure, not just the browser-side symptom.
+
+**Confirmed in CI:** the pipe-drain fix above took the Blazor UI Tests job from 50-51/60 to **59/60** in
+the very next run - only `ApplicationWorkflowTests.Dashboard_LoadsSuccessfully` (the first test in the
+whole run) still failed. Its captured `GetAppLogTail()` showed something genuinely different from the
+9-failure cluster: it was the *first-ever* request against a brand-new empty database, so unlike a
+returning-user login it has to pay for JIT warm-up, EF Core model building, and the intentionally-slow
+master-key KDF running **twice** (once via `SetupMasterPasswordAsync` to create the account, once via
+`AuthenticateAsync`/`LoginAsync` to actually log back in) - all inside `SignInAsync`'s own budget. Two
+changes address this:
+- `WaitForAppAsync` now does one `WarmUpLoginPageAsync` GET to `/login` once the app is reachable, so
+  ASP.NET Core's routing/middleware JIT cost is paid during app startup, not inside the first test's own
+  timeout. (This can't reach the interactive Blazor circuit's own code paths - a plain HTTP GET doesn't
+  open the SignalR connection Login.razor's `OnInitializedAsync` needs - so it's a partial warm-up, not
+  a full one.)
+- `SignInAsync`'s pass count went from 2 to 3. This is **not** a repeat of the reverted 2→4 bump above -
+  that one was chasing a *deterministic* race (same tests failed all retries identically); this one
+  covers a one-time cold-start cost that a genuinely fresh database pays exactly once, which retrying is
+  the correct response to.
+
+**Confirmed in CI: the HTTP-only warm-up did not fix it** - same test, same failure shape (redirect away
+from `/login` succeeds per `WaitForLoginRedirectAsync`'s own silence, then bounces back), 59/60 again.
+Root cause: `App.razor` renders with `prerender:false`, so a plain `HttpClient` GET to `/login` never
+opens the SignalR circuit - it never runs `Login.razor`'s `OnInitializedAsync` (its EF queries), never
+renders a Razor component, and never JIT-compiles any of that code. All the real cold-start cost
+(interactive circuit setup, MudBlazor's own component init, the master-key KDF) was still being paid
+entirely by the first real test. `WarmUpLoginPageAsync` now uses a real headless browser instead, and
+actually runs the "Create Master Key" flow with `SeededMasterKey` - JIT-compiled machine code is a
+process-wide cache, not per-circuit, so paying this cost against a throwaway warm-up circuit still
+speeds up every later circuit in the same `VaultGuard.Web` process, including the real first test's.
+This also means the seeded account already exists by the time the real first test runs, so it takes the
+faster profile-picker/login path instead of the create-then-login path.
+
+**Confirmed in CI: the real-browser warm-up fixed `Dashboard_LoadsSuccessfully`** (the specific failure
+that was being chased) - but a *different* test, `Dashboard_AppBar_HasBrandName` (the third test in the
+same class), failed instead, still 59/60. This one is informative: its `[TestInitialize]` calls
+`SignInAsync()` same as every test in the class, and `SignInAsync` logged **no** "still on /login"
+warning - meaning it believed sign-in had succeeded - yet the test's very first assertion immediately
+hit a Playwright strict-mode violation because it matched both the dashboard-adjacent brand text *and*
+the login page's own `"Sign in to Vault Guard"` heading, i.e. the page really was back on `/login` by
+the time the assertion ran. So the bounce happened **after** `SignInAsync` returned believing it had
+succeeded - a delayed second auth failure, not a slow/failed initial one. This is the original
+`EnforceAuthAsync` race theory from earlier in this doc, now isolated from both the pipe-blocking and
+cold-start causes already fixed above: something (a SignalR circuit disconnect/reconnect creating a
+fresh circuit with a fresh scoped `AuthService`, or a transient JS-interop failure mid-reconnect that
+`CheckAuthenticationStatusAsync`'s intentional fail-closed catch swallows - see `AuthService.cs`) can
+undo an already-successful login shortly after the fact. Server-side console output
+(`GetAppLogTail()`) can't see this - Blazor's circuit-lifecycle/reconnect messages go to the *browser*
+console via `blazor.server.js`. `BlazorWebTestBase.NavigateToHomePageAsync` now subscribes to
+`Page.Console` and writes any `error`-typed or reconnect/circuit-mentioning message straight to
+`TestContext` as it happens, so the next occurrence (rare - roughly 1-2/60 now, down from ~9/60 before
+any of these fixes) should show definitive evidence instead of another theory.
 
 ## Allure dashboard
 
@@ -208,8 +285,16 @@ Open `allure-report/index.html`. Both `allure-results/` and `allure-report/` are
 
 - **NUnit:** add `[AllureNUnit]` to the `[TestFixture]`, add `Allure.NUnit` + an `allureConfig.json` (copied
   to output), then list the project in `scripts/run-tests-allure.ps1`.
-- **MSTest (Playwright):** `Allure.MSTest` needs the test class to derive from its base type, which conflicts
-  with Playwright's `PageTest`, so the UI suite is not wired into Allure yet - run it on its own for now.
+- **MSTest (Playwright):** there's no maintained Allure adapter for MSTest - `allure-mstest` is
+  deprecated, superseded by Allure 2's own report generator gaining a native `.trx`-reading plugin
+  (`trx-plugin`), so no `[Allure*]` attributes are needed at all. `VaultGuard.Tests.Playwright` is wired
+  into the dashboard this way: in CI, `run-tests.yml`'s `publish-allure-report` job downloads the
+  `blazor-ui-tests.trx` artifact `blazor-ui-tests` uploads and drops it straight into the same
+  `allure-results` directory as the NUnit suites' JSON - `allure generate` picks up both. Locally, run
+  `scripts/run-tests-allure.ps1 -IncludeBlazorUi` to do the same (off by default - this suite installs a
+  real browser and self-hosts `VaultGuard.Web`, several minutes slower than the NUnit-only default). Note
+  this path gives per-test pass/fail/duration/error only, not the richer Behaviors/Suites categorization
+  the NUnit suites get from their `[Allure*]` attributes - `trx-plugin` groups by the test class instead.
 - **xUnit:** `Allure.Xunit` requires selecting its reporter (`-- xUnit.ReporterSwitch=allure` or a
   `.runsettings`); it did not engage cleanly under the current VSTest v3 runner, so the xUnit suites are run
   normally and are not in the Allure dashboard yet.
