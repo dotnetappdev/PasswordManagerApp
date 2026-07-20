@@ -295,6 +295,17 @@ Open `allure-report/index.html`. Both `allure-results/` and `allure-report/` are
   real browser and self-hosts `VaultGuard.Web`, several minutes slower than the NUnit-only default). Note
   this path gives per-test pass/fail/duration/error only, not the richer Behaviors/Suites categorization
   the NUnit suites get from their `[Allure*]` attributes - `trx-plugin` groups by the test class instead.
+  - **Screenshots render inline, not as filenames:** `BlazorWebTestBase.SaveEvidenceAsync` calls
+    `TestContext.AddResultFile`, which makes MSTest write each `.png` to disk next to the `.trx` and
+    record a `<ResultFile>` attachment entry pointing at it with a path relative to the `.trx`'s own
+    location. `trx-plugin` resolves that reference itself to inline the image on the test's page - so the
+    `.trx` and every `.png` it references have to keep that same relative layout wherever they end up. The
+    CI artifact (`allure-results-blazor-ui`) and the local script both upload/copy the whole
+    `blazor-ui-test-results` tree as a unit rather than pulling just the `.trx` out of it, precisely so
+    that layout survives intact; splitting the `.trx` and screenshots into separately-flattened
+    artifacts/copies (as this used to do) puts them at different relative depths, and `trx-plugin` then
+    can't find the file it's pointed at - the report shows the attachment's bare filename instead of the
+    screenshot.
 - **xUnit:** `Allure.Xunit` requires selecting its reporter (`-- xUnit.ReporterSwitch=allure` or a
   `.runsettings`); it did not engage cleanly under the current VSTest v3 runner, so the xUnit suites are run
   normally and are not in the Allure dashboard yet.
