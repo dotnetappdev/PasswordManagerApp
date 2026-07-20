@@ -103,11 +103,11 @@ jobs:
         run: |
           $ver = "${{ steps.ver.outputs.VERSION }}"
           # Inno Setup resolves a relative [Files] Source against the .iss script's own directory
-          # (installer/), not the working directory iscc was invoked from - so PUBLISH_DIR ("publish/wpf",
+          # (installers/), not the working directory iscc was invoked from - so PUBLISH_DIR ("publish/wpf",
           # relative to the repo root) must be made absolute before being passed in.
           $publishDir = (Resolve-Path "${{ env.PUBLISH_DIR }}").Path
-          iscc /DMyAppVersion=$ver /DPublishDir="$publishDir" installer/setup.iss
-          echo "EXE_PATH=$(Get-Item installer/output/*.exe | Select-Object -ExpandProperty FullName)" >> $env:GITHUB_OUTPUT
+          iscc /DMyAppVersion=$ver /DPublishDir="$publishDir" installers/setup.iss
+          echo "EXE_PATH=$(Get-Item installers/output/*.exe | Select-Object -ExpandProperty FullName)" >> $env:GITHUB_OUTPUT
         id: exe
 
       # ── MSI Installer (WiX v4) ────────────────────────────────────────────
@@ -125,14 +125,14 @@ jobs:
         run: |
           $ver = "${{ steps.ver.outputs.VERSION }}"
           # Same relative-path gotcha as the Inno Setup step above: wix resolves a relative
-          # Source/PublishDir against setup.wxs's own directory (installer/), not the repo root.
+          # Source/PublishDir against setup.wxs's own directory (installers/), not the repo root.
           $publishDir = (Resolve-Path "${{ env.PUBLISH_DIR }}").Path
-          wix build installer/setup.wxs `
+          wix build installers/setup.wxs `
             -ext WixToolset.UI.wixext `
             -d Version=$ver `
             -d PublishDir="$publishDir" `
-            -o "installer/output/VaultGuardSetup-$ver.msi"
-          echo "MSI_PATH=installer/output/VaultGuardSetup-$ver.msi" >> $env:GITHUB_OUTPUT
+            -o "installers/output/VaultGuardSetup-$ver.msi"
+          echo "MSI_PATH=installers/output/VaultGuardSetup-$ver.msi" >> $env:GITHUB_OUTPUT
         id: msi
 
       # ── Upload artifacts for PRs / branch builds ─────────────────────────
@@ -140,13 +140,13 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: VaultGuard-EXE-${{ steps.ver.outputs.VERSION }}
-          path: installer/output/*.exe
+          path: installers/output/*.exe
 
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v7
         with:
           name: VaultGuard-MSI-${{ steps.ver.outputs.VERSION }}
-          path: installer/output/*.msi
+          path: installers/output/*.msi
 
       # ── Publish to GitHub Releases: manual vX.Y.Z tag push, or a merged PR into devmain ──────────
       # Only the PR-merge case needs a new tag - a manual vX.Y.Z tag already exists (the user pushed
@@ -172,7 +172,7 @@ jobs:
           name: VaultGuard ${{ steps.ver.outputs.VERSION }}
           generate_release_notes: true
           files: |
-            installer/output/*.exe
-            installer/output/*.msi
+            installers/output/*.exe
+            installers/output/*.msi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

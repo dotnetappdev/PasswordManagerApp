@@ -68,8 +68,7 @@ VaultGuardApp/
 ├── VaultGuard.Models/           # Shared models and DTOs
 ├── VaultGuard.Services/         # Business logic services
 ├── VaultGuard.Imports/          # Import framework
-├── VaultGuardImports.1Password/ # 1Password import plugin
-└── VaultGuardImports.Bitwarden/ # Enhanced secure import plugin
+└── VaultGuardImports/           # Per-provider import plugins (1Password, Bitwarden, Chrome, ...)
 ```
 
 ## Database Development

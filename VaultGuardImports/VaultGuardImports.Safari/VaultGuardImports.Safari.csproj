@@ -1,9 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>VaultGuardImports.OnePassword</RootNamespace>
-    <AssemblyName>VaultGuardImports.OnePassword</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -13,12 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
-    <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
+    <ProjectReference Include="..\..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
+    <ProjectReference Include="..\..\VaultGuard.Models\VaultGuard.Models.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="plugin.json">
+    <None Update="plugin.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -8,12 +8,11 @@
 
   <ItemGroup>
     <PackageReference Include="FileHelpers" Version="3.5.2" />
-    <PackageReference Include="System.Text.Json" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
-    <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
+    <ProjectReference Include="..\..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
+    <ProjectReference Include="..\..\VaultGuard.Models\VaultGuard.Models.csproj" />
   </ItemGroup>
 
   <ItemGroup>

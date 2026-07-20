@@ -98,7 +98,7 @@
     <!-- Imports: ensure folder and copy DLLs -->
     <MakeDir Directories="$(OutputPath)plugins\imports" />
     <Copy SourceFiles="$(SolutionDir)VaultGuard.Imports\bin\$(Configuration)\net10.0\VaultGuard.Imports.dll" DestinationFolder="$(OutputPath)plugins\imports" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)VaultGuard.Imports\bin\$(Configuration)\net10.0\VaultGuard.Imports.dll')" />
-    <Copy SourceFiles="$(SolutionDir)VaultGuardImports.1Password\bin\$(Configuration)\net10.0\VaultGuardImports.1Password.dll" DestinationFolder="$(OutputPath)plugins\imports" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)VaultGuardImports.1Password\bin\$(Configuration)\net10.0\VaultGuardImports.1Password.dll')" />
+    <Copy SourceFiles="$(SolutionDir)VaultGuardImports\VaultGuardImports.1Password\bin\$(Configuration)\net10.0\VaultGuardImports.1Password.dll" DestinationFolder="$(OutputPath)plugins\imports" SkipUnchangedFiles="true" Condition="Exists('$(SolutionDir)VaultGuardImports\VaultGuardImports.1Password\bin\$(Configuration)\net10.0\VaultGuardImports.1Password.dll')" />
     <WriteLinesToFile File="$(OutputPath)plugins\imports\VaultGuard.Imports.plugin.json" Lines="{&quot;name&quot;:&quot;Imports&quot;,&quot;type&quot;:&quot;import&quot;,&quot;enabled&quot;:true,&quot;description&quot;:&quot;Core import plugin.&quot;}" Overwrite="true" />
     <WriteLinesToFile File="$(OutputPath)plugins\imports\VaultGuardImports.1Password.plugin.json" Lines="{&quot;name&quot;:&quot;1Password&quot;,&quot;type&quot;:&quot;import&quot;,&quot;enabled&quot;:true,&quot;description&quot;:&quot;1Password import plugin.&quot;}" Overwrite="true" />
   </Target>
@@ -122,7 +122,7 @@
       <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
       <ProjectReference Include="..\VaultGuard.Services\VaultGuard.Services.csproj" />
       <ProjectReference Include="..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
-      <ProjectReference Include="..\VaultGuardImports.1Password\VaultGuardImports.1Password.csproj" />
+      <ProjectReference Include="..\VaultGuardImports\VaultGuardImports.1Password\VaultGuardImports.1Password.csproj" />
       <ProjectReference Include="..\VaultGuard.Crypto\VaultGuard.Crypto.csproj" />
       <ProjectReference Include="..\VaultGuard.Components.Shared\VaultGuard.Components.Shared.csproj" />
       <ProjectReference Include="..\VaultGuard.ExceptionReporting\VaultGuard.ExceptionReporting.csproj" />

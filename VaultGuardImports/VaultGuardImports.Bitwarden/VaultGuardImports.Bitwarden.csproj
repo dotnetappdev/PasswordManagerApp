@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
-    <ProjectReference Include="..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
+    <ProjectReference Include="..\..\VaultGuard.Models\VaultGuard.Models.csproj" />
+    <ProjectReference Include="..\..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
   </ItemGroup>
 
 </Project>

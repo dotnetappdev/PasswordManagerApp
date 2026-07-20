@@ -89,5 +89,5 @@ solution.
 
 The `.exe` (Inno Setup) and `.msi` (WiX) installers are built by CI for every `v*` tag
 (`.github/workflows/build-wpf.yml`) and attached to the GitHub release. To build them locally, see
-[`installer/README.md`](https://github.com/dotnetappdev/PasswordManagerApp/blob/devmain/installer) in the
-repository.
+[`installers/README.md`](https://github.com/dotnetappdev/PasswordManagerApp/blob/devmain/installers/README.md) in
+the repository.

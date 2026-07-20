@@ -83,8 +83,8 @@
 		<ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
 		<ProjectReference Include="..\VaultGuard.Services\VaultGuard.Services.csproj" />
 		<ProjectReference Include="..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
-		<ProjectReference Include="..\VaultGuardImports.1Password\VaultGuardImports.1Password.csproj" />
-		<ProjectReference Include="..\VaultGuardImports.Bitwarden\VaultGuardImports.Bitwarden.csproj" />
+		<ProjectReference Include="..\VaultGuardImports\VaultGuardImports.1Password\VaultGuardImports.1Password.csproj" />
+		<ProjectReference Include="..\VaultGuardImports\VaultGuardImports.Bitwarden\VaultGuardImports.Bitwarden.csproj" />
 		<ProjectReference Include="..\VaultGuard.Crypto\VaultGuard.Crypto.csproj" />
 		<ProjectReference Include="..\VaultGuard.ExceptionReporting\VaultGuard.ExceptionReporting.csproj" />
 		<ProjectReference Include="..\VaultGuard.ExceptionReporting.Sentry\VaultGuard.ExceptionReporting.Sentry.csproj" />
@@ -102,7 +102,7 @@
 		<!-- Generic: discover all import plugin DLLs under VaultGuardImports.* projects and copy each into its own discovery folder -->
 		<ItemGroup>
 			<PluginDlls Include="$(OutputPath)**\VaultGuardImports.*.dll" />
-			<PluginDlls Include="$(SolutionDir)VaultGuardImports.*\bin\$(Configuration)\**\VaultGuardImports.*.dll" />
+			<PluginDlls Include="$(SolutionDir)VaultGuardImports\VaultGuardImports.*\bin\$(Configuration)\**\VaultGuardImports.*.dll" />
 		</ItemGroup>
 
 		<!-- Compute per-plugin folder and filename metadata -->
@@ -120,15 +120,15 @@
 			Condition=" '@(_PluginsToCopy)' != '' " />
 
 		<!-- Copy plugin.json files manually for known plugins -->
-		<Copy SourceFiles="$(SolutionDir)VaultGuardImports.1Password\plugin.json"
+		<Copy SourceFiles="$(SolutionDir)VaultGuardImports\VaultGuardImports.1Password\plugin.json"
 			DestinationFolder="$(OutputPath)imports\otherpasswordmanagers\OnePassword"
 			SkipUnchangedFiles="true"
-			Condition="Exists('$(SolutionDir)VaultGuardImports.1Password\plugin.json')" />
+			Condition="Exists('$(SolutionDir)VaultGuardImports\VaultGuardImports.1Password\plugin.json')" />
 		
-		<Copy SourceFiles="$(SolutionDir)VaultGuardImports.Bitwarden\plugin.json"
+		<Copy SourceFiles="$(SolutionDir)VaultGuardImports\VaultGuardImports.Bitwarden\plugin.json"
 			DestinationFolder="$(OutputPath)imports\otherpasswordmanagers\Bitwarden"
 			SkipUnchangedFiles="true"
-			Condition="Exists('$(SolutionDir)VaultGuardImports.Bitwarden\plugin.json')" />
+			Condition="Exists('$(SolutionDir)VaultGuardImports\VaultGuardImports.Bitwarden\plugin.json')" />
 	</Target>
 
 </Project>
