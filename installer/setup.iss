@@ -78,9 +78,110 @@ Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: no
 var
   ModePage: TInputOptionWizardPage;
   ApiPage: TInputQueryWizardPage;
+  SeedDataPage: TInputOptionWizardPage;
+  TestConnectionButton: TNewButton;
+  ConnectionStatusLabel: TNewStaticText;
 
 const
   DefaultApiUrl = 'https://vaultguardapi.dotnetappdevni.com';
+
+  INTERNET_OPEN_TYPE_PRECONFIG = 0;
+  INTERNET_FLAG_RELOAD = $80000000;
+  INTERNET_FLAG_NO_CACHE_WRITE = $04000000;
+  INTERNET_FLAG_NO_UI = $00000200;
+  INTERNET_OPTION_CONNECT_TIMEOUT = 2;
+  INTERNET_OPTION_RECEIVE_TIMEOUT = 6;
+  HTTP_QUERY_STATUS_CODE = 19;
+  HTTP_QUERY_FLAG_NUMBER = $20000000;
+
+// ── WinInet: just enough to GET a URL and read back its HTTP status code, so
+// "Test Connection" can check the API server is actually reachable without
+// bundling a separate HTTP tool. ──────────────────────────────────────────
+function InternetOpenA(lpszAgent: AnsiString; dwAccessType: LongWord;
+  lpszProxy, lpszProxyBypass: AnsiString; dwFlags: LongWord): LongWord;
+  external 'InternetOpenA@wininet.dll stdcall';
+function InternetOpenUrlA(hInternet: LongWord; lpszUrl: AnsiString; lpszHeaders: AnsiString;
+  dwHeadersLength: LongWord; dwFlags: LongWord; dwContext: LongWord): LongWord;
+  external 'InternetOpenUrlA@wininet.dll stdcall';
+function InternetCloseHandle(hInternet: LongWord): BOOL;
+  external 'InternetCloseHandle@wininet.dll stdcall';
+function InternetSetOptionA(hInternet: LongWord; dwOption: LongWord;
+  var lpBuffer: LongWord; dwBufferLength: LongWord): BOOL;
+  external 'InternetSetOptionA@wininet.dll stdcall';
+function HttpQueryInfoA(hRequest: LongWord; dwInfoLevel: LongWord;
+  var lpvBuffer: LongWord; var lpdwBufferLength: LongWord; var lpdwIndex: LongWord): BOOL;
+  external 'HttpQueryInfoA@wininet.dll stdcall';
+
+// Strips a trailing slash (if any) and hits <url>/health - VaultGuard.API exposes that
+// route unauthenticated (see ApiKeyAuthenticationMiddleware) specifically for checks like this.
+function TestApiConnection(Url: String; var StatusMsg: String): Boolean;
+var
+  hInet, hUrl: LongWord;
+  Timeout, StatusCode, BufLen, Index: LongWord;
+  TestUrl: String;
+begin
+  Result := False;
+  TestUrl := Url;
+  if (Length(TestUrl) > 0) and (Copy(TestUrl, Length(TestUrl), 1) = '/') then
+    Delete(TestUrl, Length(TestUrl), 1);
+  TestUrl := TestUrl + '/health';
+
+  hInet := InternetOpenA('VaultGuard Setup', INTERNET_OPEN_TYPE_PRECONFIG, '', '', 0);
+  if hInet = 0 then
+  begin
+    StatusMsg := 'Could not initialize a network connection.';
+    Exit;
+  end;
+
+  Timeout := 5000;
+  InternetSetOptionA(hInet, INTERNET_OPTION_CONNECT_TIMEOUT, Timeout, SizeOf(Timeout));
+  InternetSetOptionA(hInet, INTERNET_OPTION_RECEIVE_TIMEOUT, Timeout, SizeOf(Timeout));
+
+  hUrl := InternetOpenUrlA(hInet, TestUrl, '', 0,
+    INTERNET_FLAG_RELOAD or INTERNET_FLAG_NO_CACHE_WRITE or INTERNET_FLAG_NO_UI, 0);
+
+  if hUrl = 0 then
+  begin
+    StatusMsg := 'Could not reach ' + Url + ' - check the URL and your network connection.';
+    InternetCloseHandle(hInet);
+    Exit;
+  end;
+
+  BufLen := SizeOf(StatusCode);
+  Index := 0;
+  StatusCode := 0;
+  if HttpQueryInfoA(hUrl, HTTP_QUERY_STATUS_CODE or HTTP_QUERY_FLAG_NUMBER, StatusCode, BufLen, Index) then
+  begin
+    if (StatusCode >= 200) and (StatusCode < 300) then
+    begin
+      Result := True;
+      StatusMsg := 'Connected successfully (HTTP ' + IntToStr(StatusCode) + ').';
+    end
+    else
+      StatusMsg := 'Server responded with HTTP ' + IntToStr(StatusCode) + ' - check the URL.';
+  end
+  else
+    StatusMsg := 'Connected, but could not read the server''s response.';
+
+  InternetCloseHandle(hUrl);
+  InternetCloseHandle(hInet);
+end;
+
+procedure TestConnectionButtonClick(Sender: TObject);
+var
+  Msg: String;
+  Ok: Boolean;
+begin
+  ConnectionStatusLabel.Font.Color := clWindowText;
+  ConnectionStatusLabel.Caption := 'Testing connection...';
+  ConnectionStatusLabel.Update;
+  Ok := TestApiConnection(ApiPage.Values[0], Msg);
+  ConnectionStatusLabel.Caption := Msg;
+  if Ok then
+    ConnectionStatusLabel.Font.Color := clGreen
+  else
+    ConnectionStatusLabel.Font.Color := clRed;
+end;
 
 procedure InitializeWizard;
 begin
@@ -98,6 +199,34 @@ begin
     'You can change this later from Settings inside the app.');
   ApiPage.Add('API URL:', False);
   ApiPage.Values[0] := DefaultApiUrl;
+
+  // "Test Connection" + a result label, placed under the URL field on the same page - Inno's
+  // high-level wizard-page API has no built-in button, but CreateInputQueryPage's Surface is a
+  // plain TPanel any control can be dropped onto.
+  TestConnectionButton := TNewButton.Create(ApiPage);
+  TestConnectionButton.Parent := ApiPage.Surface;
+  TestConnectionButton.Left := ApiPage.Edits[0].Left;
+  TestConnectionButton.Top := ApiPage.Edits[0].Top + ApiPage.Edits[0].Height + ScaleY(12);
+  TestConnectionButton.Width := ScaleX(130);
+  TestConnectionButton.Height := ScaleY(23);
+  TestConnectionButton.Caption := '&Test Connection';
+  TestConnectionButton.OnClick := @TestConnectionButtonClick;
+
+  ConnectionStatusLabel := TNewStaticText.Create(ApiPage);
+  ConnectionStatusLabel.Parent := ApiPage.Surface;
+  ConnectionStatusLabel.Left := TestConnectionButton.Left + TestConnectionButton.Width + ScaleX(12);
+  ConnectionStatusLabel.Top := TestConnectionButton.Top + ScaleY(4);
+  ConnectionStatusLabel.Width := ApiPage.Surface.Width - ConnectionStatusLabel.Left;
+  ConnectionStatusLabel.AutoSize := False;
+  ConnectionStatusLabel.Caption := '';
+
+  SeedDataPage := CreateInputOptionPage(ApiPage.ID,
+    'Sample Data',
+    'Choose what to install with a fresh vault',
+    'Select an option, then click Next:', True, False);
+  SeedDataPage.Add('Include demo accounts and sample vault items (recommended for evaluation)');
+  SeedDataPage.Add('Start empty - no demo accounts, no sample data');
+  SeedDataPage.SelectedValueIndex := 0;
 end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
@@ -107,18 +236,16 @@ begin
     Result := True;
 end;
 
-// Vault Guard reads its per-user settings from {userappdata}\VaultGuard\settings.json
-// (see SettingsViewModel.AuthMode/ApiBaseUrl) - this file is created lazily by the app
-// itself, so we only seed it when the user actually opted into API mode, and never
-// overwrite a file that already exists (keeps upgrades/reinstalls non-destructive).
+// Vault Guard reads its per-user settings from {userappdata}\VaultGuard\settings.json (see
+// SettingsViewModel.AuthMode/ApiBaseUrl and AppStartupService.IsSeedDemoDataEnabled). This file is
+// created lazily by the app itself, so we only ever write it once here and never overwrite one that
+// already exists (keeps upgrades/reinstalls non-destructive) - but unlike before, that write now
+// always happens (to carry the seed-data choice), not just when API mode is chosen.
 procedure WriteBackendSettings();
 var
-  SettingsDir, SettingsFile: String;
+  SettingsDir, SettingsFile, SeedDemo: String;
   Lines: TStringList;
 begin
-  if ModePage.SelectedValueIndex <> 1 then
-    Exit;
-
   SettingsDir := ExpandConstant('{userappdata}\VaultGuard');
   SettingsFile := SettingsDir + '\settings.json';
 
@@ -131,14 +258,23 @@ begin
   if not DirExists(SettingsDir) then
     ForceDirectories(SettingsDir);
 
+  if SeedDataPage.SelectedValueIndex = 0 then
+    SeedDemo := 'true'
+  else
+    SeedDemo := 'false';
+
   Lines := TStringList.Create;
   try
     Lines.Add('{');
-    Lines.Add('  "AuthMode": "API Server",');
-    Lines.Add('  "ApiBaseUrl": "' + ApiPage.Values[0] + '"');
+    if ModePage.SelectedValueIndex = 1 then
+    begin
+      Lines.Add('  "AuthMode": "API Server",');
+      Lines.Add('  "ApiBaseUrl": "' + ApiPage.Values[0] + '",');
+    end;
+    Lines.Add('  "SeedDemoData": ' + SeedDemo);
     Lines.Add('}');
     Lines.SaveToFile(SettingsFile);
-    Log('Seeded ' + SettingsFile + ' with API Server configuration.');
+    Log('Seeded ' + SettingsFile + ' (SeedDemoData=' + SeedDemo + ').');
   finally
     Lines.Free;
   end;
