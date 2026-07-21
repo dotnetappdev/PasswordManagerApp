@@ -1,25 +1,17 @@
 name: Deploy API to SmarterASP.NET
 
-# Deploys ONLY VaultGuard.API (the Web API project) to SmarterASP.NET via Web Deploy, and only when:
-#   1. A PR is opened/updated against devmain touching API-relevant code, AND
-#   2. VaultGuard.BackEnd.Tests (the unit tests that cover VaultGuard.API) pass.
-# The test step runs before publish/deploy in the same job, so a test failure stops the job there -
-# publish and deploy never run.
+# Deploys VaultGuard.API (the Web API project) to SmarterASP.NET via Web Deploy, and only when
+# VaultGuard.BackEnd.Tests (the unit tests that cover VaultGuard.API) pass. The test step runs before
+# publish/deploy in the same job, so a test failure stops the job there - publish and deploy never run.
+#
+# Runs on EVERY PR into devmain (no path filter) rather than only PRs touching API-relevant code, so an
+# api-vX.Y.Z release+zip gets cut alongside every other release (WPF/Android already do this
+# unconditionally - see build-wpf.yml/build-maui.yml) instead of only when the API itself changed. This
+# also means every PR into devmain now live-deploys the current devmain build of VaultGuard.API to the
+# production SmarterASP.NET site, whether or not that PR touched API code.
 on:
   pull_request:
     branches: [ devmain ]
-    paths:
-      - 'VaultGuard.API/**'
-      - 'VaultGuard.Models/**'
-      - 'VaultGuard.DAL/**'
-      - 'VaultGuard.Services/**'
-      - 'VaultGuard.Crypto/**'
-      - 'VaultGuard.DAL.SqlServer/**'
-      - 'VaultGuard.DAL.MySql/**'
-      - 'VaultGuard.DAL.Postgres/**'
-      - 'VaultGuard.DAL.SupaBase/**'
-      - 'VaultGuard.BackEnd.Tests/**'
-      - '.github/workflows/deploy-api-smarterasp.yml'
   workflow_dispatch: {}
 
 # Serializes runs for the same PR/branch (default cancel-in-progress: false, so a deploy already in

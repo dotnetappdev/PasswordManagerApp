@@ -1,29 +1,18 @@
 name: Deploy Web to SmarterASP.NET
 
-# Deploys ONLY VaultGuard.Web (the Blazor Server web app) to SmarterASP.NET via Web Deploy, and only
-# when:
-#   1. A PR is opened/updated against devmain touching Web-relevant code, AND
-#   2. VaultGuard.Web.Tests pass.
-# The test step runs before publish/deploy in the same job, so a test failure stops the job there -
-# publish and deploy never run. Mirrors deploy-api-smarterasp.yml - see that file/ReadMe.md for the
-# reasoning behind self-contained publish and the OutOfProcess hosting model.
+# Deploys VaultGuard.Web (the Blazor Server web app) to SmarterASP.NET via Web Deploy, and only when
+# VaultGuard.Web.Tests pass. The test step runs before publish/deploy in the same job, so a test failure
+# stops the job there - publish and deploy never run. Mirrors deploy-api-smarterasp.yml - see that
+# file/ReadMe.md for the reasoning behind self-contained publish and the OutOfProcess hosting model.
+#
+# Runs on EVERY PR into devmain (no path filter) rather than only PRs touching Web-relevant code, so a
+# web-vX.Y.Z release+zip gets cut alongside every other release (WPF/Android already do this
+# unconditionally - see build-wpf.yml/build-maui.yml) instead of only when Web itself changed. This also
+# means every PR into devmain now live-deploys the current devmain build of VaultGuard.Web to the
+# production SmarterASP.NET site, whether or not that PR touched Web code.
 on:
   pull_request:
     branches: [ devmain ]
-    paths:
-      - 'VaultGuard.Web/**'
-      - 'VaultGuard.Models/**'
-      - 'VaultGuard.Components.Shared/**'
-      - 'VaultGuard.DAL/**'
-      - 'VaultGuard.Services/**'
-      - 'VaultGuard.Crypto/**'
-      - 'VaultGuard.Imports/**'
-      - 'VaultGuard.DAL.SqlServer/**'
-      - 'VaultGuard.DAL.MySql/**'
-      - 'VaultGuard.DAL.Postgres/**'
-      - 'VaultGuard.DAL.SupaBase/**'
-      - 'VaultGuard.Web.Tests/**'
-      - '.github/workflows/deploy-web-smarterasp.yml'
   workflow_dispatch: {}
 
 # Serializes runs for the same PR/branch (default cancel-in-progress: false, so a deploy already in

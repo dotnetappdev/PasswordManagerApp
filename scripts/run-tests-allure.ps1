@@ -66,8 +66,19 @@ if ($IncludeBlazorUi) {
   # docs/TESTING.md's Allure dashboard section), so it's copied straight into $results as-is rather than
   # converted to the NUnit suites' per-test JSON format.
   dotnet test $playwrightProject --no-build -c Debug --filter "FullyQualifiedName!~ScreenshotCaptureTests" --results-directory $playwrightTrxDir --logger "trx;LogFileName=blazor-ui-tests.trx"
-  Get-ChildItem -Recurse -Path $playwrightTrxDir -Filter 'blazor-ui-tests.trx' -ErrorAction SilentlyContinue |
-    Copy-Item -Destination $results -Force
+
+  # Copy the trx AND every screenshot it references, preserving their relative layout on disk (both
+  # land under $playwrightTrxDir as siblings/descendants from the same test run) instead of copying just
+  # the trx. trx-plugin's <ResultFile> attachment entries point at each PNG using a path relative to the
+  # trx's own location - copy only the trx and that reference resolves to nothing, so the report shows
+  # the attachment's bare filename instead of the actual screenshot inline.
+  Get-ChildItem -Recurse -Path $playwrightTrxDir -Include 'blazor-ui-tests.trx', '*.png' -ErrorAction SilentlyContinue |
+    ForEach-Object {
+      $relative = $_.FullName.Substring($playwrightTrxDir.Length).TrimStart('\', '/')
+      $destination = Join-Path $results $relative
+      New-Item -ItemType Directory -Force -Path (Split-Path $destination -Parent) | Out-Null
+      Copy-Item $_.FullName -Destination $destination -Force
+    }
 }
 
 $count = (Get-ChildItem $results -File -ErrorAction SilentlyContinue | Measure-Object).Count
