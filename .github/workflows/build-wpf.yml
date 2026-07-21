@@ -11,8 +11,16 @@ on:
 # Serializes runs for the same PR/branch (default cancel-in-progress: false, so a build already in
 # flight is queued behind, never killed). Without this, two pushes to the same open PR in quick
 # succession can both check out before either has pushed its own release tag/screenshot commit - both
-# then compute the same "next" wpf-vX.Y.Z and race to push it, and the loser fails with "tag already
+# then compute the same "next" release-vX.Y.Z and race to push it, and the loser fails with "tag already
 # exists". Confirmed happening in CI.
+#
+# NOTE: build-wpf.yml, build-maui.yml, deploy-web-smarterasp.yml and deploy-api-smarterasp.yml now all
+# share the SAME release-vX.Y.Z tag/version (see "Set version" below) so the four apps ship one aligned
+# version number under one combined GitHub Release, instead of four separately-versioned releases
+# (wpf-v*/android-v*/web-v*/api-v*). Because all four fire on every PR into devmain, this concurrency
+# group (scoped to just this workflow) does NOT prevent the four DIFFERENT workflows from racing each
+# other to create that same tag - see the idempotent push handling in "Tag release and create release
+# branch" below, which is what actually makes that race safe.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
@@ -43,9 +51,11 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # ── Derive version: from a git tag (v1.2.3), auto-incremented from the latest wpf-vX.Y.Z tag on
-      # a merged PR into devmain (mirrors deploy-api/web-smarterasp.yml's scheme), or 0.0.0-dev
-      # otherwise (plain branch pushes/other PRs - build validation only, no release) ───────────────
+      # ── Derive version: from a git tag (v1.2.3), auto-incremented from the latest shared
+      # release-vX.Y.Z tag on a merged PR into devmain (same prefix build-maui.yml/deploy-web-
+      # smarterasp.yml/deploy-api-smarterasp.yml all read, so all four apps agree on one version
+      # number), or 0.0.0-dev otherwise (plain branch pushes/other PRs - build validation only, no
+      # release) ─────────────────────────────────────────────────────────────────────────────────
       - name: Set version
         id: ver
         shell: bash
@@ -54,14 +64,14 @@ jobs:
             ver="${BASH_REMATCH[1]}"
             tag="${{ github.ref_name }}"
           elif [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.base.ref }}" = "devmain" ]; then
-            latest=$(git tag -l 'wpf-v*' | sed 's/^wpf-v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
+            latest=$(git tag -l 'release-v*' | sed 's/^release-v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
             if [ -z "$latest" ]; then
               ver="1.0.0"
             else
               IFS='.' read -r major minor patch <<< "$latest"
               ver="$major.$minor.$((patch + 1))"
             fi
-            tag="wpf-v$ver"
+            tag="release-v$ver"
           else
             ver="0.0.0-dev"
             tag=""
@@ -152,6 +162,13 @@ jobs:
       # Only the PR-merge case needs a new tag - a manual vX.Y.Z tag already exists (the user pushed
       # it), so there's nothing to create here; the release step below just attaches the installers to
       # that existing tag's release.
+      #
+      # Idempotent tag/branch push: release-vX.Y.Z is now shared with build-maui.yml/deploy-web-
+      # smarterasp.yml/deploy-api-smarterasp.yml, all of which fire on the same PR and independently
+      # compute the same "next" version - whichever of the four finishes this step first wins the
+      # push, and that's fine. The other three must NOT fail when they discover the tag/branch already
+      # exists - they just skip creating it and move on to attaching their own artifact to the release
+      # that already exists for that tag.
       - name: Tag release and create release branch
         if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain'
         shell: bash
@@ -159,17 +176,34 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           sha="${{ github.event.pull_request.head.sha }}"
-          git tag "${{ steps.ver.outputs.TAG }}" "$sha"
-          git push origin "${{ steps.ver.outputs.TAG }}"
-          git branch "release/${{ steps.ver.outputs.TAG }}" "$sha"
-          git push origin "release/${{ steps.ver.outputs.TAG }}"
+          tag="${{ steps.ver.outputs.TAG }}"
+          git tag "$tag" "$sha"
+          if ! git push origin "$tag" 2>push-tag.log; then
+            if grep -qi "already exists" push-tag.log; then
+              echo "Tag $tag already exists - another app's release job created it for this same version. Continuing."
+              cat push-tag.log
+            else
+              cat push-tag.log >&2
+              exit 1
+            fi
+          fi
+          git branch "release/$tag" "$sha" 2>/dev/null || true
+          if ! git push origin "release/$tag" 2>push-branch.log; then
+            if grep -qi "already exists" push-branch.log; then
+              echo "Release branch release/$tag already exists - continuing."
+              cat push-branch.log
+            else
+              cat push-branch.log >&2
+              exit 1
+            fi
+          fi
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain')
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.ver.outputs.TAG }}
-          name: VaultGuard ${{ steps.ver.outputs.VERSION }}
+          name: VaultGuard v${{ steps.ver.outputs.VERSION }}
           generate_release_notes: true
           files: |
             installer/output/*.exe

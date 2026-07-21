@@ -11,7 +11,14 @@ on:
 # Serializes runs for the same PR/branch (default cancel-in-progress: false, so a build already in
 # flight is queued behind, never killed). Without this, two pushes to the same open PR in quick
 # succession can both check out before either has pushed its own release tag - both then compute the
-# same "next" android-vX.Y.Z and race to push it, and the loser fails with "tag already exists".
+# same "next" release-vX.Y.Z and race to push it, and the loser fails with "tag already exists".
+#
+# NOTE: this shares its release-vX.Y.Z tag/version with build-wpf.yml/deploy-web-smarterasp.yml/
+# deploy-api-smarterasp.yml (see "Compute release version" below) so all four apps ship one aligned
+# version under one combined GitHub Release. Because all four fire on every PR into devmain, this
+# concurrency group (scoped to just this workflow) does NOT prevent the four DIFFERENT workflows from
+# racing each other to create that same tag - see the idempotent push handling in "Tag release and
+# create release branch" below, which is what actually makes that race safe.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
@@ -53,9 +60,10 @@ jobs:
       - name: Build
         run: dotnet build ${{ env.PROJECT }} --configuration Release -f net10.0-windows10.0.19041.0
 
-      # ── Android release: on a merged PR into devmain (auto-versioned, mirrors deploy-api/web-
-      # smarterasp.yml's "android-vX.Y.Z" tag scheme) or a manual vX.Y.Z tag push. Gated separately
-      # from the Windows-head build above so it never affects that build's own trigger scope. ──────
+      # ── Android release: on a merged PR into devmain (auto-versioned from the shared release-vX.Y.Z
+      # tag also read by build-wpf.yml/deploy-web-smarterasp.yml/deploy-api-smarterasp.yml, so all four
+      # apps ship one aligned version) or a manual vX.Y.Z tag push. Gated separately from the
+      # Windows-head build above so it never affects that build's own trigger scope. ──────
       - name: Compute release version
         if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain')
         id: ver
@@ -65,14 +73,14 @@ jobs:
             ver="${BASH_REMATCH[1]}"
             tag="${{ github.ref_name }}"
           else
-            latest=$(git tag -l 'android-v*' | sed 's/^android-v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
+            latest=$(git tag -l 'release-v*' | sed 's/^release-v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
             if [ -z "$latest" ]; then
               ver="1.0.0"
             else
               IFS='.' read -r major minor patch <<< "$latest"
               ver="$major.$minor.$((patch + 1))"
             fi
-            tag="android-v$ver"
+            tag="release-v$ver"
           fi
           echo "Resolved version: $ver (tag: $tag)"
           echo "VERSION=$ver" >> "$GITHUB_OUTPUT"
@@ -91,6 +99,13 @@ jobs:
 
       # Only for the PR-merge case - a manual vX.Y.Z tag already exists (the user pushed it), so there's
       # nothing to tag here; the release step below just attaches the APK to that existing tag's release.
+      #
+      # Idempotent tag/branch push: release-vX.Y.Z is shared with build-wpf.yml/deploy-web-smarterasp.yml/
+      # deploy-api-smarterasp.yml, all of which fire on the same PR and independently compute the same
+      # "next" version - whichever of the four finishes this step first wins the push, and that's fine.
+      # The other three must NOT fail when they discover the tag/branch already exists - they just skip
+      # creating it and move on to attaching their own artifact to the release that already exists for
+      # that tag.
       - name: Tag release and create release branch
         if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain'
         shell: bash
@@ -98,17 +113,34 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           sha="${{ github.event.pull_request.head.sha }}"
-          git tag "${{ steps.ver.outputs.TAG }}" "$sha"
-          git push origin "${{ steps.ver.outputs.TAG }}"
-          git branch "release/${{ steps.ver.outputs.TAG }}" "$sha"
-          git push origin "release/${{ steps.ver.outputs.TAG }}"
+          tag="${{ steps.ver.outputs.TAG }}"
+          git tag "$tag" "$sha"
+          if ! git push origin "$tag" 2>push-tag.log; then
+            if grep -qi "already exists" push-tag.log; then
+              echo "Tag $tag already exists - another app's release job created it for this same version. Continuing."
+              cat push-tag.log
+            else
+              cat push-tag.log >&2
+              exit 1
+            fi
+          fi
+          git branch "release/$tag" "$sha" 2>/dev/null || true
+          if ! git push origin "release/$tag" 2>push-branch.log; then
+            if grep -qi "already exists" push-branch.log; then
+              echo "Release branch release/$tag already exists - continuing."
+              cat push-branch.log
+            else
+              cat push-branch.log >&2
+              exit 1
+            fi
+          fi
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain')
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.ver.outputs.TAG }}
-          name: VaultGuard Android v${{ steps.ver.outputs.VERSION }}
+          name: VaultGuard v${{ steps.ver.outputs.VERSION }}
           generate_release_notes: true
           files: publish/android/*.apk
         env:
